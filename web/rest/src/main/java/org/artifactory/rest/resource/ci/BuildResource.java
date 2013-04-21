@@ -22,6 +22,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import com.sun.jersey.api.core.ExtendedUriInfo;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
@@ -29,7 +30,6 @@ import org.artifactory.api.build.BuildNumberComparator;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.build.BuildInfo;
 import org.artifactory.api.rest.build.Builds;
@@ -40,8 +40,6 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.exception.CancelException;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -52,6 +50,7 @@ import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.jfrog.build.api.release.Promotion;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -60,7 +59,15 @@ import org.springframework.stereotype.Component;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -175,16 +182,27 @@ public class BuildResource {
     public Response getBuildInfo(
             @PathParam("buildName") String buildName,
             @PathParam("buildNumber") String buildNumber,
+            @QueryParam("started") String buildStarted,
             @QueryParam("diff") String diffNumber) throws IOException {
 
         if (!authorizationService.canDeployToLocalRepository()) {
             throw new AuthorizationRestException();
         }
 
-        Build build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
+        Build build = null;
+        if (StringUtils.isNotBlank(buildStarted)) {
+            BuildRun buildRun = buildService.getBuildRun(buildName, buildNumber, buildStarted);
+            if (buildRun != null) {
+                build = buildService.getBuild(buildRun);
+            }
+        } else {
+            build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
+        }
+
         if (build == null) {
-            String msg =
-                    String.format("No build was found for build name: %s , build number: %s ", buildName, buildNumber);
+            String msg = String.format("No build was found for build name: %s, build number: %s %s",
+                    buildName, buildNumber,
+                    StringUtils.isNotBlank(buildStarted) ? ", build started: " + buildStarted : "");
             response.sendError(HttpStatus.SC_NOT_FOUND, msg);
             return null;
         }
@@ -292,39 +310,9 @@ public class BuildResource {
     }
 
     /**
-     * Move or copy the artifacts and\or dependencies of the specified build
-     *
-     * @param started Build started date. Can be null
-     * @param to      Key of target repository to move to
-     * @param arts    Zero or negative int if to exclude artifacts from the action take. Positive int to include
-     * @param deps    Zero or negative int if to exclude dependencies from the action take. Positive int to include
-     * @param scopes  Scopes of dependencies to copy (agnostic if null or empty)
-     * @param dry     Zero or negative int if to apply the selected action. Positive int to simulate
-     * @return Result of action
-     * @deprecated Use {@link org.artifactory.rest.resource.ci.BuildResource#promote(java.lang.String, java.lang.String,
-     *             org.jfrog.build.api.release.Promotion)} instead
-     */
-    @POST
-    @Path("{action: .+}/{buildName: .+}/{buildNumber: .+}")
-    @Produces({BuildRestConstants.MT_COPY_MOVE_RESULT, MediaType.APPLICATION_JSON})
-    @Deprecated
-    public MoveCopyResult moveBuildItems(@PathParam("action") String action,
-            @PathParam("buildName") String buildName,
-            @PathParam("buildNumber") String buildNumber,
-            @QueryParam("started") String started,
-            @QueryParam("to") String to,
-            @QueryParam("arts") @DefaultValue("1") int arts,
-            @QueryParam("deps") int deps,
-            @QueryParam("scopes") StringList scopes,
-            @QueryParam("properties") KeyValueList properties,
-            @QueryParam("dry") int dry) throws IOException {
-        return moveOrCopy(action, buildName, buildNumber, started, to, arts, deps, scopes, properties, dry);
-    }
-
-    /**
      * Promotes a build
      *
-     * @param name        Name of build to promote
+     * @param buildName   Name of build to promote
      * @param buildNumber Number of build to promote
      * @param promotion   Promotion settings
      * @return Promotion result
@@ -345,15 +333,13 @@ public class BuildResource {
             PromotionResult promotionResult = restAddon.promoteBuild(buildName, buildNumber, promotion);
             return Response.status(promotionResult.errorsOrWarningHaveOccurred() ?
                     HttpStatus.SC_BAD_REQUEST : HttpStatus.SC_OK).entity(promotionResult).build();
-        } catch (IllegalArgumentException iae) {
+        } catch (IllegalArgumentException | ItemNotFoundRuntimeException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnee) {
             response.sendError(HttpStatus.SC_NOT_FOUND, dnee.getMessage());
         } catch (ParseException pe) {
             response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unable to parse given build start date: " +
                     pe.getMessage());
-        } catch (ItemNotFoundRuntimeException infre) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, infre.getMessage());
         }
         return null;
     }
@@ -400,69 +386,21 @@ public class BuildResource {
     public void deleteBuilds(
             @PathParam("buildName") String buildName,
             @QueryParam("artifacts") int artifacts,
-            @QueryParam("buildNumbers") StringList buildNumbers) throws IOException {
+            @QueryParam("buildNumbers") StringList buildNumbers,
+            @QueryParam("deleteAll") int deleteAll) throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
             if (RestUtils.shouldDecodeParams(request)) {
                 buildName = URLDecoder.decode(buildName, "UTF-8");
             }
 
-            restAddon.deleteBuilds(response, buildName, buildNumbers, artifacts);
+            restAddon.deleteBuilds(response, buildName, buildNumbers, artifacts, deleteAll);
         } catch (IllegalArgumentException iae) {
             response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
         } catch (DoesNotExistException dnne) {
             response.sendError(HttpStatus.SC_NOT_FOUND, dnne.getMessage());
         }
         response.flushBuffer();
-    }
-
-    /**
-     * Move or copy the artifacts and\or dependencies of the specified build, The user can also send a series of
-     * Properties that are encased in a {@link KeyValueList}. Those properties will then be attached to the
-     * <b>destination</b> artifact as {@link org.artifactory.md.Properties}, these will be added to those properties
-     * from the source artifact.
-     *
-     * @param started    Build started date. Can be null
-     * @param to         Key of target repository to move to
-     * @param arts       Zero or negative int if to exclude artifacts from the action take. Positive int to include
-     * @param deps       Zero or negative int if to exclude dependencies from the action take. Positive int to include
-     * @param scopes     Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties The properties that are attached to the destination artifact.
-     * @param dry        Zero or negative int if to apply the selected action. Positive int to simulate
-     * @return Result
-     */
-    private MoveCopyResult moveOrCopy(String action, String buildName, String buildNumber, String started, String to,
-            int arts, int deps, StringList scopes, KeyValueList properties, int dry) throws IOException {
-        boolean move;
-        if ("move".equalsIgnoreCase(action)) {
-            move = true;
-        } else if ("copy".equalsIgnoreCase(action)) {
-            move = false;
-        } else {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, "'" + action +
-                    "' is an unsupported operation. Please use 'move' or 'copy'.");
-            return null;
-        }
-        if (properties == null) {
-            properties = new KeyValueList("");
-        }
-        RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        try {
-            if (RestUtils.shouldDecodeParams(request)) {
-                buildName = URLDecoder.decode(buildName, "UTF-8");
-                buildNumber = URLDecoder.decode(buildNumber, "UTF-8");
-            }
-            return restAddon.moveOrCopyBuildItems(move, buildName, buildNumber, started, to, arts, deps, scopes,
-                    properties, dry);
-        } catch (IllegalArgumentException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
-        } catch (DoesNotExistException dnee) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, dnee.getMessage());
-        } catch (ParseException pe) {
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unable to parse given build start date: " +
-                    pe.getMessage());
-        }
-        return null;
     }
 
     private boolean queryParamsContainKey(String key) {

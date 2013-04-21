@@ -21,10 +21,10 @@ package org.artifactory.descriptor.reader;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.jaxb.JaxbHelper;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.util.FileUtils;
+import org.artifactory.util.Files;
 import org.artifactory.version.ArtifactoryConfigVersion;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -41,7 +41,7 @@ public class CentralConfigReader {
      * @see CentralConfigReader#read(String)
      */
     public CentralConfigDescriptor read(File configFile) {
-        return read(FileUtils.readFileToString(configFile));
+        return read(Files.readFileToString(configFile));
     }
 
     /**
@@ -71,7 +71,7 @@ public class CentralConfigReader {
     private ArtifactoryConfigVersion verifyCurrentConfigVersion(String configXmlString) {
         if (!configXmlString.contains(Descriptor.NS)) {
             String msg = "The current Artifactory config schema namespace is '" + Descriptor.NS +
-                    "' \nThe provided config does not seem to be compliant with it.";
+                    "' The provided config does not seem to be compliant with it.";
             if (log.isDebugEnabled()) {
                 log.debug(msg + "\n" + configXmlString);
             } else {

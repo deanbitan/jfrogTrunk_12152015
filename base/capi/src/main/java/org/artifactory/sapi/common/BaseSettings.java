@@ -48,8 +48,17 @@ public interface BaseSettings extends Serializable {
 
     void setVerbose(boolean verbose);
 
+    /**
+     * @return True if the import/export should fail immediately on certain errors.
+     */
     boolean isFailFast();
 
+    /**
+     * Is set to true certain import/export actions will fail immediately on error instead of just logging the error
+     * and continuing with the import/export.
+     *
+     * @param failFast True to fail fast, false otherwise
+     */
     void setFailFast(boolean failFast);
 
     boolean isFailIfEmpty();

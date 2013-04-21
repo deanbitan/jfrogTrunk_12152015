@@ -19,19 +19,23 @@
 package org.artifactory.rest.resource.archive;
 
 import com.sun.jersey.spi.CloseableService;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.constant.ArchiveRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -42,6 +46,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -74,6 +80,12 @@ public class ArchiveResource {
 
     @Autowired
     private AddonsManager addonsManager;
+
+    @Autowired
+    private RepositoryService repositoryService;
+
+    @Autowired
+    private ArchiveIndexer archiveIndexer;
 
     @POST
     @Path(ArchiveRestConstants.PATH_BUILD_ARTIFACTS)
@@ -128,6 +140,37 @@ public class ArchiveResource {
             log.error("Failed to create builds artifacts archive: " + e.getMessage(), e);
             return null;
         }
+    }
+
+    @POST
+    @Path(ArchiveRestConstants.PATH_INDEX)
+    @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
+    public Response index(@QueryParam("path") String path, @QueryParam("recursive") int recursive,
+            @QueryParam("indexAllRepos") int indexAllRepos) {
+
+        RepoPath repoPath = null;
+        if (indexAllRepos != 1) {
+            repoPath = RestUtils.calcRepoPathFromRequestPath(path);
+            if (!repositoryService.exists(repoPath)) {
+                return Response.status(Response.Status.BAD_REQUEST).entity("Could not find repo path " + path).build();
+            }
+        }
+
+        if (indexAllRepos != 1 && recursive == 0) {
+            archiveIndexer.asyncIndex(repoPath);
+        } else {
+            archiveIndexer.recursiveMarkArchivesForIndexing(repoPath, indexAllRepos == 1);
+        }
+
+        String message;
+        if (repoPath != null) {
+            message = "Archive indexing for path '" + path + "' accepted.";
+        } else {
+            message = "Archive indexing of all repositories accepted.";
+        }
+        log.info(message);
+        return Response.status(HttpStatus.SC_ACCEPTED).entity(message).build();
     }
 
     private void markForDeletionAtResponseEnd(final File buildArtifactsArchive) {

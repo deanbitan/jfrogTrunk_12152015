@@ -37,7 +37,7 @@ public class DefaultFileUploadForm extends FileUploadForm {
     private CentralConfigService centralConfig;
 
     public DefaultFileUploadForm(String name, UploadListener listener) {
-        super(name, ContextHelper.get().getArtifactoryHome().getTmpUploadsDir().getAbsolutePath(), listener);
+        super(name, ContextHelper.get().getArtifactoryHome().getTempUploadDir().getAbsolutePath(), listener);
         add(new SubmitOnceBehavior());
 
         //Set maximum upload size

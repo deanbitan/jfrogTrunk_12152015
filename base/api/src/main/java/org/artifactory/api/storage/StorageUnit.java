@@ -137,4 +137,25 @@ public enum StorageUnit {
         readableSize = GB.fromBytes(size);
         return decimalFormat.format(readableSize) + " GB";
     }
+
+    public static long fromReadableString(String humanReadableSize) {
+        String number = humanReadableSize.replaceAll("([GgMmKkBb])", "");
+        double d = Double.parseDouble(number);
+        long l = Math.round(d * 1024 * 1024 * 1024L);
+        int unitLength = humanReadableSize.length() - number.length();
+        int unitIndex = unitLength > 0 ? humanReadableSize.length() - unitLength : 0;
+        switch (humanReadableSize.charAt(unitIndex)) {
+            default:
+                l /= 1024;
+            case 'K':
+            case 'k':
+                l /= 1024;
+            case 'M':
+            case 'm':
+                l /= 1024;
+            case 'G':
+            case 'g':
+                return l;
+        }
+    }
 }

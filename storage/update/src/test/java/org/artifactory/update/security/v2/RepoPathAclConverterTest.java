@@ -18,11 +18,11 @@
 
 package org.artifactory.update.security.v2;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.util.List;

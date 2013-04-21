@@ -28,6 +28,6 @@ public class ImportSettingsConfigurationImpl {
     public String importPath;
     public boolean includeMetadata = true;
     public boolean verbose;
-    public boolean failOnError = true;
+    public boolean failOnError = false;
     public boolean failIfEmpty = true;
 }

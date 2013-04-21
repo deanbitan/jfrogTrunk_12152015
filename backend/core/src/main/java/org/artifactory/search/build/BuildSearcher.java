@@ -18,34 +18,17 @@
 
 package org.artifactory.search.build;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.build.BuildService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.build.BuildRun;
-import org.artifactory.build.BuildRunImpl;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.sapi.common.PathFactory;
-import org.artifactory.sapi.common.PathFactoryHolder;
-import org.artifactory.sapi.data.VfsNode;
-import org.artifactory.sapi.data.VfsNodeType;
-import org.artifactory.sapi.search.VfsBoolType;
-import org.artifactory.sapi.search.VfsComparatorType;
-import org.artifactory.sapi.search.VfsQuery;
-import org.artifactory.sapi.search.VfsQueryResult;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.search.SearcherBase;
-import org.artifactory.storage.StorageConstants;
-import org.slf4j.Logger;
+import org.artifactory.storage.build.service.BuildSearchCriteria;
+import org.artifactory.storage.build.service.BuildStoreService;
 
-import javax.jcr.RepositoryException;
-import java.util.Calendar;
-import java.util.List;
 import java.util.Set;
-
-import static org.artifactory.api.build.BuildService.PROP_BUILD_LATEST_NUMBER;
-import static org.artifactory.api.build.BuildService.PROP_BUILD_LATEST_START_TIME;
 
 /**
  * Holds the build search logic
@@ -54,9 +37,6 @@ import static org.artifactory.api.build.BuildService.PROP_BUILD_LATEST_START_TIM
  */
 public class BuildSearcher extends SearcherBase {
 
-    private static final Logger log = LoggerFactory.getLogger(BuildSearcher.class);
-    private static final String MISSING_BUILD_LATEST_NUMBER = "_latest_";
-
     /**
      * Returns a set of build concentrated by name and latest date
      *
@@ -64,34 +44,8 @@ public class BuildSearcher extends SearcherBase {
      * @throws RepositoryException Any exception that might occur while executing the query
      */
     public Set<BuildRun> getLatestBuildsByName() throws Exception {
-        VfsQuery query = getVfsQueryService().createQuery();
-        query.setRootPath(PathFactoryHolder.get().getBuildsRootPath());
-        query.setNodeTypeFilter(VfsNodeType.UNSTRUCTURED);
-        VfsQueryResult queryResult = query.execute(false);
-
-        Set<BuildRun> buildsToReturn = Sets.newHashSet();
-        for (VfsNode node : queryResult.getNodes()) {
-            String buildName = PathFactoryHolder.get().unEscape(node.getName());
-            boolean bereaved = false;
-            String latestNumber = node.getStringProperty(PROP_BUILD_LATEST_NUMBER);
-            if (latestNumber == null) {
-                latestNumber = MISSING_BUILD_LATEST_NUMBER;
-                bereaved = true;
-            }
-            Calendar latestStartTime;
-            if (node.hasProperty(PROP_BUILD_LATEST_START_TIME)) {
-                latestStartTime = node.getDateProperty(PROP_BUILD_LATEST_START_TIME);
-            } else {
-                latestStartTime = Calendar.getInstance();
-                bereaved = true;
-            }
-            if (bereaved) {
-                log.warn("The build '{}/{}' might contain partial data. You may wish to delete this build.", buildName,
-                        latestNumber);
-            }
-            buildsToReturn.add(new BuildRunImpl(buildName, latestNumber, latestStartTime.getTime()));
-        }
-        return buildsToReturn;
+        BuildStoreService buildStoreService = ContextHelper.get().beanForType(BuildStoreService.class);
+        return buildStoreService.getLatestBuildsByName();
     }
 
     /**
@@ -101,8 +55,8 @@ public class BuildSearcher extends SearcherBase {
      * @param md5  MD5 checksum to search for. Can be blank.
      * @return List of basic build infos that deployed at least one artifact with the given checksum
      */
-    public List<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) throws RepositoryException {
-        return findBuildsByItemChecksums(StorageConstants.PROP_BUILD_ARTIFACT_CHECKSUMS, sha1, md5);
+    public Set<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) {
+        return findBuildsByItemChecksum(BuildSearchCriteria.IN_ARTIFACTS, sha1, md5);
     }
 
     /**
@@ -112,8 +66,8 @@ public class BuildSearcher extends SearcherBase {
      * @param md5  MD5 checksum to search for. Can be blank.
      * @return List of basic build infos that depend on the artifact with the given checksum
      */
-    public List<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) throws RepositoryException {
-        return findBuildsByItemChecksums(StorageConstants.PROP_BUILD_DEPENDENCY_CHECKSUMS, sha1, md5);
+    public Set<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) {
+        return findBuildsByItemChecksum(BuildSearchCriteria.IN_DEPENDENCIES, sha1, md5);
     }
 
     /**
@@ -125,69 +79,27 @@ public class BuildSearcher extends SearcherBase {
     }
 
     /**
-     * Locates builds that produced or depended on an item with the given checksums and adds them to the given list
-     *
-     * @param itemTypeProp Item property type. May be dependency or artifact
-     * @param sha1         SHA1 checksum. May be blank
-     * @param md5          MD5 checksum. May be blank
-     * @return List of results
-     */
-    private List<BuildRun> findBuildsByItemChecksums(String itemTypeProp, String sha1, String md5)
-            throws RepositoryException {
-        List<BuildRun> results = Lists.newArrayList();
-
-        findBuildsByItemChecksum(itemTypeProp, sha1, md5, results);
-
-        return results;
-    }
-
-    /**
      * Locates builds that produced or depended on an item with the given checksum and adds them to the given list
      *
-     * @param itemTypeProp Item property type. May be dependency or artifact
-     * @param sha1         SHA1 checksum value
-     * @param md5          MD5 checksum value
-     * @param results      List of results to append to
+     * @param criteria Where the checksum should be search for (dependencies or artifacts)
+     * @param sha1     SHA1 checksum value
+     * @param md5      MD5 checksum value
      */
-    private void findBuildsByItemChecksum(String itemTypeProp, String sha1, String md5, List<BuildRun> results) {
-        boolean validSha1 = StringUtils.isNotBlank(sha1);
-        boolean validMd5 = StringUtils.isNotBlank(md5);
+    private Set<BuildRun> findBuildsByItemChecksum(BuildSearchCriteria criteria, String sha1, String md5) {
+        Set<BuildRun> results = Sets.newHashSet();
+        boolean validSha1 = ChecksumType.sha1.isValid(sha1);
+        boolean validMd5 = ChecksumType.md5.isValid(md5);
 
         if (!validSha1 && !validMd5) {
-            return;
+            return results;
         }
-
-        VfsQuery query = getVfsQueryService().createQuery();
-        query.setRootPath(PathFactoryHolder.get().getBuildsRootPath());
-        query.addAllSubPathFilter();
-        query.setNodeTypeFilter(VfsNodeType.UNSTRUCTURED);
+        BuildStoreService buildStoreService = ContextHelper.get().beanForType(BuildStoreService.class);
         if (validSha1) {
-            query.addCriterion(itemTypeProp, VfsComparatorType.EQUAL,
-                    BuildService.BUILD_CHECKSUM_PREFIX_SHA1 + sha1).nextBool(VfsBoolType.OR);
+            results.addAll(buildStoreService.findBuildsForChecksum(criteria, ChecksumType.sha1, sha1));
         }
         if (validMd5) {
-            query.addCriterion(itemTypeProp, VfsComparatorType.EQUAL,
-                    BuildService.BUILD_CHECKSUM_PREFIX_MD5 + md5).nextBool(VfsBoolType.OR);
+            results.addAll(buildStoreService.findBuildsForChecksum(criteria, ChecksumType.md5, md5));
         }
-        VfsQueryResult queryResult = query.execute(false);
-
-        PathFactory pathFactory = PathFactoryHolder.get();
-        for (VfsNode node : queryResult.getNodes()) {
-            String path = node.absolutePath();
-            //Make sure the path is of a build => FRED with root search should never happen
-            if (!path.startsWith(pathFactory.getBuildsRootPath())) {
-                continue;
-            }
-            String[] splitPath = path.split("/");
-            if (splitPath.length < 5) {
-                log.debug("Build by item checksum search result '{}' path hierarchy does not contain sufficient " +
-                        "info.", path);
-                continue;
-            }
-            String decodedBuildName = pathFactory.unEscape(splitPath[2]);
-            String decodedBuildNumber = pathFactory.unEscape(splitPath[3]);
-            String decodedBuildStarted = pathFactory.unEscape(splitPath[4]);
-            results.add(new BuildRunImpl(decodedBuildName, decodedBuildNumber, decodedBuildStarted));
-        }
+        return results;
     }
 }

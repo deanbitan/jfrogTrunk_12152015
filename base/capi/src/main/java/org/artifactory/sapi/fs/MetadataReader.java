@@ -20,7 +20,6 @@ package org.artifactory.sapi.fs;
 
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.fs.MetadataEntryInfo;
-import org.artifactory.sapi.common.ImportSettings;
 
 import java.io.File;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.List;
  * @date Nov 13, 2008
  */
 public interface MetadataReader {
-    List<MetadataEntryInfo> getMetadataEntries(File file, ImportSettings settings, MutableStatusHolder status);
+    List<MetadataEntryInfo> getMetadataEntries(File file, MutableStatusHolder status);
 
     MetadataEntryInfo convertMetadataEntry(MetadataEntryInfo metadataEntryInfo);
 }

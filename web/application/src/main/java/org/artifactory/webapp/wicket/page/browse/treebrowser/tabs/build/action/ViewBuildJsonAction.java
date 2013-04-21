@@ -57,8 +57,7 @@ public class ViewBuildJsonAction extends ItemAction {
     @Override
     public void onAction(ItemEvent e) {
         BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-        String json = buildService.getBuildAsJson(buildRun.getName(), buildRun.getNumber(),
-                buildRun.getStarted());
+        String json = buildService.getBuildAsJson(buildRun);
 
         Component content = WicketUtils.getSyntaxHighlighter(textContentViewer.getContentId(), json, Syntax.javascript);
         CodeModalPanel modelPanel = new CodeModalPanel(content);

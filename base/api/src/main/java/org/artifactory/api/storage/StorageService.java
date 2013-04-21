@@ -32,11 +32,6 @@ public interface StorageService {
     void logStorageSizes();
 
     /**
-     * @return The artifacts storage size in bytes
-     */
-    long getStorageSize();
-
-    /**
      * Check that manual garbage collection can be run, and then activate the double GC asynchronously.
      *
      * @param statusHolder
@@ -46,8 +41,6 @@ public interface StorageService {
     void pruneUnreferencedFileInDataStore(MultiStatusHolder statusHolder);
 
     void ping();
-
-    void convertActualChecksums(MultiStatusHolder statusHolder);
 
     /**
      * Create and retrieve a storage quota info object which contains information about

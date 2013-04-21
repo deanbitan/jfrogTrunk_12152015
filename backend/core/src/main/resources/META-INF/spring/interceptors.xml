@@ -26,6 +26,7 @@
     <!-- Default storage interceptors list -->
     <bean class="org.artifactory.repo.interceptor.PluginsInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.IntegrationCleanerInterceptor"/>
+    <bean class="org.artifactory.repo.interceptor.MavenPomInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.MavenMetadataCalculationInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.ArchiveIndexingInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.AddPropertyAfterMoveOrCopyInterceptor"/>

@@ -22,7 +22,6 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.home.settings.ivy.base.BaseIvySettingsGeneratorPanel;
 import org.artifactory.webapp.wicket.page.home.settings.ivy.base.IvySettingsRepoSelectorPanel;
 import org.jdom.Comment;
@@ -31,6 +30,7 @@ import org.jdom.Element;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
 import java.net.URL;

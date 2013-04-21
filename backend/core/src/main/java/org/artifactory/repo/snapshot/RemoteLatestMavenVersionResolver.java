@@ -28,7 +28,6 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.InternalArtifactoryRequest;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.model.common.RepoPathImpl;
@@ -41,6 +40,7 @@ import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -78,7 +78,7 @@ public class RemoteLatestMavenVersionResolver extends LatestVersionResolver {
         }
 
         String path = requestContext.getResourcePath();
-        if(MavenNaming.isMavenMetadata(path)) {
+        if (MavenNaming.isMavenMetadata(path)) {
             // Recursive request for maven metadata, simply return the original request context
             return requestContext;
         }

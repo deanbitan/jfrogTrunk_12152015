@@ -18,41 +18,16 @@
 
 package org.artifactory.search;
 
-import org.artifactory.api.repo.Async;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
-import org.artifactory.jcr.JcrSearchService;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.Lock;
-import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.ReloadableBean;
-
-import javax.jcr.RepositoryException;
-import java.util.List;
 
 /**
  * @author Noam Tenne
  */
-public interface InternalSearchService extends JcrSearchService, SearchService, ReloadableBean,
-        ContextReadinessListener {
-
-    @Lock(transactional = true)
-    void transactionalIndexMarkedArchives();
-
-    void markArchivesForIndexing(boolean force);
-
-    void markArchivesForIndexing(RepoPath searchPath, boolean force);
-
-    @Async(delayUntilAfterCommit = true)
-    void index(List<RepoPath> archiveRepoPaths);
-
-    @Lock(transactional = true)
-    void index(RepoPath archiveRepoPath);
-
-    @Async(delayUntilAfterCommit = true)
-    void asyncIndex(RepoPath archiveRepoPath);
+public interface InternalSearchService extends SearchService, ReloadableBean {
 
     /**
      * Searches for version units within the given path
@@ -60,7 +35,5 @@ public interface InternalSearchService extends JcrSearchService, SearchService, 
      * @param controls Search controls
      * @return Search results
      */
-    @Lock(transactional = true)
-    ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
-            throws RepositoryException;
+    ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls);
 }

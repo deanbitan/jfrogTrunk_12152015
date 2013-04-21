@@ -19,7 +19,6 @@
 package org.artifactory.schedule.quartz;
 
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.TaskBase;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -27,6 +26,7 @@ import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.quartz.JobDetailAwareTrigger;
 
 import java.util.Date;

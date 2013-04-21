@@ -24,41 +24,33 @@ import com.google.common.collect.Sets;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FileExpectedException;
-import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.ChecksumPolicyIgnoreAndGenerate;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.InternalRepoPathFactory;
-import org.artifactory.repo.LocalCacheRepo;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RealRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.Repo;
-import org.artifactory.repo.RepoBase;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.SaveResourceContext;
-import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.repo.jcr.StoringRepoMixin;
+import org.artifactory.model.common.RepoPathImpl;
+import org.artifactory.repo.*;
+import org.artifactory.repo.db.DbStoringRepoMixin;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.interceptor.VirtualRepoInterceptor;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.RepoRequests;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.sapi.fs.MutableVfsFile;
+import org.artifactory.sapi.fs.MutableVfsFolder;
+import org.artifactory.sapi.fs.MutableVfsItem;
+import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsFolder;
+import org.artifactory.sapi.fs.VfsItem;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,7 +66,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     private Map<String, LocalCacheRepo> localCacheRepositoriesMap = Maps.newLinkedHashMap();
     private Map<String, VirtualRepo> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
-    StoringRepo<VirtualRepoDescriptor> storageMixin = new StoringRepoMixin<VirtualRepoDescriptor>(this, null);
+    DbStoringRepoMixin<VirtualRepoDescriptor> dbStorageMixin;
 
     //Use a final policy that always generates checksums
     private final ChecksumPolicy defaultChecksumPolicy = new ChecksumPolicyIgnoreAndGenerate();
@@ -83,18 +75,18 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     // List of interceptors for various download resolution points
     private Collection<VirtualRepoInterceptor> interceptors;
 
-    public VirtualRepo(InternalRepositoryService repositoryService, VirtualRepoDescriptor descriptor) {
-        super(repositoryService);
-        setDescriptor(descriptor);
+    public VirtualRepo(VirtualRepoDescriptor descriptor, InternalRepositoryService repositoryService) {
+        super(descriptor, repositoryService);
+        dbStorageMixin = new DbStoringRepoMixin<VirtualRepoDescriptor>(descriptor, null);
     }
 
     /**
      * Special ctor for the default global repo
      */
-    public VirtualRepo(InternalRepositoryService service, VirtualRepoDescriptor descriptor,
+    public VirtualRepo(VirtualRepoDescriptor descriptor, InternalRepositoryService service,
             Map<String, LocalRepo> localRepositoriesMap,
             Map<String, RemoteRepo> remoteRepositoriesMap) {
-        super(service);
+        super(descriptor, service);
         this.localRepositoriesMap = localRepositoriesMap;
         this.remoteRepositoriesMap = remoteRepositoriesMap;
         for (RemoteRepo remoteRepo : remoteRepositoriesMap.values()) {
@@ -103,7 +95,8 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
                 localCacheRepositoriesMap.put(localCacheRepo.getKey(), localCacheRepo);
             }
         }
-        setDescriptor(descriptor);
+        //TORE: [by YS] required here for global repo??
+        dbStorageMixin = new DbStoringRepoMixin<>(descriptor, null);
     }
 
     /**
@@ -139,11 +132,11 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     @Override
     public boolean isSuppressPomConsistencyChecks() {
-        return false;
+        return true;
     }
 
     public void initStorage() {
-        storageMixin.init();
+        dbStorageMixin.init();
     }
 
     public List<RealRepo> getLocalAndRemoteRepositories() {
@@ -292,11 +285,12 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         //Add paths from all children virtual repositories
         VirtualRepoItem item = null;
         for (LocalRepo repo : localAndCachedRepos) {
-            if (repo.itemExists(repoPath.getPath())) {
-                JcrFsItem fsItem = repo.getLocalJcrFsItem(repoPath.getPath());
+            RepoPathImpl localRepoPath = new RepoPathImpl(repo.getKey(), repoPath.getPath());
+            if (getRepositoryService().exists(localRepoPath)) {
+                ItemInfo itemInfo = getRepositoryService().getItemInfo(localRepoPath);
                 if (item == null) {
-                    // use the item info from the first found item
-                    item = new VirtualRepoItem(fsItem.getInfo());
+                    // use the item info of the first found item
+                    item = new VirtualRepoItem(itemInfo);
                 }
                 item.addRepoKey(repo.getKey());
             }
@@ -319,17 +313,15 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
             if (!repo.itemExists(path)) {
                 continue;
             }
-            JcrFsItem fsItem = repo.getLocalJcrFsItem(path);
-            if (!fsItem.isFolder()) {
+            ItemInfo itemInfo = getRepositoryService().getItemInfo(new RepoPathImpl(repo.getKey(), path));
+            if (!itemInfo.isFolder()) {
                 log.warn("Expected folder but got file: {}", InternalRepoPathFactory.create(repo.getKey(), path));
                 continue;
             }
-            JcrFolder dir = (JcrFolder) fsItem;
-            List<JcrFsItem> items = dir.getJcrItems();
-
-            for (JcrFsItem item : items) {
+            List<ItemInfo> items = getRepositoryService().getChildren(itemInfo.getRepoPath());
+            for (ItemInfo item : items) {
                 if (!MavenNaming.NEXUS_INDEX_DIR.equals(item.getName()) ||
-                        MavenNaming.isIndex(item.getPath())) {  // don't include the index dir in the listing
+                        MavenNaming.isIndex(item.getRelPath())) {  // don't include the index dir in the listing
                     children.add(item.getName());
                 }
             }
@@ -430,11 +422,6 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return false;
     }
 
-    @Override
-    public boolean isCache() {
-        return false;
-    }
-
     /**
      * This method is called when a resource was found in the searchable repositories, before returning it to the
      * client. This method will call a list of interceptors that might alter the returned resource and cache it
@@ -470,33 +457,18 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return getDescriptor().getPomRepositoryReferencesCleanupPolicy();
     }
 
+    /**
+     * Returns the repo resource cached in the virtual repository cache.
+     */
+    RepoResource getInfoFromVirtualCache(InternalRequestContext context) {
+        return dbStorageMixin.getInfo(context);
+    }
 
     //STORING REPO MIXIN
 
     @Override
-    public void setDescriptor(VirtualRepoDescriptor descriptor) {
-        super.setDescriptor(descriptor);
-        storageMixin.setDescriptor(descriptor);
-    }
-
-    @Override
     public ChecksumPolicy getChecksumPolicy() {
         return defaultChecksumPolicy;
-    }
-
-    @Override
-    public VfsFolder getRootFolder() {
-        return storageMixin.getRootFolder();
-    }
-
-    @Override
-    public JcrFolder getLockedRootFolder() {
-        return storageMixin.getLockedRootFolder();
-    }
-
-    @Override
-    public String getRepoRootPath() {
-        return storageMixin.getRepoRootPath();
     }
 
     @Override
@@ -506,88 +478,22 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     @Override
     public void undeploy(RepoPath repoPath, boolean calcMavenMetadata) {
-        storageMixin.undeploy(repoPath, calcMavenMetadata);
+        dbStorageMixin.undeploy(repoPath, calcMavenMetadata);
     }
 
     @Override
     public RepoResource saveResource(SaveResourceContext context) throws IOException, RepoRejectException {
-        return storageMixin.saveResource(context);
+        return dbStorageMixin.saveResource(context);
     }
 
     @Override
     public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite) {
-        return storageMixin.shouldProtectPathDeletion(path, assertOverwrite);
+        return dbStorageMixin.shouldProtectPathDeletion(path, assertOverwrite);
     }
 
     @Override
     public boolean itemExists(String relPath) {
-        return storageMixin.itemExists(relPath);
-    }
-
-    @Override
-    public List<String> getChildrenNames(String relPath) {
-        return storageMixin.getChildrenNames(relPath);
-    }
-
-    @Override
-    public void onDelete(JcrFsItem fsItem) {
-        storageMixin.onDelete(fsItem);
-    }
-
-    @Override
-    public void onCreate(JcrFsItem fsItem) {
-        storageMixin.onCreate(fsItem);
-    }
-
-    @Override
-    public void updateCache(JcrFsItem fsItem) {
-        storageMixin.updateCache(fsItem);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public JcrFsItem getJcrFsItem(RepoPath repoPath) {
-        return storageMixin.getJcrFsItem(repoPath);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public JcrFsItem getJcrFsItem(Node node) {
-        return storageMixin.getJcrFsItem(node);
-    }
-
-    @Override
-    public JcrFile getJcrFile(RepoPath repoPath) throws FileExpectedException {
-        return storageMixin.getJcrFile(repoPath);
-    }
-
-    @Override
-    public JcrFolder getJcrFolder(RepoPath repoPath) throws FolderExpectedException {
-        return storageMixin.getJcrFolder(repoPath);
-    }
-
-    @Override
-    public JcrFsItem getLockedJcrFsItem(RepoPath repoPath) {
-        return storageMixin.getLockedJcrFsItem(repoPath);
-    }
-
-    @Override
-    public JcrFsItem getLockedJcrFsItem(Node node) {
-        return storageMixin.getLockedJcrFsItem(node);
-    }
-
-    @Override
-    public JcrFile getLockedJcrFile(RepoPath repoPath, boolean createIfMissing) throws FileExpectedException {
-        return storageMixin.getLockedJcrFile(repoPath, createIfMissing);
-    }
-
-    @Override
-    public JcrFolder getLockedJcrFolder(RepoPath repoPath, boolean createIfMissing) throws FolderExpectedException {
-        return storageMixin.getLockedJcrFolder(repoPath, createIfMissing);
+        return dbStorageMixin.itemExists(relPath);
     }
 
     @Override
@@ -597,60 +503,48 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     @Override
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, RepoResource res)
-            throws IOException, RepositoryException, RepoRejectException {
-        return storageMixin.getResourceStreamHandle(requestContext, res);
+            throws IOException, RepoRejectException {
+        return dbStorageMixin.getResourceStreamHandle(requestContext, res);
     }
 
     @Override
-    public String getChecksum(String checksumFilePath, RepoResource res) throws IOException {
-        return storageMixin.getChecksum(checksumFilePath, res);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public JcrFsItem getLocalJcrFsItem(String relPath) {
-        return storageMixin.getLocalJcrFsItem(relPath);
+    public MutableVfsFile getMutableFile(RepoPath repoPath) {
+        return dbStorageMixin.getMutableFile(repoPath);
     }
 
     @Override
-    public JcrFsItem getLockedJcrFsItem(String relPath) {
-        return storageMixin.getLockedJcrFsItem(relPath);
+    public MutableVfsFile createOrGetFile(RepoPath repoPath) {
+        return dbStorageMixin.createOrGetFile(repoPath);
     }
 
     @Override
-    public JcrFile getLocalJcrFile(String relPath) throws FileExpectedException {
-        return storageMixin.getLocalJcrFile(relPath);
+    public MutableVfsFolder getMutableFolder(RepoPath repoPath) {
+        return dbStorageMixin.getMutableFolder(repoPath);
     }
 
     @Override
-    public JcrFile getLockedJcrFile(String relPath, boolean createIfMissing) throws FileExpectedException {
-        return storageMixin.getLockedJcrFile(relPath, createIfMissing);
+    public MutableVfsFolder createOrGetFolder(RepoPath repoPath) {
+        return dbStorageMixin.createOrGetFolder(repoPath);
     }
 
     @Override
-    public JcrFolder getLocalJcrFolder(String relPath) throws FolderExpectedException {
-        return storageMixin.getLocalJcrFolder(relPath);
+    public VfsItem getImmutableFsItem(RepoPath repoPath) {
+        return dbStorageMixin.getImmutableFile(repoPath);
     }
 
     @Override
-    public JcrFolder getLockedJcrFolder(String relPath, boolean createIfMissing) throws FolderExpectedException {
-        return storageMixin.getLockedJcrFolder(relPath, createIfMissing);
+    public MutableVfsItem getMutableFsItem(RepoPath repoPath) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     @Override
-    public boolean willOrIsWriteLocked(RepoPath path) {
-        return storageMixin.willOrIsWriteLocked(path);
+    public VfsFile getImmutableFile(RepoPath repoPath) {
+        return dbStorageMixin.getImmutableFile(repoPath);
     }
 
     @Override
-    public StoringRepo<VirtualRepoDescriptor> getStorageMixin() {
-        return storageMixin;
+    public VfsFolder getImmutableFolder(RepoPath repoPath) {
+        return dbStorageMixin.getImmutableFolder(repoPath);
     }
 
-    @Override
-    public void clearCaches() {
-        storageMixin.clearCaches();
-    }
 }

@@ -21,21 +21,19 @@ package org.artifactory.repo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
-import org.artifactory.descriptor.DescriptorAware;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 
-import javax.jcr.RepositoryException;
 import java.io.IOException;
-import java.io.Serializable;
 
 /**
  * @author Yoav Landman
  */
-public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Serializable {
+public interface Repo<T extends RepoDescriptor> {
     String getKey();
 
     String getDescription();
@@ -74,7 +72,7 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
     String getChecksum(String checksumPath, RepoResource res) throws IOException;
 
     ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, RepoResource res)
-            throws IOException, FileExpectedException, RepositoryException, RepoRejectException;
+            throws IOException, FileExpectedException, RepoRejectException;
 
     ModuleInfo getItemModuleInfo(String itemPath);
 
@@ -84,6 +82,8 @@ public interface Repo<T extends RepoDescriptor> extends DescriptorAware<T>, Seri
 
     RepoPath getRepoPath(String path);
 
-    @Override
     T getDescriptor();
+
+    ChecksumPolicy getChecksumPolicy();
+
 }

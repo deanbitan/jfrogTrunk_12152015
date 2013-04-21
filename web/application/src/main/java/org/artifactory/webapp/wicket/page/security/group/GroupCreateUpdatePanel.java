@@ -38,7 +38,7 @@ import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.MutableGroupInfo;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 
 /**
  * @author Yossi Shaul
@@ -64,7 +64,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
         setDefaultFocusField(groupNameTf);
         groupNameTf.add(StringValidator.maximumLength(100));
         groupNameTf.setEnabled(isCreate());// don't allow groupname update
-        groupNameTf.add(new JcrNameValidator("Invalid group name '%s'"));
+        groupNameTf.add(new NameValidator("Invalid group name '%s'"));
         border.add(groupNameTf);
 
         // Group description
@@ -127,6 +127,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
     private MutableGroupInfo getGroupInfo() {
         MutableGroupInfo groupInfo = InfoFactoryHolder.get().copyGroup((GroupInfo) form.getDefaultModelObject());
         groupInfo.setGroupName(groupInfo.getGroupName().toLowerCase());
+        groupInfo.setRealm(groupInfo.getRealm().toLowerCase());
         return groupInfo;
     }
 }

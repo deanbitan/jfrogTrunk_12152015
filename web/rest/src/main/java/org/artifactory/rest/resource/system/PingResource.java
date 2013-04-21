@@ -25,8 +25,8 @@ import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageService;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -39,13 +39,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-//import org.artifactory.jcr.JcrService;
-//import org.artifactory.jcr.JcrSession;
-
 /**
  * Resource to get information about Artifactory current state.
  * The method will:
- * <ul><li>Check that JCR behaves correctly (do an actual JCR Node retrieve)</li>
+ * <ul><li>Check that DB behaves correctly (do an actual DB retrieve)</li>
  * <li>Check that the logger behaves correctly (read and/or write to log)</li></ul>
  * Upon results return:
  * <ul><li>Code 200 with text exactly equal to "OK" if all is good</li>

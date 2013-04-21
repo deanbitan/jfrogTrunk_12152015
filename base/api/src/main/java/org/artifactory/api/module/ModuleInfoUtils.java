@@ -23,11 +23,11 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.module.regex.NamedMatcher;
 import org.artifactory.api.module.regex.NamedPattern;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.util.layouts.token.BaseTokenFilter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;

@@ -22,10 +22,10 @@ import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualResolverFilter;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RepoRequests;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Virtual resolver filter which filters virtual repo according to a request path and include/exclude pattern.

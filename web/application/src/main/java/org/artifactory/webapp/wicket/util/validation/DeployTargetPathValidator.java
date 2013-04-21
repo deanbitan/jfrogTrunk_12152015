@@ -18,29 +18,30 @@
 
 package org.artifactory.webapp.wicket.util.validation;
 
-import org.apache.jackrabbit.spi.commons.conversion.MalformedPathException;
-import org.apache.jackrabbit.spi.commons.conversion.PathParser;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
+import org.artifactory.util.PathValidator;
+
+import java.nio.file.InvalidPathException;
 
 /**
- * Validates that the deploy target path is a valid JCR one. And that checksums cannot be uploaded through the UI.
+ * Validates that the deploy target path is a valid one.
  *
- * @author Tomer Cohen
+ * @author Yossi Shaul
  */
 public class DeployTargetPathValidator extends StringValidator {
 
     @Override
     protected void onValidate(IValidatable<String> validatable) {
-        String targetPath = validatable.getValue();
-        // Check for valid JCR path
+        String path = validatable.getValue();
         try {
-            PathParser.checkFormat(targetPath);
-        } catch (MalformedPathException e) {
+            PathValidator.validate(path);
+        } catch (InvalidPathException e) {
             ValidationError validateError = new ValidationError();
             validateError.setMessage(e.getMessage());
             validatable.error(validateError);
         }
     }
+
 }

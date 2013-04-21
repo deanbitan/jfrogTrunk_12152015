@@ -34,9 +34,9 @@ public class ArchiveSearchControlsTest {
     public void isWildcardsOnly() throws Exception {
         ArchiveSearchControls controls = new ArchiveSearchControls();
         assertTrue(controls.isWildcardsOnly());
-        controls.setQuery("*?*");
+        controls.setPath("*?*");
         assertTrue(controls.isWildcardsOnly());
-        controls.setQuery("Agent");
+        controls.setPath("Agent");
         assertFalse(controls.isWildcardsOnly());
     }
 }

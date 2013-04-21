@@ -78,7 +78,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
         descriptionLabel.setEscapeModelStrings(false);
         border.add(descriptionLabel);
 
-        Form form = new Form("form");
+        final Form form = new Form("form");
         form.setOutputMarkupId(true);
         border.add(form);
 
@@ -92,9 +92,15 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
                 List<String> repoPackages = getRepoPackages(selectedRepo);
                 packagesComboBox.setChoices(repoPackages);
                 if (!repoPackages.isEmpty()) {
-                    packagesComboBox.setDefaultModelObject(repoPackages.get(0));
+                    String selectedPackage = repoPackages.get(0);
+                    packagesComboBox.setDefaultModelObject(selectedPackage);
+                    List<String> packageVersions = getPackageVersions(selectedRepo, selectedPackage);
+                    versionsComboBox.setChoices(packageVersions);
+                    if (!packageVersions.isEmpty()) {
+                        versionsComboBox.setDefaultModelObject(packageVersions.get(0));
+                    }
                 }
-                target.add(packagesComboBox.getParent());
+                target.add(form);
                 AjaxUtils.refreshFeedback(target);
             }
         });

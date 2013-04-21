@@ -28,7 +28,7 @@ import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.RepoRequests;
@@ -38,6 +38,7 @@ import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.browse.listing.ArtifactListPage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.SimpleRepoBrowserPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.servlet.FilterChain;
@@ -197,7 +198,6 @@ public class RepoFilter extends DelayedFilterBase {
 
     private void doUpload(ArtifactoryRequest artifactoryRequest, ArtifactoryResponse artifactoryResponse)
             throws IOException {
-        //We expect a url with the repo prefix and a mandatory repo-key@repo
         try {
             log.debug("Serving an upload request.");
             getUploadEngine().upload(artifactoryRequest, artifactoryResponse);
@@ -209,7 +209,11 @@ public class RepoFilter extends DelayedFilterBase {
 
     private void doDownload(HttpServletRequest request, HttpServletResponse response, String method,
             ArtifactoryRequest artifactoryRequest, ArtifactoryResponse artifactoryResponse) throws IOException {
-        //We expect either a url with the repo prefix and an optional repo-key@repo
+
+        if (redirectLegacyMetadataRequest(request, response, artifactoryRequest)) {
+            return;
+        }
+
         try {
             RepoRequests.logToContext("Received request");
             getDownloadService().process(artifactoryRequest, artifactoryResponse);
@@ -364,5 +368,24 @@ public class RepoFilter extends DelayedFilterBase {
                 return super.getServletPath();
             }
         }
+    }
+
+    private boolean redirectLegacyMetadataRequest(HttpServletRequest request, HttpServletResponse response,
+            ArtifactoryRequest artifactoryRequest) throws IOException {
+        // redirect to the appropriate REST api for legacy metadata requests
+        // for example '/path/to/item:properties' is redirected to 'api/storage/path/to/item?propertiesXml'
+        String requestPath = artifactoryRequest.getPath();
+        if (NamingUtils.isProperties(requestPath)) {
+            RepoPath repoPath = artifactoryRequest.getRepoPath();
+            log.warn("Deprecated metadata download detected: {}", request.getRequestURL());
+            String location = HttpUtils.getServletContextUrl(request) +
+                    "/api/storage/" + repoPath.getRepoKey() + "/" +
+                    NamingUtils.stripMetadataFromPath(repoPath.getPath()) + "?" +
+                    NamingUtils.getMetadataName(artifactoryRequest.getPath()) + "Xml";
+            RepoRequests.logToContext("Redirecting to path '%s'", location);
+            response.sendRedirect(HttpUtils.encodeQuery(location));
+            return true;
+        }
+        return false;
     }
 }

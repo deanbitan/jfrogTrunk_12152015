@@ -41,10 +41,6 @@ public abstract class NamingUtils {
         // utility class
     }
 
-    public static MimeType getMimeType(File file) {
-        return getMimeType(file.getName());
-    }
-
     /**
      * @param path A file path
      * @return The content type for the path. Will return default content type if not mapped.
@@ -125,8 +121,24 @@ public abstract class NamingUtils {
         if (fileName.contains(METADATA_PREFIX)) {
             return true;
         }
-        //Fallback to checking maven metadata
-        return MavenNaming.isMavenMetadataFileName(fileName);
+        return false;
+    }
+
+    /**
+     * Returns true if the path points to the deprecated properties path (i.e., ends with :properties)
+     *
+     * @param path The path to check
+     * @return True if this is a properties path
+     */
+    public static boolean isProperties(String path) {
+        String fileName = PathUtils.getFileName(path);
+        if (fileName == null || fileName.length() == 0) {
+            return false;
+        }
+        if (fileName.endsWith(METADATA_PREFIX + "properties")) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -169,6 +181,7 @@ public abstract class NamingUtils {
         if (mdPrefixIdx >= 0) {
             name = path.substring(mdPrefixIdx + METADATA_PREFIX.length());
         } else {
+            //TODO: [by YS] remove maven metadata from here
             //Fallback to checking maven metadata
             String fileName = PathUtils.getFileName(path);
             if (MavenNaming.isMavenMetadataFileName(fileName)) {
@@ -225,42 +238,13 @@ public abstract class NamingUtils {
      * @param metadataName  Name of metadata item
      * @return String - complete path to metadata
      */
+    @Deprecated
     public static String getMetadataPath(String containerPath, String metadataName) {
         if ((containerPath == null) || (metadataName == null)) {
             throw new IllegalArgumentException("Container path and metadata name cannot be null.");
         }
         String metadataPath = containerPath + METADATA_PREFIX + metadataName;
         return metadataPath;
-    }
-
-    /**
-     * Recieves a jcr path of a metadata item/element (.../a/b/c.pom/artifactory:xml/metadataname/element/xml:text) and
-     * Extracts the name of the metadata item (metadataname, in this case).
-     *
-     * @param path A jcr path of a metadata element/item
-     * @return String - Name of metadata item
-     */
-    public static String getMetadataNameFromJcrPath(String path) {
-        //Build the metadata prefix to search for
-        String metadatPrefix = METADATA_PREFIX + "metadata/";
-        int prefixStart = path.indexOf(metadatPrefix);
-
-        //If the prefix isn't in the path, it is either not a jcr path or not a metadata item/element
-        if (prefixStart < 0) {
-            return "";
-        }
-
-        //Dispose of all the path before the metadata name
-        int prefixEnd = prefixStart + metadatPrefix.length();
-        String metadataPath = path.substring(prefixEnd);
-
-        //Find where the name ends (either a forward slash, or the end of the path)
-        int followingSlash = metadataPath.indexOf('/');
-        if (followingSlash < 0) {
-            followingSlash = metadataPath.length();
-        }
-        String metadataName = metadataPath.substring(0, followingSlash);
-        return metadataName;
     }
 
     /**

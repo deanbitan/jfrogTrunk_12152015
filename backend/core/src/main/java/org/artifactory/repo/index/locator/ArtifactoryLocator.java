@@ -12,20 +12,11 @@
 package org.artifactory.repo.index.locator;
 
 import org.apache.maven.index.locator.Locator;
-import org.artifactory.repo.jcr.StoringRepo;
 
 /**
  * @author freds
  * @date Oct 24, 2008
  */
 public abstract class ArtifactoryLocator implements Locator {
-    private final StoringRepo repo;
 
-    public ArtifactoryLocator(StoringRepo repo) {
-        this.repo = repo;
-    }
-
-    public StoringRepo getRepo() {
-        return repo;
-    }
 }

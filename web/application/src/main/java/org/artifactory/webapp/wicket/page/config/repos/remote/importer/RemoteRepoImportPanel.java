@@ -62,15 +62,15 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepositoryConfigPage;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,7 +113,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
         loadForm.add(loadBorder);
 
         loadBorder.add(new HelpBubble("urlHelp",
-                "Enter the base URL of another Artifactory server you wish to import repository definitions from."));
+                "Enter the base URL of another Artifactory server you want to import repository definitions from."));
         FormComponent<String> urlTextField = new TextField<String>("url", new PropertyModel<String>(this, "url"));
         urlTextField.add(new UriValidator("http", "https"));
         setPersistent(urlTextField);
@@ -420,7 +420,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
             textField.setLabel(Model.of("Key"));
             textField.setOutputMarkupId(true);
             textField.setRequired(true);
-            textField.add(new JcrNameValidator("Invalid repository key '%s'."));
+            textField.add(new NameValidator("Invalid repository key '%s'."));
             textField.add(new XsdNCNameValidator("Invalid repository key '%s'."));
             textField.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {
                 @Override

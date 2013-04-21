@@ -75,7 +75,7 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
         searchControl.setOutputMarkupId(true);
         form.add(searchControl);
 
-        form.add(new HelpBubble("searchHelp", "Artifact name.<br/>* and ? are accepted."));
+        form.add(new HelpBubble("searchHelp", "Artifact name. * and ? are accepted."));
     }
 
     @Override

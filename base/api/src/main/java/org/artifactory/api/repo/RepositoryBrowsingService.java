@@ -19,7 +19,6 @@
 package org.artifactory.api.repo;
 
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.Lock;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +35,6 @@ public interface RepositoryBrowsingService {
      * @return Virtual repo item with all real repo keys the real item exists and accessible to the current user. Null
      *         if not found or user has no permissions.
      */
-    @Lock(transactional = true)
     @Nullable
     VirtualRepoItem getVirtualRepoItem(RepoPath repoPath);
 
@@ -45,7 +43,6 @@ public interface RepositoryBrowsingService {
      * @return List of virtual items (files and folders) under the virtual folders. Will return empty list if item
      *         doesn't exist, not a file of no permissions.
      */
-    @Lock(transactional = true)
     List<VirtualRepoItem> getVirtualRepoItems(RepoPath virtualFolderPath);
 
     /**
@@ -56,7 +53,6 @@ public interface RepositoryBrowsingService {
      * @param criteria Browsable item conditions
      * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
      */
-    @Lock(transactional = true)
     @Nonnull
     List<BaseBrowsableItem> getLocalRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria);
 
@@ -67,7 +63,6 @@ public interface RepositoryBrowsingService {
      * @param criteria Browsable item conditions
      * @return A list of all browsable items (local and remote)
      */
-    @Lock(transactional = true)
     @Nonnull
     List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria);
 
@@ -79,7 +74,6 @@ public interface RepositoryBrowsingService {
      * @param criteria Browsable item conditions
      * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
      */
-    @Lock(transactional = true)
     @Nonnull
     List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria);
 

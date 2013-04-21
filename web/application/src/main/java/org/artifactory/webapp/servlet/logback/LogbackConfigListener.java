@@ -21,13 +21,13 @@ package org.artifactory.webapp.servlet.logback;
 import ch.qos.logback.classic.LoggerContext;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.BootstrapLogger;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.log.logback.LogbackContextHelper;
 import org.artifactory.log.logback.LogbackContextSelector;
 import org.artifactory.log.logback.LoggerConfigInfo;
 import org.artifactory.util.FileWatchDog;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -121,13 +121,15 @@ public class LogbackConfigListener implements ServletContextListener {
 
         @Override
         protected void doOnChange() {
+            String contextId = null;
             if (selectorUsed) {
                 // if the selector is used, then bind a new LoggerConfigInfo.
                 // see JFW-1180
-                bind(servletContext);
+                contextId = HttpUtils.getContextId(servletContext);
+                bind(contextId);
             }
             try {
-                LogbackContextHelper.configure(loggerContext, home);
+                LogbackContextHelper.configure(loggerContext, home, contextId);
                 //Log after re-config, since this class logger is constructed before config with the default warn level
                 log.info("Reloaded logback config from: {}.", file.getAbsolutePath());
             } finally {
@@ -137,8 +139,7 @@ public class LogbackConfigListener implements ServletContextListener {
             }
         }
 
-        private void bind(ServletContext servletContext) {
-            String contextId = HttpUtils.getContextId(servletContext);
+        private void bind(String contextId) {
             LoggerConfigInfo configInfo = new LoggerConfigInfo(contextId, home);
             LogbackContextSelector.bindConfig(configInfo);
         }

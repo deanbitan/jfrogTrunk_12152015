@@ -18,10 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.browse.simplebrowser;
 
-import org.apache.wicket.markup.ComponentTag;
-import org.apache.wicket.markup.MarkupStream;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.link.AbstractLink;
-import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
@@ -31,15 +29,15 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
+import org.artifactory.api.repo.RemoteBrowsableItem;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
-import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -51,8 +49,6 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  */
 public class RemoteRepoBrowserPanel extends RemoteBrowsableRepoPanel {
     private static final Logger log = LoggerFactory.getLogger(RemoteRepoBrowserPanel.class);
-
-    private static final long serialVersionUID = 1L;
 
     @SpringBean
     private RepositoryBrowsingService repoBrowseService;
@@ -77,40 +73,30 @@ public class RemoteRepoBrowserPanel extends RemoteBrowsableRepoPanel {
         final String hrefPrefix = RequestUtils.getWicketServletContextUrl();
         add(new ListView<BaseBrowsableItem>("items", remoteChildren) {
 
-            //TODO: [by ys] this is duplication of the cache repo browser!
             @Override
             protected void populateItem(ListItem<BaseBrowsableItem> listItem) {
                 BaseBrowsableItem browsableItem = listItem.getModelObject();
-
-                String itemRelativePath = browsableItem.getRelativePath();
-                if ("/".equals(itemRelativePath)) {
-                    //Do not repeat / twice for root repo link
-                    itemRelativePath = "";
-                } else {
-                    if (browsableItem.isFolder() && itemRelativePath.length() > 0) {
-                        itemRelativePath += "/";
-                    }
-                }
-                String href = hrefPrefix + "/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" + repoPath.getRepoKey()
-                        + "/" + itemRelativePath;
                 AbstractLink link;
                 if (isEmpty(browsableItem.getRepoKey())) {
-                    link = getRootLink();
-                } else {
+                    link = createRootLink();
+                } else if (browsableItem.isRemote() &&
+                        ((RemoteBrowsableItem) browsableItem).getEffectiveUrl() != null) {
+                    String href = ((RemoteBrowsableItem) browsableItem).getEffectiveUrl();
                     link = new ExternalLink("link", href, browsableItem.getName());
+                } else {
+                    String itemRelativePath = browsableItem.getRelativePath();
+                    String name = browsableItem.getName();
+                    if (browsableItem.isFolder() && StringUtils.isNotBlank(itemRelativePath)) {
+                        itemRelativePath += "/";
+                        name += name.equals(BrowsableItem.UP) ? "" : "/";
+                    }
+                    String href = hrefPrefix + "/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH + "/" +
+                            repoPath.getRepoKey() + "/" + itemRelativePath;
+                    link = new ExternalLink("link", href, name);
                 }
                 link.add(new CssClass(getCssClass(browsableItem)));
                 addGlobeIcon(listItem, browsableItem.isRemote());
                 listItem.add(link);
-            }
-
-            private BookmarkablePageLink getRootLink() {
-                return new BookmarkablePageLink<SimpleBrowserRootPage>("link", SimpleBrowserRootPage.class) {
-                    @Override
-                    public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
-                        replaceComponentTagBody(markupStream, openTag, getDefaultModelObjectAsString(BrowsableItem.UP));
-                    }
-                };
             }
         });
     }

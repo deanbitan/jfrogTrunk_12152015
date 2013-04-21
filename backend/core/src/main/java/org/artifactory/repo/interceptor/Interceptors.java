@@ -20,11 +20,11 @@ package org.artifactory.repo.interceptor;
 
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.interceptor.Interceptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.ArtifactoryApplicationContext;
 import org.artifactory.spring.ReloadableBean;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;

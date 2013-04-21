@@ -26,7 +26,6 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.md.MutableMetadataInfo;
 import org.artifactory.mime.MavenNaming;
@@ -40,11 +39,12 @@ import org.artifactory.resource.MetadataResource;
 import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.storage.StorageException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -168,8 +168,8 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
             return MavenModelUtils.toMavenMetadata(metadataContent);
         } catch (IOException ioe) {
             log.error("IO exception retrieving maven metadata content from repo '{}': {}.", repo, ioe.getMessage());
-        } catch (RepositoryException re) {
-            log.error("Metadata retrieval failed on repo '{}': {}", repo, re.getMessage());
+        } catch (StorageException se) {
+            log.error("Metadata retrieval failed on repo '{}': {}", repo, se.getMessage());
         } finally {
             if (handle != null) {
                 handle.close();

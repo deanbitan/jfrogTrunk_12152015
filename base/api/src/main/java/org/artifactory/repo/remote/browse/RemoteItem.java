@@ -44,6 +44,10 @@ public class RemoteItem {
      * Last modification time in millis. 0 if unknown.
      */
     private final long lastModified;
+    /**
+     * The effective url for linking this item, overriding {@link #url}
+     */
+    private String effectiveUrl;
 
     public RemoteItem(@Nonnull String url, boolean directory) {
         this(url, directory, 0, 0);
@@ -93,6 +97,14 @@ public class RemoteItem {
      */
     public String getName() {
         return PathUtils.getFileName(url);
+    }
+
+    public String getEffectiveUrl() {
+        return effectiveUrl;
+    }
+
+    public void setEffectiveUrl(String effectiveUrl) {
+        this.effectiveUrl = effectiveUrl;
     }
 
     @Override

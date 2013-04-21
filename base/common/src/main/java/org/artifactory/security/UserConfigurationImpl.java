@@ -38,6 +38,9 @@ public class UserConfigurationImpl {
     public UserConfigurationImpl() {
     }
 
+    /**
+     * @return The username
+     */
     public String getName() {
         return name;
     }

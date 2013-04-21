@@ -38,7 +38,10 @@ import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
+import org.artifactory.webapp.wicket.page.search.bintray.BintraySearchPage;
+import org.artifactory.webapp.wicket.page.search.bintray.BintraySearchPanel;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.ReservedPathPrefixValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
@@ -78,7 +81,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         boolean create = isCreate();
         repoKeyField.setEnabled(create);// don't allow key update
         if (create) {
-            repoKeyField.add(new JcrNameValidator("Invalid repository key '%s'."));
+            repoKeyField.add(new NameValidator("Invalid repository key '%s'."));
             repoKeyField.add(new XsdNCNameValidator("Invalid repository key '%s'."));
             repoKeyField.add(new UniqueXmlIdValidator(cachingDescriptorHelper.getModelMutableDescriptor()));
             repoKeyField.add(new ReservedPathPrefixValidator());
@@ -156,7 +159,12 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
                 }
 
                 cachingDescriptorHelper.reset();
-                ((RepositoryConfigPage) getPage()).refresh(target);
+                if (getPage() instanceof RepositoryConfigPage) {
+                    ((RepositoryConfigPage) getPage()).refresh(target);
+                }
+                if (getPage() instanceof BintraySearchPage) {
+                    ((BintraySearchPanel) getPage().get(BaseSearchPage.SEARCH_TABS).get("panel")).refresh(target);
+                }
                 AjaxUtils.refreshFeedback(target);
                 close(target);
             }

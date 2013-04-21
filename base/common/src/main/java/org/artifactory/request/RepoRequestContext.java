@@ -19,9 +19,9 @@
 package org.artifactory.request;
 
 import org.artifactory.api.request.ArtifactoryResponse;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.servlet.TraceLoggingResponse;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

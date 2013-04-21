@@ -21,6 +21,7 @@ package org.artifactory.webapp.wicket.page.build.tabs;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -48,7 +49,8 @@ public class BuildInfoJsonTabPanel extends Panel {
         FieldSetBorder border = new FieldSetBorder("jsonBorder");
         add(border);
 
-        String buildJson = buildService.getBuildAsJson(build.getName(), build.getNumber(), build.getStarted());
+        BuildRun buildRun = buildService.getBuildRun(build.getName(), build.getNumber(), build.getStarted());
+        String buildJson = buildService.getBuildAsJson(buildRun);
         border.add(WicketUtils.getSyntaxHighlighter("jsonContent", buildJson, Syntax.javascript));
     }
 }

@@ -29,10 +29,14 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
+import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.ImportInterceptor;
 
 import javax.inject.Inject;
+
+import static org.artifactory.addon.nuget.NuGetProperties.Id;
+import static org.artifactory.addon.nuget.NuGetProperties.IsLatestVersion;
 
 /**
  * Triggers NuGet package related storage events
@@ -83,7 +87,7 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
      */
     private void extractNuPkgInfoIfNeeded(VfsItem createdItem, MutableStatusHolder statusHolder) {
         if (shouldTakeAction(createdItem)) {
-            addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo(createdItem, statusHolder);
+            addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo(((VfsFile) createdItem), statusHolder);
         }
     }
 
@@ -98,13 +102,13 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
         if (shouldTakeAction(targetItem)) {
             Properties nuPkgProperties = addonsManager.addonByType(PropertiesAddon.class).getProperties(
                     targetItem.getRepoPath());
-            String nuPkgId = nuPkgProperties.getFirst(NuGetAddon.PROP_NUGET_ID);
+            String nuPkgId = Id.extract(nuPkgProperties);
             if (StringUtils.isBlank(nuPkgId)) {
                 /**
                  * Package might have come from a repo with no NuGet support, so extract the info and the request
                  * calculation
                  */
-                addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo(targetItem, statusHolder);
+                addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo((VfsFile) targetItem, statusHolder);
             } else {
                 addonsManager.addonByType(NuGetAddon.class).requestAsyncLatestNuPkgVersionUpdate(
                         targetItem.getRepoKey(), nuPkgId);
@@ -119,9 +123,9 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
         if (shouldTakeAction(affectedItem)) {
             Properties nuPkgProperties = addonsManager.addonByType(PropertiesAddon.class).getProperties(
                     affectedItem.getRepoPath());
-            String isLatestVersion = nuPkgProperties.getFirst(NuGetAddon.PROP_NUGET_IS_LATEST_VERSION);
+            String isLatestVersion = IsLatestVersion.extract(nuPkgProperties);
             if (Boolean.TRUE.toString().equals(isLatestVersion)) {
-                String nuPkgId = nuPkgProperties.getFirst(NuGetAddon.PROP_NUGET_ID);
+                String nuPkgId = Id.extract(nuPkgProperties);
                 if (StringUtils.isNotBlank(nuPkgId)) {
                     addonsManager.addonByType(NuGetAddon.class).requestAsyncLatestNuPkgVersionUpdate(
                             affectedItem.getRepoKey(), nuPkgId);

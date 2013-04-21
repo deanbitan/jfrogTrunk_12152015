@@ -30,6 +30,8 @@ public interface LocalCacheRepo extends LocalRepo<LocalCacheRepoDescriptor> {
 
     RemoteRepo<? extends RemoteRepoDescriptor> getRemoteRepo();
 
+    RemoteRepoDescriptor getRemoteRepoDescriptor();
+
     void unexpire(String path);
 
     /**

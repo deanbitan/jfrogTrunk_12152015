@@ -18,11 +18,11 @@
 
 package org.artifactory.version.converter.v120;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Renames the element "anonDownloadsAllowed" to "anonAccessEnabled". This element was directly under the root element.

@@ -66,7 +66,7 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
         TextField searchControl = new TextField<String>("query", new PropertyModel<String>(this, "query"));
         searchControl.setOutputMarkupId(true);
         form.add(searchControl);
-        form.add(new HelpBubble("searchHelp", "Artifact sha1 or md5 checksum."));
+        form.add(new HelpBubble("searchHelp", "Artifact SHA-1 or MD5 checksum."));
     }
 
     @Override

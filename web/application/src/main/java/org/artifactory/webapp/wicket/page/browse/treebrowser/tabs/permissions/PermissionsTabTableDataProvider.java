@@ -90,7 +90,7 @@ class PermissionsTabTableDataProvider extends BaseSortableAceInfoRowDataProvider
         aceInfo.setAnnotate(authService.canAnnotate(userInfo, repoPath));
         aceInfo.setDeploy(authService.canDeploy(userInfo, repoPath));
         aceInfo.setDelete(authService.canDelete(userInfo, repoPath));
-        aceInfo.setAdmin(authService.canAdmin(userInfo, repoPath));
+        aceInfo.setManage(authService.canManage(userInfo, repoPath));
         return aceInfo;
     }
 
@@ -100,7 +100,7 @@ class PermissionsTabTableDataProvider extends BaseSortableAceInfoRowDataProvider
         aceInfo.setAnnotate(authService.canAnnotate(groupInfo, repoPath));
         aceInfo.setDeploy(authService.canDeploy(groupInfo, repoPath));
         aceInfo.setDelete(authService.canDelete(groupInfo, repoPath));
-        aceInfo.setAdmin(authService.canAdmin(groupInfo, repoPath));
+        aceInfo.setManage(authService.canManage(groupInfo, repoPath));
         return aceInfo;
     }
 

@@ -33,5 +33,4 @@ public interface RepoAwareActionableItem extends ActionableItem {
 
     ItemInfo getItemInfo();
 
-    <MD> MD getXmlMetadata(Class<MD> metadataClass);
 }

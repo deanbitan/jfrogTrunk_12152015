@@ -27,10 +27,10 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 

@@ -47,7 +47,7 @@ public class MetadataReader130beta6Test extends MetadataReaderBaseTest {
         MetadataReader130beta6 reader = new MetadataReader130beta6();
         File folderMetadataDirectory = getMetadataDirectory("/metadata/v130beta6/3.8.1.artifactory-metadata");
         BasicStatusHolder status = new BasicStatusHolder();
-        List<MetadataEntryInfo> entries = reader.getMetadataEntries(folderMetadataDirectory, null, status);
+        List<MetadataEntryInfo> entries = reader.getMetadataEntries(folderMetadataDirectory, status);
         assertFalse(status.isError());
         assertNotNull(entries);
         assertEquals(entries.size(), 1, "One matadata entry expected - folder");
@@ -63,7 +63,7 @@ public class MetadataReader130beta6Test extends MetadataReaderBaseTest {
         File fileMetadataDirectory = getMetadataDirectory(
                 "/metadata/v130beta6/junit-3.8.1.jar.artifactory-metadata");
         BasicStatusHolder status = new BasicStatusHolder();
-        List<MetadataEntryInfo> entries = reader.getMetadataEntries(fileMetadataDirectory, null, status);
+        List<MetadataEntryInfo> entries = reader.getMetadataEntries(fileMetadataDirectory, status);
         assertFalse(status.isError());
         assertNotNull(entries);
         assertEquals(entries.size(), 2, "Two matadata entries are expected - file and stats");

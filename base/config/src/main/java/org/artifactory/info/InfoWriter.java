@@ -21,8 +21,8 @@ package org.artifactory.info;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.SystemUtils;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -118,8 +118,10 @@ public enum InfoWriter {
     }
 
     public static boolean shouldMaskValue(String propertyKey) {
-        return propertyKey.toLowerCase().contains("password")
-                || propertyKey.toLowerCase().contains("secret")
+        String propKeyLower = propertyKey.toLowerCase();
+        return propKeyLower.contains("password")
+                || propKeyLower.contains("secret")
+                || propKeyLower.contains("key")
                 || maskedKeys.contains(propertyKey);
     }
 }

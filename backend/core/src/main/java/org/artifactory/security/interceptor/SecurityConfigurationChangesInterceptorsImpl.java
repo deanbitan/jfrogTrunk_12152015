@@ -18,10 +18,10 @@
 
 package org.artifactory.security.interceptor;
 
-import org.artifactory.jcr.JcrService;
 import org.artifactory.repo.interceptor.Interceptors;
 import org.artifactory.security.SecurityInfo;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.db.DbService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @Service
-@Reloadable(beanClass = SecurityConfigurationChangesInterceptors.class, initAfter = JcrService.class)
+@Reloadable(beanClass = SecurityConfigurationChangesInterceptors.class, initAfter = DbService.class)
 public class SecurityConfigurationChangesInterceptorsImpl extends Interceptors<SecurityConfigurationChangesInterceptor>
         implements SecurityConfigurationChangesInterceptors {
 

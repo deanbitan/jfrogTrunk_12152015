@@ -47,8 +47,7 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
 
         private boolean indexMarkedArchives;
 
-        // set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
-        private boolean trustServerChecksums;
+        // set this flag to true if Artifactory should mark uploaded artifacts with trusted metadata checksums mark
     }
 
     private final SharedInfo info;
@@ -105,19 +104,6 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
     @Override
     public void setIndexMarkedArchives(boolean indexMarkedArchives) {
         info.indexMarkedArchives = indexMarkedArchives;
-    }
-
-    @Override
-    public boolean isTrustServerChecksums() {
-        return info.trustServerChecksums;
-    }
-
-    /**
-     * set this flag to true if Artifactory should mark uploaded artifacts with trusted checksums mark
-     */
-    @Override
-    public void setTrustServerChecksums(boolean trustServerChecksums) {
-        info.trustServerChecksums = trustServerChecksums;
     }
 
 }

@@ -24,8 +24,8 @@ import org.apache.commons.io.output.NullWriter;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.common.StatusHolder;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;

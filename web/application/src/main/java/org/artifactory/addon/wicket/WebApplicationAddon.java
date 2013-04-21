@@ -121,9 +121,11 @@ public interface WebApplicationAddon extends Addon {
      *
      * @param propertiesWebAddon A properties addon instance
      * @param licensesWebAddon
+     * @param blackDuckWebAddon
      * @return Configuration menu node
      */
-    MenuNode getConfigurationMenuNode(PropertiesWebAddon propertiesWebAddon, LicensesWebAddon licensesWebAddon);
+    MenuNode getConfigurationMenuNode(PropertiesWebAddon propertiesWebAddon, LicensesWebAddon licensesWebAddon,
+            BlackDuckWebAddon blackDuckWebAddon);
 
     /**
      * Returns an addon-customized advanced menu node

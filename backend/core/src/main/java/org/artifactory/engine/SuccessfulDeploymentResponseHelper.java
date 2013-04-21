@@ -31,10 +31,6 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
-import org.artifactory.md.MetadataInfo;
-import org.artifactory.mime.MimeType;
-import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.codehaus.jackson.JsonGenerator;
@@ -68,11 +64,7 @@ public class SuccessfulDeploymentResponseHelper {
         if (isDirectory) {
             storageInfo = getFolderInfo(repoService, repoPath, url);
         } else {
-            if (NamingUtils.isMetadata(repoPath.getPath())) {
-                storageInfo = getMetadataFileInfo(repoService, repoPath, url);
-            } else {
-                storageInfo = getFileInfo(repoService, repoPath, url);
-            }
+            storageInfo = getFileInfo(repoService, repoPath, url);
         }
 
         JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(writer);
@@ -101,28 +93,6 @@ public class SuccessfulDeploymentResponseHelper {
         fileInfo.createdBy = deployedInfo.getCreatedBy();
         fileInfo.downloadUri = url;
         fileInfo.mimeType = deployedInfo.getMimeType();
-        fileInfo.originalChecksums = getOriginalChecksums(checksumsInfo);
-        fileInfo.path = "/" + repoPath.getPath();
-        fileInfo.repo = repoPath.getRepoKey();
-        fileInfo.size = String.valueOf(deployedInfo.getSize());
-        fileInfo.slf = url;
-        return fileInfo;
-    }
-
-    private RestFileInfo getMetadataFileInfo(InternalRepositoryService repoService, RepoPath repoPath, String url) {
-        RestFileInfo fileInfo = new RestFileInfo();
-
-        MetadataInfo deployedInfo = repoService.getMetadataInfo(
-                InternalRepoPathFactory.create(repoPath.getRepoKey(),
-                        NamingUtils.getMetadataParentPath(repoPath.getPath())),
-                NamingUtils.getMetadataName(repoPath.getPath()));
-
-        ChecksumsInfo checksumsInfo = deployedInfo.getChecksumsInfo();
-        fileInfo.checksums = getActualChecksums(checksumsInfo);
-        fileInfo.created = ISODateTimeFormat.dateTime().print(deployedInfo.getCreated());
-        fileInfo.createdBy = deployedInfo.getLastModifiedBy();
-        fileInfo.downloadUri = url;
-        fileInfo.mimeType = MimeType.applicationXml;
         fileInfo.originalChecksums = getOriginalChecksums(checksumsInfo);
         fileInfo.path = "/" + repoPath.getPath();
         fileInfo.repo = repoPath.getRepoKey();

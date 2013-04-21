@@ -1,5 +1,7 @@
 package org.artifactory.sapi.search;
 
+import org.artifactory.fs.ItemInfo;
+
 /**
  * Date: 8/5/11
  * Time: 10:52 PM
@@ -7,7 +9,7 @@ package org.artifactory.sapi.search;
  * @author Fred Simon
  */
 public interface VfsQueryRow {
-    String nodeAbsolutePath();
+    ItemInfo getItem();
 
-    String excerpt(String propertyName);
+    Iterable<ArchiveEntryRow> getArchiveEntries();
 }

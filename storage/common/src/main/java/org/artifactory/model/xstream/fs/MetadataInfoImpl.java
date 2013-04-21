@@ -20,13 +20,13 @@ package org.artifactory.model.xstream.fs;
 
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumsInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.MutableMetadataInfo;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 

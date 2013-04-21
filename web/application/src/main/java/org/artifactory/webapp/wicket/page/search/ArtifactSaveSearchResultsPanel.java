@@ -41,7 +41,7 @@ public class ArtifactSaveSearchResultsPanel extends SaveSearchResultsPanel {
         completeVersionCheckbox.setDefaultModelObject(Boolean.FALSE);
         form.add(completeVersionCheckbox);
         form.add(new HelpBubble("completeVersion.help",
-                "For every artifact, aggregate all artifacts belonging to the same artifact version (and group) \n" +
+                "For each search result, aggregate all artifacts belonging to the same artifact version (and group) \n" +
                         "under the saved search result, even if not directly found in the current search."));
     }
 }

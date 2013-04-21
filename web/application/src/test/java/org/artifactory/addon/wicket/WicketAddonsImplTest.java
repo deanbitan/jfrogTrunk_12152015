@@ -18,6 +18,7 @@
 
 package org.artifactory.addon.wicket;
 
+import com.google.common.collect.Lists;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -62,19 +63,28 @@ public class WicketAddonsImplTest {
         EasyMock.expect(addonsManager.isLicenseInstalled()).andReturn(true);
         EasyMock.expect(addonsManager.getLicenseDetails()).andReturn(new String[]{"", "", "Trial"});
         EasyMock.replay(addonsManager);
-        wicketAddons.validateTargetHasDifferentLicenseKeyHash("123");
+        wicketAddons.validateTargetHasDifferentLicenseKeyHash("123", null);
         EasyMock.verify(addonsManager);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp =
-            ".*license key is null.*")
-    public void testValidateLicenseTargetIsnull() throws Exception {
+            ".*open-source Artifactory.*")
+    public void testValidateLicenseTargetIsnullOSS() throws Exception {
         EasyMock.expect(addonsManager.isLicenseInstalled()).andReturn(true);
         EasyMock.expect(addonsManager.getLicenseDetails()).andReturn(new String[]{"", "", "Commercial"});
         EasyMock.replay(addonsManager);
-        wicketAddons.validateTargetHasDifferentLicenseKeyHash(null);
+        wicketAddons.validateTargetHasDifferentLicenseKeyHash(null, null);
         EasyMock.verify(addonsManager);
+    }
 
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp =
+            ".*user must have deploy permissions.*")
+    public void testValidateLicenseTargetIsnullPro() throws Exception {
+        EasyMock.expect(addonsManager.isLicenseInstalled()).andReturn(true);
+        EasyMock.expect(addonsManager.getLicenseDetails()).andReturn(new String[]{"", "", "Commercial"});
+        EasyMock.replay(addonsManager);
+        wicketAddons.validateTargetHasDifferentLicenseKeyHash(null, Lists.newArrayList("replication"));
+        EasyMock.verify(addonsManager);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp =
@@ -84,7 +94,7 @@ public class WicketAddonsImplTest {
         EasyMock.expect(addonsManager.getLicenseDetails()).andReturn(new String[]{"", "", "Commercial"});
         EasyMock.expect(addonsManager.getLicenseKeyHash()).andReturn("123");
         EasyMock.replay(addonsManager);
-        wicketAddons.validateTargetHasDifferentLicenseKeyHash("123");
+        wicketAddons.validateTargetHasDifferentLicenseKeyHash("123", null);
         EasyMock.verify(addonsManager);
     }
 }

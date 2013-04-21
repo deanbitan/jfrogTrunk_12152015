@@ -21,7 +21,7 @@ package org.artifactory.sapi.common;
 import java.util.Set;
 
 /**
- * Callback called before exporting a JCR file
+ * Callback called before exporting a VFS file
  *
  * @author Noam Tenne
  */

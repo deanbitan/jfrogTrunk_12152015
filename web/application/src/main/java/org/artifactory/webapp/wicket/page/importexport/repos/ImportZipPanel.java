@@ -29,7 +29,6 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.traffic.TrafficService;
@@ -37,6 +36,7 @@ import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.panel.upload.DefaultFileUploadForm;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -88,12 +88,12 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
         sb.append(" |    |--LIB_DIR_1\n");
         sb.append("\n");
         sb.append(
-                "When importing all repositories, make sure that the names of the directories that represent\n");
+                "When importing all repositories, ensure the names of the directories representing\n");
         sb.append(
                 "the repositories in the archive, match the names of the target repositories in Artifactory.\n");
-        sb.append("Please note that uploading the archive, does not import it's content.\n");
+        sb.append("NOTE! that uploading the archive, does not import its content.\n");
         sb.append(
-                "To import, choose a repository (or all of them) and press import (will appear after upload).\n");
+                "To import, choose a repository (or all of them) and click Import (appears after upload).\n");
         return sb.toString();
     }
 
@@ -134,7 +134,7 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
             uploadedFile = uploadForm.getUploadedFile();
             zipinputstream = new ZipInputStream(new FileInputStream(uploadedFile));
             ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-            destFolder = new File(artifactoryHome.getTmpUploadsDir(), uploadedFile.getName() + "_extract");
+            destFolder = new File(artifactoryHome.getTempUploadDir(), uploadedFile.getName() + "_extract");
             FileUtils.deleteDirectory(destFolder);
 
             byte[] buf = new byte[DEFAULT_BUFF_SIZE];

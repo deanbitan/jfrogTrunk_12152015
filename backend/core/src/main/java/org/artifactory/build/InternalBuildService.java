@@ -20,6 +20,7 @@ package org.artifactory.build;
 
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.build.ImportableExportableBuild;
+import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
@@ -31,8 +32,7 @@ import org.jfrog.build.api.BuildFileBean;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jcr.RepositoryException;
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,27 +70,9 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @param strictMatching   True if the artifact finder should operate in strict mode
      * @return The file infos of a result that best match the given criteria
      */
-    Set<FileInfo> getBestMatchingResult(Set<RepoPath> searchResults, Map<RepoPath, Properties> resultProperties,
+    Set<FileInfo> getBestMatchingResult(List<ItemSearchResult> searchResults,
+            Map<RepoPath, Properties> resultProperties,
             String buildName, String buildNumber, boolean strictMatching);
-
-    /**
-     * Locates builds that are named as the given name within a transaction
-     *
-     * @param buildName Name of builds to locate
-     * @return Set of builds with the given name
-     */
-    @Lock(transactional = true)
-    Set<BuildRun> transactionalSearchBuildsByName(String buildName);
-
-    /**
-     * Locates builds that are named and numbered as the given name and number within a transaction
-     *
-     * @param buildName   Name of builds to locate
-     * @param buildNumber Number of builds to locate
-     * @return Set of builds with the given name
-     */
-    @Lock(transactional = true)
-    Set<BuildRun> transactionalSearchBuildsByNameAndNumber(String buildName, String buildNumber);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a
@@ -99,7 +81,7 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @param settings Import settings
      * @param build    The build to import
      */
-    @Lock(transactional = true)
+    @Lock
     void importBuild(ImportSettings settings, ImportableExportableBuild build) throws Exception;
 
     /**
@@ -108,17 +90,8 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @param buildRun Build to rename
      * @param to       Replacement build name
      */
-    @Lock(transactional = true)
-    void renameBuildContent(BuildRun buildRun, String to) throws RepositoryException, IOException;
-
-    /**
-     * Renames the build JCR tree node
-     *
-     * @param from Name to replace
-     * @param to   Replacement build name
-     */
-    @Lock(transactional = true)
-    void renameBuildNode(String from, String to) throws RepositoryException;
+    @Lock
+    void renameBuild(BuildRun buildRun, String to);
 
     /**
      * Returns latest build by name and status (which can be {@link BuildService.LATEST_BUILD} or a status value (e.g: "Released")
@@ -127,7 +100,6 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @param buildStatus the desired status (which can be {@link BuildService.LATEST_BUILD} or a status value (e.g: "Released")
      * @return the build (if found)
      */
-    @Lock(transactional = true)
     @Nullable
     Build getLatestBuildByNameAndStatus(String buildName, String buildStatus);
 

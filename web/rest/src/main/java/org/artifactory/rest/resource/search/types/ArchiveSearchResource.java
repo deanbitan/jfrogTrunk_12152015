@@ -93,7 +93,7 @@ public class ArchiveSearchResource {
      */
     private ArchiveRestSearchResult search(String name, List<String> reposToSearch) throws IOException {
         ArchiveSearchControls controls = new ArchiveSearchControls();
-        controls.setQuery(name);
+        controls.setName(name);
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
 

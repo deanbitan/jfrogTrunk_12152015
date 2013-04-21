@@ -18,7 +18,6 @@
 
 package org.artifactory.api.search;
 
-import org.artifactory.api.repo.Async;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
@@ -28,16 +27,10 @@ import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
-import org.artifactory.api.search.xml.XmlSearchResult;
-import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
-import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
-import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
-import org.artifactory.api.search.xml.metadata.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.build.BuildRun;
-import org.artifactory.fs.StatsInfo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.SerializablePair;
 
@@ -56,7 +49,6 @@ public interface SearchService {
      * @param controls Search data (mainly the search term)
      * @return Artifacts found by the search, empty list if nothing was found
      */
-    @Lock(transactional = true)
     ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls);
 
     /**
@@ -65,7 +57,6 @@ public interface SearchService {
      * @param searchControls Search controls
      * @return Set of repo paths that comply with the given checksums
      */
-    @Lock(transactional = true)
     Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls);
 
     /**
@@ -74,7 +65,6 @@ public interface SearchService {
      * @param searchControls Search controls
      * @return List of ItemSearchResults
      */
-    @Lock(transactional = true)
     ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls);
 
     /**
@@ -84,45 +74,23 @@ public interface SearchService {
      * @return List of file repo paths that were created or modifies between the input time range and the date the file
      *         was modified. Empty if none is found.
      */
-    @Lock(transactional = true)
     List<SerializablePair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(
             @Nullable Calendar from, @Nullable Calendar to, List<String> reposToSearch);
 
-    @Lock(transactional = true)
-    ItemSearchResults<GenericMetadataSearchResult<StatsInfo>> searchArtifactsNotDownloadedSince(
-            StatsSearchControls controls);
+    ItemSearchResults<StatsSearchResult> searchArtifactsNotDownloadedSince(StatsSearchControls controls);
 
-    @Lock(transactional = true)
     ItemSearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls);
 
-    @Lock(transactional = true)
-    ItemSearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls);
-
-    @Lock(transactional = true)
-    <T> ItemSearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(
-            GenericMetadataSearchControls<T> controls);
-
-    @Lock(transactional = true)
     ItemSearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls);
 
-    @Lock(transactional = true)
-    ItemSearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls);
-
-    @Lock(transactional = true)
     ItemSearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls);
 
-    @Async(delayUntilAfterCommit = true)
-    void asyncIndexMarkedArchives();
-
-    @Lock(transactional = true)
     Set<BuildRun> getLatestBuilds() throws RepositoryRuntimeException;
 
-    @Lock(transactional = true)
-    List<BuildRun> findBuildsByArtifactChecksum(@Nullable String sha1, @Nullable String md5)
+    Set<BuildRun> findBuildsByArtifactChecksum(@Nullable String sha1, @Nullable String md5)
             throws RepositoryRuntimeException;
 
-    @Lock(transactional = true)
-    List<BuildRun> findBuildsByDependencyChecksum(@Nullable String sha1, @Nullable String md5)
+    Set<BuildRun> findBuildsByDependencyChecksum(@Nullable String sha1, @Nullable String md5)
             throws RepositoryRuntimeException;
 
     /**

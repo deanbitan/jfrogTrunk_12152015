@@ -20,10 +20,12 @@ package org.artifactory.repo;
 
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.jcr.md.MetadataAware;
+import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
@@ -31,27 +33,18 @@ import org.artifactory.util.PathMatcher;
 import org.artifactory.util.PathUtils;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.util.List;
 
 public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
-    private T descriptor;
-    private InternalRepositoryService repositoryService;
+    private final T descriptor;
+    private final InternalRepositoryService repositoryService;
 
-    protected List<String> includes;
-    protected List<String> excludes;
+    private List<String> includes;
+    private List<String> excludes;
 
-    protected RepoBase(InternalRepositoryService repositoryService) {
+    protected RepoBase(T descriptor, InternalRepositoryService repositoryService) {
         this.repositoryService = repositoryService;
-        this.excludes = PathMatcher.getGlobalExcludes();
-    }
-
-    protected RepoBase(InternalRepositoryService repositoryService, T descriptor) {
-        this(repositoryService);
-        setDescriptor(descriptor);
-    }
-
-    @Override
-    public void setDescriptor(T descriptor) {
         this.descriptor = descriptor;
         this.includes = PathUtils.includesExcludesPatternToStringList(descriptor.getIncludesPattern());
         this.excludes = PathUtils.includesExcludesPatternToStringList(descriptor.getExcludesPattern());
@@ -117,6 +110,11 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return getDescriptor().isReal();
     }
 
+    @Override
+    public boolean isCache() {
+        return false;
+    }
+
     public boolean accepts(String path) {
         if (NamingUtils.isSystem(path)) {
             // includes/excludes should not affect system paths
@@ -125,12 +123,24 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
 
         String toCheck = path;
         //For artifactory metadata the pattern apply to the object it represents
-        if (path.endsWith(MetadataAware.METADATA_FOLDER)) {
-            toCheck = path.substring(0, path.length() - MetadataAware.METADATA_FOLDER.length() - 1);
+        if (path.endsWith(RepositoryService.METADATA_FOLDER)) {
+            toCheck = path.substring(0, path.length() - RepositoryService.METADATA_FOLDER.length() - 1);
         } else if (NamingUtils.isMetadata(path)) {
             toCheck = NamingUtils.getMetadataParentPath(path);
         }
         return !StringUtils.hasLength(toCheck) || PathMatcher.matches(toCheck, includes, excludes);
+    }
+
+    @Override
+    public String getChecksum(String checksumPath, RepoResource resource) throws IOException {
+        if (resource == null || !resource.isFound()) {
+            throw new IOException("Could not get resource stream. Path not found: " + checksumPath + ".");
+        }
+        ChecksumType checksumType = ChecksumType.forFilePath(checksumPath);
+        if (checksumType == null) {
+            throw new IllegalArgumentException("Checksum type not found for path " + checksumPath);
+        }
+        return getChecksumPolicy().getChecksum(checksumType, resource.getInfo().getChecksums(), resource.getRepoPath());
     }
 
     @Override
@@ -160,7 +170,6 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
     }
 
     protected final AuthorizationService getAuthorizationService() {
-        // TODO: Analyze the optimization if made as a member
         return InternalContextHelper.get().getAuthorizationService();
     }
 }

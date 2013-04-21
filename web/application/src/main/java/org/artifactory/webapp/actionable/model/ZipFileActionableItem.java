@@ -21,11 +21,11 @@ package org.artifactory.webapp.actionable.model;
 import com.google.common.collect.Lists;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ZipEntryInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.Tree;
 import org.artifactory.util.TreeNode;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;

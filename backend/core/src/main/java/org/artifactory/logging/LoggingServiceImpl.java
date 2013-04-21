@@ -20,16 +20,10 @@ package org.artifactory.logging;
 
 import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.logging.mbean.Error;
-import org.artifactory.logging.mbean.ErrorMBean;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
-import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.spring.Reloadable;
-import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -41,29 +35,8 @@ import java.io.IOException;
  * @author Noam Y. Tenne
  */
 @Service
-@Reloadable(beanClass = LoggingService.class)
 public class LoggingServiceImpl implements LoggingService {
     private static final Logger log = LoggerFactory.getLogger(LoggingServiceImpl.class);
-
-    @Override
-    public void init() {
-        InternalContextHelper.get().registerArtifactoryMBean(new Error(), ErrorMBean.class, null);
-    }
-
-    @Override
-    public void reload(CentralConfigDescriptor oldDescriptor) {
-    }
-
-    @Override
-    public void destroy() {
-    }
-
-    @Override
-    public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
-        /**
-         * All conversions are done in org.artifactory.log.logback.LogbackContextHelper#configure
-         */
-    }
 
     @Override
     public void exportTo(ExportSettings settings) {

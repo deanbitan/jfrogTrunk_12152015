@@ -23,7 +23,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -188,15 +187,13 @@ public class LocalRepoActionableItem extends CachedItemActionableItem
 
         @Override
         protected String getDeleteConfirmMessage(RepoAwareItemEvent e) {
-            String key = e.getSource().getDisplayName();
-            ArtifactCount count = getRepoService().getArtifactCount(key);
-            //if remote repo has no cash
-            long totalCount = count.getCount();
+            RepoPath repoPath = e.getSource().getRepoPath();
+            long count = getRepoService().getArtifactCount(repoPath);
             StringBuilder builder = new StringBuilder("Are you sure you wish to delete the repository");
-            if (totalCount == 0) {
+            if (count == 0) {
                 builder.append("?");
             } else {
-                builder.append(" (").append(totalCount).append(" artifacts will be permanently deleted)?");
+                builder.append(" (").append(count).append(" artifacts will be permanently deleted)?");
             }
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
             BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);

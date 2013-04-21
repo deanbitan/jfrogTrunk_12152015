@@ -18,9 +18,9 @@
 
 package org.artifactory.traffic;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.traffic.entry.RequestEntry;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Logger class for general web requests

@@ -22,7 +22,6 @@ import com.thoughtworks.xstream.XStream;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AclInfo;
 import org.artifactory.security.SecurityInfo;
 import org.artifactory.security.UserInfo;
@@ -30,6 +29,7 @@ import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionTest;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.io.File;

@@ -14,11 +14,9 @@ package org.artifactory.repo.index.locator;
 import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.index.artifact.GavCalculator;
 import org.apache.maven.index.locator.GavHelpedLocator;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.storage.fs.tree.file.JavaIOFileAdapter;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * @author yoavl
@@ -27,15 +25,10 @@ public class PomLocator implements GavHelpedLocator {
 
     @Override
     public File locate(File source, GavCalculator gavCalculator, Gav gav) {
-        //Get the pom name
+        // build the pom name
         String artifactName = gav.getArtifactId() + "-" + gav.getVersion() + ".pom";
-        JcrFile file = (JcrFile) source;
-        List<VfsItem> children = file.getParentFolder().getItems(false);
-        for (VfsItem child : children) {
-            if (artifactName.equals(child.getName())) {
-                return (File) child;
-            }
-        }
-        return null;
+        // search sibling pom
+        JavaIOFileAdapter file = (JavaIOFileAdapter) source;
+        return file.getSibling(artifactName);
     }
 }

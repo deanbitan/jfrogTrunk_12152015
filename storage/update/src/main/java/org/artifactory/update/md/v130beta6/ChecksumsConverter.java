@@ -20,12 +20,12 @@ package org.artifactory.update.md.v130beta6;
 
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataType;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Converts artifactory-file.xml from version 1.3.0-beta-6 to 1.3.0-rc1. The extension node needs to be renamed and the

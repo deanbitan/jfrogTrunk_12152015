@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.util.Builder;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserGroupInfo;
 
 import javax.annotation.Nullable;
@@ -38,13 +39,14 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
 
     private final String username;
 
-    private String password = MutableUserInfo.INVALID_PASSWORD;
+    private SaltedPassword password = SaltedPassword.INVALID_PASSWORD;
     private String email = "";
     private boolean admin = false;
     private boolean enabled = true;
     private boolean updatableProfile = false;
     private boolean transientUser = false;
     private Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>();
+    private String bintrayAuth;
 
     public UserInfoBuilder(String username) {
         this.username = username;
@@ -71,6 +73,7 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
         user.setAccountNonLocked(true);
         user.setTransientUser(transientUser);
         user.setGroups(groups);
+        user.setBintrayAuth(bintrayAuth);
         return user;
     }
 
@@ -79,8 +82,8 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
         return this;
     }
 
-    public UserInfoBuilder password(String password) {
-        this.password = password;
+    public UserInfoBuilder password(SaltedPassword saltedPassword) {
+        this.password = saltedPassword;
         return this;
     }
 
@@ -119,6 +122,11 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
         } else {
             this.groups = Collections.emptySet();
         }
+        return this;
+    }
+
+    public UserInfoBuilder bintrayAuth(String bintrayAuth){
+        this.bintrayAuth = bintrayAuth;
         return this;
     }
 }

@@ -22,14 +22,14 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.Request;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.sapi.fs.VfsItem;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -58,10 +58,10 @@ public class RepoPathMover {
         status.setActivateLogging(!isDryRun);
 
         LocalRepo sourceRepo = getLocalRepo(fromRepoPath.getRepoKey());
-        JcrFsItem fsItemToMove = moverConfig.isCopy() ? sourceRepo.getJcrFsItem(fromRepoPath) :
-                sourceRepo.getLockedJcrFsItem(fromRepoPath);
-        if (fsItemToMove == null) {
-            throw new IllegalArgumentException("Could not find folder at " + fromRepoPath);
+        VfsItem sourceItem = moverConfig.isCopy() ? sourceRepo.getImmutableFsItem(fromRepoPath) :
+                sourceRepo.getMutableFsItem(fromRepoPath);
+        if (sourceItem == null) {
+            throw new IllegalArgumentException("Could not find item at " + fromRepoPath);
         }
 
         RepoPath targetLocalRepoPath = moverConfig.getTargetLocalRepoPath();
@@ -79,8 +79,7 @@ public class RepoPathMover {
         }
 
         RepoRepoPath<LocalRepo> targetRrp = repositoryService.getRepoRepoPath(targetLocalRepoPath);
-        LocalRepo targetLocalRepo = getLocalRepo(targetLocalRepoPath.getRepoKey());
-        if (targetLocalRepo.isCache()) {
+        if (targetRrp.getRepo().isCache()) {
             throw new IllegalArgumentException(
                     "Target repository " + targetLocalRepoPath.getRepoKey() + " is a cache " +
                             "repository. Moving\\copying to cache repositories is not allowed.");
@@ -89,14 +88,13 @@ public class RepoPathMover {
         LayoutsCoreAddon layoutsCoreAddon = addonsManager.addonByType(LayoutsCoreAddon.class);
         boolean canCrossLayouts = !moverConfig.isSuppressLayouts() &&
                 layoutsCoreAddon.canCrossLayouts(sourceRepo.getDescriptor().getRepoLayout(),
-                        targetLocalRepo.getDescriptor().getRepoLayout());
+                        targetRrp.getRepo().getDescriptor().getRepoLayout());
 
         if (canCrossLayouts) {
-            layoutsCoreAddon.performCrossLayoutMoveOrCopy(status, moverConfig, sourceRepo, targetLocalRepo,
-                    fsItemToMove);
+            layoutsCoreAddon.performCrossLayoutMoveOrCopy(status, moverConfig,
+                    sourceRepo, targetRrp.getRepo(), sourceItem);
         } else {
-            new DefaultRepoPathMover(status, moverConfig).moveOrCopy(fsItemToMove, targetLocalRepo, targetLocalRepoPath,
-                    targetRrp);
+            new DefaultRepoPathMover(status, moverConfig).moveOrCopy(sourceItem, targetRrp);
         }
     }
 

@@ -19,8 +19,8 @@
 package org.artifactory.io.checksum;
 
 import com.google.common.collect.ImmutableCollection;
-import org.artifactory.api.storage.GarbageCollectorInfo;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.storage.binstore.GarbageCollectorInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

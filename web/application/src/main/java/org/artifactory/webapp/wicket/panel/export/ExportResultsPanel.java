@@ -41,11 +41,11 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -110,8 +110,7 @@ public class ExportResultsPanel extends FieldSetPanel {
         exportForm.add(new HelpBubble("createArchiveHelp", new ResourceModel("createArchiveHelp")));
 
         exportForm.add(new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose")));
-        exportForm.add(new HelpBubble("verboseHelp", "Lowers the log level to debug and redirects the output from the "
-                + "standard log to the import-export log."));
+        exportForm.add(new HelpBubble("verboseHelp", new ResourceModel("verboseHelp")));
 
         TitledAjaxSubmitLink exportButton = new TitledAjaxSubmitLink("export", "Export", exportForm) {
             @Override

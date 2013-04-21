@@ -169,14 +169,14 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         TitledBorder borderTest = new TitledBorder("borderTest");
         form.add(borderTest);
         borderTest.add(new TextField<String>("testUsername", new PropertyModel<String>(this, "testUsername")));
-        borderTest.add(new HelpBubble("testUsername.help", "Username to test the ldap connection"));
+        borderTest.add(new HelpBubble("testUsername.help", "Username to test the LDAP connection"));
 
         PasswordTextField testPasswordField = new PasswordTextField(
                 "testPassword", new PropertyModel<String>(this, "testPassword"));
         testPasswordField.setRequired(false);
         testPasswordField.setResetPassword(false);
         borderTest.add(testPasswordField);
-        borderTest.add(new HelpBubble("testPassword.help", "Password to test the ldap connection"));
+        borderTest.add(new HelpBubble("testPassword.help", "Password to test the LDAP connection"));
 
         // Test connection button
         borderTest.add(createTestConnectionButton());

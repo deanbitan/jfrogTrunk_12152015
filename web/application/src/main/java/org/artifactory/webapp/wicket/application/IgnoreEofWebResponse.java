@@ -21,8 +21,8 @@ package org.artifactory.webapp.wicket.application;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.util.time.Time;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.Cookie;
 import java.io.EOFException;

@@ -22,16 +22,19 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.mbean.MBeanRegistrationService;
+import org.artifactory.schedule.mbean.ManagedExecutor;
 import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.db.DbService;
 import org.artifactory.util.LoggingUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ClassUtils;
@@ -50,7 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author yoavl
  */
 @Service
-@Reloadable(beanClass = TaskService.class, initAfter = {JcrService.class, InternalCentralConfigService.class})
+@Reloadable(beanClass = TaskService.class, initAfter = {DbService.class, InternalCentralConfigService.class})
 public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(TaskServiceImpl.class);
 
@@ -67,6 +70,12 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
 
     @Override
     public void init() {
+        java.util.concurrent.Executor concurrentExecutor = executor.getConcurrentExecutor();
+        if (concurrentExecutor instanceof ArtifactoryConcurrentExecutor) {
+            ContextHelper.get().beanForType(MBeanRegistrationService.class).
+                    register(new ManagedExecutor((ArtifactoryConcurrentExecutor) concurrentExecutor),
+                            "Executor Pools", "Task Service");
+        }
     }
 
     @Override

@@ -20,11 +20,11 @@ package org.artifactory.webapp.wicket.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;

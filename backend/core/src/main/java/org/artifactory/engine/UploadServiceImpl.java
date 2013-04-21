@@ -23,39 +23,34 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
-import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.InternalArtifactoryRequest;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
-import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.LocalRepoChecksumPolicy;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.factory.JcrFsItemFactory;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.md.MetadataInfo;
+import org.artifactory.md.MutablePropertiesInfo;
 import org.artifactory.md.Properties;
+import org.artifactory.md.PropertiesXmlProvider;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.model.common.RepoPathImpl;
+import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
@@ -64,11 +59,15 @@ import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapterContext;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.resource.FileResource;
-import org.artifactory.resource.MetadataResource;
 import org.artifactory.resource.MutableRepoResourceInfo;
 import org.artifactory.resource.UnfoundRepoResource;
-import org.artifactory.search.InternalSearchService;
+import org.artifactory.sapi.fs.MutableVfsFile;
+import org.artifactory.sapi.fs.MutableVfsItem;
+import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.storage.binstore.service.BinaryNotFoundException;
+import org.artifactory.storage.binstore.service.BinaryStore;
+import org.artifactory.storage.fs.VfsItemFactory;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
@@ -77,6 +76,7 @@ import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.servlet.DelayedHttpResponse;
 import org.artifactory.webapp.servlet.HttpArtifactoryResponse;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Service;
@@ -105,22 +105,19 @@ public class UploadServiceImpl implements InternalUploadService {
     private InternalRepositoryService repoService;
 
     @Autowired
-    private JcrService jcrService;
+    private BinaryStore binaryStore;
 
     @Autowired
     private BasicAuthenticationEntryPoint authenticationEntryPoint;
 
     @Autowired
-    private InternalSearchService searchService;
+    private ArchiveIndexer archiveIndexer;
 
     @Autowired
     private AddonsManager addonsManager;
 
     @Autowired
     private TrafficService trafficService;
-
-    @Autowired
-    private DeployService deployService;
 
     private SuccessfulDeploymentResponseHelper successfulDeploymentResponseHelper =
             new SuccessfulDeploymentResponseHelper();
@@ -145,6 +142,11 @@ public class UploadServiceImpl implements InternalUploadService {
             createDirectory(request, response);
         } else if (request.isChecksum()) {
             validateAndUploadChecksum(request, response, repo);
+        } else if (NamingUtils.isProperties(request.getPath())) {
+            validateAndUploadProperties(request, response, repo);
+        } else if (NamingUtils.isMetadata(request.getPath())) {
+            response.sendError(HttpStatus.SC_CONFLICT, "Old metadata notation is not supported anymore: " +
+                    request.getRepoPath(), log);
         } else {
             uploadArtifact(request, response, repo);
         }
@@ -256,8 +258,7 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
-    private void createDirectory(ArtifactoryRequest request, ArtifactoryResponse response)
-            throws IOException {
+    private void createDirectory(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         RepoPath repoPath = request.getRepoPath();
         log.info("MKDir request to '{}'", request.getRepoPath());
 
@@ -271,7 +272,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void annotateWithRequestPropertiesIfPermitted(ArtifactoryRequest request, RepoPath repoPath) {
         if (authService.canAnnotate(repoPath)) {
             Properties properties = request.getProperties();
-            repoService.setMetadata(repoPath, Properties.class, properties);
+            repoService.setProperties(repoPath, properties);
         }
     }
 
@@ -288,7 +289,7 @@ public class UploadServiceImpl implements InternalUploadService {
         log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), length < 0 ? "unspecified" : length);
 
         String checksumPath = request.getPath();
-        if (NamingUtils.isMetadataChecksum(checksumPath)) {
+        if (NamingUtils.isMetadataChecksum(checksumPath) || MavenNaming.isMavenMetadataChecksum(checksumPath)) {
             //Ignore request - we maintain our self-calculated checksums for metadata
             consumeContentAndRespondWithSuccess(request, response);
             return;
@@ -297,8 +298,56 @@ public class UploadServiceImpl implements InternalUploadService {
         validatePathAndUploadChecksum(request, response, repo);
     }
 
+    /**
+     * @see <a href="http://wiki.jfrog.org/confluence/display/RTF30/Artifactory%27s+REST+API#Artifactory'sRESTAPI-SetItemProperties">Set Item Properties REST API</a>
+     * @deprecated can use the set item properties REST API instead, see
+     */
+    private void validateAndUploadProperties(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
+            throws IOException {
+        //TORE: [by YS] this doesn't belong here
+        int length = request.getContentLength();
+        if (isAbnormalPropertiesContentLength(length)) {
+            // something is fishy, checksum file should not be so big...
+            response.sendError(SC_CONFLICT, "Properties content length of " + length +
+                    " bytes is bigger than allowed.", log);
+            return;
+        }
+
+        log.info("Deploy properties to '{}' Content-Length: {}", request.getRepoPath(),
+                length < 0 ? "unspecified" : length);
+
+        String path = request.getPath();
+        if (isMavenRepo(repo)) {
+            path = adjustMavenSnapshotPath(repo, request);
+        }
+
+        RepoPathImpl itemRepoPath = new RepoPathImpl(request.getRepoKey(),
+                NamingUtils.stripMetadataFromPath(path));
+
+        try {
+            String propertiesStr = IOUtils.toString(request.getInputStream());
+            PropertiesXmlProvider propertiesXmlProvider = new PropertiesXmlProvider();
+            MutablePropertiesInfo propertiesInfo = propertiesXmlProvider.fromXml(propertiesStr);
+            Properties properties = new PropertiesImpl(propertiesInfo);
+            boolean success = repoService.setProperties(itemRepoPath, properties);
+            if (success) {
+                response.setStatus(HttpStatus.SC_CREATED);
+            } else {
+                response.sendError(SC_NOT_FOUND, "Failed to set properties on " + itemRepoPath, log);
+            }
+        } catch (Exception e) {
+            log.debug("Failed to deploy properties to '" + itemRepoPath + "'", e);
+            response.sendError(SC_CONFLICT, "Failed to deploy properties : " + e.getMessage() +
+                    " on path " + request.getRepoPath(), log);
+        }
+    }
+
     private boolean isAbnormalChecksumContentLength(int length) {
         return length > 1024;
+    }
+
+    private boolean isAbnormalPropertiesContentLength(int length) {
+        return length > 4092;
     }
 
     private void consumeContentAndRespondWithSuccess(ArtifactoryRequest request, ArtifactoryResponse response)
@@ -310,7 +359,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void validatePathAndUploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException {
         RepoPath targetFileRepoPath = adjustAndGetChecksumTargetRepoPath(request, repo);
-        JcrFsItem fsItem = repo.getLockedJcrFsItem(targetFileRepoPath);
+        MutableVfsItem fsItem = repo.getMutableFsItem(targetFileRepoPath);
 
         if (fsItem == null) {
             response.sendError(SC_NOT_FOUND, "Target file to set checksum on doesn't exist: " + targetFileRepoPath,
@@ -323,8 +372,8 @@ public class UploadServiceImpl implements InternalUploadService {
                     targetFileRepoPath, log);
             return;
         }
-
-        uploadChecksum(request, response, (JcrFile) fsItem);
+        //TORE: [by YS] move checksum upload to local repo
+        uploadChecksum(request, response, (MutableVfsFile) fsItem);
     }
 
     private RepoPath adjustAndGetChecksumTargetRepoPath(ArtifactoryRequest request, LocalRepo repo) {
@@ -335,7 +384,7 @@ public class UploadServiceImpl implements InternalUploadService {
         return repo.getRepoPath(PathUtils.stripExtension(checksumTargetFile));
     }
 
-    private void uploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response, JcrFile jcrFile)
+    private void uploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response, MutableVfsFile vfsFile)
             throws IOException {
         String uploadedChecksum;
         try {
@@ -346,7 +395,7 @@ public class UploadServiceImpl implements InternalUploadService {
             return;
         }
 
-        updateChecksumInfoAndRespond(request, response, jcrFile, uploadedChecksum);
+        updateChecksumInfoAndRespond(request, response, vfsFile, uploadedChecksum);
     }
 
     private String getChecksumContentAsString(ArtifactoryRequest request)
@@ -360,34 +409,27 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
-    private void updateChecksumInfoAndRespond(ArtifactoryRequest request, ArtifactoryResponse response, JcrFile jcrFile,
-            String uploadedChecksum) throws IOException {
-        ChecksumInfo checksumInfo = updateAndGetFileChecksumInfo(request, jcrFile, uploadedChecksum);
+    private void updateChecksumInfoAndRespond(ArtifactoryRequest request, ArtifactoryResponse response,
+            MutableVfsFile vfsFile, String uploadedChecksum) throws IOException {
+        ChecksumInfo checksumInfo = updateAndGetFileChecksumInfo(request, vfsFile, uploadedChecksum);
         if (isChecksumValidAccordingToPolicy(uploadedChecksum, checksumInfo)) {
-            sendUploadedChecksumResponse(request, response, jcrFile.getRepoPath());
+            sendUploadedChecksumResponse(request, response, vfsFile.getRepoPath());
         } else {
             String message = String.format("Checksum error for '%s': received '%s' but actual is '%s'",
                     request.getPath(), uploadedChecksum, checksumInfo.getActual());
 
-            sendInvalidUploadedChecksumResponse(request, response, jcrFile, message);
+            sendInvalidUploadedChecksumResponse(request, response, vfsFile, message);
         }
     }
 
-    private ChecksumInfo updateAndGetFileChecksumInfo(ArtifactoryRequest request, JcrFile jcrFile, String checksum) {
-        FileInfo fileInfo = jcrFile.getInfo();
-        ChecksumsInfo checksums = fileInfo.getChecksumsInfo();
+    private ChecksumInfo updateAndGetFileChecksumInfo(ArtifactoryRequest request, MutableVfsFile vfsFile,
+            String checksum) {
         ChecksumType checksumType = ChecksumType.forFilePath(request.getPath());
         if (!checksumType.isValid(checksum)) {
-            log.warn("Uploading non valid original checksum for {}", jcrFile.getRepoPath());
+            log.warn("Uploading non valid original checksum for {}", vfsFile.getRepoPath());
         }
-        ChecksumInfo checksumInfo = checksums.getChecksumInfo(checksumType);
-        if (checksumInfo == null) {
-            checksumInfo = new ChecksumInfo(checksumType, checksum, null);
-        } else {
-            checksumInfo = new ChecksumInfo(checksumType, checksum, checksumInfo.getActual());
-        }
-        checksums.addChecksumInfo(checksumInfo);
-        return checksumInfo;
+        vfsFile.setClientChecksum(checksumType, checksum);
+        return vfsFile.getInfo().getChecksumsInfo().getChecksumInfo(checksumType);
     }
 
     private boolean isChecksumValidAccordingToPolicy(String checksum, ChecksumInfo checksumInfo) {
@@ -395,13 +437,13 @@ public class UploadServiceImpl implements InternalUploadService {
     }
 
     private void sendInvalidUploadedChecksumResponse(ArtifactoryRequest request, ArtifactoryResponse response,
-            JcrFile jcrFile, String errorMessage) throws IOException {
-        JcrFsItemFactory repo = jcrFile.getRepo();
+            VfsFile vfsFile, String errorMessage) throws IOException {
+        VfsItemFactory repo = repoService.localOrCachedRepositoryByKey(vfsFile.getRepoKey());
         ChecksumPolicy checksumPolicy = repo.getChecksumPolicy();
         if (checksumPolicy instanceof LocalRepoChecksumPolicy &&
                 ((LocalRepoChecksumPolicy) checksumPolicy).getPolicyType().equals(SERVER)) {
             log.debug(errorMessage);
-            sendUploadedChecksumResponse(request, response, jcrFile.getRepoPath());
+            sendUploadedChecksumResponse(request, response, vfsFile.getRepoPath());
         } else {
             response.sendError(SC_CONFLICT, errorMessage, log);
         }
@@ -425,38 +467,18 @@ public class UploadServiceImpl implements InternalUploadService {
 
         int length = request.getContentLength();
         log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), length < 0 ? "unspecified" : length);
-        if (NamingUtils.isMetadata(request.getPath())) {
-            uploadMetadata(request, response, repo);
-        } else {
-            uploadFile(request, response, repo);
-        }
-    }
-
-    private void uploadMetadata(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
-            throws IOException, RepoRejectException {
-        String path = request.getPath();
-
-        if (isMavenRepo(repo)) {
-
-            if (isRepoSnapshotPolicyNotDeployer(repo) && MavenNaming.isSnapshotMavenMetadata(path)) {
-                // Skip the maven metadata deployment - use the metadata calculated after the pom is deployed
-                consumeContentAndRespondAccepted(request, response);
-                return;
-            }
-
-            path = adjustMavenSnapshotPath(repo, request);
-        }
-
-        MetadataInfo metadataInfo = InfoFactoryHolder.get().createMetadata(repo.getRepoPath(path));
-        MetadataResource metadataResource = new MetadataResource(metadataInfo);
-
-        uploadItem(request, response, repo, metadataResource);
+        uploadFile(request, response, repo);
     }
 
     private void uploadFile(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws RepoRejectException, IOException {
         String path = request.getPath();
         if (isMavenRepo(repo)) {
+            if (isRepoSnapshotPolicyNotDeployer(repo) && MavenNaming.isSnapshotMavenMetadata(path)) {
+                // Skip the maven metadata deployment - use the metadata calculated after the pom is deployed
+                consumeContentAndRespondAccepted(request, response);
+                return;
+            }
             path = adjustMavenSnapshotPath(repo, request);
         }
 
@@ -507,7 +529,6 @@ public class UploadServiceImpl implements InternalUploadService {
 
     private void uploadItemWithReusedContent(ArtifactoryRequest request, ArtifactoryResponse response,
             LocalRepo repo, RepoResource res) throws IOException, RepoRejectException {
-
         String sha1 = HttpUtils.getSha1Checksum(request);
         if (StringUtils.isBlank(sha1)) {
             response.sendError(SC_NOT_FOUND, "Checksum deploy failed. SHA1 header '" +
@@ -521,15 +542,10 @@ public class UploadServiceImpl implements InternalUploadService {
         }
         InputStream inputStream = null;
         try {
-            inputStream = jcrService.getDataStreamBySha1Checksum(sha1);
-            if (inputStream == null) {
-                response.sendError(SC_NOT_FOUND, "Checksum deploy failed. No existing file with SHA1: " + sha1, log);
-                return;
-            }
+            inputStream = binaryStore.getBinary(sha1);
             uploadItemWithContent(request, response, repo, res, inputStream);
-        } catch (DataStoreException e) {
-            log.error("Failed to read stream for SHA1: " + sha1, e);
-            response.sendError(SC_NOT_FOUND, "Checksum deploy failed. View log for more details.", log);
+        } catch (BinaryNotFoundException e) {
+            response.sendError(SC_NOT_FOUND, "Checksum deploy failed. No existing file with SHA1: " + sha1, log);
         } finally {
             IOUtils.closeQuietly(inputStream);
         }
@@ -540,21 +556,17 @@ public class UploadServiceImpl implements InternalUploadService {
 
         log.debug("Client '{}' supports Expect 100/continue", request.getHeader("User-Agent"));
         String sha1 = HttpUtils.getSha1Checksum(request);
-        if (StringUtils.isNotBlank(sha1)) {
+        if (ChecksumType.sha1.isValid(sha1)) {
             log.debug("Expect continue deploy to '{}' with SHA1: {}", res.getRepoPath(), sha1);
-            if (ChecksumType.sha1.isValid(sha1)) {
-                InputStream inputStream = null;
-                try {
-                    inputStream = jcrService.getDataStreamBySha1Checksum(sha1);
-                    if (inputStream != null) {
-                        uploadItemWithContent(request, response, repo, res, inputStream);
-                        return;
-                    }
-                } catch (DataStoreException e) {
-                    log.warn("Could not get original stream from with SHA1 '{}': {}", sha1, e.getMessage());
-                } finally {
-                    IOUtils.closeQuietly(inputStream);
-                }
+            InputStream inputStream = null;
+            try {
+                inputStream = binaryStore.getBinary(sha1);
+                uploadItemWithContent(request, response, repo, res, inputStream);
+                return;
+            } catch (BinaryNotFoundException e) {
+                log.warn("Could not get original stream from with SHA1 '{}': {}", sha1, e.getMessage());
+            } finally {
+                IOUtils.closeQuietly(inputStream);
             }
         }
         uploadItemWithProvidedContent(request, response, repo, res);
@@ -702,7 +714,7 @@ public class UploadServiceImpl implements InternalUploadService {
         }
 
         if (indexJar) {
-            searchService.asyncIndex(repoPath);
+            archiveIndexer.asyncIndex(repoPath);
         }
     }
 

@@ -18,9 +18,9 @@
 
 package org.artifactory.traffic;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.ArtifactorySession;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Queue;

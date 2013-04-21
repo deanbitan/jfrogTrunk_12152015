@@ -23,12 +23,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
 import org.artifactory.info.InfoWriter;
+import org.artifactory.storage.StorageProperties;
 import org.artifactory.util.Strings;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
@@ -71,18 +71,17 @@ public class SystemInfoPage extends AuthenticatedPage {
     private String collectSystemInfo() {
         StringBuilder infoBuilder = new StringBuilder();
 
-        infoBuilder.append("System Properties:").append("\n");
+        StorageProperties storageProperties = ContextHelper.get().beanForType(StorageProperties.class);
+        infoBuilder.append("Storage Info:").append("\n");
+        addInfo(infoBuilder, "Database Type", storageProperties.getDbType().toString());
+        addInfo(infoBuilder, "Storage Type", storageProperties.getBinariesStorageType().toString());
+
+        infoBuilder.append("\n").append("System Properties:").append("\n");
         Properties properties = System.getProperties();
         //// add Artifactory version to the properties, will be alphabetically sorted later.
         properties.setProperty(ConstantValues.artifactoryVersion.getPropertyName(),
                 ConstantValues.artifactoryVersion.getString());
-        // add the JCR config dir to the properties, will be alphabetically sorted later.
-        String jcrConfigHome = ConstantValues.jcrConfigDir.getString();
-        if (StringUtils.isBlank(jcrConfigHome)) {
-            jcrConfigHome = ContextHelper.get().getArtifactoryHome().getEtcDir() + "/" + ArtifactoryHome.ARTIFACTORY_JCR_CONFIG_DIR_DEFAULT;
-        }
-        properties.setProperty(ConstantValues.jcrConfigDir.getPropertyName(), jcrConfigHome);
-        TreeSet sortedSystemPropKeys = new TreeSet<Object>(properties.keySet());
+        TreeSet sortedSystemPropKeys = new TreeSet<>(properties.keySet());
         for (Object key : sortedSystemPropKeys) {
             addInfo(infoBuilder, String.valueOf(key), String.valueOf(properties.get(key)));
         }

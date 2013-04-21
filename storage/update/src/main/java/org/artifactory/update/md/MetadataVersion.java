@@ -21,8 +21,6 @@ package org.artifactory.update.md;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.fs.MetadataEntryInfo;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.MetadataReader;
 import org.artifactory.update.md.current.PassThroughMetadataReaderImpl;
 import org.artifactory.update.md.v125rc0.MdFileConverter;
@@ -44,6 +42,7 @@ import org.artifactory.version.VersionComparator;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -112,15 +111,15 @@ public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
     }
 
     @Override
-    public List<MetadataEntryInfo> getMetadataEntries(File file, ImportSettings settings, MutableStatusHolder status) {
+    public List<MetadataEntryInfo> getMetadataEntries(File file, MutableStatusHolder status) {
         if (delegate == null) {
             throw new IllegalStateException("Metadata Import from version older than 1.2.2 is not supported!");
         }
         // The first delegate provide the base list of metadata entries to convert
-        List<MetadataEntryInfo> metadataEntries = delegate.getMetadataEntries(file, settings, status);
+        List<MetadataEntryInfo> metadataEntries = delegate.getMetadataEntries(file, status);
         if (!isCurrent()) {
             // All the version above this should be called to convert the metadata entries
-            List<MetadataEntryInfo> result = new ArrayList<MetadataEntryInfo>(metadataEntries.size());
+            List<MetadataEntryInfo> result = new ArrayList<>(metadataEntries.size());
             MetadataVersion[] values = values();
             for (MetadataEntryInfo metadataEntry : metadataEntries) {
                 for (int i = ordinal() + 1; i < values.length; i++) {

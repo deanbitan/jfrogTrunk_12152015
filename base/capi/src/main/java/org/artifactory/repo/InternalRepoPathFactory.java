@@ -49,10 +49,8 @@ public abstract class InternalRepoPathFactory extends RepoPathFactory {
     }
 
     /**
-     * Return the RepoPath of the root of the given repository
-     *
-     * @param repoKey
-     * @return
+     * @param repoKey The repository key
+     * @return Return the root repo path of the given repository
      */
     public static RepoPath repoRootPath(String repoKey) {
         return create(repoKey, StringUtils.EMPTY);

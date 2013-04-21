@@ -20,6 +20,8 @@ package org.artifactory.api.repo.cleanup;
 
 import org.artifactory.api.common.MultiStatusHolder;
 
+import javax.annotation.Nullable;
+
 /**
  * The main interface of the clean-up service
  *
@@ -28,9 +30,11 @@ import org.artifactory.api.common.MultiStatusHolder;
 public interface ArtifactCleanupService {
 
     /**
-     * Induce the artifact cleanup manually, and wait for full execution
+     * Induce the artifact cleanup manually, and wait for the cleanup to start running.
      *
-     * @param statusHolder
+     * @param statusHolder A status holder for the results.
+     * @return The task id or null if failed to start the task
      */
-    void callManualArtifactCleanup(MultiStatusHolder statusHolder);
+    @Nullable
+    String callManualArtifactCleanup(MultiStatusHolder statusHolder);
 }

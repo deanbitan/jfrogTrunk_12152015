@@ -24,9 +24,9 @@ import org.artifactory.api.mail.MailServerConfiguration;
 import org.artifactory.api.mail.MailService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.EmailException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

@@ -19,9 +19,9 @@
 package org.artifactory.config;
 
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.jcr.JcrService;
 import org.artifactory.repo.interceptor.Interceptors;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.db.DbService;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
  * @author Yossi Shaul
  */
 @Service
-@Reloadable(beanClass = ConfigurationChangesInterceptors.class, initAfter = JcrService.class)
+@Reloadable(beanClass = ConfigurationChangesInterceptors.class, initAfter = DbService.class)
 public class ConfigurationChangesInterceptorsImpl extends Interceptors<ConfigurationChangesInterceptor>
         implements ConfigurationChangesInterceptors {
 

@@ -50,7 +50,7 @@ public class ModuleDependencyGroupableColumn extends GroupableColumn<ModuleDepen
                 } else if (BuildsDiffStatus.UPDATED.equals(status)) {
                     add(new CssClass("blue-listed-label"));
                 } else if (BuildsDiffStatus.REMOVED.equals(status)) {
-                    add(new CssClass("gray-listed-label"));
+                    add(new CssClass("light-gray-listed-label"));
                 }
             }
         });

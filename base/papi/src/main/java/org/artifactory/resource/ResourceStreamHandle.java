@@ -28,7 +28,7 @@ import java.io.InputStream;
  *
  * @author Yoav Landman
  */
-public interface ResourceStreamHandle {
+public interface ResourceStreamHandle extends AutoCloseable {
     InputStream getInputStream();
 
     /**

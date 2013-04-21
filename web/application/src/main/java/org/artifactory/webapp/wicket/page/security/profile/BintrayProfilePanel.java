@@ -64,14 +64,14 @@ public class BintrayProfilePanel extends TitledPanel {
     public BintrayProfilePanel(String id, final ProfileModel profile) {
         super(id);
         setOutputMarkupId(true);
-        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
-
-        bintrayUsername = new TextField<String>("bintrayUsername", new Model<String>(HIDDEN_PASSWORD));
+        setDefaultModel(new CompoundPropertyModel<>(profile));
+        add(new CssClass("display:block"));
+        bintrayUsername = new TextField<>("bintrayUsername", new Model<>(HIDDEN_PASSWORD));
         bintrayUsername.setEnabled(false);
         add(bintrayUsername);
         add(new HelpBubble("bintrayUsername.help", new ResourceModel("bintrayUsername.help")));
 
-        bintrayApiKey = new TextField<String>("bintrayApiKey", new Model<String>(HIDDEN_PASSWORD));
+        bintrayApiKey = new TextField<>("bintrayApiKey", new Model<>(HIDDEN_PASSWORD));
         bintrayApiKey.setEnabled(false);
         add(bintrayApiKey);
         add(new HelpBubble("bintrayApiKey.help", new ResourceModel("bintrayApiKey.help")));
@@ -123,13 +123,13 @@ public class BintrayProfilePanel extends TitledPanel {
         return new HelpBubble(id, new ResourceModel("bintray.help"));
     }
 
-    public void updateDefaultModel(ProfileModel profileModel) {
+    public void updateDefaultModel(ProfileModel profileModel, boolean enableFields) {
         bintrayUsername.setDefaultModel(new PropertyModel<String>(profileModel, "bintrayUsername"));
-        bintrayUsername.setEnabled(true);
+        bintrayUsername.setEnabled(enableFields);
 
         bintrayApiKey.setDefaultModel(new PropertyModel<String>(profileModel, "bintrayApiKey"));
-        bintrayApiKey.setEnabled(true);
+        bintrayApiKey.setEnabled(enableFields);
 
-        testButton.setEnabled(true);
+        testButton.setEnabled(enableFields);
     }
 }

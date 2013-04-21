@@ -105,9 +105,9 @@ public abstract class MoveAndCopyBasePanel extends Panel {
 
         StringBuilder targetRepoHelp = new StringBuilder("Selects the target repository for the transferred items.");
         if (sourceRepoPath != null) {
-            targetRepoHelp.append("\nRepositories staring with an exclamation mark ('!') indicate that not all ").
+            targetRepoHelp.append("\nRepositories starting with an exclamation mark ('!') indicate that not all ").
                     append("tokens\ncan be mapped between the layouts of the source repository and the marked ").
-                    append("repository.\nPath translations may not to work as expected.");
+                    append("repository.\nPath translations may not work as expected.");
         }
         HelpBubble targetRepoHelpBubble = new HelpBubble("targetRepos.help", targetRepoHelp.toString());
         form.add(targetRepoHelpBubble);

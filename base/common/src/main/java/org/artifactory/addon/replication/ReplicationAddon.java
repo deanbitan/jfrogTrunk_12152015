@@ -63,20 +63,11 @@ public interface ReplicationAddon extends Addon {
 
     void offerLocalReplicationDeleteEvent(RepoPath repoPath);
 
-    void offerLocalReplicationMetadataDeploymentEvent(RepoPath repoPath, String metadataName);
+    void offerLocalReplicationPropertiesDeploymentEvent(RepoPath repoPath);
 
-    void offerLocalReplicationMetadataDeleteEvent(RepoPath repoPath, String metadataName);
+    void offerLocalReplicationPropertiesDeleteEvent(RepoPath repoPath);
 
     void validateTargetIsDifferentInstance(ReplicationBaseDescriptor descriptor, RealRepoDescriptor repoDescriptor)
             throws IOException;
 
-    /**
-     * This method is kept for the old sync resource.
-     * use {@link ReplicationAddon#performRemoteReplication} for new implementations
-     *
-     * @param remoteReplicationSettings
-     * @throws IOException
-     */
-    @Deprecated
-    void performLegacyRemoteReplication(RemoteReplicationSettings remoteReplicationSettings) throws IOException;
 }

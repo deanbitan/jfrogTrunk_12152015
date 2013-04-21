@@ -42,7 +42,7 @@ public interface InternalUploadService extends UploadService {
      * @param response Response to send
      * @param repo     Target local non-cache repo
      */
-    @Lock(transactional = true)
+    @Lock
     @Request(aggregateEventsByTimeWindow = true)
     void uploadWithinTransaction(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException,

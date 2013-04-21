@@ -31,14 +31,14 @@ import static org.testng.Assert.*;
 public class ArtifactorySidTest {
 
     public void userConstructor() {
-        ArtifactorySid sid = new ArtifactorySid("momo");
+        ArtifactorySid sid = new ArtifactorySid("momo", false);
         assertEquals(sid.getPrincipal(), "momo");
         assertFalse(sid.isGroup(), "Default group value should be false");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void nullPrincipal() {
-        new ArtifactorySid(null);
+        new ArtifactorySid(null, false);
     }
 
     public void userSidCreation() {
@@ -54,13 +54,13 @@ public class ArtifactorySidTest {
     }
 
     public void userSidsEquals() {
-        ArtifactorySid sid1 = new ArtifactorySid("user1");
+        ArtifactorySid sid1 = new ArtifactorySid("user1", false);
         // equal entry
         ArtifactorySid sid2 = new ArtifactorySid("user1", false);
         // different user
-        ArtifactorySid sid3 = new ArtifactorySid("user2");
+        ArtifactorySid sid3 = new ArtifactorySid("user2", false);
         // subclass with same value
-        ArtifactorySid sid4 = new ArtifactorySid("user1") {
+        ArtifactorySid sid4 = new ArtifactorySid("user1", false) {
         };
         // group with same name
         ArtifactorySid groupSid = new ArtifactorySid("user1", true);
@@ -68,6 +68,7 @@ public class ArtifactorySidTest {
         assertTrue(sid1.equals(sid2));
         assertFalse(sid1.equals(sid3), "Different user sid");
         assertFalse(sid1.equals(sid4), "Subclass should not equal");
+        assertFalse(sid1.equals(groupSid), "Group and User should not equal");
     }
 
     public void groupSidsEquals() {
@@ -75,9 +76,9 @@ public class ArtifactorySidTest {
         // equal entry
         ArtifactorySid sid2 = new ArtifactorySid("group1", true);
         // different user
-        ArtifactorySid sid3 = new ArtifactorySid("group2");
+        ArtifactorySid sid3 = new ArtifactorySid("group2", false);
         // subclass with same value
-        ArtifactorySid sid4 = new ArtifactorySid("group1") {
+        ArtifactorySid sid4 = new ArtifactorySid("group1", false) {
         };
 
         assertTrue(sid1.equals(sid2));
@@ -86,7 +87,7 @@ public class ArtifactorySidTest {
     }
 
     public void groupAndUserNotEquals() {
-        ArtifactorySid userSid = new ArtifactorySid("principal");
+        ArtifactorySid userSid = new ArtifactorySid("principal", false);
         ArtifactorySid groupSid = new ArtifactorySid("principal", true);
 
         assertFalse(userSid.equals(groupSid), "User and group SIDs cannot be equal");

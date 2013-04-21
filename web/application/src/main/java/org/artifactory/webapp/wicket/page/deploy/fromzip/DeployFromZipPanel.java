@@ -95,7 +95,7 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
 
         deployForm.add(new HelpBubble("deployHelp", getDeployHelp()));
         deployForm.add(new HelpBubble("supportedArchiveExtensions.help",
-                "The following archive extensions are supported: zip,tar,tar.gz,tgz"));
+                "The following archive extensions are supported: zip, tar, tar.gz, tgz"));
     }
 
     /**
@@ -104,8 +104,7 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
      * @return String - Text for archive selection help buble
      */
     private String getDeployHelp() {
-        return "When deploying an artifacts bundle, the file structure within the archive you select will be " +
-                "maintained.";
+        return "When deploying an artifacts bundle, the file structure within the archive you select is maintained.";
     }
 
     @Override

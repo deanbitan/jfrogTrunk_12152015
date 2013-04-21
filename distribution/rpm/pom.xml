@@ -19,12 +19,12 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>artifactory-rpm</artifactId>
     <packaging>pom</packaging>
-    <name>Artifactory RPM</name>
+    <name>Artifactory RPM with FHS opt layout</name>
 
     <parent>
         <artifactId>artifactory-distribution-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.6.7</version>
+        <version>3.0.0</version>
     </parent>
 
     <properties>
@@ -85,7 +85,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <executable>sh</executable>
+                            <executable>bash</executable>
                             <workingDirectory>${rpmbuild.dir}</workingDirectory>
                             <arguments>
                                 <argument>build.rpm.sh</argument>

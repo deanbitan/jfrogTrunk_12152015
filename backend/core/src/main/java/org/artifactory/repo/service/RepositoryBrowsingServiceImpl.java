@@ -43,11 +43,6 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
@@ -59,7 +54,9 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
+import org.artifactory.storage.fs.service.PropertiesService;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -86,15 +83,13 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     @Autowired
     private InternalRepositoryService repoService;
 
+    @Autowired
+    private PropertiesService propertiesService;
+
     @Override
     public BrowsableItem getLocalRepoBrowsableItem(RepoPath repoPath) {
-        JcrFsItem fsItem = getFsItem(repoPath);
-        if (fsItem != null) {
-            ItemInfo itemInfo = fsItem.getInfo();
-            return BrowsableItem.getItem(itemInfo);
-        } else {
-            return null;
-        }
+        ItemInfo itemInfo = getItemInfo(repoPath);
+        return (itemInfo != null) ? BrowsableItem.getItem(itemInfo) : null;
     }
 
     @Override
@@ -110,69 +105,62 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
     }
 
-    private JcrFsItem getFsItem(RepoPath repoPath) {
-        String repoKey = repoPath.getRepoKey();
-        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoKey);
+    private ItemInfo getItemInfo(RepoPath repoPath) {
+        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         if (repo == null) {
-            throw new IllegalArgumentException("No local or cache repo found: " + repoKey);
+            throw new IllegalArgumentException("No local or cache repo found: " + repoPath.getRepoKey());
         }
+
         if (!repo.itemExists(repoPath.getPath())) {
             throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
         }
+
         if (repo.isBlackedOut()) {
             return null;
         }
-        return repo.getJcrFsItem(repoPath);
+
+        ItemInfo itemInfo = repoService.getItemInfo(repoPath);
+        return itemInfo;
     }
 
     @Override
     @Nonnull
     public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(BrowsableItemCriteria criteria) {
         RepoPath repoPath = criteria.getRepoPath();
-        String repoKey = repoPath.getRepoKey();
-        JcrFsItem fsItem = getFsItem(repoPath);
-        if (fsItem == null) {
-            return Lists.newArrayList();
+        ItemInfo itemInfo = getItemInfo(repoPath);
+        if (itemInfo == null) {
+            return Lists.newArrayListWithCapacity(0);
         }
-        if (!fsItem.isDirectory()) {
+        if (!itemInfo.isFolder()) {
             throw new FolderExpectedException(repoPath);
         }
 
-        JcrFolder repoPathFolder = (JcrFolder) fsItem;
-        List<JcrFsItem> children = repoPathFolder.getJcrItems();
-        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoKey);
-        if (repo == null) {
-            log.debug("Repository '{}' does not exist", repoKey);
+        List<ItemInfo> children = repoService.getChildren(repoPath);
+        if (children.isEmpty()) {
             return Lists.newArrayList();
         }
 
+        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         List<BaseBrowsableItem> repoPathChildren = Lists.newArrayList();
-        for (JcrFsItem child : children) {
+        for (ItemInfo child : children) {
             //Check if we should return the child
             RepoPath childRepoPath = child.getRepoPath();
 
-            ItemInfo itemInfo = child.getInfo();
-            BrowsableItem browsableItem = BrowsableItem.getItem(itemInfo);
+            BrowsableItem browsableItem = BrowsableItem.getItem(child);
 
-            boolean isFolder = child.isFolder();
-            if (canRead(repo, childRepoPath, isFolder)) {
-                boolean isMatchingFile = child.isFile() && isPropertiesMatch(child, criteria.getRequestProperties());
-                if (isMatchingFile || isFolder) {
+            if (canRead(repo, childRepoPath, child.isFolder())) {
+                if (child.isFolder()) {
                     repoPathChildren.add(browsableItem);
-                }
-                if (isMatchingFile && criteria.isIncludeChecksums()) {
-                    repoPathChildren.addAll(getBrowsableItemChecksumItems(repo,
-                            ((FileInfo) itemInfo).getChecksumsInfo(), browsableItem));
+                } else if (isPropertiesMatch(child, criteria.getRequestProperties())) {   // match props for files
+                    repoPathChildren.add(browsableItem);
+                    if (criteria.isIncludeChecksums()) {
+                        repoPathChildren.addAll(getBrowsableItemChecksumItems(repo,
+                                ((FileInfo) child).getChecksumsInfo(), browsableItem));
+                    }
                 }
             }
-            LockingHelper.releaseReadLock(childRepoPath);
         }
 
-        if (criteria.isIncludeMavenMetadata()) {
-            addBrowsableMetadataAndChecksums(repo, repoPathFolder, repoPathChildren, criteria);
-        }
-        LockingHelper.releaseReadLock(repoPathFolder.getRepoPath());
-        //TODO: [by ys] the sort can make the up path not be the first
         Collections.sort(repoPathChildren);
         return repoPathChildren;
     }
@@ -189,14 +177,11 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return canRead;
     }
 
-    private boolean isPropertiesMatch(JcrFsItem<?, ?> fsItem, Properties requestProps) {
+    private boolean isPropertiesMatch(ItemInfo itemInfo, Properties requestProps) {
         if (requestProps == null || requestProps.isEmpty()) {
             return true;
         }
-        Properties nodeProps = fsItem.getMetadata(Properties.class);
-        if (nodeProps == null) {
-            return true;
-        }
+        Properties nodeProps = propertiesService.getProperties(itemInfo.getRepoPath());
         Properties.MatchResult result = nodeProps.matchQuery(requestProps);
         return !Properties.MatchResult.CONFLICT.equals(result);
     }
@@ -262,7 +247,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             RepoPath remoteRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), path);
             RepoPath cacheRepoPath = InternalRepoPathFactory.cacheRepoPath(remoteRepoPath);
             if (canRead(repo, cacheRepoPath, remoteItem.isDirectory())) {
-                BrowsableItem browsableItem = new RemoteBrowsableItem(remoteItem, remoteRepoPath);
+                RemoteBrowsableItem browsableItem = new RemoteBrowsableItem(remoteItem, remoteRepoPath);
+                if (remoteItem.getEffectiveUrl() != null) {
+                    browsableItem.setEffectiveUrl(remoteItem.getEffectiveUrl());
+                }
                 children.add(browsableItem);
             }
         }
@@ -473,36 +461,6 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 }
             }
             return true;
-        }
-    }
-
-    /**
-     * Adds local-repo browsable items of metadata and complying checksums for the given jcr folder (if exists)
-     *
-     * @param repo             Browsed Repo
-     * @param repoPathFolder   Folder to search and add metadata for
-     * @param repoPathChildren Folder children list
-     * @param criteria         Browsable item conditions
-     */
-    private void addBrowsableMetadataAndChecksums(LocalRepo repo, JcrFolder repoPathFolder,
-            List<BaseBrowsableItem> repoPathChildren, BrowsableItemCriteria criteria) {
-        MetadataInfo metadataInfo = repoService.getMetadataInfo(repoPathFolder.getRepoPath(),
-                MavenNaming.MAVEN_METADATA_NAME);
-
-        if (metadataInfo != null) {
-            BrowsableItem browsableItem = BrowsableItem.getMetadataItem(metadataInfo);
-
-            RepoPath metadataItemRepoPath = browsableItem.getRepoPath();
-
-            if (authService.canImplicitlyReadParentPath(metadataItemRepoPath) &&
-                    repo.accepts(metadataItemRepoPath.getPath())) {
-                repoPathChildren.add(browsableItem);
-
-                if (criteria.isIncludeChecksums()) {
-                    repoPathChildren.addAll(getBrowsableItemChecksumItems(repo, metadataInfo.getChecksumsInfo(),
-                            browsableItem));
-                }
-            }
         }
     }
 

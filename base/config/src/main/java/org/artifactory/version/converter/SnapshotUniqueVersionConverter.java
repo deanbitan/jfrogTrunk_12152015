@@ -18,11 +18,11 @@
 
 package org.artifactory.version.converter;
 
-import org.artifactory.log.LoggerFactory;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 

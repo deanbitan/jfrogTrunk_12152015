@@ -125,6 +125,12 @@ public class PathMatcherTest extends ArtifactoryHomeBoundTest {
         file = new File("/repo1-cache/test~");
         assertTrue(PathMatcher.isInGlobalExcludes(file));
         assertFalse(PathMatcher.matches(file, null, PathMatcher.getGlobalExcludes()));
+        // RTFACT-5394 -  Make sure global excludes doesn't check match start
+        File shortFileName = new File("/t");
+        assertFalse(PathMatcher.isInGlobalExcludes(shortFileName));
+        // Make sure that global excludes, exclude CVS directories.
+        File cvsFile = new File("/toto/CVS/should/be/excluded");
+        assertTrue(PathMatcher.isInGlobalExcludes(cvsFile));
     }
 
     public void subPathIncludes() {

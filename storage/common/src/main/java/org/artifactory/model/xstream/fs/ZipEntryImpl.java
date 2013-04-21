@@ -63,13 +63,13 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
             throw new IllegalArgumentException("Cannot create ZipEntryInfo without a ZipEntry!");
         }
 
-        ZipEntry entry = entries[entries.length-1];
+        ZipEntry entry = entries[entries.length - 1];
 
         if (entries.length > 1) {
             StringBuilder fullPath = new StringBuilder();
             for (int i = 0; i < entries.length; i++) {
                 fullPath.append(entries[i].getName());
-                if (i != entries.length-1) {
+                if (i != entries.length - 1) {
                     fullPath.append(RepoPath.ARCHIVE_SEP).append('/');
                 }
             }
@@ -127,11 +127,16 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
     }
 
     @Override
+    public String toString() {
+        return path;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ZipEntryImpl)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
@@ -140,7 +145,7 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
         if (directory != zipEntry.directory) {
             return false;
         }
-        if (!name.equals(zipEntry.name)) {
+        if (!path.equals(zipEntry.path)) {
             return false;
         }
 
@@ -149,7 +154,7 @@ public class ZipEntryImpl implements Serializable, ZipEntryInfo {
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
+        int result = path.hashCode();
         result = 31 * result + (directory ? 1 : 0);
         return result;
     }

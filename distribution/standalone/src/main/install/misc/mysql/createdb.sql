@@ -1,4 +1,3 @@
-create database artifactory character set utf8;
-GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER,INDEX on artifactory.* TO 'artifactory_user'@'localhost' IDENTIFIED BY 'password';
-flush privileges;
-
+CREATE DATABASE artdb CHARACTER SET utf8;
+GRANT ALL ON artdb.* TO 'artifactory'@'localhost' IDENTIFIED BY 'password';
+FLUSH PRIVILEGES;

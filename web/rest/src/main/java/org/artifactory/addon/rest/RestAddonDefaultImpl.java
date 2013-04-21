@@ -21,7 +21,6 @@ package org.artifactory.addon.rest;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
-import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
@@ -33,6 +32,7 @@ import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.legacy.DownloadResource;
@@ -91,18 +91,7 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
-            String to, int arts, int deps, StringList scopes, KeyValueList properties, int dry) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
     public PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response replicate(RemoteReplicationSettings remoteReplicationSettings) {
         throw new MissingRestAddonException();
     }
 
@@ -122,7 +111,8 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts) {
+    public void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts,
+            int deleteAll) {
         throw new MissingRestAddonException();
     }
 
@@ -185,7 +175,7 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public ResponseCtx runPluginExecution(String executionName, Map params, boolean async) {
+    public ResponseCtx runPluginExecution(String executionName, Map params, ResourceStreamHandle body, boolean async) {
         throw new MissingRestAddonException();
     }
 

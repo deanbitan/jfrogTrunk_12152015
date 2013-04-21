@@ -49,7 +49,7 @@ public interface AclService {
      * @param target The permission target to check.
      * @return True if the current logged in user has admin permissions on the permission target
      */
-    boolean canAdmin(PermissionTargetInfo target);
+    boolean canManage(PermissionTargetInfo target);
 
     /**
      * @return True is the user or a group the user belongs to has read permissions on the target
@@ -74,13 +74,15 @@ public interface AclService {
     /**
      * @return True is the user or a group the user belongs to has admin permissions on the target
      */
-    boolean canAdmin(UserInfo user, PermissionTargetInfo target);
+    boolean canManage(UserInfo user, PermissionTargetInfo target);
 
-    @Lock(transactional = true)
+    @Lock
     AclInfo createAcl(MutableAclInfo entity);
 
-    @Lock(transactional = true)
+    @Lock
     void deleteAcl(PermissionTargetInfo target);
+
+    AclInfo getAcl(String permTargetName);
 
     AclInfo getAcl(PermissionTargetInfo permissionTarget);
 

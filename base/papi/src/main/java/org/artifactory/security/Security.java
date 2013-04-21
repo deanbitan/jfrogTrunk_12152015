@@ -65,8 +65,15 @@ public interface Security {
 
     /**
      * @return True if the current user has admin permissions on a target info that includes this path..
+     * @deprecated Use {@link #canManage()} instead
      */
+    @Deprecated
     boolean canAdmin(RepoPath path);
+
+    /**
+     * @return True if the current user has manage permissions on a target info that includes this path..
+     */
+    boolean canManage(RepoPath path);
 
     /**
      * @return The current logged-in user name.

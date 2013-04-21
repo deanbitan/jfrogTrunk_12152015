@@ -21,6 +21,7 @@ package org.artifactory.addon.plugin;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.build.staging.BuildStagingStrategy;
+import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.Map;
 public interface PluginsAddon extends Addon, ImportableExportable {
     <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args);
 
-    ResponseCtx execute(String executionName, Map params, boolean async);
+    ResponseCtx execute(String executionName, Map params, ResourceStreamHandle body, boolean async);
 
     BuildStagingStrategy getStagingStrategy(String strategyName, String buildName, Map params);
 

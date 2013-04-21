@@ -20,16 +20,13 @@ package org.artifactory.repo.interceptor;
 
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.common.MutableStatusHolder;
-import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.ImportInterceptor;
-import org.artifactory.search.InternalSearchService;
-import org.artifactory.spring.InternalArtifactoryContext;
-import org.artifactory.spring.InternalContextHelper;
 
 /**
  * Interceptor which handles archive indexing calculation upon creation
@@ -56,9 +53,8 @@ public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter implem
 
     private void markArchiveForIndexing(VfsItem fsItem) {
         if (shouldIndexItem(fsItem)) {
-            InternalArtifactoryContext context = InternalContextHelper.get();
-            InternalSearchService searchService = context.beanForType(InternalSearchService.class);
-            searchService.markArchiveForIndexing((JcrFile) fsItem, true);
+            ArchiveIndexer archiveIndexer = ContextHelper.get().beanForType(ArchiveIndexer.class);
+            archiveIndexer.markArchiveForIndexing(fsItem.getRepoPath());
         }
     }
 

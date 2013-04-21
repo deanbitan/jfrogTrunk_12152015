@@ -18,7 +18,6 @@
 
 package org.artifactory.security;
 
-import org.springframework.security.acls.model.Sid;
 import org.springframework.util.Assert;
 
 /**
@@ -26,19 +25,9 @@ import org.springframework.util.Assert;
  *
  * @author Yossi Shaul
  */
-public class ArtifactorySid implements Sid {
-    private String principal;
-    private boolean group;
-
-    /**
-     * Creates new user security identity.
-     *
-     * @param username The principal id for a user
-     */
-    public ArtifactorySid(String username) {
-        Assert.notNull(username, "Username required");
-        principal = username;
-    }
+public class ArtifactorySid {
+    private final String principal;
+    private final boolean group;
 
     /**
      * Created a new user or group security identity.

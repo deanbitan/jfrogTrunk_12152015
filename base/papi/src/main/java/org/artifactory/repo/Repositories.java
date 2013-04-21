@@ -22,12 +22,9 @@ import org.artifactory.common.StatusHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FileLayoutInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.resource.ResourceStreamHandle;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
@@ -103,60 +100,6 @@ public interface Repositories {
      * @since 2.4.0
      */
     ResourceStreamHandle getContent(RepoPath repoPath);
-
-    /**
-     * @param repoPath     Repository path of the metadata aware item
-     * @param metadataName The metadata name
-     * @return The metadata info. Returns null if not found.
-     */
-    @Nullable
-    MetadataInfo getMetadataInfo(RepoPath repoPath, String metadataName);
-
-    /**
-     * Returns the available metadata names which are not internal
-     *
-     * @param repoPath The full path of the object having metadata
-     * @return A list of metadata names that exists on this element
-     */
-    List<String> getMetadataNames(RepoPath repoPath);
-
-    /**
-     * Returns the metadata of the given name.
-     *
-     * @param repoPath     A repo path (usually pointing to an JcrFsItem)
-     * @param metadataName Name of metadata to return. Cannot be null
-     * @return Requested metadata if found. Null if not
-     * @throws IllegalArgumentException If given a blank metadata name
-     */
-    String getXmlMetadata(RepoPath repoPath, String metadataName);
-
-    /**
-     * Indicates whether this item adorns the given metadata
-     *
-     * @param repoPath     A repo path (usually pointing to an JcrFsItem)
-     * @param metadataName Name of metadata to locate
-     * @return True if annotated by the given metadata. False if not
-     * @throws IllegalArgumentException If given a blank metadata name
-     */
-    boolean hasMetadata(RepoPath repoPath, String metadataName);
-
-    /**
-     * Sets the given metadata on the supplied repo path.
-     *
-     * @param repoPath        Path to targeted item
-     * @param metadataName    The metadata name to set under
-     * @param metadataContent The metadata content to add. Cannot be null
-     * @throws IllegalArgumentException When given a null metadata value
-     */
-    void setXmlMetadata(RepoPath repoPath, String metadataName, @Nonnull String metadataContent);
-
-    /**
-     * Removes the metadata of the given name
-     *
-     * @param repoPath     Path to targeted item
-     * @param metadataName Name of metadata to remove
-     */
-    void removeMetadata(RepoPath repoPath, String metadataName);
 
     Properties getProperties(RepoPath repoPath);
 

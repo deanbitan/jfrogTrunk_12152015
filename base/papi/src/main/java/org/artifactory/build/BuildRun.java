@@ -36,6 +36,8 @@ public interface BuildRun extends Serializable {
 
     Date getStartedDate();
 
+    String getCiUrl();
+
     String getReleaseStatus();
 
     @Override

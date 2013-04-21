@@ -18,54 +18,34 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.4.16"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.4.16
-        http://www.jfrog.org/xsd/artifactory-v1_4_16.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.5.0"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.5.0
+        http://www.jfrog.org/xsd/artifactory-v1_5_0.xsd">
     <!--
     enable/disable anonymous downloads
     -->
     <security>
         <anonAccessEnabled>true</anonAccessEnabled>
-        <!--<ldapSettings>
-            <ldapSetting>
-                <key>ldap1</key>
-                <enabled>true</enabled>
-                <ldapUrl>ldap://mydomain:389/dc=mycompany,dc=com</ldapUrl>
-                <userDnPattern>uid={0}, ou=People</userDnPattern>
-            </ldapSetting>
-        </ldapSettings>-->
     </security>
     <backups>
         <backup>
             <key>backup-daily</key>
-            <!--
-            backup Monday to Friday at 2:00 AM
-            -->
+            <!-- backup Monday to Friday at 2:00 AM -->
             <cronExp>0 0 2 ? * MON-FRI</cronExp>
-            <!--
-            Always backup to a "current" dir (incremental backups)
-            -->
+            <!-- Always backup to a "current" dir (incremental backups) -->
             <retentionPeriodHours>0</retentionPeriodHours>
-            <!--
-            exclude certain repositories from being backed up
-            -->
+            <!-- exclude certain repositories from being backed up -->
             <excludedRepositories>
                 <repositoryRef>repo1</repositoryRef>
             </excludedRepositories>
         </backup>
         <backup>
             <key>backup-weekly</key>
-            <!--
-            backup on Saturday at 2:00 AM
-            -->
+            <!-- backup on Saturday at 2:00 AM -->
             <cronExp>0 0 2 ? * SAT</cronExp>
-            <!--
-            keep backups for 2 weeks.
-            -->
+            <!-- keep backups for 2 weeks. -->
             <retentionPeriodHours>336</retentionPeriodHours>
-            <!--
-            exclude certain repositories from being backed up
-            -->
+            <!-- exclude certain repositories from being backed up -->
             <excludedRepositories>
                 <repositoryRef>repo1</repositoryRef>
             </excludedRepositories>
@@ -121,36 +101,17 @@
             <handleReleases>false</handleReleases>
             <handleSnapshots>true</handleSnapshots>
         </localRepository>
-
-        <!--
-        A sample local repository with all possible settings
-        -->
-        <!--
-        <localRepository>
-            <key>local-sample</key>
-            <description>Sample local repository</description>
-            <blackedOut>false</blackedOut>
-            <handleReleases>true</handleReleases>
-            <handleSnapshots>true</handleSnapshots>
-            -->
-        <!--
-        maximum number of unique stnapshot to keep
-        -->
-        <!--
-        <maxUniqueSnapshots>3</maxUniqueSnapshots>
-        <includesPattern>*/**</includesPattern>
-        <excludesPattern>com/mycompany/**</excludesPattern>
-        -->
-        <!--
-        centrally control unique snapshots behavior (non-unique|unique|deployer)
-        -->
-        <!--
-            <snapshotVersionBehavior>non-unique</snapshotVersionBehavior>
-        </localRepository>
-        -->
     </localRepositories>
 
     <remoteRepositories>
+        <remoteRepository>
+            <key>jcenter</key>
+            <description>Bintray Central Java repository</description>
+            <repoLayoutRef>maven-2-default</repoLayoutRef>
+            <handleReleases>true</handleReleases>
+            <handleSnapshots>false</handleSnapshots>
+            <url>http://jcenter.bintray.com</url>
+        </remoteRepository>
         <remoteRepository>
             <key>repo1</key>
             <description>Central Maven 2 repository</description>
@@ -260,59 +221,6 @@
             <handleSnapshots>false</handleSnapshots>
             <url>http://gradle.artifactoryonline.com/gradle/plugins</url>
         </remoteRepository>
-
-        <!-- A sample remote repository with all possible tunings -->
-        <!--
-        <remoteRepository>
-        <key>remote-sample</key>
-        <description>Sample remote repository</description>
-        -->
-        <!--
-        blok the usage of this repository
-        -->
-        <!--<blackedOut>false</blackedOut>-->
-        <!--
-        maximum number of unique stnapshot to keep
-        -->
-        <!--<maxUniqueSnapshots>3</maxUniqueSnapshots>-->
-        <!--<includesPattern>*/**</includesPattern>-->
-        <!--<excludesPattern>com/mycompany/**</excludesPattern>-->
-        <!--<url>http://maven.repo/repository</url>-->
-        <!--
-        put offline to use only the cache and not send remote requests
-        -->
-        <!--<offline>false</offline>-->
-        <!--<hardFail>true</hardFail>-->
-        <!--
-        cache remotely retrieved artifacts (you'd want 'true')
-        -->
-        <!--<storeArtifactsLocally>true</storeArtifactsLocally>-->
-        <!--
-        number of seconds to cache artifact lookup results
-        -->
-        <!--<retrievalCachePeriodSecs>43200</retrievalCachePeriodSecs>-->
-        <!--
-        number of seconds to cache artifact retrieval failures (normally communication errors)
-        -->
-        <!--<assumedOfflinePeriodSecs>300</assumedOfflinePeriodSecs>-->
-        <!--
-        number of seconds to remember artifact retrieval misses (artifact not found)
-        -->
-        <!--<missedRetrievalCachePeriodSecs>43200</missedRetrievalCachePeriodSecs>-->
-        <!--
-        ttp authentication details
-        -->
-        <!--<username>un</username>-->
-        <!--<password>pw</password>-->
-        <!--
-        network timeout for both connection establishment failures and unanswered requests
-        -->
-        <!--<socketTimeoutMillis>2000</socketTimeoutMillis>-->
-        <!--
-        proxy reference
-        -->
-        <!--<proxyRef>unused-proxy</proxyRef>-->
-        <!--</remoteRepository>-->
     </remoteRepositories>
 
     <virtualRepositories>
@@ -324,6 +232,7 @@
             <key>remote-repos</key>
             <artifactoryRequestsCanRetrieveRemoteArtifacts>true</artifactoryRequestsCanRetrieveRemoteArtifacts>
             <repositories>
+                <repositoryRef>jcenter</repositoryRef>
                 <repositoryRef>codehaus</repositoryRef>
                 <repositoryRef>jboss</repositoryRef>
                 <repositoryRef>java.net.m2</repositoryRef>
@@ -376,19 +285,6 @@
         </virtualRepository>
     </virtualRepositories>
 
-    <!--
-        <proxies>
-            <proxy>
-                <key>unused-proxy</key>
-                <host>host</host>
-                <port>8080</port>
-                <username>un</username>
-                <password>pw</password>
-                <domain>mydomain</domain>
-            </proxy>
-        </proxies>
-    -->
-
     <repoLayouts>
         <repoLayout>
             <name>maven-2-default</name>
@@ -427,7 +323,7 @@
         <cronExp>0 0 /4 * * ?</cronExp>
     </gcConfig>
     <cleanupConfig>
-        <!-- By Default index once a day at 05:12AM -->
+        <!-- by default cleanup once a day at 05:12AM -->
         <cronExp>0 12 5 * * ?</cronExp>
     </cleanupConfig>
 </config>

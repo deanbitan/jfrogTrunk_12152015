@@ -26,14 +26,12 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.links.TitledPageLink;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
@@ -43,6 +41,7 @@ import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.home.news.ArtifactoryUpdatesPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Map;
@@ -90,8 +89,8 @@ public class WelcomeBorder extends TitledBorder {
         Label countLabel = new Label("artifactsCount", "");
         add(countLabel);
         try {
-            ArtifactCount count = repoService.getArtifactCount();
-            countLabel.setDefaultModelObject(count.getCount());
+            long count = repoService.getArtifactCount();
+            countLabel.setDefaultModelObject(count);
         } catch (RepositoryRuntimeException e) {
             countLabel.setVisible(false);
             log.warn("Failed to retrieve artifacts count: " + e.getMessage());

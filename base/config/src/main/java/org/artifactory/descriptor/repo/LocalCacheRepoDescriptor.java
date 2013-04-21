@@ -23,8 +23,13 @@ import org.artifactory.descriptor.property.PropertySet;
 
 import javax.xml.bind.annotation.XmlTransient;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * A non-serialized in-memory descriptor of local cache repositories.
+ */
 public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements TaskDescriptor {
+    public static final String PATH_SUFFIX = "-cache";
 
     @XmlTransient
     private RemoteRepoDescriptor remoteRepo;
@@ -144,5 +149,9 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
         return localCacheRepoDesc.isBlackedOut() == this.isBlackedOut() &&
                 localCacheRepoDesc.getKey().equals(this.getKey()) &&
                 localCacheRepoDesc.remoteRepo.getUnusedArtifactsCleanupPeriodHours() == this.remoteRepo.getUnusedArtifactsCleanupPeriodHours();
+    }
+
+    public long getRetrievalCachePeriodMillis() {
+        return TimeUnit.SECONDS.toMillis(remoteRepo.getRetrievalCachePeriodSecs());
     }
 }

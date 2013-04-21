@@ -20,18 +20,15 @@ package org.artifactory.webapp.wicket.page.build.actionable;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.build.BuildService;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ShowInCiServerAction;
 import org.artifactory.webapp.wicket.page.build.action.DeleteBuildAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -41,6 +38,7 @@ import java.util.Date;
  */
 public class BuildActionableItem extends ActionableItemBase {
 
+    @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(BuildActionableItem.class);
 
     private BuildRun buildRun;
@@ -52,17 +50,9 @@ public class BuildActionableItem extends ActionableItemBase {
      */
     public BuildActionableItem(BuildRun buildRun) {
         this.buildRun = buildRun;
-        BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-        try {
-            String ciServerUrl = buildService.getBuildCiServerUrl(buildRun);
-            if (StringUtils.isNotBlank(ciServerUrl)) {
-                getActions().add(new ShowInCiServerAction(ciServerUrl));
-            }
-        } catch (IOException e) {
-            String message = String.format("Unable to extract CI server URL if build '%s' #%s that started at %s",
-                    buildRun.getName(), buildRun.getNumber(), buildRun.getStarted());
-            log.error(message + ": {}", e.getMessage());
-            log.debug(message + ".", e);
+        String ciServerUrl = buildRun.getCiUrl();
+        if (StringUtils.isNotBlank(ciServerUrl)) {
+            getActions().add(new ShowInCiServerAction(ciServerUrl));
         }
     }
 

@@ -28,15 +28,13 @@ public class BrowsableItemCriteria {
 
     private final RepoPath repoPath;
     private final boolean includeChecksums;
-    private final boolean includeMavenMetadata;
     private final boolean includeRemoteResources;
     private final Properties requestProperties;
 
-    private BrowsableItemCriteria(RepoPath repoPath, boolean includeChecksums, boolean includeMavenMetadata,
+    private BrowsableItemCriteria(RepoPath repoPath, boolean includeChecksums,
             boolean includeRemoteResources, Properties requestProperties) {
         this.repoPath = repoPath;
         this.includeChecksums = includeChecksums;
-        this.includeMavenMetadata = includeMavenMetadata;
         this.includeRemoteResources = includeRemoteResources;
         this.requestProperties = requestProperties;
     }
@@ -47,10 +45,6 @@ public class BrowsableItemCriteria {
 
     public boolean isIncludeChecksums() {
         return includeChecksums;
-    }
-
-    public boolean isIncludeMavenMetadata() {
-        return includeMavenMetadata;
     }
 
     public boolean isIncludeRemoteResources() {
@@ -65,7 +59,6 @@ public class BrowsableItemCriteria {
 
         private RepoPath repoPath;
         private boolean includeChecksums = true;
-        private boolean includeMavenMetadata = true;
         private boolean includeRemoteResources = true;
         private Properties requestProperties;
 
@@ -76,7 +69,6 @@ public class BrowsableItemCriteria {
         public Builder(BrowsableItemCriteria copy) {
             this.repoPath = copy.getRepoPath();
             this.includeChecksums = copy.isIncludeChecksums();
-            this.includeMavenMetadata = copy.isIncludeMavenMetadata();
             this.includeRemoteResources = copy.isIncludeRemoteResources();
             this.requestProperties = copy.getRequestProperties();
         }
@@ -88,11 +80,6 @@ public class BrowsableItemCriteria {
 
         public Builder includeChecksums(boolean includeChecksums) {
             this.includeChecksums = includeChecksums;
-            return this;
-        }
-
-        public Builder includeMavenMetadata(boolean includeMavenMetadata) {
-            this.includeMavenMetadata = includeMavenMetadata;
             return this;
         }
 
@@ -111,8 +98,7 @@ public class BrowsableItemCriteria {
                 throw new IllegalArgumentException("Please provide a repo path.");
             }
 
-            return new BrowsableItemCriteria(repoPath, includeChecksums, includeMavenMetadata, includeRemoteResources,
-                    requestProperties);
+            return new BrowsableItemCriteria(repoPath, includeChecksums, includeRemoteResources, requestProperties);
         }
     }
 }

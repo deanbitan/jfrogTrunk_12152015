@@ -31,7 +31,7 @@ public class PermissionsRow implements Serializable {
     private boolean annotate;
     private boolean deploy;
     private boolean delete;
-    private boolean admin;
+    private boolean manage;
 
     public PermissionsRow(PermissionTargetInfo permissionTarget) {
         this.permissionTarget = permissionTarget;
@@ -73,15 +73,15 @@ public class PermissionsRow implements Serializable {
         this.delete = delete;
     }
 
-    public boolean isAdmin() {
-        return admin;
+    public boolean isManage() {
+        return manage;
     }
 
-    public void setAdmin(boolean admin) {
-        this.admin = admin;
+    public void setManage(boolean manage) {
+        this.manage = manage;
     }
 
     public boolean hasPermissions() {
-        return isRead() || isDeploy() || isDelete() || isAnnotate() || isAdmin();
+        return isRead() || isDeploy() || isDelete() || isAnnotate() || isManage();
     }
 }

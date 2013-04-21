@@ -18,38 +18,26 @@
 
 package org.artifactory.search;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.artifact.ChecksumSearchControls;
-import org.artifactory.checksum.ChecksumStorageHelper;
 import org.artifactory.checksum.ChecksumType;
-import org.artifactory.common.ConstantValues;
-import org.artifactory.io.checksum.ChecksumPaths;
-import org.artifactory.jcr.factory.VfsItemFactory;
-import org.artifactory.mime.NamingUtils;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.PathFactory;
-import org.artifactory.sapi.common.PathFactoryHolder;
-import org.artifactory.sapi.data.VfsNode;
-import org.artifactory.sapi.data.VfsNodeType;
-import org.artifactory.sapi.search.VfsComparatorType;
+import org.artifactory.sapi.search.VfsQuery;
 import org.artifactory.sapi.search.VfsQueryResult;
-import org.artifactory.sapi.search.VfsRepoQuery;
+import org.artifactory.sapi.search.VfsQueryResultType;
+import org.artifactory.sapi.search.VfsQueryRow;
 
-import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import static org.artifactory.storage.StorageConstants.PROP_ARTIFACTORY_NAME;
 
 /**
  * User: freds Date: Jul 27, 2008 Time: 6:04:39 PM
@@ -61,78 +49,26 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
         String providedQuery = controls.getQuery();
         String relativePath = controls.getRelativePath();
         List<ArtifactSearchResult> results = Lists.newArrayList();
-        long resultCount;
-        boolean limit = controls.isLimitSearchResults();
-        PathFactory pathFactory = PathFactoryHolder.get();
-        if (ConstantValues.searchArtifactSearchUseV2Storage.getBoolean()) {
-            ChecksumPaths checksumPaths = ContextHelper.get().beanForType(ChecksumPaths.class);
-            //Users might enter JCR wildcards, as they've been used here for quite long. Replace with SQL equivalents
-            providedQuery = StringUtils.replaceChars(StringUtils.replaceChars(controls.getQuery(), '?', '_'), '*', '%');
-            ImmutableCollection<String> rawResults = checksumPaths.getFileOrPathsLike(
-                    Lists.<String>newArrayList(providedQuery), createPathExpressions(controls, pathFactory));
+        int limit = getLimit(controls);
 
-            for (String rawResult : rawResults) {
-                if (limit && results.size() >= getMaxResults()) {
-                    break;
-                }
-                appendResult(results, pathFactory, rawResult);
-            }
-
-            resultCount = rawResults.size();
-        } else {
-            VfsRepoQuery query = createRepoQuery(controls);
-            if (StringUtils.isNotBlank(relativePath)) {
-                query.addRelativePathFilter(relativePath);
-            }
-            query.addAllSubPathFilter();
-            query.setNodeTypeFilter(VfsNodeType.FILE);
-            query.addCriterion(PROP_ARTIFACTORY_NAME, VfsComparatorType.CONTAINS, providedQuery);
-            VfsQueryResult queryResult = query.execute(limit);
-            for (VfsNode vfsNode : queryResult.getNodes()) {
-                if (limit && results.size() >= getMaxResults()) {
-                    break;
-                }
-                appendResult(results, pathFactory, vfsNode.absolutePath());
-            }
-            resultCount = queryResult.getCount();
-        }
-
-        return new ItemSearchResults<ArtifactSearchResult>(results, resultCount);
-    }
-
-    private List<String> createPathExpressions(ArtifactSearchControls controls, PathFactory pathFactory) {
-        List<String> pathExpressions = Lists.newArrayList();
-        String relativePath = controls.getRelativePath();
-        if (controls.isSpecificRepoSearch()) {
-            List<String> repoKeys = controls.getSelectedRepoForSearch();
-            for (String repoKey : repoKeys) {
-                pathExpressions.add(createPathExpression(pathFactory, repoKey, relativePath));
-            }
-        } else {
-            pathExpressions.add(createPathExpression(pathFactory, null, relativePath));
-        }
-        return pathExpressions;
-    }
-
-    private String createPathExpression(PathFactory pathFactory, @Nullable String repoKey, String relativePath) {
-        StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append(pathFactory.getRepoRootPath(repoKey)).append("/");
-
+        VfsQuery query = createQuery(controls);
         if (StringUtils.isNotBlank(relativePath)) {
-            if (StringUtils.isBlank(repoKey)) {
-                queryBuilder.append("%/");
-            }
-            queryBuilder.append(relativePath);
+            query.addPathFilter(relativePath);
         }
-        return queryBuilder.append("%").toString();
-    }
+        query.expectedResult(VfsQueryResultType.FILE)
+                .prop("node_name").val(providedQuery);
+        VfsQueryResult queryResult = query.execute(limit);
 
-    private void appendResult(List<ArtifactSearchResult> results, PathFactory pathFactory, String nodePath) {
-        RepoPath repoPath = pathFactory.getRepoPath(nodePath);
-        if (!isResultAcceptable(repoPath) || nodePath.contains(NamingUtils.METADATA_PREFIX)) {
-            return;
+        for (VfsQueryRow row : queryResult.getAllRows()) {
+            if (limit > 0 && results.size() >= limit) {
+                break;
+            }
+            ItemInfo item = row.getItem();
+            if (isResultAcceptable(item.getRepoPath())) {
+                results.add(new ArtifactSearchResult(item));
+            }
         }
-        results.add(new ArtifactSearchResult(VfsItemFactory.createFileInfoProxy(repoPath)));
+        return new ItemSearchResults<ArtifactSearchResult>(results, queryResult.getCount());
     }
 
     /**
@@ -141,16 +77,16 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
      * @param searchControls Search controls
      * @return Set of repo paths that comply with the given checksums
      */
-    public Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls) {
-        Set<RepoPath> repoPathSet = Sets.newHashSet();
+    public Collection<ItemInfo> searchArtifactsByChecksum(ChecksumSearchControls searchControls) {
+        Map<RepoPath, ItemInfo> results = Maps.newHashMap();
 
         EnumMap<ChecksumType, String> checksums = searchControls.getChecksums();
         for (Map.Entry<ChecksumType, String> checksumEntry : checksums.entrySet()) {
-            if (repoPathSet.isEmpty() && StringUtils.isNotBlank(checksumEntry.getValue())) {
-                findArtifactsByChecksum(checksumEntry.getKey(), checksumEntry.getValue(), searchControls, repoPathSet);
+            if (results.isEmpty() && StringUtils.isNotBlank(checksumEntry.getValue())) {
+                findArtifactsByChecksum(checksumEntry.getKey(), checksumEntry.getValue(), searchControls, results);
             }
         }
-        return repoPathSet;
+        return results.values();
     }
 
     /**
@@ -159,35 +95,23 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
      * @param checksumType           Checksum type (sha1, md5) to search for
      * @param checksumValue          Checksum value to match
      * @param checksumSearchControls controls
-     * @param repoPathSet            Set of repo paths to append the results to
+     * @param results                Set of items to append the results to
      */
     private void findArtifactsByChecksum(ChecksumType checksumType, String checksumValue,
             ChecksumSearchControls checksumSearchControls,
-            Set<RepoPath> repoPathSet) {
-        VfsRepoQuery query = createRepoQuery(checksumSearchControls);
-        query.addAllSubPathFilter();
-        query.setNodeTypeFilter(VfsNodeType.FILE);
-        query.addCriterion(ChecksumStorageHelper.getActualPropName(checksumType), VfsComparatorType.EQUAL,
-                checksumValue);
-        VfsQueryResult queryResult = query.execute(false);
-        PathFactory pathFactory = PathFactoryHolder.get();
-        String allRepoRootPath = pathFactory.getAllRepoRootPath();
-        for (VfsNode vfsNode : queryResult.getNodes()) {
-            String fullPath = vfsNode.absolutePath();
-            //Make sure the path is of an artifact within an actual repository. Results may include trash and builds
-            if (fullPath.startsWith(allRepoRootPath)) {
-                RepoPath repoPath = pathFactory.getRepoPath(fullPath);
-                LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoPath.getRepoKey());
-                if (localRepo == null) {
-                    // Some left over in JCR or the node is in a virtual repo
-                    continue;
-                }
-                if (NamingUtils.isChecksum(repoPath.getPath())) {
-                    // don't show checksum files
-                    continue;
-                }
-                repoPathSet.add(repoPath);
+            Map<RepoPath, ItemInfo> results) {
+        VfsQuery query = createQuery(checksumSearchControls);
+        query.expectedResult(VfsQueryResultType.FILE);
+        query.prop(checksumType.name() + "_actual").val(checksumValue);
+        VfsQueryResult queryResult = query.execute(Integer.MAX_VALUE);
+        for (VfsQueryRow row : queryResult.getAllRows()) {
+            ItemInfo item = row.getItem();
+            LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(item.getRepoKey());
+            if (localRepo == null) {
+                // Some left over in DB or the node is in a virtual repo
+                continue;
             }
+            results.put(item.getRepoPath(), item);
         }
     }
 }

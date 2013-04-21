@@ -22,6 +22,7 @@ import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
+import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
@@ -116,4 +117,6 @@ public interface CentralConfigDescriptor extends Descriptor {
     QuotaConfigDescriptor getQuotaConfig();
 
     Map<String, LocalReplicationDescriptor> getLocalReplicationsMap();
+
+    ExternalProvidersDescriptor getExternalProvidersDescriptor();
 }

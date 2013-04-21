@@ -21,8 +21,6 @@ package org.artifactory.update.md.v125rc0;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.fs.MetadataEntryInfo;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.MetadataReader;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataConverterUtils;
@@ -30,6 +28,7 @@ import org.artifactory.update.md.current.PassThroughMetadataReaderImpl;
 import org.artifactory.update.md.v130beta6.ChecksumsConverter;
 import org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,12 +47,12 @@ public class MetadataReader125 implements MetadataReader {
     private final MetadataConverter statsConverter = new MdStatsConverter();
 
     @Override
-    public List<MetadataEntryInfo> getMetadataEntries(File file, ImportSettings settings, MutableStatusHolder status) {
+    public List<MetadataEntryInfo> getMetadataEntries(File file, MutableStatusHolder status) {
         if (!file.isFile()) {
             status.setError("Expecting a file but got a directory: " + file.getAbsolutePath(), log);
             return Collections.emptyList();
         }
-        List<MetadataEntryInfo> result = new ArrayList<MetadataEntryInfo>();
+        List<MetadataEntryInfo> result = new ArrayList<>();
         try {
             String xmlContent = FileUtils.readFileToString(file, "utf-8");
             if (xmlContent.contains("<file>")) {

@@ -53,7 +53,7 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
     protected BaseDependenciesDiffListPanel dependenciesDiffListPanel;
     protected BasePropertiesDiffListPanel envDiffListPanel;
 
-    private List<BuildsDiffActionableItem> dependencies;
+    private List<BuildsDiffActionableItem> dependencies = Lists.newArrayList();
     protected Build build;
 
     @WicketProperty
@@ -87,8 +87,7 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
                     return;
                 }
 
-                Build selectedBuild = buildService.getBuild(selectedBuildRun.getName(), selectedBuildRun.getNumber(),
-                        selectedBuildRun.getStarted());
+                Build selectedBuild = buildService.getBuild(selectedBuildRun);
 
                 artifactsDiffListPanel.getTableDataProvider().setData(
                         artifactsDiffListPanel.getArtifacts(selectedBuild));
@@ -132,7 +131,7 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
         List<BuildsDiffActionableItem> dependenciesData = dependencies;
 
         if (artifactsData == null || dependenciesData == null) {
-            if (dependencies != null) {
+            if (dependencies != null && !dependencies.isEmpty()) {
                 setDataProviderWithoutExcludedDependencies();
             }
             return;

@@ -23,10 +23,9 @@ import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.LastDownloadRestResult;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
-import org.artifactory.api.search.xml.metadata.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.fs.StatsInfo;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -85,17 +84,15 @@ public class UsageSinceResource {
         searchControls.setSelectedRepoForSearch(reposToSearch);
         searchControls.setLimitSearchResults(authorizationService.isAnonymous());
         Calendar cal = Calendar.getInstance();
-        if (lastDownloaded != null) {
-            cal.setTimeInMillis(lastDownloaded);
-        }
-        searchControls.setValue(cal);
+        cal.setTimeInMillis(lastDownloaded);
+        searchControls.setDownloadedSince(cal);
 
         if (createdBefore != null) {
             Calendar createdBeforeCalendar = Calendar.getInstance();
             createdBeforeCalendar.setTimeInMillis(createdBefore);
             searchControls.setCreatedBefore(createdBeforeCalendar);
         }
-        List<GenericMetadataSearchResult<StatsInfo>> results;
+        List<StatsSearchResult> results;
         try {
             results = searchService.searchArtifactsNotDownloadedSince(searchControls).getResults();
         } catch (RepositoryRuntimeException e) {
@@ -112,10 +109,9 @@ public class UsageSinceResource {
         MutableSortDefinition definition = new MutableSortDefinition("metadataObject.lastDownloaded", true, true);
         PropertyComparator.sort(results, definition);
         LastDownloadRestResult lastDownloadRestResult = new LastDownloadRestResult();
-        for (GenericMetadataSearchResult<StatsInfo> result : results) {
-            StatsInfo statsInfo = result.getMetadataObject();
+        for (StatsSearchResult result : results) {
             String uri = RestUtils.buildStorageInfoUri(request, result);
-            String lDownloaded = RestUtils.toIsoDateString(statsInfo.getLastDownloaded());
+            String lDownloaded = RestUtils.toIsoDateString(result.getLastDownloaded());
             LastDownloadRestResult.DownloadedEntry entry = new LastDownloadRestResult.DownloadedEntry(uri, lDownloaded);
             lastDownloadRestResult.results.add(entry);
         }

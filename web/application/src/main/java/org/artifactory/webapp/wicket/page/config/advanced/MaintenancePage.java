@@ -46,12 +46,12 @@ import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.services.cron.CronNextDatePanel;
 import org.artifactory.webapp.wicket.util.validation.CronExpValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Displays the different maintenance controls to the user

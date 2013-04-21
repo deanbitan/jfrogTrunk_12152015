@@ -19,10 +19,10 @@
 package org.artifactory.repo.snapshot;
 
 import org.apache.commons.io.FilenameUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This snapshot version adapter changes unique snapshot versions to non-unique.

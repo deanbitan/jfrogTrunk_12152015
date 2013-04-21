@@ -26,27 +26,17 @@ import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.IncludeExcludeException;
 import org.artifactory.api.repo.exception.SnapshotPolicyException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBase<T> implements RealRepo<T> {
     private static final Logger log = LoggerFactory.getLogger(RealRepoBase.class);
 
-    protected RealRepoBase(InternalRepositoryService repositoryService) {
-        super(repositoryService);
-    }
-
-    public RealRepoBase(InternalRepositoryService repositoryService, T descriptor) {
-        this(repositoryService);
-        setDescriptor(descriptor);
-    }
-
-    @Override
-    public T getDescriptor() {
-        return super.getDescriptor();
+    public RealRepoBase(T descriptor, InternalRepositoryService repositoryService) {
+        super(descriptor, repositoryService);
     }
 
     @Override

@@ -36,8 +36,4 @@ import java.lang.annotation.Target;
 @Inherited
 @Documented
 public @interface Lock {
-    /**
-     * Should start a transaction or join an exiting one
-     */
-    boolean transactional() default false;
 }

@@ -29,20 +29,12 @@ public class RepoRejectException extends Exception {
 
     private int status = 404;
 
-    /**
-     * Default constructor
-     */
     protected RepoRejectException() {
         super();
     }
 
     protected RepoRejectException(int status) {
         this.status = status;
-    }
-
-    public RepoRejectException(CancelException cause) {
-        super(cause);
-        status = cause.getErrorCode();
     }
 
     /**
@@ -70,10 +62,13 @@ public class RepoRejectException extends Exception {
     /**
      * Cause constructor
      *
-     * @param cause A thrown exception to nest
+     * @param cause The nested exception
      */
     public RepoRejectException(Throwable cause) {
         super(cause);
+        if (cause instanceof CancelException) {
+            status = ((CancelException) cause).getErrorCode();
+        }
     }
 
     /**

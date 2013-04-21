@@ -36,7 +36,6 @@ import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn
 import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailEntry;
 import org.artifactory.common.wicket.component.table.masterdetail.MasterDetailTable;
 import org.artifactory.fs.FileInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -45,6 +44,7 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionab
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildTabActionableItem;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 

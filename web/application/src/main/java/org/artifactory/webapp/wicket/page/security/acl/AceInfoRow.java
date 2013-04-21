@@ -76,14 +76,14 @@ public class AceInfoRow implements Serializable {
         mutableAceInfo.setGroup(group);
     }
 
-    public boolean isAdmin() {
-        return aceInfo.canAdmin();
+    public boolean isManage() {
+        return aceInfo.canManage();
     }
 
-    public void setAdmin(boolean admin) {
+    public void setManage(boolean manage) {
         checkMutable();
-        mutableAceInfo.setAdmin(admin);
-        if (admin) {
+        mutableAceInfo.setManage(manage);
+        if (manage) {
             setDelete(true);
         }
     }

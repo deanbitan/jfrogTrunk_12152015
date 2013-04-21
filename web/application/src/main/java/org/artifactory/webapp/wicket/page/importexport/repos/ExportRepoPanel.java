@@ -44,9 +44,9 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collections;
@@ -117,11 +117,11 @@ public class ExportRepoPanel extends TitledPanel {
 
         exportForm.add(new StyledCheckbox("m2Compatible", new PropertyModel<Boolean>(this, "m2Compatible")));
         exportForm.add(new HelpBubble("m2CompatibleHelp",
-                "Include Maven 2 repository metadata and checksum files as part of the export"));
+                "Includes Maven 2 repository metadata and checksum files as part of the export"));
 
         exportForm.add(new StyledCheckbox("excludeMetadata", new PropertyModel<Boolean>(this, "excludeMetadata")));
         exportForm.add(new HelpBubble("excludeMetadataHelp",
-                "Exclude Artifactory-specific metadata from the export.\n" +
+                "Excludes repositories metadata from the export.\n"+
                         "(Maven 2 metadata is unaffected by this setting)"));
 
         StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));

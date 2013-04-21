@@ -157,6 +157,11 @@ public abstract class ItemInfoImpl implements InternalItemInfo {
     }
 
     @Override
+    public int compareTo(ItemInfo item) {
+        return getName().compareTo(item.getName());
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

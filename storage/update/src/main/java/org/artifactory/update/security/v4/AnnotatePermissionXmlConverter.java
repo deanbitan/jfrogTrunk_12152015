@@ -61,7 +61,7 @@ public class AnnotatePermissionXmlConverter implements XmlConverter {
                 Element maskEl = ace.getChild(MASK);
                 int mask = Integer.parseInt(maskEl.getText());
                 if (!child.getText().equals(UserInfo.ANONYMOUS)) {
-                    if ((mask & (ArtifactoryPermission.ADMIN.getMask() |
+                    if ((mask & (ArtifactoryPermission.MANAGE.getMask() |
                             ArtifactoryPermission.DEPLOY.getMask())) > 0) {
                         mask |= ArtifactoryPermission.ANNOTATE.getMask();
                     }

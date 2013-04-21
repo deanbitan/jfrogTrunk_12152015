@@ -54,12 +54,12 @@ import org.artifactory.common.wicket.component.panel.feedback.aggregated.Aggrega
 import org.artifactory.common.wicket.component.panel.sidemenu.MenuPanel;
 import org.artifactory.common.wicket.resources.domutils.CommonJsPackage;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.web.ui.skins.GreenSkin;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

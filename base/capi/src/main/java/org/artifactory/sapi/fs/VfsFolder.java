@@ -19,19 +19,19 @@
 package org.artifactory.sapi.fs;
 
 import org.artifactory.fs.FolderInfo;
-import org.artifactory.fs.MutableFolderInfo;
-import org.artifactory.sapi.common.ExportSettings;
 
 import java.util.List;
 
 /**
- * Date: 8/4/11
- * Time: 1:40 PM
+ * Immutable interface of a virtual folder.
  *
- * @author Fred Simon
+ * @author Yossi Shaul
  */
-public interface VfsFolder extends VfsItem<FolderInfo, MutableFolderInfo> {
-    List<VfsItem> getItems(boolean withWriteLock);
+public interface VfsFolder<T extends FolderInfo> extends VfsItem<T> {
+    @Override
+    FolderInfo getInfo();
 
-    void exportTo(ExportSettings settings);
+    boolean hasChildren();
+
+    List<VfsItem> getImmutableChildren();
 }

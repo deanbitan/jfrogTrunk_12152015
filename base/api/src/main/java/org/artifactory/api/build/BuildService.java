@@ -20,19 +20,16 @@ package org.artifactory.api.build;
 
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportableExportable;
-import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.build.BuildRun;
-import org.artifactory.md.Properties;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.common.Lock;
-import org.artifactory.storage.StorageConstants;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.release.Promotion;
+import org.jfrog.build.api.release.PromotionStatus;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -43,10 +40,6 @@ import java.util.Set;
  */
 public interface BuildService extends ImportableExportable {
 
-    public static final String BUILD_CHECKSUM_PREFIX_MD5 = "{MD5}";
-    public static final String BUILD_CHECKSUM_PREFIX_SHA1 = "{SHA1}";
-    public static final String PROP_BUILD_LATEST_NUMBER = StorageConstants.PROP_BUILD_LATEST_NUMBER;
-    public static final String PROP_BUILD_LATEST_START_TIME = StorageConstants.PROP_BUILD_LATEST_START_TIME;
     /**
      * In case a dependency contains a {@code null} scope, fill it with an unspecified scope that will be used for
      * filtering.
@@ -61,18 +54,15 @@ public interface BuildService extends ImportableExportable {
      *
      * @param build Build to add
      */
-    @Lock(transactional = true)
+    @Lock
     void addBuild(Build build);
 
     /**
      * Returns the JSON string of the given build details
      *
-     * @param buildName    Build name
-     * @param buildNumber  Build number
-     * @param buildStarted Build started
-     * @return Build JSON if parsing succeeded. Empty string if not
+     * @param buildRun@return Build JSON if parsing succeeded. Empty string if not
      */
-    String getBuildAsJson(String buildName, String buildNumber, String buildStarted);
+    String getBuildAsJson(BuildRun buildRun);
 
     /**
      * Removes all the builds of the given name
@@ -81,7 +71,7 @@ public interface BuildService extends ImportableExportable {
      * @param deleteArtifacts   True if build artifacts should be deleted
      * @param multiStatusHolder Status holder
      */
-    @Lock(transactional = true)
+    @Lock
     void deleteBuild(String buildName, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
 
     /**
@@ -91,19 +81,16 @@ public interface BuildService extends ImportableExportable {
      * @param deleteArtifacts   True if build artifacts should be deleted
      * @param multiStatusHolder Status holder
      */
-    @Lock(transactional = true)
+    @Lock
     void deleteBuild(BuildRun buildRun, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
 
     /**
      * Returns the build of the given details
      *
-     * @param buildName    Build name
-     * @param buildNumber  Build number
-     * @param buildStarted Build started
+     * @param buildRun Build run retrieved
      * @return Build if found. Null if not
      */
-    @Lock(transactional = true)
-    Build getBuild(String buildName, String buildNumber, String buildStarted);
+    Build getBuild(BuildRun buildRun);
 
     /**
      * Returns the latest build for the given name and number
@@ -112,7 +99,6 @@ public interface BuildService extends ImportableExportable {
      * @param buildNumber Number of build to locate
      * @return Latest build if found. Null if not
      */
-    @Lock(transactional = true)
     @Nullable
     Build getLatestBuildByNameAndNumber(String buildName, String buildNumber);
 
@@ -143,11 +129,9 @@ public interface BuildService extends ImportableExportable {
      */
     Set<BuildRun> searchBuildsByNameAndNumber(String buildName, String buildNumber);
 
-    @Lock(transactional = true)
     BuildRun getBuildRun(String buildName, String buildNumber, String buildStarted);
 
     @Override
-    @Lock(transactional = true)
     void exportTo(ExportSettings settings);
 
     Set<String> findScopes(Build build);
@@ -161,45 +145,17 @@ public interface BuildService extends ImportableExportable {
     void importFrom(ImportSettings settings);
 
     /**
-     * Returns the CI server URL of the given build
-     *
-     * @param buildRun Basic build info to extract URL of
-     * @return URL if exists, form of blank string if not
-     */
-    String getBuildCiServerUrl(BuildRun buildRun) throws IOException;
-
-    /**
-     * Moves or copies build artifacts and\or dependencies
-     *
-     * @param move          True if the items should be moved. False if they should be copied
-     * @param buildRun      Basic info of the selected build
-     * @param targetRepoKey Key of target repository to move to
-     * @param artifacts     True if the build artifacts should be moved\copied
-     * @param dependencies  True if the build dependencies should be moved\copied
-     * @param scopes        Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties    The properties to tag the copied or move artifacts on their <b>destination</b> path
-     * @param dryRun        True if the action should run dry (simulate)
-     * @return Result of action
-     * @deprecated Use {@link org.artifactory.api.build.BuildService#promoteBuild} instead
-     */
-    @Deprecated
-    @Lock(transactional = true)
-    MoveCopyResult moveOrCopyBuildItems(boolean move, BuildRun buildRun, String targetRepoKey,
-            boolean artifacts, boolean dependencies, List<String> scopes, Properties properties,
-            boolean dryRun);
-
-    /**
      * Promotes a build
      *
      * @param buildRun  Basic info of build to promote
      * @param promotion Promotion settings
      * @return Promotion result
      */
-    @Lock(transactional = true)
+    @Lock
     PromotionResult promoteBuild(BuildRun buildRun, Promotion promotion);
 
     /**
-     * Renames the JCR structure and content of build info objects
+     * Renames the structure and content of build info objects
      *
      * @param from Name to replace
      * @param to   Replacement build name
@@ -207,24 +163,16 @@ public interface BuildService extends ImportableExportable {
     void renameBuilds(String from, String to);
 
     /**
-     * Updates the content (jcr data) of the given build. Please note that this method does nothing apart from updating
+     * Updates the content of the given build. Please note that this method does nothing apart from updating
      * the JSON data. Other properties and data surrounding the build nodes (apart from mandatory) will not change
      *
      * @param build                     Updated content
      * @param refreshChecksumProperties True if the build's searchable checksum properties should be updated with any
      *                                  checksum modifications of the build model
      */
-    @Lock(transactional = true)
+    @Lock
     void updateBuild(Build build, boolean refreshChecksumProperties);
 
-    /**
-     * Returns the build's latest release status
-     *
-     * @param buildName    Build name
-     * @param buildNumber  Build number
-     * @param buildStarted Build started
-     * @return Last release status if exists. Null if not
-     */
-    @Lock(transactional = true)
-    String getBuildLatestReleaseStatus(String buildName, String buildNumber, String buildStarted);
+    @Lock
+    void addPromotionStatus(Build build, PromotionStatus promotion);
 }

@@ -18,12 +18,11 @@
 
 package org.artifactory.api.common;
 
+import com.google.common.collect.Lists;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -34,40 +33,34 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @date Sep 25, 2008
  */
 public class MultiStatusHolder extends BasicStatusHolder {
-    private static final Logger log = LoggerFactory.getLogger(MultiStatusHolder.class);
-
-    private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<StatusEntry>();
-    private final BlockingQueue<File> outputFiles = new LinkedBlockingQueue<File>();
+    // save up to 500 messages. if exhausted, we manually drop the oldest element
+    private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<>(500);
 
     @Override
     protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger, boolean debug) {
         StatusEntry entry = super.addStatus(statusMsg, statusCode, logger, debug);
-        addStatusEntry(entry, logger);
+        addStatusEntry(entry);
         return entry;
     }
 
     @Override
     protected StatusEntry addError(String statusMsg, int statusCode, Throwable throwable, Logger logger, boolean warn) {
         StatusEntry entry = super.addError(statusMsg, statusCode, throwable, logger, warn);
-        addStatusEntry(entry, logger);
+        addStatusEntry(entry);
         return entry;
     }
 
-    private void addStatusEntry(StatusEntry entry, Logger logger) {
-        statusEntries.add(entry);
-    }
-
-    @Override
-    public void setOutputFile(File callback) {
-        super.setOutputFile(callback);
-        outputFiles.add(callback);
+    private void addStatusEntry(StatusEntry entry) {
+        // we don't really want to block if we reached the limit. remove the last element until offer is accepted
+        while (!statusEntries.offer(entry)) {
+            statusEntries.poll();
+        }
     }
 
     @Override
     public void reset() {
         super.reset();
         statusEntries.clear();
-        outputFiles.clear();
     }
 
     public boolean hasErrors() {
@@ -75,13 +68,17 @@ public class MultiStatusHolder extends BasicStatusHolder {
     }
 
     public boolean hasWarnings() {
-        return !getWarnings().isEmpty();
+        for (StatusEntry entry : statusEntries) {
+            if (StatusEntryLevel.WARNING.equals(entry.getLevel())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public List<StatusEntry> getAllEntries() {
-        return getEntries(null);
+        return Lists.newArrayList(statusEntries.iterator());
     }
-
 
     public List<StatusEntry> getErrors() {
         return getEntries(StatusEntryLevel.ERROR);
@@ -91,12 +88,10 @@ public class MultiStatusHolder extends BasicStatusHolder {
         return getEntries(StatusEntryLevel.WARNING);
     }
 
-    @SuppressWarnings({"ToArrayCallWithZeroLengthArrayArgument"})
     public List<StatusEntry> getEntries(StatusEntryLevel level) {
-        StatusEntry[] entries = statusEntries.toArray(new StatusEntry[0]);
-        List<StatusEntry> result = new ArrayList<StatusEntry>();
-        for (StatusEntry entry : entries) {
-            if (level == null || level.equals(entry.getLevel())) {
+        List<StatusEntry> result = new ArrayList<>();
+        for (StatusEntry entry : statusEntries) {
+            if (level.equals(entry.getLevel())) {
                 result.add(entry);
             }
         }
@@ -111,7 +106,9 @@ public class MultiStatusHolder extends BasicStatusHolder {
      * @param toMerge The multi status to merge into this.
      */
     public void merge(MultiStatusHolder toMerge) {
-        statusEntries.addAll(toMerge.getAllEntries());
+        for (StatusEntry statusEntry : toMerge.getAllEntries()) {
+            addStatusEntry(statusEntry);
+        }
         if (toMerge.isError()) {
             setLastError(toMerge.getLastError());
         }
@@ -125,7 +122,7 @@ public class MultiStatusHolder extends BasicStatusHolder {
      * @param toMerge The status to merge into this.
      */
     public void merge(BasicStatusHolder toMerge) {
-        statusEntries.add(toMerge.getStatusEntry());
+        addStatusEntry(toMerge.getStatusEntry());
         if (toMerge.isError()) {
             setLastError(toMerge.getLastError());
         }

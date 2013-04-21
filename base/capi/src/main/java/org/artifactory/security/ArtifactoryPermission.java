@@ -22,7 +22,7 @@ package org.artifactory.security;
  * @author Yoav Landman
  */
 public enum ArtifactoryPermission {
-    ADMIN(4, "m"), DELETE(3, "d"), ANNOTATE(2, "n"), DEPLOY(1, "w"), READ(0, "r");
+    MANAGE(4, "m"), DELETE(3, "d"), ANNOTATE(2, "n"), DEPLOY(1, "w"), READ(0, "r");
 
     private final int mask;
     private final String string;

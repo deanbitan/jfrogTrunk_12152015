@@ -22,11 +22,11 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.StatusHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.LoggingUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;

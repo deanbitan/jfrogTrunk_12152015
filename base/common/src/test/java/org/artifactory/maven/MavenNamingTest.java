@@ -21,7 +21,6 @@ package org.artifactory.maven;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
-import org.artifactory.util.PathUtils;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -115,6 +114,15 @@ public class MavenNamingTest extends ArtifactoryHomeBoundTest {
         assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0-SNAPSHOT"), "Not metadata path");
         assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0-SNAPSHOT/"), "Not metadata path");
         assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0-SNAPSHOT/:matadata-name"), "Not maven metadata");
+    }
+
+    public void isMavenMetadataChecksum() {
+        assertFalse(MavenNaming.isMavenMetadataChecksum(null));
+        assertFalse(MavenNaming.isMavenMetadataChecksum(""));
+        assertFalse(MavenNaming.isMavenMetadataChecksum("path/1.0-SNAPSHOT/maven-metadata.xml"));
+        assertTrue(MavenNaming.isMavenMetadataChecksum("path/1.0-SNAPSHOT/maven-metadata.xml.md5"));
+        assertFalse(MavenNaming.isMavenMetadataChecksum("path/1.0/maven-metadata.xml"));
+        assertTrue(MavenNaming.isMavenMetadataChecksum("path/1.0/maven-metadata.xml.sha1"));
     }
 
     public void getArtifactInfo() {
@@ -280,12 +288,5 @@ public class MavenNamingTest extends ArtifactoryHomeBoundTest {
         assertEquals(info.getVersion(), "1.0", "Version should be '1.0'");
         assertNull(info.getClassifier(), "Classifier should be null");
         assertEquals(info.getType(), "bababababa", "Unexpected type");
-    }
-
-    public void checksumTargetFile() {
-        assertEquals(PathUtils.stripExtension("/a/b/c.jar.sha1"), "/a/b/c.jar");
-        assertEquals(PathUtils.stripExtension("a.pom.md5"), "a.pom");
-        assertEquals(PathUtils.stripExtension("/a/b/c.jar"), "/a/b/c");
-        assertEquals(PathUtils.stripExtension("/a/b/c"), "/a/b/c");
     }
 }

@@ -39,7 +39,7 @@
     <mimetype type="text/x-java-source" extensions="java" viewable="true" syntax="java"/>
     <mimetype type="text/x-javafx-source" extensions="fx" viewable="true" syntax="javafx"/>
     <mimetype type="text/x-groovy-source" extensions="groovy, gradle" viewable="true" syntax="groovy"/>
-    <mimetype type="text/x-c" extensions="c, cc, cpp" viewable="true" syntax="groovy"/>
+    <mimetype type="text/x-c" extensions="h, c, cc, cpp" viewable="true" syntax="cpp"/>
 
     <mimetype type="application/xml-dtd" extensions="dtd" viewable="true"/>
     <mimetype type="application/xml-schema" extensions="xsd" viewable="true" syntax="xml" css="xml"/>
@@ -54,6 +54,7 @@
     <mimetype type="application/x-nupkg" extensions="nupkg" archive="true" index="true" css="nupkg"/>
     <mimetype type="application/x-rar-compressed" extensions="rar" archive="false" css="jar"/>
     <mimetype type="application/vnd.android.package-archive" extensions="apk" archive="true" index="true" css="apk"/>
+    <mimetype type="application/x-rpm" extensions="rpm" css="rpm"/>
 
     <!-- not registered -->
     <mimetype type="text/x-scala-source" extensions="scala" viewable="true" syntax="scala"/>

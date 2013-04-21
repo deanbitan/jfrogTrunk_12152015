@@ -49,4 +49,13 @@ public interface PropertiesInfo extends Info {
     boolean isEmpty();
 
     boolean containsKey(String key);
+
+    /**
+     * Returns the first value of the given key
+     *
+     * @param key Key of value
+     * @return First found value of key; null if has no values at all
+     */
+    @Nullable
+    String getFirst(@Nonnull String key);
 }

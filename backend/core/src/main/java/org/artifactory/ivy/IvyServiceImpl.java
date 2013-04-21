@@ -20,12 +20,12 @@ package org.artifactory.ivy;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.util.StringInputStream;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

@@ -28,6 +28,15 @@ import org.apache.wicket.markup.html.link.DownloadLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.request.IRequestCycle;
+import org.apache.wicket.request.Response;
+import org.apache.wicket.request.handler.resource.ResourceStreamRequestHandler;
+import org.apache.wicket.request.http.WebResponse;
+import org.apache.wicket.request.resource.ContentDisposition;
+import org.apache.wicket.request.resource.IResource;
+import org.apache.wicket.request.resource.ResourceStreamResource;
+import org.apache.wicket.util.resource.FileResourceStream;
+import org.apache.wicket.util.resource.IResourceStream;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.api.context.ContextHelper;
@@ -62,7 +71,7 @@ public class SystemLogsViewPanel extends Panel {
     /**
      * Link object for downloading the system log file
      */
-    private DownloadLink downloadLink = new DownloadLink("systemLogsLink", systemLogFile);
+    private DownloadLink downloadLink;
 
     /**
      * Label to represent the download link caption
@@ -178,6 +187,34 @@ public class SystemLogsViewPanel extends Panel {
      * Add a link to enable the download of the system log file
      */
     private void addSystemLogsLink() {
+        // This is very ugly and should be removed when we upgrade wicket, see RTFACT-5470 for explanation
+        downloadLink = new DownloadLink("systemLogsLink", systemLogFile) {
+            @Override
+            public void onClick() {
+                final File file = getModelObject();
+                IResourceStream resourceStream = new FileResourceStream(new org.apache.wicket.util.file.File(file));
+                ResourceStreamRequestHandler handler = new ResourceStreamRequestHandler(resourceStream) {
+                    @Override
+                    public void respond(IRequestCycle requestCycle) {
+                        IResource.Attributes attributes = new IResource.Attributes(requestCycle.getRequest(),
+                                requestCycle.getResponse());
+
+                        ResourceStreamResource resource = new ResourceStreamResource(this.getResourceStream()) {
+                            @Override
+                            protected void configureCache(ResourceResponse data, Attributes attributes) {
+                                Response response = attributes.getResponse();
+                                ((WebResponse) response).disableCaching();
+                            }
+                        };
+                        resource.setFileName(file.getName());
+                        resource.setContentDisposition(ContentDisposition.ATTACHMENT);
+                        resource.respond(attributes);
+                    }
+                };
+                getRequestCycle().scheduleRequestHandlerAfterCurrent(handler);
+            }
+        };
+
         add(downloadLink);
         downloadLink.add(linkLabel);
         downloadLink.setOutputMarkupId(true);

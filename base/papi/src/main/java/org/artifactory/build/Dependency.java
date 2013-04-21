@@ -47,11 +47,11 @@ public final class Dependency extends BuildFile {
                 .type(StringUtils.isNotBlank(type) ? type : PathUtils.getExtension(fileInfo.getName())).build());
     }
 
-    String getId() {
+    public String getId() {
         return dependency.getId();
     }
 
-    List<String> getScopes() {
+    public List<String> getScopes() {
         return dependency.getScopes();
     }
 

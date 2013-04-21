@@ -60,7 +60,6 @@ import org.artifactory.common.wicket.contributor.ResourcePackage;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.common.wicket.model.sitemap.SiteMap;
 import org.artifactory.common.wicket.model.sitemap.SiteMapBuilder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.spring.ArtifactorySpringComponentInjector;
 import org.artifactory.webapp.wicket.application.sitemap.ArtifactorySiteMapBuilder;
 import org.artifactory.webapp.wicket.page.base.BasePage;
@@ -81,6 +80,7 @@ import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.artifactory.webapp.wicket.resource.LogoResource;
 import org.artifactory.webapp.wicket.service.authentication.LogoutService;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -327,7 +327,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
      */
     private void deleteUploadsFolder() {
         ArtifactoryHome artifactoryHome = getArtifactoryContext().getArtifactoryHome();
-        File tmpUploadsDir = artifactoryHome.getTmpUploadsDir();
+        File tmpUploadsDir = artifactoryHome.getTempUploadDir();
         if (tmpUploadsDir.exists()) {
             try {
                 FileUtils.cleanDirectory(tmpUploadsDir);

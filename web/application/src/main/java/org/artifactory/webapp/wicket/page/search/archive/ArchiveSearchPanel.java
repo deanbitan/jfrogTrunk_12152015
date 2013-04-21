@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.search.archive;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
@@ -31,6 +32,7 @@ import org.apache.wicket.markup.repeater.Item;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
@@ -50,6 +52,8 @@ import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResu
 
 import java.util.List;
 
+import static org.artifactory.common.wicket.util.ComponentPersister.setPersistent;
+
 /**
  * Displays the archive content searcher
  *
@@ -63,10 +67,11 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
     private boolean excludeInnerClasses;
 
     @WicketProperty
-    private boolean searchAllTypes;
+    private boolean searchClassResourcesOnly;
 
     public ArchiveSearchPanel(Page parent, String id) {
         super(parent, id);
+        searchClassResourcesOnly = true; //defaults to true
     }
 
     @Override
@@ -82,27 +87,36 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
     @Override
     protected void addSearchComponents(Form form) {
         searchControls = new ArchiveSearchControls();
-        getDataProvider().setGroupParam(new SortParam("searchResult.entry", true));
+        searchControls.setPath("*"); //default to any path
+        getDataProvider().setGroupParam(new SortParam("searchResult.entryName", true));
 
-        TextField searchControl = new TextField<String>("query", new PropertyModel<String>(searchControls, "query"));
-        searchControl.setOutputMarkupId(true);
-        form.add(searchControl);
+        TextField pathText = new TextField("path", new PropertyModel<String>(searchControls, "path"));
+        pathText.setOutputMarkupId(true);
+        setPersistent(pathText);
+        form.add(pathText);
+        form.add(new HelpBubble("path.help", new ResourceModel("path.help")));
 
-        form.add(new StyledCheckbox("excludeInnerClasses", new PropertyModel<Boolean>(this, "excludeInnerClasses")));
-        form.add(new HelpBubble("excludeInnerClassesHelp", "Exclude inner classes from the list of results."));
+        TextField nameText = new TextField("name", new PropertyModel<String>(searchControls, "name"));
+        nameText.setOutputMarkupId(true);
+        setPersistent(nameText);
+        form.add(nameText);
+        form.add(new HelpBubble("name.help", new ResourceModel("name.help")));
 
-        form.add(new StyledCheckbox("allFileTypes", new PropertyModel<Boolean>(this, "searchAllTypes")));
-        form.add(new HelpBubble("allFileTypesHelp", "Search through all types of files (including package names).\n" +
-                "Use the full file name including extension, e.g.: 'Driver.properties' or use wildcards.\n" +
-                "Please note: providing a search term which is too frequent in an archive, may yield\n" +
-                "too many results, which will not be displayed."));
+        form.add(new StyledCheckbox("searchClassResourcesOnly",
+                new PropertyModel<Boolean>(this, "searchClassResourcesOnly")));
+        form.add(new HelpBubble("searchClassResourcesOnly.help", new ResourceModel("searchClassResourcesOnly.help")));
 
-        form.add(new HelpBubble("searchHelp", "Archive entry name.<br/>* and ? are accepted."));
+        form.add(new StyledCheckbox("excludeInnerClasses",
+                new PropertyModel<Boolean>(this, "excludeInnerClasses")));
+        form.add(new HelpBubble("excludeInnerClassesHelp", "Mark to exclude inner classes from the list of results."));
+
+        form.add(new HelpBubble("searchHelp",
+                "Archive entry name. * and ? are accepted.<br/>For package search add * after the prefix, e.g: org.jfrog.*"));
 
         //Group entry names which are similar but have different character cases
         getDataProvider().setGroupRenderer("searchResult.entry",
-                new ChoiceRenderer<ActionableSearchResult<ArchiveSearchResult>>("searchResult.entry",
-                        "searchResult.lowerCaseEntry"));
+                new ChoiceRenderer<ActionableSearchResult<ArchiveSearchResult>>("searchResult.entryName",
+                        "searchResult.lowerCaseEntryName"));
     }
 
     @Override
@@ -117,7 +131,7 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
 
     @Override
     protected void onNoResults() {
-        warnNoArtifacts(searchControls.getQuery());
+        warnNoArtifacts(searchControls.getQueryDisplay());
     }
 
     @Override
@@ -133,14 +147,14 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
 
     @Override
     public String getSearchExpression() {
-        return searchControls.getQuery();
+        return searchControls.getQueryDisplay();
     }
 
     @Override
     protected void addColumns(List<IColumn<ActionableSearchResult<ArchiveSearchResult>>> columns) {
         columns.add(new ActionsColumn<ActionableSearchResult<ArchiveSearchResult>>(""));
         columns.add(new GroupableColumn<ActionableSearchResult<ArchiveSearchResult>>(
-                "Entry Name", "searchResult.entry", "searchResult.entryPath"));
+                "Entry Name", "searchResult.entryName", "searchResult.entryPath"));
         columns.add(new BaseSearchPanel.ArtifactNameColumn());
         columns.add(new ArtifactPathColumn());
         //columns.add(new TitlePropertyColumn<ActionableSearchResult<ArchiveSearchResult>>(
@@ -167,15 +181,11 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
      */
     private ItemSearchResults<ArchiveSearchResult> search(boolean limitlessSearch) {
         ArchiveSearchControls controlsCopy = new ArchiveSearchControls(searchControls);
-        String exp = controlsCopy.getQuery();
-        if (!searchAllTypes && !exp.endsWith(".class")) {
-            exp += ".class";
-            controlsCopy.setQuery(exp);
-        }
         if (limitlessSearch) {
             controlsCopy.setLimitSearchResults(false);
             controlsCopy.setShouldCalcEntries(false);
         }
+        controlsCopy.setSearchClassResourcesOnly(searchClassResourcesOnly);
         controlsCopy.setExcludeInnerClasses(excludeInnerClasses);
         return searchService.searchArchiveContent(controlsCopy);
     }

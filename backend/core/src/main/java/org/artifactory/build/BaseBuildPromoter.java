@@ -34,7 +34,6 @@ import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.DoesNotExistException;
@@ -44,6 +43,7 @@ import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -68,7 +68,7 @@ public class BaseBuildPromoter {
     }
 
     protected Build getBuild(BuildRun buildRun) {
-        return buildService.getBuild(buildRun.getName(), buildRun.getNumber(), buildRun.getStarted());
+        return buildService.getBuild(buildRun);
     }
 
     protected void assertRepoExists(String targetRepoKey) {

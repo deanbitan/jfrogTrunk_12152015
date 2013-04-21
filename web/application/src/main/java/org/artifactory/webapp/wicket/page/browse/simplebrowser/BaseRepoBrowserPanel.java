@@ -18,13 +18,16 @@
 
 package org.artifactory.webapp.wicket.page.browse.simplebrowser;
 
+import org.apache.wicket.markup.ComponentTag;
+import org.apache.wicket.markup.MarkupStream;
+import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Tomer Cohen
@@ -44,7 +47,7 @@ public abstract class BaseRepoBrowserPanel extends TitledPanel {
     protected BaseBrowsableItem getPseudoUpLink(RepoPath repoPath) {
         String repoKey = repoPath.getRepoKey();
         BrowsableItem upDirItem;
-        if (StringUtils.hasLength(repoPath.getPath())) {
+        if (!repoPath.isRoot()) {
             upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true,
                     0, 0, 0, InternalRepoPathFactory.create(repoKey, repoPath.getParent().getPath()));
         } else {
@@ -62,5 +65,14 @@ public abstract class BaseRepoBrowserPanel extends TitledPanel {
         } else {
             return ItemCssClass.getFileCssClass(browsableItem.getRelativePath()).name();
         }
+    }
+
+    protected BookmarkablePageLink createRootLink() {
+        return new BookmarkablePageLink<SimpleBrowserRootPage>("link", SimpleBrowserRootPage.class) {
+            @Override
+            public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
+                replaceComponentTagBody(markupStream, openTag, getDefaultModelObjectAsString(BrowsableItem.UP));
+            }
+        };
     }
 }

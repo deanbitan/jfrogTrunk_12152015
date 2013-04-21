@@ -22,9 +22,9 @@ import org.apache.commons.io.IOUtils;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.Pair;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;

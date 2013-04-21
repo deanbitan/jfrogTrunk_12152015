@@ -19,9 +19,9 @@
 package org.artifactory.webapp.wicket.page.security.acl;
 
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.PermissionTargetInfo;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Displays the permissions recipients table.

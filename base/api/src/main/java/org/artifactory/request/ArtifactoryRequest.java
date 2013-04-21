@@ -19,10 +19,6 @@
 package org.artifactory.request;
 
 public interface ArtifactoryRequest extends Request {
-
-    @Deprecated
-    char LEGACY_REPO_SEP = '@';
-
     @Deprecated
     String ORIGIN_ARTIFACTORY = "Origin-Artifactory";
 

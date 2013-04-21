@@ -18,7 +18,6 @@
 
 package org.artifactory.addon;
 
-import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.security.UserInfo;
 
 import javax.annotation.Nonnull;
@@ -50,13 +49,11 @@ public interface CoreAddons extends Addon {
      */
     boolean isAol();
 
-    void backup(ExportSettings settings);
-
     /**
      * @return Returns email addresses of Artifactory administrators to send error notification to.
      */
     @Nonnull
     List<String> getUsersForBackupNotifications();
 
-    void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash);
+    void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash, List<String> addons);
 }

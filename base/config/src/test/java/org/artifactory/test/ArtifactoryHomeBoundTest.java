@@ -38,6 +38,7 @@ import java.io.InputStream;
  */
 public class ArtifactoryHomeBoundTest {
     protected MimeTypes mimeTypes;
+    private ArtifactoryHomeStub homeStub;
 
     @BeforeClass
     public void readMimeTypes() {
@@ -54,10 +55,12 @@ public class ArtifactoryHomeBoundTest {
     }
 
     protected ArtifactoryHomeStub getOrCreateArtifactoryHomeStub() {
-        ArtifactoryHomeStub artifactory = new ArtifactoryHomeStub();
-        artifactory.setMimeTypes(mimeTypes);
-        loadAndBindArtifactoryProperties(artifactory);
-        return artifactory;
+        if (homeStub == null) {
+            homeStub = new ArtifactoryHomeStub();
+            homeStub.setMimeTypes(mimeTypes);
+            loadAndBindArtifactoryProperties(homeStub);
+        }
+        return homeStub;
     }
 
     private void loadAndBindArtifactoryProperties(ArtifactoryHomeStub artifactory) {

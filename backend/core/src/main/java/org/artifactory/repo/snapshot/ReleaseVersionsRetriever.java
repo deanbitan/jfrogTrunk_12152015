@@ -18,20 +18,18 @@
 
 package org.artifactory.repo.snapshot;
 
-import com.google.common.collect.TreeMultimap;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.regex.NamedPattern;
-import org.artifactory.jcr.fs.JcrTreeNode;
-import org.artifactory.jcr.fs.JcrTreeNodeFileFilter;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.sapi.common.RepositoryRuntimeException;
-import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.StoringRepo;
+import org.artifactory.storage.fs.tree.ItemNode;
+import org.artifactory.storage.fs.tree.ItemNodeFilter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.Calendar;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Collects release versions items under a given root node.
@@ -41,40 +39,30 @@ import java.util.Set;
 public class ReleaseVersionsRetriever extends VersionsRetriever {
     private static final Logger log = LoggerFactory.getLogger(ReleaseVersionsRetriever.class);
 
-    @Override
-    public TreeMultimap<Calendar, VfsItem> collectVersionsItems(StoringRepo repo, JcrTreeNode node) {
-        internalCollectVersionsItems(repo, node);
-        return versionsItems;
+    public ReleaseVersionsRetriever(boolean reverseOrderResults) {
+        super(reverseOrderResults);
     }
 
-    private void internalCollectVersionsItems(StoringRepo repo, JcrTreeNode node) {
+    @Override
+    protected void internalCollectVersionsItems(StoringRepo repo, ItemNode node) {
         if (node.isFolder()) {
-            Set<JcrTreeNode> children = node.getChildren();
-            for (JcrTreeNode child : children) {
+            List<ItemNode<? extends ItemInfo>> children = node.getChildren();
+            for (ItemNode child : children) {
                 internalCollectVersionsItems(repo, child);
             }
         } else {
-            RepoPath itemRepoPath = node.getRepoPath();
-            VfsItem fsItem;
-            try {
-                fsItem = repo.getJcrFsItem(itemRepoPath);
-            } catch (RepositoryRuntimeException e) {
-                log.warn("Could not get file at '{}' ({}). Skipping.", itemRepoPath, e.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.error("Error while getting file.", e);
-                }
-                return;
-            }
-            versionsItems.put(node.getCreated(), fsItem);
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(node.getItemInfo().getCreated());
+            versionsItems.put(cal, node.getItemInfo());
         }
     }
 
     @Override
-    public JcrTreeNodeFileFilter getFileFilter(StoringRepo repo, NamedPattern pattern) {
+    public ItemNodeFilter getFileFilter(StoringRepo repo, NamedPattern pattern) {
         return new ReleaseFileFilter(repo, pattern);
     }
 
-    private static class ReleaseFileFilter implements JcrTreeNodeFileFilter {
+    private static class ReleaseFileFilter implements ItemNodeFilter {
         private final StoringRepo repo;
 
         private final NamedPattern pattern;
@@ -85,14 +73,17 @@ public class ReleaseVersionsRetriever extends VersionsRetriever {
         }
 
         @Override
-        public boolean acceptsFile(RepoPath repoPath) {
-            String path = repoPath.getPath();
+        public boolean accepts(@Nonnull ItemInfo itemInfo) {
+            if (itemInfo.isFolder()) {
+                return true;
+            }
+            String path = itemInfo.getRelPath();
             if (!pattern.matcher(path).matches()) {
                 return false;
             }
-            ModuleInfo itemModuleInfo = repo.getItemModuleInfo(path);
 
             //Make sure this file's module info is valid and is actually a release version
+            ModuleInfo itemModuleInfo = repo.getItemModuleInfo(path);
             return itemModuleInfo.isValid() && !itemModuleInfo.isIntegration();
         }
     }

@@ -22,13 +22,14 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.jcr.factory.JcrFsItemFactory;
-import org.artifactory.jcr.factory.VfsItemFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
+import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.storage.fs.VfsItemFactory;
+import org.artifactory.util.RepoPathUtils;
 
 /**
  * Interceptor which handles maven metadata calculation upon creation and removal
@@ -58,33 +59,24 @@ public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapt
                 // for pom files we need to trigger metadata calculation on the grandparent -
                 // potential new version and snapshot.
                 // this can be done asynchronously since it's usually not requires instant update
-                RepoPath grandparentFolder = getAncestor(fsItem.getRepoPath(), 2);
+                RepoPath grandparentFolder = RepoPathUtils.getAncestor(fsItem.getRepoPath(), 2);
                 ContextHelper.get().getRepositoryService().calculateMavenMetadataAsync(grandparentFolder);
             }
         }
-    }
-
-    public static RepoPath getAncestor(RepoPath repoPath, int degree) {
-        RepoPath result = repoPath.getParent();   // first ancestor
-        for (int i = degree - 1; i > 0 && result != null; i--) {
-            result = result.getParent();
-        }
-        return result;
     }
 
     private boolean shouldRecalculateOnCreate(VfsItem fsItem) {
         if (!fsItem.isFile()) {
             return false;
         }
-        JcrFsItemFactory storingRepo = VfsItemFactory.getStoringRepo(fsItem);
-        if (!isLocalNonCachedRepository(storingRepo)) {
+        LocalRepo localRepo = ContextHelper.get().beanForType(InternalRepositoryService.class)
+                .localOrCachedRepositoryByKey(fsItem.getRepoKey());
+        if (localRepo == null || !isLocalNonCachedRepository(localRepo)) {
             return false;
         }
-        // it's a local non-cache repository, check the snapshot behavior
-        LocalRepo localRepo = (LocalRepo) storingRepo;
 
-        String path = fsItem.getPath();
-        ModuleInfo moduleInfo = localRepo.getItemModuleInfo(path);
+        // it's a local non-cache repository, check the snapshot behavior
+        ModuleInfo moduleInfo = localRepo.getItemModuleInfo(fsItem.getPath());
         if (moduleInfo.isIntegration() &&
                 SnapshotVersionBehavior.DEPLOYER.equals(localRepo.getMavenSnapshotVersionBehavior())) {
             return false;
@@ -93,17 +85,18 @@ public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapt
     }
 
     /**
-     * Checks that the given storing repo is a non-cache local repo, since it is the only kind that metadata calculation
+     * Checks that the given repo is a local non-cache repo, since it is the only kind that metadata calculation
      * can be performed on.
      *
-     * @param storingRepo Repo to check
+     * @param localRepo Repo to check
      * @return boolean - True if calculation is allowed on this type of repo. False if not
      */
-    private boolean isLocalNonCachedRepository(JcrFsItemFactory storingRepo) {
-        return storingRepo.isLocal() && (!storingRepo.isCache());
+    private boolean isLocalNonCachedRepository(VfsItemFactory localRepo) {
+        return localRepo.isLocal() && (!localRepo.isCache());
     }
 
     private boolean isPomFile(VfsItem fsItem) {
         return MavenNaming.isPom(fsItem.getRepoPath().getPath());
     }
+
 }

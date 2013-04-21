@@ -20,9 +20,9 @@ package org.artifactory.update.test;
 
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.ArtifactoryVersion;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.io.InputStream;

@@ -21,7 +21,6 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
@@ -32,6 +31,7 @@ import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 

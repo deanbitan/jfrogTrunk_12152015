@@ -215,4 +215,12 @@ public class PathUtilsTest {
         assertEquals(PathUtils.normalizeSlashes("///a///////b///c/"), "/a/b/c/");
         assertNull(PathUtils.normalizeSlashes(null));
     }
+
+    public void checksumTargetFile() {
+        assertEquals(PathUtils.stripExtension("/a/b/c.jar.sha1"), "/a/b/c.jar");
+        assertEquals(PathUtils.stripExtension("a.pom.md5"), "a.pom");
+        assertEquals(PathUtils.stripExtension("/a/b/c.jar"), "/a/b/c");
+        assertEquals(PathUtils.stripExtension("/a/b/c"), "/a/b/c");
+    }
+
 }

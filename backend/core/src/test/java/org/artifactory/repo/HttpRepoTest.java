@@ -77,7 +77,7 @@ public class HttpRepoTest extends ArtifactoryHomeBoundTest {
 
         httpRepoDescriptor.setLocalAddress("0.0.0.0");
 
-        HttpRepo httpRepo = new HttpRepo(internalRepoService, httpRepoDescriptor, false, null);
+        HttpRepo httpRepo = new HttpRepo(httpRepoDescriptor, internalRepoService, false, null);
         HttpClient client = httpRepo.createHttpClient();
 
         Credentials proxyCredentials = client.getState().getProxyCredentials(AuthScope.ANY);

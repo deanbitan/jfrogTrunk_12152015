@@ -19,6 +19,8 @@
 package org.artifactory.repo.service.mover;
 
 import org.apache.commons.io.IOUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -27,26 +29,26 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.jcr.JcrRepoService;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.factory.JcrFsItemFactory;
-import org.artifactory.jcr.factory.VfsItemFactory;
-import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
+import org.artifactory.repo.cleanup.FolderPruningService;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.sapi.common.PathFactoryHolder;
+import org.artifactory.sapi.fs.MutableVfsFile;
+import org.artifactory.sapi.fs.MutableVfsFolder;
+import org.artifactory.sapi.fs.MutableVfsItem;
 import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.storage.fs.lock.LockingHelper;
+import org.artifactory.storage.fs.session.StorageSessionHolder;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 
@@ -58,11 +60,9 @@ import java.io.InputStream;
 public abstract class BaseRepoPathMover {
     private static final Logger log = LoggerFactory.getLogger(BaseRepoPathMover.class);
 
-    private JcrService jcrService;
     private InternalRepositoryService repositoryService;
 
     protected AuthorizationService authorizationService;
-    protected JcrRepoService jcrRepoService;
     protected StorageInterceptors storageInterceptors;
 
     protected final boolean copy;
@@ -80,8 +80,6 @@ public abstract class BaseRepoPathMover {
         this.status = status;
         artifactoryContext = ContextHelper.get();
         authorizationService = artifactoryContext.getAuthorizationService();
-        jcrService = artifactoryContext.beanForType(JcrService.class);
-        jcrRepoService = artifactoryContext.beanForType(JcrRepoService.class);
         repositoryService = artifactoryContext.beanForType(InternalRepositoryService.class);
         storageInterceptors = artifactoryContext.beanForType(StorageInterceptors.class);
 
@@ -113,7 +111,7 @@ public abstract class BaseRepoPathMover {
      */
     protected boolean shouldRemoveSourceFolder(VfsFolder sourceFolder) {
         return !dryRun && !searchResult && !copy && !sourceFolder.getRepoPath().isRoot() &&
-                sourceFolder.list().length == 0 && status.getMovedCount() != 0;
+                !sourceFolder.hasChildren() && status.getMovedCount() != 0;
     }
 
     protected void handleFile(VfsItem source, RepoRepoPath<LocalRepo> targetRrp) {
@@ -161,8 +159,8 @@ public abstract class BaseRepoPathMover {
             }
 
             // don't allow moving/copying folder to file
-            if (source.isDirectory()) {
-                VfsItem targetFsItem = targetRepo.getLockedJcrFsItem(targetRepoPath);
+            if (source.isFolder()) {
+                VfsItem targetFsItem = targetRepo.getMutableFsItem(targetRepoPath);
                 if (targetFsItem != null && targetFsItem.isFile()) {
                     status.setWarning("Can't move folder under file '" + targetRepoPath + "'. ", log);
                     return false;
@@ -196,53 +194,54 @@ public abstract class BaseRepoPathMover {
     protected void moveFile(VfsFile sourceFile, RepoRepoPath<LocalRepo> targetRrp) {
         assertNotDryRun();
         LocalRepo targetRepo = targetRrp.getRepo();
-        String sourceAbsPath = PathFactoryHolder.get().getAbsolutePath(sourceFile.getRepoPath());
-        if (!jcrService.itemNodeExists(sourceAbsPath)) {
-            //RTFACT-4878
-            status.setWarning("Cannot move file '" + sourceAbsPath + "' since it no longer exists.", log);
-            return;
-        }
-        if (contains(targetRrp)) {
-            // target repository already contains file with the same name, delete it
-            log.debug("File {} already exists in target repository. Overriding.", targetRrp.getRepoPath().getPath());
-            VfsItem existingTargetFile = targetRepo.getLockedJcrFsItem(targetRrp.getRepoPath().getPath());
-            bruteForceDeleteAndReplicateEvent(existingTargetFile);
-        } else {
-            // make sure parent directories exist
-            RepoPath targetParentRepoPath = InternalRepoPathFactory.create(targetRepo.getKey(),
-                    targetRrp.getRepoPath().getParent().getPath());
-            VfsItemFactory.createVfsFolder(targetParentRepoPath, targetRepo).mkdirs();
+
+        MutableVfsItem targetItem = targetRepo.getMutableFsItem(targetRrp.getRepoPath());
+        if (targetItem != null) {
+            // target repository already contains file or folder with the same name, delete it
+            log.debug("File {} already exists in target repository. Overriding.", targetRrp.getRepoPath());
+            targetItem.delete();
+            saveSession();
         }
 
+        MutableVfsFile targetFile = targetRepo.createOrGetFile(targetRrp.getRepoPath());
+
         RepoPath targetRepoPath = targetRrp.getRepoPath();
-        VfsFile targetJcrFile = VfsItemFactory.createVfsFile(targetRepoPath, targetRepo);
-        String targetAbsPath = PathFactoryHolder.get().getAbsolutePath(targetRepoPath);
         if (copy) {
-            //Important - do, otherwise target folders aren't found by the workspace yet
-            jcrService.getManagedSession().save();
             StatusEntry lastError = status.getLastError();
             storageInterceptors.beforeCopy(sourceFile, targetRepoPath, status, properties);
             if (status.getCancelException(lastError) != null) {
                 return;
             }
-            log.debug("Copying file {} to {}", sourceAbsPath, targetAbsPath);
-            jcrService.copy(sourceAbsPath, targetAbsPath);
-            storageInterceptors.afterCopy(sourceFile, targetJcrFile, status, properties);
+            log.debug("Copying file {} to {}", sourceFile, targetFile);
+            copyVfsFile(sourceFile, targetFile);
+            storageInterceptors.afterCopy(sourceFile, targetFile, status, properties);
         } else {
             StatusEntry lastError = status.getLastError();
             storageInterceptors.beforeMove(sourceFile, targetRepoPath, status, properties);
             if (status.getCancelException(lastError) != null) {
                 return;
             }
-            log.debug("Moving file from {} to {}", sourceAbsPath, targetAbsPath);
-            jcrService.move(sourceAbsPath, targetAbsPath);
-            storageInterceptors.afterMove(sourceFile, targetJcrFile, status, properties);
-            // mark the moved source file as deleted and remove it from the cache
-            sourceFile.setDeleted(true);
-            sourceFile.updateCache();
+            log.debug("Moving file from {} to {}", sourceFile, targetFile);
+            moveVfsFile(sourceFile, targetFile);
+            storageInterceptors.afterMove(sourceFile, targetFile, status, properties);
         }
+        saveSession();
         LockingHelper.removeLockEntry(sourceFile.getRepoPath());
         status.itemMoved();
+    }
+
+    private void copyVfsFile(VfsFile sourceFile, MutableVfsFile targetFile) {
+        // copy the info and the properties only (stats and watches are not required)
+        targetFile.useData(sourceFile.getSha1(), sourceFile.getMd5(), sourceFile.length());
+        targetFile.fillInfo(sourceFile.getInfo());
+        targetFile.setProperties(sourceFile.getProperties());
+    }
+
+    private void moveVfsFile(VfsFile sourceFile, MutableVfsFile targetFile) {
+        copyVfsFile(sourceFile, targetFile);
+        LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(sourceFile.getRepoKey());
+        MutableVfsFile mutableSourceFile = localRepo.getMutableFile(sourceFile.getRepoPath());
+        mutableSourceFile.delete();
     }
 
     protected void assertNotDryRun() {
@@ -255,39 +254,45 @@ public abstract class BaseRepoPathMover {
         return rrp.getRepo().itemExists(rrp.getRepoPath().getPath());
     }
 
-    protected void clearEmptyDirsAndCalcMetadata(RepoRepoPath<LocalRepo> targetRrp, VfsItem fsItemToMove) {
+    protected void clearEmptyDirsAndCalcMetadata(RepoRepoPath<LocalRepo> targetRrp, VfsItem sourceItem) {
         if (!dryRun) {
-            VfsFolder sourceRootFolder = clearEmptySourceDirs(fsItemToMove);
-
+            clearEmptySourceDirs(sourceItem);
             if (calcMetadata()) {
-                calculateMavenMetadata(targetRrp, sourceRootFolder);
+                RepoPath folderRepoPath = getFolderRepoPath(sourceItem);
+                if (folderRepoPath != null) {
+                    calculateMavenMetadata(targetRrp, folderRepoPath);
+                }
             }
         }
     }
 
-    /**
-     * Clears any remaining empty source directories (if needed) and returns the highest remaining one
-     */
-    protected VfsFolder clearEmptySourceDirs(VfsItem fsItemToMove) {
-        VfsFolder sourceRootFolder;
-        if (fsItemToMove.isDirectory()) {
-            //If the item is a directory
-            VfsFolder fsFolderToMove = (VfsFolder) fsItemToMove;
-            if (searchResult && !copy) {
-                /**
-                 * If search results are being handled, clean up empty folders and return the folder that should be
-                 * calculated (parent of last deleted folder)
-                 */
-                sourceRootFolder = cleanEmptyFolders(fsFolderToMove);
-            } else {
-                //If ordinary artifacts are being handled, return the source folder to be calculated
-                sourceRootFolder = fsFolderToMove;
-            }
-        } else {
-            //If the item is a file, just calculate the parent folder
-            sourceRootFolder = fsItemToMove.getLockedParentFolder();
+    protected void clearEmptySourceDirs(VfsItem sourceItem) {
+        RepoPath sourceRepoPath = getFolderRepoPath(sourceItem);
+        if (sourceRepoPath == null) {
+            return;
         }
-        return sourceRootFolder;
+
+        if (!searchResult || copy) {
+            // cleanup only in search results after move
+            return;
+        }
+
+        FolderPruningService pruningService = ContextHelper.get().beanForType(FolderPruningService.class);
+        pruningService.prune(sourceRepoPath);
+    }
+
+    protected RepoPath getFolderRepoPath(VfsItem sourceItem) {
+        RepoPath sourceRepoPath = sourceItem.getRepoPath();
+        if (sourceItem.isFile()) {
+            //If the item is a file, just calculate the parent folder
+            sourceRepoPath = sourceRepoPath.getParent();
+        }
+
+        if (sourceRepoPath == null || sourceRepoPath.isRoot()) {
+            // cleanup only for non root folders
+            return null;
+        }
+        return sourceRepoPath;
     }
 
     protected boolean calcMetadata() {
@@ -302,83 +307,34 @@ public abstract class BaseRepoPathMover {
         return true;
     }
 
-    /**
-     * Cleans the empty folders of the upper hierarchy, starting from the given folder. This method is only called after
-     * moving search results and only if a folder was the root of the move operation (which means that all the
-     * descendants were selected to move).
-     *
-     * @param sourceFolder Folder to start clean up at
-     * @param status       MutableStatusHolder
-     * @return Parent of highest removed folder
-     */
-    private VfsFolder cleanEmptyFolders(VfsFolder sourceFolder) {
-        VfsFolder highestRemovedPath = sourceFolder;
-        boolean emptyAndNotRoot = true;
-        while (emptyAndNotRoot) {
-            boolean isRoot = highestRemovedPath.getRepoPath().isRoot();
-            emptyAndNotRoot = !isRoot && hasNoSiblings(highestRemovedPath.getAbsolutePath());
-            if (emptyAndNotRoot) {
-                //Remove current folder, continue to the parent
-                storageInterceptors.afterDelete(highestRemovedPath, status);
-                bruteForceDeleteAndReplicateEvent(highestRemovedPath);
-                highestRemovedPath = highestRemovedPath.getLockedParentFolder();
-            }
-        }
-        return highestRemovedPath;
-    }
-
-    /**
-     * Indicates if the current source folder has no sibling nodes
-     *
-     * @param parentAbsPath Absolute path of source folder parent
-     * @return True if the current source folder has no siblings, false if not
-     */
-    private boolean hasNoSiblings(String parentAbsPath) {
-        //Important: Make sure to get the child count in a non-locking way
-        return jcrRepoService.getChildrenNames(parentAbsPath).isEmpty();
-    }
-
-    private void calculateMavenMetadata(RepoRepoPath<LocalRepo> targetRrp, VfsFolder rootFolderToMove) {
+    protected void calculateMavenMetadata(RepoRepoPath<LocalRepo> targetRrp, RepoPath sourceFolderRepoPath) {
         assertNotDryRun();
 
         if (calcMetadataOnTarget()) {
             LocalRepo targetLocalRepo = targetRrp.getRepo();
-            VfsItem fsItem = targetLocalRepo.getJcrFsItem(targetRrp.getRepoPath());
-
+            VfsItem fsItem = targetLocalRepo.getImmutableFsItem(targetRrp.getRepoPath());
             if (fsItem == null) {
                 log.debug("Target item doesn't exist. Skipping maven metadata recalculation.");
                 return;
             }
-            VfsFolder rootTargetFolder;
-            if (fsItem.isDirectory()) {
-                rootTargetFolder = (VfsFolder) fsItem;
-            } else {
-                rootTargetFolder = fsItem.getParentFolder();
-            }
-            if (rootTargetFolder == null) {
-                //  target repository doesn't exist which means nothing was moved (maybe permissions issue)
-                log.debug("Target root folder doesn't exist. Skipping maven metadata recalculation.");
-                return;
-            }
-            // always recalculate the target repository. start with the parent of the moved folder in the target
-            VfsFolder rootTargetFolderForMatadataCalculation =
-                    !rootTargetFolder.getRepoPath().isRoot() && rootTargetFolder.getLockedParentFolder() != null ?
-                            rootTargetFolder.getLockedParentFolder() : rootTargetFolder;
-            repositoryService.markBaseForMavenMetadataRecalculation(
-                    rootTargetFolderForMatadataCalculation.getRepoPath());
+
+            // start calculation from the parent folder of the target path (unless it's the root)
+            RepoPath folderForMetadataCalculation =
+                    fsItem.getRepoPath().isRoot() ? fsItem.getRepoPath() : fsItem.getRepoPath().getParent();
+            repositoryService.markBaseForMavenMetadataRecalculation(folderForMetadataCalculation);
             if (executeMavenMetadataCalculation) {
-                repositoryService.calculateMavenMetadataAsync(rootTargetFolderForMatadataCalculation.getRepoPath());
+                repositoryService.calculateMavenMetadataAsync(folderForMetadataCalculation);
             }
         }
 
         if (calcMetadataOnSource()) {
             // recalculate the source repository only if it's not a cache repo and not copy
-            JcrFsItemFactory sourceRepo = VfsItemFactory.getStoringRepo(rootFolderToMove);
-            if (!copy && !sourceRepo.isCache() && rootFolderToMove.getLockedParentFolder() != null) {
-                VfsFolder sourceFolderMetadata = rootFolderToMove.getLockedParentFolder();
-                repositoryService.markBaseForMavenMetadataRecalculation(sourceFolderMetadata.getRepoPath());
+            RepoPath sourceForMetadataCalculation = sourceFolderRepoPath.getParent();
+            Repo sourceRepo = repositoryService.repositoryByKey(sourceFolderRepoPath.getRepoKey());
+            if (!copy && sourceRepo != null && !sourceRepo.isCache() && sourceForMetadataCalculation != null) {
+                repositoryService.markBaseForMavenMetadataRecalculation(sourceForMetadataCalculation);
                 if (executeMavenMetadataCalculation) {
-                    repositoryService.calculateMavenMetadataAsync(sourceFolderMetadata.getRepoPath());
+                    repositoryService.calculateMavenMetadataAsync(sourceForMetadataCalculation);
                 }
             }
         }
@@ -388,7 +344,18 @@ public abstract class BaseRepoPathMover {
         return (status.hasWarnings() || status.hasErrors()) && failFast;
     }
 
-    protected void bruteForceDeleteAndReplicateEvent(VfsItem item) {
-        jcrRepoService.bruteForceDeleteAndReplicateEvent(item);
+    protected void deleteAndReplicateEvent(VfsFolder folder) {
+        LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(folder.getRepoKey());
+        if (localRepo != null) {
+            MutableVfsFolder mutableFolder = localRepo.getMutableFolder(folder.getRepoPath());
+            mutableFolder.delete();
+            artifactoryContext.beanForType(AddonsManager.class).addonByType(ReplicationAddon.class)
+                    .offerLocalReplicationDeleteEvent(folder.getRepoPath());
+        }
     }
+
+    protected void saveSession() {
+        StorageSessionHolder.getSession().save();
+    }
+
 }

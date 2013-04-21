@@ -60,7 +60,7 @@ public class ArtifactSearchControls extends SearchControlsBase {
      * Relative path to search the artifact under
      *
      * @param relativePath Relative path to search the artifact under
-     * @see org.artifactory.jcr.search.VfsQueryJcrImpl#addRelativePathFilter(java.lang.String)
+     * @see org.artifactory.sapi.search.VfsQuery#addPathFilter(String)
      */
     public void setRelativePath(String relativePath) {
         this.relativePath = relativePath;

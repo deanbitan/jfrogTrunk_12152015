@@ -22,8 +22,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.wicket.WicketRuntimeException;
 import org.apache.wicket.util.lang.PropertyResolver;
 import org.artifactory.descriptor.Descriptor;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import javax.xml.XMLConstants;

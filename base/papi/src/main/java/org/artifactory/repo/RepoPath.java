@@ -20,6 +20,8 @@ package org.artifactory.repo;
 
 import org.artifactory.common.Info;
 
+import javax.annotation.Nullable;
+
 /**
  * Holds a compound path of a repository id and a path withing that repository separated by ':'
  */
@@ -35,10 +37,25 @@ public interface RepoPath extends Info {
     String getId();
 
     /**
+     * A path composed of the repository key and path.
+     * <pre>
+     * repoKey = "key", path = "path/to" returns "key/path/to"
+     * repoKey = "key", name = "" returns "key/"
+     * </pre>
+     *
+     * @return A path composed of the repository key and path
+     */
+    String toPath();
+
+    /**
      * @return The name of the path as if it was a file (the string after the last '/' or '\')
      */
     String getName();
 
+    /**
+     * @return Parent repo path of this path. Null if current is root repository path).
+     */
+    @Nullable
     RepoPath getParent();
 
     boolean isRoot();

@@ -23,9 +23,9 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -58,7 +58,7 @@ public class ConfigResource {
         /*
         File configFile = ArtifactoryHome.getConfigFile();
         try {
-            return org.apache.commons.io.FileUtils.readFileToString(configFile, "utf-8");
+            return org.apache.commons.io.Files.readFileToString(configFile, "utf-8");
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage(), e);
         }

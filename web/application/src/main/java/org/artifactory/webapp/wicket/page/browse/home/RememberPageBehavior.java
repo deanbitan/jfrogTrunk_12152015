@@ -46,7 +46,7 @@ public class RememberPageBehavior extends Behavior {
 
     private String getPageUrl(Page page) {
         Class<? extends Page> pageClass = page.getClass();
-        String pageUrl = RequestCycle.get().urlFor(pageClass, null).toString();
+        String pageUrl = RequestCycle.get().urlFor(pageClass, page.getPageParameters()).toString();
         try {
             return new URL(WicketUtils.toAbsolutePath(pageUrl)).getFile();
         } catch (MalformedURLException e) {

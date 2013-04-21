@@ -19,9 +19,9 @@
 package org.artifactory.webapp.servlet.authentication;
 
 import org.artifactory.api.context.ArtifactoryContext;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;

@@ -35,7 +35,7 @@ public interface MutableUserInfo extends UserInfo {
 
     void setUsername(String username);
 
-    void setPassword(String password);
+    void setPassword(SaltedPassword password);
 
     void setEmail(String email);
 

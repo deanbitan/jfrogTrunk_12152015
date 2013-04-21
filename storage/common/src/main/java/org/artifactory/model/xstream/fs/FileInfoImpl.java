@@ -90,15 +90,15 @@ public class FileInfoImpl extends ItemInfoImpl implements InternalFileInfo {
 
     @Override
     public String getMimeType() {
+        if (this.mimeType == null) {
+            this.mimeType = NamingUtils.getMimeTypeByPathAsString(getRelPath());
+        }
         return mimeType;
     }
 
     @Override
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
-        if (this.mimeType == null) {
-            this.mimeType = NamingUtils.getMimeTypeByPathAsString(getRelPath());
-        }
     }
 
     @Override

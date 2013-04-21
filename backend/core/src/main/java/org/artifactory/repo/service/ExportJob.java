@@ -20,8 +20,8 @@ package org.artifactory.repo.service;
 
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.common.MutableStatusHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
+import org.artifactory.repo.cleanup.IntegrationCleanupJob;
 import org.artifactory.sapi.common.BaseSettings;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
@@ -34,6 +34,7 @@ import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author freds
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
         keyAttributes = {Task.REPO_KEY},
         commandsToStop = {
                 @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
+                @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)
         }
 )

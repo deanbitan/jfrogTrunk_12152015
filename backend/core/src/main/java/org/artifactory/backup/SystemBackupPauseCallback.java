@@ -20,12 +20,12 @@ package org.artifactory.backup;
 
 import com.google.common.collect.Sets;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.FileExportCallback;
 import org.artifactory.sapi.common.FileExportEvent;
 import org.artifactory.sapi.common.FileExportInfo;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.Set;

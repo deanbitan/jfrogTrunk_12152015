@@ -125,6 +125,10 @@ public abstract class MavenNaming {
         return isMavenMetadataFileName(fileName);
     }
 
+    /**
+     * @param path The maven metadata full path
+     * @return True if the path points to maven metadata under a snapshot folder
+     */
     public static boolean isSnapshotMavenMetadata(String path) {
         Pair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(path);
         String name = nameAndParent.getFirst();
@@ -239,5 +243,14 @@ public abstract class MavenNaming {
             throw new IllegalArgumentException("Not a valid maven unique snapshot version: " + uniqueVersion);
         }
         return matcher;
+    }
+
+    public static boolean isMavenMetadataChecksum(String path) {
+        if (NamingUtils.isChecksum(path)) {
+            String checksumTargetFile = PathUtils.stripExtension(path);
+            return isMavenMetadata(checksumTargetFile);
+        } else {
+            return false;
+        }
     }
 }

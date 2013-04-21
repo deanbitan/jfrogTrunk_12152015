@@ -30,7 +30,7 @@ import org.artifactory.common.wicket.util.WicketUtils;
 
 import java.io.File;
 
-import static org.artifactory.util.FileUtils.removeFile;
+import static org.artifactory.util.Files.removeFile;
 
 
 public class FileUploadForm extends Form {

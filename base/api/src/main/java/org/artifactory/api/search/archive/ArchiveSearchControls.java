@@ -27,9 +27,11 @@ import org.artifactory.api.search.SearchControlsBase;
  * @author Noam Tenne
  */
 public class ArchiveSearchControls extends SearchControlsBase {
-    private String query;
+    private String path;
+    private String name;
     private boolean excludeInnerClasses;
     private boolean shouldCalcEntries;
+    private boolean searchClassResourcesOnly;
 
     /**
      * Default constructor
@@ -37,6 +39,7 @@ public class ArchiveSearchControls extends SearchControlsBase {
     public ArchiveSearchControls() {
         excludeInnerClasses = false;
         shouldCalcEntries = true;
+        searchClassResourcesOnly = false;
     }
 
     /**
@@ -45,29 +48,39 @@ public class ArchiveSearchControls extends SearchControlsBase {
      * @param archiveSearchControls Controls to copy
      */
     public ArchiveSearchControls(ArchiveSearchControls archiveSearchControls) {
-        this.query = archiveSearchControls.query;
+        this.path = archiveSearchControls.path;
+        this.name = archiveSearchControls.name;
         this.selectedRepoForSearch = archiveSearchControls.selectedRepoForSearch;
         setLimitSearchResults(archiveSearchControls.isLimitSearchResults());
         this.excludeInnerClasses = archiveSearchControls.excludeInnerClasses;
         this.shouldCalcEntries = archiveSearchControls.shouldCalcEntries;
+        this.searchClassResourcesOnly = archiveSearchControls.searchClassResourcesOnly;
     }
 
-    public String getQuery() {
-        return query;
+    public String getPath() {
+        return path;
     }
 
-    public void setQuery(String query) {
-        this.query = query;
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override
     public boolean isEmpty() {
-        return StringUtils.isEmpty(query);
+        return StringUtils.isEmpty(path) && StringUtils.isEmpty(name);
     }
 
     @Override
     public boolean isWildcardsOnly() {
-        return isWildcardsOnly(query);
+        return isWildcardsOnly(path) && isWildcardsOnly(name);
     }
 
     public boolean isExcludeInnerClasses() {
@@ -84,5 +97,18 @@ public class ArchiveSearchControls extends SearchControlsBase {
 
     public void setShouldCalcEntries(boolean shouldCalcEntries) {
         this.shouldCalcEntries = shouldCalcEntries;
+    }
+
+    public boolean isSearchClassResourcesOnly() {
+        return searchClassResourcesOnly;
+    }
+
+    public void setSearchClassResourcesOnly(boolean searchClassResourcesOnly) {
+        this.searchClassResourcesOnly = searchClassResourcesOnly;
+    }
+
+    public String getQueryDisplay() {
+        return (StringUtils.isNotEmpty(getPath()) && !isWildcardsOnly(getPath()) ? getPath() + "/" : "") +
+                (StringUtils.isNotEmpty(getName()) ? getName() : "");
     }
 }

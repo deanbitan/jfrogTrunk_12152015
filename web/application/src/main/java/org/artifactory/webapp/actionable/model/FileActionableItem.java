@@ -28,8 +28,8 @@ import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.addon.wicket.YumWebAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.ivy.IvyNaming;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
@@ -49,6 +49,7 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.PomViewT
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats.StatsTabPanel;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -98,6 +99,10 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     @Override
     public FileInfo getFileInfo() {
         return fileInfo;
+    }
+
+    public StatsInfo getStatsInfo() {
+        return getRepoService().getStatsInfo(getRepoPath());
     }
 
     @Override
@@ -184,7 +189,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     @Override
     public void filterActions(AuthorizationService authService) {
         RepoPath repoPath = getFileInfo().getRepoPath();
-        boolean canAdmin = authService.canAdmin(repoPath);
+        boolean canAdmin = authService.canManage(repoPath);
         boolean canDelete = authService.canDelete(repoPath);
         boolean canRead = authService.canRead(repoPath);
         if (!canDelete) {

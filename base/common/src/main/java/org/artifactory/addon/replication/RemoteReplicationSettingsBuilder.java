@@ -31,16 +31,30 @@ public class RemoteReplicationSettingsBuilder {
     private boolean progress = false;
     private String url;
     private int socketTimeoutMillis = 15000;
-    private int mark = 0;
     private boolean deleteExisting = false;
     private boolean includeProperties = false;
     private ReplicationAddon.Overwrite overwrite = ReplicationAddon.Overwrite.force;
+
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
+    private int mark = 0;
+
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
     private Writer responseWriter;
 
     public RemoteReplicationSettingsBuilder(RepoPath repoPath) {
         this.repoPath = repoPath;
     }
 
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
     public RemoteReplicationSettingsBuilder responseWriter(Writer responseWriter) {
         this.responseWriter = responseWriter;
         return this;
@@ -51,6 +65,10 @@ public class RemoteReplicationSettingsBuilder {
         return this;
     }
 
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
     public RemoteReplicationSettingsBuilder mark(int mark) {
         this.mark = mark;
         return this;

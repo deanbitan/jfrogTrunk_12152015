@@ -22,6 +22,7 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.logging.version.LoggingVersion;
@@ -36,7 +37,15 @@ public abstract class LogbackContextHelper {
     }
 
     public static LoggerContext configure(LoggerContext lc, ArtifactoryHome artifactoryHome) {
+        return configure(lc, artifactoryHome, "");
+    }
+
+    public static LoggerContext configure(LoggerContext lc, ArtifactoryHome artifactoryHome, String contextId) {
         try {
+            contextId = StringUtils.trimToEmpty(contextId);
+            contextId = "artifactory".equalsIgnoreCase(contextId) ? "" : contextId + " ";
+            contextId = StringUtils.isBlank(contextId) ? "" : contextId;
+
             /**
              * Perform the logback conversion here because if we do it after configuration is loaded, we must wait 'till
              * the changes are detected by the watchdog (possibly missing out on important log messages)
@@ -65,7 +74,9 @@ public abstract class LogbackContextHelper {
             JoranConfigurator configurator = new JoranConfigurator();
             lc.stop();
             configurator.setContext(lc);
-            //Set the artifactory.home so that tokens in the logback config file are extracted
+            // Set the contextId to differentiate AOLs console logger logs
+            lc.putProperty("artifactory.contextId", StringUtils.uncapitalize(contextId));
+            // Set the artifactory.home so that tokens in the logback config file are extracted
             lc.putProperty(ArtifactoryHome.SYS_PROP, artifactoryHome.getHomeDir().getAbsolutePath());
             configurator.doConfigure(artifactoryHome.getLogbackConfig());
             StatusPrinter.printIfErrorsOccured(lc);

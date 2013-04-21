@@ -19,14 +19,10 @@
 package org.artifactory.repo;
 
 import org.artifactory.api.config.ImportableExportable;
-import org.artifactory.api.repo.ArchiveFileContent;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.resource.ResourceStreamHandle;
-
-import java.io.IOException;
 
 public interface LocalRepo<T extends LocalRepoDescriptor> extends RealRepo<T>, StoringRepo<T>, ImportableExportable {
 
@@ -50,8 +46,4 @@ public interface LocalRepo<T extends LocalRepoDescriptor> extends RealRepo<T>, S
      *         Handle is to be closed by clients to avoid stream leaks!
      */
     ResourceStreamHandle getFileContent(RepoPath repoPath);
-
-    boolean isAnonAccessEnabled();
-
-    ArchiveFileContent getArchiveFileContent(RepoPath repoPath, String filePath) throws IOException;
 }

@@ -65,4 +65,24 @@ public class StorageUnitTest {
         String twoAndAHalfGigs = StorageUnit.toReadableString(twoAndAHalfGigsInBytes);
         assertEquals(twoAndAHalfGigs, "2.50 GB");
     }
+
+    public void readableFormatToBytes() {
+        assertEquals(StorageUnit.fromReadableString("3"), 3);
+        assertEquals(StorageUnit.fromReadableString("5368709120"), 5368709120L);
+
+        assertEquals(StorageUnit.fromReadableString("4k"), 4096);
+        assertEquals(StorageUnit.fromReadableString("12K"), 12288);
+        assertEquals(StorageUnit.fromReadableString("3kb"), 3072);
+        assertEquals(StorageUnit.fromReadableString("32KB"), 32768);
+
+        assertEquals(StorageUnit.fromReadableString("1024m"), 1073741824);
+        assertEquals(StorageUnit.fromReadableString("500M"), 524288000);
+        assertEquals(StorageUnit.fromReadableString("40mb"), 41943040);
+        assertEquals(StorageUnit.fromReadableString("128MB"), 134217728);
+
+        assertEquals(StorageUnit.fromReadableString("4g"), 4294967296L);
+        assertEquals(StorageUnit.fromReadableString("12G"), 12884901888L);
+        assertEquals(StorageUnit.fromReadableString("3gb"), 3221225472L);
+        assertEquals(StorageUnit.fromReadableString("32GB"), 34359738368L);
+    }
 }

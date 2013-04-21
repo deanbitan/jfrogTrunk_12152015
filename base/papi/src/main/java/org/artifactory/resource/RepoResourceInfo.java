@@ -40,8 +40,14 @@ public interface RepoResourceInfo extends Info {
 
     long getSize();
 
+    /**
+     * @return The actual sha1 checksum of the file. Null if not determined yet.
+     */
     String getSha1();
 
+    /**
+     * @return The actual md5 checksum of the file. Null if not determined yet.
+     */
     String getMd5();
 
     ChecksumsInfo getChecksumsInfo();

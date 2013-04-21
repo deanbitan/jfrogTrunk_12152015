@@ -26,4 +26,5 @@ public interface ArchiveRestConstants {
 
     //Query path
     String PATH_BUILD_ARTIFACTS = "buildArtifacts";
+    String PATH_INDEX = "index";
 }

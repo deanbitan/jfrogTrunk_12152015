@@ -27,17 +27,24 @@ import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.RestCoreAddon;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.repo.HttpRepo;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
+import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+
+import static org.artifactory.repo.remote.browse.S3RepositorySecuredHelper.getPrefix;
 
 /**
  * Support browsing Amazon S3 repositories.<p/>
@@ -52,14 +59,28 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
 
     private static final String ERROR_CODE_NOSUCHKEY = "NoSuchKey";
     private static final String HEADER_S3_REQUEST_ID = "x-amz-request-id";
+    private static final String INVALID_ARGUMENT = "InvalidArgument";
+    private static final String UNSUPPORTED_AUTHORIZATION_TYPE = "Unsupported Authorization Type";
+
+    private HttpRepo httpRepo;
 
     /**
      * The root URL of the S3 repository. This is the bucket url on which list requests should be done.
      */
     private String rootUrl;
 
+    /**
+     * Indicates this URL is S3 secured
+     */
+    private boolean secured;
+
     public S3RepositoryBrowser(HttpExecutor client) {
         super(client);
+    }
+
+    public S3RepositoryBrowser(HttpExecutor client, HttpRepo httpRepo) {
+        super(client);
+        this.httpRepo = httpRepo;
     }
 
     @Override
@@ -76,13 +97,17 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
     }
 
     private String buildS3RequestUrl(String url) {
+        if (secured) {
+            String pfx = getPrefix(url);
+            return buildSecuredS3RequestUrl(url, httpRepo, "") + "&prefix=" + pfx + "&delimiter=/";
+        }
         // the s3 request should always go to the root and add the rest of the path as the prefix parameter.
         String prefixPath = StringUtils.removeStart(url, rootUrl);
         StringBuilder sb = new StringBuilder(rootUrl).append("?prefix=").append(prefixPath);
 
         // we assume a file system structure with '/' as the delimiter
         sb.append("&").append("delimiter=/");
-        return sb.toString();
+        return HttpUtils.encodeQuery(sb.toString());
     }
 
     /**
@@ -93,7 +118,10 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
      * @return The root url of the repository (the bucket)
      */
     String detectRootUrl(String url) throws IOException {
-        // force non-directory url. S3 returns 200 for directory paths
+        //noinspection RedundantStringConstructorCall
+        String copyUrl = new String(url); //defense
+
+        // force non-directory copyUrl. S3 returns 200 for directory paths
         url = url.endsWith("/") ? StringUtils.removeEnd(url, "/") : url;
         // generate a random string to force 404
         String randomString = RandomStringUtils.randomAlphanumeric(16);
@@ -112,12 +140,37 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
             if (ERROR_CODE_NOSUCHKEY.equals(errorCode)) {
                 String relativePath = root.getChildText("Key", root.getNamespace());
                 rootUrl = StringUtils.removeEnd(url, relativePath);
+            } else if (INVALID_ARGUMENT.equals(errorCode)) {
+                if (isPro()) {
+                    String message = root.getChildText("Message");
+                    if (UNSUPPORTED_AUTHORIZATION_TYPE.equals(message)) {
+                        rootUrl = detectRootUrlSecured(copyUrl);
+                    }
+                } else {
+                    log.warn("Browsing secured S3 requires Artifactory Pro"); //TODO [mamo] should inform otherwise?
+                }
             }
         } finally {
             method.releaseConnection();
         }
         log.debug("Detected S3 root URL: {}", rootUrl);
         return rootUrl;
+    }
+
+    private String detectRootUrlSecured(String url) throws IOException {
+        String securedUrl = buildSecuredS3RequestUrl(url, httpRepo, "") +
+                "&prefix=" + getPrefix(url) + "&delimiter=/&max-keys=1";
+        GetMethod method = new GetMethod(securedUrl);
+        int statusCode = client.executeMethod(method);
+        if (statusCode == 200) {
+            String rootUrl = StringUtils.removeEnd(httpRepo.getUrl(), getPrefix(httpRepo.getUrl()));
+            if (!rootUrl.endsWith("/")) {
+                rootUrl += "/";
+            }
+            secured = true;
+            return rootUrl;
+        }
+        return null;
     }
 
     /**
@@ -141,7 +194,6 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
 
     @SuppressWarnings({"unchecked"})
     private List<RemoteItem> parseResponse(String content) {
-        List<String> children = Lists.newArrayList();
         List<RemoteItem> items = Lists.newArrayList();
         Document document = XmlUtils.parse(content);
         Element root = document.getRootElement();
@@ -154,7 +206,9 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
             String directoryPath = folder.getChildText("Prefix", ns);
             String folderName = StringUtils.removeStart(directoryPath, prefix);
             if (StringUtils.isNotBlank(folderName)) {
-                children.add(rootUrl + directoryPath);
+                if (secured) {
+                    directoryPath = StringUtils.removeStart(directoryPath, getPrefix(rootUrl));
+                }
                 items.add(new RemoteItem(rootUrl + directoryPath, true));
             }
         }
@@ -171,8 +225,16 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
                 String lastModifiedStr = element.getChildText("LastModified", ns);
                 long lastModified =
                         lastModifiedStr == null ? 0 : ISODateTimeFormat.dateTime().parseMillis(lastModifiedStr);
-                children.add(rootUrl + filePath);
-                items.add(new RemoteItem(rootUrl + filePath, false, size, lastModified));
+                if (secured) {
+                    RemoteItem remoteItem = new RemoteItem(rootUrl + filePath, false, size, lastModified);
+                    String filePath2 = StringUtils.removeStart(filePath, getPrefix(rootUrl));
+                    String url = rootUrl + filePath2;
+                    String securedPath = buildSecuredS3RequestUrl(url, httpRepo, getPrefix(url));
+                    remoteItem.setEffectiveUrl(securedPath);
+                    items.add(remoteItem);
+                } else {
+                    items.add(new RemoteItem(rootUrl + filePath, false, size, lastModified));
+                }
             }
         }
 
@@ -192,5 +254,16 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
             }
         }
         return false;
+    }
+
+    protected boolean isPro() {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        RestCoreAddon restCoreAddon = addonsManager.addonByType(RestCoreAddon.class);
+        return !restCoreAddon.isDefault();
+    }
+
+    private String buildSecuredS3RequestUrl(String url, HttpRepo httpRepo, String prefix) {
+        long expiration = new DateTime().plusSeconds((int) httpRepo.getRetrievalCachePeriodSecs()).getMillis();
+        return S3RepositorySecuredHelper.buildSecuredS3RequestUrl(url, prefix, httpRepo, expiration);
     }
 }

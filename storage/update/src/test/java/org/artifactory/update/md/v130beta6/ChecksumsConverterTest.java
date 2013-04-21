@@ -21,12 +21,12 @@ package org.artifactory.update.md.v130beta6;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

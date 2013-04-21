@@ -21,11 +21,11 @@ package org.artifactory.io;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.fs.ZipEntryRepoResource;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;

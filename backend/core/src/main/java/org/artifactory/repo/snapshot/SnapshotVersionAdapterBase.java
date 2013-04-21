@@ -19,9 +19,9 @@
 package org.artifactory.repo.snapshot;
 
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.NamingUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base abstract class for {@link MavenSnapshotVersionAdapter}s.

@@ -26,7 +26,6 @@ import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.HttpCacheAvoidableResource;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.RepoResourceInfo;
@@ -37,6 +36,7 @@ import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
 import org.artifactory.webapp.servlet.HttpArtifactoryResponse;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

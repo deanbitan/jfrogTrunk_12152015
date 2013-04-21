@@ -18,12 +18,12 @@
 
 package org.artifactory.update.md.v130beta3;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverterTest;
 import org.artifactory.util.XmlUtils;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;

@@ -24,46 +24,34 @@ import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.md.Properties;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.PathFactory;
-import org.artifactory.sapi.common.PathFactoryHolder;
-import org.artifactory.sapi.data.VfsNode;
-import org.artifactory.sapi.data.VfsNodeType;
 import org.artifactory.sapi.search.VfsComparatorType;
+import org.artifactory.sapi.search.VfsQuery;
 import org.artifactory.sapi.search.VfsQueryResult;
-import org.artifactory.sapi.search.VfsRepoQuery;
+import org.artifactory.sapi.search.VfsQueryResultType;
+import org.artifactory.sapi.search.VfsQueryRow;
 import org.artifactory.search.SearcherBase;
 
-import javax.jcr.RepositoryException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.artifactory.storage.StorageConstants.NODE_ARTIFACTORY_METADATA;
-import static org.artifactory.storage.StorageConstants.NODE_ARTIFACTORY_PROPERTIES;
-
 /**
  * @author Noam Tenne
  */
 public class PropertySearcher extends SearcherBase<PropertySearchControls, PropertySearchResult> {
 
-    // /repositories/libs-releases-local/artifactory:metadata/properties/artifactory:properties[set1.prop1 = 'val1']
-
-    private final static String FULL_PROPERTY_PATH = "/" + NODE_ARTIFACTORY_METADATA + "/" + Properties.ROOT + "/" +
-            NODE_ARTIFACTORY_PROPERTIES;
-
     @Override
     public ItemSearchResults<PropertySearchResult> doSearch(PropertySearchControls controls) {
         LinkedHashSet<PropertySearchResult> globalResults = Sets.newLinkedHashSet();
 
-        ////Get all open property keys and search through them
+        // TODO: [by FSI] Create a real full DB query aggregating properties conditions
+        // Get all open property keys and search through them
         Set<String> openPropertyKeys = controls.getPropertyKeysByOpenness(PropertySearchControls.OPEN);
         long totalResultCount = executeOpenPropSearch(controls, openPropertyKeys, globalResults);
 
-        //Get all closed property keys and search through them
+        // Get all closed property keys and search through them
         Set<String> closedPropertyKeys = controls.getPropertyKeysByOpenness(PropertySearchControls.CLOSED);
         totalResultCount += executeClosedPropSearch(controls, closedPropertyKeys, globalResults);
 
@@ -84,12 +72,10 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         for (String key : openPropertyKeys) {
             Set<String> values = controls.get(key);
             for (String value : values) {
-                //*[jcr:contains(@myapp:title, 'JSR 170')]
-                VfsRepoQuery repoQuery = createRepoQuery(controls);
-                repoQuery.addAllSubPathFilter();
-                repoQuery.setNodeTypeFilter(VfsNodeType.UNSTRUCTURED);
-                repoQuery.addSmartEqualCriterion(key, value);
-                VfsQueryResult queryResult = repoQuery.execute(controls.isLimitSearchResults());
+                VfsQuery repoQuery = createQuery(controls)
+                        .expectedResult(VfsQueryResultType.ANY_ITEM)
+                        .prop(key).val(value);
+                VfsQueryResult queryResult = repoQuery.execute(getLimit(controls));
                 resultCount += processResults(controls, queryResult, globalResults);
             }
         }
@@ -108,8 +94,8 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         if (closedPropertyKeys.isEmpty()) {
             return 0;
         }
-        VfsRepoQuery repoQuery = createRepoQuery(controls);
-        repoQuery.setNodeTypeFilter(VfsNodeType.UNSTRUCTURED);
+        VfsQuery repoQuery = createQuery(controls)
+                .expectedResult(VfsQueryResultType.ANY_ITEM);
 
         // TODO: Should support any boolean
         Iterator<String> keyIterator = closedPropertyKeys.iterator();
@@ -119,10 +105,10 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
 
             while (valueIterator.hasNext()) {
                 String value = valueIterator.next();
-                repoQuery.addCriterion(key, VfsComparatorType.EQUAL, value);
+                repoQuery.prop(key).comp(VfsComparatorType.EQUAL).val(value);
             }
         }
-        VfsQueryResult queryResult = repoQuery.execute(controls.isLimitSearchResults());
+        VfsQueryResult queryResult = repoQuery.execute(getLimit(controls));
         return processResults(controls, queryResult, globalResults);
     }
 
@@ -144,38 +130,25 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
          * until now
          */
         boolean noGlobalResults = globalResults.isEmpty();
-        boolean limit = controls.isLimitSearchResults();
+        int limit = getLimit(controls);
 
-        PathFactory pathFactory = PathFactoryHolder.get();
         long resultCount = 0L;
         List<PropertySearchResult> currentSearchResults = Lists.newArrayList();
-        for (VfsNode vfsNode : queryResult.getNodes()) {
-            if (limit && globalResults.size() >= getMaxResults()) {
+        for (VfsQueryRow row : queryResult.getAllRows()) {
+            if (globalResults.size() >= limit) {
                 break;
             }
-            String path = vfsNode.absolutePath();
+            ItemInfo item = row.getItem();
+            if (!isResultAcceptable(item.getRepoPath())) {
+                continue;
+            }
 
-            //Make sure the result is actually a property
-            if (path.contains(FULL_PROPERTY_PATH)) {
-                String artifactPath = path.substring(0, path.lastIndexOf(FULL_PROPERTY_PATH));
-                VfsNode node = getVfsDataService().findByPath(artifactPath);
-                if (node == null) {
-                    // Was deleted in the mean time
-                    continue;
-                }
-                RepoPath repoPath = pathFactory.getRepoPath(node.absolutePath());
-                if (!isResultAcceptable(repoPath)) {
-                    continue;
-                }
+            PropertySearchResult searchResult = new PropertySearchResult(item);
 
-                ItemInfo itemInfo = getProxyItemInfo(node);
-                PropertySearchResult searchResult = new PropertySearchResult(itemInfo);
-
-                //Make sure that we don't get any double results
-                if (!currentSearchResults.contains(searchResult)) {
-                    resultCount++;
-                    currentSearchResults.add(searchResult);
-                }
+            //Make sure that we don't get any double results
+            if (!currentSearchResults.contains(searchResult)) {
+                resultCount++;
+                currentSearchResults.add(searchResult);
             }
         }
 

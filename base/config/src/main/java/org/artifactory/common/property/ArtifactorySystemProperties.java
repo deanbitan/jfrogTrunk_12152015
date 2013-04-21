@@ -60,14 +60,9 @@ public class ArtifactorySystemProperties {
                     .put("artifactory.metadataCacheIdleTimeSecs", new NullPropertyMapper())
                     .put("artifactory.logs.refreshrate.secs",
                             new SamePropertyMapper("artifactory.logs.viewRefreshRateSecs"))
-                    .put("artifactory.jcr.configPath", new SamePropertyMapper("artifactory.jcr.configDir"))
                     .put("artifactory.spring.configPath", new SamePropertyMapper("artifactory.spring.configDir"))
                     .put("artifactory.lockTimeoutSecs", new SamePropertyMapper("artifactory.locks.timeoutSecs"))
                     .put("artifactory.xmlAdditionalMimeTypeExtensions", new NullPropertyMapper())
-                    .put("artifactory.jcr.session.pool.maxSize", new NullPropertyMapper())
-                    .put("artifactory.gcIntervalMins", new NullPropertyMapper())
-                    .put("artifactory.gc.intervalSecs", new NullPropertyMapper())
-                    .put("artifactory.gc.delaySecs", new NullPropertyMapper())
                     .put("repo.cleanup.intervalHours", new NullPropertyMapper())
                     .build();
 

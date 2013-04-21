@@ -18,13 +18,13 @@
 
 package org.artifactory.schedule;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalContextHelper;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author yoavl

@@ -19,15 +19,15 @@
 
 <configuration debug="false">
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <encoder>
             <pattern>%d [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
-        </layout>
+        </encoder>
     </appender>
     <appender name="TRAFFIC" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>target/traffic</File>
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <encoder>
             <pattern>%message%n</pattern>
-        </layout>
+        </encoder>
         <rollingPolicy class="org.artifactory.traffic.policy.TrafficTimeBasedRollingPolicy">
             <FileNamePattern>target/traffic.%d{yyyyMMdd}</FileNamePattern>
         </rollingPolicy>

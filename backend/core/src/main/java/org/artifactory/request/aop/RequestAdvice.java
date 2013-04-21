@@ -25,10 +25,10 @@ import org.artifactory.api.repo.AggregatingRequestListener;
 import org.artifactory.api.repo.DirectRequestListener;
 import org.artifactory.api.repo.Request;
 import org.artifactory.api.repo.RequestListener;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AuthenticationHelper;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 
 import java.util.Collection;
@@ -43,11 +43,8 @@ public class RequestAdvice implements MethodInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RequestAdvice.class);
 
-    /**
-     * Default constructor
-     */
     public RequestAdvice() {
-        log.info("Creating request advice interceptor");
+        log.debug("Creating request advice interceptor");
     }
 
     @Override

@@ -24,6 +24,8 @@ import org.artifactory.security.MutableGroupInfo;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserInfo;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
@@ -36,31 +38,39 @@ public interface UserGroupService {
     UserInfo currentUser();
 
     /**
+     * Returns the user details for the given username.
+     *
      * @param username The unique username
      * @return UserInfo if user with the input username exists
      * @throws UsernameNotFoundException if user not found in the system
      */
+    @Nonnull
     UserInfo findUser(String username);
 
     void updateUser(MutableUserInfo user);
 
-    @Lock(transactional = true)
+    @Lock
     boolean createUser(MutableUserInfo user);
 
-    @Lock(transactional = true)
+    @Lock
     void deleteUser(String username);
 
     List<UserInfo> getAllUsers(boolean includeAdmins);
 
-    @Lock(transactional = true)
-    void deleteGroup(String groupname);
+    /**
+     * Deletes the group from the database including any group membership users have to this group.
+     *
+     * @param groupName The group name to delete
+     */
+    @Lock
+    void deleteGroup(String groupName);
 
     List<GroupInfo> getAllGroups();
 
     /**
      * @return A set of all the groups that should be added by default to newly created users.
      */
-    Set<GroupInfo> getNewUserDefaultGroups();
+    List<GroupInfo> getNewUserDefaultGroups();
 
     /**
      * @return A list of all groups that are of an external realm
@@ -84,7 +94,7 @@ public interface UserGroupService {
      */
     void updateGroup(MutableGroupInfo groupInfo);
 
-    @Lock(transactional = true)
+    @Lock
     boolean createGroup(MutableGroupInfo groupInfo);
 
     /**
@@ -93,7 +103,7 @@ public interface UserGroupService {
      * @param groupName The group's unique name.
      * @param usernames The list of usernames.
      */
-    @Lock(transactional = true)
+    @Lock
     void addUsersToGroup(String groupName, List<String> usernames);
 
     /**
@@ -102,7 +112,7 @@ public interface UserGroupService {
      * @param groupName The group name
      * @param usernames The list of usernames
      */
-    @Lock(transactional = true)
+    @Lock
     void removeUsersFromGroup(String groupName, List<String> usernames);
 
     /**
@@ -127,5 +137,12 @@ public interface UserGroupService {
      */
     UserInfo findOrCreateExternalAuthUser(String username, boolean transientUser);
 
+    /**
+     * Returns the group details for the group name provided.
+     *
+     * @param groupName The name of the group to look for
+     * @return The group details, null if no group with this name found
+     */
+    @Nullable
     GroupInfo findGroup(String groupName);
 }

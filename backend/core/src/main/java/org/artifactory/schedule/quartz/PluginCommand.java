@@ -18,7 +18,6 @@
 
 package org.artifactory.schedule.quartz;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.ImportJob;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
@@ -29,6 +28,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A quartz command job that runs a plugin closure

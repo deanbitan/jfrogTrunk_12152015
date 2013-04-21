@@ -29,6 +29,11 @@ import org.artifactory.repo.remote.browse.RemoteItem;
 public class RemoteBrowsableItem extends BrowsableItem {
 
     /**
+     * The effective url for linking this item
+     */
+    private String effectiveUrl;
+
+    /**
      * Creates a new remote browsable item.
      *
      * @param remoteItem Remote item details
@@ -38,6 +43,14 @@ public class RemoteBrowsableItem extends BrowsableItem {
         super(remoteItem.getName(), remoteItem.isDirectory(), 0L,
                 remoteItem.getLastModified(), remoteItem.getSize(), repoPath);
         setRemote(true);
+    }
+
+    public String getEffectiveUrl() {
+        return effectiveUrl;
+    }
+
+    public void setEffectiveUrl(String effectiveUrl) {
+        this.effectiveUrl = effectiveUrl;
     }
 
     @Override

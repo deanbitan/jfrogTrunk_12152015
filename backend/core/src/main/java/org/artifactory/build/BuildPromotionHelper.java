@@ -23,7 +23,6 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.DoesNotExistException;
@@ -32,6 +31,7 @@ import org.jfrog.build.api.builder.PromotionStatusBuilder;
 import org.jfrog.build.api.release.Promotion;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Date;
@@ -135,21 +135,17 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
             return;
         }
 
-        build.addStatus(statusBuilder.build());
-        buildService.updateBuild(build, false);
+        buildService.addPromotionStatus(build, statusBuilder.build());
     }
 
     private void promoteBuildItems(Promotion promotion, MultiStatusHolder status, Set<RepoPath> itemsToMove) {
-
-        boolean copy = promotion.isCopy();
         String targetRepo = promotion.getTargetRepo();
-
         boolean dryRun = promotion.isDryRun();
-
-        if (copy) {
+        if (promotion.isCopy()) {
             try {
                 status.merge(copy(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
             } catch (Exception e) {
+                log.error(e.getMessage(), e);
                 status.setError("Error occurred while copying: " + e.getMessage(), e, log);
             }
         } else {

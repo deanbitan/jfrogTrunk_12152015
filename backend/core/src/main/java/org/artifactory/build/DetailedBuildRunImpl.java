@@ -25,6 +25,8 @@ import org.jfrog.build.api.Build;
 import org.jfrog.build.api.release.PromotionStatus;
 
 import javax.annotation.Nonnull;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -35,13 +37,36 @@ import java.util.List;
  *
  * @author Noam Y. Tenne
  */
-public class DetailedBuildRunImpl extends BuildRunImpl implements DetailedBuildRun {
+public class DetailedBuildRunImpl implements DetailedBuildRun {
 
     final Build build;
 
     public DetailedBuildRunImpl(@Nonnull Build build) {
-        super(build.getName(), build.getNumber(), build.getStarted());
         this.build = build;
+    }
+
+    @Override
+    public String getName() {
+        return build.getName();
+    }
+
+    @Override
+    public String getNumber() {
+        return build.getNumber();
+    }
+
+    @Override
+    public String getStarted() {
+        return build.getStarted();
+    }
+
+    @Override
+    public Date getStartedDate() {
+        try {
+            return new SimpleDateFormat(Build.STARTED_FORMAT).parse(getStarted());
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -127,6 +152,11 @@ public class DetailedBuildRunImpl extends BuildRunImpl implements DetailedBuildR
             build.setStatuses(promotionStatuses);
         }
         return new ReleaseStatusList(promotionStatuses);
+    }
+
+    @Override
+    public String getCiUrl() {
+        return build.getUrl();
     }
 
     @Override

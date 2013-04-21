@@ -18,10 +18,10 @@
 
 package org.artifactory.common;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
@@ -65,7 +65,6 @@ public class ArtifactoryPropertiesTest extends ArtifactoryHomeBoundTest {
         assertEquals(ConstantValues.locksTimeoutSecs.getInt(),
                 parseInt(ConstantValues.locksTimeoutSecs.getDefValue()));
         assertEquals(ConstantValues.securityAuthenticationCacheIdleTimeSecs.getInt(), 50);
-        assertEquals(ConstantValues.jcrFixConsistency.getBoolean(), true);
         assertEquals(ConstantValues.searchMaxResults.getInt(),
                 parseInt(ConstantValues.searchMaxResults.getDefValue()));
     }
@@ -79,7 +78,6 @@ public class ArtifactoryPropertiesTest extends ArtifactoryHomeBoundTest {
         assertEquals(ConstantValues.logsViewRefreshRateSecs.getInt(), 1000);
         assertEquals(ConstantValues.locksTimeoutSecs.getInt(), 120);
         assertEquals(ConstantValues.securityAuthenticationCacheIdleTimeSecs.getInt(), 800);
-        assertEquals(ConstantValues.jcrFixConsistency.getBoolean(), true);
         assertEquals(ConstantValues.searchMaxResults.getInt(),
                 parseInt(ConstantValues.searchMaxResults.getDefValue()));
     }

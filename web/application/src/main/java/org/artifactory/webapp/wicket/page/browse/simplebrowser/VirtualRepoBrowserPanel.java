@@ -27,7 +27,6 @@ import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.markup.html.link.AbstractLink;
-import org.apache.wicket.markup.html.link.BookmarkablePageLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
@@ -39,18 +38,16 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.repo.BaseBrowsableItem;
+import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualBrowsableItem;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
-import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RequestUtils;
-import org.artifactory.webapp.wicket.page.browse.simplebrowser.root.SimpleBrowserRootPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
@@ -64,8 +61,6 @@ import static org.artifactory.request.ArtifactoryRequest.SIMPLE_BROWSING_PATH;
  */
 public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
     private static final Logger log = LoggerFactory.getLogger(VirtualRepoBrowserPanel.class);
-
-    private static final long serialVersionUID = 1L;
 
     @SpringBean
     private RepositoryBrowsingService repoBrowsingService;
@@ -95,34 +90,30 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
 
             @Override
             protected void populateItem(final Item<BaseBrowsableItem> listItem) {
-                VirtualBrowsableItem browsableItem = (VirtualBrowsableItem) listItem.getModelObject();
-
-                String relativePath = browsableItem.getRelativePath();
-                if ("/".equals(relativePath)) {
-                    //Do not repeat / twice for root repo link
-                    relativePath = "";
-                }
-
-                String itemName = browsableItem.getName();
+                BaseBrowsableItem browsableItem = listItem.getModelObject();
+                String itemRelativePath = browsableItem.getRelativePath();
                 AbstractLink itemLink;
-                if (VirtualBrowsableItem.UP.equals(relativePath)) {
+                if (StringUtils.isEmpty(browsableItem.getRepoKey())) {
                     //Up link to the list of repositories
-                    itemLink = new BookmarkablePageLink<Class>("link", SimpleBrowserRootPage.class);
+                    itemLink = createRootLink();
                 } else {
-                    StringBuilder hrefBuilder = new StringBuilder(hrefPrefix).append("/").append(SIMPLE_BROWSING_PATH)
-                            .append("/").append(repoKey).append("/").append(relativePath);
-                    //Make sure to add a slash at the end of the URI so we always reach the browser
-                    if (browsableItem.isFolder() &&
-                            ((!StringUtils.isBlank(relativePath)) && (!StringUtils.endsWith(relativePath, "/")))) {
-                        hrefBuilder.append("/");
+                    String itemName = browsableItem.getName();
+                    if (browsableItem.isFolder() && StringUtils.isNotBlank(itemRelativePath)) {
+                        itemRelativePath += "/";
+                        itemName += itemName.equals(BrowsableItem.UP) ? "" : "/";
                     }
-                    itemLink = new ExternalLink("link", hrefBuilder.toString(), itemName);
+
+                    String hrefBuilder = hrefPrefix + "/" + SIMPLE_BROWSING_PATH + "/" + repoKey + "/" +
+                            itemRelativePath;
+                    itemLink = new ExternalLink("link", hrefBuilder, itemName);
                 }
                 itemLink.add(new CssClass(getCssClass(browsableItem)));
                 listItem.add(itemLink);
                 addGlobeIcon(listItem, browsableItem.isRemote());
-                final List<String> repoKeys = browsableItem.getRepoKeys();
-                final String finalRelativePath = relativePath;
+
+                final List<String> repoKeys = (browsableItem instanceof VirtualBrowsableItem) ?
+                        ((VirtualBrowsableItem) browsableItem).getRepoKeys() : Collections.<String>emptyList();
+                final String finalRelativePath = itemRelativePath;
                 ListView<String> repositoriesList = new ListView<String>("repositoriesList", repoKeys) {
 
                     @Override
@@ -146,57 +137,6 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
         //Add sorting decorator
         add(new OrderByBorder("orderByName", "name", dataProvider));
         add(table);
-    }
-
-    /**
-     * Creates a virtual repo "up directory"\.. browsable item
-     *
-     * @param repoPath Relative path of starting point
-     * @return Virtual up-dir Browsable item
-     */
-    @Override
-    protected BaseBrowsableItem getPseudoUpLink(RepoPath repoPath) {
-        String startingRelativePath = repoPath.getPath();
-        VirtualBrowsableItem upDirItem;
-        if (org.apache.commons.lang.StringUtils.isNotBlank(startingRelativePath)) {
-            int upDirIdx = startingRelativePath.lastIndexOf('/');
-            String upDirPath;
-            if (upDirIdx > 0) {
-                upDirPath = startingRelativePath.substring(0, upDirIdx);
-            } else {
-                upDirPath = "";
-            }
-            upDirItem = new VirtualBrowsableItem(VirtualBrowsableItem.UP, true, 0, 0, 0,
-                    InternalRepoPathFactory.create("", upDirPath), Lists.<String>newArrayList());
-        } else {
-            // up link for the root repo dir
-            upDirItem = new VirtualBrowsableItem(VirtualBrowsableItem.UP, true, 0, 0, 0,
-                    InternalRepoPathFactory.create("", VirtualBrowsableItem.UP), Lists.<String>newArrayList());
-        }
-        return upDirItem;
-    }
-
-
-    @Override
-    public String getCssClass(BaseBrowsableItem browsableItem) {
-        String cssClass;
-        if (browsableItem.isFolder()) {
-            cssClass = "folder";
-        } else {
-            String name = browsableItem.getName();
-            if (NamingUtils.getMimeType(name).isArchive()) {
-                cssClass = "jar";
-            } else if (name.equals(VirtualBrowsableItem.UP)) {
-                cssClass = "parent";
-            } else if (NamingUtils.isPom(name)) {
-                cssClass = "pom";
-            } else if (NamingUtils.isXml(name)) {
-                cssClass = "xml";
-            } else {
-                cssClass = "doc";
-            }
-        }
-        return cssClass;
     }
 
     private static class DirectoryItemsDataProvider extends SortableDataProvider<BaseBrowsableItem> {
@@ -226,7 +166,7 @@ public class VirtualRepoBrowserPanel extends RemoteBrowsableRepoPanel {
 
         @Override
         public IModel<BaseBrowsableItem> model(BaseBrowsableItem object) {
-            return new Model<BaseBrowsableItem>(object);
+            return new Model<>(object);
         }
 
         @Override

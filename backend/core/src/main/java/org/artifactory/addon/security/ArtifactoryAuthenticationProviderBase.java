@@ -18,20 +18,18 @@
 
 package org.artifactory.addon.security;
 
-import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.UserInfoBuilder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.RealmAwareAuthenticationProvider;
 import org.artifactory.security.SimpleUser;
-import org.artifactory.security.UserGroupManager;
 import org.artifactory.security.UserInfo;
+import org.artifactory.storage.security.service.UserGroupStoreService;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Set;
 
@@ -44,10 +42,7 @@ public abstract class ArtifactoryAuthenticationProviderBase implements RealmAwar
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryAuthenticationProviderBase.class);
 
     @Autowired
-    private UserGroupManager userGroupManager;
-
-    @Autowired
-    private UserGroupService userGroupservice;
+    private UserGroupStoreService userGroupStore;
 
     @Override
     public boolean supports(Class authentication) {
@@ -96,19 +91,16 @@ public abstract class ArtifactoryAuthenticationProviderBase implements RealmAwar
      * @return A new or found SimpleUser (never null)
      */
     protected SimpleUser findOrCreateUser(String userName) {
-        SimpleUser user;
-        try {
-            user = userGroupManager.loadUserByUsername(userName);
-        } catch (UsernameNotFoundException e) {
+        UserInfo userInfo = userGroupStore.findUser(userName);
+        if (userInfo == null) {
             log.debug(String.format("Creating new user '%s' for %s...", userName, getProviderName()));
             // Creates a new user with invalid password, and user permissions.
             // The created user cannot update its profile.
             UserInfoBuilder builder = new UserInfoBuilder(userName);
-            Set<String> defaultGroups = userGroupservice.getNewUserDefaultGroupsNames();
-            UserInfo userInfo = builder.internalGroups(defaultGroups).build();
-            user = new SimpleUser(userInfo);
-            userGroupManager.createUser(user);
+            Set<String> defaultGroups = userGroupStore.getNewUserDefaultGroupsNames();
+            userInfo = builder.internalGroups(defaultGroups).build();
+            userGroupStore.createUser(userInfo);
         }
-        return user;
+        return new SimpleUser(userInfo);
     }
 }

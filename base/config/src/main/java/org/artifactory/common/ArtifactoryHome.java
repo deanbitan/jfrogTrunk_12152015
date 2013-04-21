@@ -50,13 +50,10 @@ public class ArtifactoryHome {
     public static final String ARTIFACTORY_CONFIG_BOOTSTRAP_FILE = "artifactory.config.bootstrap.xml";
     public static final String ARTIFACTORY_SYSTEM_PROPERTIES_FILE = "artifactory.system.properties";
     public static final String ARTIFACTORY_PROPERTIES_FILE = "artifactory.properties";
-    public static final String ARTIFACTORY_JCR_CONFIG_DIR_DEFAULT = "repo/default";
-    public static final String ARTIFACTORY_JCR_FILE = "repo.xml";
     public static final String LOGBACK_CONFIG_FILE_NAME = "logback.xml";
     public static final String MIME_TYPES_FILE_NAME = "mimetypes.xml";
 
-    private static final InheritableThreadLocal<ArtifactoryHome> current =
-            new InheritableThreadLocal<ArtifactoryHome>();
+    private static final InheritableThreadLocal<ArtifactoryHome> current = new InheritableThreadLocal<>();
 
     /**
      * The current running version, discovered during runtime.
@@ -73,14 +70,13 @@ public class ArtifactoryHome {
     private final File homeDir;
     private File etcDir;
     private File dataDir;
-    private File jcrRootDir;
     private File logDir;
     private File backupDir;
-    private File workTmpDir;
-    private File tmpUploadsDir;
+    private File tempWorkDir;
+    private File tempUploadDir;
     private File pluginsDir;
-    private File logoDir;
 
+    private File logoDir;
     private boolean newDataDir;
 
     /**
@@ -130,10 +126,6 @@ public class ArtifactoryHome {
         return dataDir;
     }
 
-    public File getJcrRootDir() {
-        return jcrRootDir;
-    }
-
     public File getEtcDir() {
         return etcDir;
     }
@@ -146,12 +138,12 @@ public class ArtifactoryHome {
         return backupDir;
     }
 
-    public File getWorkTmpDir() {
-        return workTmpDir;
+    public File getTempWorkDir() {
+        return tempWorkDir;
     }
 
-    public File getTmpUploadsDir() {
-        return tmpUploadsDir;
+    public File getTempUploadDir() {
+        return tempUploadDir;
     }
 
     public File getPluginsDir() {
@@ -178,19 +170,18 @@ public class ArtifactoryHome {
 
     private void create() {
         try {
-            // Create or find all the needed subfolders
+            // Create or find all the needed sub folders
             etcDir = getOrCreateSubDir("etc");
             if (!new File(getHomeDir(), "data").exists()) {
                 newDataDir = true;
             }
             dataDir = getOrCreateSubDir("data");
-            jcrRootDir = dataDir;
             logDir = getOrCreateSubDir("logs");
             backupDir = getOrCreateSubDir("backup");
-            File jettyWorkDir = getOrCreateSubDir("work");
-            File rootTmpDir = getOrCreateSubDir(dataDir, "tmp");
-            workTmpDir = getOrCreateSubDir(rootTmpDir, "work");
-            tmpUploadsDir = getOrCreateSubDir(rootTmpDir, "artifactory-uploads");
+
+            File tempRootDir = getOrCreateSubDir(dataDir, "tmp");
+            tempWorkDir = getOrCreateSubDir(tempRootDir, "work");
+            tempUploadDir = getOrCreateSubDir(tempRootDir, "artifactory-uploads");
             pluginsDir = getOrCreateSubDir(etcDir, "plugins");
             logoDir = getOrCreateSubDir(etcDir, "ui");
 
@@ -200,16 +191,15 @@ public class ArtifactoryHome {
 
             //Check the write access to all directories that need it
             checkWritableDirectory(dataDir);
-            checkWritableDirectory(jcrRootDir);
             checkWritableDirectory(logDir);
             checkWritableDirectory(backupDir);
-            checkWritableDirectory(jettyWorkDir);
-            checkWritableDirectory(workTmpDir);
-            checkWritableDirectory(tmpUploadsDir);
+            checkWritableDirectory(tempRootDir);
+            checkWritableDirectory(tempWorkDir);
+            checkWritableDirectory(tempUploadDir);
             checkWritableDirectory(pluginsDir);
 
             try {
-                for (File rootTmpDirChild : rootTmpDir.listFiles()) {
+                for (File rootTmpDirChild : tempRootDir.listFiles()) {
                     if (rootTmpDirChild.isDirectory()) {
                         FileUtils.cleanDirectory(rootTmpDirChild);
                     } else {
@@ -228,27 +218,19 @@ public class ArtifactoryHome {
     }
 
     private String findArtifactoryHome(SimpleLog logger) {
-        logger.log("Determining " + SYS_PROP + "...");
-        logger.log("Looking for '-D" + SYS_PROP + "=<path>' vm parameter...");
         String home = System.getProperty(SYS_PROP);
+        String artHomeSource = "System property";
         if (home == null) {
-            logger.log("Could not find vm parameter.");
             //Try the environment var
-            logger.log("Looking for " + ENV_VAR + " environment variable...");
             home = System.getenv(ENV_VAR);
+            artHomeSource = "Environment variable";
             if (home == null) {
-                logger.log("Could not find environment variable.");
                 home = new File(System.getProperty("user.home", "."), ".artifactory").getAbsolutePath();
-                logger.log("Defaulting to '" + home + "'...");
-            } else {
-                logger.log("Found environment variable value: " + home + ".");
+                artHomeSource = "Default (user home)";
             }
-        } else {
-            logger.log("Found vm parameter value: " + home + ".");
         }
-
         home = home.replace('\\', '/');
-        logger.log("Using artifactory.home at '" + home + "'.");
+        logger.log("Using artifactory.home at '" + home + "' resolved from: " + artHomeSource);
         return home;
     }
 
@@ -285,7 +267,7 @@ public class ArtifactoryHome {
                 String configContent = FileUtils.readFileToString(importConfigFile, "utf-8");
                 if (StringUtils.isNotBlank(configContent)) {
                     File bootstrapConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
-                    org.artifactory.util.FileUtils.switchFiles(importConfigFile, bootstrapConfigFile);
+                    org.artifactory.util.Files.switchFiles(importConfigFile, bootstrapConfigFile);
                     return configContent;
                 }
             } catch (IOException e) {
@@ -333,7 +315,7 @@ public class ArtifactoryHome {
     public void renameInitialConfigFileIfExists() {
         File initialConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_FILE);
         if (initialConfigFile.isFile()) {
-            org.artifactory.util.FileUtils.switchFiles(initialConfigFile,
+            org.artifactory.util.Files.switchFiles(initialConfigFile,
                     new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE));
         }
     }

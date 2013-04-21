@@ -1,10 +1,9 @@
 package org.artifactory.sapi.search;
 
-import org.artifactory.sapi.data.VfsNodeType;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Calendar;
+import java.util.Collection;
 
 /**
  * Date: 8/5/11
@@ -13,40 +12,46 @@ import java.util.Calendar;
  * @author Fred Simon
  */
 public interface VfsQuery {
-    void setNodeTypeFilter(@Nonnull VfsNodeType nodeType);
+    String ALL_PATH_VALUE = "**";
 
-    VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
-            @Nullable String value);
+    VfsQuery expectedResult(@Nonnull VfsQueryResultType itemType);
 
-    VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
-            @Nonnull VfsFunctionType function, @Nullable String value);
+    VfsQuery setSingleRepoKey(String repoKey);
 
-    VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
-            @Nullable Long value);
+    VfsQuery setRepoKeys(Collection<String> repoKeys);
 
-    VfsQueryCriterion addCriterion(@Nonnull String propertyName, @Nonnull VfsComparatorType comparator,
-            @Nullable Calendar value);
+    VfsQuery orderByAscending(@Nonnull String propertyName);
 
-    void orderByAscending(@Nonnull String propertyName);
+    VfsQuery orderByDescending(@Nonnull String propertyName);
 
-    void orderByDescending(@Nonnull String propertyName);
+    VfsQuery name(@Nonnull String nodeName);
+
+    VfsQuery archiveName(@Nonnull String entryName);
+
+    VfsQuery archivePath(@Nonnull String entryPath);
+
+    VfsQuery prop(@Nonnull String propertyName);
+
+    VfsQuery comp(@Nonnull VfsComparatorType comparator);
+
+    VfsQuery func(@Nonnull VfsFunctionType function);
+
+    VfsQuery val(String... values);
+
+    VfsQuery val(@Nonnull Long value);
+
+    VfsQuery val(@Nonnull Calendar value);
+
+    VfsQuery nextBool(@Nonnull VfsBoolType bool);
+
+    VfsQuery startGroup();
+
+    VfsQuery endGroup(@Nullable VfsBoolType bool);
+
+    VfsQuery addPathFilters(String... folderNames);
+
+    VfsQuery addPathFilter(String pathSearch);
 
     @Nonnull
-    VfsQueryResult execute(boolean limit);
-
-    VfsQueryCriterion addSmartEqualCriterion(@Nonnull String propertyName, @Nullable String value);
-
-    VfsQueryCriterion group(VfsQueryCriterion... vfsQueryCriterion);
-
-    void setRootPath(String rootPath);
-
-    void addAllSubPathFilter();
-
-    VfsQueryPathCriterion addRelativePathFilter(String pathSearch);
-
-    VfsQueryPathCriterion addPathFilters(String... pathFilters);
-
-    VfsQueryPathCriterion addPathFilter(String pathFilter);
-
-    VfsQueryPathCriterion addMetadataNameFilter(String pathFilter);
+    VfsQueryResult execute(int limit);
 }

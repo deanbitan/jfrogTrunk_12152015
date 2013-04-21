@@ -30,9 +30,11 @@ import static org.testng.Assert.*;
 @Test
 public class ChecksumInfoTest {
 
+    public static final String DUMMY_UPPER_CASE_SHA1 = "1234567890ABCD56789012345678901234567890";
     public static final String DUMMY_SHA1 = "1234567890123456789012345678901234567890";
     public static final String DUMMY2_SHA1 = "3234567890123456789012345678901234567890";
 
+    public static final String DUMMY_UPPER_CASE_MD5 = "1234567890ABCD567890123456789012";
     public static final String DUMMY_MD5 = "12345678901234567890123456789012";
     public static final String DUMMY2_MD5 = "32345678901234567890123456789012";
 
@@ -101,4 +103,34 @@ public class ChecksumInfoTest {
                 "marked as trusted and actual not null");
     }
 
+    /**
+     * This test makes sure that if the  original checksum is valid  then the original checksum is being converted to lowercase.
+     */
+    public void validChecksumWithDifferentCaseNormalizationTest() {
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, DUMMY_UPPER_CASE_SHA1.toUpperCase(),
+                DUMMY_UPPER_CASE_SHA1.toLowerCase());
+        assertTrue(infoSha1.getOriginal().equals(DUMMY_UPPER_CASE_SHA1.toLowerCase()),
+                "Expected lower case but fund upper case");
+        assertTrue(infoSha1.checksumsMatch(), "SHA1 Checksums should match");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, DUMMY_UPPER_CASE_MD5.toUpperCase(),
+                DUMMY_UPPER_CASE_MD5.toLowerCase());
+        assertTrue(infoMd5.getOriginal().equals(DUMMY_UPPER_CASE_MD5.toLowerCase()),
+                "Expected lower case but fund upper case");
+        assertTrue(infoMd5.checksumsMatch(), "MD5 Checksums should match");
+    }
+
+    /**
+     * This test makes sure that if the  original checksum is not valid  then the original checksum stay untouched.
+     */
+    public void notValidChecksumNormalizationTest() {
+        String sha1Checksum = "ABC";
+        String md5Checksum = "DEF";
+        ChecksumInfo infoSha1 = new ChecksumInfo(ChecksumType.sha1, sha1Checksum.toUpperCase(),
+                DUMMY_UPPER_CASE_SHA1.toLowerCase());
+        assertTrue(infoSha1.getOriginal().equals(sha1Checksum), "Expected upper case but fund lower case");
+        ChecksumInfo infoMd5 = new ChecksumInfo(ChecksumType.md5, md5Checksum.toUpperCase(),
+                DUMMY_UPPER_CASE_MD5.toLowerCase());
+        assertTrue(infoMd5.getOriginal().equals(md5Checksum), "Expected upper case but fund lower case");
+
+    }
 }

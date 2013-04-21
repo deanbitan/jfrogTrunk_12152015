@@ -44,13 +44,13 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.EmailException;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.util.validation.PortNumberValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 

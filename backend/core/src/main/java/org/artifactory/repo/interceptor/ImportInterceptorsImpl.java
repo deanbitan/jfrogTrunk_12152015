@@ -19,17 +19,17 @@
 package org.artifactory.repo.interceptor;
 
 import org.artifactory.common.MutableStatusHolder;
-import org.artifactory.jcr.JcrService;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.ImportInterceptor;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.db.DbService;
 import org.springframework.stereotype.Service;
 
 /**
  * @author Noam Y. Tenne
  */
 @Service
-@Reloadable(beanClass = ImportInterceptors.class, initAfter = JcrService.class)
+@Reloadable(beanClass = ImportInterceptors.class, initAfter = DbService.class)
 public class ImportInterceptorsImpl extends Interceptors<ImportInterceptor> implements ImportInterceptors {
 
     @Override

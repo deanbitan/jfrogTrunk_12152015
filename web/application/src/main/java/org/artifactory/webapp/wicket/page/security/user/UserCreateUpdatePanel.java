@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.security.user;
 
 import com.ocpsoft.pretty.time.PrettyTime;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -58,9 +57,10 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.util.SerializablePair;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.springframework.util.StringUtils;
 
@@ -111,7 +111,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         setDefaultFocusField(usernameField);
         usernameField.setEnabled(create);
         usernameField.add(StringValidator.maximumLength(100));
-        usernameField.add(new JcrNameValidator("Invalid username '%s'"));
+        usernameField.add(new NameValidator("Invalid username '%s'"));
         border.add(usernameField);
 
         //Password
@@ -281,19 +281,19 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     updateUser(username);
                     AccessLogger.updated("User " + username + " was updated successfully");
                 }
+                AjaxUtils.refreshFeedback(target);
                 if (successful) {
-                    AjaxUtils.refreshFeedback(target);
                     ModalHandler.closeCurrent(target);
                 }
             }
 
             private boolean createNewUser(String username) {
                 UserInfoBuilder builder = new UserInfoBuilder(username);
-                builder.password(DigestUtils.md5Hex(entity.getPassword()))
+                builder.password(securityService.generateSaltedPassword(entity.getPassword()))
                         .email(entity.getEmail())
                         .admin(entity.isAdmin())
                         .updatableProfile(entity.isUpdatableProfile())
-                        .groups(new HashSet<UserGroupInfo>(groupsListView.getData()));
+                        .groups(new HashSet<>(groupsListView.getData()));
                 MutableUserInfo newUser = builder.build();
 
                 boolean created = userGroupService.createUser(newUser);
@@ -320,9 +320,9 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 userInfo.setGroups(new HashSet<UserGroupInfo>(groupsListView.getData()));
                 if (entity.isDisableInternalPassword()) {
                     // user should authenticate externally - set password to invalid
-                    userInfo.setPassword(MutableUserInfo.INVALID_PASSWORD);
+                    userInfo.setPassword(SaltedPassword.INVALID_PASSWORD);
                 } else if (StringUtils.hasText(entity.getPassword())) {
-                    userInfo.setPassword(DigestUtils.md5Hex(entity.getPassword()));
+                    userInfo.setPassword(securityService.generateSaltedPassword(entity.getPassword()));
                 }
                 userGroupService.updateUser(userInfo);
                 getPage().info("User '" + username + "' successfully updated.");

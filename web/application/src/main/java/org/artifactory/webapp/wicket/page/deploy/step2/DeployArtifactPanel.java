@@ -61,12 +61,11 @@ import org.artifactory.common.wicket.util.ComponentPersister;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.ExceptionUtils;
-import org.artifactory.util.FileUtils;
+import org.artifactory.util.Files;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.StringInputStream;
 import org.artifactory.webapp.wicket.page.deploy.DeployArtifactPage;
@@ -74,6 +73,7 @@ import org.artifactory.webapp.wicket.page.deploy.step1.UploadArtifactPanel;
 import org.artifactory.webapp.wicket.util.TreeUtils;
 import org.artifactory.webapp.wicket.util.validation.DeployTargetPathValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -116,7 +116,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             model.file = file;
             model.mavenArtifactInfo = guessArtifactInfo();
             model.pomXml = mavenService.getPomModelString(file);
-            model.deployPom = isPomArtifact() || !isPomExists(getPersistentTargetRepo());
+            model.deployPom = (isPomArtifact() || !isPomExists(getPersistentTargetRepo())) && !hasClassifier();
             model.repos = getRepos();
             model.targetRepo = getPersistentTargetRepo();
 
@@ -200,7 +200,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         private Component newGeneratePomCheckBox() {
             FormComponent checkbox = new StyledCheckbox("deployPom");
             checkbox.setOutputMarkupId(true);
-            checkbox.setVisible(!isPomArtifact());
+            checkbox.setVisible(!isPomArtifact() && !hasClassifier());
             checkbox.setLabel(Model.of("Also Deploy Jar's Internal POM/Generate Default POM"));
             checkbox.add(new OnGeneratePomChangeBehavior());
             return checkbox;
@@ -217,7 +217,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             artifactInfoContainer.add(newGavcField("artifactInfo.groupId", true, new OnGavcChangeBehavior()));
             artifactInfoContainer.add(newGavcField("artifactInfo.artifactId", true, new OnGavcChangeBehavior()));
             artifactInfoContainer.add(newGavcField("artifactInfo.version", true, new OnGavcChangeBehavior()));
-            artifactInfoContainer.add(newGavcField("artifactInfo.classifier", false, new OnGavcChangeBehavior()));
+            artifactInfoContainer.add(newGavcField("artifactInfo.classifier", false, new OnClassifierChangeBehavior()));
             artifactInfoContainer.add(newGavcField("artifactInfo.type", true, new OnPackTypeChangeBehavior()));
             return artifactInfoContainer;
         }
@@ -293,6 +293,15 @@ public class DeployArtifactPanel extends TitledActionPanel {
             return MavenArtifactInfo.POM.equalsIgnoreCase(packagingType);
         }
 
+        private boolean hasClassifier() {
+            UnitInfo artifactInfo = model.getArtifactInfo();
+            if (!artifactInfo.isMavenArtifact()) {
+                return false;
+            }
+            MavenArtifactInfo mavenArtifactInfo = (MavenArtifactInfo) artifactInfo;
+            return StringUtils.isNotBlank(mavenArtifactInfo.getClassifier());
+        }
+
         private boolean isPomExists(LocalRepoDescriptor repo) {
             try {
                 String path =
@@ -311,7 +320,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             if (model.mavenArtifactInfo != null) {
                 model.mavenArtifactInfo = new MavenArtifactInfo();
             }
-            FileUtils.removeFile(model.file);
+            Files.removeFile(model.file);
             model.pomXml = "";
         }
 
@@ -367,7 +376,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 boolean isMavenArtifact = Boolean.parseBoolean(get("isMavenArtifact").getDefaultModelObjectAsString());
-                if (!isMavenArtifact) {
+                if (!isMavenArtifact || hasClassifier()) {
                     model.deployPom = false;
                 }
                 target.add(get("artifactInfo"));
@@ -431,11 +440,20 @@ public class DeployArtifactPanel extends TitledActionPanel {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
                 Component deployPomCheckbox = getPomEditorContainer().get("deployPom");
-                boolean pomArtifact = isPomArtifact();
-                deployPomCheckbox.setVisible(!pomArtifact);
-                if (pomArtifact) {
-                    model.deployPom = true;
-                }
+                boolean shouldDeployPom = !isPomArtifact() && !hasClassifier();
+                deployPomCheckbox.setVisible(shouldDeployPom);
+                model.deployPom = shouldDeployPom;
+                target.add(getPomEditorContainer());
+                super.onUpdate(target);
+            }
+        }
+
+        private class OnClassifierChangeBehavior extends OnGavcChangeBehavior {
+            @Override
+            protected void onUpdate(AjaxRequestTarget target) {
+                MarkupContainer pomEditorContainer = getPomEditorContainer();
+                pomEditorContainer.setVisible(!hasClassifier());
+                pomEditorContainer.get("deployPom").setVisible(!hasClassifier());
                 super.onUpdate(target);
             }
         }

@@ -28,7 +28,12 @@ import java.util.List;
  * @author Eli Givoni
  */
 public class LastDownloadRestResult {
-    public List<DownloadedEntry> results = new ArrayList<DownloadedEntry>();
+    public List<DownloadedEntry> results = new ArrayList<>();
+
+    @Override
+    public String toString() {
+        return results.toString();
+    }
 
     public static class DownloadedEntry {
         public String uri;
@@ -39,7 +44,19 @@ public class LastDownloadRestResult {
             this.lastDownloaded = lastDownloaded;
         }
 
+        @SuppressWarnings("UnusedDeclaration")
         private DownloadedEntry() {
+            // for json mapper
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+            sb.append("DownloadedEntry");
+            sb.append("{uri='").append(uri).append('\'');
+            sb.append(", lastDownloaded='").append(lastDownloaded).append('\'');
+            sb.append('}');
+            return sb.toString();
         }
     }
 }

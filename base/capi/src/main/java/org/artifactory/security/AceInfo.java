@@ -17,7 +17,7 @@ public interface AceInfo extends Info {
 
     int getMask();
 
-    boolean canAdmin();
+    boolean canManage();
 
     boolean canDelete();
 

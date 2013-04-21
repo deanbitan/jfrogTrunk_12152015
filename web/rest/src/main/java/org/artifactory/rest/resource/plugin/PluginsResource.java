@@ -24,6 +24,8 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.io.SimpleResourceStreamHandle;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -32,6 +34,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -40,6 +43,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -73,21 +77,24 @@ public class PluginsResource {
     }
 
     @POST
+    @Consumes(MediaType.WILDCARD)
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response execute(
+            InputStream body,
             @PathParam("executionName") String executionName,
             @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
             @QueryParam(PARAM_ASYNC) int async) throws Exception {
-        Map<String, List<String>> params =
-                paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
-        ResponseCtx responseCtx =
-                addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName, params, async == 1);
-        if (async == 1) {
-            //Just return accepted (202)
-            return Response.status(HttpStatus.SC_ACCEPTED).build();
-        } else {
-            return responseFromResponseCtx(responseCtx);
+        Map<String, List<String>> params = paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
+        try (ResourceStreamHandle handle = new SimpleResourceStreamHandle(body)) {
+            ResponseCtx responseCtx =
+                    addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName, params, handle, async == 1);
+            if (async == 1) {
+                //Just return accepted (202)
+                return Response.status(HttpStatus.SC_ACCEPTED).build();
+            } else {
+                return responseFromResponseCtx(responseCtx);
+            }
         }
     }
 

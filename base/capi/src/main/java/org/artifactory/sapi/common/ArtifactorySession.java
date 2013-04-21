@@ -1,7 +1,5 @@
 package org.artifactory.sapi.common;
 
-import org.artifactory.sapi.data.VfsNode;
-
 import java.util.concurrent.Callable;
 
 /**
@@ -12,8 +10,6 @@ import java.util.concurrent.Callable;
  */
 public interface ArtifactorySession {
     void save();
-
-    VfsNode getVfsRootNode();
 
     void logout();
 

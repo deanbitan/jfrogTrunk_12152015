@@ -21,21 +21,27 @@ package org.artifactory.api.config;
 import org.artifactory.descriptor.DescriptorAware;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.joda.time.format.DateTimeFormatter;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
 
 /**
  * User: freds Date: Aug 3, 2008 Time: 6:22:39 PM
  */
 public interface CentralConfigService extends DescriptorAware<CentralConfigDescriptor>, ImportableExportable {
-    DateFormat getDateFormatter();
+    DateTimeFormatter getDateFormatter();
 
     void saveEditedDescriptorAndReload(CentralConfigDescriptor descriptor);
 
     String getServerName();
 
+    /**
+     * Formats the given milliseconds date with the date format configured in the central config.
+     *
+     * @param date Date in milliseconds
+     * @return Formatted date string
+     */
     String format(long date);
 
     VersionInfo getVersionInfo();

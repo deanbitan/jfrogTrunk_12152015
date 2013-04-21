@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.application;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Session;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
@@ -33,7 +32,6 @@ import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.security.HttpAuthenticationDetails;
@@ -41,6 +39,7 @@ import org.artifactory.security.UserInfo;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -113,7 +112,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
             authenticated = false;
             AccessLogger.loginDenied(authenticationToken);
             if (log.isDebugEnabled()) {
-                log.debug("Failed to authenticate " + username + "/" + DigestUtils.md5Hex(password), e);
+                log.debug("Failed to authenticate " + username, e);
             }
         }
         return authenticated;

@@ -17,14 +17,14 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>artifactory-common-storage</artifactId>
+    <artifactId>artifactory-storage-common</artifactId>
     <packaging>jar</packaging>
-    <name>Artifactory Storage Common Classes</name>
+    <name>Artifactory Storage Common</name>
 
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.6.7</version>
+        <version>3.0.0</version>
     </parent>
 
     <dependencies>
@@ -56,6 +56,11 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>opensymphony</groupId>
+            <artifactId>quartz</artifactId>
         </dependency>
 
         <dependency>

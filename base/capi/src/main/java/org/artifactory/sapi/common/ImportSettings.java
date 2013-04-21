@@ -35,8 +35,4 @@ public interface ImportSettings extends BaseSettings {
     boolean isIndexMarkedArchives();
 
     void setIndexMarkedArchives(boolean indexMarkedArchives);
-
-    boolean isTrustServerChecksums();
-
-    void setTrustServerChecksums(boolean trustServerChecksums);
 }

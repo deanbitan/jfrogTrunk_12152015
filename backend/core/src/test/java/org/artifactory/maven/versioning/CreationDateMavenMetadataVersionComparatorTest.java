@@ -18,11 +18,14 @@
 
 package org.artifactory.maven.versioning;
 
-import org.artifactory.jcr.fs.JcrTreeNode;
-import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.fs.MutableFileInfo;
+import org.artifactory.model.common.RepoPathImpl;
+import org.artifactory.storage.fs.tree.FileNode;
+import org.artifactory.storage.fs.tree.ItemNode;
 import org.testng.annotations.Test;
 
-import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 import static org.testng.Assert.assertEquals;
 
@@ -37,12 +40,13 @@ public class CreationDateMavenMetadataVersionComparatorTest {
     public void compare() {
         CreationDateMavenMetadataVersionComparator comparator = new CreationDateMavenMetadataVersionComparator();
 
-        Calendar cal1 = Calendar.getInstance();
-        JcrTreeNode older = new JcrTreeNode(InternalRepoPathFactory.create("repo", "2.0"), false, cal1, null);
+        MutableFileInfo olderFileInfo = new XStreamInfoFactory().createFileInfo(new RepoPathImpl("repo", "2.0"));
+        olderFileInfo.setCreated(System.currentTimeMillis());
+        ItemNode older = new FileNode(olderFileInfo);
 
-        Calendar cal2 = Calendar.getInstance();
-        cal2.add(Calendar.HOUR, 2);
-        JcrTreeNode newer = new JcrTreeNode(InternalRepoPathFactory.create("repo", "1.1"), false, cal2, null);
+        MutableFileInfo newerFileInfo = new XStreamInfoFactory().createFileInfo(new RepoPathImpl("repo", "1.1"));
+        newerFileInfo.setCreated(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(2));
+        ItemNode newer = new FileNode(newerFileInfo);
 
         assertEquals(comparator.compare(older, newer), -1, "The comparison should be time based");
 

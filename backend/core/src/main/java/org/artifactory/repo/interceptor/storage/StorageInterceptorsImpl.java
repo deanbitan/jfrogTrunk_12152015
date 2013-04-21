@@ -20,7 +20,6 @@ package org.artifactory.repo.interceptor.storage;
 
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.exception.CancelException;
-import org.artifactory.jcr.JcrService;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.Interceptors;
@@ -28,13 +27,14 @@ import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.StorageInterceptor;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.db.DbService;
 import org.springframework.stereotype.Service;
 
 /**
  * @author yoav
  */
 @Service
-@Reloadable(beanClass = StorageInterceptors.class, initAfter = JcrService.class)
+@Reloadable(beanClass = StorageInterceptors.class, initAfter = DbService.class)
 public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> implements StorageInterceptors {
 
     @Override
@@ -44,14 +44,18 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforeCreate(fsItem, statusHolder);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Create rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Before create rejected: " + e.getMessage(), e.getErrorCode(), e);
         }
     }
 
     @Override
     public void afterCreate(VfsItem fsItem, MutableStatusHolder statusHolder) {
-        for (StorageInterceptor storageInterceptor : this) {
-            storageInterceptor.afterCreate(fsItem, statusHolder);
+        try {
+            for (StorageInterceptor storageInterceptor : this) {
+                storageInterceptor.afterCreate(fsItem, statusHolder);
+            }
+        } catch (CancelException e) {
+            statusHolder.setError("After create rejected: " + e.getMessage(), e.getErrorCode(), e);
         }
     }
 

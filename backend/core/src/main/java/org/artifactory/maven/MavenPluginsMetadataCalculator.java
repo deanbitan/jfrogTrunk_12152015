@@ -25,12 +25,17 @@ import org.apache.maven.artifact.repository.metadata.Plugin;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.properties.PropertiesService;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.mime.MavenNaming;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.LocalRepo;
-import org.artifactory.sapi.fs.VfsFile;
-import org.artifactory.sapi.fs.VfsFolder;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.storage.fs.service.FileService;
+import org.artifactory.util.RepoPathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -56,36 +61,38 @@ public class MavenPluginsMetadataCalculator extends AbstractMetadataCalculator {
         }
 
         log.debug("Calculating maven plugins metadata on repo '{}'", localRepo.getKey());
-        List<VfsFile> pluginPoms = (List<VfsFile>) ((List) getJcrService().getPluginPomFiles(localRepo));
+        FileService fileService = ContextHelper.get().beanForType(FileService.class);
+        List<FileInfo> pluginPoms = fileService.searchFilesByProperty(localRepo.getKey(),
+                PropertiesService.MAVEN_PLUGIN_PROPERTY_NAME, Boolean.TRUE.toString());
         log.debug("{} plugin poms found", pluginPoms.size());
 
         // aggregate one pom for each plugin under the plugins metadata container
-        HashMultimap<VfsFolder, VfsFile> pluginsMetadataContainers = HashMultimap.create();
-        for (VfsFile pom : pluginPoms) {
+        HashMultimap<RepoPath, RepoPath> pluginsMetadataContainers = HashMultimap.create();
+        for (FileInfo pom : pluginPoms) {
             // great-grandparent is the plugins metadata container
             // eg, if the plugin pom is org/jfrog/maven/plugins/maven-test-plugin/1.0/maven-test-plugin-1.0.pom
             // the node that contains the plugins metadata is org/jfrog/maven/plugins
-            VfsFolder pluginsMetadataContainer = pom.getAncestor(3);
+            RepoPath pluginsMetadataContainer = RepoPathUtils.getAncestor(pom.getRepoPath(), 3);
             if (pluginsMetadataContainer != null) {
-                pluginsMetadataContainers.put(pluginsMetadataContainer, pom);
+                pluginsMetadataContainers.put(pluginsMetadataContainer, pom.getRepoPath());
             } else {
                 log.info("Found plugin pom without maven GAV path: '{}'. Ignoring...", pom.getRepoPath());
             }
         }
 
         // for each plugins folder container, create plugins metadata on the parent
-        Set<VfsFolder> folders = pluginsMetadataContainers.keySet();
-        for (VfsFolder pluginsMetadataContainer : folders) {
+        Set<RepoPath> folders = pluginsMetadataContainers.keySet();
+        for (RepoPath pluginsMetadataContainer : folders) {
             //Metadata metadata = getOrCreatePluginMetadata(pluginsMetadataContainer);
             Metadata metadata = new Metadata();
-            for (VfsFile pomFile : pluginsMetadataContainers.get(pluginsMetadataContainer)) {
-                String artifactId = pomFile.getAncestor(2).getName();
+            for (RepoPath pomFile : pluginsMetadataContainers.get(pluginsMetadataContainer)) {
+                String artifactId = RepoPathUtils.getAncestor(pomFile, 2).getName();
                 if (hasPlugin(metadata, artifactId)) {
                     continue;
                 }
 
                 // extract the plugin details and add to the metadata
-                String pomStr = getRepositoryService().getStringContent(pomFile.getInfo());
+                String pomStr = getRepositoryService().getStringContent(pomFile);
                 Model pomModel = MavenModelUtils.stringToMavenModel(pomStr);
                 artifactId = pomModel.getArtifactId();
                 Plugin plugin = new Plugin();
@@ -101,7 +108,7 @@ public class MavenPluginsMetadataCalculator extends AbstractMetadataCalculator {
 
             // save only if something changed
             if (modified(getPluginMetadata(pluginsMetadataContainer), metadata)) {
-                saveMetadata(pluginsMetadataContainer.getRepoPath(), metadata, new BasicStatusHolder());
+                saveMetadata(pluginsMetadataContainer, metadata, new BasicStatusHolder());
             }
         }
         log.debug("Finished maven plugins metadata calculation on '{}'", localRepo.getKey());
@@ -146,10 +153,10 @@ public class MavenPluginsMetadataCalculator extends AbstractMetadataCalculator {
         return false;
     }
 
-    private Metadata getPluginMetadata(VfsFolder folder) {
-        String xmlMavenMetadata =
-                getRepositoryService().getXmlMetadata(folder.getRepoPath(), MavenNaming.MAVEN_METADATA_NAME);
-        if (xmlMavenMetadata != null) {
+    private Metadata getPluginMetadata(RepoPath folder) {
+        String xmlMavenMetadata = getRepositoryService().getStringContent(
+                new RepoPathImpl(folder, MavenNaming.MAVEN_METADATA_NAME));
+        if (StringUtils.isNotBlank(xmlMavenMetadata)) {
             try {
                 return MavenModelUtils.toMavenMetadata(xmlMavenMetadata);
             } catch (IOException e) {

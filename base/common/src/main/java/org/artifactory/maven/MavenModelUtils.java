@@ -40,13 +40,13 @@ import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.ivy.IvyNaming;
 import org.artifactory.ivy.IvyService;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.PathUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;

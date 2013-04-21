@@ -34,23 +34,24 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.reader.CentralConfigReader;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.io.checksum.ChecksumPaths;
 import org.artifactory.jaxb.JaxbHelper;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.mime.MimeType;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
-import org.artifactory.sapi.common.PathFactoryHolder;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.fs.service.ConfigsService;
+import org.artifactory.util.Files;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.version.ArtifactoryConfigVersion;
 import org.artifactory.version.CompoundVersionDetails;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -63,9 +64,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,12 +73,12 @@ import java.util.Map;
  */
 @Repository("centralConfig")
 @Reloadable(beanClass = InternalCentralConfigService.class,
-        initAfter = {ChecksumPaths.class, ConfigurationChangesInterceptors.class})
+        initAfter = {DbService.class, ConfigurationChangesInterceptors.class})
 public class CentralConfigServiceImpl implements InternalCentralConfigService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(CentralConfigServiceImpl.class);
 
     private CentralConfigDescriptor descriptor;
-    private DateFormat dateFormatter;
+    private DateTimeFormatter dateFormatter;
     private String serverName;
 
     @Autowired
@@ -88,6 +86,9 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
 
     @Autowired
     private SecurityService securityService;
+
+    @Autowired
+    private ConfigsService configsService;
 
     @Autowired
     private ConfigurationChangesInterceptors interceptors;
@@ -114,11 +115,10 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         //If no import config file exists, or is empty, continue as normal
         if (StringUtils.isBlank(currentConfigXml)) {
             //Check in DB
-            JcrService jcr = InternalContextHelper.get().getJcrService();
-            String jcrConfPath = getCurrentConfigRootNodePath();
-            if (jcr.itemNodeExists(jcrConfPath)) {
-                log.info("Loading existing configuration from storage.");
-                currentConfigXml = jcr.getString(jcrConfPath);
+            String dbConfigName = ArtifactoryHome.ARTIFACTORY_CONFIG_FILE;
+            if (configsService.hasConfig(dbConfigName)) {
+                log.debug("Loading existing configuration from storage.");
+                currentConfigXml = configsService.getConfig(dbConfigName);
                 updateDescriptor = false;
             } else {
                 log.info("Loading bootstrap configuration (artifactory home dir is {}).", artifactoryHome.getHomeDir());
@@ -127,8 +127,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         }
         artifactoryHome.renameInitialConfigFileIfExists();
         log.trace("Current config xml is:\n{}", currentConfigXml);
-        return new SerializablePair<CentralConfigDescriptor, Boolean>(
-                new CentralConfigReader().read(currentConfigXml), updateDescriptor);
+        return new SerializablePair<>(new CentralConfigReader().read(currentConfigXml), updateDescriptor);
     }
 
     @Override
@@ -142,7 +141,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     }
 
     @Override
-    public DateFormat getDateFormatter() {
+    public DateTimeFormatter getDateFormatter() {
         return dateFormatter;
     }
 
@@ -152,8 +151,8 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     }
 
     @Override
-    public synchronized String format(long date) {
-        return dateFormatter.format(new Date(date));
+    public String format(long date) {
+        return dateFormatter.print(date);
     }
 
     @Override
@@ -227,7 +226,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
             File newConfigFile = new File(settings.getBaseDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
             if (newConfigFile.exists()) {
                 status.setStatus("Reloading configuration from " + newConfigFile, log);
-                String xmlConfig = org.artifactory.util.FileUtils.readFileToString(newConfigFile);
+                String xmlConfig = Files.readFileToString(newConfigFile);
                 setConfigXml(xmlConfig);
                 status.setStatus("Configuration reloaded from " + newConfigFile, log);
             }
@@ -257,10 +256,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         checkUniqueProxies();
         //Create the date formatter
         String dateFormat = descriptor.getDateFormat();
-        dateFormatter = new SimpleDateFormat(dateFormat);
-        if (StringUtils.containsNone(dateFormat, new char[]{'z', 'Z'})) {
-            dateFormatter.setTimeZone(CentralConfigDescriptor.UTC_TIME_ZONE);
-        }
+        dateFormatter = DateTimeFormat.forPattern(dateFormat);
         //Get the server name
         serverName = descriptor.getServerName();
         if (serverName == null) {
@@ -274,9 +270,8 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         }
         if (save) {
             log.info("Saving new configuration in storage...");
-            JcrService jcr = InternalContextHelper.get().getJcrService();
-            jcr.setString(getConfigRootNodePath(), "current", JaxbHelper.toXml(descriptor),
-                    MimeType.applicationXml, authService.currentUsername());
+            String configString = JaxbHelper.toXml(descriptor);
+            configsService.addOrUpdateConfig(ArtifactoryHome.ARTIFACTORY_CONFIG_FILE, configString);
             log.info("New configuration saved.");
         }
     }
@@ -308,7 +303,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
 
     private void storeLatestConfigToFile(String configXml) {
         try {
-            org.artifactory.util.FileUtils.writeContentToRollingFile(configXml,
+            Files.writeContentToRollingFile(configXml,
                     new File(ArtifactoryHome.get().getEtcDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_LATEST_FILE));
         } catch (IOException e) {
             log.error("Error occurred while performing a backup of the latest configuration.", e);
@@ -397,7 +392,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
                 IOUtils.write(artifactoryConfigXml, fos);
                 fos.close();
                 if (newConfigFile != bootstrapConfigFile) {
-                    org.artifactory.util.FileUtils.switchFiles(newConfigFile, bootstrapConfigFile);
+                    Files.switchFiles(newConfigFile, bootstrapConfigFile);
                 }
             } catch (Exception e) {
                 log.warn("The converted config xml is:\n" + artifactoryConfigXml +
@@ -409,14 +404,6 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
                     "\nThe new configuration is saved in DB but it failed to be saved automatically to '" +
                     parentFile.getAbsolutePath() + "' since the folder is not writable.\n");
         }
-    }
-
-    private static String getCurrentConfigRootNodePath() {
-        return getConfigRootNodePath() + "/current";
-    }
-
-    private static String getConfigRootNodePath() {
-        return PathFactoryHolder.get().getConfigPath("artifactory");
     }
 
     private void checkUniqueProxies() {

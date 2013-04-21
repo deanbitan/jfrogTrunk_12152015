@@ -26,11 +26,9 @@ import org.apache.maven.index.Scanner;
 import org.apache.maven.index.ScanningRequest;
 import org.apache.maven.index.ScanningResult;
 import org.apache.maven.index.context.IndexingContext;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Arrays;
@@ -39,7 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * A repository scanner to scan the content of a single repository. Releases locks early.
+ * A repository scanner to scan the content of a single repository.
  *
  * @author Yossi Shaul
  */
@@ -56,7 +54,7 @@ public class ArtifactoryContentScanner extends AbstractLogEnabled implements Sca
     public ScanningResult scan(ScanningRequest request) {
         request.getArtifactScanningListener().scanningStarted(request.getIndexingContext());
 
-        ScanningResult result = new ScanningResult();
+        ScanningResult result = new ScanningResult(request);
 
         scanDirectory(request.getStartingDirectory(), request);
 
@@ -71,17 +69,10 @@ public class ArtifactoryContentScanner extends AbstractLogEnabled implements Sca
         }
 
         File[] fileArray = dir.listFiles();
-        LockingHelper.releaseReadLock(((JcrFsItem) dir).getRepoPath());
 
         if (fileArray == null) {
             log.debug("Unexpected null file list returned from {}", dir.getAbsolutePath());
             return;
-        }
-
-        for (File file : fileArray) {
-            // release the locks early (otherwise we will lock the entire repository until the indexing
-            // is done).
-            LockingHelper.releaseReadLock(((JcrFsItem) file).getRepoPath());
         }
 
         Set<File> files = new TreeSet<File>(new ScannerFileComparator());
@@ -110,10 +101,6 @@ public class ArtifactoryContentScanner extends AbstractLogEnabled implements Sca
         } catch (Throwable t) {
             log.info("Failed to add {} to the maven index: {}", file.getAbsolutePath(), t.getMessage());
             log.debug("Failed to add file to the maven index", t);
-        } finally {
-            // perform aggressive unlock for all read locks held by this thread
-            // the artifactContextProducer might lock parent folder and siblings of this file
-            LockingHelper.unlockAllReadLocks(((JcrFsItem) file).getRepoPath().getRepoKey());
         }
     }
 

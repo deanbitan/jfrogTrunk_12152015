@@ -31,15 +31,22 @@ import static org.testng.Assert.*;
 public class NamingUtilsTest extends ArtifactoryHomeBoundTest {
 
     public void testIsMetadata() {
-        assertTrue(isMetadata("path/1.0-SNAPSHOT/maven-metadata.xml"));
+        assertFalse(isMetadata("path/1.0-SNAPSHOT/maven-metadata.xml"));
         assertTrue(isMetadata("path/1.0/resource:md"));
+    }
+
+    public void testIsProperties() {
+        assertTrue(isProperties("path/1.0-SNAPSHOT/maven-metadata.xml:properties"));
+        assertTrue(isProperties("path/1.0/resource:properties"));
+        assertFalse(isProperties("path/1.0/resource:md"));
+        assertFalse(isProperties("path/1.0:properties/resource"));
     }
 
     public void testIsMetadataChecksum() {
         assertFalse(isMetadataChecksum("path/1.0-SNAPSHOT/maven-metadata.xml"));
         assertFalse(isMetadataChecksum("1.0-SNAPSHOT/maven-metadata.xml.bla1"));
-        assertTrue(isMetadataChecksum("1.0-SNAPSHOT/maven-metadata.xml.sha1"));
-        assertTrue(isMetadataChecksum("maven-metadata.xml.md5"));
+        assertFalse(isMetadataChecksum("1.0-SNAPSHOT/maven-metadata.xml.sha1"));
+        assertFalse(isMetadataChecksum("maven-metadata.xml.md5"));
         assertFalse(isMetadataChecksum("path/1.0/resource:md"));
         assertTrue(isMetadataChecksum("path/1.0/resource:md.md5"));
         assertTrue(isMetadataChecksum("path/1.0/resource:md.sha1"));

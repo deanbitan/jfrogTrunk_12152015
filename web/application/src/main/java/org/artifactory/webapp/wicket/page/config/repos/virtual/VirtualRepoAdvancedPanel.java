@@ -120,7 +120,7 @@ public class VirtualRepoAdvancedPanel extends Panel {
         cleanCacheButton.setVisible(!isCreate());
         add(cleanCacheButton);
         HelpBubble help = new HelpBubble("cleanCache.help",
-                "Clears all caches that are stored on the virtual repository level\n" +
+                "Clears all caches stored on the virtual repository level\n" +
                         "(transformed POMs, JNLP files, merged indexes, etc.)");
         help.setVisible(!isCreate());
         add(help);

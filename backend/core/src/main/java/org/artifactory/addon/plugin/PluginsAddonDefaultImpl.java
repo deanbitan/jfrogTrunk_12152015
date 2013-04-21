@@ -20,6 +20,7 @@ package org.artifactory.addon.plugin;
 
 import com.google.common.collect.Maps;
 import org.artifactory.build.staging.BuildStagingStrategy;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.springframework.stereotype.Component;
@@ -37,7 +38,7 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     }
 
     @Override
-    public ResponseCtx execute(String executionName, Map params, boolean async) {
+    public ResponseCtx execute(String executionName, Map params, ResourceStreamHandle body, boolean async) {
         throw new UnsupportedOperationException("Executing plugin actions requires Artifactory Pro.");
     }
 

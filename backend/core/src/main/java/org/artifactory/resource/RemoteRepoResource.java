@@ -38,6 +38,7 @@ public class RemoteRepoResource implements RepoResource {
 
     public RemoteRepoResource(RepoPath repoPath, long lastModified, long size, Set<ChecksumInfo> checksums) {
         if (NamingUtils.isMetadata(repoPath.getPath())) {
+            //TODO: [by YS] remove if not used by the replication for properties
             info = InfoFactoryHolder.get().createMetadata(repoPath);
         } else {
             info = InfoFactoryHolder.get().createFileInfo(repoPath);

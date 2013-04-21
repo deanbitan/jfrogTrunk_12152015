@@ -59,7 +59,7 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     @Override
     public boolean isAdminPageAccessible() {
         AuthorizationService authService = ContextHelper.get().beanForType(AuthorizationService.class);
-        return authService.isAdmin() || authService.hasPermission(ArtifactoryPermission.ADMIN);
+        return authService.isAdmin() || authService.hasPermission(ArtifactoryPermission.MANAGE);
     }
 
     @Override

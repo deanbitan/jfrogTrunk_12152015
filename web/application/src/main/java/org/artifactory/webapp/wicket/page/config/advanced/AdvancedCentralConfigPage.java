@@ -30,10 +30,10 @@ import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Enables the user to edit the central configuration configuration descriptor as an XML file

@@ -21,11 +21,13 @@ import java.util.Set;
  */
 public interface PropertiesService {
 
-    public static final String FILTERED_RESOURCE_PROPERTY_NAME = "filtered";
+    String FILTERED_RESOURCE_PROPERTY_NAME = "filtered";
+
+    String MAVEN_PLUGIN_PROPERTY_NAME = "artifactory.maven.mavenPlugin";
 
     /**
      * @param repoPath The item (repository/folder/file) repository path
-     * @return The properties attached to this repo path. Empty properties if none exist.
+     * @return The properties attached to this repo path. Empty properties if non exist.
      */
     @Nonnull
     Properties getProperties(RepoPath repoPath);
@@ -38,7 +40,7 @@ public interface PropertiesService {
      * @param property    Property to add
      * @param values      Property values (if null, will not add the property)
      */
-    @Lock(transactional = true)
+    @Lock
     void addProperty(RepoPath repoPath, @Nullable PropertySet propertySet, Property property, String... values);
 
     /**
@@ -49,7 +51,7 @@ public interface PropertiesService {
      * @param property    The property to add
      * @param values      Property values
      */
-    @Lock(transactional = true)
+    @Lock
     void editProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
 
 
@@ -61,7 +63,7 @@ public interface PropertiesService {
      * @param property    Property to add
      * @param values      Property values (if null, will not add the property)
      */
-    @Lock(transactional = true)
+    @Lock
     void addPropertyRecursively(RepoPath repoPath, @Nullable PropertySet propertySet, Property property,
             String... values);
 
@@ -71,7 +73,7 @@ public interface PropertiesService {
      * @param repoPath The item repo path
      * @param property Property name to delete
      */
-    @Lock(transactional = true)
+    @Lock
     void deleteProperty(RepoPath repoPath, String property);
 
     /**
@@ -80,7 +82,7 @@ public interface PropertiesService {
      * @param repoPath The item repo path
      * @param property Property name to delete
      */
-    @Lock(transactional = true)
+    @Lock
     void deletePropertyRecursively(RepoPath repoPath, String property);
 
     /**

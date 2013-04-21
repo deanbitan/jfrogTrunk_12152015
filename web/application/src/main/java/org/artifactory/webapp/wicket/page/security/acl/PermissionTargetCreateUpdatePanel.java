@@ -62,7 +62,6 @@ import org.artifactory.common.wicket.component.table.columns.checkbox.AjaxCheckb
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.MutableAclInfo;
@@ -76,6 +75,7 @@ import org.artifactory.webapp.wicket.page.security.acl.tabs.RepositoriesTabPanel
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.SubmittingTabbedPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -197,6 +197,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                 final String name = entity.getName();
                 if (StringUtils.isBlank(name)) {
                     error("Field 'Name' is required.");
+                    AjaxUtils.refreshFeedback(target);
                     return;
                 }
 
@@ -332,12 +333,12 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                 }
             }
         });
-        columns.add(new RoleCheckboxColumn("Admin", "admin") {
+        columns.add(new RoleCheckboxColumn("Manage", "manage") {
             @Override
             protected void onUpdate(FormComponent checkbox, AceInfoRow row, boolean value, AjaxRequestTarget target) {
                 super.onUpdate(checkbox, row, value, target);
                 if (sanityCheckAdmin() && isEnabled(row)) {
-                    row.setAdmin(value);
+                    row.setManage(value);
                     onCheckboxUpdate(checkbox, target);
                 }
             }
@@ -434,7 +435,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
     }
 
     private boolean sanityCheckAdmin() {
-        if (!isCreate() && !aclService.canAdmin(permissionTarget)) {
+        if (!isCreate() && !aclService.canManage(permissionTarget)) {
             String username = authService.currentUsername();
             log.error(username + " operation ignored: not enough permissions to administer '" +
                     permissionTarget + "'.");

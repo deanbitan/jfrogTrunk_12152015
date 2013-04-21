@@ -88,7 +88,7 @@ public class GroupPermissionsPanel extends BaseModalPanel {
             }
         });
 
-        columns.add(new BooleanColumn<PermissionsRow>("Admin", "admin", "admin"));
+        columns.add(new BooleanColumn<PermissionsRow>("Manage", "manage", "manage"));
         columns.add(new BooleanColumn<PermissionsRow>("Delete", "delete", "delete"));
         columns.add(new BooleanColumn<PermissionsRow>("Deploy", "deploy", "deploy"));
         columns.add(new BooleanColumn<PermissionsRow>("Annotate", "annotate", "annotate"));
@@ -143,7 +143,7 @@ public class GroupPermissionsPanel extends BaseModalPanel {
                 permissionsRow.setAnnotate(targetAce.canAnnotate());
                 permissionsRow.setDeploy(targetAce.canDeploy());
                 permissionsRow.setDelete(targetAce.canDelete());
-                permissionsRow.setAdmin(targetAce.canAdmin());
+                permissionsRow.setManage(targetAce.canManage());
             }
             return permissionsRow;
         }

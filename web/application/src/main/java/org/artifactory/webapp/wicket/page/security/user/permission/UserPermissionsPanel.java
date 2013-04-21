@@ -91,7 +91,7 @@ public class UserPermissionsPanel extends BaseModalPanel {
                     }
                 });
 
-        columns.add(new BooleanColumn<PermissionsRow>("Admin", "admin", "admin"));
+        columns.add(new BooleanColumn<PermissionsRow>("Manage", "manage", "manage"));
         columns.add(new BooleanColumn<PermissionsRow>("Delete", "delete", "delete"));
         columns.add(new BooleanColumn<PermissionsRow>("Deploy", "deploy", "deploy"));
         columns.add(new BooleanColumn<PermissionsRow>("Annotate", "annotate", "annotate"));
@@ -144,7 +144,7 @@ public class UserPermissionsPanel extends BaseModalPanel {
             permissionsRow.setAnnotate(aclService.canAnnotate(userInfo, target));
             permissionsRow.setDeploy(aclService.canDeploy(userInfo, target));
             permissionsRow.setDelete(aclService.canDelete(userInfo, target));
-            permissionsRow.setAdmin(aclService.canAdmin(userInfo, target));
+            permissionsRow.setManage(aclService.canManage(userInfo, target));
             return permissionsRow;
         }
 

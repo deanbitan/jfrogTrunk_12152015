@@ -23,10 +23,10 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.RepoLayoutBuilder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.layouts.token.BaseTokenFilter;
 import org.artifactory.util.layouts.token.OrganizationPathTokenFilter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;

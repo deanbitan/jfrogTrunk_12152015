@@ -20,7 +20,6 @@ package org.artifactory.ivy;
 
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.Lock;
 
 import java.io.File;
 
@@ -28,7 +27,6 @@ import java.io.File;
  * @author Yoav Landman
  */
 public interface IvyService {
-    @Lock(transactional = true)
     ModuleDescriptor parseIvyFile(RepoPath repoPath);
 
     ModuleDescriptor parseIvyFile(File file);

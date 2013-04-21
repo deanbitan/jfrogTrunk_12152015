@@ -18,12 +18,12 @@
 
 package org.artifactory.version.converter.v1410;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Converts the gc.interval.secs system property to a cron expression.

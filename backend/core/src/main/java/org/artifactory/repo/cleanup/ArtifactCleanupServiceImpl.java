@@ -24,14 +24,11 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
-import org.artifactory.api.search.xml.metadata.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
-import org.artifactory.fs.StatsInfo;
-import org.artifactory.jcr.utils.JcrHelper;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -43,13 +40,16 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.fs.service.StatsService;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -67,6 +67,9 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
 
     @Autowired
     private CentralConfigService centralConfigService;
+
+    @Autowired
+    private StatsService statsService;
 
     @Autowired
     private InternalRepositoryService repositoryService;
@@ -100,17 +103,18 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
     }
 
     @Override
-    public void callManualArtifactCleanup(MultiStatusHolder statusHolder) {
+    public String callManualArtifactCleanup(MultiStatusHolder statusHolder) {
         TaskService taskService = InternalContextHelper.get().getTaskService();
         taskService.checkCanStartManualTask(ArtifactCleanupJob.class, statusHolder);
         if (!statusHolder.isError()) {
             try {
                 TaskBase task = TaskUtils.createManualTask(ArtifactCleanupJob.class, 0L);
-                taskService.startTask(task, true);
+                return taskService.startTask(task, true);
             } catch (Exception e) {
                 statusHolder.setError("Error scheduling manual artifact cleanup", e, log);
             }
         }
+        return null;
     }
 
     static class CleanupConfigDescriptorHandler extends BaseTaskServiceDescriptorHandler<CleanupConfigDescriptor> {
@@ -171,6 +175,8 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
 
     @Override
     public void clean() {
+        // flush the download statistics before starting the cleanup
+        statsService.flushStats();
         List<LocalCacheRepoDescriptor> cachedRepoDescriptors = repositoryService.getCachedRepoDescriptors();
         for (LocalCacheRepoDescriptor cachedRepoDescriptor : cachedRepoDescriptors) {
             performCleanOnRepo(cachedRepoDescriptor);
@@ -197,10 +203,10 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
             return;
         }
 
-        doClean(repoKey, periodMillis, storingRepo);
+        doClean(repoKey, periodMillis);
     }
 
-    private void doClean(String repoKey, long periodMillis, LocalRepo storingRepo) {
+    private void doClean(String repoKey, long periodMillis) {
         log.info("Auto-clean has begun on the repository '{}' with period of {} millis.", repoKey, periodMillis);
 
         //Calculate unused artifact expiry
@@ -210,24 +216,26 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         StatsSearchControls searchControls = new StatsSearchControls();
         searchControls.setLimitSearchResults(false);
         searchControls.addRepoToSearch(repoKey);
-        searchControls.setValue(JcrHelper.getCalendar(expiryMillis));
-        ItemSearchResults<GenericMetadataSearchResult<StatsInfo>> metadataSearchResults =
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(expiryMillis);
+        searchControls.setDownloadedSince(calendar);
+        ItemSearchResults<StatsSearchResult> metadataSearchResults =
                 searchService.searchArtifactsNotDownloadedSince(searchControls);
 
         int iterationCount = 0;
         int cleanedArtifactsCount = 0;
-        for (GenericMetadataSearchResult<StatsInfo> metadataSearchResult : metadataSearchResults.getResults()) {
+        for (StatsSearchResult searchResult : metadataSearchResults.getResults()) {
             if ((++iterationCount % 10 == 0) && TaskUtils.pauseOrBreak()) {
                 throw new TaskInterruptedException();
             }
-            StatsInfo statsInfo = metadataSearchResult.getMetadataObject();
-            RepoPath repoPath = metadataSearchResult.getItemInfo().getRepoPath();
-            long lastDownloaded = statsInfo.getLastDownloaded();
+            RepoPath repoPath = searchResult.getItemInfo().getRepoPath();
+            long lastDownloaded = searchResult.getLastDownloaded();
 
             //If the artifact wasn't downloaded within the expiry window, remove it
             if (expiryMillis > lastDownloaded) {
                 try {
-                    storingRepo.undeploy(repoPath, false);  // no need for maven metadata calculation on cache repos
+                    repositoryService.undeploy(repoPath,
+                            false);  // no need for maven metadata calculation on cache repos
                     cleanedArtifactsCount++;
                 } catch (Exception e) {
                     log.error(String.format("Could not auto-clean artifact '%s'.", repoPath.getId()), e);

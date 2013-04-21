@@ -18,28 +18,23 @@
 
 package org.artifactory.repo.snapshot;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.module.ModuleInfoBuilder;
 import org.artifactory.api.module.regex.NamedPattern;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.jcr.fs.JcrTreeNode;
-import org.artifactory.jcr.fs.JcrTreeNodeFileFilter;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.sapi.common.RepositoryRuntimeException;
-import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.repo.StoringRepo;
+import org.artifactory.storage.fs.tree.ItemNode;
+import org.artifactory.storage.fs.tree.ItemNodeFilter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Collects integration versions items under a given root node.
@@ -50,36 +45,25 @@ public class SnapshotVersionsRetriever extends VersionsRetriever {
     private static final Logger log = LoggerFactory.getLogger(SnapshotVersionsRetriever.class);
 
     private Map<String, Calendar> integrationCreationMap = Maps.newHashMap();
-    private Multimap<Calendar, ModuleInfo> folderIntegrationMap = HashMultimap.create();
 
-    @Override
-    public TreeMultimap<Calendar, VfsItem> collectVersionsItems(StoringRepo repo, JcrTreeNode node) {
-        internalCollectVersionsItems(repo, node);
-        return versionsItems;
+    public SnapshotVersionsRetriever(boolean reverseOrderResults) {
+        super(reverseOrderResults);
     }
 
-    private void internalCollectVersionsItems(StoringRepo repo, JcrTreeNode node) {
+    @Override
+    protected void internalCollectVersionsItems(StoringRepo repo, ItemNode node) {
         if (node.isFolder()) {
-            Set<JcrTreeNode> children = node.getChildren();
-            for (JcrTreeNode child : children) {
+            List<ItemNode<? extends ItemInfo>> children = node.getChildren();
+            for (ItemNode child : children) {
                 internalCollectVersionsItems(repo, child);
             }
         } else {
             RepoPath itemRepoPath = node.getRepoPath();
-            VfsItem fsItem;
-            try {
-                fsItem = repo.getJcrFsItem(itemRepoPath);
-            } catch (RepositoryRuntimeException e) {
-                log.warn("Could not get file at '{}' ({}). Skipping.", itemRepoPath, e.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.error("Error while getting file.", e);
-                }
-                return;
-            }
             ModuleInfo itemModuleInfo = repo.getItemModuleInfo(itemRepoPath.getPath());
 
-            ModuleInfo folderIntegrationModuleInfo = getFolderIntegrationModuleInfo(itemModuleInfo);
-            Calendar itemCreated = node.getCreated();
+            Calendar itemCreated = Calendar.getInstance();
+            ItemInfo itemInfo = node.getItemInfo();
+            itemCreated.setTimeInMillis(itemInfo.getCreated());
 
             String uniqueRevision = itemModuleInfo.getFileIntegrationRevision();
 
@@ -92,58 +76,28 @@ public class SnapshotVersionsRetriever extends VersionsRetriever {
 
                     //Update the reference of all the children with the same unique integration
                     integrationCreationMap.put(uniqueRevision, itemCreated);
-                    Collection<VfsItem> itemsToRelocate = versionsItems.removeAll(existingIntegrationCreation);
+                    Collection<ItemInfo> itemsToRelocate = versionsItems.removeAll(existingIntegrationCreation);
                     versionsItems.putAll(itemCreated, itemsToRelocate);
-                    versionsItems.put(itemCreated, fsItem);
-
-                    Collection<ModuleInfo> folderIntegrationsToRelocate =
-                            folderIntegrationMap.removeAll(existingIntegrationCreation);
-                    folderIntegrationMap.putAll(itemCreated, folderIntegrationsToRelocate);
-                    if (folderIntegrationModuleInfo.isValid()) {
-                        folderIntegrationMap.put(itemCreated, folderIntegrationModuleInfo);
-                    }
+                    versionsItems.put(itemCreated, itemInfo);
                 } else {
 
                     //Child's creation date isn't newer, just add it
-                    versionsItems.put(existingIntegrationCreation, fsItem);
-                    if (folderIntegrationModuleInfo.isValid()) {
-                        folderIntegrationMap.put(existingIntegrationCreation, folderIntegrationModuleInfo);
-                    }
+                    versionsItems.put(existingIntegrationCreation, itemInfo);
                 }
             } else {
-
                 //No reference exists yet, create one
                 integrationCreationMap.put(uniqueRevision, itemCreated);
-                versionsItems.put(itemCreated, fsItem);
-                if (folderIntegrationModuleInfo.isValid()) {
-                    folderIntegrationMap.put(itemCreated, folderIntegrationModuleInfo);
-                }
+                versionsItems.put(itemCreated, itemInfo);
             }
         }
     }
 
-    private ModuleInfo getFolderIntegrationModuleInfo(ModuleInfo itemModuleInfo) {
-        String folderIntegrationRevision = itemModuleInfo.getFolderIntegrationRevision();
-        if (StringUtils.isBlank(folderIntegrationRevision) ||
-                !folderIntegrationRevision.equals(itemModuleInfo.getFileIntegrationRevision())) {
-            return new ModuleInfo();
-        }
-
-        return new ModuleInfoBuilder().organization(itemModuleInfo.getOrganization()).
-                module(itemModuleInfo.getModule()).baseRevision(itemModuleInfo.getBaseRevision()).
-                folderIntegrationRevision(folderIntegrationRevision).build();
-    }
-
-    public Multimap<Calendar, ModuleInfo> getFolderIntegrationMap() {
-        return folderIntegrationMap;
-    }
-
     @Override
-    public JcrTreeNodeFileFilter getFileFilter(StoringRepo repo, NamedPattern pattern) {
+    public ItemNodeFilter getFileFilter(StoringRepo repo, NamedPattern pattern) {
         return new IntegrationFileFilter(repo, pattern);
     }
 
-    private static class IntegrationFileFilter implements JcrTreeNodeFileFilter {
+    private static class IntegrationFileFilter implements ItemNodeFilter {
         private final StoringRepo repo;
 
         private final NamedPattern pattern;
@@ -154,8 +108,11 @@ public class SnapshotVersionsRetriever extends VersionsRetriever {
         }
 
         @Override
-        public boolean acceptsFile(RepoPath repoPath) {
-            String path = repoPath.getPath();
+        public boolean accepts(ItemInfo itemInfo) {
+            if (itemInfo.isFolder()) {
+                return true;
+            }
+            String path = itemInfo.getRelPath();
             if (!pattern.matcher(path).matches()) {
                 return false;
             }

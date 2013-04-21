@@ -18,8 +18,6 @@
 
 package org.artifactory.update.security.v2;
 
-import org.apache.jackrabbit.util.Text;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.security.ArtifactoryPermission;
@@ -28,7 +26,10 @@ import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
 
 /**
@@ -66,7 +67,7 @@ public class RepoPathAclConverter implements XmlConverter {
                     newAce.getChild(PRINCIPAL).setText(ace.getChildText(PRINCIPAL));
                     Element maskEl = ace.getChild(MASK);
                     int mask = Integer.parseInt(maskEl.getText());
-                    if ((mask & (ArtifactoryPermission.ADMIN.getMask() |
+                    if ((mask & (ArtifactoryPermission.MANAGE.getMask() |
                             ArtifactoryPermission.DEPLOY.getMask())) > 0) {
                         mask |= ArtifactoryPermission.DELETE.getMask();
                     }
@@ -82,7 +83,12 @@ public class RepoPathAclConverter implements XmlConverter {
     }
 
     private void convertIdentifierToPermissionTarget(Element acl) {
-        String identifier = Text.unescape(acl.getChildText(IDENTIFIER));
+        String identifier;
+        try {
+            identifier = URLDecoder.decode(acl.getChildText(IDENTIFIER), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Failed to decode identifier", e);
+        }
         RepoPath repoPath = InternalRepoPathFactory.fromId(identifier);
         acl.removeChild(IDENTIFIER);
         Element permissionTarget = new Element("permissionTarget");

@@ -18,12 +18,12 @@
 
 package org.artifactory.update.md.v130beta6;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataType;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Converts FolderInfo from version 1.3.0-beta-6. Just renaming extension to additionalInfo.

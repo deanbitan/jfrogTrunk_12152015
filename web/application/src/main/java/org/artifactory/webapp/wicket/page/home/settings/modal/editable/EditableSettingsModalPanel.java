@@ -33,11 +33,11 @@ import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.component.modal.panel.bordered.BorderedModalPanel;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.webapp.wicket.page.home.settings.modal.DownloadModalSettings;
 import org.artifactory.webapp.wicket.page.home.settings.modal.download.AjaxSettingsDownloadBehavior;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
 

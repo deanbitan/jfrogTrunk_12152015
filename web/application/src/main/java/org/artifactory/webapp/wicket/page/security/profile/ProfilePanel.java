@@ -21,7 +21,6 @@ package org.artifactory.webapp.wicket.page.security.profile;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
-import org.apache.wicket.event.Broadcast;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -40,22 +39,13 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
-import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.common.wicket.util.SetEnableVisitor;
-import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.CryptoHelper;
-import org.artifactory.security.InternalUsernamePasswordAuthenticationToken;
 import org.artifactory.security.MutableUserInfo;
-import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.slf4j.Logger;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
@@ -77,8 +67,6 @@ public class ProfilePanel extends TitledPanel {
     @SpringBean
     private SecurityService securityService;
 
-    @SpringBean
-    private AuthenticationManager authenticationManager;
     private Label encryptedPasswordLabel;
     private Form form;
 
@@ -86,13 +74,9 @@ public class ProfilePanel extends TitledPanel {
         super(id);
         this.form = form;
         setOutputMarkupId(true);
-        add(new CssClass("profile-panel"));
-        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
 
-        // current password
-        final PasswordTextField currentPassword = new PasswordTextField("currentPassword");
-        add(currentPassword);
-        add(new HelpBubble("currentPassword.help", getString("currentPassword.help")));
+        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
+        add(new CssClass("display:block"));
 
         encryptedPasswordLabel = new Label("encryptedPassword", HIDDEN_PASSWORD);
         encryptedPasswordLabel.setVisible(securityService.isPasswordEncryptionEnabled());
@@ -112,46 +96,6 @@ public class ProfilePanel extends TitledPanel {
         emailTf.add(EmailAddressValidator.getInstance());
         updateFieldsContainer.add(emailTf);
 
-        // submit password
-        add(new TitledAjaxSubmitLink("unlock", "Unlock") {
-            @Override
-            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
-                UserInfo userInfo = loadUserInfo();
-                String enteredCurrentPassword = getUserProfile().getCurrentPassword();
-                if (!authenticate(userInfo, enteredCurrentPassword)) {
-                    error("The specified current password is incorrect.");
-                } else {
-                    unlockProfile(userInfo, target);
-                }
-                target.add(ProfilePanel.this);
-                AjaxUtils.refreshFeedback(target);
-            }
-
-            private boolean authenticate(UserInfo userInfo, String enteredCurrentPassword) {
-                try {
-                    Authentication authentication = authenticationManager.authenticate(
-                            new InternalUsernamePasswordAuthenticationToken(userInfo.getUsername(),
-                                    enteredCurrentPassword));
-                    return (authentication != null) && authentication.isAuthenticated();
-                } catch (AuthenticationException e) {
-                    return false;
-                }
-            }
-
-            private void unlockProfile(UserInfo userInfo, AjaxRequestTarget target) {
-                currentPassword.setEnabled(false);
-                this.setEnabled(false);
-
-                if (authService.isUpdatableProfile()) {
-                    updateFieldsContainer.visitChildren(new SetEnableVisitor(true));
-                }
-
-                MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
-                displayEncryptedPassword(mutableUser);
-
-                send(getPage(), Broadcast.BREADTH, new ProfileEvent(target, mutableUser));
-            }
-        });
     }
 
     private void addPasswordFields(WebMarkupContainer updateFieldsContainer) {
@@ -211,12 +155,6 @@ public class ProfilePanel extends TitledPanel {
 
     private ProfileModel getUserProfile() {
         return (ProfileModel) getDefaultModelObject();
-    }
-
-    private UserInfo loadUserInfo() {
-        // load the user directly from the database. the instance returned from currentUser() might not
-        // be with the latest changes
-        return userGroupService.findUser(userGroupService.currentUser().getUsername());
     }
 
     @Override

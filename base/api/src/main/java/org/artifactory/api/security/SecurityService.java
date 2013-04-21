@@ -23,9 +23,11 @@ import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Async;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.sapi.common.Lock;
+import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.SecurityInfo;
 import org.artifactory.util.SerializablePair;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 
 /**
@@ -42,10 +44,10 @@ public interface SecurityService extends ImportableExportable {
 
     SecurityInfo getSecurityData();
 
-    @Lock(transactional = true)
+    @Lock
     void importSecurityData(String securityXml);
 
-    @Lock(transactional = true)
+    @Lock
     void importSecurityData(SecurityInfo descriptor);
 
     /**
@@ -149,4 +151,10 @@ public interface SecurityService extends ImportableExportable {
     void authenticateAsSystem();
 
     void nullifyContext();
+
+    SaltedPassword generateSaltedPassword(String rawPassword);
+
+    SaltedPassword generateSaltedPassword(String rawPassword, @Nullable String salt);
+
+    String getDefaultSalt();
 }

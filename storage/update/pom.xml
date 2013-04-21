@@ -20,7 +20,7 @@
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.6.7</version>
+        <version>3.0.0</version>
     </parent>
 
     <artifactId>artifactory-update</artifactId>
@@ -38,20 +38,8 @@
         </dependency>
         <dependency>
             <groupId>org.artifactory</groupId>
-            <artifactId>artifactory-common-storage</artifactId>
+            <artifactId>artifactory-storage-common</artifactId>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.jcr</groupId>
-            <artifactId>jcr</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-core-jfrog</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core-jfrog</artifactId>
         </dependency>
         <dependency>
             <groupId>org.artifactory</groupId>

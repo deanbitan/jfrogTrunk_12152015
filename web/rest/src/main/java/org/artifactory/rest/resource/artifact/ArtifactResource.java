@@ -33,8 +33,6 @@ import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.artifact.ItemLastModified;
-import org.artifactory.api.rest.artifact.ItemMetadata;
-import org.artifactory.api.rest.artifact.ItemMetadataNames;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
@@ -51,7 +49,6 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -63,6 +60,7 @@ import org.artifactory.util.DoesNotExistException;
 import org.artifactory.util.HttpUtils;
 import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -90,7 +88,6 @@ import java.util.List;
 import java.util.Set;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
-import static org.artifactory.api.rest.constant.RestConstants.PATH_API;
 
 /**
  * @author Eli Givoni
@@ -111,9 +108,8 @@ public class ArtifactResource {
     private static final String MD_TIMESTAMPS_PARAM = "mdTimestamps";
     private static final String INCLUDE_ROOT_PATH_PARAM = "includeRootPath";
     private static final String LAST_MODIFIED_PARAM = "lastModified";
-    private static final String MDNS_PARAM = "mdns";
-    private static final String MD_PARAM = "md";
     private static final String PROPERTIES_PARAM = "properties";
+    private static final String PROPERTIES_XML_PARAM = "propertiesXml";
     private static final String PERMISSIONS_PARAM = "permissions";
 
     @Context
@@ -147,8 +143,8 @@ public class ArtifactResource {
     String path;
 
     @GET
-    @Produces({MediaType.APPLICATION_JSON, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_METADATA_NAMES, MT_ITEM_PROPERTIES,
-            MT_ITEM_METADATA, MT_FILE_LIST, MT_ITEM_LAST_MODIFIED, MT_ITEM_PERMISSIONS})
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_PROPERTIES,
+            MT_FILE_LIST, MT_ITEM_LAST_MODIFIED, MT_ITEM_PERMISSIONS})
     public Object getStorageInfo() throws IOException {
         RepoPath repoPath = repoPathFromRequestPath();
         if (authorizationService.canRead(repoPath)) {
@@ -179,12 +175,10 @@ public class ArtifactResource {
             return prepareFileListResponse();
         } else if (isLastModifiedRequest()) {
             return prepareLastModifiedResponse();
-        } else if (isAnnotatingMetadataNamesRequest()) {
-            return prepareAnnotatingMetadataResponse();
-        } else if (isMetadataRequest()) {
-            return prepareMetadataResponse();
         } else if (isPropertiesRequest()) {
             return preparePropertiesResponse();
+        } else if (isPropertiesXmlRequest()) {
+            return preparePropertiesXmlResponse();
         } else if (isPermissionsRequest()) {
             return preparePermissionsResponse();
         } else {
@@ -210,12 +204,12 @@ public class ArtifactResource {
         return queryParamsContainKey(LAST_MODIFIED_PARAM);
     }
 
-    private boolean isAnnotatingMetadataNamesRequest() {
-        return queryParamsContainKey(MDNS_PARAM);
-    }
-
     private boolean isPropertiesRequest() {
         return queryParamsContainKey(PROPERTIES_PARAM);
+    }
+
+    private boolean isPropertiesXmlRequest() {
+        return queryParamsContainKey(PROPERTIES_XML_PARAM);
     }
 
     private boolean isPermissionsRequest() {
@@ -309,17 +303,6 @@ public class ArtifactResource {
                 lastModifiedItem.getRelPath());
     }
 
-    private Response prepareAnnotatingMetadataResponse() throws IOException {
-        if (isMediaTypeAcceptableByUser(MT_ITEM_METADATA_NAMES)) {
-            if (isRequestToNoneLocalRepo()) {
-                return nonLocalRepoResponse();
-            }
-            return getAnnotatingMetadataResponse();
-        } else {
-            return notAcceptableResponse(MT_ITEM_METADATA_NAMES);
-        }
-    }
-
     private boolean isMediaTypeAcceptableByUser(String mediaTypeToCheckString) {
         List<MediaType> mediaTypesAcceptableByUser = requestHeaders.getAcceptableMediaTypes();
         MediaType mediaTypeToCheck = MediaType.valueOf(mediaTypeToCheckString);
@@ -331,23 +314,6 @@ public class ArtifactResource {
             }
         }
         return false;
-    }
-
-    private Response getAnnotatingMetadataResponse() throws IOException {
-        RepoPath repoPath = repoPathFromRequestPath();
-        ItemMetadataNames itemMetadataNames;
-        List<String> metadataNameList = repositoryService.getMetadataNames(repoPath);
-        if (metadataNameList != null && !metadataNameList.isEmpty()) {
-            itemMetadataNames = new ItemMetadataNames();
-            itemMetadataNames.slf = buildMetadataSlf(path).trim();
-            for (String name : metadataNameList) {
-                String uri = String.format("%s%s", buildMetadataUri(path, NamingUtils.METADATA_PREFIX), name);
-                ItemMetadataNames.MetadataNamesInfo info = new ItemMetadataNames.MetadataNamesInfo(uri);
-                itemMetadataNames.metadata.put(name, info);
-            }
-            return okResponse(itemMetadataNames, MT_ITEM_METADATA_NAMES);
-        }
-        return sendAndCreateNotFoundResponse("No annotating metadata could be found.");
     }
 
     private Response preparePropertiesResponse() throws IOException {
@@ -363,8 +329,7 @@ public class ArtifactResource {
 
     private Response getPropertiesResponse() throws IOException {
         ItemProperties itemProperties = new ItemProperties();
-        Properties propertiesAnnotatingItem =
-                repositoryService.getMetadata(repoPathFromRequestPath(), Properties.class);
+        Properties propertiesAnnotatingItem = repositoryService.getProperties(repoPathFromRequestPath());
         if (propertiesAnnotatingItem != null) {
             StringList requestProperties = new StringList(queryParams().getFirst(PROPERTIES_PARAM));
             if (!requestProperties.isEmpty()) {
@@ -384,6 +349,14 @@ public class ArtifactResource {
         if (!itemProperties.properties.isEmpty()) {
             itemProperties.slf = request.getRequestURL().toString();
             return okResponse(itemProperties, MT_ITEM_PROPERTIES);
+        }
+        return sendAndCreateNotFoundResponse("No properties could be found.");
+    }
+
+    private Response preparePropertiesXmlResponse() throws IOException {
+        Properties properties = repositoryService.getProperties(repoPathFromRequestPath());
+        if (properties != null && !properties.isEmpty()) {
+            return okResponse(properties, MediaType.APPLICATION_XML);
         }
         return sendAndCreateNotFoundResponse("No properties could be found.");
     }
@@ -481,20 +454,6 @@ public class ArtifactResource {
     }
 
 
-    private String buildMetadataSlf(String path) {
-        String servletContextUrl = HttpUtils.getServletContextUrl(request);
-        StringBuilder sb = new StringBuilder(servletContextUrl);
-        sb.append("/").append(PATH_API).append("/").append(PATH_ROOT).append("/").append(path);
-        return sb.toString();
-    }
-
-    private String buildMetadataUri(String path, String addedProperty) {
-        String servletContextUrl = HttpUtils.getServletContextUrl(request);
-        StringBuilder sb = new StringBuilder(servletContextUrl);
-        sb.append("/").append(path).append(addedProperty);
-        return sb.toString();
-    }
-
     private RestFileInfo createFileInfoData(FileInfo itemInfo, String repoKey) {
         RestFileInfo fileInfo = new RestFileInfo();
         setBaseStorageInfo(fileInfo, itemInfo, repoKey);
@@ -537,15 +496,13 @@ public class ArtifactResource {
     }
 
     private void setBaseStorageInfo(RestBaseStorageInfo storageInfoRest, ItemInfo itemInfo, String repoKey) {
-        String uri = RestUtils.buildStorageInfoUri(request, repoKey, itemInfo.getRelPath());
-        storageInfoRest.slf = uri;
+        storageInfoRest.slf = RestUtils.buildStorageInfoUri(request, repoKey, itemInfo.getRelPath());
         storageInfoRest.path = "/" + itemInfo.getRelPath();
         storageInfoRest.created = RestUtils.toIsoDateString(itemInfo.getCreated());
         storageInfoRest.createdBy = itemInfo.getCreatedBy();
         storageInfoRest.lastModified = RestUtils.toIsoDateString(itemInfo.getLastModified());
         storageInfoRest.modifiedBy = itemInfo.getModifiedBy();
         storageInfoRest.lastUpdated = RestUtils.toIsoDateString(itemInfo.getLastUpdated());
-        storageInfoRest.metadataUri = uri + "?" + MDNS_PARAM;
     }
 
     private String buildDownloadUri() {
@@ -592,49 +549,4 @@ public class ArtifactResource {
         return addonsManager.addonByType(RestAddon.class);
     }
 
-    @Deprecated
-    private boolean isMetadataRequest() {
-        if (queryParams().containsKey(MD_PARAM)) {
-            List<String> values = queryParams().get(MD_PARAM);
-            return (values != null) && !values.isEmpty();
-        }
-        return false;
-    }
-
-    @Deprecated
-    private Response prepareMetadataResponse() throws IOException {
-        if (isMediaTypeAcceptableByUser(MT_ITEM_METADATA)) {
-            ItemMetadata res = getItemMetadata(path, new StringList(queryParams().getFirst(MD_PARAM)));
-            return okResponse(res, MT_ITEM_METADATA);
-        } else {
-            return notAcceptableResponse(MT_ITEM_METADATA);
-        }
-    }
-
-    @Deprecated
-    private ItemMetadata getItemMetadata(String path, StringList md) throws IOException {
-        RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
-        //not supporting virtual repo metadata
-        if (isLocalRepo(repoPath.getRepoKey())) {
-            ItemMetadata itemMetadata = new ItemMetadata();
-            //add metadata
-            if (md != null) {
-                for (String metadataName : md) {
-                    if (StringUtils.isNotBlank(metadataName)) {
-                        String metadata = repositoryService.getXmlMetadata(repoPath, metadataName);
-                        if (metadata != null) {
-                            itemMetadata.metadata.put(metadataName, metadata);
-                        }
-                    }
-
-                }
-            }
-            if (!itemMetadata.metadata.isEmpty()) {
-                itemMetadata.slf = request.getRequestURL().toString();
-                return itemMetadata;
-            }
-        }
-        RestUtils.sendNotFoundResponse(response);
-        return null;
-    }
 }

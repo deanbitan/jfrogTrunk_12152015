@@ -29,35 +29,11 @@ import java.io.File;
  * @author Fred Simon
  */
 public interface PathFactory {
-    PathBuilder createBuilder(String root);
-
     String escape(String pathElement);
-
-    String unEscape(String storagePathElement);
 
     String getAllRepoRootPath();
 
-    String getConfigurationRootPath();
-
-    String getTrashRootPath();
-
-    String getLogsRootPath();
-
-    String getBuildsRootPath();
-
-    String getLogPath(String logKey);
-
-    String getRepoRootPath(String repoKey);
-
-    String repoKeyFromPath(String absPath);
-
-    String getConfigPath(String configKey);
-
-    String getBuildsPath(String buildsKey);
-
     File getRepositoriesExportDir(File exportDir);
-
-    File getRepoExportDir(File exportDir, String repoKey);
 
     String getAbsolutePath(RepoPath repoPath);
 

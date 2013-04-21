@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.sapi.security.SecurityConstants;
 import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.security.UserInfo;
 
@@ -34,6 +35,7 @@ public class UserImpl implements MutableUserInfo {
     private String username;
     private String password;
     private String email;
+    private String salt;
     private String genPasswordKey;
     private boolean admin;
     private boolean enabled;
@@ -67,6 +69,7 @@ public class UserImpl implements MutableUserInfo {
     public UserImpl(UserInfo user) {
         this.username = user.getUsername();
         this.password = user.getPassword();
+        this.salt = user.getSalt();
         this.email = user.getEmail();
         this.admin = user.isAdmin();
         this.enabled = user.isEnabled();
@@ -110,8 +113,14 @@ public class UserImpl implements MutableUserInfo {
     }
 
     @Override
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPassword(SaltedPassword saltedPassword) {
+        this.password = saltedPassword.getPassword();
+        this.salt = saltedPassword.getSalt();
+    }
+
+    @Override
+    public String getSalt() {
+        return salt;
     }
 
     @Override
@@ -279,7 +288,7 @@ public class UserImpl implements MutableUserInfo {
         return ImmutableSet.copyOf(_groups());
     }
 
-    // Needed because OCM and XStream inject nulls :(
+    // Needed because XStream inject nulls :(
     private Set<UserGroupInfo> _groups() {
         if (groups == null) {
             this.groups = new HashSet<UserGroupInfo>(1);

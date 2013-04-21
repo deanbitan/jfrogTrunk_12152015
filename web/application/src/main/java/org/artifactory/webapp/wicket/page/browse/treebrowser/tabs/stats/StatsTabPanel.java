@@ -23,7 +23,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.StatsInfo;
-import org.artifactory.webapp.actionable.RepoAwareActionableItem;
+import org.artifactory.webapp.actionable.model.FileActionableItem;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
@@ -36,7 +36,7 @@ import java.util.Date;
  */
 public class StatsTabPanel extends Panel {
 
-    public StatsTabPanel(String id, RepoAwareActionableItem item) {
+    public StatsTabPanel(String id, FileActionableItem item) {
         super(id);
         LabeledValue downloadedLabel = new LabeledValue("downloaded", "Downloaded: ");
         add(downloadedLabel);
@@ -44,7 +44,8 @@ public class StatsTabPanel extends Panel {
         add(lastDownloaded);
         LabeledValue lastDownloadedBy = new LabeledValue("lastDownloadedBy", "Last Downloaded by: ");
         add(lastDownloadedBy);
-        StatsInfo statsInfo = item.getXmlMetadata(StatsInfo.class);
+        //StatsInfo statsInfo = item.getXmlMetadata(StatsInfo.class);
+        StatsInfo statsInfo = item.getStatsInfo();
         if (statsInfo == null) {
             statsInfo = InfoFactoryHolder.get().createStats();
         }
@@ -57,8 +58,8 @@ public class StatsTabPanel extends Panel {
         } else {
             PrettyTime prettyTime = new PrettyTime();
             Date lastDownloadedDate = new Date(statsInfo.getLastDownloaded());
-            String lastDownloadedString = prettyTime.format(lastDownloadedDate) + " (" + lastDownloadedDate.toString() +
-                    ")";
+            String lastDownloadedString = prettyTime.format(lastDownloadedDate) +
+                    " (" + lastDownloadedDate.toString() + ")";
             lastDownloaded.setValue(lastDownloadedString);
             String lastDownloadedByVal = statsInfo.getLastDownloadedBy();
             lastDownloadedBy.setValue(StringUtils.hasLength(lastDownloadedByVal) ? lastDownloadedByVal : "");

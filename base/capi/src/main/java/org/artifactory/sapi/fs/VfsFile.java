@@ -18,20 +18,46 @@
 
 package org.artifactory.sapi.fs;
 
-import org.artifactory.checksum.ChecksumType;
 import org.artifactory.fs.FileInfo;
-import org.artifactory.fs.MutableFileInfo;
 
 import java.io.InputStream;
 
 /**
- * Date: 8/4/11
- * Time: 2:05 PM
+ * Immutable interface of a virtual file.
  *
- * @author Fred Simon
+ * @author Yossi Shaul
  */
-public interface VfsFile extends VfsItem<FileInfo, MutableFileInfo> {
-    String getChecksum(ChecksumType checksumType);
+public interface VfsFile<T extends FileInfo> extends VfsItem<T> {
 
+    @Override
+    FileInfo getInfo();
+
+    /**
+     * Returns the actual sha1 checksum of the binary for this file.
+     * <b>Note:</b> This might be null during new file creation
+     *
+     * @return The actual sha1 checksum of the binary for this file, null if not constructed yet
+     */
+    String getSha1();
+
+    /**
+     * Returns the actual md5 checksum of the binary for this file.
+     * <b>Note:</b> This might be null during new file creation
+     *
+     * @return The actual sha1 checksum of the binary for this file, null if not constructed yet
+     */
+    String getMd5();
+
+    /**
+     * Returns the input stream of this file. This method will throw an exception if the content doesn't exist
+     * (new item) or the content couldn't be loaded.
+     *
+     * @return An input stream of this file data.
+     */
     InputStream getStream();
+
+    /**
+     * @return The size, in bytes, of the current file
+     */
+    long length();
 }

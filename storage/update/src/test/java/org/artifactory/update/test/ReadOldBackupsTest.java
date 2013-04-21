@@ -22,7 +22,6 @@ import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AclInfo;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.PermissionTargetInfo;
@@ -32,6 +31,7 @@ import org.artifactory.update.security.SecurityInfoReader;
 import org.artifactory.update.utils.BackupUtils;
 import org.artifactory.version.ArtifactoryVersion;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

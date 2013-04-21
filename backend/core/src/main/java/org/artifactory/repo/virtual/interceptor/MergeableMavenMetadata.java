@@ -25,12 +25,12 @@ import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.versioning.MavenVersionComparator;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.util.CollectionUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -83,9 +83,10 @@ class MergeableMavenMetadata {
                     } catch (IllegalArgumentException e) {
                         // New Java 7 TimSort is pointing out the non transitive behavior
                         // of the Mercury version comparator => Doing fallback to natural string order
-                        log.info("Hitting Mercury version comparator non transitive behavior message='"+e.getMessage()+"'");
+                        log.info(
+                                "Hitting Mercury version comparator non transitive behavior message='" + e.getMessage() + "'");
                         if (log.isDebugEnabled()) {
-                            log.debug("The lists of versions is: "+versions);
+                            log.debug("The lists of versions is: " + versions);
                         }
                         Collections.sort(versions);
                     }

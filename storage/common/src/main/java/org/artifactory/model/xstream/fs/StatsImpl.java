@@ -68,4 +68,37 @@ public class StatsImpl implements MutableStatsInfo {
     public void setLastDownloadedBy(String lastDownloadedBy) {
         this.lastDownloadedBy = lastDownloadedBy;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        StatsImpl stats = (StatsImpl) o;
+
+        if (downloadCount != stats.downloadCount) {
+            return false;
+        }
+        if (lastDownloaded != stats.lastDownloaded) {
+            return false;
+        }
+        if (lastDownloadedBy != null ? !lastDownloadedBy.equals(stats.lastDownloadedBy) :
+                stats.lastDownloadedBy != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (downloadCount ^ (downloadCount >>> 32));
+        result = 31 * result + (int) (lastDownloaded ^ (lastDownloaded >>> 32));
+        result = 31 * result + (lastDownloadedBy != null ? lastDownloadedBy.hashCode() : 0);
+        return result;
+    }
 }

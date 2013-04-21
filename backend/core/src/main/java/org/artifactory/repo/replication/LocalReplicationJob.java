@@ -25,7 +25,6 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.ImportJob;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
@@ -40,6 +39,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Noam Y. Tenne

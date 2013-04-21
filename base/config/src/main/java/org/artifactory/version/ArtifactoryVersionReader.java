@@ -20,8 +20,8 @@ package org.artifactory.version;
 
 import org.apache.commons.io.IOUtils;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -107,8 +107,7 @@ public class ArtifactoryVersionReader {
         int artifactoryRevision = Integer.parseInt(revisionString);
         log.warn("Version " + versionString + " is not an official release version. " +
                 "The closest released revision to " + artifactoryRevision + " will be used to determine the current " +
-                "version.\nWarning: This version is unsupported! Reading backup data may not work!\n" +
-                "Please specify an explicit version when running artadmin commands.");
+                "version.\nWarning: This version is unsupported! Reading backup data may not work!\n");
         ArtifactoryVersion[] values = ArtifactoryVersion.values();
         for (int i = values.length - 1; i >= 0; i--) {
             ArtifactoryVersion version = values[i];

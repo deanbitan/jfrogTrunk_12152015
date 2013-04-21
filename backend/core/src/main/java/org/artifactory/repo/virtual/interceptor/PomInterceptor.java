@@ -26,7 +26,6 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.Repo;
@@ -39,13 +38,14 @@ import org.artifactory.request.InternalRequestContext;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.storage.StorageException;
 import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -93,7 +93,7 @@ public class PomInterceptor extends VirtualRepoInterceptorBase {
                 log.error(e.getMessage());
             }
             return new UnfoundRepoResource(resource.getRepoPath(), message + ": " + e.getMessage());
-        } catch (RepositoryException e) {
+        } catch (StorageException e) {
             String message = "Failed to transform pom file";
             log.debug(message, e);
             log.error(message + ":" + e.getMessage());
@@ -112,7 +112,7 @@ public class PomInterceptor extends VirtualRepoInterceptorBase {
         try {
             SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(transformedResource,
                     IOUtils.toInputStream(pomContent, "utf-8")).build();
-            transformedResource = virtualRepo.saveResource(saveResourceContext);
+            transformedResource = repoService.saveResource(virtualRepo, saveResourceContext);
         } catch (IOException e) {
             String message = "Failed to import file to local storage";
             log.error(message, e);
@@ -128,7 +128,7 @@ public class PomInterceptor extends VirtualRepoInterceptorBase {
     }
 
     private String transformPomResource(InternalRequestContext context, RepoResource resource, VirtualRepo virtualRepo)
-            throws IOException, RepositoryException, RepoRejectException {
+            throws IOException, RepoRejectException {
         String repoKey = resource.getResponseRepoPath().getRepoKey();
         Repo repository = repoService.repositoryByKey(repoKey);
         ResourceStreamHandle handle;

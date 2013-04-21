@@ -66,8 +66,8 @@ public class LicensePanel extends TitledPanel {
 
         add(new Label("licenseKeyLabel", "License Key"));
         add(new HelpBubble("licenseKey.help",
-                "A license key that uniquely validates this artifactory server instance.\n" +
-                        "The license key is required for using Artifactory add-ons."));
+                "A license key that uniquely validates this Artifactory server instance.\n" +
+                        "The license key is required for using Artifactory Add-ons."));
 
         licenseKey = addonsManager.getLicenseKey();
         TextArea licenseKeyTextField = new TextArea("licenseKey", new PropertyModel(this, "licenseKey"));

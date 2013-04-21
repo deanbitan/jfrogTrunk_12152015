@@ -25,7 +25,7 @@ package org.artifactory.sapi.search;
  */
 public enum VfsFunctionType {
 
-    NONE(""), LOWER_CASE("lower-case"), UPPER_CASE("upper-case");
+    NONE(""), LOWER_CASE("LOWER"), UPPER_CASE("UPPER");
 
     public final String str;
 

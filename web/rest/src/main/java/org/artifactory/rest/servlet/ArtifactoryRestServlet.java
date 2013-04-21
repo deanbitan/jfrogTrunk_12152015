@@ -25,9 +25,9 @@ import com.sun.jersey.spi.spring.container.SpringComponentProviderFactory;
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.BeanUtilsBean2;
 import org.artifactory.api.context.ArtifactoryContext;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.servlet.DelayedInit;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import javax.servlet.Filter;

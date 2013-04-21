@@ -39,6 +39,7 @@ import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TitlePropertyColumn;
 import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.sapi.security.SecurityConstants;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.MutableGroupInfo;
@@ -106,6 +107,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
     @Override
     protected BaseModalPanel newCreateItemPanel() {
         MutableGroupInfo group = InfoFactoryHolder.get().createGroup();
+        group.setRealm(SecurityConstants.DEFAULT_REALM);
         return new GroupCreateUpdatePanel(CreateUpdateAction.CREATE, group, this);
     }
 

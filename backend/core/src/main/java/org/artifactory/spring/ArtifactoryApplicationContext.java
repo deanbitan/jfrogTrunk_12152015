@@ -20,9 +20,7 @@ package org.artifactory.spring;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.WebstartAddon;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
@@ -30,7 +28,6 @@ import org.artifactory.api.build.BuildService;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.config.ImportSettingsImpl;
-import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
@@ -39,11 +36,6 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.jcr.JcrRepoService;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.factory.JcrFsItemFactory;
-import org.artifactory.jcr.md.MetadataDefinitionService;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.logging.LoggingService;
 import org.artifactory.repo.service.ExportJob;
 import org.artifactory.repo.service.ImportJob;
@@ -53,12 +45,14 @@ import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskService;
+import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.update.FatalConversionException;
 import org.artifactory.update.utils.BackupUtils;
 import org.artifactory.util.ZipUtils;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
@@ -66,15 +60,9 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.jmx.access.MBeanProxyFactoryBean;
 
-import javax.annotation.Nullable;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -93,8 +81,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     public static final String CURRENT_TIME_EXPORT_DIR_NAME = "current";
 
-    private Set<Class<? extends ReloadableBean>> toInitialize = new HashSet<Class<? extends ReloadableBean>>();
-    private ConcurrentHashMap<Class, Object> beansForType = new ConcurrentHashMap<Class, Object>();
+    private Set<Class<? extends ReloadableBean>> toInitialize = new HashSet<>();
+    private ConcurrentHashMap<Class, Object> beansForType = new ConcurrentHashMap<>();
     private List<ReloadableBean> reloadableBeans;
     private final ArtifactoryHome artifactoryHome;
     private final String contextId;
@@ -125,53 +113,13 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     }
 
     @Override
+    public String getDisplayName() {
+        return contextId;
+    }
+
+    @Override
     public SpringConfigPaths getConfigPaths() {
         return springConfigPaths;
-    }
-
-    @Override
-    public MBeanServer getMBeanServer() {
-        //Delegate to the mbean server already created by the platform
-        //return JmxUtils.locateMBeanServer();
-        return ManagementFactory.getPlatformMBeanServer();
-    }
-
-    @SuppressWarnings({"unchecked"})
-    public <T> T getArtifactoryMBean(Class<T> mbeanIfc, String mbeanProps) {
-        ObjectName mbeanName = createArtifactoryMBeanName(mbeanIfc, mbeanProps);
-        MBeanProxyFactoryBean factory = new MBeanProxyFactoryBean();
-        factory.setProxyInterface(mbeanIfc);
-        try {
-            factory.setObjectName(mbeanName);
-        } catch (MalformedObjectNameException e) {
-            throw new IllegalStateException("Unexpected failure when using an existing object name instance.", e);
-        }
-        factory.afterPropertiesSet();
-        return (T) factory.getObject();
-        /*
-        Use this once we are JDK 6+ only
-        if (JMX.isMXBeanInterface(mbeanIfc)) {
-            return JMX.newMXBeanProxy(getMBeanServer(), mbeanName, mbeanIfc);
-        } else {
-            return JMX.newMBeanProxy(getMBeanServer(), mbeanName, mbeanIfc);
-        }
-        */
-    }
-
-    @Override
-    public <T> T registerArtifactoryMBean(T mbean, Class<T> mbeanIfc, @Nullable String mbeanProps) {
-        ObjectName mbeanName = createArtifactoryMBeanName(mbeanIfc, mbeanProps);
-        try {
-            if (getMBeanServer().isRegistered(mbeanName)) {
-                log.debug("Unregistering existing mbean '{}'.", mbeanName);
-                getMBeanServer().unregisterMBean(mbeanName);
-            }
-            log.debug("Registering mbean '{}'.", mbeanName);
-            getMBeanServer().registerMBean(mbean, mbeanName);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not register new mbean '" + mbeanName + "'.", e);
-        }
-        return getArtifactoryMBean(mbeanIfc, mbeanProps);
     }
 
     @Override
@@ -212,13 +160,12 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     @Override
     public void refresh() throws BeansException, IllegalStateException {
         try {
-            // TODO: Check concurrency issue during reload/refresh
             setReady(false);
             beansForType.clear();
             ArtifactoryContextThreadBinder.bind(this);
             super.refresh();
-            reloadableBeans = new ArrayList<ReloadableBean>(toInitialize.size());
-            Set<Class<? extends ReloadableBean>> toInit = new HashSet<Class<? extends ReloadableBean>>(toInitialize);
+            reloadableBeans = new ArrayList<>(toInitialize.size());
+            Set<Class<? extends ReloadableBean>> toInit = new HashSet<>(toInitialize);
             for (Class<? extends ReloadableBean> beanClass : toInitialize) {
                 orderReloadableBeans(toInit, beanClass);
             }
@@ -477,23 +424,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     }
 
     @Override
-    public JcrService getJcrService() {
-        return beanForType(JcrService.class);
-    }
-
-    @Override
-    public JcrRepoService getJcrRepoService() {
-        return beanForType(JcrRepoService.class);
-    }
-
-    @Override
-    public MetadataDefinitionService getMetadataDefinitionService() {
-        return beanForType(MetadataDefinitionService.class);
-    }
-
-    @Override
-    public JcrFsItemFactory storingRepositoryByKey(String repoKey) {
-        return beanForType(InternalRepositoryService.class).storingRepositoryByKey(repoKey);
+    public BinaryStore getBinaryStore() {
+        return beanForType(BinaryStore.class);
     }
 
     @Override
@@ -514,10 +446,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                     "into Artifactory.");
         }
         ((ImportSettingsImpl) settings).setExportVersion(backupVersion);
-        if (ArtifactoryVersion.v240.equals(backupVersion)) {
-            log.info("Forcing trust server checksums for import from version 2.4.0!");
-            settings.setTrustServerChecksums(true);
-        }
         List<String> stoppedTasks = Lists.newArrayList();
         try {
             stopRelatedTasks(ImportJob.class, stoppedTasks);
@@ -540,7 +468,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             beanForType(BuildService.class).importFrom(settings);
             // import logback conf
             beanForType(LoggingService.class).importFrom(settings);
-
             if (!settings.isExcludeContent()) {
                 // import repositories content
                 getRepositoryService().importFrom(settings);
@@ -598,8 +525,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             AddonsManager addonsManager = beanForType(AddonsManager.class);
 
             stopRelatedTasks(ExportJob.class, stoppedTasks);
-            // AOL
-            CoreAddons coreAddons = addonsManager.addonByType(CoreAddons.class);
 
             // central config
             getCentralConfig().exportTo(exportSettings);
@@ -665,9 +590,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
             settings.cleanCallbacks();
 
-            // AOL backup should run after everything else is done
-            coreAddons.backup(exportSettings);
-
             status.setStatus("Full system export completed successfully.", log);
         } catch (RuntimeException e) {
             status.setError("Full system export failed: " + e.getMessage(), e, log);
@@ -689,7 +611,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         try {
             FileUtils.moveDirectory(tmpExportDir, exportDir);
         } catch (IOException e) {
-            log.error("Failed to move '{}' to '{}': {}", new Object[]{tmpExportDir, exportDir, e.getMessage()});
+            log.error("Failed to move '{}' to '{}': {}", tmpExportDir, exportDir, e.getMessage());
         } finally {
             status.setOutputFile(exportDir);
         }
@@ -799,7 +721,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     private void exportSecurity(ExportSettingsImpl settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        ImportableExportable security = getSecurityService();
+        SecurityService security = getSecurityService();
         if (security != null) {
             status.setStatus("Exporting security...", log);
             security.exportTo(settings);
@@ -815,7 +737,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             return;
         }
 
-        ImportableExportable build = beanForType(BuildService.class);
+        BuildService build = beanForType(BuildService.class);
         if (build != null) {
             status.setStatus("Exporting build info...", log);
             build.exportTo(exportSettings);
@@ -845,21 +767,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         TaskService taskService = getTaskService();
         for (String token : tokens) {
             taskService.resumeTask(token);
-        }
-    }
-
-    private ObjectName createArtifactoryMBeanName(Class mbeanIfc, String mbeanProps) {
-        String type = mbeanIfc.getSimpleName();
-        if (type.endsWith("MBean")) {
-            type = type.substring(0, type.length() - 5);
-        }
-        String nameStr = null;
-        try {
-            nameStr = MBEANS_DOMAIN_NAME + "instance=" + contextId + ", type=" + type +
-                    (StringUtils.isNotEmpty(mbeanProps) ? "," + mbeanProps : "");
-            return new ObjectName(nameStr);
-        } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException("Failed to create mbean name from '" + nameStr + "'.", e);
         }
     }
 }

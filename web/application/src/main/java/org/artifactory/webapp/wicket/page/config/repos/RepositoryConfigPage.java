@@ -36,7 +36,6 @@ import org.apache.wicket.util.visit.IVisitor;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.ajax.CancelDefaultDecorator;
@@ -57,8 +56,8 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.RepoLayoutUtils;
+import org.artifactory.util.RepoPathUtils;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
@@ -67,6 +66,7 @@ import org.artifactory.webapp.wicket.page.config.repos.remote.HttpRepoPanel;
 import org.artifactory.webapp.wicket.page.config.repos.remote.importer.RemoteRepoImportPanel;
 import org.artifactory.webapp.wicket.page.config.repos.virtual.VirtualRepoPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -434,23 +434,23 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
         private String getDeleteConfirmMessage() {
             String key = repoDescriptor.getKey();
-            ArtifactCount count = null;
+            long count = 0;
             boolean hasCacheItems = false;
             if (repoDescriptor instanceof RemoteRepoDescriptor) {
                 RepoDescriptor cacheRepoDescriptor = findRemoteCacheDescriptor();
                 if (cacheRepoDescriptor != null) {
-                    count = repositoryService.getArtifactCount(cacheRepoDescriptor.getKey());
+                    count = repositoryService.getArtifactCount(
+                            RepoPathUtils.repoRootPath(cacheRepoDescriptor.getKey()));
                     hasCacheItems = true;
                 }
             } else {
-                count = repositoryService.getArtifactCount(key);
+                count = repositoryService.getArtifactCount(RepoPathUtils.repoRootPath(key));
             }
             //if remote repo has no cache
-            long totalCount = count != null ? count.getCount() : 0;
             StringBuilder builder = new StringBuilder("Are you sure you wish to delete the repository '").append(
                     key).append("'?\n");
             if (!(repoDescriptor instanceof VirtualRepoDescriptor)) {
-                builder.append("The repository ").append(key).append(" contains ").append(totalCount).append(
+                builder.append("The repository ").append(key).append(" contains ").append(count).append(
                         " artifacts");
                 builder.append(hasCacheItems ? " in cache repo" : "");
                 builder.append(" which will be permanently deleted!");

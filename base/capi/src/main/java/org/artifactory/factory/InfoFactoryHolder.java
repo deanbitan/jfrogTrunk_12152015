@@ -18,9 +18,6 @@
 
 package org.artifactory.factory;
 
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.Logger;
-
 /**
  * Date: 8/1/11
  * Time: 8:59 PM
@@ -28,27 +25,10 @@ import org.slf4j.Logger;
  * @author Fred Simon
  */
 public abstract class InfoFactoryHolder {
-    private static final Logger log = LoggerFactory.getLogger(InfoFactoryHolder.class);
-
-    private final static ThreadLocal<InfoFactory> FACTORY_HOLDER = new ThreadLocal<InfoFactory>();
     private final static InfoFactory DEFAULT_FACTORY;
 
     public static InfoFactory get() {
         return DEFAULT_FACTORY;
-        /*
-        InfoFactory infoFactory = FACTORY_HOLDER.get();
-        if (infoFactory == null) {
-        }
-        return infoFactory;
-        */
-    }
-
-    public static void bindFactory(InfoFactory factory) {
-        FACTORY_HOLDER.set(factory);
-    }
-
-    public static void unbindFactory() {
-        FACTORY_HOLDER.remove();
     }
 
     static {

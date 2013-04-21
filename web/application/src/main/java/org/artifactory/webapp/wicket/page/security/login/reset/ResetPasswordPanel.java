@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.security.login.reset;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.RestartResponseException;
 import org.apache.wicket.Session;
@@ -28,23 +27,24 @@ import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.validation.EqualPasswordInputValidator;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 /**
- * Displays the "Reset Password" interface
+ * Displays the "Reset SaltedPassword" interface
  *
  * @author Noam Tenne
  */
@@ -52,6 +52,8 @@ public class ResetPasswordPanel extends TitledActionPanel {
 
     private static final Logger log = LoggerFactory.getLogger(ResetPasswordPanel.class);
 
+    @SpringBean
+    private SecurityService securityService;
     @SpringBean
     private UserGroupService userGroupService;
 
@@ -102,7 +104,7 @@ public class ResetPasswordPanel extends TitledActionPanel {
                         return;
                     }
                     String chosenPassword = passwordTextField.getValue();
-                    user.setPassword(DigestUtils.md5Hex(chosenPassword));
+                    user.setPassword(securityService.generateSaltedPassword(chosenPassword));
                     user.setGenPasswordKey(null);
                     userGroupService.updateUser(user);
                     log.info("The user: '{}' has successfully reset his password.", user.getUsername());

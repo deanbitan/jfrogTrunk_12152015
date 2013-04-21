@@ -21,8 +21,8 @@ package org.artifactory.config;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.reader.CentralConfigReader;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.io.File;

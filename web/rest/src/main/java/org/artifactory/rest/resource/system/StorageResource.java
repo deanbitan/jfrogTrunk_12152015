@@ -19,11 +19,14 @@
 package org.artifactory.rest.resource.system;
 
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageService;
 import org.artifactory.backup.InternalBackupService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.storage.binstore.service.InternalBinaryStore;
+import org.artifactory.storage.binstore.service.ProviderConnectMode;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -33,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
 
 /**
  * @author yoavl
@@ -41,11 +45,14 @@ public class StorageResource {
     private HttpServletResponse httpResponse;
     private StorageService storageService;
     private InternalBackupService backupService;
+    private InternalBinaryStore binaryStore;
 
     public StorageResource(StorageService storageService, InternalBackupService backupService,
+            InternalBinaryStore binaryStore,
             HttpServletResponse httpResponse) {
         this.storageService = storageService;
         this.httpResponse = httpResponse;
+        this.binaryStore = binaryStore;
         this.backupService = backupService;
     }
 
@@ -61,7 +68,36 @@ public class StorageResource {
     @Path("size")
     @Produces(MediaType.TEXT_PLAIN)
     public String size() {
-        return storageService.getStorageSize() + "";
+        return binaryStore.getStorageSize() + "";
+    }
+
+    @POST
+    @Path("addFilestore")
+    @Deprecated
+    public Response addExternalFilestore(@QueryParam("dir") String externalDir, @QueryParam("mode") String mode) {
+        File extDir = new File(externalDir);
+        ProviderConnectMode connectMode = ProviderConnectMode.PASS_THROUGH;
+        if (StringUtils.isNotBlank(mode)) {
+            connectMode = ProviderConnectMode.getConnectMode(mode);
+        }
+        binaryStore.addExternalFilestore(extDir, connectMode);
+        return Response.ok("Directory " + extDir.getAbsolutePath() + " added as external filestore" +
+                "using connection mode " + connectMode.propName).build();
+    }
+
+    @POST
+    @Path("disconnectFilestore")
+    @Deprecated
+    public void disconnectExternalFilestore(@QueryParam("dir") String externalDir,
+            @QueryParam("mode") String mode, @QueryParam("verbose") boolean verbose) {
+        File extDir = new File(externalDir);
+        ProviderConnectMode connectMode = ProviderConnectMode.PASS_THROUGH;
+        if (StringUtils.isNotBlank(mode)) {
+            connectMode = ProviderConnectMode.getConnectMode(mode);
+        }
+        StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
+        holder.setVerbose(verbose);
+        binaryStore.disconnectExternalFilestore(extDir, connectMode, holder);
     }
 
     @POST
@@ -83,15 +119,7 @@ public class StorageResource {
     @Path("prune")
     public Response activatePruneEmptyDirs() {
         MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
-        storageService.pruneUnreferencedFileInDataStore(statusHolder);
-        return response(statusHolder);
-    }
-
-    @POST
-    @Path("convertActual")
-    public Response activateConvertActual() {
-        MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
-        storageService.convertActualChecksums(statusHolder);
+        binaryStore.prune(statusHolder);
         return response(statusHolder);
     }
 

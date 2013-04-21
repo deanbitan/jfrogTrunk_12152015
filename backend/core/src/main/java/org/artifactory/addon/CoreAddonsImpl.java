@@ -34,6 +34,7 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.api.rest.replication.ReplicationStatus;
 import org.artifactory.api.rest.replication.ReplicationStatusType;
 import org.artifactory.common.MutableStatusHolder;
@@ -48,7 +49,6 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -56,9 +56,6 @@ import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.HttpRepo;
 import org.artifactory.repo.LocalRepo;
@@ -71,17 +68,19 @@ import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.Request;
-import org.artifactory.resource.MetadataResource;
+import org.artifactory.resource.FileResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
+import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.util.RepoLayoutUtils;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ldap.core.ContextSource;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
@@ -109,7 +108,7 @@ import java.util.Set;
  */
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
-        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon {
+        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -120,7 +119,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public VirtualRepo createVirtualRepo(InternalRepositoryService repoService, VirtualRepoDescriptor descriptor) {
-        return new VirtualRepo(repoService, descriptor);
+        return new VirtualRepo(descriptor, repoService);
     }
 
     @Override
@@ -195,7 +194,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public List findLicensesInRepos(List<RepoDescriptor> repositories, LicenseStatus status) {
+    public List findLicensesInRepos(List<String> repoKeys, LicenseStatus status) {
         return Lists.newArrayList();
     }
 
@@ -220,9 +219,8 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public RepoResource assembleDynamicMetadata(MetadataInfo info, VfsItem<?, ?> metadataHostingItem,
-            InternalRequestContext context, RepoPath metadataRepoPath) {
-        return new MetadataResource(info);
+    public RepoResource assembleDynamicMetadata(InternalRequestContext context, RepoPath metadataRepoPath) {
+        return new FileResource(ContextHelper.get().getRepositoryService().getFileInfo(metadataRepoPath));
     }
 
     @Override
@@ -283,7 +281,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void performCrossLayoutMoveOrCopy(MoveMultiStatusHolder status, MoverConfig moverConfig,
-            LocalRepo sourceRepo, LocalRepo targetLocalRepo, JcrFsItem fsItemToMove) {
+            LocalRepo sourceRepo, LocalRepo targetLocalRepo, VfsItem sourceItem) {
         throw new UnsupportedOperationException(
                 "Cross layout move or copy operations require the Repository Layouts addon.");
     }
@@ -361,20 +359,16 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void offerLocalReplicationMetadataDeploymentEvent(RepoPath repoPath, String metadataName) {
+    public void offerLocalReplicationPropertiesDeploymentEvent(RepoPath repoPath) {
     }
 
     @Override
-    public void offerLocalReplicationMetadataDeleteEvent(RepoPath repoPath, String metadataName) {
+    public void offerLocalReplicationPropertiesDeleteEvent(RepoPath repoPath) {
     }
 
     @Override
     public void validateTargetIsDifferentInstance(ReplicationBaseDescriptor descriptor,
             RealRepoDescriptor repoDescriptor) throws IOException {
-    }
-
-    @Override
-    public void performLegacyRemoteReplication(RemoteReplicationSettings remoteReplicationSettings) throws IOException {
     }
 
     private MultiStatusHolder getReplicationRequiredStatusHolder() {
@@ -397,7 +391,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void extractNuPkgInfo(VfsItem item, MutableStatusHolder statusHolder) {
+    public void extractNuPkgInfo(VfsFile item, MutableStatusHolder statusHolder) {
     }
 
     @Override
@@ -456,7 +450,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public RemoteRepo createRemoteRepo(InternalRepositoryService repoService, RemoteRepoDescriptor repoDescriptor,
             boolean offlineMode, RemoteRepo oldRemoteRepo) {
-        return new HttpRepo(repoService, (HttpRepoDescriptor) repoDescriptor, offlineMode, oldRemoteRepo);
+        return new HttpRepo((HttpRepoDescriptor) repoDescriptor, repoService, offlineMode, oldRemoteRepo);
     }
 
     @Override
@@ -484,5 +478,15 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public boolean findUser(String userName) {
         return false;
+    }
+
+    @Override
+    public FileComplianceInfo getExternalInfoFromMetadata(RepoPath repoPath) {
+        throw new UnsupportedOperationException("This feature requires the Black Duck addon.");
+    }
+
+    @Override
+    public void performBlackDuckOnBuildArtifacts(Build build) {
+        // NOP
     }
 }

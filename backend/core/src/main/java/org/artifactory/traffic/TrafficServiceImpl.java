@@ -21,6 +21,7 @@ package org.artifactory.traffic;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.mbean.MBeanRegistrationService;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -30,7 +31,6 @@ import org.artifactory.spring.ReloadableBean;
 import org.artifactory.traffic.entry.TrafficEntry;
 import org.artifactory.traffic.entry.TransferEntry;
 import org.artifactory.traffic.mbean.Traffic;
-import org.artifactory.traffic.mbean.TrafficMBean;
 import org.artifactory.traffic.read.TrafficReader;
 import org.artifactory.version.CompoundVersionDetails;
 import org.springframework.stereotype.Service;
@@ -55,7 +55,7 @@ public class TrafficServiceImpl implements InternalTrafficService, ReloadableBea
         //Register a mbean
         InternalArtifactoryContext context = InternalContextHelper.get();
         Traffic traffic = new Traffic(context.beanForType(InternalTrafficService.class));
-        context.registerArtifactoryMBean(traffic, TrafficMBean.class, null);
+        ContextHelper.get().beanForType(MBeanRegistrationService.class).register(traffic);
 
         active = ConstantValues.trafficCollectionActive.getBoolean();
 

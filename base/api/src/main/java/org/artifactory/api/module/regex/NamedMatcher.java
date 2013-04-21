@@ -20,8 +20,8 @@ package org.artifactory.api.module.regex;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -88,7 +88,7 @@ public class NamedMatcher implements NamedMatchResult {
             return false;
         }
         if (groupCount() != parentPattern.groupNames().size()) {
-            log.error("Regular expression '"+parentPattern.namedPattern()+"' uses unnamed capturing group!");
+            log.error("Regular expression '" + parentPattern.namedPattern() + "' uses unnamed capturing group!");
             return false;
         }
         return matcher.matches();

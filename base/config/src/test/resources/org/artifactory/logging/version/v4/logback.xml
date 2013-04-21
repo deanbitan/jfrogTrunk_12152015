@@ -128,9 +128,6 @@
     <logger name="httpclient.wire">
         <level value="INFO"/>
     </logger>
-    <logger name="org.apache.jackrabbit">
-        <level value="WARN"/>
-    </logger>
     <logger name="org.eclipse.jetty">
         <level value="INFO"/>
     </logger>
@@ -140,26 +137,4 @@
     <logger name="org.springframework">
         <level value="WARN"/>
     </logger>
-    <logger name="org.apache.jackrabbit.core.persistence.bundle.BundleDbPersistenceManager">
-        <level value="INFO"/>
-    </logger>
-    <!--
-    <logger name="org.artifactory.webapp.servlet.RepoFilter">
-        <level value="DEBUG"/>
-    </logger>
-    <logger name="org.artifactory.jcr.lock.SessionLockEntry">
-        <level value="TRACE"/>
-    </logger>
-    <logger name="org.artifactory.repo.jcr.JcrRepoBase">
-        <level value="DEBUG"/>
-    </logger>
-    <logger name="org.artifactory.webapp.servlet.ArtifactoryResponseBase">
-        <level value="DEBUG"/>
-    </logger>
-    -->
-    <!--
-    <logger name="org.artifactory.jcr.lock.InternalLockManager">
-        <level value="TRACE"/>
-    </logger>
-    -->
 </configuration>

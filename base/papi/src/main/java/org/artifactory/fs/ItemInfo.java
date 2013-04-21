@@ -27,11 +27,15 @@ import org.artifactory.repo.RepoPath;
  *
  * @author Fred Simon
  */
-public interface ItemInfo extends Info {
+public interface ItemInfo extends Info, Comparable<ItemInfo> {
     RepoPath getRepoPath();
 
     boolean isFolder();
 
+    /**
+     * @return The file/folder name of this item
+     * @see org.artifactory.repo.RepoPath#getName()
+     */
     String getName();
 
     String getRepoKey();

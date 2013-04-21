@@ -38,12 +38,12 @@ import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.test.ArtifactoryHomeStub;
 import org.artifactory.test.TestUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import javax.xml.XMLConstants;
@@ -346,6 +346,7 @@ public class ConfigXmlConversionTest /** Don't extend ArtHomeBoundTest */
         }
     }
 
+    // TORE: rename the method and config - they aren't for 1.5.0
     public void convert150custom() throws Exception {
         CentralConfigDescriptor cc = transform("/config/test/config.1.5.0_indexing.xml", v1411);
         assertEquals(cc.getIndexer().getCronExp(), "0 23 5 * * ?");

@@ -56,7 +56,7 @@ public class CachingDescriptorHelper implements Serializable {
         Injector.get().inject(this);
     }
 
-    CachingDescriptorHelper(MutableCentralConfigDescriptor mutableDescriptor) {
+    public CachingDescriptorHelper(MutableCentralConfigDescriptor mutableDescriptor) {
         this.modelMutableDescriptor = mutableDescriptor;
     }
 

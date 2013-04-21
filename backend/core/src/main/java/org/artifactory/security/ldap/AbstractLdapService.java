@@ -20,8 +20,8 @@ package org.artifactory.security.ldap;
 
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ldap.AuthenticationException;
 import org.springframework.ldap.BadLdapGrammarException;
 import org.springframework.ldap.CommunicationException;

@@ -21,6 +21,8 @@ package org.artifactory.api.bintray;
 import org.artifactory.api.bintray.exception.BintrayException;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Async;
+import org.artifactory.api.search.BintrayItemSearchResults;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
@@ -47,6 +49,13 @@ public interface BintrayService {
     String PATH_USERS = "users";
 
     String VERSION_SHOW_FILES = "version/show/files";
+
+    final static BintrayItemInfo ITEM_NOT_FOUND = new BintrayItemInfo();
+    final static BintrayItemInfo ITEM_IN_PROCESS = new BintrayItemInfo();
+    final static BintrayItemInfo ITEM_RETRIEVAL_ERROR = new BintrayItemInfo();
+    final static BintrayPackageInfo PACKAGE_NOT_FOUND = new BintrayPackageInfo();
+    final static BintrayPackageInfo PACKAGE_IN_PROCESS = new BintrayPackageInfo();
+    final static BintrayPackageInfo PACKAGE_RETRIEVAL_ERROR = new BintrayPackageInfo();
 
     /**
      * Pushing synchronously single artifact to Bintray
@@ -146,15 +155,38 @@ public interface BintrayService {
     boolean isUserHasBintrayAuth();
 
     /**
-     * Checks if the given url is a Bintray url, if so it needs to be converted from the dl.bintray.com
-     * host to the appropriate one (if using credentials than to the Bintray public URL bintray.com/repo/browse/:subject/:repo
-     * otherwise using the Bintray get repository REST API URL (bintray.com/repos/:subject/:repo)
-     */
-    String getBintrayTestRepoUrl(String url);
-
-    /**
      * Get the registation URL for Bintray including Artifactory specific source query param.
      * In case of Artifactory Pro, the license hash is also included with the query param value.
      */
     String getBintrayRegistrationUrl();
+
+    /**
+     * Search for a files by name, can take the * and ? wildcard characters.
+     */
+    BintrayItemSearchResults<BintrayItemInfo> searchByName(String query) throws IOException, BintrayException;
+
+    /**
+     * Retrieves JCenter repo
+     */
+    RemoteRepoDescriptor getJCenterRepo();
+
+    /**
+     * Retrieves from  Bintray item info for item's sha1.
+     */
+    BintrayItemInfo getBintrayItemInfoByChecksum(String sha1);
+
+    /**
+     * Retrieves from  Bintray package info for the trio owner,repo,package.
+     */
+    BintrayPackageInfo getBintrayPackageInfo(String owner, String repo, String packageName);
+
+    /**
+     * Retrieves from  Bintray package info for  item's sha1.
+     */
+    BintrayPackageInfo getBintrayPackageInfo(String sha1);
+
+    /**
+     * Retrieves true if system Bintray API key exists
+     */
+    boolean hasBintraySystemUser();
 }

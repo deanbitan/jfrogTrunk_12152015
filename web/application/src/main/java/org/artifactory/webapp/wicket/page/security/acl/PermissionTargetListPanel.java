@@ -63,7 +63,7 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
 
     @Override
     protected List<PermissionTargetInfo> getList() {
-        return security.getPermissionTargets(ArtifactoryPermission.ADMIN);
+        return security.getPermissionTargets(ArtifactoryPermission.MANAGE);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
         columns.add(
                 new PropertyColumn<PermissionTargetInfo>(Model.of("Permission Target Name"), "name", "name"));
         columns.add(
-                new PropertyColumn<PermissionTargetInfo>(Model.of("Repositories"), "repoKeys", "repoKeys"));
+                new PropertyColumn<PermissionTargetInfo>(Model.of("Repositories"), "repoKeys"));
     }
 
     @Override

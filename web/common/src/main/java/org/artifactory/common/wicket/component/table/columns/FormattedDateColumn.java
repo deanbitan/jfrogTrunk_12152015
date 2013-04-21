@@ -23,6 +23,8 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColu
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.artifactory.api.config.CentralConfigService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -36,6 +38,8 @@ import java.text.SimpleDateFormat;
  * @see org.artifactory.api.config.CentralConfigService#getDateFormatter()
  */
 public class FormattedDateColumn<T> extends PropertyColumn<T> {
+    private static final Logger log = LoggerFactory.getLogger(FormattedDateColumn.class);
+
     private CentralConfigService centralConfigService;
     private String originalFormat;
 
@@ -49,19 +53,16 @@ public class FormattedDateColumn<T> extends PropertyColumn<T> {
     @Override
     protected IModel<String> createLabelModel(IModel<T> embeddedModel) {
         IModel<String> model = (IModel<String>) super.createLabelModel(embeddedModel);
-        String dateAsString = model.getObject();
-        DateFormat formatter = centralConfigService.getDateFormatter();
-        DateFormat simpleDateFormat;
+        String formattedDate = model.getObject();
         if (StringUtils.isNotBlank(originalFormat)) {
-            simpleDateFormat = new SimpleDateFormat(originalFormat);
-        } else {
-            simpleDateFormat = centralConfigService.getDateFormatter();
+            try {
+                DateFormat simpleDateFormat = new SimpleDateFormat(originalFormat);
+                long dateAsLong = simpleDateFormat.parse(formattedDate).getTime();
+                formattedDate = centralConfigService.getDateFormatter().print(dateAsLong);
+            } catch (ParseException e) {
+                log.warn("Failed to parse date {} using format: {}", formattedDate, originalFormat);
+            }
         }
-        try {
-            return Model.of(formatter.format(simpleDateFormat.parse(dateAsString)));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return model;
+        return Model.of(formattedDate);
     }
 }

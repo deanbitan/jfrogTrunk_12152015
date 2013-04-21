@@ -25,8 +25,12 @@ import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.VersionUnit;
+import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.repo.exception.FolderExpectedException;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.search.SavedSearchResults;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
@@ -37,13 +41,14 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.ZipEntryInfo;
-import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.Lock;
+import org.artifactory.sapi.fs.MutableVfsItem;
 import org.artifactory.util.Tree;
 
 import javax.annotation.Nonnull;
@@ -54,12 +59,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-//import org.artifactory.api.tree.fs.ZipEntriesTree;
-
 /**
  * User: freds Date: Jul 21, 2008 Time: 8:07:50 PM
  */
 public interface RepositoryService extends ImportableExportable {
+
+    String METADATA_FOLDER = ".artifactory-metadata";
 
     List<LocalRepoDescriptor> getLocalRepoDescriptors();
 
@@ -78,9 +83,6 @@ public interface RepositoryService extends ImportableExportable {
 
     /**
      * Doesn't work for virtual repositories (RTFACT-4891)
-     *
-     * @param key
-     * @return
      */
     RepoDescriptor repoDescriptorByKey(String key);
 
@@ -99,29 +101,20 @@ public interface RepositoryService extends ImportableExportable {
 
     /**
      * Internal - get the raw content directly
-     *
-     * @param fileInfo
-     * @return
      */
-    @Lock(transactional = true)
     String getStringContent(FileInfo fileInfo);
 
     /**
-     * Internal - get the raw content directly
-     *
-     * @param repoPath
-     * @return
+     * Internal - get the raw content directly. Returns empty string if content not found.
      */
-    @Lock(transactional = true)
+    @Nonnull
     String getStringContent(RepoPath repoPath);
 
     /**
      * Internal - get the raw content directly
      *
-     * @param repoPath
      * @return The ResourceStreamHandle for an existing file or a NullResourceStreamHandle for a non-exiting file
      */
-    @Lock(transactional = true)
     ResourceStreamHandle getResourceStreamHandle(RepoPath repoPath);
 
     /**
@@ -130,7 +123,6 @@ public interface RepositoryService extends ImportableExportable {
      * @return The source entry details (including content if found)
      * @throws IOException On failure reading to archive or the sources file (will not fail if not found)
      */
-    @Lock(transactional = true)
     public ArchiveFileContent getArchiveFileContent(RepoPath archivePath, String sourceEntryPath) throws IOException;
 
     /**
@@ -149,128 +141,58 @@ public interface RepositoryService extends ImportableExportable {
      * @param repoKey
      * @param settings
      */
-    @Lock(transactional = false)
     void importRepo(String repoKey, ImportSettingsImpl settings);
 
     /**
      * @param repoPath Repository path of the item
      * @return Folder or file info. Throws exception if the path doesn't exist.
      */
-    @Lock(transactional = true)
-    ItemInfo getItemInfo(RepoPath repoPath);
+    @Nonnull
+    ItemInfo getItemInfo(RepoPath repoPath) throws ItemNotFoundRuntimeException;
 
     /**
      * @param repoPath Repository path of the file
      * @return The file info. Throws exception if the path doesn't exist or it doesn't point to a file.
      */
-    @Lock(transactional = true)
-    FileInfo getFileInfo(RepoPath repoPath);
+    @Nonnull
+    FileInfo getFileInfo(RepoPath repoPath) throws ItemNotFoundRuntimeException, FileExpectedException;
 
     /**
      * @param repoPath Repository path of the folder
      * @return The folder info. Throws exception if the path doesn't exist or it doesn't point to a folder.
      */
-    @Lock(transactional = true)
-    FolderInfo getFolderInfo(RepoPath repoPath);
+    @Nonnull
+    FolderInfo getFolderInfo(RepoPath repoPath) throws ItemNotFoundRuntimeException, FolderExpectedException;
 
-    /**
-     * @param repoPath     Repository path of the metadata aware item
-     * @param metadataName The metadata name
-     * @return The metadata info. Returns null if not found.
-     */
-    @Lock(transactional = true)
+    boolean hasProperties(RepoPath repoPath);
+
     @Nullable
-    MetadataInfo getMetadataInfo(RepoPath repoPath, String metadataName);
+    Properties getProperties(RepoPath repoPath);
 
     /**
-     * Returns the available metadata names which are not internal
+     * Sets the given properties on the target existing item. Overrides any existing properties.
+     * This methods checks for annotate permissions.
      *
-     * @param repoPath The full path of the object having metadata
-     * @return A list of metadata names that exists on this element
+     * @param repoPath   Repo path of the item
+     * @param properties Properties to set
+     * @return True if properties were set successfully
      */
-    @Lock(transactional = true)
-    List<String> getMetadataNames(RepoPath repoPath);
+    @Lock
+    boolean setProperties(RepoPath repoPath, Properties properties);
 
-    /**
-     * Returns the metadata of the given type class.<br> To be used only with non-generic metadata classes.<br> Generic
-     * (String class) will be ignored.<br>
-     *
-     * @param repoPath      A repo path (usually pointing to an JcrFsItem)
-     * @param metadataClass Class of metadata type. Cannot be generic or null
-     * @param <MD>          Metadata type
-     * @return Requested metadata if found. Null if not
-     * @throws IllegalArgumentException If given a null metadata class
-     */
-    @Lock(transactional = true)
-    <MD> MD getMetadata(RepoPath repoPath, Class<MD> metadataClass);
-
-    /**
-     * Returns the metadata of the given name.
-     *
-     * @param repoPath     A repo path (usually pointing to an JcrFsItem)
-     * @param metadataName Name of metadata to return. Cannot be null
-     * @return Requested metadata if found. Null if not
-     * @throws IllegalArgumentException If given a blank metadata name
-     */
-    @Lock(transactional = true)
-    @Nullable
-    String getXmlMetadata(RepoPath repoPath, String metadataName);
-
-    /**
-     * Indicates whether this item adorns the given metadata
-     *
-     * @param repoPath     A repo path (usually pointing to an JcrFsItem)
-     * @param metadataName Name of metadata to locate
-     * @return True if annotated by the given metadata. False if not
-     * @throws IllegalArgumentException If given a blank metadata name
-     */
-    @Lock(transactional = true)
-    boolean hasMetadata(RepoPath repoPath, String metadataName);
-
-    /**
-     * Sets the given metadata on the supplied repo path.<br> To be used only with non-generic metadata classes.<br>
-     * Generic (String class) will be ignored.<br>
-     *
-     * @param repoPath      Path to targeted item
-     * @param metadataClass Type class of metadata to set
-     * @param metadata      Value of metadata to set. Cannot be null
-     * @return True if the setting was successful
-     * @throws IllegalArgumentException When given a null metadata value
-     */
-    @Lock(transactional = true)
-    <MD> boolean setMetadata(RepoPath repoPath, Class<MD> metadataClass, MD metadata);
-
-    /**
-     * Sets the given metadata on the supplied repo path.
-     *
-     * @param repoPath        Path to targeted item
-     * @param metadataName    The metadata name to set under
-     * @param metadataContent The metadata content to add. Cannot be null
-     * @throws IllegalArgumentException When given a null metadata value
-     */
-    @Lock(transactional = true)
-    void setXmlMetadata(RepoPath repoPath, String metadataName, @Nonnull String metadataContent);
-
-    /**
-     * Removes the metadata of the given name
-     *
-     * @param repoPath     Path to targeted item
-     * @param metadataName Name of metadata to remove
-     * @return True if the setting was successful
-     */
-    @Lock(transactional = true)
-    boolean removeMetadata(RepoPath repoPath, String metadataName);
+    @Lock
+    boolean removeProperties(RepoPath repoPath);
 
     @Request
-    @Lock(transactional = true)
+    @Lock
     BasicStatusHolder undeploy(RepoPath repoPath);
 
     @Request
-    @Lock(transactional = true)
+    @Lock
     BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata);
 
     @Request
-    @Lock(transactional = true)
+    @Lock
     BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata, boolean pruneEmptyFolders);
 
     @Request
@@ -286,7 +208,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param dryRun             If true the method will just report the expected result but will not move any file
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
-    @Lock(transactional = true)
+    @Lock
     MoveMultiStatusHolder move(RepoPath repoPath, String targetLocalRepoKey, boolean dryRun);
 
 
@@ -301,7 +223,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param failFast        If true, the operation should fail upon encountering an error.
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
-    @Lock(transactional = true)
+    @Lock
     MoveMultiStatusHolder move(RepoPath fromRepoPath, RepoPath targetPath, boolean dryRun, boolean suppressLayouts,
             boolean failFast);
 
@@ -321,7 +243,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param failFast      True if the operation should abort upon the first occurring warning or error
      * @param searchResults
      */
-    @Lock(transactional = true)
+    @Lock
     MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetRepoKey, Properties properties,
             boolean dryRun, boolean failFast, boolean searchResults);
 
@@ -335,7 +257,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param dryRun             If true the method will just report the expected result but will not copy any file
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
-    @Lock(transactional = true)
+    @Lock
     MoveMultiStatusHolder copy(RepoPath fromRepoPath, String targetLocalRepoKey, boolean dryRun);
 
     /**
@@ -350,7 +272,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param failFast        If true, the operation should fail upon encountering an error.
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
-    @Lock(transactional = true)
+    @Lock
     MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts,
             boolean failFast);
 
@@ -371,7 +293,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param searchResults
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
-    @Lock(transactional = true)
+    @Lock
     MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast, boolean searchResults);
 
@@ -382,23 +304,32 @@ public interface RepositoryService extends ImportableExportable {
      *                 applied.
      * @return A count of the items affected by the zap
      */
-    @Lock(transactional = true)
+    @Lock
     int zap(RepoPath repoPath);
 
-    @Lock(transactional = true)
-    List<org.artifactory.fs.FolderInfo> getWithEmptyChildren(FolderInfo folderInfo);
+    List<FolderInfo> getWithEmptyChildren(FolderInfo folderInfo);
 
     Set<String> getAllRepoKeys();
 
-    @Lock(transactional = true)
     boolean exists(RepoPath repoPath);
+
+    /**
+     * Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path.
+     * An empty list is returned if the path doesn't exist of is not pointing to a folder.
+     *
+     * @param repoPath The repo path to list children
+     * @return Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path
+     */
+    @Nonnull
+    List<ItemInfo> getChildren(RepoPath repoPath);
+
+    @Lock
+    List<ItemInfo> getChildrenDeeply(RepoPath path);
 
     List<String> getChildrenNames(RepoPath repoPath);
 
-    @Lock(transactional = true)
     boolean hasChildren(RepoPath repoPath);
 
-    @Lock(transactional = false)
     void exportRepo(String repoKey, ExportSettings settings);
 
     /**
@@ -408,9 +339,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param baseSettings
      * @return The status of the procedure
      */
-    @Lock(transactional = true)
-    MutableStatusHolder exportSearchResults(SavedSearchResults searchResults,
-            ExportSettingsImpl baseSettings);
+    MutableStatusHolder exportSearchResults(SavedSearchResults searchResults, ExportSettingsImpl baseSettings);
 
     /**
      * Returns all the version units under a certain path.
@@ -418,23 +347,12 @@ public interface RepositoryService extends ImportableExportable {
      * @param repoPath The repository path (might be repository root with no sub-path)
      * @return version units under a certain path
      */
-    @Lock(transactional = true)
     List<VersionUnit> getVersionUnitsUnder(RepoPath repoPath);
 
     /**
-     * Returns the number of artifacts currently being served
-     *
-     * @return ArtifactCount
+     * @return the number of artifacts currently being served, including virtual repo cached files
      */
-    ArtifactCount getArtifactCount();
-
-    /**
-     * Returns the number of artifacts currently being served from the specified repository
-     *
-     * @param repoKey Repository to query
-     * @return ArtifactCount
-     */
-    ArtifactCount getArtifactCount(String repoKey);
+    long getArtifactCount();
 
     /**
      * Returns a list of local repo descriptors that the user is permitted to deploy on
@@ -489,9 +407,15 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param localRepoKey Key of the local non-cache repository to calculate maven plugins metadata on.
      */
-    @Async(delayUntilAfterCommit = true, transactional = true)
+    @Async(delayUntilAfterCommit = true)
     public void calculateMavenPluginsMetadataAsync(String localRepoKey);
 
+    /**
+     * Calculates the maven metadata recursively on all the folders under the input folder.
+     * This will also trigger asynchronous maven metadata calculation for maven plugins.
+     *
+     * @param baseFolderPath Base repo path to start calculating from
+     */
     public void calculateMavenMetadata(RepoPath baseFolderPath);
 
     /**
@@ -499,15 +423,7 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param basePath Base folder path for the recalculation. Must be a local non-cache repository path.
      */
-    @Lock(transactional = true)
     void markBaseForMavenMetadataRecalculation(RepoPath basePath);
-
-    /**
-     * For internal use by the JR WebDAV debugging servlet - should not be really exposed here
-     *
-     * @return
-     */
-    Object getJcrHandle();
 
     /**
      * @return List of virtual repositories that include the repository in their list.
@@ -515,7 +431,7 @@ public interface RepositoryService extends ImportableExportable {
     List<VirtualRepoDescriptor> getVirtualReposContainingRepo(RepoDescriptor repoDescriptor);
 
     /**
-     * Inidicates if the given virtual repo path exists
+     * Indicates if the given virtual repo path exists
      *
      * @param repoPath Virtual repo path
      * @return True if repo path exists, false if not
@@ -536,7 +452,6 @@ public interface RepositoryService extends ImportableExportable {
      * @return Tree representation of the entries in the zip.
      * @throws IOException On error retrieving or parsing the zip file
      */
-    @Lock(transactional = true)
     Tree<ZipEntryInfo> zipEntriesToTree(RepoPath zipPath) throws IOException;
 
     /**
@@ -545,10 +460,9 @@ public interface RepositoryService extends ImportableExportable {
      * @param pathToSearch Repo path to search in
      * @return Latest modified item
      */
-    @Lock(transactional = true)
-    org.artifactory.fs.ItemInfo getLastModified(RepoPath pathToSearch);
+    ItemInfo getLastModified(RepoPath pathToSearch);
 
-    @Lock(transactional = true)
+    @Lock
     void touch(RepoPath repoPath);
 
     /**
@@ -556,24 +470,12 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param fileRepoPath Repository path of the file
      */
-    @Lock(transactional = true)
+    @Lock
     void fixChecksums(RepoPath fileRepoPath);
-
-    /**
-     * Returns an item-info list of the given repo path
-     *
-     * @param repoPath Repo path to look for children
-     * @return Child list (empty if given path is non-existent)
-     */
-    @Lock(transactional = true)
-    List<ItemInfo> getChildren(RepoPath repoPath);
-
-    @Lock(transactional = true)
-    List<ItemInfo> getChildrenDeeply(RepoPath path);
 
     ModuleInfo getItemModuleInfo(RepoPath repoPath);
 
-    @Lock(transactional = true)
+    @Lock
     boolean mkdirs(RepoPath folderRepoPath);
 
     StatusHolder deploy(RepoPath repoPath, InputStream inputStream);
@@ -581,29 +483,18 @@ public interface RepositoryService extends ImportableExportable {
     /**
      * Returns the first resolved local file info from a virtual repo.
      *
-     * @param repoPath Repo path of virtual file
+     * @param virtualRepoPath Repo path of virtual file
      * @return Local file info
      */
-    @Lock(transactional = true)
-    FileInfo getVirtualFileInfo(RepoPath repoPath);
+    FileInfo getVirtualFileInfo(RepoPath virtualRepoPath);
 
     /**
      * Returns the first resolved local item info from a virtual repo.
      *
-     * @param repoPath Repo path of virtual item
+     * @param virtualRepoPath Repo path of virtual item
      * @return Local item info
      */
-    @Lock(transactional = true)
-    ItemInfo getVirtualItemInfo(RepoPath repoPath);
-
-    /**
-     * Returns the first resolved local metadata info from a virtual repo.
-     *
-     * @param repoPath Repo path of virtual metadata info
-     * @return Local metadata info
-     */
-    @Lock(transactional = true)
-    MetadataInfo getVirtualMetadataInfo(RepoPath repoPath, String metadataName);
+    ItemInfo getVirtualItemInfo(RepoPath virtualRepoPath);
 
     void assertValidDeployPath(RepoPath repoPath, long contentLength) throws RepoRejectException;
 
@@ -627,4 +518,34 @@ public interface RepositoryService extends ImportableExportable {
      * Manually reset the assumed offline flag to false (i.e., the repository is considered back online)
      */
     void resetAssumedOffline(@Nonnull String remoteRepoKey);
+
+    /**
+     * Returns the files count under the specified repo path (repository or folder).
+     *
+     * @param repoPath Repository path of a root repo or a folder
+     * @return Files count under the specified repo path
+     */
+    long getArtifactCount(RepoPath repoPath);
+
+    /**
+     * Returns the files and folder (nodes)count under the specified repo path (repository or folder).
+     *
+     * @param repoPath Repository path of a root repo or a folder
+     * @return files and folder count under the specified repo path
+     */
+    long getNodesCount(RepoPath repoPath);
+
+    /**
+     * Search for all files with bad checksums of the given checksum type (SHA-1 or MD5)
+     *
+     * @param type The checksum type to search for, we support SHA-1 or MD5
+     */
+    List<FileInfo> searchFilesWithBadChecksum(ChecksumType type);
+
+    //TODO: [by YS] cannot be transactional by itself should be transactional mandatory
+    MutableVfsItem getMutableItem(RepoPath repoPath);
+
+    @Nullable
+    StatsInfo getStatsInfo(RepoPath repoPath);
+
 }

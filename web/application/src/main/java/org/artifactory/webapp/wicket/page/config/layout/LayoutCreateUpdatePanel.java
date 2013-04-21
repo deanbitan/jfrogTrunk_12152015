@@ -60,7 +60,7 @@ import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.layout.validators.LayoutFieldRequiredTokenValidator;
 import org.artifactory.webapp.wicket.page.config.layout.validators.ReservedLayoutNameValidator;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 
@@ -94,7 +94,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         setDefaultFocusField(nameTextField);
 
         if (isCreate()) {
-            nameTextField.add(new JcrNameValidator("Invalid layout name '%s'."));
+            nameTextField.add(new NameValidator("Invalid layout name '%s'."));
             nameTextField.add(new XsdNCNameValidator("Invalid layout name '%s'."));
             nameTextField.add(new UniqueXmlIdValidator(layoutListPanel.getMutableDescriptor()));
             nameTextField.add(new ReservedLayoutNameValidator());

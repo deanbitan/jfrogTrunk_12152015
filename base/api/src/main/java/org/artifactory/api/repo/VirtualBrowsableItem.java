@@ -18,11 +18,8 @@
 
 package org.artifactory.api.repo;
 
-import org.artifactory.checksum.ChecksumType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableItemInfo;
-import org.artifactory.md.MetadataInfo;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 
 import java.util.List;
@@ -74,38 +71,6 @@ public class VirtualBrowsableItem extends BaseBrowsableItem {
         }
         return new VirtualBrowsableItem(itemInfo.getName(), false, itemInfo.getCreated(), itemInfo.getLastModified(),
                 ((FileInfo) itemInfo).getSize(), repoPath, repoKeys);
-    }
-
-    /**
-     * Creates a metadata browsable item
-     *
-     * @param repoPath     Item's virtual repo path
-     * @param metadataInfo Backing metadata info
-     * @param repoKeys     List of keys of the repos that the item appears in
-     * @return Browsable item
-     */
-    public static VirtualBrowsableItem getMetadataItem(RepoPath repoPath, MetadataInfo metadataInfo,
-            List<String> repoKeys) {
-        return new VirtualBrowsableItem(metadataInfo.getName(), false, metadataInfo.getCreated(),
-                metadataInfo.getLastModified(), metadataInfo.getSize(), repoPath, repoKeys);
-    }
-
-    /**
-     * Creates a checksum browsable item
-     *
-     * @param checksumType        Type of checksum to create for
-     * @param checksumValueLength Byte length of checksum value
-     * @return Browsable item
-     */
-    public static VirtualBrowsableItem getChecksumItem(VirtualBrowsableItem virtualBrowsableItem,
-            ChecksumType checksumType, long checksumValueLength) {
-        String checksumItemName = virtualBrowsableItem.name + checksumType.ext();
-        RepoPath repoPath = InternalRepoPathFactory.create(virtualBrowsableItem.getRepoKey(),
-                virtualBrowsableItem.getRelativePath() + checksumType.ext());
-
-        return new VirtualBrowsableItem(checksumItemName, false, virtualBrowsableItem.getCreated(),
-                virtualBrowsableItem.getLastModified(), checksumValueLength, repoPath,
-                virtualBrowsableItem.getRepoKeys());
     }
 
     @Override

@@ -18,7 +18,7 @@
 
 package org.artifactory.security;
 
-import org.artifactory.security.jcr.JcrAuthenticationProvider;
+import org.artifactory.security.db.DbAuthenticationProvider;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
@@ -39,6 +39,6 @@ public class InternalRealmAwareAuthentication extends RealmAwareUserPassAuthenti
 
     @Override
     public String getRealm() {
-        return JcrAuthenticationProvider.INTERNAL_REALM;
+        return DbAuthenticationProvider.INTERNAL_REALM;
     }
 }

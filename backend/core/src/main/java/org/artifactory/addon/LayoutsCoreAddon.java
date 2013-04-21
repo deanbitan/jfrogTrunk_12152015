@@ -22,9 +22,9 @@ import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.jcr.fs.JcrFsItem;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.service.mover.MoverConfig;
+import org.artifactory.sapi.fs.VfsItem;
 
 import javax.annotation.Nullable;
 
@@ -45,7 +45,7 @@ public interface LayoutsCoreAddon extends Addon {
     boolean canCrossLayouts(RepoLayout source, RepoLayout target);
 
     void performCrossLayoutMoveOrCopy(MoveMultiStatusHolder status, MoverConfig moverConfig, LocalRepo sourceRepo,
-            LocalRepo targetLocalRepo, JcrFsItem fsItemToMove);
+            LocalRepo targetLocalRepo, VfsItem fsItemToMove);
 
     String translateArtifactPath(RepoLayout sourceRepoLayout, RepoLayout targetRepoLayout, String path);
 

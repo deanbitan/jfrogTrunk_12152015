@@ -36,7 +36,7 @@ public interface ReloadableBean {
     /**
      * This init will be called after the context is created and can be annotated with transactional propagation
      */
-    @Lock(transactional = true)
+    @Lock
     void init();
 
     /**

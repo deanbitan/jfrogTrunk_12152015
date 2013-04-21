@@ -19,11 +19,8 @@
 package org.artifactory.spring;
 
 import org.artifactory.api.security.SecurityService;
-import org.artifactory.jcr.spring.ArtifactoryStorageContext;
+import org.artifactory.storage.spring.ArtifactoryStorageContext;
 import org.springframework.context.ApplicationContext;
-
-import javax.annotation.Nullable;
-import javax.management.MBeanServer;
 
 /**
  * @author freds
@@ -34,16 +31,4 @@ public interface InternalArtifactoryContext extends ArtifactoryStorageContext,
     SecurityService getSecurityService();
 
     void addReloadableBean(Class<? extends ReloadableBean> interfaceClass);
-
-    /**
-     * Registers an object as an mbean.
-     *
-     * @param mbean      The mbean implementation
-     * @param mbeanIfc   The mbean interface
-     * @param mbeanProps Optional string to attach to the mbean name
-     * @return The registered mbean (might be a proxy of the original instance)
-     */
-    <T> T registerArtifactoryMBean(T mbean, Class<T> mbeanIfc, @Nullable String mbeanProps);
-
-    MBeanServer getMBeanServer();
 }

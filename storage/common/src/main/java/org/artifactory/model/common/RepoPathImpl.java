@@ -23,6 +23,8 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 
+import javax.annotation.Nullable;
+
 /**
  * An object identity that represents a repository and a path inside the repository
  * <p/>
@@ -89,10 +91,16 @@ public final class RepoPathImpl implements RepoPath {
         return NamingUtils.stripMetadataFromPath(PathUtils.getFileName(getPath()));
     }
 
+    @Override
+    public String toPath() {
+        return repoKey + (StringUtils.isNotBlank(path) ? "/" + path : "");
+    }
+
     /**
      * @return Parent of this repo path. Null if has no parent
      */
     @Override
+    @Nullable
     public RepoPath getParent() {
         if (isRoot()) {
             return null;

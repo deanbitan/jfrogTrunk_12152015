@@ -84,4 +84,16 @@ public class ReplicationResource {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         return addonsManager.addonByType(RestAddon.class).replicate(repoPath, replicationRequest);
     }
+
+    /**
+     * Executes replication with default values and no JSON body
+     * (using for pull, false properties and deletes and uses the remote repository URL and credentials)
+     *
+     * @param path Replication root
+     */
+    @POST
+    @Path("{path: .+}")
+    public Response replicateNoJson(@PathParam("path") String path) throws IOException {
+        return replicate(path, new ReplicationRequest());
+    }
 }

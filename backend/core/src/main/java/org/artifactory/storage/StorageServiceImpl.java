@@ -21,7 +21,6 @@ package org.artifactory.storage;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
-import org.apache.jackrabbit.core.RepositoryImpl;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -34,14 +33,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.jackrabbit.ExtendedDbDataStore;
-import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
-import org.artifactory.jcr.utils.DerbyUtils;
-import org.artifactory.jcr.utils.JcrUtils;
-import org.artifactory.jcr.version.v240.ActualChecksumsConverter;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.mbean.MBeanRegistrationService;
 import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
 import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskBase;
@@ -49,10 +41,14 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.storage.mbean.Storage;
-import org.artifactory.storage.mbean.StorageMBean;
+import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
+import org.artifactory.storage.binstore.service.InternalBinaryStore;
+import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.DbType;
+import org.artifactory.storage.mbean.ManagedStorage;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -74,7 +70,10 @@ public class StorageServiceImpl implements InternalStorageService {
     private CentralConfigService centralConfigService;
 
     @Autowired
-    private JcrService jcrService;
+    private DbService dbService;
+
+    @Autowired
+    private InternalBinaryStore binaryStore;
 
     @Autowired
     private TaskService taskService;
@@ -89,18 +88,19 @@ public class StorageServiceImpl implements InternalStorageService {
         }
 
         logStorageSizes();
-        DerbyUtils.compress(statusHolder);
+        dbService.compressDerbyDb(statusHolder);
         logStorageSizes();
     }
 
     @Override
+    //TODO: [by YS] change to the new directories
     public void logStorageSizes() {
         StringBuilder sb = new StringBuilder();
         sb.append("\n-----Derby storage sizes-----\n");
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
         File dataDir = artifactoryHome.getDataDir();
         // print the size of derby directories (derby is the new name, db and store for old installations)
-        File[] dirs = {new File(dataDir, "derby"), new File(dataDir, "db"), new File(dataDir, "store")};
+        File[] dirs = {new File(dataDir, "derby"), new File(dataDir, "db"), binaryStore.getBinariesDir()};
         for (File dir : dirs) {
             if (dir.exists()) {
                 long sizeOfDirectory = FileUtils.sizeOfDirectory(dir);
@@ -114,31 +114,8 @@ public class StorageServiceImpl implements InternalStorageService {
     }
 
     @Override
-    public long getStorageSize() {
-        JcrSession session = jcrService.getUnmanagedSession();
-        try {
-            RepositoryImpl repository = (RepositoryImpl) session.getRepository();
-            ExtendedDbDataStore dataStore = JcrUtils.getExtendedDataStore(repository);
-            return dataStore.getStorageSize();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to calculate storage size.", e);
-        } finally {
-            session.logout();
-        }
-    }
-
-    @Override
     public void ping() {
-        jcrService.ping();
-    }
-
-    @Override
-    public void convertActualChecksums(MultiStatusHolder statusHolder) {
-        if (new ActualChecksumsConverter().convertAllActualChecksumsProperties()) {
-            statusHolder.setStatus("Conversion was successful", log);
-        } else {
-            statusHolder.setError("Conversion failed", log);
-        }
+        binaryStore.ping();
     }
 
     @Override
@@ -152,14 +129,14 @@ public class StorageServiceImpl implements InternalStorageService {
             return null;
         }
 
-        File binariesFolder = jcrService.getBinariesFolder();
+        File binariesFolder = binaryStore.getBinariesDir();
         return new StorageQuotaInfo(binariesFolder, quotaConfig.getDiskSpaceLimitPercentage(),
                 quotaConfig.getDiskSpaceWarningPercentage(), fileContentLength);
     }
 
     @Override
     public void callManualGarbageCollect(MultiStatusHolder statusHolder) {
-        taskService.checkCanStartManualTask(JcrGarbageCollectorJob.class, statusHolder);
+        taskService.checkCanStartManualTask(BinaryStoreGarbageCollectorJob.class, statusHolder);
         if (!statusHolder.isError()) {
             try {
                 execOneGcAndWait(true);
@@ -172,37 +149,11 @@ public class StorageServiceImpl implements InternalStorageService {
 
     @Override
     public void pruneUnreferencedFileInDataStore(MultiStatusHolder statusHolder) {
-        JcrSession session = jcrService.getUnmanagedSession();
-        try {
-            RepositoryImpl repository = (RepositoryImpl) session.getRepository();
-            ExtendedDbDataStore dataStore = JcrUtils.getExtendedDataStore(repository);
-            dataStore.pruneUnreferencedFileInDataStore(statusHolder);
-        } finally {
-            session.logout();
-        }
-    }
-
-    @Override
-    public void asyncManualGarbageCollect(String firstRunToken) {
-        taskService.waitForTaskCompletion(firstRunToken);
-        execOneGcAndWait(true);
-    }
-
-    @Override
-    public void manualGarbageCollect() {
-        try {
-            //GC in-use-records weak references used by the file datastore
-            System.gc();
-            log.info("Scheduling manual garbage collector to run immediately.");
-            execOneGcAndWait(true);
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Error in executing the manual garbage collector.", e);
-        }
+        binaryStore.prune(statusHolder);
     }
 
     private String execOneGcAndWait(boolean waitForCompletion) {
-        TaskBase task = TaskUtils.createManualTask(JcrGarbageCollectorJob.class, 0L);
-        task.addAttribute(JcrGarbageCollectorJob.FIX_CONSISTENCY, "true");
+        TaskBase task = TaskUtils.createManualTask(BinaryStoreGarbageCollectorJob.class, 0L);
         String token = taskService.startTask(task, true);
         if (waitForCompletion) {
             taskService.waitForTaskCompletion(token);
@@ -217,15 +168,17 @@ public class StorageServiceImpl implements InternalStorageService {
 
     @Override
     public void init() {
-        derbyUsed = DerbyUtils.isDerbyUsed();
-        InternalContextHelper.get().registerArtifactoryMBean(new Storage(this), StorageMBean.class, null);
+        derbyUsed = dbService.getDatabaseType() == DbType.DERBY;
+
+        ContextHelper.get().beanForType(MBeanRegistrationService.class).
+                register(new ManagedStorage(this, binaryStore), "Storage", "Binary Storage");
+
         CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
         new GcSchedulerHandler(descriptor.getGcConfig(), null).reschedule();
     }
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
-        derbyUsed = DerbyUtils.isDerbyUsed();
         CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
         new GcSchedulerHandler(descriptor.getGcConfig(), oldDescriptor.getGcConfig()).reschedule();
     }
@@ -274,7 +227,7 @@ public class StorageServiceImpl implements InternalStorageService {
             return new Predicate<Task>() {
                 @Override
                 public boolean apply(@Nullable Task input) {
-                    return (input != null) && JcrGarbageCollectorJob.class.isAssignableFrom(input.getType());
+                    return (input != null) && BinaryStoreGarbageCollectorJob.class.isAssignableFrom(input.getType());
                 }
             };
         }
@@ -288,16 +241,16 @@ public class StorageServiceImpl implements InternalStorageService {
         public void activate(@Nonnull GcConfigDescriptor descriptor, boolean manual) {
             AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
             CoreAddons coreAddons = addonsManager.addonByType(CoreAddons.class);
-            TaskBase jcrGarbageCollectorTask;
+            TaskBase garbageCollectorTask;
             if (coreAddons.isAol()) {
-                jcrGarbageCollectorTask = TaskUtils.createRepeatingTask(JcrGarbageCollectorJob.class,
+                garbageCollectorTask = TaskUtils.createRepeatingTask(BinaryStoreGarbageCollectorJob.class,
                         TimeUnit.SECONDS.toMillis(ConstantValues.gcIntervalSecs.getLong()),
                         TimeUnit.SECONDS.toMillis(ConstantValues.gcDelaySecs.getLong()));
             } else {
-                jcrGarbageCollectorTask = TaskUtils.createCronTask(JcrGarbageCollectorJob.class,
+                garbageCollectorTask = TaskUtils.createCronTask(BinaryStoreGarbageCollectorJob.class,
                         descriptor.getCronExp());
             }
-            InternalContextHelper.get().getTaskService().startTask(jcrGarbageCollectorTask, manual);
+            InternalContextHelper.get().getTaskService().startTask(garbageCollectorTask, manual);
         }
 
         @Override

@@ -29,6 +29,7 @@ import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.BlackDuckWebAddon;
 import org.artifactory.addon.wicket.FilteredResourcesWebAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
@@ -36,23 +37,19 @@ import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.bintray.BintrayService;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.repo.ArtifactCount;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.common.wicket.ajax.AjaxLazyLoadSpanPanel;
+import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
-import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
-import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
-import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.PathUtils;
@@ -62,9 +59,6 @@ import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.action.BintrayArtifactPanel;
-import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
-import org.slf4j.Logger;
 
 /**
  * Displays general item information. Placed inside the general info panel.
@@ -72,8 +66,6 @@ import org.slf4j.Logger;
  * @author Yossi Shaul
  */
 public class GeneralInfoPanel extends Panel {
-    private static final Logger log = LoggerFactory.getLogger(GeneralInfoPanel.class);
-
     @SpringBean
     private AddonsManager addonsManager;
 
@@ -177,7 +169,7 @@ public class GeneralInfoPanel extends Panel {
         };
         infoBorder.add(blackListedLabel);
 
-        addArtifactCount(itemIsRepo, infoBorder, itemDisplayName);
+        addArtifactCount(repoItem, infoBorder);
 
         addWatcherInfo(repoItem, infoBorder);
 
@@ -207,7 +199,7 @@ public class GeneralInfoPanel extends Panel {
 
         addItemInfoLabels(infoBorder, itemInfo);
 
-        addLicenseInfo(infoBorder, repoItem);
+        infoBorder.add(getLicenseInfo(repoItem));
 
         addLocalLayoutInfo(infoBorder, repoDescriptor, itemIsRepo);
         addRemoteLayoutInfo(infoBorder, remoteRepo, itemIsRepo);
@@ -215,7 +207,7 @@ public class GeneralInfoPanel extends Panel {
 
         addFilteredResourceCheckbox(infoBorder, itemInfo);
 
-        addBintrayButton(infoBorder, itemInfo, isCache, repoDescriptor.isHandleReleases());
+        addBintrayInfoPanel(infoBorder, itemInfo);
 
         return this;
     }
@@ -230,9 +222,8 @@ public class GeneralInfoPanel extends Panel {
         }
     }
 
-    private void addArtifactCount(final boolean itemIsRepo, final FieldSetBorder infoBorder,
-            final String itemDisplayName) {
-        if (!itemIsRepo) {
+    private void addArtifactCount(final RepoAwareActionableItem repoItem, final FieldSetBorder infoBorder) {
+        if (!repoItem.getItemInfo().isFolder()) {
             infoBorder.add(new WebMarkupContainer("artifactCountLabel"));
             infoBorder.add(new WebMarkupContainer("artifactCountValue"));
             WebMarkupContainer linkContainer = new WebMarkupContainer("link");
@@ -246,7 +237,7 @@ public class GeneralInfoPanel extends Panel {
                 @Override
                 public void onClick(AjaxRequestTarget target) {
                     setVisible(false);
-                    container.replaceWith((new ArtifactCountLazySpanPanel("artifactCountValue", itemDisplayName)));
+                    container.replaceWith(new ArtifactCountLazySpanPanel("artifactCountValue", repoItem.getRepoPath()));
                     target.add(infoBorder);
                 }
             };
@@ -258,22 +249,22 @@ public class GeneralInfoPanel extends Panel {
         @SpringBean
         private RepositoryService repositoryService;
 
-        private String itemDisplayName;
+        private final RepoPath repoPath;
 
-        public ArtifactCountLazySpanPanel(final String id, String itemDisplayName) {
+        public ArtifactCountLazySpanPanel(final String id, RepoPath repoPath) {
             super(id);
-            this.itemDisplayName = itemDisplayName;
+            this.repoPath = repoPath;
         }
 
         @Override
         public Component getLazyLoadComponent(String markupId) {
-            ArtifactCount count = repositoryService.getArtifactCount(itemDisplayName);
-            return new Label(markupId, Long.toString(count.getCount()));
+            long count = repositoryService.getArtifactCount(repoPath);
+            return new Label(markupId, Long.toString(count));
         }
     }
 
     private void addWatcherInfo(RepoAwareActionableItem repoItem, FieldSetBorder infoBorder) {
-        org.artifactory.fs.ItemInfo itemInfo = repoItem.getItemInfo();
+        ItemInfo itemInfo = repoItem.getItemInfo();
         WatchAddon watchAddon = addonsManager.addonByType(WatchAddon.class);
         RepoPath selectedPath;
 
@@ -287,12 +278,19 @@ public class GeneralInfoPanel extends Panel {
         infoBorder.add(watchAddon.getDirectlyWatchedPathPanel("watchedPath", selectedPath));
     }
 
-    private void addLicenseInfo(FieldSetBorder infoBorder, RepoAwareActionableItem actionableItem) {
+    private Component getLicenseInfo(RepoAwareActionableItem actionableItem) {
         if (!actionableItem.getItemInfo().isFolder()) {
+            BlackDuckWebAddon blackDuckWebAddon = addonsManager.addonByType(BlackDuckWebAddon.class);
+            boolean enableIntegration = blackDuckWebAddon.isEnableIntegration();
+            if (!blackDuckWebAddon.isDefault()) {
+                if (enableIntegration) {
+                    return blackDuckWebAddon.getBlackDuckLicenseGeneralInfoPanel(actionableItem);
+                }
+            }
             LicensesWebAddon licensesWebAddon = addonsManager.addonByType(LicensesWebAddon.class);
-            infoBorder.add(licensesWebAddon.getLicenseGeneralInfoPanel(actionableItem));
+            return licensesWebAddon.getLicenseGeneralInfoPanel(actionableItem);
         } else {
-            infoBorder.add(new WebMarkupContainer("licensesPanel"));
+            return new WebMarkupContainer("licensesPanel").setVisible(false);
         }
     }
 
@@ -302,6 +300,10 @@ public class GeneralInfoPanel extends Panel {
 
         LabeledValue ageLabel = new LabeledValue("age", "Age: ");
         infoBorder.add(ageLabel);
+
+        String created = centralConfigService.format(itemInfo.getCreated());
+        LabeledValue createdLabel = new LabeledValue("created", "Created: ", created);
+        infoBorder.add(createdLabel);
 
         LabeledValue moduleId = new LabeledValue("moduleId", "Module ID: ");
         infoBorder.add(moduleId);
@@ -373,35 +375,14 @@ public class GeneralInfoPanel extends Panel {
         }
     }
 
-    private void addBintrayButton(FieldSetBorder infoBorder, final ItemInfo itemInfo, boolean isCache,
-            boolean handleReleases) {
-        RepoPath repoPath = itemInfo.getRepoPath();
-        if (!isCache && !itemInfo.isFolder() && authorizationService.canAnnotate(repoPath)
-                && !isIntegration(repoPath) && handleReleases) {
-            infoBorder.add(new ModalShowLink("pushToBintray", "") {
-                @Override
-                protected BaseModalPanel getModelPanel() {
-                    return new BintrayArtifactPanel(itemInfo);
-                }
-
-                @Override
-                public void onClick(AjaxRequestTarget target) {
-                    if (!bintrayService.isUserHasBintrayAuth()) {
-                        String profilePagePath = WicketUtils.absoluteMountPathForPage(ProfilePage.class);
-                        getPage().error("User doesn't have Bintray credentials, " +
-                                "please configure them from the user <a href=\"" + profilePagePath + "\">profile page</a>.");
-                    } else {
-                        super.onClick(target);
-                    }
-                }
-            });
+    private void addBintrayInfoPanel(FieldSetBorder infoBorder, final ItemInfo itemInfo) {
+        ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(itemInfo.getRepoPath());
+        boolean offlineMode = centralConfigService.getDescriptor().isOfflineMode();
+        if (itemInfo.isFolder() || offlineMode || moduleInfo.isIntegration()) {
+            infoBorder.add(new WebMarkupContainer("bintrayDynamicInfoPanel"));
+            infoBorder.add(new CssClass("bintrayDynamicPanelHidden"));
         } else {
-            infoBorder.add(new WebMarkupContainer("pushToBintray").setVisible(false));
+            infoBorder.add(new BintrayDynamicInfoPanel("bintrayDynamicInfoPanel", itemInfo));
         }
-    }
-
-    private boolean isIntegration(RepoPath repoPath) {
-        ModuleInfo moduleInfo = repositoryService.getItemModuleInfo(repoPath);
-        return moduleInfo.isIntegration();
     }
 }

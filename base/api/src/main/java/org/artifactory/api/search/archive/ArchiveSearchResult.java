@@ -28,48 +28,39 @@ import org.artifactory.fs.ItemInfo;
  */
 public class ArchiveSearchResult extends ArtifactSearchResult {
 
-    private final String entry;
+    private final String entryName;
     private final String entryPath;
     private final boolean isRealEntry;
 
     /**
-     * Extended constructor
-     *
-     * @param itemInfo    Item info
-     * @param entry       Entry name
-     * @param entryPath   Entry path
+     * @param itemInfo    Item info the info of the zip or jar containing this entry
+     * @param entryName
+     * @param entryPath   Entry path the full path of the entry with the file name at the end
      * @param isRealEntry Whether the entry is a real one, or just an informative missing entry message
      */
-    public ArchiveSearchResult(ItemInfo itemInfo, String entry, String entryPath, boolean isRealEntry) {
+    public ArchiveSearchResult(ItemInfo itemInfo, String entryName, String entryPath, boolean isRealEntry) {
         super(itemInfo);
-        this.entry = entry;
+        this.entryName = entryName;
         this.entryPath = entryPath;
         this.isRealEntry = isRealEntry;
     }
 
-    /**
-     * Returns the entry name
-     *
-     * @return String - entry name
-     */
-    public String getEntry() {
-        return entry;
+    // Used by Wicket
+    @SuppressWarnings("UnusedDeclaration")
+    public String getEntryName() {
+        return entryName;
+    }
+
+    // Used by Wicket
+    @SuppressWarnings("UnusedDeclaration")
+    public String getLowerCaseEntryName() {
+        return entryName.toLowerCase();
     }
 
     /**
-     * Returns the entry name in all-lower-case.<p> Currently used by the grouping methods of the groupable table, so
-     * that names which are identical in all but character cases will be grouped together.
+     * Returns the entry full path
      *
-     * @return Lower-cased entry name
-     */
-    public String getLowerCaseEntry() {
-        return entry.toLowerCase();
-    }
-
-    /**
-     * Returns the entry path
-     *
-     * @return String - entry path
+     * @return String - entry full path
      */
     public String getEntryPath() {
         return entryPath;

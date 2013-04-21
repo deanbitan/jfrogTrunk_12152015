@@ -36,7 +36,7 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.StringResourceStreamHandle;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
@@ -55,15 +55,16 @@ import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.resource.UnfoundRepoResourceReason;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.StorageException;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Service;
 
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -137,6 +138,13 @@ public class DownloadServiceImpl implements InternalDownloadService {
             return;
         }
 
+        if (NamingUtils.isMetadata(request.getPath())) {
+            // the repo filter redirects for the ":properties" paths. This is here to protect direct calls to this
+            // method (mainly from
+            response.sendError(HttpStatus.SC_CONFLICT, "Old metadata notation is not supported anymore: " +
+                    request.getRepoPath(), log);
+        }
+
         addonsManager.interceptResponse(response);
         if (responseWasIntercepted(response)) {
             RepoRequests.logToContext("Exiting download process - intercepted by addon manager");
@@ -156,7 +164,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
                         "' specified in the request.");
             } else {
                 RepoRequests.logToContext("Retrieving info");
-                resource = callGetInfoInTransaction(repository, requestContext);
+                resource = repository.getInfo(requestContext);
             }
 
             respond(requestContext, response, resource);
@@ -181,11 +189,6 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 }
             }
         }
-    }
-
-    @Override
-    public RepoResource getInfo(Repo repo, InternalRequestContext context) {
-        return repo.getInfo(context);
     }
 
     @Override
@@ -308,6 +311,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
             }
         } catch (RepoRejectException rre) {
             int status = rre.getErrorCode();
+            log.debug("Repo rejection while downloading: " + rre.getMessage(), rre);
             if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
                 RepoRequests.logToContext("Response status is '%s' and authenticated as anonymous - sending challenge",
                         status);
@@ -321,17 +325,20 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 sendError(requestContext, response, status, msg, log);
             }
         } catch (RemoteRequestException rre) {
+            log.debug("Remote exception while downloading: " + rre.getMessage(), rre);
             RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
                     rre.getMessage());
             sendError(requestContext, response, rre.getRemoteReturnCode(), rre.getMessage(), log);
         } catch (BadPomException bpe) {
+            log.debug("Bad pom while downloading: " + bpe.getMessage(), bpe);
             RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
                     bpe.getMessage());
             sendError(requestContext, response, HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
-        } catch (RepositoryException re) {
+        } catch (StorageException se) {
+            log.debug("Exception while downloading: " + se.getMessage(), se);
             RepoRequests.logToContext("Error occurred while sending response - sending error instead: %s",
-                    re.getMessage());
-            sendError(requestContext, response, HttpStatus.SC_INTERNAL_SERVER_ERROR, re.getMessage(), log);
+                    se.getMessage());
+            sendError(requestContext, response, HttpStatus.SC_INTERNAL_SERVER_ERROR, se.getMessage(), log);
         } finally {
             if (handle != null) {
                 handle.close();
@@ -527,11 +534,6 @@ public class DownloadServiceImpl implements InternalDownloadService {
             RepoRequests.logToContext("Sending checksum response with status %s", response.getStatus());
             requestResponseHelper.sendBodyResponse(response, requestRepoPath, checksum);
         }
-    }
-
-    private RepoResource callGetInfoInTransaction(Repo repo, InternalRequestContext context) {
-        InternalDownloadService txMe = InternalContextHelper.get().beanForType(InternalDownloadService.class);
-        return txMe.getInfo(repo, context);
     }
 
     private void handleGenericIoException(ArtifactoryResponse response, RepoResource res, IOException e)

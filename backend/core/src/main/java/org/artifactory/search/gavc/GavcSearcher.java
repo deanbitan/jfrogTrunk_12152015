@@ -18,38 +18,24 @@
 
 package org.artifactory.search.gavc;
 
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
-import org.artifactory.common.ConstantValues;
-import org.artifactory.fs.FileInfo;
-import org.artifactory.io.checksum.ChecksumPaths;
-import org.artifactory.jcr.factory.VfsItemFactory;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.mime.NamingUtils;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.PathFactory;
-import org.artifactory.sapi.common.PathFactoryHolder;
-import org.artifactory.sapi.data.VfsNode;
-import org.artifactory.sapi.data.VfsNodeType;
-import org.artifactory.sapi.search.VfsComparatorType;
+import org.artifactory.sapi.search.VfsQuery;
 import org.artifactory.sapi.search.VfsQueryResult;
-import org.artifactory.sapi.search.VfsRepoQuery;
+import org.artifactory.sapi.search.VfsQueryResultType;
+import org.artifactory.sapi.search.VfsQueryRow;
 import org.artifactory.search.SearcherBase;
-import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static org.artifactory.storage.StorageConstants.PROP_ARTIFACTORY_NAME;
 
 /**
  * Holds the GAVC search logic
@@ -57,151 +43,43 @@ import static org.artifactory.storage.StorageConstants.PROP_ARTIFACTORY_NAME;
  * @author Noam Tenne
  */
 public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchResult> {
+    @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(GavcSearcher.class);
 
     @Override
     public ItemSearchResults<GavcSearchResult> doSearch(GavcSearchControls controls) {
-        if (ConstantValues.searchArtifactSearchUseV2Storage.getBoolean()) {
-            return doSearchCSPath(controls);
-        } else {
-            return doSearchJcr(controls);
-        }
-    }
-
-    public ItemSearchResults<GavcSearchResult> doSearchCSPath(GavcSearchControls controls) {
-
-        // create the common path suffix
-        StringBuilder pathBuilder = new StringBuilder();
-        appendNewPath(pathBuilder, escapeGroupPath(controls.getGroupId()));
-        appendNewPath(pathBuilder, controls.getArtifactId());
-        appendNewPath(pathBuilder, controls.getVersion());
-        pathBuilder.append("%");    // any path after version
-        String pathSuffix = replaceToSqlWildcards(pathBuilder.toString());
-
-        // create an array for each repository or one expression for all
-        ArrayList<String> pathExpressions = Lists.newArrayList();
-        if (CollectionUtils.isNullOrEmpty(controls.getSelectedRepoForSearch())) {
-            pathExpressions.add("/repositories/%/" + pathSuffix);
-        } else {
-            for (String repoKey : controls.getSelectedRepoForSearch()) {
-                pathExpressions.add("/repositories/" + repoKey + "/" + pathSuffix);
-            }
-        }
-
-        // file expression includes only the classifier if specified
-        String fileExpression = "%";
-        if (!StringUtils.isBlank(controls.getClassifier())) {
-            fileExpression = "%-%-" + controls.getClassifier() + "%";
-        }
-
-        ChecksumPaths checksumPaths = ContextHelper.get().beanForType(ChecksumPaths.class);
-        fileExpression = replaceToSqlWildcards(fileExpression);
-        ImmutableCollection<String> rawResults = checksumPaths.getFileOrPathsLike(
-                Lists.<String>newArrayList(fileExpression), pathExpressions);
-
-        log.debug("Received {} results", rawResults.size());
-        boolean limit = controls.isLimitSearchResults();
-        List<GavcSearchResult> results = Lists.newArrayList();
-        for (String rawResult : rawResults) {
-            if (limit && results.size() >= getMaxResults()) {
-                break;
-            }
-            appendResult(results, PathFactoryHolder.get(), rawResult, controls.getGroupId());
-        }
-
-        // the raw results are inaccurate and it's a lot of work to calculate the exact matches. to avoid confusion
-        // we display the actual matches if the actual is smaller than max results
-        int totalResults = rawResults.size();
-        if (results.size() < getMaxResults()) {
-            totalResults = results.size();
-        }
-        return new ItemSearchResults<GavcSearchResult>(results, totalResults);
-    }
-
-    private String replaceToSqlWildcards(String str) {
-        str = StringUtils.replace(str, "*", "%");
-        str = StringUtils.replace(str, "?", "_");
-        return str;
-    }
-
-    private void appendResult(List<GavcSearchResult> results, PathFactory pathFactory, String nodePath,
-            String groupId) {
-        RepoPath repoPath = pathFactory.getRepoPath(nodePath);
-        log.debug("Checking path {}", repoPath);
-        if (!isResultAcceptable(repoPath) || nodePath.contains(NamingUtils.METADATA_PREFIX)) {
-            return;
-        }
-
-        LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoPath.getRepoKey());
-
-        ModuleInfo moduleInfo = localRepo.getItemModuleInfo(repoPath.getPath());
-        if (moduleInfo.isValid()) {
-            // this check is a bit ugly but required with the current structure
-            if (StringUtils.isBlank(groupId) || inputContainsWildCard(groupId)
-                    || groupId.equals(moduleInfo.getOrganization())) {
-                log.debug("Creating file proxy for {}", repoPath);
-                FileInfo fileInfo = VfsItemFactory.createFileInfoProxy(repoPath);
-                log.debug("Adding path {}", repoPath);
-                results.add(new GavcSearchResult(fileInfo, moduleInfo));
-            }
-        }
-    }
-
-    private void appendNewPath(StringBuilder pathBuilder, String expression) {
-        if (StringUtils.isBlank(expression)) {
-            expression = "%";
-        } else {
-            expression = StringUtils.replace(expression, "*", "%");
-        }
-        pathBuilder.append(expression).append('/');
-    }
-
-    public ItemSearchResults<GavcSearchResult> doSearchJcr(GavcSearchControls controls) {
         //Validate and escape all input values
         String groupInput = escapeGroupPath(controls.getGroupId());
-        boolean groupContainsWildCard = inputContainsWildCard(groupInput);
-
-        VfsRepoQuery query = createRepoQuery(controls);
-        query.setNodeTypeFilter(VfsNodeType.FILE);
 
         //Build search path from inputted group
-        if (groupContainsWildCard) {
-            query.addAllSubPathFilter();
-        }
-        query.addRelativePathFilter(groupInput);
-        if (groupContainsWildCard) {
-            query.addAllSubPathFilter();
-        }
-        query.addPathFilters(controls.getArtifactId(), controls.getVersion());
+        VfsQuery query = createQuery(controls)
+                .expectedResult(VfsQueryResultType.FILE)
+                .addPathFilter(groupInput)
+                .addPathFilters(controls.getArtifactId(), controls.getVersion());
 
         String classifier = controls.getClassifier();
         if (!StringUtils.isBlank(classifier)) {
-            query.addCriterion(PROP_ARTIFACTORY_NAME, VfsComparatorType.CONTAINS, "*-" + classifier + "*");
+            query.name("*-" + classifier + "*");
         }
 
-        boolean limit = controls.isLimitSearchResults();
+        int limit = getLimit(controls);
         VfsQueryResult queryResult = query.execute(limit);
         List<GavcSearchResult> results = Lists.newArrayList();
-        Iterable<VfsNode> nodes = queryResult.getNodes();
-        PathFactory pathFactory = PathFactoryHolder.get();
-        for (VfsNode node : nodes) {
-            if (limit && results.size() >= getMaxResults()) {
+        for (VfsQueryRow row : queryResult.getAllRows()) {
+            if (results.size() >= limit) {
                 break;
             }
-            RepoPath repoPath = pathFactory.getRepoPath(node.absolutePath());
-
-            String repoKey = repoPath.getRepoKey();
+            ItemInfo item = row.getItem();
+            String repoKey = item.getRepoKey();
             LocalRepo localRepo = getRepoService().localOrCachedRepositoryByKey(repoKey);
-            if (!isResultAcceptable(repoPath, localRepo)) {
+            if (localRepo == null || !isResultAcceptable(item.getRepoPath(), localRepo)) {
                 continue;
             }
 
-            FileInfo fileInfo = VfsItemFactory.createFileInfoProxy(repoPath);
-
-            ModuleInfo moduleInfo = localRepo.getItemModuleInfo(repoPath.getPath());
+            ModuleInfo moduleInfo = localRepo.getItemModuleInfo(item.getRelPath());
 
             if (moduleInfo.isValid()) {
-                results.add(new GavcSearchResult(fileInfo, moduleInfo));
+                results.add(new GavcSearchResult(item, moduleInfo));
             }
         }
 
@@ -222,6 +100,14 @@ public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchRes
         groupInput = groupInput.replace('\\', '/');
         groupInput = PathUtils.trimSlashes(groupInput).toString();
         groupInput = groupInput.replace('.', '/');
+        // wildcard in the beginning means all values/as many folders begin
+        if (groupInput.startsWith("*") && !groupInput.startsWith(VfsQuery.ALL_PATH_VALUE)) {
+            groupInput = "*" + groupInput;
+        }
+        // Same for the end
+        if (groupInput.endsWith("*") && !groupInput.endsWith(VfsQuery.ALL_PATH_VALUE)) {
+            groupInput = groupInput + "*";
+        }
         return groupInput;
     }
 }

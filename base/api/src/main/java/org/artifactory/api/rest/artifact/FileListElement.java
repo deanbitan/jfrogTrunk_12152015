@@ -185,4 +185,9 @@ public class FileListElement implements Serializable {
         result = 31 * result + (folder ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return uri;
+    }
 }

@@ -18,9 +18,9 @@
 
 package org.artifactory.repo;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 

@@ -18,12 +18,12 @@
 
 package org.artifactory.version.converter.v136;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Replace the cronExp for the indexer with an interval. Applies for upgrading from schema 1.3.5 to 1.3.6.

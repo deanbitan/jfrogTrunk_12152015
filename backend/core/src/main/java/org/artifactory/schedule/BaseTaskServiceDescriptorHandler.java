@@ -20,9 +20,9 @@ package org.artifactory.schedule;
 
 import com.google.common.collect.Sets;
 import org.artifactory.descriptor.TaskDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -37,16 +37,16 @@ public abstract class BaseTaskServiceDescriptorHandler<T extends TaskDescriptor>
     private static final Logger log = LoggerFactory.getLogger(BaseTaskServiceDescriptorHandler.class);
 
     public void unschedule() {
-        TaskService taskService1 = InternalContextHelper.get().getBean(TaskService.class);
+        TaskService taskService = InternalContextHelper.get().getBean(TaskService.class);
         log.info("Removing all job " + jobName() + " from task service handler.");
-        taskService1.cancelTasks(getAllPredicate(), true);
+        taskService.cancelTasks(getAllPredicate(), true);
     }
 
     public void reschedule() {
         TaskService taskService = InternalContextHelper.get().getBean(TaskService.class);
         List<T> newDescriptors = getNewDescriptors();
         if (newDescriptors.isEmpty()) {
-            log.info("No " + jobName() + " configured. " + jobName() + " is disabled.");
+            log.debug("No " + jobName() + " configured. " + jobName() + " is disabled.");
             taskService.cancelTasks(getAllPredicate(), true);
             return;
         }

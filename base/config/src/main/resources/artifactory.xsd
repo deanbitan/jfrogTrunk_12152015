@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.4.18"
-           xmlns="http://artifactory.jfrog.org/xsd/1.4.18"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.0"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.0"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -38,8 +38,8 @@
             <xs:element name="offlineMode" type="xs:boolean" default="false" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        If set to true, Artifactory will never try to fetch artifacts remotely.
-                        Only cached and local artifacts will be served.
+                        If marked, Artifactory never tries to fetch artifacts remotely.
+                        Only cached and local artifacts are served.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -54,28 +54,31 @@
             <xs:element name="dateFormat" type="xs:string" default="dd-MM-yy HH:mm:ss z" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
+                        <![CDATA[
                         The format used for displaying dates.
+                        For a detailed explanation see: <a href="http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html" target="_blank">Joda DateTimeFormat</a>
+                        ]]>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="addons" type="AddonsType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Addons related configuration.
+                        Add-ons-related configuration.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="mailServer" type="MailServerType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Mail server related configuration.
+                        Mail server-related configuration.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="security" type="SecurityType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Security related configuration used in authentication and authorization.
+                        Security-related configuration used in authentication and authorization.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -91,6 +94,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A set of locally installed repositories.
+                        NOTE! that when using the default global virtual repository (repo) the order of the local repositories resolution is determined by the order they appear in this list.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -98,21 +102,21 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A set of remote proxied (normally cached) repositories.
+                        NOTE! that when using the default global virtual repository (repo) the order of the cache and remote repositories resolution is determined by the order they appear in this list.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="virtualRepositories" type="VirtualRepositoriesType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A set of virtual repositories wrapping regular local and remote
-                        repositories.
+                        A set of virtual repositories aggregating regular local and remote repositories.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="proxies" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A set of reusable proxy definitions. Proxies can be used by remote repositories by assocating a
+                        A set of reusable proxy definitions. Proxies can be used by remote repositories by associating a
                         proxy definition with a remote repository.
                     </xs:documentation>
                 </xs:annotation>
@@ -128,7 +132,7 @@
                         Define property sets to group together properties of the same category (e.g. QA). Then, define
                         properties and their respective possible values (e.g. performance:{poor,acceptable,good} and
                         qaStaffComment:[any]).
-                        Once property sets and their properties are defined, you may associate them with repositories,
+                        Once property sets and their properties are defined, you can associate them with repositories,
                         in order to be able to easily set, update and search for predefined property values on hosted
                         repository items.
                     </xs:documentation>
@@ -138,7 +142,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A hard-coded URL prefix used by Artifactory for calculating relative URLs.
-                        Use this only if you need to override the default URL base (equals to the Servlet context URL
+                        Use this only if you must override the default URL base (similar to the Servlet context URL
                         - e.g. http://myhost.com/artifactory).
                     </xs:documentation>
                 </xs:annotation>
@@ -146,14 +150,14 @@
             <xs:element name="logo" type="xs:string" default="" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A remote URL of a logo image.
+                        The remote URL of a logo image.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="footer" type="xs:string" default="" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Additional custom text to appear on the page footer.
+                        Additional custom text to appear in the page footer.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -199,6 +203,7 @@
             <xs:element name="gcConfig" type="GcConfigType" minOccurs="1"/>
             <xs:element name="cleanupConfig" type="CleanupConfigType" minOccurs="1"/>
             <xs:element name="quotaConfig" type="QuotaConfigType" minOccurs="0"/>
+            <xs:element name="externalProviders" type="ExternalProvidersType" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -217,7 +222,7 @@
                             <xs:documentation source="description">
                                 Whether to use time-based version numbers for the name of SNAPSHOTs,
                                 or to use a non-unique, self-overriding naming pattern of
-                                artifactId-version-SNAPSHOT.type (the default), or to respect the
+                                artifactId-version-SNAPSHOT.type (default), or to respect the
                                 deployer settings coming from the Maven client.
                             </xs:documentation>
                         </xs:annotation>
@@ -234,16 +239,16 @@
                             <xs:documentation source="description">
                                 Checksum policy determines how Artifactory behaves when a client checksum for a deployed
                                 resource is missing or conflicts with the locally calculated checksum (bad checksum).
-                                Checksum checking effectively verifies the integrity of the deployed resource.
+                                Checking checksums effectively verifies the integrity of the deployed resource.
                                 The options are:
                                 (1) Verify against client checksums (default) - Until a client has sent a valid checksum
-                                for a deployed artifact that matches the server's locally calculated checksum, the
-                                artifact's checksum will not be available and will return 404 (not found).
-                                If the client has sent a checksum that conflicts with the one calculated on the server a
-                                409 (conflict) will be returned until a valid checksum is deployed.
+                                for a deployed artifact matching the server's locally calculated checksum, the
+                                artifact's checksum is not available and returns 404 (not found).
+                                If the client has sent a checksum conflicting with the one calculated on the server a
+                                409 (conflict) is returned until a valid checksum is deployed.
                                 (2) Trust server generated checksums - Do not verify against checksums sent by clients
-                                and trust the ones store server's locally calculated checksums. An uploaded artifact
-                                will be available for consumption immediately, but integrity might be compromised.
+                                and trust the store server's locally calculated checksums. An uploaded artifact is
+                                available for consumption immediately, but integrity might be compromised.
                             </xs:documentation>
                         </xs:annotation>
                         <xs:simpleType>
@@ -256,27 +261,25 @@
                     <xs:element name="calculateYumMetadata" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Asynchronously calculate YUM repository metadata upon RPM deployment and removal.
+                                A-synchronously calculate YUM repository metadata upon RPM deployment and removal.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="yumRootDepth" type="xs:int" default="0" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The depth, relative to the repository's root folder, where YUM metadata will be created.
-                                This is useful when your repository contains multiple YUM repositories under parallel
-                                hierarchies.
-                                For example, if your RPMs are stored under 'fedora/linux/$releasever/$basearch',
-                                specify a depth of 4.
+                                The depth, relative to the repository's root folder, where YUM metadata is created.
+                                This is useful when your repository contains multiple YUM repositories under parallel hierarchies.
+                                For example, if your RPMs are stored under 'fedora/linux/$releasever/$basearch', specify a depth of 4.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="yumGroupFileNames" type="xs:string" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                A comma-separated list of xml file names that contain YUM group component definitions.
-                                Artifactory will include the group definitions as part of the calculated YUM metadata,
-                                as well as automatically generate a gzipped version of the group files if needed.
+                                A comma-separated list of xml file names containing YUM group component definitions.
+                                Artifactory includes the group definitions as part of the calculated YUM metadata,
+                                as well as automatically generating a gzipped version of the group files, if required.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -292,8 +295,8 @@
                     <xs:element name="blackedOut" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Whether the repository is blacked-out. A blacked-out repository does not
-                                participate in artifact resolution, nor does its local cache.
+                                Whether the repository is blacked-out. A blacked-out repository or its local cache do not
+                                participate in artifact resolution.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -314,9 +317,9 @@
                     <xs:element name="maxUniqueSnapshots" type="xs:int" default="0" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The maximum number unique snapshots (of the same artifact) to store.
-                                Any number of snapshots above the max will be automatically removed by age.
-                                A value of 0 (the default) means no limits on unique snapshots number (thus
+                                The maximum number of unique snapshots (of the same artifact) to store.
+                                Any number of snapshots above the max are automatically removed by age.
+                                A value of 0 (the default) indicates no limits on unique snapshots number (thus
                                 no automatic cleanup).
                             </xs:documentation>
                         </xs:annotation>
@@ -324,17 +327,17 @@
                     <xs:element name="suppressPomConsistencyChecks" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Whether the repository should suppress pom consistency checks.
+                                Whether the repository should suppress POM consistency checks.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="propertySets" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The property sets that users will be able to use of items hosted under this repository.
+                                The property sets that you are able to use of items hosted under this repository.
                                 As property sets are purely assistive and not enforcing, setting this on a repository
                                 only affects the list of predefined properties in the user interface properties tab for
-                                items under the repository. You will still be able to attach arbitrary properties to
+                                items under the repository. You are still be able to attach arbitrary properties to
                                 repository items.
                             </xs:documentation>
                         </xs:annotation>
@@ -372,7 +375,7 @@
             <xs:element name="key" type="xs:ID">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Repository unique id.
+                        Repository unique ID.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -380,7 +383,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Textual description of the repository.
-                        This description will also appear when selecting the repository in the tree browser.
+                        This description also appears when selecting the repository in the Tree Browser.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -396,7 +399,7 @@
                     <xs:documentation source="description">
                         Comma-separated list of artifact patterns to include when evaluating
                         artifact requests, in the form of x/y/**/z/*. When used, only requests
-                        matching one the include patterns will be served.
+                        matching one the include patterns are served.
                         By default all artifacts are included (**/*).
                     </xs:documentation>
                 </xs:annotation>
@@ -413,7 +416,7 @@
             <xs:element name="repoLayoutRef" type="xs:IDREF" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Select the layout the repository should use for storing and identifying modules.
+                        Select the layout that the repository should use for storing and identifying modules.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -508,16 +511,16 @@
                     <xs:element name="offline" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                When set to true only already-cached artifacts will be retrieved and
-                                fetching remote artifacts will not be attempted.
+                                When marked, only already-cached artifacts are retrieved and
+                                fetching remote artifacts is not attempted.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="hardFail" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Whether failing to communicate with this repository will return an
-                                error to the client that will fail the build.
+                                Whether failing to communicate with this repository returns an
+                                error to the client that fails the build.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -525,7 +528,7 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 Whether the repository should store cached artifacts locally or not. When not storing
-                                artifacts locally direct repository-to-client streaming is used. This can be useful for
+                                artifacts locally, direct repository-to-client streaming is used. This can be useful for
                                 multi-server setups over a high-speed LAN, with one Artifactory caching certain data
                                 on a central storage and streaming it directly to satellite pass-though Artifactory
                                 servers.
@@ -535,15 +538,15 @@
                     <xs:element name="fetchJarsEagerly" type="xs:boolean" default="true" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                When selected, the repository will attempt to eagerly fetch the jar in the background
-                                each time a pom is requested.
+                                When marked, the repository attempts to eagerly fetch the jar in the background
+                                each time a POM is requested.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="fetchSourcesEagerly" type="xs:boolean" default="true" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                When selected, the repository will attempt to eagerly fetch the source jar in the
+                                When marked, the repository attempts to eagerly fetch the source jar in the
                                 background each time a jar is requested.
                             </xs:documentation>
                         </xs:annotation>
@@ -551,8 +554,8 @@
                     <xs:element name="retrievalCachePeriodSecs" type="xs:long" default="43200" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The number of seconds to cache artifact lookup results.
-                                A value of 0 means no caching.
+                                The number of seconds to cache artifact look-up results.
+                                A value of 0 indicates no caching.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -570,7 +573,7 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 The number of seconds to cache artifact retrieval misses (artifact not found).
-                                A value of 0 means no caching.
+                                A value of 0 indicates no caching.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -581,17 +584,17 @@
                                 is missing or conflicts with the locally calculated checksum (bad checksum).
                                 Checksum checking effectively verifies the integrity of the remote resource.
                                 The options are:
-                                (1) Generate if absent (the default) - A bad remote checksum will fail the resource
-                                request. If, however, a remote checksum could not be found Artifactory will
-                                automatically generate one.
-                                (2) Fail: A bad or missing remote checksum will fail the resource request.
-                                (3) Ignore and generate: Artifactory will locally generate a checksum for both bad or
-                                missing remote checksum. Remote resource retrieval will never fail, but integrity might
+                                1) Generate if absent (by default) - A bad remote checksum fails the resource
+                                request. If, however, a remote checksum could not be found Artifactory automatically
+								generates one.
+                                2) Fail: A bad or missing remote checksum fails the resource request.
+                                3) Ignore and generate: Artifactory locally generates a checksum for both bad or
+                                missing remote checksum. Remote resource retrieval never fails, but integrity might
                                 be compromised.
-                                (4) Pass-thru: Artifactory will store and pass-thorugh all remote checksums including
-                                bad ones and will locally generate a checksum for a missing remote checksum cannot be
-                                found. Remote resource retrieval will never fail, but integrity might be compromised and
-                                client-side checksum validation (such as the one done by Maven) will fail.
+                                4) Pass-thru: Artifactory stores and passes-thorugh all remote checksums including
+                                bad ones and locally generates a checksum for a missing remote checksum that cannot be
+                                found. Remote resource retrieval never fails, but integrity might be compromised and
+                                client-side checksum validation (such as the one performed by Maven) fails.
                             </xs:documentation>
                         </xs:annotation>
                         <xs:simpleType>
@@ -633,7 +636,7 @@
                             <xs:documentation source="description">
                                 Lists the items of remote folders in simple and list browsing. Required for dynamic
                                 resolution that depends on remote folder content information, such as remote Ivy version
-                                lookups. The remote content will be cached according to the value of
+                                lookups. The remote content is cached according to the value of the
                                 'Retrieval Cache Period'
                             </xs:documentation>
                         </xs:annotation>
@@ -643,8 +646,8 @@
                             <xs:documentation source="description">
                                 Select the layout that best matches the layout used by remote repository for storing and
                                 identifying modules.
-                                Path-mapping will take place if the remote layout is different from the local layout -
-                                remote module artifacts and descriptors will be stored according to the local repository
+                                Path-mapping takes place if the remote layout is different from the local layout -
+                                remote module artifacts and descriptors is stored according to the local repository
                                 layout (e.g., Maven 1->Maven 2, or Maven 2->Ivy).
                             </xs:documentation>
                         </xs:annotation>
@@ -700,7 +703,7 @@
                             <xs:documentation source="description">
                                 Determines whether artifact requests coming from other Artifactories
                                 can be fulfilled by accessing this virtual repository's remote repositories
-                                or by only accessing its caches (the default).
+                                or by only accessing its caches (by default).
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -723,11 +726,11 @@
                                 minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                (1) Discard Active References - Will removes repository elements that are declared
-                                directly under project or under a profile in the same pom that is activeByDefault.
-                                (2)Discard Any References - Will removes all repository elements regardless of whether
+                                (1) Discard Active References - Removes repository elements that are declared
+                                directly under project or under a profile in the same POM that is activeByDefault.
+                                (2)Discard Any References - Removes all repository elements regardless of whether
                                 they are included in an active profile or not.
-                                (3)Nothing - Don't removes any repository elements declared in the POM.
+                                (3)Nothing - Does not remove any repository elements declared in the POM.
                             </xs:documentation>
                         </xs:annotation>
                         <xs:simpleType>
@@ -762,7 +765,7 @@
             <xs:element name="urls" type="P2UrlsType" maxOccurs="1" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A set of local and remote P2 repository urls to aggregate under this virtual repository.
+                        A set of local and remote P2 repository URLs to aggregate under this virtual repository.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -827,14 +830,14 @@
             <xs:element name="key" type="xs:ID">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Proxy unique id.
+                        Proxy Unique ID.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="host" type="xs:string">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Proxy host.
+                        Proxy host name.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -862,7 +865,7 @@
             <xs:element name="ntHost" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The computer name of this machine (the one connecting to the NTLM proxy).
+                        The computer name of this machine (that is connected to the NTLM proxy).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -885,7 +888,7 @@
                     <xs:documentation source="description">
                         An optional list of newline or comma separated host names to which the proxy may redirect
                         requests.
-                        The credentials of the proxy will be reused by requests redirected to any of these hosts.
+                        The credentials of the proxy are reused by requests redirected to any of these hosts.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -903,7 +906,7 @@
             <xs:element name="key" type="xs:ID">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Backup unique id.
+                        Backup Unique ID.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -928,7 +931,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        The cron expression by which backup frequency is determined.  <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">More Info...</a>
+                        The Cron expression by which backup frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -937,7 +940,7 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         The maximum number of hours to keep old backups in the destination dir.
-                        Checking the "Incremental" checkbox, means that backups will be incrementally (delta only)
+                        Marking the "Incremental" checkbox, indicates that backups are incrementally (delta only)
                         written to the same directory: ${backupDir}/current. This "in place" backup type is suitable
                         for file-system based backup support, and cleanup of old backups is inactive in this mode.
                         The default is 168 hours = 7 days.
@@ -973,7 +976,7 @@
             <xs:element name="sendMailOnError" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Send email notifications to admin users if errors were encountered during the backup process
+                        Send email notifications to admin users if errors are encountered during the backup process
                         (requires properly configured email settings and valid email addresses for admin users).
                     </xs:documentation>
                 </xs:annotation>
@@ -1006,8 +1009,8 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        The cron expression by which indexer frequency is determined to recalculate
-                        new Maven indexes on selected repositories.  <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">More Info...</a>
+                        The Cron expression by which indexer frequency is determined to recalculate
+                        new Maven indexes on selected repositories. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1039,15 +1042,15 @@
             <xs:element name="showAddonsInfo" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        When selected, info about available add-ons will show up in the Artifactory user interface.
-                        Enabling add-ons info display will reset any user-specific info-hiding preference.
+                        When selected, info about available Add-ons is displayed in the Artifactory user interface.
+                        Enabling add-ons info display resets any user-specific info-hiding preference.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="showAddonsInfoCookie" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A variable used for calculating the path for a user cookie storing his personal add-on
+                        A variable used for calculating the path for a user cookie storing their personal add-on
                         info showing preferences.
                     </xs:documentation>
                 </xs:annotation>
@@ -1074,7 +1077,7 @@
             <xs:element name="port" type="xs:int" default="25" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The mail server's port.
+                        The mail server port.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1143,9 +1146,9 @@
             <xs:element name="hideUnauthorizedResources" type="xs:boolean" minOccurs="0" default="false">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        When checked, Artifactory will hide the existence of unauthorized resources by sending a 404
+                        When marked, Artifactory hides the existence of unauthorized resources by sending a 404
                         response (not found) to requests for resources that are not accessible by the user. Otherwise,
-                        the response will imply that the resource exists but is protected - by requesting authentication
+                        the response implies that the resource exists but is protected - by requesting authentication
                         for anonymous requests (401) or by denying an authenticated request for unauthorized users.
                     </xs:documentation>
                 </xs:annotation>
@@ -1215,10 +1218,10 @@
                         Determines the password requirements from users identified to Artifactory from a remote
                         client, such as Maven.
                         The options are:
-                        (1) Supported (the default) - Users can authenticate using both secure encrypted
+                        (1) Supported (by default) - Users can authenticate using both secure encrypted
                         passwords or clear-text passwords.
-                        (2) Required: Users need to authenticate using secure encrypted passwords. Clear-text
-                        authentication will fail.
+                        (2) Required: Users must authenticate using secure encrypted passwords. Clear-text
+                        authentication fails.
                         (3) Unsupported: Only clear-text passwords can be used for authentication.
                     </xs:documentation>
                 </xs:annotation>
@@ -1239,15 +1242,15 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                When checked, Artifactory will trust incoming requests and will reuse the remote user originally set on the
+                                Artifactory trusts incoming requests and reuses the remote user originally set on the
 request by the SSO of the HTTP server.
 
-This is extremely useful if you wish to use exiting enterprise SSO integrations, such as the powerful authentication
+This is useful if you want to use existing enterprise SSO integrations, such as the powerful authentication
 schemes provided by Apache (mod_auth_ldap, mod_auth_ntlm, mod_auth_kerb, etc.).
 
 When Artifactory is deployed as a webapp on Tomcat behind Apache:
-If using mod_proxy_ajp, make sure to set tomcatAuthentication="false" on the AJP connector.
-If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache's config.
+If using mod_proxy_ajp, ensure to set tomcatAuthentication="false" on the AJP connector.
+If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's configuration.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1256,12 +1259,12 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        When automatic user creation is off, authenticated users will not be automatically created
-                        inside Artifactory. Instead, for every request from a SSO user, the user will be temporarily
+                        When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from an SSO user, the user is temporarily
                         associated with default groups (if such groups are defined), and the permissions for these
-                        groups will apply.
-                        Without auto user creation, you will need to manually create the user inside Artifactory in
-                        order to manage user permissions that are not attached to his default groups.
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage 
+						user permissions not attached to their default groups.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1303,7 +1306,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                The application name that was configured for Artifactory in Crowd.
+                                The application name configured for Artifactory in Crowd.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1312,7 +1315,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                The application password that was configured for Artifactory in Crowd.
+                                The application password configured for Artifactory in Crowd.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1330,7 +1333,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        If true, and a default proxy definition exists, it will be used to pass through to the Crowd Server.
+                        If a default proxy definition exists, it is used to pass through to the Crowd Server.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1339,12 +1342,12 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        When automatic user creation is off, authenticated users will not be automatically created
-                        inside Artifactory. Instead, for every request from a Crowd user, the user will be temporarily
+                        When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a Crowd user, the user is temporarily
                         associated with default groups (if such groups are defined), and the permissions for these
-                        groups will apply.
-                        Without auto user creation, you will need to manually create the user inside Artifactory in
-                        order to manage user permissions that are not attached to his default groups.
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage 
+						user permissions not attached to their default groups.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1353,7 +1356,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                Specify the SSO custom cookie name. Out of the box Crowd uses the 'crowd.token_key' cookie name for all Crowd-connected applications.
+                                Specify the SSO custom cookie name. Out-of-the-box Crowd uses the 'crowd.token_key' cookie name for all Crowd-connected applications.
                                 You can override the default value with your own cookie name. This is useful in environments with multiple Crowd servers.
                                 ]]>
                     </xs:documentation>
@@ -1377,7 +1380,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                The identity provider login URL (when the user tries to login, the service provider redirects to this URL)
+                                The identity provider login URL (when you try to login, the service provider redirects to this URL).
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1386,7 +1389,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                The identity provider logout URL (when the user tries to logout, the service provider redirects to this URL)
+                                The identity provider logout URL (when you try to logout, the service provider redirects to this URL).
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1395,7 +1398,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                The certificate for SAML Authentication. NOTE: The certificate must contain the public key in order to allow Artifactory to verify sign-in requests
+                                The certificate for SAML Authentication. NOTE! that the certificate must contain the public key to allow Artifactory to verify sign-in requests.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1404,7 +1407,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                SAML service provider name: this is the Artifactory name in the SAML federation
+                                SAML service provider name: this is the Artifactory name in the SAML federation.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1413,12 +1416,12 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                                When automatic user creation is off, authenticated users will not be automatically created
-                        inside Artifactory. Instead, for every request from a SAML user, the user will be temporarily
+                                When automatic user creation is off, authenticated users are not automatically created
+                        inside Artifactory. Instead, for every request from a SAML user, the user is temporarily
                         associated with default groups (if such groups are defined), and the permissions for these
-                        groups will apply.
-                        Without auto user creation, you will need to manually create the user inside Artifactory in
-                        order to manage user permissions that are not attached to his default groups.
+                        groups apply.
+                        Without auto-user creation, you must manually create the user inside Artifactory to manage 
+						user permissions not attached to their default groups.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1443,14 +1446,14 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="key" type="xs:ID">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Ldap setting unique id.
+                        LDAP setting Unique ID.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Determines whether this ldap is enabled or disabled.
+                        Determines whether this LDAP is enabled or disabled.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1458,7 +1461,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        Location of the ldap server in the form of:
+                        Location of the LDAP server in the form of:
                         ldap://myserver:myport/dc=sampledomain,dc=com
                         ]]>
                     </xs:documentation>
@@ -1468,11 +1471,11 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        A DN pattern that can be used to directly login users to LDAP.
+                        A DN pattern that can be used to login users directlyto LDAP.
                         This pattern is used for creating a DN string for 'direct' user
                         authentication, where the pattern is relative to the base DN in the LDAP URL.
-                        The pattern argument {0} will be replaced with the username.
-                        This will work only if anonymous binding is allowed and a direct user DN can
+                        The pattern argument {0} is replaced with the username.
+                        This works only if anonymous binding is allowed and a direct user DN can
                         be used, which is not the default case for Active Directory (use User DN
                         search filter instead).
                         Example: uid={0},ou=People
@@ -1493,7 +1496,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        An attribute that can be used to map a users' email to a user that is created
+                        An attribute that can be used to map a user's email to a user created
                         automatically in Artifactory.
                         ]]>
                     </xs:documentation>
@@ -1507,56 +1510,56 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Ldap group setting search base.
+                        LDAP group setting search base.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="groupBaseDn" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Ldap group setting search base.
+                        LDAP group setting search base.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="groupNameAttribute" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The Group name attribute.
+                        The group name attribute.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="groupMemberAttribute" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The group member attribute
+                        The group member attribute.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="subTree" type="xs:boolean" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Flag whether to check the full subtree when searching
+                        Mark if you want to check the full subtree when searching.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="filter" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The filter to search in the group
+                        The filter to search for in the group.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="descriptionAttribute" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The group description
+                        The group description.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="strategy" default="STATIC" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The group description
+                        The group description.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>
@@ -1593,13 +1596,13 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        A filter expression used to search for the user DN that will be used in LDAP
+                        A filter expression used to search for the user DN used in LDAP
                         authentication.
-                        This is a LDAP search filter (as defined in 'RFC 2254') with optional
+                        This is an LDAP search filter (as defined in 'RFC 2254') with optional
                         arguments. In this case, the username is the only argument, denoted by '{0}'.
                         Possible examples are:
-                        (uid={0}) - this would search for a username match on the uid attribute.
-                        Authentication to LDAP will be done from the DN found if successful.
+                        (uid={0}) - this searches for a username match on the attribute.
+                        Authentication to LDAP is performed from the DN found, if successful.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1609,7 +1612,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                     <xs:documentation source="description">
                         <![CDATA[
                         Context name to search in, relative to the base DN in the LDAP URL. ex: ou=users
-                        With LDAP Group addon enabled it is possible to enter multiple searchBase entries
+                        With LDAP Group Add-on enabled, it is possible to enter multiple search base entries
                         separated by the '|' sign. ex: ou=internalUsers,ou=hq|ou=externalUsers
                         This parameter is optional.
                         ]]>
@@ -1620,7 +1623,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        Enables deep search through the sub tree of the LDAP URL + searchBase. True by default.
+                        Enables deep search through the sub tree of the LDAP URL + search base. True by default.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1630,7 +1633,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                     <xs:documentation source="description">
                         <![CDATA[
                         Used only with "search" authentication method.
-                        It is the full DN of the user who will bind to the LDAP server to perform user searches.
+                        It is the full DN of the user that binds to the LDAP server to perform user searches.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1640,7 +1643,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                     <xs:documentation source="description">
                         <![CDATA[
                         Used only with "search" authentication method.
-                        It is the password of the user who will bind to the LDAP server to perform the search.
+                        It is the password of the user that binds to the LDAP server to perform the search.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1666,7 +1669,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="visible" type="xs:boolean">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Whether this property set will be visible in the properties management user interface, or is
+                        Whether this property set is visible in the properties management user interface, or is
                         intended for internal use.
                     </xs:documentation>
                 </xs:annotation>
@@ -1699,7 +1702,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="closedPredefinedValues" type="xs:boolean">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Whether the values of the property should come from a predefined closed list of values.
+                        Whether the values of the property shall come from a predefined closed list of values.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1996,17 +1999,17 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="descriptorPathPattern" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The path pattern that matches the storage path of module descriptors.
-                        Uses the same format as of the artifact path pattern.
+                        The path pattern matching the storage path of module descriptors.
+                        Uses the same format as the artifact path pattern.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="folderIntegrationRevisionRegExp" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A regular expression that matches the integration revision string that appears in a folder name
+                        A regular expression matching the integration revision string appearing in a folder name
                         as part of the artifact's path. For example, 'SNAPSHOT', in Maven.
-                        Note: please make sure not to introduce any regexp capturing groups within this expression.
+                        Note! that you must ensure not to introduce any regexp capturing groups within this expression.
                         If not applicable use '.*'.
                     </xs:documentation>
                 </xs:annotation>
@@ -2014,10 +2017,10 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="fileIntegrationRevisionRegExp" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        A regular expression that matches the integration revision string that appears in a file name
+                        A regular expression matching the integration revision string appearing in a file name
                         as part of the artifact's path. For example, 'SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))',
                         in Maven.
-                        Note: please make sure not to introduce any regexp capturing groups within this expression.
+                        Note! that you must ensure not to introduce any regexp capturing groups within this expression.
                         If not applicable use '.*'.
                     </xs:documentation>
                 </xs:annotation>
@@ -2038,7 +2041,7 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
                 <xs:annotation>
                     <xs:documentation source="description">
                         <![CDATA[
-                        The cron expression by which replication frequency is determined. <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">More Info...</a>
+                        The Cron expression by which replication frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -2146,14 +2149,14 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
     <xs:complexType name="GcConfigType">
         <xs:annotation>
             <xs:documentation source="description">
-                GC config
+                GC config.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
             <xs:element name="cronExp" type="xs:string" default="* * 4 * * ?" minOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        GC cron exp
+                        The Cron expression by which garbage collection frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2162,14 +2165,14 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
     <xs:complexType name="CleanupConfigType">
         <xs:annotation>
             <xs:documentation source="description">
-                Cleanup config
+                Cleanup config.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
             <xs:element name="cronExp" type="xs:string" default="0 12 5 * * ?" minOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Artifacts cleanup cron exp
+                        The Cron expression by which artifacts cleanup frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2178,28 +2181,26 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
     <xs:complexType name="QuotaConfigType">
         <xs:annotation>
             <xs:documentation source="description">
-                Quota management configuration
+                Quota management configuration.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
             <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Enable control over the size of storage space used for binaries to avoid running out of disk
-                        space.
+                        Enable control over the size of storage space used for binaries to avoid running out of disk space.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="diskSpaceLimitPercentage" type="xs:int" default="0" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The maximum allowed disk usage, in percentage, of the partition containing the binaries folder.
-                        Once this limit has been reached deployments will be rejected with a 413 error (request entity
-                        too large) and an
-                        error message will be displayed in the UI (visible for admin users only).
-                        With a filesystem storage the partition checked is one containing the
+                        The maximum disk usage allowed by percentage, of the partition containing the binaries folder.
+                        Once this limit has been reached, deployments are rejected with a 413 error (request entity
+                        too large) and an error message is displayed in the UI (visible to admin users only).
+                        With a filesystem storage the partition checked is the one containing the
                         '$ARTIFACTORY_HOME/data/filestore' directory.
-                        With a database blob storage the partition checked is one containing the
+                        With a database BLOB storage the partition checked is the one containing the
                         '$ARTIFACTORY_HOME/data/cache' directory.
                     </xs:documentation>
                 </xs:annotation>
@@ -2207,13 +2208,62 @@ If using mod_jk, make sure to use the "JkEnvVar REMOTE_USER" directive in Apache
             <xs:element name="diskSpaceWarningPercentage" type="xs:int" default="0" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The maximum warning-level disk usage, in percentage, of the partition containing the binaries
-                        folder.
-                        Once this limit has been reached a warning will be logged and a
-                        warning message will be displayed in the UI (visible for admin users only).
+                        The maximum warning-level of disk usage, by percentage, of the partition containing the binaries folder.
+                        Once this limit is reached a warning is logged and a warning message is displayed in the UI (visible to admin users only).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ExternalProvidersType">
+        <xs:sequence>
+            <xs:element name="blackduck" type="BlackDuckSettingsType" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BlackDuckSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable Black Duck Code Center integration with Artifactory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:sequence>
+                <xs:element name="serverUri" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Black Duck Code Center server URI.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="username" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Black Duck Code Center authentication username.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="password" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Black Duck Code Center authentication password.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="connectionTimeoutMillis" type="xs:long" default="20000" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            Network timeout in milliseconds to use both for connection
+                            establishment and for unanswered requests.
+                            Timing-out on a network operation is considered as a retrieval
+                            failure. Defaults to 20000 milliseconds.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
         </xs:sequence>
     </xs:complexType>
 </xs:schema>

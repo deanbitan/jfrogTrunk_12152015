@@ -38,6 +38,8 @@ public class ArtifactSearchResult extends SearchResultBase {
         return DAY_FORMAT.format(getLastModified());
     }
 
+    // Used by Wicket
+    @SuppressWarnings("UnusedDeclaration")
     public String getLastModifiedString() {
         long lastModified = getItemInfo().getLastModified();
         return ContextHelper.get().getCentralConfig().format(lastModified);

@@ -46,6 +46,7 @@ public class ItemSearchResults<T extends ItemSearchResult> implements Serializab
      */
     public ItemSearchResults(List<T> results) {
         this.results = results;
+        this.fullResultsCount = -1L;
     }
 
     /**
@@ -57,7 +58,7 @@ public class ItemSearchResults<T extends ItemSearchResult> implements Serializab
      */
     public ItemSearchResults(List<T> results, long count) {
         this.results = results;
-        fullResultsCount = count;
+        this.fullResultsCount = count;
     }
 
     /**

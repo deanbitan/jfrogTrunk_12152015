@@ -12,14 +12,15 @@
 package org.artifactory.repo.index;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.maven.index.ArtifactContext;
 import org.apache.maven.index.ArtifactScanningListener;
+import org.apache.maven.index.DefaultIndexer;
 import org.apache.maven.index.DefaultIndexerEngine;
-import org.apache.maven.index.DefaultNexusIndexer;
 import org.apache.maven.index.DefaultQueryCreator;
+import org.apache.maven.index.DefaultScannerListener;
 import org.apache.maven.index.DefaultSearchEngine;
+import org.apache.maven.index.ScanningRequest;
 import org.apache.maven.index.ScanningResult;
 import org.apache.maven.index.context.IndexCreator;
 import org.apache.maven.index.context.IndexingContext;
@@ -33,63 +34,54 @@ import org.apache.maven.index.updater.DefaultIndexUpdater;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.TempFileStreamHandle;
-import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.InternalRepoPathFactory;
-import org.artifactory.repo.index.creator.JcrJarFileContentsIndexCreator;
-import org.artifactory.repo.index.creator.JcrMavenArchetypeArtifactInfoIndexCreator;
-import org.artifactory.repo.index.creator.JcrMavenPluginArtifactInfoIndexCreator;
-import org.artifactory.repo.index.creator.JcrMinimalArtifactInfoIndexCreator;
-import org.artifactory.repo.index.locator.MetadataLocator;
-import org.artifactory.repo.index.locator.PomLocator;
-import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.StoringRepo;
+import org.artifactory.repo.index.creator.VfsJarFileContentsIndexCreator;
+import org.artifactory.repo.index.creator.VfsMavenArchetypeArtifactInfoIndexCreator;
+import org.artifactory.repo.index.creator.VfsMavenPluginArtifactInfoIndexCreator;
+import org.artifactory.repo.index.creator.VfsMinimalArtifactInfoIndexCreator;
 import org.artifactory.request.NullRequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
-import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.schedule.TaskUtils;
-import org.artifactory.util.FileUtils;
+import org.artifactory.storage.fs.tree.ItemTree;
+import org.artifactory.storage.fs.tree.file.JavaIOFileAdapter;
+import org.artifactory.util.Files;
+import org.artifactory.util.Pair;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.util.FieldUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * @author yoavl
  * @author yossis
  */
-class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListener {
+class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
     private static final Logger log = LoggerFactory.getLogger(RepoIndexer.class);
 
     private StoringRepo repo;
     private IndexingContext context;
     private IndexPacker packer;
+    private final DefaultIndexerEngine defaultIndexerEngine;
+    private final ArtifactoryContentScanner scanner;
 
     RepoIndexer(StoringRepo repo) {
         this.repo = repo;
         //Unplexus
-        FieldUtils.setProtectedFieldValue("indexerEngine", this, new DefaultIndexerEngine());
-        ArtifactoryArtifactContextProducer artifactContextProducer = new ArtifactoryArtifactContextProducer(repo);
-        FieldUtils.setProtectedFieldValue("pl", artifactContextProducer, new PomLocator());
-        FieldUtils.setProtectedFieldValue("ml", artifactContextProducer, new MetadataLocator());
-        ArtifactoryContentScanner scanner = new ArtifactoryContentScanner(artifactContextProducer);
-        FieldUtils.setProtectedFieldValue("scanner", this, scanner);
+        defaultIndexerEngine = new DefaultIndexerEngine();
+        FieldUtils.setProtectedFieldValue("indexerEngine", this, defaultIndexerEngine);
         DefaultQueryCreator queryCreator = new DefaultQueryCreator();
         FieldUtils.setProtectedFieldValue("logger", queryCreator,
                 new ConsoleLogger(org.codehaus.plexus.logging.Logger.LEVEL_INFO, "console"));
@@ -103,6 +95,10 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         FieldUtils.setProtectedFieldValue("incrementalHandler", packer, incrementalHandler);
         FieldUtils.setProtectedFieldValue("logger", packer,
                 new ConsoleLogger(org.codehaus.plexus.logging.Logger.LEVEL_WARN, "console"));
+
+        ArtifactoryArtifactContextProducer artifactContextProducer = new ArtifactoryArtifactContextProducer();
+        scanner = new ArtifactoryContentScanner(artifactContextProducer);
+
     }
 
     @Override
@@ -130,14 +126,14 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    ResourceStreamHandle index(Date fireTime) throws Exception {
+    Pair<TempFileStreamHandle, TempFileStreamHandle> index(Date fireTime) throws Exception {
         //Use a file based dir with a temp file to conserve memory
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
         // TODO: Should use the temp file of the repo
-        File dir = FileUtils.createRandomDir(artifactoryHome.getWorkTmpDir(), "artifactory.index." + repo.getKey());
-        Directory indexDir = FSDirectory.getDirectory(dir);
+        File dir = Files.createRandomDir(artifactoryHome.getTempWorkDir(), "artifactory.index." + repo.getKey());
         try {
-            return createIndex(indexDir, true);
+            createContext(dir);
+            return createIndex(dir, true);
         } catch (Exception e) {
             throw new RuntimeException("Indexing failed.", e);
         } finally {
@@ -146,17 +142,19 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         }
     }
 
-    ResourceStreamHandle createIndex(Directory indexDir, boolean scan) throws IOException {
+    Pair<TempFileStreamHandle, TempFileStreamHandle> createIndex(File indexDir, boolean scan) throws IOException {
         OutputStream os = null;
         try {
-            createContext(indexDir);
+
             context.updateTimestamp();
             if (scan) {
                 //Update the dir content by scanning the repo
-                scan(context, this);
+                scanner.scan(new ScanningRequest(context,
+                        new DefaultScannerListener(context, defaultIndexerEngine, true, this), null));
             }
+
             ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-            File outputFolder = FileUtils.createRandomDir(artifactoryHome.getWorkTmpDir(),
+            File outputFolder = Files.createRandomDir(artifactoryHome.getTempWorkDir(),
                     "artifactory.index." + repo.getKey());
             outputFolder.deleteOnExit();
             IndexPackingRequest request = newIndexPackingRequest(outputFolder);
@@ -167,28 +165,17 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
             if (!tmpGz.exists()) {
                 throw new RuntimeException("Temp index file '" + tmpGz.getAbsolutePath() + "' does not exist.");
             }
+            File propertiesFile = new File(outputFolder, MavenNaming.NEXUS_INDEX_PROPERTIES);
+            if (!propertiesFile.exists()) {
+                throw new RuntimeException("Temp properties file '" + tmpGz.getAbsolutePath() + "' does not exist.");
+            }
             TempFileStreamHandle zipIndexHandle = new TempFileStreamHandle(tmpGz);
-            return zipIndexHandle;
+            TempFileStreamHandle propertiesHandle = new TempFileStreamHandle(propertiesFile);
+            return new Pair<>(zipIndexHandle, propertiesHandle);
         } catch (Exception e) {
             IOUtils.closeQuietly(os);
             throw new RuntimeException("Index creation failed.", e);
         }
-    }
-
-    ResourceStreamHandle getProperties() {
-        Properties info = new Properties();
-        info.setProperty(IndexingContext.INDEX_ID, context.getId());
-        SimpleDateFormat df = new SimpleDateFormat(IndexingContext.INDEX_TIME_FORMAT);
-        info.setProperty(IndexingContext.INDEX_TIMESTAMP, df.format(context.getTimestamp()));
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        try {
-            info.store(os, null);
-        } catch (IOException e) {
-            throw new RuntimeException("Index properties calculation failed.", e);
-        }
-        ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-        ResourceStreamHandle handle = new SimpleResourceStreamHandle(is, os.size());
-        return handle;
     }
 
     void mergeInto(StoringRepo localRepo, Map<StoringRepo, FSDirectory> extractedRepoIndexes) throws Exception {
@@ -220,8 +207,8 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
              * Remove indexing context and delete the created files in a proper manner
              */
             try {
-                removeIndexingContext(context, true);
-            } catch (IOException e) {
+                closeIndexingContext(context, true);
+            } catch (Exception e) {
                 log.warn("Could not remove temporary index context '{}'.", context);
             }
             /**
@@ -232,15 +219,16 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
         }
     }
 
-    void createContext(Directory indexDir) throws IOException, UnsupportedExistingLuceneIndexException {
+    void createContext(File indexDir) throws IOException, UnsupportedExistingLuceneIndexException {
         String repoKey = repo.getKey();
-        VfsFolder repoDir = repo.getRootFolder();
-        List<IndexCreator> indexCreators = new ArrayList<IndexCreator>(4);
-        indexCreators.add(new JcrMinimalArtifactInfoIndexCreator(repo));
-        indexCreators.add(new JcrJarFileContentsIndexCreator());
-        indexCreators.add(new JcrMavenPluginArtifactInfoIndexCreator());
-        indexCreators.add(new JcrMavenArchetypeArtifactInfoIndexCreator());
-        context = addIndexingContextForced(repoKey, repoKey, (File) repoDir, indexDir, null, null, indexCreators);
+        List<IndexCreator> indexCreators = new ArrayList<>(4);
+        indexCreators.add(new VfsMinimalArtifactInfoIndexCreator());
+        indexCreators.add(new VfsJarFileContentsIndexCreator());
+        indexCreators.add(new VfsMavenPluginArtifactInfoIndexCreator());
+        indexCreators.add(new VfsMavenArchetypeArtifactInfoIndexCreator());
+        ItemTree itemTree = new ItemTree(repo.getRepoPath(""));
+        JavaIOFileAdapter rootFile = new JavaIOFileAdapter(itemTree.getRootNode());
+        context = createIndexingContext(repoKey, repoKey, rootFile, indexDir, null, null, true, true, indexCreators);
     }
 
     private IndexPackingRequest newIndexPackingRequest(File outputFolder) {
@@ -270,18 +258,15 @@ class RepoIndexer extends DefaultNexusIndexer implements ArtifactScanningListene
             ResourceStreamHandle handle = repo.getResourceStreamHandle(requestContext, indexRes);
             try {
                 ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-                File indexUnzippedDir = FileUtils.createRandomDir(artifactoryHome.getWorkTmpDir(),
+                File indexUnzippedDir = Files.createRandomDir(artifactoryHome.getTempWorkDir(),
                         "artifactory.merged-index." + repo.getKey());
                 indexUnzippedDir.deleteOnExit();
-                indexDir = FSDirectory.getDirectory(indexUnzippedDir);
+                indexDir = FSDirectory.open(indexUnzippedDir);
                 //Get the extracted lucene dir
                 DefaultIndexUpdater.unpackIndexData(handle.getInputStream(), indexDir, context);
             } finally {
                 handle.close();
             }
-            //We can release the lock on the zip file (or expanding the repo root will block)
-            LockingHelper.removeLockEntry(
-                    InternalRepoPathFactory.create(repo.getKey(), MavenNaming.NEXUS_INDEX_GZ_PATH));
             //Remember the extracted index
             extractedRepoIndexes.put(repo, indexDir);
         }

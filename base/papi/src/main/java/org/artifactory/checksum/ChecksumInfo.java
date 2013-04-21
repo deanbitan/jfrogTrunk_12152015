@@ -45,7 +45,9 @@ public class ChecksumInfo implements Serializable {
             throw new IllegalStateException(
                     "Actual checksum invalid " + actual + " : " + original + " for type " + type);
         }
-        this.original = original;
+        // The original checksum comes from remote servers which we can't control their formats, therefore we have to
+        // normalize the original checksum value.
+        this.original = normalize(original);
         this.actual = actual;
     }
 
@@ -53,6 +55,9 @@ public class ChecksumInfo implements Serializable {
         return type;
     }
 
+    /**
+     * @return The client (original) checksum or the actual if the checksum is marked as trusted
+     */
     public String getOriginal() {
         if (isMarkedAsTrusted()) {
             return getActual();
@@ -61,12 +66,27 @@ public class ChecksumInfo implements Serializable {
         }
     }
 
+    /**
+     * @return Always returns the client (original) recorded checksum, even if it is org.artifactory.checksum.ChecksumInfo#TRUSTED_FILE_MARKER
+     */
+    public String getOriginalOrNoOrig() {
+        return original;
+    }
+
     public String getActual() {
         return actual;
     }
 
     public boolean checksumsMatch() {
         return original != null && actual != null && (isMarkedAsTrusted() || actual.equals(original));
+    }
+
+    /**
+     * Normalize checksum value.
+     * Checksum comparisons shouldn't be case sensitive therefore we have to normalize the original checksum to lower case.
+     */
+    private String normalize(String candidate) {
+        return type.isValid(candidate) ? candidate.toLowerCase() : candidate;
     }
 
     /**

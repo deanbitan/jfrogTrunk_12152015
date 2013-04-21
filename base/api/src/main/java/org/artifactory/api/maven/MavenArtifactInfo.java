@@ -24,12 +24,12 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;

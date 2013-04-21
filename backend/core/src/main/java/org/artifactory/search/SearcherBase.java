@@ -18,10 +18,6 @@
 
 package org.artifactory.search;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.analysis.Token;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.ItemSearchResult;
@@ -29,30 +25,18 @@ import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.api.search.Searcher;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.fs.ItemInfo;
-import org.artifactory.jcr.factory.VfsItemFactory;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.sapi.common.PathFactoryHolder;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
-import org.artifactory.sapi.data.VfsDataService;
-import org.artifactory.sapi.data.VfsNode;
 import org.artifactory.sapi.search.InvalidQueryRuntimeException;
+import org.artifactory.sapi.search.VfsQuery;
 import org.artifactory.sapi.search.VfsQueryService;
-import org.artifactory.sapi.search.VfsRepoQuery;
 import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.util.ExceptionUtils;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.input.SAXBuilder;
 import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.List;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author yoavl
@@ -60,7 +44,6 @@ import java.util.List;
 public abstract class SearcherBase<C extends SearchControls, R extends ItemSearchResult> implements Searcher<C, R> {
     private static final Logger log = LoggerFactory.getLogger(SearcherBase.class);
 
-    private final VfsDataService vfsDataService;
     private final VfsQueryService vfsQueryService;
     private final InternalRepositoryService repoService;
 
@@ -69,7 +52,6 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
 
     protected SearcherBase() {
         ArtifactoryContext context = ContextHelper.get();
-        vfsDataService = context.beanForType(VfsDataService.class);
         vfsQueryService = context.beanForType(VfsQueryService.class);
         repoService = context.beanForType(InternalRepositoryService.class);
     }
@@ -91,7 +73,7 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
                 throw (InvalidQueryRuntimeException) e;
             } else {
                 log.error("Could not perform search.", e);
-                throw new RepositoryRuntimeException("Could not execute search query (" + e.getMessage() + ").", e);
+                throw new RepositoryRuntimeException("Could not execute search query", e);
             }
         }
         long time = System.currentTimeMillis() - start;
@@ -100,13 +82,11 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
         return results;
     }
 
-
-    protected VfsRepoQuery createRepoQuery(SearchControls controls) {
-        VfsRepoQuery query = getVfsQueryService().createRepoQuery();
+    protected VfsQuery createQuery(SearchControls controls) {
+        VfsQuery query = getVfsQueryService().createQuery();
         if (controls.isSpecificRepoSearch()) {
             query.setRepoKeys(controls.getSelectedRepoForSearch());
         }
-        query.addAllSubPathFilter();
         return query;
     }
 
@@ -120,63 +100,8 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
         return vfsQueryService;
     }
 
-    public VfsDataService getVfsDataService() {
-        return vfsDataService;
-    }
-
-    //We can use this method to monitor the actions of the Lucene StandardAnalyzer
-
-    @SuppressWarnings({"UnusedDeclaration", "deprecation"})
-    private void debugLuceneStandardAnalyzer(String search) {
-        TokenStream tokenStream =
-                new StandardAnalyzer().tokenStream("dummy", new StringReader(search));
-        Token token;
-        try {
-            while ((token = tokenStream.next()) != null) {
-                String text = token.toString();
-                System.out.println("text = " + text);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Extract the Fragment JDom elements from the highlighting excerpt
-     *
-     * @param excerpt Highlighting excerpt
-     * @return Element[] - fragments
-     */
-    @SuppressWarnings({"unchecked"})
-    protected Element[] getFragmentElements(String excerpt) {
-        SAXBuilder builder = new SAXBuilder();
-        builder.setValidation(false);
-        Document document;
-        try {
-            document = builder.build(new StringReader(excerpt));
-        } catch (Exception e) {
-            log.error("An error has occurred while parsing the search result excerpt", e);
-            return new Element[]{};
-        }
-        Element element = document.getRootElement();
-        List<Element> fragments = element.getChildren("fragment");
-        return fragments.toArray(new Element[fragments.size()]);
-    }
-
     protected int getMaxResults() {
         return maxResults;
-    }
-
-    protected ItemInfo getProxyItemInfo(VfsNode artifactNode) {
-        RepoPath repoPath = PathFactoryHolder.get().getRepoPath(artifactNode.absolutePath());
-        switch (artifactNode.nodeType()) {
-            case FILE:
-                return VfsItemFactory.createFileInfoProxy(repoPath);
-            case FOLDER:
-                return VfsItemFactory.createFolderInfoProxy(repoPath);
-            default:
-                throw new RepositoryRuntimeException("Got a node " + repoPath + " which neither a file or folder");
-        }
     }
 
     /**
@@ -209,13 +134,10 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
                 (!NamingUtils.isChecksum(repoPath.getPath()));
     }
 
-    /**
-     * Indicates whether the given input contains the '*' or the '?' wildcards
-     *
-     * @param userInput Input taken from the user
-     * @return True if the input contains '*' or the '?' wildcards
-     */
-    protected boolean inputContainsWildCard(String userInput) {
-        return !StringUtils.isBlank(userInput) && ((userInput.contains("*") || userInput.contains("?")));
+    protected int getLimit(SearchControls controls) {
+        if (controls.isLimitSearchResults()) {
+            return getMaxResults();
+        }
+        return Integer.MAX_VALUE;
     }
 }

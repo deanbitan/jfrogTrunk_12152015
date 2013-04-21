@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-backend-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.6.7</version>
+        <version>3.0.0</version>
     </parent>
 
     <dependencies>
@@ -55,7 +55,7 @@
 
         <dependency>
             <groupId>org.artifactory</groupId>
-            <artifactId>artifactory-common-storage</artifactId>
+            <artifactId>artifactory-storage-common</artifactId>
             <!-- TODO: Check what can be runtime -->
             <scope>compile</scope>
         </dependency>
@@ -69,14 +69,8 @@
 
         <dependency>
             <groupId>org.artifactory</groupId>
-            <artifactId>artifactory-jcr-storage</artifactId>
-            <!-- TODO: Will be moved to runtime soon -->
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.artifactory</groupId>
-            <artifactId>artifactory-profiler</artifactId>
+            <artifactId>artifactory-storage-db</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -88,11 +82,6 @@
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
         </dependency>
 
         <dependency>
@@ -126,50 +115,8 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.jcr</groupId>
-            <artifactId>jcr</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-ocm</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-core-jfrog</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-jcr-server</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core-jfrog</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>concurrent</groupId>
-            <artifactId>concurrent</artifactId>
-            <scope>compile</scope>
-            <!-- for tha patched jackrabbit file -->
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-spi</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.jackrabbit</groupId>
-            <artifactId>jackrabbit-jcr-commons</artifactId>
         </dependency>
 
         <dependency>
@@ -213,11 +160,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>se-jcr</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>opensymphony</groupId>
             <artifactId>quartz</artifactId>
         </dependency>
@@ -250,11 +192,6 @@
         <dependency>
             <groupId>net.sf.jsignature.io-tools</groupId>
             <artifactId>easystream</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>backport-util-concurrent</groupId>
-            <artifactId>backport-util-concurrent</artifactId>
         </dependency>
 
         <dependency>

@@ -36,11 +36,11 @@ import org.artifactory.common.wicket.panel.upload.HideUploadProgressDecorator;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.general.addon.AddonSettingsPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;

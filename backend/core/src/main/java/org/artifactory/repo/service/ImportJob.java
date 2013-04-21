@@ -19,15 +19,16 @@
 package org.artifactory.repo.service;
 
 import org.artifactory.api.config.ImportSettingsImpl;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.backup.BackupJob;
 import org.artifactory.common.MutableStatusHolder;
-import org.artifactory.jcr.schedule.JcrGarbageCollectorJob;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
-import org.artifactory.repo.index.IndexerJob;
-import org.artifactory.repo.index.IndexerServiceImpl;
+import org.artifactory.repo.cleanup.IntegrationCleanupJob;
+import org.artifactory.repo.index.MavenIndexerJob;
+import org.artifactory.repo.index.MavenIndexerServiceImpl;
 import org.artifactory.repo.replication.LocalReplicationJob;
 import org.artifactory.repo.replication.RemoteReplicationJob;
 import org.artifactory.sapi.common.BaseSettings;
@@ -37,12 +38,15 @@ import org.artifactory.schedule.StopStrategy;
 import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
-import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Semaphore;
 
 /**
  * @author freds
@@ -51,13 +55,16 @@ import org.slf4j.Logger;
 @JobCommand(manualUser = TaskUser.CURRENT,
         keyAttributes = {Task.REPO_KEY},
         commandsToStop = {
-                @StopCommand(command = JcrGarbageCollectorJob.class, strategy = StopStrategy.IMPOSSIBLE),
+                @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = ExportJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = BackupJob.class, strategy = StopStrategy.IMPOSSIBLE),
-                @StopCommand(command = IndexerServiceImpl.FindOrCreateIndexJob.class, strategy = StopStrategy.STOP),
-                @StopCommand(command = IndexerServiceImpl.SaveIndexFileJob.class, strategy = StopStrategy.STOP),
-                @StopCommand(command = IndexerJob.class, strategy = StopStrategy.STOP),
+                @StopCommand(command = MavenIndexerServiceImpl.FindOrCreateMavenIndexJob.class,
+                        strategy = StopStrategy.STOP),
+                @StopCommand(command = MavenIndexerServiceImpl.SaveMavenIndexFileJob.class,
+                        strategy = StopStrategy.STOP),
+                @StopCommand(command = MavenIndexerJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
+                @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = LocalReplicationJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.STOP)
         })
@@ -68,6 +75,7 @@ public class ImportJob extends QuartzCommand {
 
     @Override
     protected void onExecute(JobExecutionContext callbackContext) {
+        Semaphore gateToRelease = null;
         MutableStatusHolder status = null;
         try {
             JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
@@ -77,6 +85,7 @@ public class ImportJob extends QuartzCommand {
             }
             boolean deleteRepo = (Boolean) jobDataMap.get(DELETE_REPO);
             ImportSettingsImpl settings = (ImportSettingsImpl) jobDataMap.get(ImportSettingsImpl.class.getName());
+            gateToRelease = (Semaphore) jobDataMap.get(Semaphore.class.getName());
             status = settings.getStatusHolder();
             InternalRepositoryService repositoryService =
                     InternalContextHelper.get().beanForType(InternalRepositoryService.class);
@@ -95,23 +104,13 @@ public class ImportJob extends QuartzCommand {
                             log.error(e.getMessage(), e);
                         }
                         status.setStatus("Repository '" + repoKey + "' fully deleted.", log);
-                        try {
-                            // Wait 2 seconds for the DB to delete the files..
-                            // Bug in Jackrabbit/Derby:
-                            // A lock could not be obtained within the time requested, state/code: 40XL1/30000
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            status.setError(e.getMessage(), e, log);
-                        }
                     }
                     repositoryService.importRepo(repoKey, settings);
                 }
             }
 
             if (settings.isIndexMarkedArchives()) {
-                InternalSearchService internalSearchService =
-                        InternalContextHelper.get().beanForType(InternalSearchService.class);
-                internalSearchService.asyncIndexMarkedArchives();
+                ContextHelper.get().beanForType(ArchiveIndexer.class).asyncIndexMarkedArchives();
             }
         } catch (RuntimeException e) {
             if (status != null) {
@@ -119,6 +118,8 @@ public class ImportJob extends QuartzCommand {
             } else {
                 log.error("Error occurred during import", e);
             }
+        } finally {
+            if (gateToRelease != null) gateToRelease.release();
         }
     }
 

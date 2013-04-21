@@ -18,15 +18,16 @@
 
 package org.artifactory.spring;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonInfo;
 import org.artifactory.addon.AddonState;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -66,7 +67,7 @@ public abstract class SpringConfigResourceLoader {
      */
     public static SpringConfigPaths getConfigurationPaths(ArtifactoryHome artifactoryHome) {
         //Load the default config locations
-        String[] springConfigs = {"applicationContext.xml", "jcr.xml", "scheduling.xml", "security.xml",
+        String[] springConfigs = {"applicationContext.xml", "scheduling.xml", "security.xml",
                 "addons.xml", "interceptors.xml"};
         List<String> paths = new ArrayList<String>();
 
@@ -85,19 +86,21 @@ public abstract class SpringConfigResourceLoader {
 
         Map<String, AddonInfo> addonContextPaths = loadEnabledAddons(artifactoryHome.getArtifactoryProperties());
 
-        //TODO: [by yl] Load custom interceptors
-
         SpringConfigPaths configPaths = new SpringConfigPaths(paths, addonContextPaths);
         return configPaths;
     }
 
     private static Map<String, AddonInfo> loadEnabledAddons(ArtifactorySystemProperties props) {
-        String[] disabledAddonsArr = props.getProperty(ConstantValues.disabledAddons).split(",");
-        List<String> disabledAddons = new ArrayList<String>(disabledAddonsArr.length);
-        for (String disabledAddon : disabledAddonsArr) {
-            disabledAddons.add(disabledAddon.trim());
+        List<String> disabledAddons = Lists.newArrayList();
+        if (StringUtils.isNotBlank(props.getProperty(ConstantValues.disabledAddons))) {
+            String[] disabledAddonsArr = props.getProperty(ConstantValues.disabledAddons).split(",");
+            disabledAddons = Lists.newArrayListWithCapacity(disabledAddonsArr.length);
+            for (String disabledAddon : disabledAddonsArr) {
+                disabledAddons.add(disabledAddon.trim());
+            }
+            log.info("{}={}", ConstantValues.disabledAddons.getPropertyName(), disabledAddons);
         }
-        log.info("{}={}", ConstantValues.disabledAddons.getPropertyName(), disabledAddons);
+
         try {
             Enumeration<URL> addonsPropsUrls =
                     Thread.currentThread().getContextClassLoader().getResources("META-INF/addon.properties");
@@ -125,10 +128,10 @@ public abstract class SpringConfigResourceLoader {
                     AddonState state;
                     if (!disabledAddons.contains(addonName)) {
                         // addon is enabled, add it's addon.xml to the spring context
-                        log.info("Adding enabled addon: {}", addonName);
+                        log.debug("Adding enabled addon: {}", addonName);
                         state = AddonState.INACTIVATED; //  if license is installed it will be activated by the manager 
                     } else {
-                        log.info("Adding disabled addon: {}", addonName);
+                        log.debug("Adding disabled addon: {}", addonName);
                         state = AddonState.DISABLED;
                     }
                     addonsContextPathsByAddonName.put(addonName, new AddonInfo(addonName, addonDisplayName,

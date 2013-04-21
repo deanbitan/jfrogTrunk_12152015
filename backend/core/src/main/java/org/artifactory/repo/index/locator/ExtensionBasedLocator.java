@@ -18,9 +18,7 @@
 
 package org.artifactory.repo.index.locator;
 
-import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.jcr.StoringRepo;
-import org.artifactory.sapi.common.PathFactoryHolder;
+import org.artifactory.storage.fs.tree.file.JavaIOFileAdapter;
 import org.artifactory.util.PathUtils;
 
 import java.io.File;
@@ -32,8 +30,7 @@ import java.io.File;
 public final class ExtensionBasedLocator extends ArtifactoryLocator {
     private final String expectedExtension;
 
-    public ExtensionBasedLocator(StoringRepo repo, String expectedExtension) {
-        super(repo);
+    public ExtensionBasedLocator(String expectedExtension) {
         this.expectedExtension = expectedExtension;
     }
 
@@ -41,8 +38,7 @@ public final class ExtensionBasedLocator extends ArtifactoryLocator {
     public File locate(File source) {
         String sourcePath = source.getAbsolutePath();
         String targetPath = PathUtils.stripExtension(sourcePath) + expectedExtension;
-        RepoPath repoPath = PathFactoryHolder.get().getRepoPath(targetPath);
-        File target = getRepo().getJcrFile(repoPath);
+        File target = ((JavaIOFileAdapter) source).getSibling(targetPath);
         if (target == null) {
             //Cannot return null - return non existing file
             target = new File(targetPath) {

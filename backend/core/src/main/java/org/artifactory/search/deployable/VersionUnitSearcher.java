@@ -29,14 +29,13 @@ import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.PathFactory;
-import org.artifactory.sapi.common.PathFactoryHolder;
-import org.artifactory.sapi.data.VfsNode;
-import org.artifactory.sapi.data.VfsNodeType;
+import org.artifactory.sapi.search.VfsQuery;
 import org.artifactory.sapi.search.VfsQueryResult;
-import org.artifactory.sapi.search.VfsRepoQuery;
+import org.artifactory.sapi.search.VfsQueryResultType;
+import org.artifactory.sapi.search.VfsQueryRow;
 import org.artifactory.search.SearcherBase;
 
 import java.util.Set;
@@ -52,22 +51,25 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
     public ItemSearchResults<VersionUnitSearchResult> doSearch(VersionUnitSearchControls controls) {
         RepoPath pathToSearch = controls.getPathToSearchWithin();
 
-        VfsRepoQuery repoQuery = createRepoQuery(controls);
-        repoQuery.setSingleRepoKey(pathToSearch.getRepoKey());
-        repoQuery.addRelativePathFilter(pathToSearch.getPath());
-        repoQuery.addAllSubPathFilter();
-        repoQuery.setNodeTypeFilter(VfsNodeType.FILE);
-        boolean limit = controls.isLimitSearchResults();
-        VfsQueryResult queryResult = repoQuery.execute(limit);
-        Multimap<ModuleInfo, RepoPath> moduleInfoToRepoPaths = HashMultimap.create();
         Repo repo = getRepoService().repositoryByKey(pathToSearch.getRepoKey());
-        PathFactory pathFactory = PathFactoryHolder.get();
-        for (VfsNode node : queryResult.getNodes()) {
-            RepoPath fileRepoPath = pathFactory.getRepoPath(node.absolutePath());
-            ModuleInfo moduleInfo = repo.getItemModuleInfo(fileRepoPath.getPath());
+        if (repo == null) {
+            return new ItemSearchResults<VersionUnitSearchResult>(Lists.<VersionUnitSearchResult>newArrayList());
+        }
+
+        VfsQuery repoQuery = createQuery(controls)
+                .setSingleRepoKey(pathToSearch.getRepoKey())
+                .addPathFilter(pathToSearch.getPath())
+                .addPathFilters(VfsQuery.ALL_PATH_VALUE)
+                .expectedResult(VfsQueryResultType.FILE);
+
+        VfsQueryResult queryResult = repoQuery.execute(getLimit(controls));
+        Multimap<ModuleInfo, RepoPath> moduleInfoToRepoPaths = HashMultimap.create();
+        for (VfsQueryRow row : queryResult.getAllRows()) {
+            ItemInfo item = row.getItem();
+            ModuleInfo moduleInfo = repo.getItemModuleInfo(item.getRelPath());
             if (moduleInfo.isValid()) {
                 ModuleInfo stripped = stripModuleInfoFromUnnecessaryData(moduleInfo);
-                moduleInfoToRepoPaths.put(stripped, fileRepoPath);
+                moduleInfoToRepoPaths.put(stripped, item.getRepoPath());
             }
         }
         Set<VersionUnitSearchResult> results = getVersionUnitResults(moduleInfoToRepoPaths);

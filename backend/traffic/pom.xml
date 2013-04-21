@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-backend-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.6.7</version>
+        <version>3.0.0</version>
     </parent>
 
     <dependencies>
@@ -40,7 +40,7 @@
 
         <dependency>
             <groupId>org.artifactory</groupId>
-            <artifactId>artifactory-jcr-storage</artifactId>
+            <artifactId>artifactory-storage-common</artifactId>
             <scope>runtime</scope>
         </dependency>
 

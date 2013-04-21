@@ -19,11 +19,11 @@
 package org.artifactory.logging.version.v1;
 
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 

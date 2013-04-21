@@ -125,4 +125,9 @@ public abstract class BaseBrowsableItem implements Serializable, Comparable<Base
     public boolean isFolder() {
         return folder;
     }
+
+    @Override
+    public String toString() {
+        return getRepoPath().toString();
+    }
 }

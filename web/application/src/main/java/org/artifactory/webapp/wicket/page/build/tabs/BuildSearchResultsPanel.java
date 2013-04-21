@@ -85,16 +85,16 @@ public class BuildSearchResultsPanel extends SaveSearchResultsPanel {
         form.add(scopesContainer);
 
         final StyledCheckbox artifactsCheckbox = addCheckBox(form, "artifacts",
-                "If checked, published module artifacts will be saved as search results.", true);
+                "If marked, published module artifacts are saved as search results.", true);
         artifactsCheckbox.add(new NopFormComponentUpdatingBehavior("onclick"));
 
         final StyledCheckbox dependenciesCheckbox = addCheckBox(form, "dependencies",
-                "If checked, published module dependencies will be saved as search results.\nYou can optionally hand-pick the dependency scopes to include.",
+                "If marked, published module dependencies are saved as search results.\nYou can optionally select the dependency scopes to include.",
                 false);
         if (scopes.isEmpty()) {
             dependenciesCheckbox.add(new NopFormComponentUpdatingBehavior("onclick"));
         } else {
-            dependenciesCheckbox.setLabel(Model.of("Include Dependencies of the Following Scopes:"));
+            dependenciesCheckbox.setLabel(Model.of("Include Dependencies of the following scopes:"));
             dependenciesCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {

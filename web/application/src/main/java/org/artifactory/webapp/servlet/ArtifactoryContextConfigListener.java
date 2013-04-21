@@ -23,14 +23,15 @@ import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.log.logback.LogbackContextSelector;
 import org.artifactory.log.logback.LoggerConfigInfo;
 import org.artifactory.spring.SpringConfigPaths;
 import org.artifactory.spring.SpringConfigResourceLoader;
+import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.core.JdkVersion;
@@ -51,6 +52,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ArtifactoryContextConfigListener implements ServletContextListener {
+
+    private static ArtifactoryLockFile artifactoryLockFile;
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
@@ -76,14 +79,15 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
                     LogbackContextSelector.unbindConfig();
                 } catch (Exception e) {
-                    getLogger().error("Application could not be initialized.", e);
+                    getLogger().error("Application could not be initialized: " +
+                            ExceptionUtils.getRootCause(e).getMessage(), e);
                     success = false;
                 } finally {
                     if (success) {
                         //Run the waiting filters
                         BlockingQueue<DelayedInit> waitingFiltersQueue = (BlockingQueue<DelayedInit>) servletContext
                                 .getAttribute(DelayedInit.APPLICATION_CONTEXT_LOCK_KEY);
-                        List<DelayedInit> waitingInits = new ArrayList<DelayedInit>();
+                        List<DelayedInit> waitingInits = new ArrayList<>();
                         waitingFiltersQueue.drainTo(waitingInits);
                         for (DelayedInit filter : waitingInits) {
                             try {
@@ -115,7 +119,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
     /**
      * Disable sessionId in URL (Servlet 3.0 containers) by setting the session tracking mode to SessionTrackingMode.COOKIE
-     * For Servlet container < 3.0 we use differnet method (for tomcat 6 we use custom context.xml and for jetty
+     * For Servlet container < 3.0 we use different method (for tomcat 6 we use custom context.xml and for jetty
      * there is a custom jetty.xml file).
      */
     @SuppressWarnings("unchecked")
@@ -135,7 +139,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         if (artifactoryHome.getArtifactoryProperties().getBooleanProperty(
                 ConstantValues.supportUrlSessionTracking.getPropertyName(),
                 ConstantValues.supportUrlSessionTracking.getDefValue())) {
-            getLogger().info("Skipping setting session tracking mode to COOKIE, enableURLSessionId flag it on.");
+            getLogger().debug("Skipping setting session tracking mode to COOKIE, enableURLSessionId flag it on.");
             return;
         }
 
@@ -149,7 +153,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             Method method = servletContext.getClass().getMethod("setSessionTrackingModes", Set.class);
             method.setAccessible(true);
             ReflectionUtils.invokeMethod(method, servletContext, Sets.newHashSet(cookieTrackingMode));
-            getLogger().info("Successfully set session tracking mode to COOKIE");
+            getLogger().debug("Successfully set session tracking mode to COOKIE");
         } catch (Exception e) {
             getLogger().warn("Failed to set session tracking mode: " + e.getMessage());
         }
@@ -159,7 +163,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         return LoggerFactory.getLogger(ArtifactoryContextConfigListener.class);
     }
 
-    private void configure(ServletContext servletContext, Logger log) {
+    private void configure(ServletContext servletContext, Logger log) throws Exception {
         long start = System.currentTimeMillis();
 
         ArtifactoryHome artifactoryHome =
@@ -187,26 +191,10 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
                         " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n"
         );
 
-        if (!isSupportedJava6()) {
-            String message = "\n\n" +
-                    "***************************************************************************\n" +
-                    "*** You have started Artifactory with an unsupported version of Java 6! ***\n" +
-                    "***                Please use Java 6 update 4 and above.                ***\n" +
-                    "***************************************************************************\n";
-            log.warn(message);
-        }
+        warnIfJava7WithLoopPredicate(log);
 
-        if (isJava7WithLoopPredicate(log)) {
-            String message = "\n\n" +
-                    "********************************************************************************************\n" +
-                    "*** It looks like you are running Artifactory with Java 7.                               ***\n" +
-                    "*** Due to critical Hotspot bugs in some of the first Java 7 releases (bug ids: 7070134, ***\n" +
-                    "*** 7044738 & 7068051), it is HIGHLY RECOMMENDED to run Artifactory with the following   ***\n" +
-                    "*** JVM Hotspot flag, to avoid JVM crashes and/or index corruption:                      ***\n" +
-                    "*** -XX:-UseLoopPredicate                                                                ***\n" +
-                    "********************************************************************************************\n";
-            log.warn(message);
-        }
+        artifactoryLockFile = new ArtifactoryLockFile(artifactoryHome);
+        artifactoryLockFile.tryLock();
 
         ApplicationContext context;
         try {
@@ -222,9 +210,6 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             SpringConfigPaths springConfigPaths = SpringConfigResourceLoader.getConfigurationPaths(artifactoryHome);
             context = (ApplicationContext) constructor.newInstance(
                     contextUniqueName, springConfigPaths, artifactoryHome);
-        } catch (Exception e) {
-            log.error("Error creating spring context", e);
-            throw new RuntimeException(e);
         } finally {
             ArtifactoryHome.unbind();
         }
@@ -232,7 +217,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         log.info("\n" +
                 "###########################################################\n" +
                 "### Artifactory successfully started (" +
-                String.format("%-17s", (DurationFormatUtils.formatPeriod(start, System.currentTimeMillis(), "s")) +
+                String.format("%-17s", (DurationFormatUtils.formatPeriod(start, System.currentTimeMillis(), "s.S")) +
                         " seconds)") + " ###\n" +
                 "###########################################################\n");
         //Register the context for easy retrieval for faster destroy
@@ -254,6 +239,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             if (context != null) {
                 context.destroy();
             }
+            artifactoryLockFile.release();
         } finally {
             event.getServletContext().removeAttribute(ArtifactoryContext.APPLICATION_CONTEXT_KEY);
             event.getServletContext().removeAttribute(ArtifactoryHome.SERVLET_CTX_ATTR);
@@ -261,52 +247,31 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
     }
 
     /**
-     * @return True if the current jvm version is supported (the unsupported versions are java 6 upto java 6 update 4)
-     */
-    private boolean isSupportedJava6() {
-        //Make sure to warn user if he is using Java 6 with an update earlier than 4
-        boolean supported = true;
-        if (JdkVersion.getMajorJavaVersion() == JdkVersion.JAVA_16) {
-            String javaVersion = JdkVersion.getJavaVersion();
-            int underscoreIndex = javaVersion.indexOf('_');
-            if (underscoreIndex == -1) {
-                // maybe not sun jvm (don't bother checking)
-                supported = true;
-            } else {
-                try {
-                    int minorVersion = Integer.parseInt(javaVersion.substring(underscoreIndex + 1));
-                    if (minorVersion < 4) {
-                        supported = false;
-                    }
-                } catch (Exception e) {
-                    // maybe not sun jvm (don't bother checking)                    
-                    supported = true;
-                }
-            }
-        }
-        return supported;
-    }
-
-    /**
      * @return True if the current jvm version Java 7 and the loop predicate hotspot optimization is on. This was fixed
      *         in JDK 1.7.0_01.
      */
-    private boolean isJava7WithLoopPredicate(Logger log) {
+    private void warnIfJava7WithLoopPredicate(Logger log) {
         if ("1.7.0".equals(JdkVersion.getJavaVersion())) {
             try {
                 List<String> arguments = ManagementFactory.getRuntimeMXBean().getInputArguments();
                 for (String argument : arguments) {
                     if (argument.contains("-XX:-UseLoopPredicate")) {
-                        return false;
+                        return;
                     }
                 }
-                return true;
+                String message = "\n\n" +
+                        "********************************************************************************************\n" +
+                        "*** It looks like you are running Artifactory with Java 7.                               ***\n" +
+                        "*** Due to critical Hotspot bugs in some of the first Java 7 releases (bug ids: 7070134, ***\n" +
+                        "*** 7044738 & 7068051), it is HIGHLY RECOMMENDED to run Artifactory with the following   ***\n" +
+                        "*** JVM Hotspot flag, to avoid JVM crashes and/or index corruption:                      ***\n" +
+                        "*** -XX:-UseLoopPredicate                                                                ***\n" +
+                        "********************************************************************************************\n";
+                log.warn(message);
             } catch (Exception e) {
                 log.warn("Could not check for Java 7 loop predicate jvm arg ({}).", e.getMessage());
                 log.debug("Could not check for Java 7 loop predicate jvm arg.", e);
-                return false;
             }
         }
-        return false;
     }
 }

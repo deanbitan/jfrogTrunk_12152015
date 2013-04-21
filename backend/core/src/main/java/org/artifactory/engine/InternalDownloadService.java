@@ -20,10 +20,6 @@ package org.artifactory.engine;
 
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.request.DownloadService;
-import org.artifactory.fs.RepoResource;
-import org.artifactory.repo.Repo;
-import org.artifactory.request.InternalRequestContext;
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
 
 import java.util.concurrent.CountDownLatch;
@@ -33,15 +29,10 @@ import java.util.concurrent.CountDownLatch;
  * @date Oct 28, 2008
  */
 public interface InternalDownloadService extends DownloadService, ReloadableBean {
-    /**
-     * Internal method to open a transation before calling getInfo on the repository.
-     */
-    @Lock(transactional = true)
-    RepoResource getInfo(Repo repo, InternalRequestContext context);
 
     /**
      * Will cause the provided latch to unlock notifying download waiters on a remote repo. We do this after transaction
-     * so that new download thread will not override the yet-to-be-committed jcr file.
+     * so that new download thread will not override the yet-to-be-committed vfs file.
      *
      * @param currentDownload
      */

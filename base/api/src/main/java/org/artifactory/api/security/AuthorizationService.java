@@ -81,7 +81,7 @@ public interface AuthorizationService {
     /**
      * @return True if the current user has admin permissions on a target info that includes this path..
      */
-    boolean canAdmin(RepoPath path);
+    boolean canManage(RepoPath path);
 
     /**
      * Indicates if the current user has the given permission, no matter the target
@@ -114,7 +114,7 @@ public interface AuthorizationService {
     /**
      * @return True if the user can administer the specified path.
      */
-    boolean canAdmin(UserInfo user, RepoPath path);
+    boolean canManage(UserInfo user, RepoPath path);
 
     /**
      * @return True if users in the group can read the specified path.
@@ -139,7 +139,7 @@ public interface AuthorizationService {
     /**
      * @return True if users in the group can administer the specified path.
      */
-    boolean canAdmin(GroupInfo group, RepoPath path);
+    boolean canManage(GroupInfo group, RepoPath path);
 
     /**
      * @return True if the current is a system administrator.
@@ -152,7 +152,8 @@ public interface AuthorizationService {
     boolean isAnonymous();
 
     /**
-     * @return The current logged in username.
+     * @return The current logged in username. {@link org.artifactory.api.security.SecurityService#USER_SYSTEM} is
+     *         returned if no login information is found.
      */
     @Nonnull
     String currentUsername();

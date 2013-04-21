@@ -27,6 +27,7 @@ import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
+import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
@@ -70,7 +71,8 @@ import java.util.Map;
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
-                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "quotaConfig"},
+                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "quotaConfig",
+                "externalProviders"},
         namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
@@ -91,7 +93,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElementWrapper(name = "proxies")
     @XmlElement(name = "proxy", required = false)
-    private List<ProxyDescriptor> proxies = new ArrayList<ProxyDescriptor>();
+    private List<ProxyDescriptor> proxies = new ArrayList<>();
     @XmlElement(defaultValue = DEFAULT_DATE_FORMAT)
     private String dateFormat = DEFAULT_DATE_FORMAT;
 
@@ -100,7 +102,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElementWrapper(name = "backups")
     @XmlElement(name = "backup", required = false)
-    private List<BackupDescriptor> backups = new ArrayList<BackupDescriptor>();
+    private List<BackupDescriptor> backups = new ArrayList<>();
 
     private IndexerDescriptor indexer;
 
@@ -157,6 +159,9 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private CleanupConfigDescriptor cleanupConfig;
+
+    @XmlElement
+    private ExternalProvidersDescriptor externalProviders;
 
     private QuotaConfigDescriptor quotaConfig;
 
@@ -884,5 +889,15 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     private <T extends ReplicationBaseDescriptor> void removeReplication(T replicationDescriptor,
             List<T> replications) {
         replications.remove(replicationDescriptor);
+    }
+
+    @Override
+    public ExternalProvidersDescriptor getExternalProvidersDescriptor() {
+        return externalProviders;
+    }
+
+    @Override
+    public void setExternalProvidersDescriptor(ExternalProvidersDescriptor externalProvidersDescriptor) {
+        this.externalProviders = externalProvidersDescriptor;
     }
 }

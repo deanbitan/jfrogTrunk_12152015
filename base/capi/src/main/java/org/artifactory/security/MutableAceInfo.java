@@ -34,7 +34,7 @@ public interface MutableAceInfo extends AceInfo {
 
     void setMask(int mask);
 
-    void setAdmin(boolean admin);
+    void setManage(boolean manage);
 
     void setDelete(boolean delete);
 

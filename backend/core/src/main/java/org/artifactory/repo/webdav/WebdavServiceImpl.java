@@ -31,19 +31,19 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.md.MetadataInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -144,7 +144,7 @@ public class WebdavServiceImpl implements WebdavService {
         int propertyFindType = FIND_ALL_PROP;
         Node propNode = null;
         //get propertyNode and type
-        if (request.getContentLength() != 0) {
+        if (request.getContentLength() > 0) {
             DocumentBuilder documentBuilder = getDocumentBuilder();
             try {
                 Document document = documentBuilder.parse(
@@ -244,20 +244,14 @@ public class WebdavServiceImpl implements WebdavService {
         }
 
         // make sure the parent exists
-        JcrFolder parentFolder = repo.getLockedJcrFolder(repoPath.getParent(), false);
+        VfsFolder parentFolder = repo.getMutableFolder(repoPath.getParent());
         if (parentFolder == null) {
             response.sendError(HttpStatus.SC_CONFLICT,
                     "Directory cannot be created: parent doesn't exist: " + repoPath.getParent(), log);
             return;
         }
 
-        JcrFolder targetFolder = repo.getLockedJcrFolder(repoPath, true);
-        boolean created = targetFolder.mkdirs();
-        if (!created) {
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR,
-                    "Directory cannot be created: " + repoPath, log);
-            return;
-        }
+        repo.createOrGetFolder(repoPath);
         response.setStatus(HttpStatus.SC_CREATED);
     }
 
@@ -270,20 +264,32 @@ public class WebdavServiceImpl implements WebdavService {
             response.setStatus(HttpStatus.SC_NOT_FOUND);
             return;
         }
-        if (request.isMetadata()) {
-            String metadataName = NamingUtils.getMetadataName(repoPath.getPath());
-            MetadataInfo metadataInfo = repoService.getMetadataInfo(repoPath, metadataName);
-            if (metadataInfo == null) {
-                response.setStatus(HttpStatus.SC_NOT_FOUND);
-                return;
-            }
+
+        if (!NamingUtils.isProperties(repoPath.getPath())) {
+            deleteItem(response, repoPath);
+        } else {
+            deleteProperties(response, repoPath);
         }
+    }
+
+    private void deleteItem(ArtifactoryResponse response, RepoPath repoPath) throws IOException {
         StatusHolder statusHolder = repoService.undeploy(repoPath);
         if (statusHolder.isError()) {
             response.sendError(statusHolder);
-            return;
+        } else {
+            response.setStatus(HttpStatus.SC_NO_CONTENT);
         }
-        response.setStatus(HttpStatus.SC_NO_CONTENT);
+    }
+
+    private void deleteProperties(ArtifactoryResponse response, RepoPath repoPath) throws IOException {
+        RepoPathImpl itemRepoPath = new RepoPathImpl(repoPath.getRepoKey(),
+                NamingUtils.stripMetadataFromPath(repoPath.getPath()));
+        boolean removed = repoService.removeProperties(itemRepoPath);
+        if (removed) {
+            response.setStatus(HttpStatus.SC_NO_CONTENT);
+        } else {
+            response.sendError(HttpStatus.SC_NOT_FOUND, "Failed to remove properties from " + itemRepoPath, log);
+        }
     }
 
     @Override

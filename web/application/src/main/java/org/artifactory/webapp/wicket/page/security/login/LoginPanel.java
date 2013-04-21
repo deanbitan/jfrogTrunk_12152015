@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.security.login;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
@@ -56,6 +55,8 @@ public class LoginPanel extends TitledActionPanel {
     @SpringBean
     private AddonsManager addons;
 
+    @SpringBean
+    private SecurityService securityService;
 
     @SpringBean
     private UserGroupService userGroupService;
@@ -69,7 +70,8 @@ public class LoginPanel extends TitledActionPanel {
             boolean neverLoggedIn =
                     (userInfo.getLastLoginTimeMillis() == 0) && (StringUtils.isEmpty(userInfo.getLastLoginClientIp()));
             String password = userInfo.getPassword();
-            boolean defaultPassword = (DigestUtils.md5Hex(SecurityService.DEFAULT_ADMIN_PASSWORD).equals(password));
+            boolean defaultPassword = (securityService.generateSaltedPassword(userInfo.getSalt(),
+                    SecurityService.DEFAULT_ADMIN_PASSWORD).equals(password));
             defaultCredentialsLabel.setVisible(neverLoggedIn && defaultPassword);
         } catch (Exception ignored) {
             defaultCredentialsLabel.setVisible(false);

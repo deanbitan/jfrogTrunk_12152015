@@ -19,6 +19,7 @@
 package org.artifactory.api.security;
 
 import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserInfo;
 import org.testng.annotations.Test;
 
@@ -56,6 +57,7 @@ public class UserInfoBuilderTest {
         assertEquals(user.getLastLoginTimeMillis(), 0);
         assertNull(user.getLastAccessClientIp());
         assertEquals(user.getLastAccessTimeMillis(), 0);
+        assertNotNull(user.getSalt());
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -66,10 +68,19 @@ public class UserInfoBuilderTest {
 
     public void emailBuild() {
         UserInfoBuilder builder = new UserInfoBuilder("yossis");
-        builder.email("yossis@test.org").password("secret");
+        builder.email("yossis@test.org").password(new SaltedPassword("secret", "SALT"));
         UserInfo user = builder.build();
         assertEquals(user.getEmail(), "yossis@test.org");
         assertEquals(user.getPassword(), "secret");
+    }
+
+    public void saltBuild() {
+        UserInfoBuilder builder = new UserInfoBuilder("yossis");
+        builder.email("yossis@test.org").password(new SaltedPassword("secret", "SALT"));
+        UserInfo user = builder.build();
+        assertEquals(user.getEmail(), "yossis@test.org");
+        assertEquals(user.getPassword(), "secret");
+        assertEquals(user.getSalt(), "SALT");
     }
 
 }

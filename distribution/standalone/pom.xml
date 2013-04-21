@@ -24,12 +24,8 @@
     <parent>
         <artifactId>artifactory-distribution-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>2.6.7</version>
+        <version>3.0.0</version>
     </parent>
-
-    <properties>
-        <cli.version>1.0</cli.version>
-    </properties>
 
     <build>
         <finalName>artifactory</finalName>
@@ -55,6 +51,18 @@
             <type>war</type>
         </dependency>
         <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-logging-juli</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
         </dependency>
@@ -77,8 +85,18 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.18</version>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>ojdbc6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>sqljdbc4</artifactId>
         </dependency>
         <!-- support running dev mode artifactory -->
         <dependency>
@@ -90,18 +108,15 @@
     <profiles>
         <profile>
             <id>release</id>
-            <!-- dependencies for packaging -->
             <dependencies>
                 <dependency>
-                    <groupId>org.jfrog.artifactory.client</groupId>
-                    <artifactId>artifactory-cli</artifactId>
-                    <version>${cli.version}</version>
+                    <groupId>org.apache.tomcat</groupId>
+                    <artifactId>tomcat</artifactId>
                     <type>zip</type>
                 </dependency>
             </dependencies>
             <build>
                 <plugins>
-                    <!-- unpack the cli standalone zip -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
@@ -115,12 +130,10 @@
                                 <configuration>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>org.jfrog.artifactory.client</groupId>
-                                            <artifactId>artifactory-cli</artifactId>
-                                            <version>${cli.version}</version>
+                                            <groupId>org.apache.tomcat</groupId>
+                                            <artifactId>tomcat</artifactId>
                                             <type>zip</type>
-                                            <overWrite>true</overWrite>
-                                            <outputDirectory>${project.build.directory}/cli</outputDirectory>
+                                            <outputDirectory>${project.build.directory}/tomcat-extract</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>

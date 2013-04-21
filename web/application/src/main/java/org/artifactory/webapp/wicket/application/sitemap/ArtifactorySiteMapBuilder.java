@@ -21,13 +21,13 @@ package org.artifactory.webapp.wicket.application.sitemap;
 import org.apache.wicket.Page;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.BlackDuckWebAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.SearchAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.addon.wicket.WebstartWebAddon;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.common.wicket.model.sitemap.MenuNodeVisitor;
 import org.artifactory.common.wicket.model.sitemap.SiteMap;
@@ -46,9 +46,9 @@ import org.artifactory.webapp.wicket.page.home.settings.ivy.gradle.GradleBuildSc
 import org.artifactory.webapp.wicket.page.home.settings.maven.MavenSettingsPage;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
+import org.artifactory.webapp.wicket.page.search.bintray.BintraySearchPage;
 import org.artifactory.webapp.wicket.page.search.checksum.ChecksumSearchPage;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPage;
-import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPage;
 
 import java.util.Iterator;
 
@@ -103,10 +103,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         searchGroup.addChild(propertiesWebAddon.getPropertySearchMenuNode("Property Search"));
         searchGroup.addChild(new ArtifactsPageNode("Checksum Search", ChecksumSearchPage.class));
-        if (ConstantValues.searchXmlIndexing.getBoolean()) {
-            searchGroup.addChild(new ArtifactsPageNode("POM/XML Search", MetadataSearchPage.class));
-        }
-
+        searchGroup.addChild(new ArtifactsPageNode("Remote Search", BintraySearchPage.class));
         DeployArtifactPageNode deployPage = new DeployArtifactPageNode(DeployArtifactPage.class, "Deploy");
         root.addChild(deployPage);
         MenuNode deployGroup = new OpenedMenuNode("Deploy");
@@ -117,7 +114,9 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         MenuNode adminPage = new AdminPageNode("Admin");
         root.addChild(adminPage);
         LicensesWebAddon licensesWebAddon = addons.addonByType(LicensesWebAddon.class);
-        MenuNode adminConfiguration = applicationAddon.getConfigurationMenuNode(propertiesWebAddon, licensesWebAddon);
+        BlackDuckWebAddon blackDuckWebAddon = addons.addonByType(BlackDuckWebAddon.class);
+        MenuNode adminConfiguration = applicationAddon.getConfigurationMenuNode(propertiesWebAddon, licensesWebAddon,
+                blackDuckWebAddon);
         adminPage.addChild(adminConfiguration);
 
         WebstartWebAddon webstartAddon = addons.addonByType(WebstartWebAddon.class);

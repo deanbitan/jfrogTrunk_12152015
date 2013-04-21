@@ -32,9 +32,9 @@ import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.jaxb.JaxbHelper;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.util.FileUtils;
+import org.artifactory.util.Files;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -169,7 +169,7 @@ public class CentralConfigReadWriteTest {
     public void readWrittenCentralConfig() {
         File outputConfig = new File(testDir, "central.config.test.xml");
         // This needs to be here because this is for a test of writing and re-reading configs.
-        CentralConfigDescriptor cc = JaxbHelper.readConfig(FileUtils.readFileToString(outputConfig));
+        CentralConfigDescriptor cc = JaxbHelper.readConfig(Files.readFileToString(outputConfig));
 
         assertEquals(cc.getServerName(), "mymy");
         assertTrue(cc.getSecurity().isAnonAccessEnabled());

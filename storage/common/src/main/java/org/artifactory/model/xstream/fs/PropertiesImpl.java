@@ -25,10 +25,10 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.md.PropertiesInfo;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

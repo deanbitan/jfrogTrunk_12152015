@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2012 JFrog Ltd.
+ * Copyright (C) 2013 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,7 +27,6 @@ import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
 import org.artifactory.api.rest.artifact.RestFolderInfo;
-import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
@@ -155,7 +154,6 @@ public class StorageInfoHelper {
         storageInfoRest.lastModified = RestUtils.toIsoDateString(itemInfo.getLastModified());
         storageInfoRest.modifiedBy = itemInfo.getModifiedBy();
         storageInfoRest.lastUpdated = RestUtils.toIsoDateString(itemInfo.getLastUpdated());
-        storageInfoRest.metadataUri = uri + "?" + ArtifactRestConstants.PARAM_METADATA_NAMES_PREFIX;
     }
 
     private String buildDownloadUrl() {
@@ -177,7 +175,7 @@ public class StorageInfoHelper {
         // Outside the loop since we want Jackson to parse it as an empty list if there aren't any properties
         storageInfo.properties = Maps.newTreeMap();
 
-        Properties propertiesAnnotatingItem = repositoryService.getMetadata(itemInfo.getRepoPath(), Properties.class);
+        Properties propertiesAnnotatingItem = repositoryService.getProperties(itemInfo.getRepoPath());
         if (propertiesAnnotatingItem != null && !propertiesAnnotatingItem.isEmpty()) {
             for (String propertyName : propertiesAnnotatingItem.keySet()) {
                 storageInfo.properties.put(propertyName,

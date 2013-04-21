@@ -18,7 +18,7 @@
 
 package org.artifactory.maven.versioning;
 
-import org.artifactory.jcr.fs.JcrTreeNode;
+import org.artifactory.storage.fs.tree.ItemNode;
 
 /**
  * A {@link MavenMetadataVersionComparator} that determines the latest and release versions based on a versions comparator.
@@ -36,7 +36,7 @@ public class VersionNameMavenMetadataVersionComparator implements MavenMetadataV
     private final MavenVersionComparator comparator = new MavenVersionComparator();
 
     @Override
-    public int compare(JcrTreeNode o1, JcrTreeNode o2) {
+    public int compare(ItemNode o1, ItemNode o2) {
         return comparator.compare(o1.getName(), o2.getName());
     }
 

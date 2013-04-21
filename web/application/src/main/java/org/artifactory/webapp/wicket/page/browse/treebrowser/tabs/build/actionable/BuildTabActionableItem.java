@@ -20,20 +20,16 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actiona
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.artifactory.api.build.BuildService;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.actionable.ActionableItemBase;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.GoToBuildAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ShowInCiServerAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.action.ViewBuildJsonAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.slf4j.Logger;
-
-import java.io.IOException;
+import org.slf4j.LoggerFactory;
 
 /**
  * Artifact associated build actionable item
@@ -42,6 +38,7 @@ import java.io.IOException;
  */
 public class BuildTabActionableItem extends ActionableItemBase {
 
+    @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(BuildTabActionableItem.class);
 
     private String moduleId;
@@ -62,21 +59,9 @@ public class BuildTabActionableItem extends ActionableItemBase {
         getActions().add(new GoToBuildAction(buildRun, moduleId));
         viewJsonAction = new ViewBuildJsonAction(textContentViewer, buildRun);
         getActions().add(viewJsonAction);
-
-        try {
-            BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
-            String ciServerUrl = buildService.getBuildCiServerUrl(buildRun);
-            if (StringUtils.isNotBlank(ciServerUrl)) {
-                getActions().add(new ShowInCiServerAction(ciServerUrl));
-            }
-        } catch (IOException e) {
-            String buildName = buildRun.getName();
-            String buildNumber = buildRun.getNumber();
-            String buildStarted = buildRun.getStarted();
-            String message = String.format("Unable to extract CI server URL if build '%s' #%s that started at %s",
-                    buildName, buildNumber, buildStarted);
-            log.error(message + ": {}", e.getMessage());
-            log.debug(message + ".", e);
+        String ciServerUrl = buildRun.getCiUrl();
+        if (StringUtils.isNotBlank(ciServerUrl)) {
+            getActions().add(new ShowInCiServerAction(ciServerUrl));
         }
     }
 

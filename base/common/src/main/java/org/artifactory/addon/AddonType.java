@@ -41,7 +41,8 @@ public enum AddonType {
     FILTERED_RESOURCES("filtered-resources", "Filtered Resources", 1300),
     SSO("sso", "Crowd & SSO Integration", 1400),
     WATCH("watch", "Watches", 1500),
-    WEBSTART("webstart", "WebStart & Jar Signing", 1600);
+    WEBSTART("webstart", "WebStart & Jar Signing", 1600),
+    BLACKDUCK("blackduck", "Black Duck Integration", 250);
 
     private String addonName;
     private String addonDisplayName;

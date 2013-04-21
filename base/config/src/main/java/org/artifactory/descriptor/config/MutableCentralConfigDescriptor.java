@@ -21,6 +21,7 @@ package org.artifactory.descriptor.config;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
+import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
@@ -240,4 +241,6 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor);
 
     void setQuotaConfig(QuotaConfigDescriptor descriptor);
+
+    void setExternalProvidersDescriptor(ExternalProvidersDescriptor externalProvidersDescriptor);
 }

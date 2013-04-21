@@ -21,13 +21,13 @@ package org.artifactory.api.request;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -216,10 +216,6 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         }
 
         //REPO HANDLING
-
-        //Look for the deprecated legacy format of repo-key@repo
-        int legacyRepoSeparatorIndex = repoKey.indexOf(ArtifactoryRequest.LEGACY_REPO_SEP);
-        repoKey = legacyRepoSeparatorIndex > 0 ? repoKey.substring(0, legacyRepoSeparatorIndex) : repoKey;
 
         //Calculate matrix params on the repo
         repoKey = processMatrixParamsIfExist(repoKey);

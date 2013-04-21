@@ -50,8 +50,10 @@
     <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider"/>
     <bean id="crowdAuthenticationProviderAdapter"
           class="org.artifactory.security.crowd.CrowdAuthenticationProviderAdapter"/>
-    <bean id="jcrAuthenticationProvider" class="org.artifactory.security.jcr.JcrAuthenticationProvider">
-        <property name="userDetailsService" ref="userDetailsService"/>
+    <bean id="dbAuthenticationProvider" class="org.artifactory.security.db.DbAuthenticationProvider">
+        <property name="userDetailsService" ref="dbUserDetailsService"/>
+        <property name="saltSource" ref="dbUserDetailsService"/>
+        <property name="passwordEncoder" ref="passwordEncoder"/>
     </bean>
 
     <!-- authentication providers order is important. keep internal provider after ldap and sso -->
@@ -61,11 +63,14 @@
             <list>
                 <ref bean="ldapAuthenticationProvider"/>
                 <ref bean="crowdAuthenticationProviderAdapter"/>
-                <ref bean="jcrAuthenticationProvider"/>
+                <ref bean="dbAuthenticationProvider"/>
                 <ref bean="rememberMeAuthenticationProvider"/>
             </list>
         </property>
     </bean>
+
+    <bean id="passwordEncoder"
+          class="org.springframework.security.authentication.encoding.Md5PasswordEncoder"/>
 
     <bean id="rememberMeProcessingFilter"
           class="org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter">
@@ -75,7 +80,7 @@
 
     <bean id="rememberMeServices"
           class="org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices">
-        <property name="userDetailsService" ref="userDetailsService"/>
+        <property name="userDetailsService" ref="dbUserDetailsService"/>
         <property name="key" value="artifactory"/>
         <property name="tokenValiditySeconds" value="604800"/>
     </bean>

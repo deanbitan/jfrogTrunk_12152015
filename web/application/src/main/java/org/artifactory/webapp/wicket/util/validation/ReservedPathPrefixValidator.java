@@ -25,7 +25,7 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.webapp.servlet.RequestUtils;
 
 /**
- * Validates that the given to-be repo-key isn't equal to a reserved name (repo, jcr, webapp, etc.)
+ * Validates that the given to-be repo-key isn't equal to a reserved name (repo, webapp, etc.)
  *
  * @author Noam Y. Tenne
  */

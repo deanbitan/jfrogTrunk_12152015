@@ -26,7 +26,7 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.Lock;
-import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.sapi.fs.VfsFile;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,11 +42,6 @@ import java.io.OutputStream;
  */
 public interface NuGetAddon extends Addon {
 
-    String NUGET_PREFIX = "nuget";
-    String PROP_NUGET_ID = NUGET_PREFIX + ".id";
-    String PROP_NUGET_VERSION = NUGET_PREFIX + ".version";
-    String PROP_NUGET_IS_LATEST_VERSION = NUGET_PREFIX + ".isLatestVersion";
-    String PROP_NUGET_DIGEST = NUGET_PREFIX + ".digest";
     String API_KEY_HEADER = "X-NuGet-ApiKey";
     String API_KEY_SEPARATOR = ":";
     String REPO_KEY_PARAM = "repoKey";
@@ -61,7 +56,7 @@ public interface NuGetAddon extends Addon {
      * @param statusHolder Status holder for logging
      */
     @Async(transactional = true, delayUntilAfterCommit = true)
-    void extractNuPkgInfo(VfsItem item, MutableStatusHolder statusHolder);
+    void extractNuPkgInfo(VfsFile item, MutableStatusHolder statusHolder);
 
     /**
      * Requests an async nupkg latest update for the given repository and packaged ID
@@ -86,7 +81,6 @@ public interface NuGetAddon extends Addon {
      * @param subActionParam An action parameter in addition to the main one
      * @param output         Output stream to write the response to
      */
-    @Lock(transactional = true)
     void handleSearchRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
             @Nullable String subActionParam, OutputStream output) throws IOException;
 
@@ -100,7 +94,7 @@ public interface NuGetAddon extends Addon {
      * @return Null if the result was written directly to the original response, a response object otherwise
      */
     @Nullable
-    @Lock(transactional = true)
+    @Lock
     ResponseCtx handleDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
             @Nonnull String packageId, @Nonnull String packageVersion);
 
@@ -111,7 +105,7 @@ public interface NuGetAddon extends Addon {
      * @param repoKey Key of repository to search in
      * @param output  Output stream to write the response to
      */
-    @Lock(transactional = true)
+    @Lock
     void handlePackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
             @Nonnull OutputStream output) throws IOException;
 
@@ -122,7 +116,6 @@ public interface NuGetAddon extends Addon {
      * @param repoKey Key of repository to search in
      * @param output  Output stream to write the response to
      */
-    @Lock(transactional = true)
     void handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
             @Nonnull OutputStream output) throws IOException;
 
@@ -135,7 +128,7 @@ public interface NuGetAddon extends Addon {
      * @param actionParam An action parameter in addition to the main one
      * @param output      Output stream to write the response to
      */
-    @Lock(transactional = true)
+    @Lock
     void handleGetUpdatesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
             @Nullable String actionParam, @Nonnull OutputStream output) throws IOException;
 

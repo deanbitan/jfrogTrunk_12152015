@@ -40,6 +40,11 @@ public class RestFolderInfo extends RestBaseStorageInfo {
         }
 
         @Override
+        public String toString() {
+            return uri + (folder ? "/" : "");
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) {
                 return true;

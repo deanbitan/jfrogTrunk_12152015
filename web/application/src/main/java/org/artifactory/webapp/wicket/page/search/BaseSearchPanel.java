@@ -128,7 +128,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
                     msg.append(rowCount).append(" out of ").
                             append(fullResultsCount == queryLimit ? "more than " : "").append(fullResultsCount).
                             append(" matches found for '").append(searchExpression).append("'");
-                } else if (isLimitSearchResults() && fullResultsCount == -1 && rowCount == maxResults) {
+                } else if (isLimitSearchResults() && fullResultsCount == -1 && rowCount >= maxResults) {
                     msg.append("Showing first ").append(rowCount).append(" matches found for '").
                             append(searchExpression).append("'");
                 } else if (searchExpression == null) {

@@ -20,6 +20,7 @@ package org.artifactory.repo.snapshot;
 
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.spring.InternalArtifactoryContext;
@@ -29,6 +30,7 @@ import org.testng.annotations.Test;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.artifactory.mime.MavenNaming.MAVEN_METADATA_NAME;
 import static org.easymock.EasyMock.*;
 
 /**
@@ -81,6 +83,8 @@ public class UniqueSnapshotVersionAdapterTest extends BaseSnapshotAdapterTest<Un
         RepositoryService repositoryServiceMock = createMock(RepositoryService.class);
         expect(repositoryServiceMock.exists(repoPath)).andReturn(false).anyTimes();
         expect(repositoryServiceMock.exists(repoPath.getParent())).andReturn(false).anyTimes();
+        expect(repositoryServiceMock.exists(new RepoPathImpl(repoPath.getParent(), MAVEN_METADATA_NAME)))
+                .andReturn(false).anyTimes();
         InternalArtifactoryContext contextMock = createMock(InternalArtifactoryContext.class);
         expect(contextMock.getRepositoryService()).andReturn(repositoryServiceMock).anyTimes();
         ArtifactoryContextThreadBinder.bind(contextMock);

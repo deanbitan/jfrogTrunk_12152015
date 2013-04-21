@@ -18,8 +18,8 @@
 
 package org.artifactory.io.checksum;
 
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -49,6 +49,31 @@ public class ChecksumInputStream extends BufferedInputStream {
 
     public boolean isClosed() {
         return closed;
+    }
+
+    @Override
+    public synchronized long skip(long n) throws IOException {
+        throw new UnsupportedOperationException("Checksum input stream calculator does not support skip!");
+    }
+
+    @Override
+    public boolean markSupported() {
+        return false;
+    }
+
+    @Override
+    public synchronized void mark(int readlimit) {
+        throw new UnsupportedOperationException("Checksum input stream calculator does not support mark!");
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        log.trace("Resetting {}", in);
+        super.reset();
+        totalBytesRead = 0L;
+        for (Checksum checksum : checksums) {
+            checksum.reset();
+        }
     }
 
     @Override

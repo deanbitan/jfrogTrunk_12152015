@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.search;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
@@ -29,19 +30,19 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
-import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.panel.sidemenu.SubMenuPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.browse.home.RememberPageBehavior;
 import org.artifactory.webapp.wicket.page.search.archive.ArchiveSearchPanel;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPanel;
+import org.artifactory.webapp.wicket.page.search.bintray.BintraySearchPage;
+import org.artifactory.webapp.wicket.page.search.bintray.BintraySearchPanel;
 import org.artifactory.webapp.wicket.page.search.checksum.ChecksumSearchPanel;
 import org.artifactory.webapp.wicket.page.search.gavc.GavcSearchPanel;
-import org.artifactory.webapp.wicket.page.search.metadata.MetadataSearchPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -56,6 +57,7 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     private static final Logger log = LoggerFactory.getLogger(BaseSearchPage.class);
 
     public static final String QUERY_PARAM = "q";
+    public static final String SEARCH_TABS = "searchTabs";
 
     @SpringBean
     private AddonsManager addons;
@@ -64,7 +66,8 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     public static final int GAVC_SEARCH_INDEX = 2;
     public static final int PROPERTY_SEARCH_INDEX = 3;
     public static final int CHECKSUM_SEARCH_INDEX = 4;
-    public static final int METADATA_SEARCH_INDEX = 5;
+    public static final int BINTRAY_SEARCH_INDEX = 5;
+    public static final int METADATA_SEARCH_INDEX = 6;
 
     private String searchQuery;
 
@@ -127,16 +130,13 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
             }
         });
 
-        if (ConstantValues.searchXmlIndexing.getBoolean()) {
-            tabs.add(new AbstractTab(Model.of("POM/XML Search")) {
-                @Override
-                public Panel getPanel(String panelId) {
-                    return new MetadataSearchPanel(BaseSearchPage.this, panelId);
-                }
-            });
-        }
-
-        TabbedPanel tabbedPanel = new StyledTabbedPanel("searchTabs", tabs) {
+        tabs.add(new AbstractTab(Model.of("Remote Search")) {
+            @Override
+            public Panel getPanel(String panelId) {
+                return new BintraySearchPanel(panelId);
+            }
+        });
+        TabbedPanel tabbedPanel = new StyledTabbedPanel(SEARCH_TABS, tabs) {
             /*
             Renders the side menu panel, because after we "redirect" between the different search pages, it disappears
              */
@@ -144,12 +144,15 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
             @Override
             protected void onAjaxUpdate(AjaxRequestTarget target) {
                 super.onAjaxUpdate(target);
-                Class<? extends BaseSearchPage> menuPageClass =
-                        ((BaseSearchPanel) get(TAB_PANEL_ID)).getMenuPageClass();
-
-                SubMenuPanel sideMenuPanel =
-                        new SubMenuPanel("sideMenuPanel", getSecondLevelMenuNodes(), menuPageClass);
-
+                Component component = get(TAB_PANEL_ID);
+                Class<? extends BaseSearchPage> menuPageClass;
+                if (component instanceof BaseSearchPanel) {
+                    menuPageClass = ((BaseSearchPanel) component).getMenuPageClass();
+                } else {
+                    menuPageClass = BintraySearchPage.class;
+                }
+                SubMenuPanel sideMenuPanel = new SubMenuPanel("sideMenuPanel", getSecondLevelMenuNodes(),
+                        menuPageClass);
                 BaseSearchPage.this.replace(sideMenuPanel);
                 if (target != null) {
                     target.add(sideMenuPanel);

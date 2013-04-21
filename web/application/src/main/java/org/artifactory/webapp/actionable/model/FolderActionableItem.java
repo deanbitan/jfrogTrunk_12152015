@@ -88,8 +88,8 @@ public class FolderActionableItem extends CachedItemActionableItem
 
     private String calcCompactedDisplayName(List<FolderInfo> folderList) {
         StringBuilder name = new StringBuilder();
-        for (FolderInfo jcrFolder : folderList) {
-            name.append('/').append(jcrFolder.getName());
+        for (FolderInfo folder : folderList) {
+            name.append('/').append(folder.getName());
         }
         return name.substring(1);
     }
@@ -219,7 +219,7 @@ public class FolderActionableItem extends CachedItemActionableItem
     }
 
     private boolean isCompacted() {
-        return !getItemInfo().getRepoPath().equals(folderInfo.getRepoPath());
+        return !getRepoPath().equals(folderInfo.getRepoPath());
     }
 
     public boolean hasStatsInfo() {

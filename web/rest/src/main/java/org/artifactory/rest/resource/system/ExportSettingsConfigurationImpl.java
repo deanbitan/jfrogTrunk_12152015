@@ -31,7 +31,7 @@ public class ExportSettingsConfigurationImpl {
     private boolean createArchive;
     private boolean bypassFiltering;
     private boolean verbose;
-    private boolean failOnError = true;
+    private boolean failOnError = false;
     private boolean failIfEmpty = true;
     private boolean m2;
     private boolean incremental;

@@ -26,7 +26,6 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.build.BuildRun;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.DoesNotExistException;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -38,6 +37,7 @@ import org.artifactory.webapp.wicket.page.build.panel.BuildsForNamePanel;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -225,9 +225,12 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
     private Build getBuild(String buildName, String buildNumber, String buildStarted) {
         boolean buildStartedSupplied = StringUtils.isNotBlank(buildStarted);
         try {
-            Build build;
+            Build build = null;
             if (buildStartedSupplied) {
-                build = buildService.getBuild(buildName, buildNumber, buildStarted);
+                BuildRun buildRun = buildService.getBuildRun(buildName, buildNumber, buildStarted);
+                if (buildRun != null) {
+                    build = buildService.getBuild(buildRun);
+                }
             } else {
                 //Take the latest build of the specified number
                 build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);

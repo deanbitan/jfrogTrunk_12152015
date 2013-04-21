@@ -25,16 +25,16 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.artifactory.api.repo.Async;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.lock.aop.LockingAdvice;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.tx.SessionResource;
+import org.artifactory.storage.fs.lock.aop.LockingAdvice;
+import org.artifactory.storage.fs.session.StorageSession;
+import org.artifactory.storage.fs.session.StorageSessionHolder;
+import org.artifactory.storage.tx.SessionResource;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
 import org.springframework.aop.support.AopUtils;
@@ -73,7 +73,7 @@ public class AsyncAdvice implements MethodInterceptor {
         boolean delayExecutionUntilCommit = asyncMethodAnnotation.annotation.delayUntilAfterCommit();
         boolean failIfNotScheduledFromTransaction =
                 asyncMethodAnnotation.annotation.failIfNotScheduledFromTransaction();
-        boolean inTransaction = LockingAdvice.isInJcrTransaction();
+        boolean inTransaction = LockingAdvice.isInTransaction();
         if (!inTransaction && delayExecutionUntilCommit) {
             if (failIfNotScheduledFromTransaction) {
                 throw new IllegalStateException("Async invocation scheduled for after commit, " +
@@ -93,8 +93,7 @@ public class AsyncAdvice implements MethodInterceptor {
         try {
             if (delayExecutionUntilCommit && inTransaction) {
                 //Schedule task submission for session save()
-                JcrService jcrService = InternalContextHelper.get().getJcrService();
-                JcrSession session = jcrService.getManagedSession();
+                StorageSession session = StorageSessionHolder.getSession();
                 MethodCallbackSessionResource sessionCallbacks =
                         session.getOrCreateResource(MethodCallbackSessionResource.class);
                 sessionCallbacks.setAdvice(this);
@@ -118,7 +117,7 @@ public class AsyncAdvice implements MethodInterceptor {
             Class<T> annotationClass) {
         Method method = invocation.getMethod();
         T annotation = method.getAnnotation(annotationClass);
-        //Try to read the class level annotation if the inerface is not found
+        //Try to read the class level annotation if the interface is not found
         if (annotation != null) {
             return new MethodAnnotation(method, annotation);
         }
@@ -195,7 +194,7 @@ public class AsyncAdvice implements MethodInterceptor {
             if (methodAnnotation.annotation.transactional()) {
                 //Wrap in a transaction
                 log.trace("Invoking {} in transaction", invocation);
-                return new LockingAdvice().invoke(invocation, true);
+                return new LockingAdvice().invoke(invocation);
             } else {
                 log.trace("Invoking {} ", invocation);
                 return invocation.proceed();
@@ -242,7 +241,7 @@ public class AsyncAdvice implements MethodInterceptor {
 
     public static class MethodCallbackSessionResource implements SessionResource {
         AsyncAdvice advice;
-        final List<MethodInvocation> invocations = new ArrayList<MethodInvocation>();
+        final List<MethodInvocation> invocations = new ArrayList<>();
         final CompoundInvocation sharedInvocations = new CompoundInvocation();
 
         public void setAdvice(AsyncAdvice advice) {

@@ -18,19 +18,18 @@
 
 package org.artifactory.update.md.current;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MetadataEntryInfo;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.MetadataReader;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
     private static final Logger log = LoggerFactory.getLogger(PassThroughMetadataReaderImpl.class);
 
     @Override
-    public List<MetadataEntryInfo> getMetadataEntries(File file, ImportSettings settings, MutableStatusHolder status) {
+    public List<MetadataEntryInfo> getMetadataEntries(File file, MutableStatusHolder status) {
         if (!file.isDirectory()) {
             status.setError("Expecting a directory but got file: " + file.getAbsolutePath(), log);
             return Collections.emptyList();
@@ -55,7 +54,7 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
         }
 
         //Import all the xml files within the metadata folder
-        List<MetadataEntryInfo> result = new ArrayList<MetadataEntryInfo>();
+        List<MetadataEntryInfo> result = Lists.newArrayListWithCapacity(metadataFileNames.length);
         for (String metadataFileName : metadataFileNames) {
             File metadataFile = new File(file, metadataFileName);
             String extension = PathUtils.getExtension(metadataFileName);
@@ -80,7 +79,7 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
 
     private boolean verify(MutableStatusHolder status, String metadataFileName, File metadataFile, String extension) {
         if (metadataFile.exists() && metadataFile.isDirectory()) {
-            //Sanity chek
+            //Sanity check
             status.setWarning("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
                     "'. Expected a file but encountered a folder.", log);
             return false;

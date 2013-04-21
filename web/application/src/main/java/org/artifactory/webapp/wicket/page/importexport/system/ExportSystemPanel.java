@@ -45,9 +45,9 @@ import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -109,21 +109,21 @@ public class ExportSystemPanel extends TitledPanel {
         m2CompatibleCheckbox.setOutputMarkupId(true);
         exportForm.add(m2CompatibleCheckbox);
         exportForm.add(new HelpBubble("m2CompatibleHelp",
-                "Include Maven 2 repository metadata and checksum files as part of the export"));
+                "Mark to include Maven 2 repository metadata and checksum files as part of the export"));
 
         final StyledCheckbox excludeMetadataCheckbox =
                 new StyledCheckbox("excludeMetadata", new PropertyModel(this, "excludeMetadata"));
         excludeMetadataCheckbox.setOutputMarkupId(true);
         exportForm.add(excludeMetadataCheckbox);
         exportForm.add(new HelpBubble("excludeMetadataHelp",
-                "Exclude Artifactory-specific metadata from the export.\n" +
+                "Mark to exclude repositories metadata from the export.\n" +
                         "(Maven 2 metadata is unaffected by this setting)"));
 
         final StyledCheckbox excludeBuildsCheckbox =
                 new StyledCheckbox("excludeBuilds", new PropertyModel(this, "excludeBuilds"));
         excludeBuildsCheckbox.setOutputMarkupId(true);
         exportForm.add(excludeBuildsCheckbox);
-        exportForm.add(new HelpBubble("excludeBuildsHelp", "Exclude all builds from the export."));
+        exportForm.add(new HelpBubble("excludeBuildsHelp", "Mark to exclude all builds from the export."));
 
         final StyledCheckbox excludeContentCheckbox =
                 new StyledCheckbox("excludeContent", new PropertyModel(this, "excludeContent"));
@@ -150,8 +150,7 @@ public class ExportSystemPanel extends TitledPanel {
         });
         exportForm.add(excludeContentCheckbox);
         exportForm.add(new HelpBubble("excludeContentHelp",
-                "Exclude repository binaries content from the export." +
-                        "To export repositories metadata uncheck the 'Exclude Metadata' checkbox.)"));
+                "Exclude repository binaries from the export."));
 
         //Create a zip archive (slow!)
         exportForm.add(new StyledCheckbox("createArchive", new PropertyModel<Boolean>(this, "createArchive")));

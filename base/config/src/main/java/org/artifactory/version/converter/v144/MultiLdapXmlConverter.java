@@ -18,7 +18,6 @@
 
 package org.artifactory.version.converter.v144;
 
-import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
@@ -30,8 +29,8 @@ import java.util.List;
 /**
  * Convert the {@link LdapGroupSetting} descriptor with the appropriate
  * LDAP setting to use. <p/>
- * The converter tries to find an enabled {@link LdapSetting}, if such a setting
- * does not exist, the converter will use the first found {@link LdapSetting#key}
+ * The converter tries to find an enabled {@link org.artifactory.descriptor.security.ldap.LdapSetting}, if such a
+ * setting does not exist, the converter will use the first found {@link org.artifactory.descriptor.security.ldap.LdapSetting#key}
  *
  * @author Tomer Cohen
  */

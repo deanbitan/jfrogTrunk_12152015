@@ -18,9 +18,9 @@
 
 package org.artifactory.security;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import javax.crypto.SecretKey;

@@ -20,9 +20,9 @@ package org.artifactory.webapp.wicket.page.config;
 
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.artifactory.descriptor.Descriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.util.DescriptionExtractor;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This model extracts the help message from the artifactory schema using the descriptor and property.

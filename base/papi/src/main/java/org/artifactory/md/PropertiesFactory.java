@@ -18,8 +18,8 @@
 
 package org.artifactory.md;
 
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 

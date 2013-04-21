@@ -30,11 +30,21 @@ import java.io.UnsupportedEncodingException;
  */
 public class StringInputStream extends ByteArrayInputStream {
 
+    private int length;
+
     public StringInputStream(String string) throws UnsupportedEncodingException {
         this(string, Charsets.UTF_8.displayName());
     }
 
     public StringInputStream(String string, String encoding) throws UnsupportedEncodingException {
         super(string.getBytes(encoding));
+        this.length = super.buf.length;
+    }
+
+    /**
+     * @return The length, in bytes, of the input stream
+     */
+    public int getLength() {
+        return length;
     }
 }

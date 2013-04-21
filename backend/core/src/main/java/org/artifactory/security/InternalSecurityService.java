@@ -23,14 +23,10 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.spring.ReloadableBean;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author yoavl
  */
 public interface InternalSecurityService extends ReloadableBean,
         AuthorizationService, UserGroupService, AclService, SecurityService {
-
-    @Transactional
-    void createOcmRoots();
 }

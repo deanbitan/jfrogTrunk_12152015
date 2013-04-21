@@ -89,8 +89,7 @@ public class DeleteAction extends RepoAwareItemAction {
     }
 
     protected String getDeleteConfirmMessage(RepoAwareItemEvent e) {
-        String defaultMessage = new StringBuilder().append("Are you sure you wish to delete '").
-                append(e.getSource().getDisplayName()).append("'?").toString();
+        String defaultMessage = "Are you sure you wish to delete '" + e.getSource().getDisplayName() + "'?";
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
         return buildAddon.getDeleteItemWarningMessage(e.getSource().getItemInfo(), defaultMessage);

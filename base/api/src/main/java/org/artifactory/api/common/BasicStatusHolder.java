@@ -19,12 +19,13 @@
 package org.artifactory.api.common;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
 import org.artifactory.exception.CancelException;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -43,6 +44,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
     public static final int CODE_INTERNAL_ERROR = 500;
 
     private boolean activateLogging;
+    // the latest status
     private StatusEntry statusEntry;
     private File outputFile;
     private StatusEntry lastError = null;
@@ -201,7 +203,8 @@ public class BasicStatusHolder implements MutableStatusHolder {
         Throwable throwable = entry.getException();
         if (!isVerbose() && throwable != null) {
             //Update the status message for when there's an exception message to append
-            statusMessage += ": " + throwable.getMessage();
+            statusMessage += ": " + (StringUtils.isNotBlank(throwable.getMessage()) ? throwable.getMessage() :
+                    throwable.getClass().getSimpleName());
         }
         if (entry.isWarning() && activeLogger.isWarnEnabled()) {
             if (isVerbose()) {

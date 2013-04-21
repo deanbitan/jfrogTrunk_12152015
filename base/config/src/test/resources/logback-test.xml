@@ -19,10 +19,11 @@
 
 <!-- This file is used when unit tests are executed -->
 <configuration>
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <pattern>%-30(%d{HH:mm:ss.SSS} [%thread]) [%-5p] \(%F:%L\) - %m%n</pattern>
-        </layout>
+        <encoder>
+            <pattern>%-30(%d{HH:mm:ss.SSS} [%thread]) [%-5p] \(%-20c{3}:%L\) - %m%n</pattern>
+        </encoder>
     </appender>
     <logger name="org.artifactory">
         <level value="warn"/>

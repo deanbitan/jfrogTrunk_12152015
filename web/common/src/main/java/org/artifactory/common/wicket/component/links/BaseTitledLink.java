@@ -29,8 +29,8 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.util.string.Strings;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.model.Titled;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.MissingResourceException;
 

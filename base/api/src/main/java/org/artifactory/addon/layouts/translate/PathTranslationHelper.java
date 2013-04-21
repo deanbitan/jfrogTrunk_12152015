@@ -23,10 +23,10 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.Pair;
 import org.artifactory.util.RepoLayoutUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 

@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.security.profile;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.wicket.Application;
 import org.apache.wicket.Page;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -37,6 +36,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
@@ -59,6 +59,7 @@ public class ProfilePage extends AuthenticatedPage {
     private final TitledAjaxSubmitLink updateLink;
     private final Form form;
     private final BintrayProfilePanel bintrayProfilePanel;
+    private final ProfileLockPanel profileLockPanel;
     private MavenSettingsPanel mavenSettingsPanel;
 
     public ProfilePage() {
@@ -72,7 +73,7 @@ public class ProfilePage extends AuthenticatedPage {
         profile.setEmail(userInfo.getEmail());
         profile.setBintrayAuth(userInfo.getBintrayAuth());
         setOutputMarkupId(true);
-        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
+        setDefaultModel(new CompoundPropertyModel<>(profile));
 
         form = new Form("form");
 
@@ -89,18 +90,22 @@ public class ProfilePage extends AuthenticatedPage {
                 setResponsePage(Application.get().getHomePage());
             }
         };
-        cancelLink.setEnabled(false);
-        cancelLink.setVisible(authorizationService.isUpdatableProfile());
+
         add(cancelLink);
 
         form.add(new DefaultButtonBehavior(updateLink));
         add(form);
+        WebMarkupContainer adminAuthOverlay = new WebMarkupContainer("adminAuthOverlay");
 
+        form.add(adminAuthOverlay);
         profilePanel = new ProfilePanel("updatePanel", form, profile);
         form.add(profilePanel);
 
         bintrayProfilePanel = new BintrayProfilePanel("bintrayProfilePanel", profile);
         form.add(bintrayProfilePanel);
+
+        profileLockPanel = new ProfileLockPanel(profilePanel, bintrayProfilePanel, this, profile, adminAuthOverlay);
+        form.add(profileLockPanel);
 
         WebMarkupContainer mavenSettingsPanel = new WebMarkupContainer("mavenSettingsPanel");
         mavenSettingsPanel.setVisible(false);
@@ -113,8 +118,9 @@ public class ProfilePage extends AuthenticatedPage {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 ProfileModel profile = getUserProfile();
                 UserInfo userInfo = loadUserInfo();
-                String currentPasswordHashed = DigestUtils.md5Hex(profile.getCurrentPassword());
-                if (!authorizationService.isDisableInternalPassword() && !currentPasswordHashed.equals(
+                SaltedPassword userInputHashPassword = securityService.generateSaltedPassword(
+                        profile.getCurrentPassword(), userInfo.getSalt());
+                if (!authorizationService.isDisableInternalPassword() && !userInputHashPassword.getPassword().equals(
                         userInfo.getPassword())) {
                     error("The specified current password is incorrect.");
                 } else if (!StringUtils.hasText(profile.getEmail())) {
@@ -132,7 +138,7 @@ public class ProfilePage extends AuthenticatedPage {
                     if (!authorizationService.isDisableInternalPassword()) {
                         String newPassword = profile.getNewPassword();
                         if (StringUtils.hasText(newPassword)) {
-                            mutableUser.setPassword(DigestUtils.md5Hex(newPassword));
+                            mutableUser.setPassword(securityService.generateSaltedPassword(newPassword));
                             profile.setCurrentPassword(newPassword);
                             profilePanel.displayEncryptedPassword(mutableUser);
                             if (mavenSettingsPanel != null) {
@@ -148,6 +154,7 @@ public class ProfilePage extends AuthenticatedPage {
                 form.clearInput();
                 target.add(profilePanel);
                 AjaxUtils.refreshFeedback(target);
+
             }
         };
     }
@@ -193,9 +200,7 @@ public class ProfilePage extends AuthenticatedPage {
             ProfileModel userProfile = getUserProfile();
             mavenSettingsPanel = new MavenSettingsPanel("mavenSettingsPanel", userProfile);
             form.replace(mavenSettingsPanel);
-
-            bintrayProfilePanel.updateDefaultModel(userProfile);
-
+            bintrayProfilePanel.updateDefaultModel(userProfile, updatableProfile);
             profileEvent.getTarget().add(this, bintrayProfilePanel);
         }
     }

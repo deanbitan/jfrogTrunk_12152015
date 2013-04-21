@@ -20,13 +20,14 @@ package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.util.StringInputStream;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author freds
@@ -34,7 +35,6 @@ import org.slf4j.Logger;
 public class AbstractMetadataCalculator {
     private static final Logger log = LoggerFactory.getLogger(AbstractMetadataCalculator.class);
 
-    private JcrService jcrService;
     private InternalRepositoryService repositoryService;
 
     protected InternalRepositoryService getRepositoryService() {
@@ -44,19 +44,13 @@ public class AbstractMetadataCalculator {
         return repositoryService;
     }
 
-    protected JcrService getJcrService() {
-        if (jcrService == null) {
-            jcrService = InternalContextHelper.get().getJcrService();
-        }
-        return jcrService;
-    }
-
     protected void saveMetadata(RepoPath repoPath, Metadata metadata, BasicStatusHolder status) {
         String metadataStr;
         try {
             metadataStr = MavenModelUtils.mavenMetadataToString(metadata);
-            // Write lock auto upgrade supported LockingHelper.releaseReadLock(repoPath);
-            getRepositoryService().setXmlMetadataLater(repoPath, MavenNaming.MAVEN_METADATA_NAME, metadataStr);
+            //getRepositoryService().setXmlMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME, metadataStr);
+            RepoPathImpl mavenMetadataRepoPath = new RepoPathImpl(repoPath, MavenNaming.MAVEN_METADATA_NAME);
+            getRepositoryService().saveFileInternal(mavenMetadataRepoPath, new StringInputStream(metadataStr));
         } catch (Exception e) {
             status.setError("Error while writing metadata for " + repoPath + ".", e, log);
         }

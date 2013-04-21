@@ -69,7 +69,7 @@ public class DescriptionExtractorTest {
         assertNotNull(description, "Description should not be null");
         Assert.assertFalse(description.contains("[#text:") || description.contains("CDATA"),
                 "Looks like the query didn't get the resolved xml text");
-        Assert.assertEquals(description, "The format used for displaying dates.");
+        assertTrue(description.startsWith("The format used for displaying dates."));
     }
 
     public void inheritedProperty() {
@@ -77,7 +77,7 @@ public class DescriptionExtractorTest {
         String description = extractor.getDescription(httpRepo, "offline");
 
         assertNotNull(description, "Description should not be null");
-        assertTrue(description.startsWith("When set to true only"), "Description not match");
+        assertTrue(description.startsWith("When marked, only already-cached artifacts are retrieved"), "Description not match");
     }
 
     public void nestedProperty() {

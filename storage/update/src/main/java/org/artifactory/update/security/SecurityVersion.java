@@ -24,21 +24,15 @@ import org.artifactory.update.security.v2.RepoPathAclConverter;
 import org.artifactory.update.security.v2.SimpleUserConverter;
 import org.artifactory.update.security.v3.AclRepoKeysConverter;
 import org.artifactory.update.security.v3.AnyRemoteConverter;
-import org.artifactory.update.security.v3.OcmStorageConverter;
-import org.artifactory.update.security.v4.AnnotatePermissionOcmConverter;
 import org.artifactory.update.security.v4.AnnotatePermissionXmlConverter;
-import org.artifactory.update.security.v6.LdapGroupSettingLowerCaseOcmConverter;
 import org.artifactory.update.security.v6.LdapGroupSettingXmlConverter;
 import org.artifactory.update.security.v6.LowercaseUsernameXmlConverter;
-import org.artifactory.update.security.v7.DeleteForSecurityDumpConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
 import org.artifactory.version.XmlConverterUtils;
-import org.artifactory.version.converter.ConfigurationConverter;
 import org.artifactory.version.converter.XmlConverter;
 
-import javax.jcr.Session;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,45 +42,39 @@ import java.util.List;
  * @date Nov 9, 2008
  */
 public enum SecurityVersion implements SubConfigElementVersion {
-    unsupported(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v125rc6, null) {
+    unsupported(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v125rc6) {
         @Override
         public String convert(String in) {
             throw new IllegalStateException(
                     "Reading security data from backup of Artifactory version older than 1.2.5-rc6 is not supported!");
         }
     },
-    v1(ArtifactoryVersion.v125, ArtifactoryVersion.v125u1, null, new UserPermissionsConverter(), new AclsConverter()),
+    v1(ArtifactoryVersion.v125, ArtifactoryVersion.v125u1, new UserPermissionsConverter(), new AclsConverter()),
     v2(ArtifactoryVersion.v130beta1, ArtifactoryVersion.v130beta2,
-            null, new SimpleUserConverter(), new RepoPathAclConverter()),
-    v3(ArtifactoryVersion.v130beta3, ArtifactoryVersion.v208, new OcmStorageConverter(),
-            new AnyRemoteConverter(), new AclRepoKeysConverter()),
-    v4(ArtifactoryVersion.v210, ArtifactoryVersion.v210, new AnnotatePermissionOcmConverter(),
-            new AnnotatePermissionXmlConverter()),
-    v5(ArtifactoryVersion.v211, ArtifactoryVersion.v212, null),
+            new SimpleUserConverter(), new RepoPathAclConverter()),
+    v3(ArtifactoryVersion.v130beta3, ArtifactoryVersion.v208, new AnyRemoteConverter(), new AclRepoKeysConverter()),
+    v4(ArtifactoryVersion.v210, ArtifactoryVersion.v210, new AnnotatePermissionXmlConverter()),
+    v5(ArtifactoryVersion.v211, ArtifactoryVersion.v212),
     // due to a bug 2.1.2 was released with new security version that is the same as 4
-    v6(ArtifactoryVersion.v213, ArtifactoryVersion.v213, new LdapGroupSettingLowerCaseOcmConverter(),
-            new LdapGroupSettingXmlConverter(), new LowercaseUsernameXmlConverter()),
-    v7(ArtifactoryVersion.v220, ArtifactoryVersion.v264, new DeleteForSecurityDumpConverter()),
-    v8(ArtifactoryVersion.v265, ArtifactoryVersion.getCurrent(), null);
+    v6(ArtifactoryVersion.v213, ArtifactoryVersion.v213, new LdapGroupSettingXmlConverter(),
+            new LowercaseUsernameXmlConverter()),
+    v7(ArtifactoryVersion.v220, ArtifactoryVersion.v264),
+    v8(ArtifactoryVersion.v265, ArtifactoryVersion.getCurrent());
 
     private static final String VERSION_ATT = "version=\"";
 
     private final VersionComparator comparator;
     private final XmlConverter[] xmlConverters;
-    private final ConfigurationConverter<Session> configurationConverter;
 
     /**
      * Represents Artifactory security version. For each change in the security files new security version is created.
      *
-     * @param from                   Artifactory version this security version started at
-     * @param until                  Last Artifactory version this security version was valid
-     * @param configurationConverter OCM converter to convert security data from this version to the next
-     * @param xmlConverters          List of converters needed to convert the security.xml of this version to the next
-     *                               one
+     * @param from          Artifactory version this security version started at
+     * @param until         Last Artifactory version this security version was valid
+     * @param xmlConverters List of converters needed to convert the security.xml of this version to the next
+     *                      one
      */
-    SecurityVersion(ArtifactoryVersion from, ArtifactoryVersion until,
-            ConfigurationConverter<Session> configurationConverter, XmlConverter... xmlConverters) {
-        this.configurationConverter = configurationConverter;
+    SecurityVersion(ArtifactoryVersion from, ArtifactoryVersion until, XmlConverter... xmlConverters) {
         this.comparator = new VersionComparator(this, from, until);
         this.xmlConverters = xmlConverters;
     }
@@ -117,23 +105,6 @@ public enum SecurityVersion implements SubConfigElementVersion {
         }
 
         return XmlConverterUtils.convert(converters, securityXmlAsString);
-    }
-
-    public void convert(Session rawSession) {
-        // First create the list of converters to apply
-        List<ConfigurationConverter<Session>> converters = new ArrayList<ConfigurationConverter<Session>>();
-
-        // All converters of versions above me needs to be executed in sequence
-        SecurityVersion[] versions = SecurityVersion.values();
-        for (SecurityVersion version : versions) {
-            if (version.ordinal() >= ordinal() && version.configurationConverter != null) {
-                converters.add(version.configurationConverter);
-            }
-        }
-
-        for (ConfigurationConverter<Session> converter : converters) {
-            converter.convert(rawSession);
-        }
     }
 
     public static SecurityVersion getCurrent() {

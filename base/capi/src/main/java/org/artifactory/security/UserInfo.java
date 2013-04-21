@@ -35,6 +35,8 @@ public interface UserInfo extends Info {
 
     String getPassword();
 
+    String getSalt();
+
     String getEmail();
 
     String getPrivateKey();

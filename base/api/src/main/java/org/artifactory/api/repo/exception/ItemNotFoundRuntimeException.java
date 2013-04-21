@@ -18,6 +18,7 @@
 
 package org.artifactory.api.repo.exception;
 
+import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 
 /**
@@ -25,6 +26,10 @@ import org.artifactory.sapi.common.RepositoryRuntimeException;
  * @date Oct 24, 2008
  */
 public class ItemNotFoundRuntimeException extends RepositoryRuntimeException {
+    public ItemNotFoundRuntimeException(RepoPath repoPath) {
+        super("Item " + repoPath + " does not exist");
+    }
+
     public ItemNotFoundRuntimeException(String message) {
         super(message);
     }

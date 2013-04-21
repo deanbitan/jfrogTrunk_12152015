@@ -56,18 +56,11 @@ public class ImportRepoPanel extends BasicImportPanel {
 
         addVerboseCheckbox(form);
         addExcludeMetadataCheckbox(form);
-        addTrustServerChecksumsCheckbox(form);
     }
 
     private void addExcludeMetadataCheckbox(Form form) {
         form.add(new StyledCheckbox("excludeMetadata", new PropertyModel<Boolean>(this, "excludeMetadata")));
-        form.add(new HelpBubble("excludeMetadataHelp", "Exclude Artifactory-specific metadata from the export."));
-    }
-
-    private void addTrustServerChecksumsCheckbox(Form form) {
-        form.add(new StyledCheckbox("trustServerChecksums", new PropertyModel<Boolean>(this, "trustServerChecksums")));
-        form.add(new HelpBubble("trustServerChecksumsHelp",
-                "Ignore missing checksum and calculate them automatically."));
+        form.add(new HelpBubble("excludeMetadataHelp", "Excludes repositories metadata from the import"));
     }
 
     @Override
@@ -96,7 +89,7 @@ public class ImportRepoPanel extends BasicImportPanel {
         sb.append(" |    |--LIB_DIR_1\n");
         sb.append("\n");
         sb.append(
-                "When importing all repositories, make sure that the names of the directories that represent\n");
+                "When importing all repositories, ensure the names of the directories representing\n");
         sb.append(
                 "the repositories in the archive, match the names of the target repositories in Artifactory.\n");
         return sb.toString();

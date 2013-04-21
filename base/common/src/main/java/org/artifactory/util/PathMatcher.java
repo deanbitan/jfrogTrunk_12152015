@@ -21,8 +21,8 @@ package org.artifactory.util;
 import com.google.common.collect.Lists;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.AntPathMatcher;
 
 import javax.annotation.Nullable;
@@ -140,7 +140,7 @@ public abstract class PathMatcher {
 
     public static boolean isInGlobalExcludes(File file) {
         // global excludes are used as includes to test if path is in the default excludes
-        return matches(file, initOrGetGlobalExcludes(), null);
+        return matches(cleanPath(file), initOrGetGlobalExcludes(), null, false);
     }
 
     public static List<String> getGlobalExcludes() {

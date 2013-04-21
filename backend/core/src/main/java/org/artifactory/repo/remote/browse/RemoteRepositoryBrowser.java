@@ -52,7 +52,7 @@ public abstract class RemoteRepositoryBrowser {
             url += "/";
         }
 
-        GetMethod method = new GetMethod(HttpUtils.encodeQuery(url));
+        GetMethod method = new GetMethod(url);
         int statusCode = client.executeMethod(method);
         try {
             assertSizeLimit(url, method);

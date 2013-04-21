@@ -26,7 +26,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.io.checksum.Checksum;
-import org.artifactory.repo.jcr.JcrCacheRepo;
+import org.artifactory.repo.db.DbCacheRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
@@ -65,7 +65,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
         EasyMock.replay(authService, context, addonsManager);
         ArtifactoryContextThreadBinder.bind(context);
         httpRepoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);
-        httpRepo = new HttpRepo(internalRepoService, httpRepoDescriptor, false, null);
+        httpRepo = new HttpRepo(httpRepoDescriptor, internalRepoService, false, null);
     }
 
     /**
@@ -74,7 +74,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testDownloadWithCachePrefix() {
         expectCanRead(true);
-        createJcrCacheRepo(false);
+        createCacheRepo();
         StatusHolder statusHolder = tryAllowsDownload(repoPath);
         Assert.assertFalse(statusHolder.isError());
     }
@@ -86,7 +86,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     public void testDownloadWithNoCachePrefix() {
         RepoPath repoPathNoPrefix = InternalRepoPathFactory.create("remote-repo", "test/test/1.0/test-1.0.jar");
         expectCanRead(true);
-        createJcrCacheRepo(false);
+        createCacheRepo();
         StatusHolder statusHolder = tryAllowsDownload(repoPathNoPrefix);
         Assert.assertFalse(statusHolder.isError());
     }
@@ -97,7 +97,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testDownloadWithAnonymousEnabledAndNoReadPermissions() {
         expectCanRead(false);       // don't give read access
-        createJcrCacheRepo(true);   // and enable anon
+        createCacheRepo();   // and enable anon
         StatusHolder statusHolder = tryAllowsDownload(repoPath);
         Assert.assertTrue(statusHolder.isError());
     }
@@ -108,7 +108,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testDownloadWithBlackedOut() {
         httpRepoDescriptor.setBlackedOut(true);
-        createJcrCacheRepo(false);
+        createCacheRepo();
         StatusHolder statusHolder = tryAllowsDownload(repoPath);
         Assert.assertTrue(statusHolder.isError());
         httpRepoDescriptor.setBlackedOut(false);
@@ -120,7 +120,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testDownloadWithNoReleases() {
         httpRepoDescriptor.setHandleReleases(false);
-        createJcrCacheRepo(false);
+        createCacheRepo();
         StatusHolder statusHolder = tryAllowsDownload(repoPath);
         Assert.assertTrue(statusHolder.isError());
         httpRepoDescriptor.setHandleReleases(true);
@@ -132,7 +132,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testDownloadWithExcludes() {
         httpRepoDescriptor.setExcludesPattern("test/test/1.0/**");
-        createJcrCacheRepo(false);
+        createCacheRepo();
         StatusHolder statusHolder = tryAllowsDownload(repoPath);
         Assert.assertTrue(statusHolder.isError());
         httpRepoDescriptor.setExcludesPattern("");
@@ -141,8 +141,6 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     /**
      * Verify reading of valid checksum file to test the {@link Checksum#checksumStringFromStream(java.io.InputStream)}
      * method
-     *
-     * @throws Exception
      */
     @Test
     public void testReadValidChecksum() throws Exception {
@@ -152,8 +150,6 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     /**
      * Verify reading of a checksum file containing comments to test the {@link Checksum#checksumStringFromStream(java.io.InputStream)}
      * method
-     *
-     * @throws Exception
      */
     @Test
     public void testReadCommentChecksum() throws Exception {
@@ -163,8 +159,6 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     /**
      * Verify reading of a checksum file containing file description to test the {@link
      * Checksum#checksumStringFromStream(java.io.InputStream)} method
-     *
-     * @throws Exception
      */
     @Test
     public void testReadDescChecksum() throws Exception {
@@ -174,8 +168,6 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     /**
      * Verify reading of an empty checksum file to test the {@link Checksum#checksumStringFromStream(java.io.InputStream)}
      * method
-     *
-     * @throws Exception
      */
     @Test
     public void testReadEmptyChecksum() throws Exception {
@@ -187,7 +179,6 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
      *
      * @param checksumType  Type of checksum test file to read
      * @param expectedValue Expected checksum value
-     * @throws Exception
      */
     private void invokeReadChecksum(String checksumType, String expectedValue) throws Exception {
         InputStream stream = getClass().getResourceAsStream("/org/artifactory/repo/test-" + checksumType + ".md5");
@@ -199,23 +190,12 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
         }
     }
 
-    /**
-     * Create a JcrCacheRepo object ready for the test
-     *
-     * @param anonymousEnabled True if to enable the Anonymous mode on the repo, false if not
-     */
-    private void createJcrCacheRepo(boolean anonymousEnabled) {
+    private void createCacheRepo() {
         httpRepoDescriptor.setKey("remote-repo");
-        JcrCacheRepo localCacheRepo = new JcrCacheRepo(httpRepo, null);
-        ReflectionTestUtils.setField(localCacheRepo, "anonAccessEnabled", anonymousEnabled);
+        DbCacheRepo localCacheRepo = new DbCacheRepo(httpRepo, null);
         ReflectionTestUtils.setField(httpRepo, "localCacheRepo", localCacheRepo);
     }
 
-    /**
-     * Setup the authentication service and the context to expect a canRead request
-     *
-     * @param canRead
-     */
     private void expectCanRead(boolean canRead) {
         EasyMock.expect(authService.canRead(repoPath)).andReturn(canRead);
         EasyMock.replay(authService);

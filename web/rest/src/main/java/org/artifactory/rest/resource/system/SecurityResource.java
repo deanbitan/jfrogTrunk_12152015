@@ -23,9 +23,9 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.descriptor.security.EncryptionPolicy;
 import org.artifactory.descriptor.security.PasswordSettings;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.SecurityInfo;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;

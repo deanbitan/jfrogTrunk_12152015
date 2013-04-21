@@ -19,14 +19,17 @@
 package org.artifactory.webapp.wicket.page.build.panel;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.BlackDuckWebAddon;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.addon.wicket.LicensesWebAddon;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.RenderJavaScript;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
@@ -39,7 +42,9 @@ import org.artifactory.webapp.wicket.page.build.tabs.ReleaseHistoryTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.StyledTabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.DisabledTab;
+import org.jfrog.build.api.BlackDuckProperties;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.Governance;
 import org.jfrog.build.api.Module;
 
 import java.util.List;
@@ -124,8 +129,16 @@ public class BuildTabbedPanel extends TitledPanel {
 
         tabList.add(getIssuesTab("Issues", hasDeployOnLocal));
 
-        LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
-        tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
+
+        BlackDuckWebAddon blackDuckWebAddon = addonsManager.addonByType(BlackDuckWebAddon.class);
+        ITab governanceTab = blackDuckWebAddon.getBuildInfoTab("Governance", build, hasDeployOnLocal);
+
+        if (blackDuckWebAddon.shouldShowLicensesAddonTab(governanceTab, build)) {
+            LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
+            tabList.add(licensesAddon.getLicensesInfoTab("Licenses", build, hasDeployOnLocal));
+        }
+
+        tabList.add(governanceTab);
 
         BuildAddon buildAddon = addonsManager.addonByType(BuildAddon.class);
         ITab tab = buildAddon.getBuildDiffTab("Diff", build, hasDeployOnLocal);

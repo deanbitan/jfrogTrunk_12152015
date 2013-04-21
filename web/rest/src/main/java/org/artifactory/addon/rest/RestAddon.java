@@ -23,7 +23,6 @@ import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
-import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.exception.BlackedOutException;
@@ -36,10 +35,10 @@ import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.resource.artifact.legacy.DownloadResource;
-import org.artifactory.sapi.common.Lock;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildRetention;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
@@ -114,25 +113,6 @@ public interface RestAddon extends Addon {
             InterruptedException;
 
     /**
-     * Moves or copies build artifacts and\or dependencies
-     *
-     * @param move        True if the items should be moved. False if they should be copied
-     * @param buildName   Name of build to target
-     * @param buildNumber Number of build to target
-     * @param started     Start date of build to target (can be null)
-     * @param to          Key of target repository to move to
-     * @param arts        Zero if to exclude artifacts from the action take. One to include
-     * @param deps        Zero if to exclude dependencies from the action take. One int to include
-     * @param scopes      Scopes of dependencies to copy (agnostic if null or empty)
-     * @param properties  Properties to tag the moved or copied artifacts.
-     * @param dry         Zero if to apply the selected action. One to simulate  @return Result of action
-     * @deprecated Use {@link org.artifactory.addon.rest.RestAddon#promoteBuild} instead
-     */
-    @Deprecated
-    MoveCopyResult moveOrCopyBuildItems(boolean move, String buildName, String buildNumber, String started,
-            String to, int arts, int deps, StringList scopes, KeyValueList properties, int dry) throws ParseException;
-
-    /**
      * Promotes a build
      *
      * @param buildName   Name of build to promote
@@ -141,16 +121,6 @@ public interface RestAddon extends Addon {
      * @return Promotion result
      */
     PromotionResult promoteBuild(String buildName, String buildNumber, Promotion promotion) throws ParseException;
-
-    /**
-     * Locally replicates the given remote path
-     *
-     * @param remoteReplicationSettings Settings
-     * @return Response
-     * @deprecated use {@link RestAddon#replicate(org.artifactory.repo.RepoPath, org.artifactory.api.rest.replication.ReplicationRequest)} instead
-     */
-    @Deprecated
-    Response replicate(RemoteReplicationSettings remoteReplicationSettings) throws IOException;
 
     Response replicate(RepoPath repoPath, ReplicationRequest replicationRequest) throws IOException;
 
@@ -178,9 +148,10 @@ public interface RestAddon extends Addon {
      * @param buildName    Name of build to delete
      * @param buildNumbers Numbers of builds to delete
      * @param artifacts    1 if build artifacts should be deleted
+     * @param deleteAll    1 if should delete all the builds
      */
-    void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts)
-            throws IOException;
+    void deleteBuilds(HttpServletResponse response, String buildName, StringList buildNumbers, int artifacts,
+            int deleteAll) throws IOException;
 
     /**
      * Discard old builds as according to count or date.
@@ -282,7 +253,7 @@ public interface RestAddon extends Addon {
 
     Response deletePathProperties(String path, String recursive, StringList properties);
 
-    ResponseCtx runPluginExecution(String executionName, Map params, boolean async);
+    ResponseCtx runPluginExecution(String executionName, Map params, ResourceStreamHandle body, boolean async);
 
     Response getStagingStrategy(String strategyName, String buildName, Map params);
 
@@ -477,11 +448,9 @@ public interface RestAddon extends Addon {
      * @param remote        whether to fetch maven-metadata from remote repository or not
      * @return A wrapper class of the search results
      */
-    @Lock(transactional = true)
     ArtifactVersionsResult getArtifactVersions(String groupId, String artifactId, @Nullable String version,
             @Nullable StringList reposToSearch, boolean remote);
 
-    @Lock(transactional = true)
     void writeStreamingFileList(HttpServletResponse response, String requestUrl, String path, int deep, int depth,
             int listFolders, int mdTimestamps, int includeRootPath) throws IOException, BlackedOutException;
 }

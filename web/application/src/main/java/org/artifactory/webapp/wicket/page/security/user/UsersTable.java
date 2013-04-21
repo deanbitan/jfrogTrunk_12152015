@@ -44,12 +44,12 @@ import org.artifactory.common.wicket.component.panel.list.ModalListPanel;
 import org.artifactory.common.wicket.component.table.columns.BooleanColumn;
 import org.artifactory.common.wicket.component.table.columns.TooltipLabelColumn;
 import org.artifactory.common.wicket.component.table.columns.checkbox.SelectAllCheckboxColumn;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.webapp.wicket.page.security.user.column.UserColumn;
 import org.artifactory.webapp.wicket.page.security.user.permission.UserPermissionsPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;

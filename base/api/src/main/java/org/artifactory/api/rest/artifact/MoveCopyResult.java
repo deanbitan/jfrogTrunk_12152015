@@ -51,5 +51,10 @@ public class MoveCopyResult {
 
         private MoveCopyMessages() {
         }
+
+        @Override
+        public String toString() {
+            return level + ":" + message;
+        }
     }
 }

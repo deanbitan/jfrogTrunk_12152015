@@ -33,8 +33,6 @@ import org.apache.wicket.model.Model;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
-import org.artifactory.api.bintray.BintrayService;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -44,7 +42,6 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
@@ -52,6 +49,7 @@ import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePan
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.util.CronUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -206,13 +204,11 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     return;
                 }
                 // always test with url trailing slash
-                String originalUrl = PathUtils.addTrailingSlash(repo.getUrl());
-                String transformedUrl = ContextHelper.get().beanForType(BintrayService.class).getBintrayTestRepoUrl(
-                        originalUrl);
+                String url = PathUtils.addTrailingSlash(repo.getUrl());
                 NuGetWebAddon nuGetWebAddon = addons.addonByType(NuGetWebAddon.class);
-                HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(transformedUrl, repo);
+                HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(url, repo);
                 HttpClient client = new HttpClientConfigurator()
-                        .hostFromUrl(transformedUrl)
+                        .hostFromUrl(url)
                                 //.defaultMaxConnectionsPerHost(5)
                                 //.maxTotalConnections(5)
                         .connectionTimeout(repo.getSocketTimeoutMillis())
@@ -233,16 +229,16 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     }
                 } catch (UnknownHostException e) {
                     error("Unknown host: " + e.getMessage());
-                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } catch (ConnectException e) {
                     error(e.getMessage());
-                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } catch (IOException e) {
                     error("Connection failed with exception: " + e.getMessage());
-                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } catch (Exception e) {
                     error("Connection failed with general exception: " + e.getMessage());
-                    log.debug("Test connection to '" + originalUrl + "' failed with exception", e);
+                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } finally {
                     testMethod.releaseConnection();
                 }

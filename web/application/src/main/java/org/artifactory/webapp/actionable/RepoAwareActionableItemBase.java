@@ -24,6 +24,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.BlackDuckWebAddon;
 import org.artifactory.addon.wicket.BuildAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.context.ContextHelper;
@@ -33,13 +34,12 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.MutableFileInfo;
-import org.artifactory.fs.StatsInfo;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.general.GeneralTabPanel;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.MetadataTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.permissions.PermissionsTabPanel;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.properties.PropertiesTabPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.TabbedPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 
@@ -80,10 +80,6 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         return ContextHelper.get().beanForType(AddonsManager.class);
     }
 
-    public StatsInfo getStatsInfo() {
-        return getXmlMetadata(StatsInfo.class);
-    }
-
     @Override
     public org.artifactory.fs.ItemInfo getItemInfo() {
         return getItemInfo(repoPath);
@@ -91,15 +87,6 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
 
     public org.artifactory.fs.ItemInfo getItemInfo(RepoPath repoPath) {
         return getRepoService().getItemInfo(repoPath);
-    }
-
-    @Override
-    public <MD> MD getXmlMetadata(Class<MD> metadataClass) {
-        return getXmlMetadata(repoPath, metadataClass);
-    }
-
-    public <MD> MD getXmlMetadata(RepoPath repoPath, Class<MD> metadataClass) {
-        return getRepoService().getMetadata(repoPath, metadataClass);
     }
 
     @Override
@@ -118,7 +105,7 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         final RepoAwareActionableItem item = this;
 
         AuthorizationService authService = ContextHelper.get().getAuthorizationService();
-        boolean canAdminRepoPath = authService.canAdmin(repoPath);
+        boolean canAdminRepoPath = authService.canManage(repoPath);
 
         tabs.add(new AbstractTab(Model.of("General")) {
             @Override
@@ -141,11 +128,11 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
             canonicalRepoPath = item.getRepoPath();
         }
 
-        // add metadata view panel
-        tabs.add(new AbstractTab(Model.of("Metadata")) {
+        // add properties view panel
+        tabs.add(new AbstractTab(Model.of("Properties")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new MetadataTabPanel(panelId, item, canonicalRepoPath);
+                return new PropertiesTabPanel(panelId, item);
             }
         });
 
@@ -160,6 +147,11 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
         if (!itemInfo.isFolder() && itemInfo instanceof MutableFileInfo) {
             BuildAddon buildAddon = getAddonsProvider().addonByType(BuildAddon.class);
             tabs.add(buildAddon.getBuildsTab(item));
+        }
+
+        if (!itemInfo.isFolder()) {
+            BlackDuckWebAddon blackDuckWebAddon = getAddonsProvider().addonByType(BlackDuckWebAddon.class);
+            tabs.add(blackDuckWebAddon.getExternalComponentInfoTab(item));
         }
     }
 

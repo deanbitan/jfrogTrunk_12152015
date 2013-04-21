@@ -37,11 +37,11 @@ import java.io.File;
 public interface DeployService {
 
     @Request
-    @Lock(transactional = true)
+    @Lock
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoRejectException;
 
     @Request
-    @Lock(transactional = true)
+    @Lock
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
             boolean forceDeployPom, boolean partOfBundleDeploy, Properties properties) throws RepoRejectException;
 

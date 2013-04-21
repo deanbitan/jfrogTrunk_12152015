@@ -48,16 +48,16 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.webapp.wicket.components.SortedRepoDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.services.cron.CronNextDatePanel;
 import org.artifactory.webapp.wicket.util.validation.CronExpValidator;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -110,7 +110,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         setDefaultFocusField(keyField);
         keyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
-            keyField.add(new JcrNameValidator("Invalid backup key '%s'"));
+            keyField.add(new NameValidator("Invalid backup key '%s'"));
             keyField.add(new XsdNCNameValidator("Invalid backup key '%s'"));
             keyField.add(new UniqueXmlIdValidator(backupsListPanel.getMutableDescriptor()));
         }
@@ -179,7 +179,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
         advancedFields.add(new StyledCheckbox("sendMailOnError"));
         advancedFields.add(new SchemaHelpBubble("sendMailOnError.help"));
-        
+
         advancedFields.add(new StyledCheckbox("excludeBuilds"));
         advancedFields.add(new SchemaHelpBubble("excludeBuilds.help"));
 

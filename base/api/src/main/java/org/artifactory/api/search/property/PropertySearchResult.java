@@ -31,4 +31,20 @@ public class PropertySearchResult extends SearchResultBase {
     public PropertySearchResult(ItemInfo itemInfo) {
         super(itemInfo);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof SearchResultBase)) {
+            return false;
+        }
+        return getItemInfo().equals(((SearchResultBase) o).getItemInfo());
+    }
+
+    @Override
+    public int hashCode() {
+        return getItemInfo().hashCode();
+    }
 }

@@ -8,10 +8,11 @@
                 <span>artifacts.</span>
             </div>
         </wicket:enclosure>
-
+        <div class="welcome-space"></div>
         <wicket:enclosure child="logoutLink">
-            <div class="info">
+            <div class="infoStatusLine aLoginName">
                 <div>
+                    <span class="icon"></span>
                     <span>You are logged-in as</span>
                     <a wicket:id="profileLink"/>
                     (<a wicket:id="logoutLink"/>).
@@ -34,17 +35,21 @@
         </wicket:enclosure>
 
         <wicket:enclosure>
-            <div class="info">
-                Uptime is <span wicket:id="uptime"/>.
+            <div class="infoStatusLine aUptime">
+                <span class="icon"></span>
+                <span class="text">Uptime is </span><span class="text" wicket:id="uptime"/>.
             </div>
         </wicket:enclosure>
 
         <span wicket:id="versioningInfo">
-            <div class="info">
-                You are running Artifactory version <span class="value" wicket:id="currentLabel"/>
-                <span wicket:id="latestLabel"/>
+            <div class="infoStatusLine aVersion">
+                <span class="icon"></span>
+                <span class="text">You are running Artifactory version <span class="value" wicket:id="currentLabel"/>
+                    <span wicket:id="latestLabel"/>
+                </span>
             </div>
-            <div class="info">
+            <div class="infoStatusLine aUptodateInfo">
+                <span class="icon"></span>
                 For up-to-date information, please visit the online <a wicket:id="wikiLink" target="_blank">
                 Artifactory User Guide</a>.
             </div>

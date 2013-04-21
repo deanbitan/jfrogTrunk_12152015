@@ -19,13 +19,8 @@
 package org.artifactory.api.repo;
 
 import org.artifactory.checksum.ChecksumType;
-import org.artifactory.factory.InfoFactory;
-import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.md.MetadataInfo;
-import org.artifactory.mime.MavenNaming;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 
@@ -69,23 +64,6 @@ public class BrowsableItem extends BaseBrowsableItem {
         return new BrowsableItem(itemInfo.getName(), false, itemInfo.getCreated(),
                 itemInfo.getLastModified(), ((FileInfo) itemInfo).getSize(), itemInfo.getRepoPath()
         );
-    }
-
-    /**
-     * Creates a metadata browsable item
-     *
-     * @param metadataInfo Backing metadata info
-     * @return Browsable item
-     */
-    public static BrowsableItem getMetadataItem(MetadataInfo metadataInfo) {
-        //TODO: [by ys] ugly hack to display standard maven-metadata url. check for existing code that does that
-        InfoFactory factory = InfoFactoryHolder.get();
-        RepoPath parent = factory.createRepoPath(metadataInfo.getRepoPath().getRepoKey(),
-                NamingUtils.stripMetadataFromPath(metadataInfo.getRepoPath().getPath()));
-        return new BrowsableItem(metadataInfo.getName(), false, metadataInfo.getCreated(),
-                metadataInfo.getLastModified(), metadataInfo.getSize(),
-                factory.createRepoPath(parent.getRepoKey(),
-                        parent.getPath() + "/" + MavenNaming.MAVEN_METADATA_NAME));
     }
 
     /**

@@ -26,7 +26,6 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
@@ -34,6 +33,7 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 
 import javax.servlet.ServletContext;
@@ -111,9 +111,7 @@ public abstract class RequestUtils {
         if (NON_UI_PATH_PREFIXES.contains(pathPrefix)) {
             return false;
         }
-        //Check that is a repository prefix with support for old repo sytax
-        String repoKey = pathPrefix.endsWith("@repo") ?
-                pathPrefix.substring(0, pathPrefix.length() - 5) : pathPrefix;
+        String repoKey = pathPrefix;
         //Support repository-level metadata requests
         repoKey = NamingUtils.stripMetadataFromPath(repoKey);
         //Strip any matrix params

@@ -120,11 +120,9 @@ import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.Request;
-import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.util.HttpUtils;
@@ -141,7 +139,7 @@ import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.BaseBuildsTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.build.actionable.BuildTabActionableItem;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.PropertiesPanel;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.properties.PropertiesPanel;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.build.tabs.BuildSearchResultsPanel;
@@ -192,6 +190,7 @@ import org.jfrog.build.api.Module;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpServletRequest;
@@ -217,9 +216,8 @@ import static org.artifactory.addon.AddonType.*;
 @org.springframework.stereotype.Component
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
-        BuildAddon,
-        LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon, P2WebAddon,
-        NuGetWebAddon {
+        BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
+        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -247,7 +245,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public MenuNode getConfigurationMenuNode(PropertiesWebAddon propertiesWebAddon, LicensesWebAddon licensesWebAddon) {
+    public MenuNode getConfigurationMenuNode(PropertiesWebAddon propertiesWebAddon, LicensesWebAddon licensesWebAddon,
+            BlackDuckWebAddon blackDuckWebAddon) {
         MenuNode adminConfiguration = new MenuNode("Configuration");
         adminConfiguration.addChild(new MenuNode("General", GeneralConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Repositories", RepositoryConfigPage.class));
@@ -255,6 +254,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         AddonsManager addonsManager = getAddonsManager();
         LicensesWebAddon licensesAddon = addonsManager.addonByType(LicensesWebAddon.class);
         adminConfiguration.addChild(licensesAddon.getLicensesMenuNode("Licenses"));
+        adminConfiguration.addChild(blackDuckWebAddon.getBlackDuckMenuNode("Black Duck"));
         adminConfiguration.addChild(propertiesWebAddon.getPropertySetsPage("Property Sets"));
         adminConfiguration.addChild(new MenuNode("Proxies", ProxyConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Mail", MailConfigPage.class));
@@ -794,6 +794,17 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
+    public MenuNode getBlackDuckMenuNode(String nodeName) {
+        return new DisabledAddonMenuNode(nodeName, AddonType.BLACKDUCK);
+    }
+
+    @Override
+    public Component getBlackDuckLicenseGeneralInfoPanel(RepoAwareActionableItem actionableItem) {
+        LicensesWebAddon licensesWebAddon = getAddonsManager().addonByType(LicensesWebAddon.class);
+        return licensesWebAddon.getLicenseGeneralInfoPanel(actionableItem);
+    }
+
+    @Override
     public String getSearchResultsPageAbsolutePath(String resultToSelect) {
         return new StringBuilder(RequestUtils.getWicketServletContextUrl()).append("/").
                 append(HttpUtils.WEBAPP_URL_PATH_PREFIX).toString();
@@ -834,11 +845,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void backup(ExportSettings settings) {
-        // Nothing to do here
-    }
-
-    @Override
     @Nonnull
     public List<String> getUsersForBackupNotifications() {
         List<UserInfo> allUsers = ContextHelper.get().beanForType(UserGroupService.class).getAllUsers(true);
@@ -856,7 +862,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash) {
+    public void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash, List<String> addons) {
         AddonsManager addonsManager = getAddonsManager();
         // Skip Trial license
         if (isTrial(addonsManager)) {
@@ -864,7 +870,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             return;
         }
         if (StringUtils.isBlank(targetLicenseHash)) {
-            throw new IllegalArgumentException("Target Artifactory instance license key is null, perhaps OSS version?");
+            if (addons == null || !addons.contains(AddonType.REPLICATION.getAddonName())) {
+                throw new IllegalArgumentException(
+                        "Replication between an open-source Artifactory instance is not supported.");
+            }
+
+            throw new IllegalArgumentException(
+                    "Could not retrieve license key from remote target, user must have deploy permissions.");
         }
         if (addonsManager.getLicenseKeyHash().equals(targetLicenseHash)) {
             throw new IllegalArgumentException("Replication between same-license servers is not supported.");
@@ -926,9 +938,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             }
         };
         runCalculationButton.setEnabled(false);
+        calculationBorder.add(runCalculationButton);
         calculationBorder.add(new TextField<Integer>("yumRootDepth").setEnabled(false));
         calculationBorder.add(new SchemaHelpBubble("yumRootDepth.help").setEnabled(false));
-        calculationBorder.add(runCalculationButton);
+        calculationBorder.add(new TextArea("yumGroupFileNames").setEnabled(false));
+        calculationBorder.add(new SchemaHelpBubble("yumGroupFileNames.help").setEnabled(false));
         calculationBorder.setEnabled(false);
         form.add(calculationBorder);
     }
@@ -1015,6 +1029,26 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public MenuNode getSamlAddonMenuNode(String nodeName) {
         return new DisabledAddonMenuNode(nodeName, AddonType.SSO);
+    }
+
+    @Override
+    public ITab getExternalComponentInfoTab(RepoAwareActionableItem repoItem) {
+        return new DisabledAddonTab(Model.<String>of("Governance"), AddonType.BLACKDUCK);
+    }
+
+    @Override
+    public ITab getBuildInfoTab(String title, Build build, boolean hasDeployOnLocal) {
+        return new DisabledAddonTab(Model.<String>of("Governance"), AddonType.BLACKDUCK);
+    }
+
+    @Override
+    public boolean shouldShowLicensesAddonTab(ITab governanceTab, Build build) {
+        return true;
+    }
+
+    @Override
+    public boolean isEnableIntegration() {
+        return false;
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {
@@ -1163,7 +1197,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     private static class DisabledPropertiesPanel extends PropertiesPanel {
-
         public DisabledPropertiesPanel(String id, String nestedPanelId) {
             super(id);
             add(new DisabledCollapsibleBehavior());

@@ -18,12 +18,12 @@
 
 package org.artifactory.version.converter.v130;
 
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Schema version 1.3.1 removed the authenticationMethod and searchAuthPasswordAttributeName from the ldap settings

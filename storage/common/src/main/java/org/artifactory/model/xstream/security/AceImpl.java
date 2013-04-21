@@ -76,16 +76,16 @@ public class AceImpl implements MutableAceInfo {
     }
 
     @Override
-    public boolean canAdmin() {
-        return (getMask() & ArtifactoryPermission.ADMIN.getMask()) > 0;
+    public boolean canManage() {
+        return (getMask() & ArtifactoryPermission.MANAGE.getMask()) > 0;
     }
 
     @Override
-    public void setAdmin(boolean admin) {
-        if (admin) {
-            setMask(getMask() | ArtifactoryPermission.ADMIN.getMask());
+    public void setManage(boolean manage) {
+        if (manage) {
+            setMask(getMask() | ArtifactoryPermission.MANAGE.getMask());
         } else {
-            setMask(getMask() & ~ArtifactoryPermission.ADMIN.getMask());
+            setMask(getMask() & ~ArtifactoryPermission.MANAGE.getMask());
         }
     }
 

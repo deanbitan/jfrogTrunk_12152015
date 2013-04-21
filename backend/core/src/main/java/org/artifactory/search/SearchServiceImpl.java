@@ -18,16 +18,15 @@
 
 package org.artifactory.search;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import org.apache.jackrabbit.util.ISO8601;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.search.ItemSearchResults;
-import org.artifactory.api.search.JcrQuerySpec;
 import org.artifactory.api.search.SearchControls;
-import org.artifactory.api.search.Searcher;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
@@ -39,68 +38,46 @@ import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
-import org.artifactory.api.search.xml.XmlSearchResult;
-import org.artifactory.api.search.xml.metadata.GenericMetadataSearchControls;
-import org.artifactory.api.search.xml.metadata.GenericMetadataSearchResult;
-import org.artifactory.api.search.xml.metadata.MetadataSearchControls;
-import org.artifactory.api.search.xml.metadata.MetadataSearchResult;
-import org.artifactory.api.search.xml.metadata.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchControls;
+import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
-import org.artifactory.fs.StatsInfo;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.JcrSession;
-import org.artifactory.jcr.factory.VfsItemFactory;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.fs.JcrFsItem;
-import org.artifactory.jcr.md.MetadataDefinition;
-import org.artifactory.jcr.md.MetadataDefinitionService;
-import org.artifactory.log.LoggerFactory;
-import org.artifactory.mime.MimeType;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepoBase;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.jcr.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.sapi.common.PathFactoryHolder;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
+import org.artifactory.sapi.search.VfsQuery;
+import org.artifactory.sapi.search.VfsQueryResult;
+import org.artifactory.sapi.search.VfsQueryRow;
+import org.artifactory.sapi.search.VfsQueryService;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
-import org.artifactory.search.archive.ArchiveIndexer;
 import org.artifactory.search.archive.ArchiveSearcher;
 import org.artifactory.search.build.BuildSearcher;
 import org.artifactory.search.deployable.VersionUnitSearcher;
 import org.artifactory.search.gavc.GavcSearcher;
 import org.artifactory.search.property.PropertySearcher;
-import org.artifactory.search.version.SearchVersion;
-import org.artifactory.search.xml.XmlFileSearcher;
-import org.artifactory.search.xml.metadata.LastDownloadedSearcher;
-import org.artifactory.search.xml.metadata.MetadataSearcher;
+import org.artifactory.search.stats.LastDownloadedSearcher;
 import org.artifactory.security.AccessLogger;
-import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.Reloadable;
-import org.artifactory.storage.StorageConstants;
 import org.artifactory.util.PathMatcher;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.version.CompoundVersionDetails;
-import org.slf4j.Logger;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.query.QueryResult;
+import javax.annotation.Nullable;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -109,6 +86,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.artifactory.sapi.search.VfsBoolType.AND;
+import static org.artifactory.sapi.search.VfsBoolType.OR;
+import static org.artifactory.sapi.search.VfsComparatorType.*;
+import static org.artifactory.sapi.search.VfsQueryResultType.FILE;
+
 /**
  * @author Frederic Simon
  * @author Yoav Landman
@@ -116,10 +98,9 @@ import java.util.concurrent.TimeoutException;
 @Service
 @Reloadable(beanClass = InternalSearchService.class, initAfter = {InternalRepositoryService.class})
 public class SearchServiceImpl implements InternalSearchService {
-    private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
 
     @Autowired
-    private JcrService jcrService;
+    private VfsQueryService vfsQueryService;
 
     @Autowired
     private InternalRepositoryService repoService;
@@ -132,13 +113,6 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Autowired
     private CachedThreadPoolTaskExecutor executor;
-
-    private InternalArtifactoryContext context;
-
-    @Autowired
-    private void setApplicationContext(ApplicationContext context) throws BeansException {
-        this.context = (InternalArtifactoryContext) context;
-    }
 
     @Override
     public ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls) {
@@ -153,15 +127,25 @@ public class SearchServiceImpl implements InternalSearchService {
     @Override
     public Set<RepoPath> searchArtifactsByChecksum(ChecksumSearchControls searchControls) {
         ArtifactSearcher searcher = new ArtifactSearcher();
-        return searcher.searchArtifactsByChecksum(searchControls);
+        Collection<ItemInfo> itemInfos = searcher.searchArtifactsByChecksum(searchControls);
+        Set<RepoPath> results = Sets.newHashSet(
+                Iterables.transform(itemInfos, new Function<ItemInfo, RepoPath>() {
+                    @Override
+                    public RepoPath apply(@Nullable ItemInfo input) {
+                        return input == null ? null : input.getRepoPath();
+                    }
+                })
+        );
+        return results;
     }
 
     @Override
     public ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls) {
         List<ArtifactSearchResult> resultList = Lists.newArrayList();
-        Set<RepoPath> repoPaths = searchArtifactsByChecksum(searchControls);
-        for (RepoPath repoPath : repoPaths) {
-            resultList.add(new ArtifactSearchResult(VfsItemFactory.createFileInfoProxy(repoPath)));
+        ArtifactSearcher searcher = new ArtifactSearcher();
+        Collection<ItemInfo> itemInfos = searcher.searchArtifactsByChecksum(searchControls);
+        for (ItemInfo item : itemInfos) {
+            resultList.add(new ArtifactSearchResult(item));
         }
         return new ItemSearchResults<ArtifactSearchResult>(resultList, resultList.size());
     }
@@ -177,36 +161,10 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     @Override
-    public ItemSearchResults<MetadataSearchResult> searchMetadata(MetadataSearchControls controls) {
+    public ItemSearchResults<StatsSearchResult> searchArtifactsNotDownloadedSince(StatsSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<MetadataSearchResult>(Lists.<MetadataSearchResult>newArrayList());
+            return new ItemSearchResults<StatsSearchResult>(Lists.<StatsSearchResult>newArrayList());
         }
-        MetadataSearcher searcher = new MetadataSearcher();
-        ItemSearchResults<MetadataSearchResult> results = searcher.search(controls);
-        return results;
-    }
-
-    @Override
-    public <T> ItemSearchResults<GenericMetadataSearchResult<T>> searchGenericMetadata(
-            GenericMetadataSearchControls<T> controls) {
-        if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<GenericMetadataSearchResult<T>>(
-                    Lists.<GenericMetadataSearchResult<T>>newArrayList());
-        }
-        MetadataDefinitionService mdService = context.beanForType(MetadataDefinitionService.class);
-        MetadataDefinition<T, ?> definition = mdService.getMetadataDefinition(controls.getMetadataClass());
-        Searcher<GenericMetadataSearchControls<T>, GenericMetadataSearchResult<T>> searcher = definition.getSearcher();
-        return searcher.search(controls);
-    }
-
-    @Override
-    public ItemSearchResults<GenericMetadataSearchResult<StatsInfo>> searchArtifactsNotDownloadedSince(
-            StatsSearchControls controls) {
-        if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<GenericMetadataSearchResult<StatsInfo>>(
-                    Lists.<GenericMetadataSearchResult<StatsInfo>>newArrayList());
-        }
-        controls.setPropertyName("lastDownloaded");
         return new LastDownloadedSearcher().search(controls);
     }
 
@@ -218,18 +176,6 @@ public class SearchServiceImpl implements InternalSearchService {
 
         GavcSearcher searcher = new GavcSearcher();
         ItemSearchResults<GavcSearchResult> results = searcher.search(controls);
-
-        return results;
-    }
-
-    @Override
-    public ItemSearchResults<XmlSearchResult> searchXmlContent(MetadataSearchControls controls) {
-        if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<XmlSearchResult>(Lists.<XmlSearchResult>newArrayList());
-        }
-
-        XmlFileSearcher searcher = new XmlFileSearcher();
-        ItemSearchResults<XmlSearchResult> results = searcher.search(controls);
 
         return results;
     }
@@ -259,49 +205,41 @@ public class SearchServiceImpl implements InternalSearchService {
             to = Calendar.getInstance();    // now
         }
 
-        try {
-            // all artifactory files that were created or modified after input date
-            StringBuilder builder = new StringBuilder("/");
-            addReposToQueryBuilder(reposToSearch, builder);
-            builder.append("/element(*, ").append(StorageConstants.NT_ARTIFACTORY_FILE).append(") [(@").
-                    append(StorageConstants.PROP_ARTIFACTORY_CREATED).append(" > xs:dateTime('").append(
-                    ISO8601.format(from)).
-                    append("') or @").append(StorageConstants.PROP_ARTIFACTORY_LAST_MODIFIED).append(
-                    " > xs:dateTime('").
-                    append(ISO8601.format(from)).append("') ) and (@").append(
-                    StorageConstants.PROP_ARTIFACTORY_CREATED).
-                    append(" <= xs:dateTime('").append(ISO8601.format(to)).append("') or @").
-                    append(StorageConstants.PROP_ARTIFACTORY_LAST_MODIFIED).append(" <= xs:dateTime('").
-                    append(ISO8601.format(to)).append("') )]");
+        // all artifactory files that were created or modified after input date
+        VfsQuery query = vfsQueryService.createQuery().expectedResult(FILE)
+                .setRepoKeys(reposToSearch)
+                .name(MavenNaming.MAVEN_METADATA_NAME).comp(NOT_EQUAL)
+                .startGroup()
+                .prop("created").comp(GREATER_THAN).val(from).nextBool(OR)
+                .prop("modified").comp(GREATER_THAN).val(from)
+                .endGroup(AND)
+                .startGroup()
+                .prop("created").comp(LOWER_THAN_EQUAL).val(to).nextBool(OR)
+                .prop("modified").comp(LOWER_THAN_EQUAL).val(to)
+                .endGroup(null);
+        VfsQueryResult queryResult = query.execute(Integer.MAX_VALUE);
 
-            QueryResult resultXpath = jcrService.executeQuery(JcrQuerySpec.xpath(builder.toString()).noLimit());
-            NodeIterator nodeIterator = resultXpath.getNodes();
-            List<SerializablePair<RepoPath, Calendar>> result = Lists.newArrayList();
-            while (nodeIterator.hasNext()) {
-                Node fileNode = (Node) nodeIterator.next();
-                Calendar modified = fileNode.getProperty(
-                        StorageConstants.PROP_ARTIFACTORY_CREATED).getValue().getDate();
-                if (!(modified.after(from) && modified.before(to) || modified.equals(to))) {
-                    // if created not in range then the last modified is
-                    modified = fileNode.getProperty(
-                            StorageConstants.PROP_ARTIFACTORY_LAST_MODIFIED).getValue().getDate();
-                }
-                RepoPath repoPath = PathFactoryHolder.get().getRepoPath(fileNode.getPath());
-                if (!isRangeResultValid(repoPath, reposToSearch)) {
-                    continue;
-                }
-
-                result.add(new SerializablePair<RepoPath, Calendar>(repoPath, modified));
+        List<SerializablePair<RepoPath, Calendar>> result = Lists.newArrayList();
+        for (VfsQueryRow row : queryResult.getAllRows()) {
+            ItemInfo item = row.getItem();
+            Calendar modified = Calendar.getInstance();
+            modified.setTimeInMillis(item.getCreated());
+            if (!(modified.after(from) && modified.before(to) || modified.equals(to))) {
+                // if created not in range then the last modified is
+                modified.setTimeInMillis(item.getLastModified());
             }
-            return result;
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException(e);
+            RepoPath repoPath = item.getRepoPath();
+            if (!isRangeResultValid(repoPath, reposToSearch)) {
+                continue;
+            }
+
+            result.add(new SerializablePair<>(repoPath, modified));
         }
+        return result;
     }
 
     @Override
-    public ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls)
-            throws RepositoryException {
+    public ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls) {
         VersionUnitSearcher searcher = new VersionUnitSearcher();
         return searcher.doSearch(controls);
     }
@@ -317,23 +255,15 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     @Override
-    public List<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) {
+    public Set<BuildRun> findBuildsByArtifactChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
-        try {
-            return searcher.findBuildsByArtifactChecksum(sha1, md5);
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException(e);
-        }
+        return searcher.findBuildsByArtifactChecksum(sha1, md5);
     }
 
     @Override
-    public List<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) {
+    public Set<BuildRun> findBuildsByDependencyChecksum(String sha1, String md5) {
         BuildSearcher searcher = new BuildSearcher();
-        try {
-            return searcher.findBuildsByDependencyChecksum(sha1, md5);
-        } catch (RepositoryException e) {
-            throw new RepositoryRuntimeException(e);
-        }
+        return searcher.findBuildsByDependencyChecksum(sha1, md5);
     }
 
     @Override
@@ -375,10 +305,17 @@ public class SearchServiceImpl implements InternalSearchService {
                     if (repo.isLocal() || repo.isCache()) {
                         repoKey = repo.getKey();
                     } else {
-                        repoKey = ((RemoteRepoBase) repo).getLocalCacheRepo().getKey();
+                        LocalCacheRepo localCacheRepo = ((RemoteRepoBase) repo).getLocalCacheRepo();
+                        if (localCacheRepo != null) {
+                            repoKey = localCacheRepo.getKey();
+                        } else {
+                            repoKey = null;
+                        }
                     }
-                    collectLocalRepoItemsRecursively(patternFragments, pathsToReturn,
-                            InternalRepoPathFactory.create(repoKey, ""));
+                    if (repoKey != null) {
+                        collectLocalRepoItemsRecursively(patternFragments, pathsToReturn,
+                                InternalRepoPathFactory.create(repoKey, ""));
+                    }
                 } else {
                     collectVirtualRepoItemsRecursively(patternFragments, pathsToReturn,
                             InternalRepoPathFactory.create(repo.getKey(), ""));
@@ -418,146 +355,6 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
-        SearchVersion.values();
-        //We cannot convert the indexes straight away since the JCR will initialize and close the session on us,
-        //so we just mark and index on init
-        SearchVersion originalVersion = source.getVersion().getSubConfigElementVersion(SearchVersion.class);
-        originalVersion.convert(this);
-    }
-
-    @Override
-    public void transactionalIndexMarkedArchives() {
-        JcrSession session = jcrService.getManagedSession();
-        List<RepoPath> archiveRepoPaths = ArchiveIndexer.searchMarkedArchives(session);
-        //Schedule the files for indexing
-        log.debug("Scheduling indexing for marked archives.");
-        index(archiveRepoPaths);
-    }
-
-    @Override
-    public void markArchivesForIndexing(boolean force) {
-        markArchivesForIndexing(null, force);
-    }
-
-    /**
-     * Marks all archives under the specified repo path for indexing
-     *
-     * @param searchPath Path to search under, search under root if null is passed
-     * @param force      True if should force marking
-     */
-    @Override
-    public void markArchivesForIndexing(RepoPath searchPath, boolean force) {
-        Session usession = context.getJcrService().getUnmanagedSession();
-        try {
-            //Scan all file to look for archives, and mark them for content indexing
-            String path;
-            if (searchPath != null) {
-                path = PathFactoryHolder.get().getAbsolutePath(searchPath);
-            } else {
-                path = PathFactoryHolder.get().getAllRepoRootPath();
-            }
-            Node rootNode = (Node) usession.getItem(path);
-            ArchiveIndexer.markArchivesForIndexing(rootNode, force);
-            log.info("Successfully marked archives under path: '{}' for indexing", path);
-        } catch (RepositoryException e) {
-            log.warn("Could not complete archive scanning for indexes calculation.", e);
-        } finally {
-            usession.logout();
-        }
-    }
-
-    /**
-     * Marks the archive specified in the given repo path for indexing
-     *
-     * @param newJcrFile
-     * @return boolean - Was archive marked
-     */
-    @Override
-    @SuppressWarnings({"SimplifiableIfStatement"})
-    public boolean markArchiveForIndexing(JcrFile newJcrFile, boolean force) {
-        Node archiveNode = newJcrFile.getNode();
-        try {
-            return ArchiveIndexer.markArchiveForIndexing(archiveNode, force);
-        } catch (RepositoryException e) {
-            log.warn("Could not mark the archive '" + newJcrFile + "' for indexing.", e);
-        }
-        return false;
-    }
-
-    /**
-     * Indexes all the archives that were marked
-     */
-    @Override
-    public void asyncIndexMarkedArchives() {
-        JcrSession session = jcrService.getUnmanagedSession();
-        try {
-            List<RepoPath> archiveRepoPaths = ArchiveIndexer.searchMarkedArchives(session);
-            //Schedule the files for indexing
-            log.debug("Scheduling indexing for marked archives.");
-            getAdvisedMe().index(archiveRepoPaths);
-        } finally {
-            try {
-                session.save();
-            } catch (Exception e) {
-                log.error("Could not save partial archive indexes.");
-            }
-            session.logout();
-        }
-    }
-
-    /**
-     * Force indexing on all specified repo paths
-     *
-     * @param archiveRepoPaths Repo paths to index
-     */
-    @Override
-    public void index(List<RepoPath> archiveRepoPaths) {
-        for (RepoPath repoPath : archiveRepoPaths) {
-            try {
-                getAdvisedMe().index(repoPath);
-            } catch (Exception e) {
-                log.error("Exception indexing "+repoPath, e);
-            }
-        }
-    }
-
-    @Override
-    public void index(RepoPath archiveRepoPath) {
-        MimeType mimeType = NamingUtils.getMimeType(archiveRepoPath.getPath());
-        if (!mimeType.isArchive() || !mimeType.isIndex()) {
-            log.trace("Not indexing '{}' - with mime type '{}'.", archiveRepoPath, mimeType);
-            return;
-        }
-
-        StoringRepo repo = repoService.storingRepositoryByKey(archiveRepoPath.getRepoKey());
-        if (repo == null) {
-            log.debug("Skipping archive indexing for {} - repo does not exist.", archiveRepoPath.getRepoKey());
-            return;
-        }
-        JcrFsItem item = repo.getLockedJcrFsItem(archiveRepoPath);
-        if ((item != null) && item.isFile()) {
-            ArchiveIndexer.index((JcrFile) item);
-        } else {
-            log.debug("Skipping archive indexing for {} - item does not exist or not a file.", archiveRepoPath);
-        }
-    }
-
-    @Override
-    public void asyncIndex(RepoPath repoPath) {
-        try {
-            getAdvisedMe().index(repoPath);
-        } catch (Exception e) {
-            log.error("Exception indexing "+repoPath, e);
-        }
-    }
-
-    /**
-     * Retrieves the Async advised instance of the service
-     *
-     * @return InternalSearchService - Async advised instance
-     */
-    private InternalSearchService getAdvisedMe() {
-        return context.beanForType(InternalSearchService.class);
     }
 
     /**
@@ -608,6 +405,9 @@ public class SearchServiceImpl implements InternalSearchService {
             RepoPath repoPath) {
 
         VirtualRepoItem itemInfo = repoBrowsingService.getVirtualRepoItem(repoPath);
+        if (itemInfo == null) {
+            return;
+        }
 
         if (!patternFragments.isEmpty()) {
 
@@ -646,29 +446,6 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     /**
-     * Appends the provided repo keys to the query builder
-     *
-     * @param repoKeys     Keys of specific repositories to search within
-     * @param queryBuilder Query string builder
-     */
-    private void addReposToQueryBuilder(List<String> repoKeys, StringBuilder queryBuilder) {
-        if ((repoKeys != null) && (!repoKeys.isEmpty())) {
-            queryBuilder.append("jcr:root").append(PathFactoryHolder.get().getAllRepoRootPath()).append("/").
-                    append(". [");
-
-            Iterator<String> iterator = repoKeys.iterator();
-            while (iterator.hasNext()) {
-                queryBuilder.append("fn:name() = '").append(iterator.next()).append("'");
-                if (iterator.hasNext()) {
-                    queryBuilder.append(" or ");
-                }
-            }
-
-            queryBuilder.append("]/");
-        }
-    }
-
-    /**
      * Indicates whether the range query result repo path is valid
      *
      * @param repoPath      Repo path of query result
@@ -685,24 +462,5 @@ public class SearchServiceImpl implements InternalSearchService {
 
         LocalRepo localRepo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         return (localRepo != null) && (!NamingUtils.isChecksum(repoPath.getPath()));
-    }
-
-    @Override
-    public void onContextCreated() {
-        if (ConstantValues.searchForceArchiveIndexing.getBoolean()) {
-            log.info(ConstantValues.searchForceArchiveIndexing.getPropertyName() +
-                    " is on: forcing archive indexes recalculation.");
-            markArchivesForIndexing(true);
-        }
-        //Index archives marked for indexing (might have left overs from abrupt shutdown after deploy)
-        getAdvisedMe().asyncIndexMarkedArchives();
-    }
-
-    @Override
-    public void onContextReady() {
-    }
-
-    @Override
-    public void onContextUnready() {
     }
 }

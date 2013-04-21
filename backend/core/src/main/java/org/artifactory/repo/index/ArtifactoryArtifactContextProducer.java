@@ -24,17 +24,15 @@ import org.apache.maven.index.ArtifactContextProducer;
 import org.apache.maven.index.ArtifactInfo;
 import org.apache.maven.index.artifact.ArtifactPackagingMapper;
 import org.apache.maven.index.artifact.Gav;
-import org.apache.maven.index.artifact.IllegalArtifactCoordinateException;
 import org.apache.maven.index.context.IndexingContext;
 import org.apache.maven.index.locator.GavHelpedLocator;
 import org.apache.maven.index.locator.Locator;
-import org.apache.maven.index.locator.MetadataLocator;
-import org.apache.maven.index.locator.PomLocator;
 import org.apache.maven.model.Model;
-import org.artifactory.jcr.fs.JcrFile;
 import org.artifactory.repo.index.locator.MainArtifactLocator;
-import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.index.locator.MetadataLocator;
+import org.artifactory.repo.index.locator.PomLocator;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
+import org.artifactory.storage.fs.tree.file.JavaIOFileAdapter;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.BufferedInputStream;
@@ -49,19 +47,12 @@ public class ArtifactoryArtifactContextProducer implements ArtifactContextProduc
     private final ArtifactPackagingMapper mapper = new SimpleArtifactPackagingMapper();
     private GavHelpedLocator pl = new PomLocator();
     private Locator ml = new MetadataLocator();
-    private final StoringRepo repo;
-
-    public ArtifactoryArtifactContextProducer(StoringRepo repo) {
-        this.repo = repo;
-    }
 
     /**
      * Get ArtifactContext for given pom or artifact (jar, war, etc). A file can be
      */
-    public ArtifactContext getArtifactContext(IndexingContext context, File file)
-            throws IllegalArtifactCoordinateException {
-        // TODO shouldn't this use repository layout instead?
-
+    @Override
+    public ArtifactContext getArtifactContext(IndexingContext context, File file) {
         String repositoryPath = context.getRepository().getAbsolutePath();
         String artifactPath = file.getAbsolutePath();
 
@@ -84,7 +75,7 @@ public class ArtifactoryArtifactContextProducer implements ArtifactContextProduc
         File artifact;
 
         if (file.getName().endsWith(".pom")) {
-            MainArtifactLocator al = new MainArtifactLocator(repo, mapper);
+            MainArtifactLocator al = new MainArtifactLocator(mapper);
             artifact = al.locate(file, context.getGavCalculator(), gav);
 
             // If we found the matching artifact, switch over to indexing that, instead of the pom
@@ -118,7 +109,7 @@ public class ArtifactoryArtifactContextProducer implements ArtifactContextProduc
             InputStream pomInputStream = null;
             try {
                 // need to read the pom model to get packaging
-                pomInputStream = new BufferedInputStream(((JcrFile) pom).getStream());
+                pomInputStream = new BufferedInputStream(((JavaIOFileAdapter) pom).getStream());
                 Model model = new ArtifactContext.ModelReader().readModel(pomInputStream);
                 if (model != null) {
                     if (model.getPackaging() != null) {
@@ -161,8 +152,7 @@ public class ArtifactoryArtifactContextProducer implements ArtifactContextProduc
         return true;
     }
 
-    private Gav getGavFromPath(IndexingContext context, String repositoryPath, String artifactPath)
-            throws IllegalArtifactCoordinateException {
+    private Gav getGavFromPath(IndexingContext context, String repositoryPath, String artifactPath) {
         String path = artifactPath.substring(repositoryPath.length() + 1).replace('\\', '/');
 
         return context.getGavCalculator().pathToGav(path);

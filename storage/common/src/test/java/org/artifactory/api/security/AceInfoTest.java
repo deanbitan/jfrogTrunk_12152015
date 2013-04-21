@@ -38,12 +38,12 @@ public class AceInfoTest {
 
     public void adminMaskOnly() {
         MutableAceInfo aceInfo = new AceImpl();
-        aceInfo.setAdmin(true);
-        assertOnlyAdmin(aceInfo);
+        aceInfo.setManage(true);
+        assertOnlyManage(aceInfo);
 
         aceInfo = new AceImpl();
         aceInfo.setPermissionsFromString(Sets.<String>newHashSet("m"));
-        assertOnlyAdmin(aceInfo);
+        assertOnlyManage(aceInfo);
     }
 
     public void readerMaskOnly() {
@@ -89,13 +89,13 @@ public class AceInfoTest {
 
     public void allMasks() {
         MutableAceInfo aceInfo = new AceImpl();
-        aceInfo.setAdmin(true);
+        aceInfo.setManage(true);
         aceInfo.setDeploy(true);
         aceInfo.setRead(true);
         aceInfo.setDelete(true);
         aceInfo.setAnnotate(true);
 
-        assertTrue(aceInfo.canAdmin(), "Should have all roles");
+        assertTrue(aceInfo.canManage(), "Should have all roles");
         assertTrue(aceInfo.canRead(), "Should have all roles");
         assertTrue(aceInfo.canDeploy(), "Should have all roles");
         assertTrue(aceInfo.canDelete(), "Should have all roles");
@@ -104,7 +104,7 @@ public class AceInfoTest {
     }
 
     public void copyConstructor() {
-        MutableAceInfo orig = new AceImpl("koko", true, ArtifactoryPermission.ADMIN.getMask());
+        MutableAceInfo orig = new AceImpl("koko", true, ArtifactoryPermission.MANAGE.getMask());
         AceInfo copy = new AceImpl(orig);
 
         assertEquals(orig.getPrincipal(), copy.getPrincipal());
@@ -114,14 +114,14 @@ public class AceInfoTest {
     }
 
     public void copyConstructorReflectionEquality() {
-        MutableAceInfo orig = new AceImpl("koko", true, ArtifactoryPermission.ADMIN.getMask());
+        MutableAceInfo orig = new AceImpl("koko", true, ArtifactoryPermission.MANAGE.getMask());
         AceInfo copy = new AceImpl(orig);
 
         assertTrue(EqualsBuilder.reflectionEquals(orig, copy), "Orig and copy differ");
     }
 
-    private void assertOnlyAdmin(MutableAceInfo aceInfo) {
-        assertTrue(aceInfo.canAdmin(), "Should be admin");
+    private void assertOnlyManage(MutableAceInfo aceInfo) {
+        assertTrue(aceInfo.canManage(), "Should be a manager");
         assertFalse(aceInfo.canRead(), "Shouldn't be a reader");
         assertFalse(aceInfo.canDeploy(), "Shouldn't be a deployer");
         assertFalse(aceInfo.canDelete(), "Shouldn't be a deleter");
@@ -131,7 +131,7 @@ public class AceInfoTest {
     }
 
     private void assertOnlyRead(MutableAceInfo aceInfo) {
-        assertFalse(aceInfo.canAdmin(), "Shouldn't be an admin");
+        assertFalse(aceInfo.canManage(), "Shouldn't be a manager");
         assertTrue(aceInfo.canRead(), "Should be a reader");
         assertFalse(aceInfo.canDeploy(), "Shouldn't be a deployer");
         assertFalse(aceInfo.canDelete(), "Shouldn't be a deleter");
@@ -141,7 +141,7 @@ public class AceInfoTest {
     }
 
     private void assertOnlyDeploy(MutableAceInfo aceInfo) {
-        assertFalse(aceInfo.canAdmin(), "Shouldn't be an admin");
+        assertFalse(aceInfo.canManage(), "Shouldn't be a manager");
         assertFalse(aceInfo.canRead(), "Shouldn't be a reader");
         assertTrue(aceInfo.canDeploy(), "Should be a deployer");
         assertFalse(aceInfo.canDelete(), "Shouldn't be a deleter");
@@ -151,7 +151,7 @@ public class AceInfoTest {
     }
 
     private void assertOnlyDelete(MutableAceInfo aceInfo) {
-        assertFalse(aceInfo.canAdmin(), "Shouldn't be an admin");
+        assertFalse(aceInfo.canManage(), "Shouldn't be a manager");
         assertFalse(aceInfo.canRead(), "Shouldn't be a reader");
         assertFalse(aceInfo.canDeploy(), "Shouldn't be a deployer");
         assertTrue(aceInfo.canDelete(), "Should be a deleter");
@@ -161,7 +161,7 @@ public class AceInfoTest {
     }
 
     private void assertOnlyAnnotate(MutableAceInfo aceInfo) {
-        assertFalse(aceInfo.canAdmin(), "Shouldn't be an admin");
+        assertFalse(aceInfo.canManage(), "Shouldn't be a manager");
         assertFalse(aceInfo.canRead(), "Shouldn't be a reader");
         assertFalse(aceInfo.canDeploy(), "Shouldn't be a deployer");
         assertFalse(aceInfo.canDelete(), "Shouldn't be a deleter");

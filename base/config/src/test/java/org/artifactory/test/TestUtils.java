@@ -20,7 +20,7 @@ package org.artifactory.test;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
-import org.artifactory.log.LoggerFactory;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -76,6 +76,29 @@ public class TestUtils {
             }
             field.setAccessible(true);
             field.set(target, value);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Get the {@link java.lang.reflect.Field field} with the given <code>name</code> on the
+     * provided {@link Object target object}.
+     * <p/>
+     * Assumes the field is declared in the specified target class.
+     *
+     * @param target the target object on which to set the field
+     * @param name   the name of the field to get
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T getField(Object target, String name, Class<T> type) {
+        try {
+            Field field = findField(target.getClass(), name);
+            if (field == null) {
+                throw new IllegalArgumentException("Could not find field [" + name + "] on target [" + target + "]");
+            }
+            field.setAccessible(true);
+            return (T) field.get(target);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

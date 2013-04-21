@@ -23,7 +23,6 @@ import com.google.common.collect.MapMaker;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.jackrabbit.core.data.DataStoreException;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
@@ -36,25 +35,24 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.concurrent.ExpiringDelayed;
+import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.engine.InternalDownloadService;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.checksum.Checksum;
-import org.artifactory.jcr.JcrService;
-import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.io.checksum.policy.ChecksumPolicy;
+import org.artifactory.io.checksum.policy.ChecksumPolicyBase;
 import org.artifactory.md.Properties;
-import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.jcr.JcrCacheRepo;
+import org.artifactory.repo.db.DbCacheRepo;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
@@ -68,17 +66,18 @@ import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
-import org.artifactory.search.InternalSearchService;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.storage.binstore.service.BinaryNotFoundException;
+import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jcr.RepositoryException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,13 +124,20 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     private Map<String, List<RemoteItem>> remoteResourceCache;
 
+    private final ChecksumPolicy checksumPolicy;
+
     private boolean globalOfflineMode;
     private final HandleRefsTracker handleRefsTracker;
     private final ConcurrentMap<String, DownloadEntry> inTransit;
 
-    protected RemoteRepoBase(InternalRepositoryService repositoryService, T descriptor, boolean globalOfflineMode,
+    protected RemoteRepoBase(T descriptor, InternalRepositoryService repositoryService,
+            boolean globalOfflineMode,
             RemoteRepo oldRemoteRepo) {
-        super(repositoryService, descriptor);
+        super(descriptor, repositoryService);
+
+        ChecksumPolicyType checksumPolicyType = descriptor.getChecksumPolicyType();
+        checksumPolicy = ChecksumPolicyBase.getByType(checksumPolicyType);
+
         this.globalOfflineMode = globalOfflineMode;
         if (oldRemoteRepo instanceof RemoteRepoBase) {
             this.oldRemoteRepo = (RemoteRepoBase) oldRemoteRepo;
@@ -148,12 +154,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Override
     public void init() {
         if (isStoreArtifactsLocally()) {
-            LocalCacheRepo oldCacheRepo = null;
+            DbCacheRepo oldCacheRepo = null;
             if (oldRemoteRepo != null) {
-                oldCacheRepo = oldRemoteRepo.localCacheRepo;
+                oldCacheRepo = (DbCacheRepo) oldRemoteRepo.localCacheRepo;
             }
             //Initialize the local cache
-            localCacheRepo = new JcrCacheRepo(this, oldCacheRepo);
+            localCacheRepo = new DbCacheRepo(this, oldCacheRepo);
             localCacheRepo.init();
         }
         initCaches();
@@ -215,11 +221,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     @Override
-    public boolean isCache() {
-        return false;
-    }
-
-    @Override
     public boolean isHardFail() {
         return getDescriptor().isHardFail();
     }
@@ -257,6 +258,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Override
     public long getMissedRetrievalCachePeriodSecs() {
         return getDescriptor().getMissedRetrievalCachePeriodSecs();
+    }
+
+    @Override
+    public ChecksumPolicy getChecksumPolicy() {
+        return checksumPolicy;
     }
 
     /**
@@ -442,7 +448,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     public ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, RepoResource res)
-            throws IOException, RepositoryException, RepoRejectException {
+            throws IOException, RepoRejectException {
         // We also change the context here, otherwise if there is something in the cache
         // we will receive it instead of trying to download the latest from the remote
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
@@ -483,7 +489,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     public ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource,
-            RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException {
+            RepoResource cachedResource) throws IOException, RepoRejectException {
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         String path = remoteRepoPath.getPath();
 
@@ -507,14 +513,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             //Create the parent folder
             String parentPath = PathUtils.getParent(path);
             RepoPath parentRepoPath = InternalRepoPathFactory.create(localCacheRepo.getKey(), parentPath);
-
-            RepoRequests.logToContext("Locking parent folder");
-            JcrFolder parentFolder = localCacheRepo.getLockedJcrFolder(parentRepoPath, true);
-            RepoRequests.logToContext("Creating folder hierarchy if needed");
-            if (!parentFolder.mkdirs()) {
-                RepoRequests.logToContext("No folders created - removing lock");
-                LockingHelper.removeLockEntry(parentRepoPath);
-            }
 
             //Check that the resource is not being downloaded in parallel
             DownloadEntry completedConcurrentDownload = getCompletedConcurrentDownload(path);
@@ -571,23 +569,17 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     RepoRequests.logToContext("Remote property synchronization enabled = %s", synchronizeProperties);
 
                     if (synchronizeProperties) {
-                        if (getAuthorizationService().canAnnotate(remoteRepoPath)) {
-                            RepoRequests.logToContext("Trying to find remote properties");
-                            properties = getRemoteProperties(path);
-                        } else {
-                            RepoRequests.logToContext("Skipping property synchronization - " +
-                                    "lacking annotate permissions");
-                            log.warn("Skipping property synchronization of item '{}': Lacking annotate permissions.",
-                                    remoteRepoPath);
-                        }
+                        // No check for annotate permissions, since sync props is a configuration flag
+                        // and file will be deployed here
+                        RepoRequests.logToContext("Trying to find remote properties");
+                        properties = getRemoteProperties(path);
                     }
 
                     //Create/override the resource in the storage cache
                     RepoRequests.logToContext("Saving resource to " + localCacheRepo);
                     SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(remoteResource, handle)
                             .properties(properties).build();
-                    cachedResource = localCacheRepo.saveResource(saveResourceContext);
-
+                    cachedResource = getRepositoryService().saveResource(localCacheRepo, saveResourceContext);
                     if (remoteRequestStartTime > 0) {
                         // fire upload event only if the resource was downloaded from the remote repository
                         UploadEntry uploadEntry = new UploadEntry(remoteResource.getRepoPath().getId(),
@@ -644,50 +636,44 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     private ResourceStreamHandle getExistingResourceByChecksum(Set<ChecksumInfo> remoteChecksums, long size) {
-        RepoRequests.logToContext("Searching for existing resource based on SHA-1 checksum");
+        String remoteSha1 = getRemoteSha1(remoteChecksums);
+        if (!ChecksumType.sha1.isValid(remoteSha1)) {
+            RepoRequests.logToContext("Remote sha1 doesn't exist or is invalid: " + remoteSha1);
+            return null;
+        }
+        try {
+            RepoRequests.logToContext("Searching for existing resource with SHA-1 '%s'", remoteSha1);
+            BinaryStore binaryStore = ContextHelper.get().beanForType(BinaryStore.class);
+            InputStream data = binaryStore.getBinary(remoteSha1);
+            RepoRequests.logToContext("Found existing resource with the same checksum - " +
+                    "returning as normal content handle");
+            return new SimpleResourceStreamHandle(data, size);
+        } catch (BinaryNotFoundException e) {
+            // not found - resume
+            return null;
+        }
+    }
+
+    private String getRemoteSha1(Set<ChecksumInfo> remoteChecksums) {
         for (ChecksumInfo remoteChecksum : remoteChecksums) {
             if (ChecksumType.sha1.equals(remoteChecksum.getType())) {
-                String sha1 = remoteChecksum.getOriginal();
-                RepoRequests.logToContext("Searching for existing resource with SHA-1 '%s'", sha1);
-                JcrService jcrService = ContextHelper.get().beanForType(JcrService.class);
-                InputStream data = null;
-                try {
-                    data = jcrService.getDataStreamBySha1Checksum(sha1);
-                } catch (DataStoreException e) {
-                    RepoRequests.logToContext("Unable to find a data record with the same checksum");
-                    return null;
-                }
-                if (data != null) {
-                    RepoRequests.logToContext("Found existing resource with the same checksum - " +
-                            "returning as normal content handle");
-                    return new SimpleResourceStreamHandle(data, size);
-                }
+                return remoteChecksum.getOriginal();
             }
         }
-
-        RepoRequests.logToContext("Unable to find an existing resource with the same checksum");
         return null;
     }
 
     private void unexpire(RepoResource cachedResource) {
         RepoRequests.logToContext("Un-expiring cached resource if needed");
         String relativePath = cachedResource.getRepoPath().getPath();
-        boolean isMavenMetadata = MavenNaming.isMavenMetadata(relativePath);
         boolean isMetadata = cachedResource.isMetadata();
 
-        RepoRequests.logToContext("Is resource Maven metadata = %s", isMavenMetadata);
         RepoRequests.logToContext("Is resource metadata = %s", isMetadata);
 
-        if (isMavenMetadata || !isMetadata) {
-            if (isMavenMetadata) {
-                // unexpire the parent folder
-                RepoRequests.logToContext("Un-expiring the metadata's parent folder");
-                localCacheRepo.unexpire(NamingUtils.stripMetadataFromPath(relativePath));
-            } else {
-                // unexpire the file
-                RepoRequests.logToContext("Un-expiring the resource");
-                localCacheRepo.unexpire(relativePath);
-            }
+        if (!isMetadata) {
+            // unexpire the file
+            RepoRequests.logToContext("Un-expiring the resource");
+            localCacheRepo.unexpire(relativePath);
             // remove it from bad retrieval caches
             RepoRequests.logToContext("Removing the resource from all failed caches");
             removeFromCaches(relativePath, false);
@@ -724,9 +710,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 }
                 log.info("Waiting on concurrent download of '{}' in '{}'.", relPath, this);
                 RepoRequests.logToContext("Waiting on concurrent download.");
-                if (LockingHelper.getSessionLockManager().hasPendingResources()) {
-                    RepoRequests.logToContext("Session locks exit while waiting on concurrent download.");
-                }
                 boolean latchTriggered =
                         currentDownload.latch.await(currentDownload.getDelay(TimeUnit.SECONDS), TimeUnit.SECONDS);
                 if (!latchTriggered) {
@@ -750,7 +733,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     private void notifyConcurrentWaiters(InternalRequestContext requestContext, RepoResource resource, String relPath)
-            throws IOException, RepositoryException, RepoRejectException {
+            throws IOException, RepoRejectException {
         DownloadEntry currentDownload = inTransit.remove(relPath);
         if (currentDownload != null) {
             //Put it low enough in case it is incremented by multiple late waiters
@@ -956,9 +939,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private void afterResourceDownload(RepoResource resource) {
         RepoRequests.logToContext("Executing async archive content indexing if needed");
         String path = resource.getRepoPath().getPath();
-        InternalSearchService internalSearchService =
-                InternalContextHelper.get().beanForType(InternalSearchService.class);
-        internalSearchService.asyncIndex(InternalRepoPathFactory.create(localCacheRepo.getKey(), path));
+        ArchiveIndexer archiveIndexer =
+                InternalContextHelper.get().beanForType(ArchiveIndexer.class);
+        archiveIndexer.asyncIndex(InternalRepoPathFactory.create(localCacheRepo.getKey(), path));
     }
 
     /**
@@ -1028,12 +1011,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     "expired resource property synchronization not attempted");
             return;
         }
-        if (!getAuthorizationService().canAnnotate(repoPath)) {
-            log.warn("Skipping property synchronization of item '{}': Lacking annotate permissions.", repoPath);
-            RepoRequests.logToContext("Lacking annotate permissions - " +
-                    "expired resource property synchronization not attempted");
-            return;
-        }
 
         try {
             String artifactRelativePath = repoPath.getPath();
@@ -1084,7 +1061,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
 
             RepoPath localCacheRepoPath = InternalRepoPathFactory.create(cache.getKey(), artifactRelativePath);
-            getRepositoryService().setMetadata(localCacheRepoPath, Properties.class, properties);
+            getRepositoryService().setProperties(localCacheRepoPath, properties);
         } catch (Exception e) {
             String repoPathId = repoPath.getId();
             log.error("Unable to synchronize the properties of the item '{}' with the remote resource: {}",

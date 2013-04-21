@@ -24,7 +24,6 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.jcr.fs.JcrTreeNode;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
@@ -32,20 +31,19 @@ import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.SaveResourceContext;
-import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.StoringRepo;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
-import org.springframework.transaction.annotation.Transactional;
+import org.artifactory.storage.fs.service.ItemMetaInfo;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -61,8 +59,10 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @param key The repository key
      * @return Repository with the exact given key (no special meaning for remote/cache repo keys). Null if not found.
      */
+    @Nullable
     Repo repositoryByKey(String key);
 
+    @Nullable
     VirtualRepo virtualRepositoryByKey(String key);
 
     @Nullable
@@ -106,40 +106,42 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
 
     /**
      * This will verify the permission to deploy to the path, and will not acquire any FsItem. ATTENTION: No read lock
-     * acquire, pure JCR and ACL tests are done.
+     * acquire, pure DB and ACL tests are done.
      *
      * @param repo The storing repository (cache or local) to deploy to
      * @param path The path for deployment
      * @return A status holder with info on error
      */
-    @Transactional
     void assertValidDeployPath(LocalRepo repo, String path, long contentLength) throws RepoRejectException;
 
-    @Lock(transactional = true)
+    @Lock
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,
-            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepositoryException, RepoRejectException;
+            RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepoRejectException;
 
-    @Lock(transactional = true)
+    @Lock
     RepoResource unexpireIfExists(LocalRepo localCacheRepo, String path);
 
-    @Lock(transactional = true)
+    @Lock
     ResourceStreamHandle unexpireAndRetrieveIfExists(InternalRequestContext requestContext, LocalRepo localCacheRepo,
-            String path) throws IOException, RepositoryException, RepoRejectException;
+            String path) throws IOException, RepoRejectException;
 
-    @Lock(transactional = true)
     ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, Repo repo, RepoResource res)
-            throws IOException, RepoRejectException, RepositoryException;
+            throws IOException, RepoRejectException;
 
-    @Lock(transactional = true)
+    @Lock
     RepoResource saveResource(StoringRepo repo, SaveResourceContext saveContext)
-            throws IOException, RepoRejectException, RepositoryException;
+            throws IOException, RepoRejectException;
 
     @Override
-    @Lock(transactional = true)
     void exportTo(ExportSettings settings);
 
-    List<StoringRepo> getStoringRepositories();
-
+    /**
+     * Returns a local or local cache repository. Throws an exception if not found
+     *
+     * @param repoPath A repo path in the repository
+     * @return Local/cache repository matching the repo path repo key
+     */
+    @Nonnull
     LocalRepo getLocalRepository(RepoPath repoPath);
 
     /**
@@ -148,7 +150,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * that the maven metadata wasn't recalculated on them (the recalculation might execute in metadata and interrupted
      * in the middle)
      */
-    @Async(delayUntilAfterCommit = true, transactional = true)
+    @Async(delayUntilAfterCommit = true)
     void recalculateMavenMetadataOnMarkedFolders();
 
     /**
@@ -156,36 +158,32 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      *
      * @param basePath Repo path to remove the mark from. Must be a local non-cache repository path.
      */
-    @Lock(transactional = true)
-    void removeMarkForMavenMetadataRecalculation(RepoPath basePath) throws ItemNotFoundException;
-
-    /**
-     * Asynchronous method called at the end of the transaction to acquire a write lock on the repo path and activate
-     * the automatic save. The write will be acquired only if the fs item is not already write locked.
-     *
-     * @param repoPath The RepoPath of the item with dirty state.
-     */
-    @Async(delayUntilAfterCommit = true, transactional = true)
-    void markForSaveOnCommit(RepoPath repoPath);
+    @Lock
+    void removeMarkForMavenMetadataRecalculation(RepoPath basePath);
 
     @Override
-    Repository getJcrHandle();
-
-    @Override
-    @Lock(transactional = true)
+    @Lock
     void reload(CentralConfigDescriptor oldDescriptor);
-
-    @Lock(transactional = true)
-    void setXmlMetadataLater(RepoPath repoPath, String metadataName, String metadataContent);
-
-    /**
-     * @param treeNode Tree node to check recursively
-     * @return True if this node or any of its file node descendants represents a maven plugin
-     */
-    @Lock(transactional = true)
-    boolean treeNodeContainsMavenPlugins(JcrTreeNode treeNode);
 
     RepoPath getExplicitDescriptorPathByArtifact(RepoPath repoPath);
 
     VirtualRepo getGlobalVirtualRepo();
+
+    /**
+     * A convenient method fro saving internally generated files to the repositories.
+     *
+     * @param fileRepoPath Repository path to store the input stream
+     * @param is           The input stream to store. Will be closed before returning from this method
+     * @see InternalRepositoryService#saveResource(org.artifactory.repo.StoringRepo, org.artifactory.repo.SaveResourceContext)
+     */
+    @Lock
+    void saveFileInternal(RepoPath fileRepoPath, InputStream is)
+            throws RepoRejectException, IOException;
+
+    /**
+     * @param repoPath The repo path of an item.
+     * @return The meta info of the given repo path. Null if not found.
+     */
+    @Nullable
+    ItemMetaInfo getItemMetaInfo(RepoPath repoPath);
 }

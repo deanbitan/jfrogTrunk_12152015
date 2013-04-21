@@ -28,7 +28,6 @@ import java.util.Map;
 public abstract class RestBaseStorageInfo implements Serializable {
     @XmlElement(name = "uri")
     public String slf;
-    public String metadataUri;
     public String repo;
     public String path;
     public String created;

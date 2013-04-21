@@ -25,17 +25,14 @@ import org.apache.commons.io.IOUtils;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.io.TempFileStreamHandle;
-import org.artifactory.jcr.fs.JcrFile;
-import org.artifactory.jcr.fs.JcrFolder;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.StoringRepo;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -43,7 +40,9 @@ import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.ExceptionUtils;
+import org.artifactory.util.Pair;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -237,8 +236,9 @@ public class MavenIndexManager {
         log.debug("Creating index files for {}", indexedRepo);
         RepoIndexer repoIndexer = new RepoIndexer(indexStorageRepo);
         try {
-            indexHandle = repoIndexer.index(fireTime);
-            propertiesHandle = repoIndexer.getProperties();
+            Pair<TempFileStreamHandle, TempFileStreamHandle> tempFileStreamHandlesPair = repoIndexer.index(fireTime);
+            indexHandle = tempFileStreamHandlesPair.getFirst();
+            propertiesHandle = tempFileStreamHandlesPair.getSecond();
             indexStatus = IndexStatus.NEEDS_SAVING;
             log.debug("Created index files for {}", indexedRepo);
         } catch (Exception e) {
@@ -267,24 +267,23 @@ public class MavenIndexManager {
             if (indexStatus != IndexStatus.NEEDS_SAVING) {
                 return false;
             }
-            //Create the new jcr files for index and properties
-            //Create the index dir
-            RepoPath indexFolderRepoPath = InternalRepoPathFactory
-                    .create(indexStorageRepo.getRootFolder().getRepoPath(),
-                            MavenNaming.NEXUS_INDEX_DIR);
-            JcrFolder targetIndexDir = indexStorageRepo.getLockedJcrFolder(indexFolderRepoPath, true);
-            targetIndexDir.mkdirs();
+
+            InternalRepositoryService repoService = InternalContextHelper.get().beanForType(
+                    InternalRepositoryService.class);
+            RepoPath indexFolderRepoPath = indexStorageRepo.getRepoPath(MavenNaming.NEXUS_INDEX_DIR);
+
+            // save the index gz file
+            RepoPath indexGzRepoPath = new RepoPathImpl(indexFolderRepoPath, MavenNaming.NEXUS_INDEX_GZ);
             InputStream indexInputStream = indexHandle.getInputStream();
+            repoService.saveFileInternal(indexGzRepoPath, indexInputStream);
+
+            // save the index properties file
+            RepoPath indexPropsRepoPath = new RepoPathImpl(indexFolderRepoPath, MavenNaming.NEXUS_INDEX_PROPERTIES);
             InputStream propertiesInputStream = propertiesHandle.getInputStream();
-            //Copy to jcr, acquiring the lock as latest as possible
-            JcrFile indexFile = indexStorageRepo.getLockedJcrFile(InternalRepoPathFactory.create(
-                    targetIndexDir.getRepoPath(), MavenNaming.NEXUS_INDEX_GZ), true);
-            indexFile.fillData(indexInputStream);
-            JcrFile propertiesFile = indexStorageRepo.getLockedJcrFile(InternalRepoPathFactory.create(
-                    targetIndexDir.getRepoPath(), MavenNaming.NEXUS_INDEX_PROPERTIES), true);
-            propertiesFile.fillData(propertiesInputStream);
+            repoService.saveFileInternal(indexPropsRepoPath, propertiesInputStream);
+
             log.info("Successfully saved index file '{}' and index info '{}'.",
-                    indexFile.getAbsolutePath(), propertiesFile.getAbsolutePath());
+                    indexGzRepoPath, indexPropsRepoPath);
             log.debug("Saved index file for {}", indexStorageRepo);
             return true;
         } catch (Exception e) {

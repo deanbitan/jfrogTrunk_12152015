@@ -21,11 +21,9 @@ package org.artifactory.addon;
 import org.artifactory.descriptor.property.Property;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.md.MetadataInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.InternalRequestContext;
-import org.artifactory.sapi.fs.VfsItem;
 
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +37,9 @@ public interface PropertiesAddon extends Addon {
      *
      * @param repoPath Path to extract properties for
      * @return Properties of the repo path
+     * @deprecated Moved from Addons to repo service
      */
+    @Deprecated
     Properties getProperties(RepoPath repoPath);
 
     /**
@@ -72,6 +72,5 @@ public interface PropertiesAddon extends Addon {
      * Assemble a custom maven-metadata.xml according to the metadata definitions and matrix params in conjunction with
      * the existing properties already on the node.
      */
-    RepoResource assembleDynamicMetadata(MetadataInfo info, VfsItem<?, ?> metadataHostingItem,
-            InternalRequestContext context, RepoPath metadataRepoPath);
+    RepoResource assembleDynamicMetadata(InternalRequestContext context, RepoPath metadataRepoPath);
 }

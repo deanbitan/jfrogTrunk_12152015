@@ -32,7 +32,6 @@ import org.apache.wicket.model.Model;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.common.wicket.ajax.CancelDefaultDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.ActionableItem;
@@ -46,6 +45,7 @@ import org.artifactory.webapp.actionable.model.HierarchicActionableItem;
 import org.artifactory.webapp.actionable.model.ZipFileActionableItem;
 import org.artifactory.webapp.wicket.actionable.tree.menu.ActionsMenuPanel;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;

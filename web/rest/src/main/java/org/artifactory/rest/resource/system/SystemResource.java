@@ -27,6 +27,7 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.storage.StorageService;
 import org.artifactory.backup.InternalBackupService;
 import org.artifactory.info.InfoWriter;
+import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -69,6 +70,9 @@ public class SystemResource {
     StorageService storageService;
 
     @Autowired
+    InternalBinaryStore binaryStore;
+
+    @Autowired
     InternalBackupService backupService;
 
     @GET
@@ -89,7 +93,7 @@ public class SystemResource {
 
     @Path(SystemRestConstants.PATH_STORAGE)
     public StorageResource getStorageResource() {
-        return new StorageResource(storageService, backupService, httpResponse);
+        return new StorageResource(storageService, backupService, binaryStore, httpResponse);
     }
 
 }

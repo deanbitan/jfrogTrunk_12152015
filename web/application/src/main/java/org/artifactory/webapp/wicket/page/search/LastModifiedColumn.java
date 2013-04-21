@@ -24,10 +24,6 @@ import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
 import org.artifactory.webapp.wicket.page.search.actionable.ActionableSearchResult;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
 /**
  * Last modified groupable table column
  *
@@ -35,7 +31,6 @@ import java.util.Locale;
  */
 public class LastModifiedColumn extends GroupableColumn<ActionableSearchResult<ArtifactSearchResult>>
         implements IChoiceRenderer<ActionableSearchResult<ArtifactSearchResult>> {
-    private static final SimpleDateFormat DISPLAY_FORMAT = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
 
     public LastModifiedColumn() {
         super(Model.of("Modified"), "searchResult.lastModified", "searchResult.lastModifiedString");
@@ -48,7 +43,7 @@ public class LastModifiedColumn extends GroupableColumn<ActionableSearchResult<A
 
     @Override
     public Object getDisplayValue(ActionableSearchResult<ArtifactSearchResult> object) {
-        return DISPLAY_FORMAT.format(new Date(object.getSearchResult().getLastModified()));
+        return object.getSearchResult().getLastModifiedString();
     }
 
     @Override

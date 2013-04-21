@@ -88,7 +88,6 @@ public interface BuildAddon extends Addon {
      * @param defaultMessage Default message to display in any case
      * @return Delete confirmation message
      */
-    @Lock(transactional = true)
     String getDeleteItemWarningMessage(org.artifactory.fs.ItemInfo item, String defaultMessage);
 
     /**
@@ -98,7 +97,6 @@ public interface BuildAddon extends Addon {
      * @param defaultMessage The message to display in any case
      * @return Delete confirmation message
      */
-    @Lock(transactional = true)
     String getDeleteVersionsWarningMessage(List<RepoPath> versionPaths, String defaultMessage);
 
     /**
@@ -166,7 +164,7 @@ public interface BuildAddon extends Addon {
      * @param from Build name property value to search for
      * @param to   Replacement build name
      */
-    @Lock(transactional = true)
+    @Lock
     void renameBuildNameProperty(String from, String to);
 
     /**
@@ -177,7 +175,7 @@ public interface BuildAddon extends Addon {
      * @param buildRetention    Build retention model that holds information about which build to discard
      * @param multiStatusHolder Status holder
      */
-    @Lock(transactional = true)
+    @Lock
     void discardOldBuildsByDate(String buildName, BuildRetention buildRetention, MultiStatusHolder multiStatusHolder);
 
     /**
@@ -188,7 +186,7 @@ public interface BuildAddon extends Addon {
      * @param discard           Build retention model that holds information about which build to discard
      * @param multiStatusHolder Status holder
      */
-    @Lock(transactional = true)
+    @Lock
     void discardOldBuildsByCount(String buildName, BuildRetention discard, MultiStatusHolder multiStatusHolder);
 
     /**

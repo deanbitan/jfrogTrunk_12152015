@@ -40,13 +40,13 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.actionable.column.ActionsColumn;
 import org.artifactory.webapp.wicket.page.build.actionable.BuildActionableItem;
 import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
 import org.artifactory.webapp.wicket.page.build.panel.compare.BuildForNameListSorter;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.List;

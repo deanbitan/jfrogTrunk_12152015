@@ -104,7 +104,7 @@ public interface Searches {
      * @param sha1 The sha1 cheksum of the build dependency to search
      * @return A list of BuildRuns (may be empty)
      */
-    List<BuildRun> buildsByArtifactSha1(String sha1);
+    Set<BuildRun> buildsByArtifactSha1(String sha1);
 
     /**
      * Find all build runs that used a dependency with the provided sha1 checksum
@@ -112,5 +112,5 @@ public interface Searches {
      * @param sha1 The sha1 cheksum of the build dependency to search
      * @return A list of BuildRuns (may be empty)
      */
-    List<BuildRun> buildsByDependencySha1(String sha1);
+    Set<BuildRun> buildsByDependencySha1(String sha1);
 }

@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoBuilder;
-import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
@@ -32,29 +31,26 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.jcr.fs.JcrTreeNode;
-import org.artifactory.log.LoggerFactory;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.maven.versioning.MavenVersionComparator;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
-import org.artifactory.repo.jcr.StoringRepo;
+import org.artifactory.repo.StoringRepo;
 import org.artifactory.request.InternalRequestContext;
-import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
-import java.util.SortedSet;
+import java.util.Map;
 
 /**
  * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request
@@ -92,28 +88,10 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
 
     private InternalRequestContext getLatestVersionRequestContext(InternalRequestContext requestContext,
             StoringRepo repo, ModuleInfo originalModuleInfo, boolean searchForReleaseVersion) {
-        RepoLayout repoLayout = repo.getDescriptor().getRepoLayout();
-        ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(originalModuleInfo);
-
         VersionsRetriever retriever =
-                searchForReleaseVersion ? new ReleaseVersionsRetriever() : new SnapshotVersionsRetriever();
-        String baseArtifactPath = ModuleInfoUtils.constructArtifactPath(baseRevisionModule, repoLayout, false);
-        JcrTreeNode artifactSearchNode = retriever.getTreeNode(repo, repoLayout, baseArtifactPath, true);
-        TreeMultimap<Calendar, VfsItem> versionsItems = null;
-        if (artifactSearchNode != null) {
-            versionsItems = retriever.collectVersionsItems(repo, artifactSearchNode);
-        }
-
-        if (repoLayout.isDistinctiveDescriptorPathPattern()) {
-            String baseDescriptorPath = ModuleInfoUtils.constructDescriptorPath(baseRevisionModule, repoLayout, false);
-            if (!baseDescriptorPath.equals(baseArtifactPath)) {
-                JcrTreeNode descriptorNode = retriever.getTreeNode(repo, repoLayout, baseDescriptorPath, true);
-                if (descriptorNode != null) {
-                    versionsItems = retriever.collectVersionsItems(repo, descriptorNode);
-                }
-            }
-        }
-
+                searchForReleaseVersion ? new ReleaseVersionsRetriever(true) : new SnapshotVersionsRetriever(true);
+        ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(originalModuleInfo);
+        TreeMultimap<Calendar, ItemInfo> versionsItems = retriever.collectVersionsItems(repo, baseRevisionModule, true);
         if (versionsItems != null) {
             if (searchForReleaseVersion && !ConstantValues.requestSearchLatestReleaseByDateCreated.getBoolean()) {
                 return getRequestContentForReleaseByVersion(versionsItems.values(), repo, requestContext,
@@ -127,15 +105,15 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
         }
     }
 
-    private InternalRequestContext getRequestContentForReleaseByVersion(Collection<VfsItem> vfsItems,
+    private InternalRequestContext getRequestContentForReleaseByVersion(Collection<ItemInfo> itemInfos,
             StoringRepo repo, InternalRequestContext requestContext, ModuleInfo originalModuleInfo) {
-        List<VfsItem> itemsList = Lists.newArrayList(vfsItems);
+        List<ItemInfo> itemsList = Lists.newArrayList(itemInfos);
         String originalPath = requestContext.getResourcePath();
         RepositoryService repositoryService = getRepositoryService();
         ModuleInfo latestModuleInfo = null;
-        String latestArtifactPath = null;
-        for (VfsItem item : itemsList) {
-            if (item.isFile()) {
+        String latestArtifactPath = originalPath;
+        for (ItemInfo item : itemsList) {
+            if (!item.isFolder()) {
                 ModuleInfo itemModuleInfo = repositoryService.getItemModuleInfo(item.getRepoPath());
                 if (itemModuleInfo.isValid()) {
                     if (areModuleInfosTheSame(originalModuleInfo, itemModuleInfo) && isPropertiesMatch(item,
@@ -150,47 +128,25 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
             }
         }
 
-        String metadataName = null;
-        if (NamingUtils.isMetadata(originalPath)) {
-            metadataName = NamingUtils.getMetadataName(originalPath);
-        }
-        if (StringUtils.isNotBlank(metadataName)) {
-            latestArtifactPath = NamingUtils.getMetadataPath(latestArtifactPath, metadataName);
-        }
         return translateRepoRequestContext(requestContext, repo, latestArtifactPath);
     }
 
-    private InternalRequestContext getRequestContextFromMap(TreeMultimap<Calendar, VfsItem> versionsItems,
+    private InternalRequestContext getRequestContextFromMap(TreeMultimap<Calendar, ItemInfo> versionsItems,
             StoringRepo repo, InternalRequestContext requestContext, ModuleInfo originalModuleInfo,
             boolean searchForReleaseVersion) {
         String originalPath = requestContext.getResourcePath();
-        SortedSet<Calendar> keySet = versionsItems.keySet();
-        Calendar[] calendarKeys = keySet.toArray(new Calendar[keySet.size()]);
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
-        for (int calendarKeyIdx = calendarKeys.length - 1; calendarKeyIdx >= 0; calendarKeyIdx--) {
-            SortedSet<VfsItem> vfsItems = versionsItems.get(calendarKeys[calendarKeyIdx]);
-            VfsItem[] vfsItemsArray = vfsItems.toArray(new VfsItem[vfsItems.size()]);
-            for (int vfsItemIdx = vfsItemsArray.length - 1; vfsItemIdx >= 0; vfsItemIdx--) {
-                VfsItem item = vfsItemsArray[vfsItemIdx];
-                if (item.isFile()) {
-                    ModuleInfo itemModuleInfo = repositoryService.getItemModuleInfo(item.getRepoPath());
-                    boolean isIntegration = itemModuleInfo.isIntegration();
-                    boolean matchReleaseSearch = searchForReleaseVersion && !isIntegration;
-                    boolean matchIntegrationSearch = !searchForReleaseVersion && isIntegration;
-                    if (itemModuleInfo.isValid() && (matchReleaseSearch || matchIntegrationSearch)) {
-                        if (areModuleInfosTheSame(originalModuleInfo, itemModuleInfo) && isPropertiesMatch(item,
-                                requestContext.getProperties())) {
-                            String metadataName = null;
-                            if (NamingUtils.isMetadata(originalPath)) {
-                                metadataName = NamingUtils.getMetadataName(originalPath);
-                            }
-                            String artifactTranslatedPath = item.getRepoPath().getPath();
-                            if (StringUtils.isNotBlank(metadataName)) {
-                                artifactTranslatedPath = NamingUtils.getMetadataPath(artifactTranslatedPath,
-                                        metadataName);
-                            }
-                            return translateRepoRequestContext(requestContext, repo, artifactTranslatedPath);
-                        }
+        for (Map.Entry<Calendar, ItemInfo> entry : versionsItems.entries()) {
+            ItemInfo item = entry.getValue();
+            if (!item.isFolder()) {
+                ModuleInfo itemModuleInfo = repositoryService.getItemModuleInfo(item.getRepoPath());
+                boolean isIntegration = itemModuleInfo.isIntegration();
+                boolean matchReleaseSearch = searchForReleaseVersion && !isIntegration;
+                boolean matchIntegrationSearch = !searchForReleaseVersion && isIntegration;
+                if (itemModuleInfo.isValid() && (matchReleaseSearch || matchIntegrationSearch)) {
+                    if (areModuleInfosTheSame(originalModuleInfo, itemModuleInfo) && isPropertiesMatch(item,
+                            requestContext.getProperties())) {
+                        return translateRepoRequestContext(requestContext, repo, item.getRelPath());
                     }
                 }
             }
@@ -199,15 +155,12 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
         return requestContext;
     }
 
-    private boolean isPropertiesMatch(VfsItem<?, ?> fsItem, Properties requestProps) {
+    private boolean isPropertiesMatch(ItemInfo itemInfo, Properties requestProps) {
         if (requestProps == null || requestProps.isEmpty()) {
             return true;
         }
-        Properties nodeProps = fsItem.getMetadata(Properties.class);
-        if (nodeProps == null) {
-            return true;
-        }
-        Properties.MatchResult result = nodeProps.matchQuery(requestProps);
+        Properties nodeProps = getRepositoryService().getProperties(itemInfo.getRepoPath());
+        Properties.MatchResult result = nodeProps != null ? nodeProps.matchQuery(requestProps) : null;
         return !Properties.MatchResult.CONFLICT.equals(result);
     }
 
@@ -230,19 +183,8 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
                 repoDescriptor.getSnapshotVersionBehavior());
         String artifactPath = getLatestArtifactPath(parentRepoPath, originalModuleInfo, isDeployerBehavior,
                 requestContext.getProperties());
-        if (artifactPath != null) {
-            String metadataName = null;
-            if (NamingUtils.isMetadata(path)) {
-                metadataName = NamingUtils.getMetadataName(path);
-            }
-            if (StringUtils.isNotBlank(metadataName)) {
-                artifactPath = NamingUtils.getMetadataPath(artifactPath, metadataName);
-            }
-            requestContext = translateRepoRequestContext(requestContext, repo, artifactPath);
-            return requestContext;
-        }
 
-        return requestContext;
+        return artifactPath != null ? translateRepoRequestContext(requestContext, repo, artifactPath) : requestContext;
     }
 
     /**
@@ -318,12 +260,11 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
     }
 
     private boolean areModuleInfosTheSame(ModuleInfo originalModuleInfo, ModuleInfo moduleInfo) {
-        String originalExtWithoutMetadata = NamingUtils.stripMetadataFromPath(originalModuleInfo.getExt());
         boolean releaseCondition = StringUtils.equals(originalModuleInfo.getOrganization(),
                 moduleInfo.getOrganization())
                 && StringUtils.equals(originalModuleInfo.getModule(), moduleInfo.getModule())
                 && StringUtils.equals(originalModuleInfo.getClassifier(), moduleInfo.getClassifier())
-                && StringUtils.equals(originalExtWithoutMetadata, moduleInfo.getExt());
+                && StringUtils.equals(originalModuleInfo.getExt(), moduleInfo.getExt());
 
         boolean integrationCondition = releaseCondition
                 && StringUtils.equals(originalModuleInfo.getBaseRevision(), moduleInfo.getBaseRevision());

@@ -27,11 +27,11 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.ImportRestConstants;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.SystemRestConstants;
-import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.sapi.common.ImportSettings;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -73,7 +73,7 @@ public class ImportResource {
     AuthorizationService authorizationService;
 
     @Autowired
-    SearchService searchService;
+    ArchiveIndexer archiveIndexer;
 
 
     @GET
@@ -107,8 +107,7 @@ public class ImportResource {
                 return Response.serverError().entity(e.getMessage()).build();
             }
         } finally {
-            SearchService searchService = ContextHelper.get().beanForType(SearchService.class);
-            searchService.asyncIndexMarkedArchives();
+            ContextHelper.get().beanForType(ArchiveIndexer.class).asyncIndexMarkedArchives();
         }
         return Response.ok().build();
     }
@@ -161,7 +160,7 @@ public class ImportResource {
             statusHolder.setError("Unable to import repository", e, log);
         } finally {
             if (!importSettings.isIndexMarkedArchives()) {
-                searchService.asyncIndexMarkedArchives();
+                archiveIndexer.asyncIndexMarkedArchives();
             }
         }
     }

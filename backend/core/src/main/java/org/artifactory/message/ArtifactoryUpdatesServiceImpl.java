@@ -32,10 +32,10 @@ import org.artifactory.api.message.ArtifactoryUpdatesService;
 import org.artifactory.api.message.Message;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.HttpClientConfigurator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

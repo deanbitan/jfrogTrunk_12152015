@@ -28,7 +28,6 @@ import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.List;
 
@@ -87,7 +86,7 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      *
      */
     ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource,
-            RepoResource cachedResource) throws IOException, RepositoryException, RepoRejectException;
+            RepoResource cachedResource) throws IOException, RepoRejectException;
 
     /**
      * List remote resources from a remote path.

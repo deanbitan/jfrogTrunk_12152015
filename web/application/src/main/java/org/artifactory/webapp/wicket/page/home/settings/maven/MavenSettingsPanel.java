@@ -38,11 +38,11 @@ import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsGeneratorPanel;
 import org.artifactory.webapp.wicket.page.home.settings.DefaultOptionSelector;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;

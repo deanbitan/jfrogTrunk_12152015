@@ -20,11 +20,11 @@ package org.artifactory.log.logback;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.selector.ContextSelector;
+import ch.qos.logback.classic.util.ContextSelectorStaticBinder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.log.LoggerFactory;
-import org.slf4j.impl.StaticLoggerBinder;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public class LogbackContextSelector implements ContextSelector {
                     throw new IllegalStateException(
                             "Trying to create a new configuration but artifactory home is null.");
                 }
-                LogbackContextHelper.configure(loggerContext, home);
+                LogbackContextHelper.configure(loggerContext, home, configInfo.getContextId());
                 LoggerContext existingContext = loggerContextsByContextId.putIfAbsent(contextPath, loggerContext);
                 return existingContext == null ? loggerContext : existingContext;
             } else {
@@ -113,7 +113,7 @@ public class LogbackContextSelector implements ContextSelector {
 
     public static void bind() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ContextSelector selector = StaticLoggerBinder.getSingleton().getContextSelector();
+        ContextSelector selector = ContextSelectorStaticBinder.getSingleton().getContextSelector();
         if (selector instanceof LogbackContextSelector) {
             tlsLoggingContext.set(context);
         }

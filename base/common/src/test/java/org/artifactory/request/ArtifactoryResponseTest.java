@@ -18,8 +18,8 @@
 
 package org.artifactory.request;
 
-import org.artifactory.log.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
 import java.io.IOException;

@@ -37,7 +37,6 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
 import org.artifactory.schedule.Task;
@@ -51,6 +50,7 @@ import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.EmailException;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -416,24 +416,29 @@ public class BackupServiceImpl implements InternalBackupService {
      */
     private String getErrorListBlock(MultiStatusHolder statusHolder) {
         StringBuilder builder = new StringBuilder();
-
-        for (StatusEntry errorEntry : statusHolder.getErrors()) {
-
-            //Make one error per row
-            String errorMessage = errorEntry.getMessage();
-
-            Throwable throwable = errorEntry.getException();
-            if (throwable != null) {
-                String throwableMessage = throwable.getMessage();
-                if (StringUtils.isNotBlank(throwableMessage)) {
-                    errorMessage += ": " + throwableMessage;
-                }
+        List<StatusEntry> errors = statusHolder.getErrors();
+        if (errors.size() > 0) {
+            for (StatusEntry errorEntry : errors) {
+                convertErrorEntryToString(builder, errorEntry);
             }
-            builder.append(errorMessage).append("<br>");
+        } else {
+            convertErrorEntryToString(builder, statusHolder.getLastError());
         }
-
         builder.append("<p>");
-
         return builder.toString();
+    }
+
+    private void convertErrorEntryToString(StringBuilder builder, StatusEntry errorEntry) {
+        //Make one error per row
+        builder.append(errorEntry.getMessage());
+        Throwable throwable = errorEntry.getException();
+        if (throwable != null) {
+            String throwableMessage = throwable.getMessage();
+            if (StringUtils.isNotBlank(throwableMessage)) {
+                builder.append(": ");
+                builder.append(throwableMessage);
+            }
+        }
+        builder.append("<br>");
     }
 }

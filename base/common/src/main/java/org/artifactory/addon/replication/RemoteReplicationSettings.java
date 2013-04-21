@@ -28,14 +28,24 @@ import java.io.Writer;
 public class RemoteReplicationSettings extends ReplicationBaseSettings {
 
     private final boolean progress;
-    private final int mark;
     private final ReplicationAddon.Overwrite overwrite;
+
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
+    private final int mark;
+
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
     private final Writer responseWriter;
 
     /**
      * <B>NOTE<B>: Try to refrain from using this constructor directly and use the builder instead
      */
-    RemoteReplicationSettings(RepoPath repoPath, boolean progress, int mark, boolean deleteExisting,
+    protected RemoteReplicationSettings(RepoPath repoPath, boolean progress, int mark, boolean deleteExisting,
             boolean includeProperties, ReplicationAddon.Overwrite overwrite, Writer responseWriter,
             String url, int socketTimeoutMillis) {
         super(repoPath, deleteExisting, includeProperties, url, socketTimeoutMillis);
@@ -49,6 +59,10 @@ public class RemoteReplicationSettings extends ReplicationBaseSettings {
         return progress;
     }
 
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
     public int getMark() {
         return mark;
     }
@@ -57,6 +71,10 @@ public class RemoteReplicationSettings extends ReplicationBaseSettings {
         return overwrite;
     }
 
+    /**
+     * Never used ?!?!
+     */
+    @Deprecated
     public Writer getResponseWriter() {
         return responseWriter;
     }

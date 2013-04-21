@@ -29,14 +29,15 @@ import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.maven.MavenModelUtils;
 import org.artifactory.mime.MavenNaming;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
@@ -214,9 +215,9 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
             // get the parent path which should contains the maven-metadata
             RepoPath parentRepoPath = repoPath.getParent();
             RepositoryService repoService = ContextHelper.get().getRepositoryService();
-            if (repoService.exists(parentRepoPath) &&
-                    repoService.hasMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME)) {
-                String mavenMetadataStr = repoService.getXmlMetadata(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);
+            RepoPathImpl mavenMetadataPath = new RepoPathImpl(parentRepoPath, MavenNaming.MAVEN_METADATA_NAME);
+            if (repoService.exists(mavenMetadataPath)) {
+                String mavenMetadataStr = repoService.getStringContent(mavenMetadataPath);
                 Metadata metadata = MavenModelUtils.toMavenMetadata(mavenMetadataStr);
                 Versioning versioning = metadata.getVersioning();
                 if (versioning != null) {

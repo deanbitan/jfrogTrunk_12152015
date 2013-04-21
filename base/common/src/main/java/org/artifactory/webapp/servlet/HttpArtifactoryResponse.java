@@ -20,12 +20,12 @@ package org.artifactory.webapp.servlet;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.ArtifactoryResponseBase;
 import org.artifactory.util.HttpUtils;
 import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

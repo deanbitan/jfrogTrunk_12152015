@@ -56,7 +56,6 @@ public abstract class TitledAjaxSubmitLink extends TitledSubmitLink implements I
         add(new AjaxFormSubmitBehavior(form, "onclick") {
             @Override
             protected void onSubmit(AjaxRequestTarget target) {
-                //TODO: [by YS] why don't we use this link's form directly?
                 TitledAjaxSubmitLink.this.onSubmit(target, getForm());
             }
 

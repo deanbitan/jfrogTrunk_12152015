@@ -42,7 +42,7 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.artifactory.webapp.wicket.util.validation.JcrNameValidator;
+import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.PortNumberValidator;
 import org.artifactory.webapp.wicket.util.validation.UniqueXmlIdValidator;
 import org.artifactory.webapp.wicket.util.validation.XsdNCNameValidator;
@@ -77,7 +77,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
         setDefaultFocusField(proxyKeyField);
         proxyKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
-            proxyKeyField.add(new JcrNameValidator("Invalid proxy key '%s'."));
+            proxyKeyField.add(new NameValidator("Invalid proxy key '%s'."));
             proxyKeyField.add(new XsdNCNameValidator("Invalid proxy key '%s'."));
             proxyKeyField.add(new UniqueXmlIdValidator(proxiesListPanel.getEditingDescriptor()));
         }

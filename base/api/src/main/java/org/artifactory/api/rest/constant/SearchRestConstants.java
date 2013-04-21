@@ -29,7 +29,6 @@ public interface SearchRestConstants {
     String PATH_ARCHIVE = "archive";
     String PATH_GAVC = "gavc";
     String PATH_PROPERTY = "prop";
-    String PATH_XPATH = "xpath";
     String PATH_USAGE_SINCE = "usage";
     String PATH_CREATED_IN_RANGE = "creation";
     String PATH_PATTERN = "pattern";

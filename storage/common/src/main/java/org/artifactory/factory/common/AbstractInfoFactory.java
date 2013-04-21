@@ -23,6 +23,7 @@ import org.artifactory.md.MutableMetadataInfo;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.sapi.security.SecurityConstants;
 import org.artifactory.security.AceInfo;
 import org.artifactory.security.MutableAceInfo;
 import org.artifactory.security.MutableAclInfo;
@@ -79,6 +80,7 @@ public abstract class AbstractInfoFactory implements InfoFactory {
     public MutableGroupInfo createGroup(String groupName) {
         MutableGroupInfo group = createGroup();
         group.setGroupName(groupName);
+        group.setRealm(SecurityConstants.DEFAULT_REALM);
         return group;
     }
 

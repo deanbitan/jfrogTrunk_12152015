@@ -31,9 +31,9 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.log.LoggerFactory;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;

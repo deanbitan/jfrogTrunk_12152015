@@ -34,8 +34,6 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoResolver;
 import org.artifactory.fs.RepoResource;
-import org.artifactory.jcr.lock.LockingHelper;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -54,8 +52,8 @@ import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.util.List;
 
@@ -98,8 +96,6 @@ public class VirtualRepoDownloadStrategy {
         // release the read lock on the virtual repo local cache to prevent deadlock in any of the interceptors
         // (in case one of them needs to write back to the virtual repo cache)
         RepoPath localCacheRepoPath = InternalRepoPathFactory.create(virtualRepo.getKey(), context.getResourcePath());
-        RepoRequests.logToContext("Releasing the cached resource read lock");
-        LockingHelper.releaseReadLock(localCacheRepoPath);
 
         // not found in local virtual repository storage, look in configured repositories
         RepoResource searchableResource = getInfoFromSearchableRepositories(context);
@@ -109,7 +105,7 @@ public class VirtualRepoDownloadStrategy {
         } else if (cachedResource.isFound() && !searchableResource.isFound()) {
             // delete the local cached artifact and return the not found resource
             RepoRequests.logToContext("Resource was not found but is still cached - removing from the cache");
-            virtualRepo.undeploy(localCacheRepoPath, false);
+            repositoryService.undeploy(localCacheRepoPath, false);
             return searchableResource;
         } else if (cachedResource.isFound() && searchableResource.isFound()) {
             String sourceRepoKey = searchableResource.getResponseRepoPath().getRepoKey();
@@ -132,9 +128,6 @@ public class VirtualRepoDownloadStrategy {
                 } catch (RepoRejectException rre) {
                     RepoRequests.logToContext("Error while updating download stats: %s", rre.getMessage());
                     log.error("Could not update download stats", rre);
-                } catch (RepositoryException re) {
-                    RepoRequests.logToContext("Error while updating download stats: %s", re.getMessage());
-                    log.error("Could not update download stats", re);
                 } finally {
                     if (searchableHandle != null) {
                         searchableHandle.close();
@@ -152,7 +145,7 @@ public class VirtualRepoDownloadStrategy {
     private RepoResource getInfoFromLocalStorage(InternalRequestContext context) {
         try {
             RepoRequests.logToContext("Trying to retrieve resource info from the local storage");
-            return virtualRepo.storageMixin.getInfo(context);
+            return virtualRepo.getInfoFromVirtualCache(context);
         } catch (FileExpectedException e) {
             RepoRequests.logToContext("Unable to find resource info in the local storage - " +
                     "already exists as a directory: %s", e.getMessage());
@@ -305,8 +298,9 @@ public class VirtualRepoDownloadStrategy {
                         "retrying with the original");
                 res = repo.getInfo(context);
             }
+            //TORE: [by YS] check if this is necessary with the reduced locking
             // release all read locks acquired by the repo during the getInfo
-            LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
+            //LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
             if (res.isFound()) {
                 RepoRequests.logToContext("Resource was found in %s", repo.getKey());
                 updateResponseRepoPath(repo, res);

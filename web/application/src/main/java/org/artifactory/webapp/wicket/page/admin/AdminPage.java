@@ -49,7 +49,7 @@ public class AdminPage extends AuthenticatedPage {
         if (authService.isAdmin()) {
             // for now redirect all valid admin requests to the general configuration tab
             throw new RestartResponseException(GeneralConfigPage.class);
-        } else if (authService.hasPermission(ArtifactoryPermission.ADMIN)) {
+        } else if (authService.hasPermission(ArtifactoryPermission.MANAGE)) {
             throw new RestartResponseException(AclsPage.class);
         }
 

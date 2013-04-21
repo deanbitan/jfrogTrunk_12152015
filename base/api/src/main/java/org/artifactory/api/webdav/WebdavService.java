@@ -45,19 +45,16 @@ public interface WebdavService {
     /**
      * PROPFIND Method.
      */
-    @Lock(transactional = true)
     void handlePropfind(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
 
-    @Lock(transactional = true)
+    @Lock
     void handleMkcol(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
 
-    @Lock(transactional = true)
     void handleDelete(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
 
     void handleOptions(ArtifactoryResponse response) throws IOException;
 
     void handlePost(ArtifactoryRequest request, ArtifactoryResponse response);
 
-    @Lock(transactional = true)
     void handleMove(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
 }

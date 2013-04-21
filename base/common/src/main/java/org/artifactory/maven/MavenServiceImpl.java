@@ -38,10 +38,10 @@ import org.artifactory.api.maven.MavenSettingsServer;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedInputStream;
@@ -204,7 +204,7 @@ public class MavenServiceImpl implements MavenService {
     public void validatePomContent(String pomContent, String relPath, ModuleInfo moduleInfo,
             boolean suppressPomConsistencyChecks) throws IOException {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File tempFile = File.createTempFile("pom.validation", ".tmp", artifactoryHome.getWorkTmpDir());
+        File tempFile = File.createTempFile("pom.validation", ".tmp", artifactoryHome.getTempWorkDir());
         try {
             FileUtils.writeStringToFile(tempFile, pomContent, "utf-8");
             validatePomFile(tempFile, relPath, moduleInfo, suppressPomConsistencyChecks);

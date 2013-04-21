@@ -114,17 +114,6 @@ public class SearchResource {
     }
 
     /**
-     * Delegates the request to the metadata search resource
-     *
-     * @return Metadata search resource
-     */
-    @Path(SearchRestConstants.PATH_XPATH)
-    public XpathSearchResource metadataQuery() {
-        return new XpathSearchResource(authorizationService, searchService, repositoryService, repoBrowsingService,
-                request, response);
-    }
-
-    /**
      * Delegates the request to the usage since search resource
      *
      * @return Usage since resource
@@ -192,25 +181,4 @@ public class SearchResource {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return new BuildArtifactsSearchResource(restAddon, authorizationService, request, response);
     }
-
-    /**
-     * Searches the repository and returns a plain text result
-     *
-     * @param searchQuery The search query
-     * @return String - Plain text response
-     */
-    /*@GET
-    @Produces("text/plain")
-    public String searchAsText(@QueryParam(QUERY_PREFIX) String searchQuery) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Artifactory REST API search\n");
-        sb.append("============================\n");
-        if ((searchQuery == null) || ("".equals(searchQuery))) {
-            sb.append("'query' parameter is either empty or non existant");
-            return sb.toString();
-        }
-        SearchHelper searchHelper = new SearchHelper(searchService, null);
-        String searchResult = searchHelper.searchPlainText(sb, searchQuery);
-        return searchResult;
-    }*/
 }

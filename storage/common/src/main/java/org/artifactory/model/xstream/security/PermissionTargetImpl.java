@@ -25,6 +25,7 @@ import org.artifactory.util.PathUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @XStreamAlias("target")
@@ -89,7 +90,8 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
 
     @Override
     public void setRepoKeys(List<String> repoKeys) {
-        this.repoKeys = repoKeys;
+        this.repoKeys = new ArrayList<>(repoKeys);
+        Collections.sort(this.repoKeys);
     }
 
     @Override
@@ -119,7 +121,6 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
 
     @Override
     public void setIncludesPattern(String includesPattern) {
-        //Must be wrapped for ocm, otherwise uses an internal Arrays.List class
         this.includes = PathUtils.includesExcludesPatternToStringList(includesPattern);
     }
 
@@ -130,7 +131,6 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
 
     @Override
     public void setExcludesPattern(String excludesPattern) {
-        //Must be wrapped for ocm, otherwise uses an internal Arrays.List class
         this.excludes = PathUtils.includesExcludesPatternToStringList(excludesPattern);
     }
 

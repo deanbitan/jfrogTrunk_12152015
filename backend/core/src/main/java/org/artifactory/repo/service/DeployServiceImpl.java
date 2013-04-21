@@ -34,13 +34,11 @@ import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
-import org.artifactory.api.repo.exception.RepoAccessException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.UploadService;
-import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
@@ -50,13 +48,12 @@ import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
-import org.artifactory.search.InternalSearchService;
-import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.PathMatcher;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -78,10 +75,7 @@ public class DeployServiceImpl implements DeployService {
     private InternalRepositoryService repositoryService;
 
     @Autowired
-    private AuthorizationService authService;
-
-    @Autowired
-    private InternalSearchService searchService;
+    private ArchiveIndexer archiveIndexer;
 
     @Autowired
     private UploadService uploadService;
@@ -111,16 +105,9 @@ public class DeployServiceImpl implements DeployService {
         if (localRepo == null) {
             throw new IllegalArgumentException("No target repository found for deployment.");
         }
-        //Check acceptance according to include/exclude patterns
-        //TODO: [by yl] assertValidDeployPath is already called by the upload service, including security checks!
-        repositoryService.assertValidDeployPath(localRepo, path, fileToDeploy.length());
+
         RepoPath repoPath = InternalRepoPathFactory.create(targetRepo.getKey(), path);
-        //TODO: [by yl] assertValidDeployPath is already checking deploy permissions!
-        if (!authService.canDeploy(repoPath)) {
-            AccessLogger.deployDenied(repoPath);
-            throw new RepoAccessException("Not enough permissions to deploy artifact '" + fileToDeploy + "'.", repoPath,
-                    "deploy", authService.currentUsername());
-        }
+
         // upload the main file
         try {
             ArtifactoryDeployRequest request = new ArtifactoryDeployRequestBuilder(repoPath)
@@ -273,7 +260,7 @@ public class DeployServiceImpl implements DeployService {
             status.setStatus("Successfully deployed " + archiveContentSize + " artifacts from archive: " + bundleName
                     + " (" + timeTaken + " seconds).", log);
             //Trigger indexing for marked files
-            searchService.asyncIndexMarkedArchives();
+            archiveIndexer.asyncIndexMarkedArchives();
         } catch (Exception e) {
             status.setError(e.getMessage(), e, log);
         } finally {
@@ -292,7 +279,7 @@ public class DeployServiceImpl implements DeployService {
         } catch (IOException e) {
             throw new Exception("Could not encode archive name to UTF-8.", e);
         }
-        File extractFolder = new File(ContextHelper.get().getArtifactoryHome().getTmpUploadsDir(),
+        File extractFolder = new File(ContextHelper.get().getArtifactoryHome().getTempUploadDir(),
                 fixedArchive.getName() + "_extracted_" + System.currentTimeMillis());
         if (extractFolder.exists()) {
             //Clean up any existing folder

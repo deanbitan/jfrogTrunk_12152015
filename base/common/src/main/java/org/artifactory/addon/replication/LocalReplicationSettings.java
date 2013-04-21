@@ -40,7 +40,7 @@ public class LocalReplicationSettings extends ReplicationBaseSettings {
     /**
      * <B>NOTE<B>: Try to refrain from using this constructor directly and use the builder instead
      */
-    LocalReplicationSettings(RepoPath repoPath, String url, ProxyDescriptor proxyDescriptor,
+    public LocalReplicationSettings(RepoPath repoPath, String url, ProxyDescriptor proxyDescriptor,
             int socketTimeoutMillis, String username, String password, boolean deleteExisting,
             boolean includeProperties) {
         super(repoPath, deleteExisting, includeProperties, url, socketTimeoutMillis);

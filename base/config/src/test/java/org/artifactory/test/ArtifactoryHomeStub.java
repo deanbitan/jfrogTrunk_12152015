@@ -31,6 +31,7 @@ import org.artifactory.mime.MimeTypes;
 public class ArtifactoryHomeStub extends ArtifactoryHome {
 
     public ArtifactoryHomeStub() {
+        super();
         setArtifactorySystemProperties(new ArtifactorySystemProperties());
     }
 

@@ -20,7 +20,6 @@ package org.artifactory.addon.license;
 
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.jfrog.build.api.Build;
@@ -57,5 +56,5 @@ public interface LicensesAddon extends Addon {
      */
     void exportLicenses(ExportSettings exportSettings);
 
-    List findLicensesInRepos(List<RepoDescriptor> repositories, LicenseStatus status);
+    List findLicensesInRepos(List<String> repoKeys, LicenseStatus status);
 }

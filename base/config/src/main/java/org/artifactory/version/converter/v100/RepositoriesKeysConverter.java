@@ -19,12 +19,12 @@
 package org.artifactory.version.converter.v100;
 
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.version.converter.XmlConverter;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.Namespace;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -29,7 +29,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -41,9 +41,9 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collections;
@@ -59,7 +59,7 @@ public abstract class BasicImportPanel extends TitledPanel {
     private RepositoryService repositoryService;
 
     @SpringBean
-    private SearchService searchService;
+    private ArchiveIndexer archiveIndexer;
 
     @WicketProperty
     private String targetRepoKey;
@@ -72,9 +72,6 @@ public abstract class BasicImportPanel extends TitledPanel {
 
     @WicketProperty
     private boolean excludeMetadata;
-
-    @WicketProperty
-    private boolean trustServerChecksums;
 
     private Form importForm;
 
@@ -141,7 +138,6 @@ public abstract class BasicImportPanel extends TitledPanel {
                     importSettings.setFailIfEmpty(true);
                     importSettings.setVerbose(verbose);
                     importSettings.setIncludeMetadata(!excludeMetadata);
-                    importSettings.setTrustServerChecksums(trustServerChecksums);
                     //If we chose "All" import all local repositories, else import a single repo
                     if (importAllRepos) {
                         //Do not activate archive indexing until all repositories were imported
@@ -168,7 +164,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                     errorImportFeedback(status);
                 } finally {
                     if (!importSettings.isIndexMarkedArchives()) {
-                        searchService.asyncIndexMarkedArchives();
+                        archiveIndexer.asyncIndexMarkedArchives();
                     }
                     cleanupResources();
                 }

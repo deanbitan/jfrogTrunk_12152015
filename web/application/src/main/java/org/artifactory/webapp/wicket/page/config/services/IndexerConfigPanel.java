@@ -29,7 +29,7 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.repo.index.IndexerService;
+import org.artifactory.api.repo.index.MavenIndexerService;
 import org.artifactory.common.wicket.component.CancelLink;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.dnd.select.sorted.SortedDragDropSelection;
@@ -42,12 +42,12 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.webapp.wicket.components.SortedRepoDragDropSelection;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.services.cron.CronNextDatePanel;
 import org.artifactory.webapp.wicket.util.validation.CronExpValidator;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,7 +69,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
     private RepositoryService repositoryService;
 
     @SpringBean
-    private IndexerService indexerService;
+    private MavenIndexerService mavenIndexer;
 
     private MutableCentralConfigDescriptor centralConfig;
 
@@ -101,7 +101,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
                 MultiStatusHolder statusHolder = new MultiStatusHolder();
                 try {
                     BasicStatusHolder status = new BasicStatusHolder();
-                    indexerService.scheduleImmediateIndexing(status);
+                    mavenIndexer.scheduleImmediateIndexing(status);
                     if (status.isError()) {
                         error(status.getStatusMsg());
                     } else {

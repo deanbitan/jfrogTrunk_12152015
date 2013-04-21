@@ -28,11 +28,11 @@ import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.InfoRestSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FileInfo;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.StorageInfoHelper;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

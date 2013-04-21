@@ -30,7 +30,7 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
@@ -43,11 +43,11 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.log.LoggerFactory;
 import org.artifactory.util.ZipUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class ImportSystemPanel extends TitledPanel {
     private static final Logger log = LoggerFactory.getLogger(ImportSystemPanel.class);
 
     @SpringBean
-    private SearchService searchService;
+    private ArchiveIndexer archiveIndexer;
 
     @WicketProperty
     private File importFromPath;
@@ -74,9 +74,6 @@ public class ImportSystemPanel extends TitledPanel {
 
     @WicketProperty
     private boolean excludeContent;
-
-    @WicketProperty
-    private boolean trustServerChecksums;
 
     public ImportSystemPanel(String string) {
         super(string);
@@ -98,16 +95,9 @@ public class ImportSystemPanel extends TitledPanel {
         });
 
         addExcludeMetadataCheckbox(importForm);
-        addTrustServerChecksumsCheckbox(importForm);
         addVerboseCheckbox(importForm);
 
         addImportButton(importForm);
-    }
-
-    private void addTrustServerChecksumsCheckbox(Form form) {
-        form.add(new StyledCheckbox("trustServerChecksums", new PropertyModel<Boolean>(this, "trustServerChecksums")));
-        form.add(new HelpBubble("trustServerChecksumsHelp",
-                "Ignore missing checksum and calculate them automatically."));
     }
 
     private void addVerboseCheckbox(Form importForm) {
@@ -128,7 +118,7 @@ public class ImportSystemPanel extends TitledPanel {
         excludeMetadataCheckbox.setOutputMarkupId(true);
         importForm.add(excludeMetadataCheckbox);
         importForm.add(new HelpBubble("excludeMetadataHelp",
-                "Exclude Artifactory-specific metadata from the import."));
+                "Mark to exclude repositories metadata from the import."));
 
         final StyledCheckbox excludeContentCheckbox =
                 new StyledCheckbox("excludeContent", new PropertyModel<Boolean>(this, "excludeContent"));
@@ -146,7 +136,7 @@ public class ImportSystemPanel extends TitledPanel {
         });
         importForm.add(excludeContentCheckbox);
         importForm.add(new HelpBubble("excludeContentHelp",
-                "Exclude repository content from the import.\n" + "(Import only settings)"));
+                "Mark to exclude repository binaries from the import.\n"));
     }
 
     @SuppressWarnings({"unchecked"})
@@ -155,7 +145,7 @@ public class ImportSystemPanel extends TitledPanel {
             @Override
             protected IAjaxCallDecorator getAjaxCallDecorator() {
                 String confirmImportMessage =
-                        "Full system import will wipe all existing Artifactory content.\n" +
+                        "Full system import deletes all existing Artifactory content.\n" +
                                 "Are you sure you want to continue?";
 
                 return new ConfirmationAjaxCallDecorator(super.getAjaxCallDecorator(),
@@ -186,7 +176,7 @@ public class ImportSystemPanel extends TitledPanel {
                         status.setStatus("Extracting archive...", log);
                         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
                         importFromFolder =
-                                new File(artifactoryHome.getTmpUploadsDir(),
+                                new File(artifactoryHome.getTempUploadDir(),
                                         importFromPath.getName() + "_extract");
                         FileUtils.deleteDirectory(importFromFolder);
                         FileUtils.forceMkdir(importFromFolder);
@@ -211,7 +201,6 @@ public class ImportSystemPanel extends TitledPanel {
                     importSettings.setVerbose(verbose);
                     importSettings.setIncludeMetadata(!excludeMetadata);
                     importSettings.setExcludeContent(excludeContent);
-                    importSettings.setTrustServerChecksums(trustServerChecksums);
                     context.importFrom(importSettings);
                     List<StatusEntry> warnings = status.getWarnings();
 
@@ -222,12 +211,15 @@ public class ImportSystemPanel extends TitledPanel {
                                 "\">log</a> for further information.");
                     }
                     if (status.isError()) {
-                        String msg = "Error while importing system from '" + importFromPath + "': "
-                                + status.getStatusMsg();
-                        Session.get().error(msg);
-                        if (status.getException() != null) {
-                            log.warn(msg, status.getException());
+                        int errorCount = status.getErrors().size();
+                        if (errorCount > 1) {
+                            String msg = errorCount + " errors occurred while importing system from '" + importFromPath + "': For more accurate information, please look at the log.";
+                            Session.get().error(msg);
+                        } else {
+                            String msg = "Error while importing system from '" + importFromPath + "': " + status.getStatusMsg();
+                            Session.get().error(msg);
                         }
+
                     } else {
                         Session.get().info("Successfully imported system from '" + importFromPath + "'.");
                     }
@@ -253,7 +245,7 @@ public class ImportSystemPanel extends TitledPanel {
                         }
                     }
                     status.reset();
-                    searchService.asyncIndexMarkedArchives();
+                    archiveIndexer.asyncIndexMarkedArchives();
                 }
             }
         };

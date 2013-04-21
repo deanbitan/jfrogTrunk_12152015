@@ -20,7 +20,7 @@ package org.artifactory.security;
 
 import com.google.common.collect.Sets;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -33,10 +33,10 @@ import java.util.Set;
 public class SimpleUser implements UserDetails, Comparable {
 
     public static final Set<GrantedAuthority> USER_GAS =
-            Sets.<GrantedAuthority>newHashSet(new GrantedAuthorityImpl(SecurityServiceImpl.ROLE_USER));
+            Sets.<GrantedAuthority>newHashSet(new SimpleGrantedAuthority(SecurityServiceImpl.ROLE_USER));
     public static final Set<GrantedAuthority> ADMIN_GAS =
-            Sets.<GrantedAuthority>newHashSet(new GrantedAuthorityImpl(InternalSecurityService.ROLE_ADMIN),
-                    new GrantedAuthorityImpl(SecurityServiceImpl.ROLE_USER));
+            Sets.<GrantedAuthority>newHashSet(new SimpleGrantedAuthority(InternalSecurityService.ROLE_ADMIN),
+                    new SimpleGrantedAuthority(SecurityServiceImpl.ROLE_USER));
 
     private UserInfo userInfo;
 
@@ -67,6 +67,10 @@ public class SimpleUser implements UserDetails, Comparable {
     @Override
     public String getUsername() {
         return userInfo.getUsername();
+    }
+
+    public String getSalt() {
+        return userInfo.getSalt();
     }
 
     @Override
@@ -111,10 +115,6 @@ public class SimpleUser implements UserDetails, Comparable {
 
     public boolean isUpdatableProfile() {
         return userInfo.isUpdatableProfile();
-    }
-
-    public ArtifactorySid toArtifactorySid() {
-        return new ArtifactorySid(getUsername());
     }
 
     @Override
