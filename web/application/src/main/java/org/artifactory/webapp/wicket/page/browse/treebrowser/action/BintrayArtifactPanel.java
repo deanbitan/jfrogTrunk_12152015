@@ -28,9 +28,11 @@ import org.artifactory.api.bintray.BintrayParams;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.fs.ItemInfo;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Displays a list of Bintray properties and enables the user to push an artifact to Bintray
@@ -67,6 +69,11 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
     }
 
     @Override
+    protected boolean isFieldRequired() {
+        return true;
+    }
+
+    @Override
     protected void addExtraComponentsToForm(Form form) {
         FormComponent<String> relativePathTextField = new TextField<String>("path");
         relativePathTextField.setRequired(true);
@@ -85,7 +92,8 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
     protected void onPushClicked() {
         try {
             bintrayService.savePropertiesOnRepoPath(pathToPush.getRepoPath(), bintrayModel);
-            MultiStatusHolder statusHolder = bintrayService.pushArtifact(pathToPush, bintrayModel);
+            Map<String, String> headersMap = WicketUtils.getHeadersMap();
+            MultiStatusHolder statusHolder = bintrayService.pushArtifact(pathToPush, bintrayModel, headersMap);
             if (statusHolder.hasErrors()) {
                 getPage().error(statusHolder.getLastError().getMessage());
             } else {

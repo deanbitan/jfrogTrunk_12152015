@@ -43,9 +43,11 @@ import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Shay Yaakov
@@ -62,6 +64,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
 
     private ComboBox packagesComboBox;
     private ComboBox versionsComboBox;
+    private Map<String, String> headersMap = WicketUtils.getHeadersMap();
 
     @Override
     public String getTitle() {
@@ -69,6 +72,8 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
     }
 
     protected abstract void initBintrayModel();
+
+    protected abstract boolean isFieldRequired();
 
     protected void initComponents() {
         MarkupContainer border = new TitledBorder("border");
@@ -84,7 +89,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
 
         final ComboBox reposDropDown = new ComboBox("repo",
                 new PropertyModel<String>(bintrayModel, "repo"), getBintrayRepos());
-        reposDropDown.setRequired(true);
+        reposDropDown.setRequired(isFieldRequired());
         reposDropDown.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
@@ -116,7 +121,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
 
         packagesComboBox = new ComboBox("packageId", new PropertyModel<String>(bintrayModel, "packageId"),
                 packagesChoices);
-        packagesComboBox.setRequired(true);
+        packagesComboBox.setRequired(isFieldRequired());
         packagesComboBox.setOutputMarkupId(true);
         packagesComboBox.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
@@ -142,7 +147,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
         }
 
         versionsComboBox = new ComboBox("version", new PropertyModel<String>(bintrayModel, "version"), versionsChoices);
-        versionsComboBox.setRequired(true);
+        versionsComboBox.setRequired(isFieldRequired());
         versionsComboBox.setOutputMarkupId(true);
         form.add(versionsComboBox);
         form.add(new HelpBubble("version.help", new ResourceModel("version.help")));
@@ -170,7 +175,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
     private List<String> getBintrayRepos() {
         List<String> repos = Lists.newArrayList();
         try {
-            List<Repo> reposToDeploy = bintrayService.getReposToDeploy();
+            List<Repo> reposToDeploy = bintrayService.getReposToDeploy(headersMap);
             repos = Lists.newArrayList(Iterables.transform(reposToDeploy, new Function<Repo, String>() {
                 @Override
                 public String apply(Repo repo) {
@@ -193,7 +198,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
     private List<String> getRepoPackages(String repoKey) {
         List<String> repoPackages = Lists.newArrayList();
         try {
-            repoPackages = bintrayService.getPackagesToDeploy(repoKey);
+            repoPackages = bintrayService.getPackagesToDeploy(repoKey, headersMap);
         } catch (IOException e) {
             if (getFeedbackMessages().isEmpty()) {
                 error("Connection failed with exception: " + e.getMessage());
@@ -210,7 +215,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
     private List<String> getPackageVersions(String repoKey, String packageId) {
         List<String> packageVersions = Lists.newArrayList();
         try {
-            packageVersions = bintrayService.getVersions(repoKey, packageId);
+            packageVersions = bintrayService.getVersions(repoKey, packageId, headersMap);
         } catch (IOException e) {
             if (getFeedbackMessages().isEmpty()) {
                 error("Connection failed with exception: " + e.getMessage());

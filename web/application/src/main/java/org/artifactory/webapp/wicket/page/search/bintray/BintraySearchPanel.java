@@ -56,6 +56,7 @@ import org.artifactory.common.wicket.component.table.columns.FormattedDateColumn
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.ComponentPersister;
 import org.artifactory.common.wicket.util.ListPropertySorter;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -74,6 +75,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static org.artifactory.common.wicket.component.CreateUpdateAction.CREATE;
 
@@ -322,7 +324,9 @@ public class BintraySearchPanel extends Panel {
                 throw new IllegalArgumentException("The search key must contain at least 3 letters");
             }
             query = addCaret(query);
-            BintrayItemSearchResults<BintrayItemInfo> itemSearchResults = bintrayService.searchByName(query);
+            Map<String, String> headersMap = WicketUtils.getHeadersMap();
+            BintrayItemSearchResults<BintrayItemInfo> itemSearchResults = bintrayService.searchByName(query,
+                    headersMap);
             rangeLimitTotal = itemSearchResults.getRangeLimitTotal();
             final RemoteRepoDescriptor jCenterDescriptor = bintrayService.getJCenterRepo();
             for (BintrayItemInfo result : itemSearchResults.getResults()) {

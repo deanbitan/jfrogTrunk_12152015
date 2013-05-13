@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite failures="0" time="3.667" errors="0" skipped="0" tests="401" name="TestSuite">
+  <properties>
+    <property name="java.vendor" value="Oracle Corporation"/>
+    <property name="JOB_NAME" value="artifactory-3.x-release"/>
+    <property name="PWD" value="/opt/hudson/hudson/hudson-home"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="JENKINS_HOME" value="/opt/tomcat/hudson/hudson-home"/>
+    <property name="PATH" value="/usr/kerberos/bin:/usr/local/bin:/bin:/usr/bin"/>
+    <property name="HUDSON_SERVER_COOKIE" value="8f6cc43b682e0d4a"/>
+    <property name="os.name" value="Linux"/>
+    <property name="BUILDINFO_PROPFILE" value="/opt/tomcat/hudson/temp/buildInfo5888093729695937898.properties"/>
+    <property name="sun.boot.class.path" value="/usr/java/jdk1.7.0_10/jre/lib/resources.jar:/usr/java/jdk1.7.0_10/jre/lib/rt.jar:/usr/java/jdk1.7.0_10/jre/lib/sunrsasign.jar:/usr/java/jdk1.7.0_10/jre/lib/jsse.jar:/usr/java/jdk1.7.0_10/jre/lib/jce.jar:/usr/java/jdk1.7.0_10/jre/lib/charsets.jar:/usr/java/jdk1.7.0_10/jre/lib/jfr.jar:/usr/java/jdk1.7.0_10/jre/classes"/>
+    <property name="EXECUTOR_NUMBER" value="0"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="NODE_LABELS" value="derby master"/>
+    <property name="java.runtime.version" value="1.7.0_10-b18"/>
+    <property name="LD_LIBRARY_PATH" value="/opt/CA/SharedComponents/lib"/>
+    <property name="user.name" value="hudson"/>
+    <property name="guice.disable.misplaced.annotation.check" value="true"/>
+    <property name="m3plugin.lib" value="/opt/tomcat/hudson/hudson-home/plugins/artifactory/WEB-INF/lib"/>
+    <property name="extractor.used" value="true"/>
+    <property name="maven.repo.local" value="/opt/tomcat/hudson/hudson-home/jobs/artifactory-3.x-release/workspace/.repository"/>
+    <property name="user.language" value="en"/>
+    <property name="HUDSON_BASEDIR" value="/opt/tomcat/hudson"/>
+    <property name="sun.boot.library.path" value="/usr/java/jdk1.7.0_10/jre/lib/amd64"/>
+    <property name="classworlds.conf" value="/opt/tomcat/hudson/temp/classworlds363598555893358228conf"/>
+    <property name="java.version" value="1.7.0_10"/>
+    <property name="user.timezone" value="GMT"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="NODE_NAME" value="master"/>
+    <property name="TERM" value="xterm"/>
+    <property name="NLSPATH" value="/usr/dt/lib/nls/msg/%L/%N.cat"/>
+    <property name="java.endorsed.dirs" value="/usr/java/jdk1.7.0_10/jre/lib/endorsed"/>
+    <property name="BUILD_ID" value="2013-05-13_13-05-04"/>
+    <property name="sun.cpu.isalist" value=""/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="SHELL" value="/bin/bash"/>
+    <property name="file.separator" value="/"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="CATALINA_OPTS" value="-DHUDSON_HOME=/opt/tomcat/hudson/hudson-home -Xms2g -Xmx2g -XX:MaxPermSize=128m -Djava.awt.headless=true"/>
+    <property name="java.class.version" value="51.0"/>
+    <property name="user.country" value="US"/>
+    <property name="securerandom.source" value="file:/dev/./urandom"/>
+    <property name="java.home" value="/usr/java/jdk1.7.0_10/jre"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="CASHCOMP" value="/opt/CA/SharedComponents"/>
+    <property name="LESSOPEN" value="|/usr/bin/lesspipe.sh %s"/>
+    <property name="os.version" value="2.6.18-92.1.22.el5"/>
+    <property name="TOMCAT_HOME" value="/opt/tomcat/hudson"/>
+    <property name="sun.font.fontmanager" value="sun.awt.X11FontManager"/>
+    <property name="path.separator" value=":"/>
+    <property name="java.vm.version" value="23.6-b04"/>
+    <property name="CALIB" value="/opt/CA/SharedComponents/lib"/>
+    <property name="SHLVL" value="2"/>
+    <property name="_" value="/opt/java/1.7.0//bin/java"/>
+    <property name="java.awt.printerjob" value="sun.print.PSPrinterJob"/>
+    <property name="JAVA_HOME" value="/opt/java/1.7.0"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="awt.toolkit" value="sun.awt.X11.XToolkit"/>
+    <property name="LOGNAME" value="hudson"/>
+    <property name="HOME" value="/opt/tomcat/hudson"/>
+    <property name="G_BROKEN_FILENAMES" value="1"/>
+    <property name="user.home" value="/opt/tomcat/hudson/hudson-home"/>
+    <property name="BUILD_TAG" value="jenkins-artifactory-3.x-release-30008"/>
+    <property name="JENKINS_SERVER_COOKIE" value="8f6cc43b682e0d4a"/>
+    <property name="HUDSON_URL" value="https://build.jfrog.org/hudson/"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="CLASSPATH" value=""/>
+    <property name="java.library.path" value="/opt/CA/SharedComponents/lib:/usr/java/packages/lib/amd64:/usr/lib64:/lib64:/lib:/usr/lib"/>
+    <property name="java.vendor.url" value="http://java.oracle.com/"/>
+    <property name="java.vm.vendor" value="Oracle Corporation"/>
+    <property name="HISTSIZE" value="1000"/>
+    <property name="LIC_ECHO" value="echo -e"/>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="maven.home" value="/opt/tools/apache-maven/apache-maven-3.0.4"/>
+    <property name="java.class.path" value="/opt/tomcat/hudson/hudson-home/plugins/maven-plugin/WEB-INF/lib/maven3-agent-1.2.jar:/opt/tools/apache-maven/current/boot/plexus-classworlds-2.4.jar"/>
+    <property name="sun.java.command" value="org.jvnet.hudson.maven3.agent.Maven3Main /opt/tools/apache-maven/current/ /opt/hudson/hudson/webapps/hudson/WEB-INF/lib/remoting-2.17.jar /opt/tomcat/hudson/hudson-home/plugins/maven-plugin/WEB-INF/lib/maven3-interceptor-1.2.jar 58331"/>
+    <property name="CATALINA_PID" value="/opt/tomcat/hudson/hudson-tomcat.pid"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="PATH+JDK" value="/opt/java/1.7.0/bin"/>
+    <property name="java.vm.specification.version" value="1.7"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="M2_HOME" value="/opt/tools/apache-maven/current/"/>
+    <property name="MAIL" value="/var/spool/mail/hudson"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="HOSTNAME" value="pond.jfrog.org"/>
+    <property name="HUDSON_HOME" value="/opt/tomcat/hudson/hudson-home"/>
+    <property name="PATH+MAVEN" value="/opt/tools/apache-maven/current//bin"/>
+    <property name="BUILD_URL" value="https://build.jfrog.org/hudson/job/artifactory-3.x-release/30008/"/>
+    <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/"/>
+    <property name="LS_COLORS" value="no=00:fi=00:di=00;34:ln=00;36:pi=40;33:so=00;35:bd=40;33;01:cd=40;33;01:or=01;05;37;41:mi=01;05;37;41:ex=00;32:*.cmd=00;32:*.exe=00;32:*.com=00;32:*.btm=00;32:*.bat=00;32:*.sh=00;32:*.csh=00;32:*.tar=00;31:*.tgz=00;31:*.arj=00;31:*.taz=00;31:*.lzh=00;31:*.zip=00;31:*.z=00;31:*.Z=00;31:*.gz=00;31:*.bz2=00;31:*.bz=00;31:*.tz=00;31:*.rpm=00;31:*.cpio=00;31:*.jpg=00;35:*.gif=00;35:*.bmp=00;35:*.xbm=00;35:*.xpm=00;35:*.png=00;35:*.tif=00;35:"/>
+    <property name="buildInfoConfig.propertiesFile" value="/opt/tomcat/hudson/temp/buildInfo5888093729695937898.properties"/>
+    <property name="buildNumber.prop" value="30008"/>
+    <property name="MAVEN_OPTS" value="-Xmx512m -Dm3plugin.lib=/opt/tomcat/hudson/hudson-home/plugins/artifactory/WEB-INF/lib"/>
+    <property name="java.awt.graphicsenv" value="sun.awt.X11GraphicsEnvironment"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.ext.dirs" value="/usr/java/jdk1.7.0_10/jre/lib/ext:/usr/java/packages/lib/ext"/>
+    <property name="dbType" value="derby"/>
+    <property name="user.dir" value="/opt/hudson/hudson/hudson-home/jobs/artifactory-3.x-release/workspace/devenv"/>
+    <property name="JOB_URL" value="https://build.jfrog.org/hudson/job/artifactory-3.x-release/"/>
+    <property name="line.separator" value="
+"/>
+    <property name="MAVEN_HOME" value="/opt/tools/apache-maven/current/"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="BUILD_NUMBER" value="30008"/>
+    <property name="JENKINS_URL" value="https://build.jfrog.org/hudson/"/>
+    <property name="GIT_BRANCH" value="origin/3.x-release"/>
+    <property name="BUILD_CAUSE_USERIDCAUSE" value="true"/>
+    <property name="GIT_COMMIT" value="94cbdbb07e30729689450409e806680421ed094b"/>
+    <property name="project.version.prop" value="3.0.1"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="LANG" value="en_US.UTF-8"/>
+    <property name="maven3.interceptor" value="/opt/tomcat/hudson/hudson-home/plugins/maven-plugin/WEB-INF/lib/maven3-interceptor-1.2.jar"/>
+    <property name="CVS_RSH" value="ssh"/>
+    <property name="WORKSPACE" value="/opt/tomcat/hudson/hudson-home/jobs/artifactory-3.x-release/workspace"/>
+    <property name="java.specification.version" value="1.7"/>
+    <property name="BUILD_CAUSE" value="USERIDCAUSE"/>
+    <property name="INPUTRC" value="/etc/inputrc"/>
+    <property name="USER" value="hudson"/>
+    <property name="XFILESEARCHPATH" value="/usr/dt/app-defaults/%L/Dt"/>
+  </properties>
+  <testcase time="0.005" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.034" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countAllFiles"/>
+  <testcase time="0.032" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countFilesUnderFolder"/>
+  <testcase time="0.019" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countFilesUnderRepo"/>
+  <testcase time="0.026" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countFolderAndFilesUnderFolder"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countFolderAndFilesUnderRepo"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countRepoFilesAndFoldersUnderNonExistentRepo"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="countRepoFilesUnderNonExistentRepo"/>
+  <testcase time="0.052" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="createFolder"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="deleteNonExistentItem"/>
+  <testcase time="0.03" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="getMd5BadChecksums"/>
+  <testcase time="0.02" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="getSha1BadChecksums"/>
+  <testcase time="0.019" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="itemExists"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="itemExistsRepoRoot"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="itemNotExists"/>
+  <testcase time="0.021" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="loadChildren"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="loadFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="loadFolderUnderRoot"/>
+  <testcase time="0.014" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="loadItemById"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="loadNonExistentById"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="loadNonExistentFolder"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="nodeIdNoSuchNode"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="nodeIdRoot"/>
+  <testcase time="0.016" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="nodeSha1OfFile"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="nodeSha1OfFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="nodeSha1NotExist"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest" name="deleteFolderById"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="createDirectoryNode"/>
+  <testcase time="0.021" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="getChildrenOfLeafFolderNode"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="searchBadMd5Checksums"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="getChildrenOfRoot"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesUnderFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="nodeSha1OfFile"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesUnderFile"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesAndFoldersUnderNonExistentFolder"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="getChildrenOfNodeDirectlyUnderRootWithCousinStartingWithSamePrefix"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="searchBadSha1Checksums"/>
+  <testcase time="0.04" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="getFilesTotalSize"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="findChecksumsByMd5"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="itemExists"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="nodeSha1OfFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesAndFoldersUnderFolderWithDirectChildren"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countRepositoryFiles"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="testFindEmptyChecksumsBySha1"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countRepositoryFilesAndFoldersUnderFolder"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="getChildrenOfLeafFileNode"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countRepositoryFilesAndFolders"/>
+  <testcase time="0.027" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="searchFilesByPropertyNoMatch"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="findChecksumsBySha1"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="itemNotExists"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="deleteNonExistent"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="nodeSha1NotExist"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="testFindEmptyChecksumsByMd5"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="getChildrenOfNodeDirectlyUnderRoot"/>
+  <testcase time="0.05" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesUnderNonExistentFolder"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesUnderFolderWithDirectChildren"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="nodeIdNoSuchNode"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="searchFilesByProperty"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="countFilesAndFoldersUnderFile"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="nodeIdRoot"/>
+  <testcase time="0.018" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="updateFolderNode"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="deleteDirectoryNode"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="loadDirectoryNodeByPath"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest" name="loadDirectoryNodeById"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="binaryNotExists"/>
+  <testcase time="0.025" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="findChecksumsByMd5"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="findChecksumsBySha1"/>
+  <testcase time="0.019" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="findPotentialDeletion"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="loadExistingNode"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="testFindEmptyChecksumsByMd5"/>
+  <testcase time="0" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="testFindEmptyChecksumsBySha1"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="createExistingBinary"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="binaryExists"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="loadNonExistingNode"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="createBinary"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="testGetCountAndTotalSize"/>
+  <testcase time="0.021" classname="org.artifactory.storage.db.binstore.itest.dao.BinariesDaoTest" name="testDeleteEntries"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="deletePropertiesNodeWithNoProperties"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="deletePropertiesNodeWithProperties"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="deletePropertiesNonExistentNode"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="getPropertiesNodeNotExist"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="getPropertiesNodeWithEmptyProperties"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="getPropertiesNodeWithProperties"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="getPropertiesNodeWithoutProperties"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="hasPropertiesNodeNotExist"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="hasPropertiesNodeWithProperties"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="hasPropertiesNodeWithoutProperties"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.PropertiesDaoTest" name="insertProperty"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="getPropertiesNodeNotExist"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="hasPropertiesPathWithProperties"/>
+  <testcase time="0.018" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="setProperties"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="getPropertiesNodeWithMultiValueProperties"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="getPropertiesNodeWithProperties"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="hasPropertiesPathWithNoProperties"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="getPropertiesNodeWithNone"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.service.PropertiesServiceImplTest" name="deleteProperties"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="deleteAllUserWatches"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="deleteAllUserWatchesNoSuchUser"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="deleteUserWatches"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="deleteWatchesNodeWithNoWatches"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="deleteWatchesNodeWithWatches"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="deleteWatchesNonExistentNode"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="getWatchesNodeNotExist"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="getWatchesNodeWithWatches"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="getWatchesNodeWithoutWatches"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="hasWatchesNodeNotExist"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="hasWatchesNodeWithWatches"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="hasWatchesNodeWithoutWatches"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.fs.itest.dao.WatchesDaoTest" name="insertWatch"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.037" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="createWatch"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="createWatches"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="deleteAllUserWatches"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="deleteUserWatches"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="getWatchesNodeNotExist"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="getWatchesNodeWithMultiWatches"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="getWatchesNodeWithWatches"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="hasWatchesNodeNotExist"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="getWatchesNodeWithNone"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="deleteUserWatchesNoSuchUser"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="deleteAllUserWatchesNoSuchUser"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="hasWatchesNodeWithoutWatches"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="hasWatchesNodeWithWatches"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="deleteWatches"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.WatchesServiceImplTest" name="verifyCachePopulation"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.012" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="createStatsFileWithoutStats"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="deleteStatsFileWithoutStats"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="deleteStatsNonExistingNode"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="getFileStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="getFileStatsWithNoDownloads"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="hasStatsFileWithStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="hasStatsFileWithoutStats"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="hasStatsFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="hasStatsNonExistentId"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="updateStatsFileWithoutStats"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="createStatsFileWithStats"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="updateStatsFileWithStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.StatsDaoTest" name="deleteStatsFileWithStats"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="deleteStatsOnNonExistingNode"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="fileDownloadedOnNonExistingItem"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="getStatsFileWithNoStats"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="getStatsFileWithStats"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="getStatsFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="getStatsNonExistingItem"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="hasStatsFileWithStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="hasStatsFileWithoutStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="hasStatsFolder"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="hasStatsNonExistentPath"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="setStatsOnFileWithoutStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="fileDownloadedOnFileWithNoStats"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="setStatsOnFileWithStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="fileDownloadedOnFileWithStats"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="deleteStatsOnFileWithStats"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.StatsServiceImplTest" name="deleteStatsOnFileWithoutStats"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="createConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="createStreamConfig"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="hasConfigNoConfig"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="loadConfigNoConfig"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="updateConfigNoConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="hasConfig"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="hasStreamConfig"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="loadConfig"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="loadStreamConfig"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="updateConfig"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="updateStreamConfig"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.ConfigsDaoTest" name="testDelete"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="addConfig"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="addOrUpdateConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="hasConfigNoConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="loadConfigNoConfig"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="updateConfigNoConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="addConfigExistingConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="getConfig"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="hasConfig"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.ConfigsServiceImplTest" name="updateConfig"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="createFindArchiveNameEntry"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="createFindArchiveNameEntryEmpty"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="createFindArchivePathEntry"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="createIndexedArchive"/>
+  <testcase time="0.021" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="deleteUnreferencedNameIds"/>
+  <testcase time="0.014" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="deleteUnreferencedPathIds"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="findArchivePathEntryEmpty"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="getEntryPathExistingPath"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="getEntryPathNonExistingPath"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="hasIndexedArchivesEntries"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="isIndexed"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="isIndexedNoSuchChecksum"/>
+  <testcase time="0.028" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="loadByChecksum"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="loadByChecksumNonExisting"/>
+  <testcase time="0.024" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="removeByChecksum"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="removeByChecksumNoSuchChecksum"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.ArchiveEntriesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="deleteEntriesNotIndexed"/>
+  <testcase time="0.027" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="deleteKeepsPathAndName"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="getEntries"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="hasEntries"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="hasEntriesNoSuchChecksum"/>
+  <testcase time="0.014" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="insertEntries"/>
+  <testcase time="0.023" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="insertEntriesReusedPathAndName"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.fs.itest.service.ArchiveEntriesServiceImplTest" name="deleteEntries"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.TasksDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.018" classname="org.artifactory.storage.db.fs.itest.dao.TasksDaoTest" name="create"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.dao.TasksDaoTest" name="createDuplicate"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.fs.itest.dao.TasksDaoTest" name="delete"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.dao.TasksDaoTest" name="exist"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.dao.TasksDaoTest" name="loadByType"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="getIndexTasks"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="hasIndexTask"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="removeIndexTaskByRepoPathNotExist"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="addIndexTask"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="removeIndexTaskByRepoPath"/>
+  <testcase time="0.023" classname="org.artifactory.storage.db.fs.itest.service.TasksServiceImplTest" name="removeIndexTask"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateGroup"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateGroupSameId"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateGroupSameName"/>
+  <testcase time="0.022" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateUser"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateUserFailedNoGroups"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateUserSameId"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateUserSameName"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateUserWithFailedGroups"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testCreateUserWithGroups"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testFindGroupByName"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testFindUserById"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testFindUserByName"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testFindGroupById"/>
+  <testcase time="0.057" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testDeleteUserAndGroupLinked"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testUpdateGroup"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testUpdateUser"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testWrongUpdateGroupName"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testWrongUpdateUser"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testDeleteGroup"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testDeleteUser"/>
+  <testcase time="0.025" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testFindGroupByFilter"/>
+  <testcase time="0.064" classname="org.artifactory.storage.db.security.itest.dao.UserGroupsDaoTest" name="testAddUsersToGroup"/>
+  <testcase time="0.028" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testCreateAclNoAces"/>
+  <testcase time="0.02" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testCreatePermissionTargetNoRepoKeys"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testFindAclById"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testFindAclByPermissionTargetId"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testLoadPermissionTargets"/>
+  <testcase time="0.015" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testUserOrGroupHasAce"/>
+  <testcase time="0" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testCreateAclWithAces"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testCreatePermissionTargetWithRepoKeys"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testCreatePermissionTargetWrongRepoKeys"/>
+  <testcase time="0.028" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testDeleteAcls"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testDeletePermissionTarget"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.security.itest.dao.AclsDaoTest" name="testLoadAllAcls"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteAclsDaoTest" name="testDeletePermissionTargetWithAcl"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteAclsDaoTest" name="testDeleteUserWithAce"/>
+  <testcase time="0" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteAclsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteAclsDaoTest" name="testDeleteAllData"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteUserGroupsDaoTest" name="testDeleteLastAdmin"/>
+  <testcase time="0" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteUserGroupsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.security.itest.dao.FullDeleteUserGroupsDaoTest" name="testDeleteAllData"/>
+  <testcase time="0" classname="org.artifactory.storage.db.security.itest.service.UserGroupServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.security.itest.service.UserGroupServiceImplTest" name="createGroupExistingGroupName"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.security.itest.service.UserGroupServiceImplTest" name="createUserExistingUsername"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.security.itest.service.UserGroupServiceImplTest" name="createUserTest"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.security.itest.service.UserGroupServiceImplTest" name="hasAnonymousUser"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.security.itest.service.UserGroupServiceImplTest" name="hasDefaultAdmin"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.ItemTreeTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.027" classname="org.artifactory.storage.db.fs.itest.ItemTreeTest" name="preBuildTree"/>
+  <testcase time="0.015" classname="org.artifactory.storage.db.fs.itest.ItemTreeTest" name="rootItemTree"/>
+  <testcase time="0.002" classname="org.artifactory.storage.db.fs.itest.ItemTreeTest" name="treeWithFilter"/>
+  <testcase time="0.329" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testCreateBuildSameNameAndNumber"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testCreateBuildWithPromotions"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testCreateBuildWithProps"/>
+  <testcase time="0.008" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testCreateBuildWithPropsAndPromotions"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testSimpleCreateBuild"/>
+  <testcase time="0" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testReadBuildsById"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testCreateBuildSameId"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testReadBuildsByFullPath"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testFindLatestBuildDate"/>
+  <testcase time="0.059" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testDeleteBuilds"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.build.itest.dao.BuildsDaoTest" name="testReadBuildsByName"/>
+  <testcase time="0.031" classname="org.artifactory.storage.db.build.itest.dao.BuildModulesDaoTest" name="testCreateTwoBuildModulesWithProperties"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.build.itest.dao.BuildModulesDaoTest" name="testReadBuildModulesById"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.build.itest.dao.BuildModulesDaoTest" name="testSimpleCreateBuildModule"/>
+  <testcase time="0" classname="org.artifactory.storage.db.build.itest.dao.BuildModulesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.036" classname="org.artifactory.storage.db.build.itest.dao.BuildModulesDaoTest" name="testDeleteBuildModules"/>
+  <testcase time="0.042" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="testCreateMultipleArtifacts"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="testCreateNullChecksumsDependencies"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="testCreateSimpleArtifact"/>
+  <testcase time="0" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="testFindByMd5"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="testFindBySha1"/>
+  <testcase time="0.016" classname="org.artifactory.storage.db.build.itest.dao.BuildArtifactsDaoTest" name="testDeleteBuildArtifacts"/>
+  <testcase time="0.029" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="testCreateMultipleDependencies"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="testCreateNullChecksumsDependencies"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="testCreateSimpleDependency"/>
+  <testcase time="0" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="testFindByMd5"/>
+  <testcase time="0.007" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="testFindBySha1"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.build.itest.dao.BuildDependenciesDaoTest" name="testDeleteBuildDependencies"/>
+  <testcase time="0.141" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="testAddBuild"/>
+  <testcase time="0" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="testSearchByChecksum"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="testFindBuild"/>
+  <testcase time="0.015" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="testGetAllBuildNames"/>
+  <testcase time="0.015" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="testDeleteBuildB"/>
+  <testcase time="0.012" classname="org.artifactory.storage.db.build.itest.service.BuildStoreServiceImplTest" name="testDeleteOneBuildA"/>
+  <testcase time="0.064" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testEmpty"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.018" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testLoadResources"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testLoadResources"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testLoadResources"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testLoadResources"/>
+  <testcase time="0.049" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testLoadedNothingToDelete"/>
+  <testcase time="0.049" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.015" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.017" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testEmpty"/>
+  <testcase time="0" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.028" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testLoadResources"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testLoadResources"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testLoadResources"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testLoadResources"/>
+  <testcase time="0.033" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testLoadedNothingToDelete"/>
+  <testcase time="0.019" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.012" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedDbProviderTest" name="testGarbageOneByOne"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testEmpty"/>
+  <testcase time="0" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testLoadResources"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testLoadResources"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testLoadResources"/>
+  <testcase time="0.034" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testLoadedNothingToDelete"/>
+  <testcase time="0.015" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testGarbageOneByOne"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testGarbageOneByOne"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testEmpty"/>
+  <testcase time="0" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testLoadResources"/>
+  <testcase time="0.005" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testLoadResources"/>
+  <testcase time="0.034" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testLoadedNothingToDelete"/>
+  <testcase time="0.014" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testGarbageOneByOne"/>
+  <testcase time="0.014" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyFirstTest" name="testGarbageOneByOne"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testEmpty"/>
+  <testcase time="0" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testLoadResources"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testLoadResources"/>
+  <testcase time="0.037" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testLoadedNothingToDelete"/>
+  <testcase time="0.026" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testGarbageOneByOne"/>
+  <testcase time="0.013" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testGarbageOneByOne"/>
+  <testcase time="0.011" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testGarbageOneByOne"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderCopyOnReadTest" name="testGarbageOneByOne"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testEmpty"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testLoadResources"/>
+  <testcase time="0.003" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testLoadResources"/>
+  <testcase time="0.033" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testLoadedNothingToDelete"/>
+  <testcase time="0.014" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testGarbageOneByOne"/>
+  <testcase time="0.012" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testGarbageOneByOne"/>
+  <testcase time="0.012" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testGarbageOneByOne"/>
+  <testcase time="0.01" classname="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderMoveTest" name="testGarbageOneByOne"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="verifyDbResourcesReleased"/>
+  <testcase time="0.029" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="backslash"/>
+  <testcase time="0.031" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="createFileValidChars"/>
+  <testcase time="0.009" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="createFolderValidChars"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalCarretLeft"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalCarretRight"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalColon"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalPipe"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalQuestionMark"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalQuotationMark"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="illegalStar"/>
+  <testcase time="0.006" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidAllSpaces"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidDot"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidDotDot"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidSingleAmpersand"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidSingleColon"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidSingleDot"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidSingleDotDot"/>
+  <testcase time="0.001" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidSpaceAfterSlash"/>
+  <testcase time="0" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="invalidSpaceBeforeSlash"/>
+  <testcase time="0.004" classname="org.artifactory.storage.db.fs.itest.service.FileServiceSpecialCharsTest" name="rootRepo"/>
+</testsuite>

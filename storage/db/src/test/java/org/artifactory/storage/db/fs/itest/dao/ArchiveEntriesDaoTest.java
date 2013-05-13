@@ -141,12 +141,9 @@ public class ArchiveEntriesDaoTest extends DbBaseTest {
         assertEquals(archiveEntriesDao.findArchiveNameId("delete.me"), DbService.NO_DB_ID);
     }
 
-    private ArchiveEntry getByPathName(String path, String name, Set<ArchiveEntry> entries) {
-        for (ArchiveEntry entry : entries) {
-            if (path.equals(entry.getEntryPath()) && name.equals(entry.getEntryName())) {
-                return entry;
-            }
-        }
-        return null;
+    public void hasIndexedArchivesEntries() throws SQLException {
+        assertTrue(archiveEntriesDao.hasIndexedArchivesEntries(6000, 8002, 9003));
+        assertFalse(archiveEntriesDao.hasIndexedArchivesEntries(6000, 8002, 7894));
     }
+
 }

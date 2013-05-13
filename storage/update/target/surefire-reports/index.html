@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+  <title>TestNG reports</title>
+
+    <link type="text/css" href="testng-reports.css" rel="stylesheet" />  
+    <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="testng-reports.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type='text/javascript'>
+      google.load('visualization', '1', {packages:['table']});
+      google.setOnLoadCallback(drawTable);
+      var suiteTableInitFunctions = new Array();
+      var suiteTableData = new Array();
+    </script>
+    <!--
+      <script type="text/javascript" src="jquery-ui/js/jquery-ui-1.8.16.custom.min.js"></script>
+     -->
+  </head>
+
+  <body>
+    <div class="top-banner-root">
+      <span class="top-banner-title-font">Test results</span>
+      <br/>
+      <span class="top-banner-font-1">1 suite</span>
+    </div> <!-- top-banner-root -->
+    <div class="navigator-root">
+      <div class="navigator-suite-header">
+        <span>All suites</span>
+        <a href="#" class="collapse-all-link" title="Collapse/expand all the suites">
+          <img class="collapse-all-icon" src="collapseall.gif">
+          </img> <!-- collapse-all-icon -->
+        </a> <!-- collapse-all-link -->
+      </div> <!-- navigator-suite-header -->
+      <div class="suite">
+        <div class="rounded-window">
+          <div class="suite-header light-rounded-window-top">
+            <a href="#" class="navigator-link" panel-name="suite-Command_line_suite">
+              <span class="suite-name border-passed">Command line suite</span>
+            </a> <!-- navigator-link -->
+          </div> <!-- suite-header light-rounded-window-top -->
+          <div class="navigator-suite-content">
+            <div class="suite-section-title">
+              <span>Info</span>
+            </div> <!-- suite-section-title -->
+            <div class="suite-section-content">
+              <ul>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="test-xml-Command_line_suite">
+                    <span>[unset file name]</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="testlist-Command_line_suite">
+                    <span class="test-stats">1 test</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="group-Command_line_suite">
+                    <span>0 groups</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="times-Command_line_suite">
+                    <span>Times</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="reporter-Command_line_suite">
+                    <span>Reporter output</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="ignored-methods-Command_line_suite">
+                    <span>Ignored methods</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+                <li>
+                  <a href="#" class="navigator-link " panel-name="chronological-Command_line_suite">
+                    <span>Chronological view</span>
+                  </a> <!-- navigator-link  -->
+                </li>
+              </ul>
+            </div> <!-- suite-section-content -->
+            <div class="result-section">
+              <div class="suite-section-title">
+                <span>Results</span>
+              </div> <!-- suite-section-title -->
+              <div class="suite-section-content">
+                <ul>
+                  <li>
+                    <span class="method-stats">40 methods,   40 passed</span>
+                  </li>
+                  <li>
+                    <span class="method-list-title passed">Passed methods</span>
+                    <span class="show-or-hide-methods passed">
+                      <a href="#" panel-name="suite-Command_line_suite" class="hide-methods passed suite-Command_line_suite"> (hide)</a> <!-- hide-methods passed suite-Command_line_suite -->
+                      <a href="#" panel-name="suite-Command_line_suite" class="show-methods passed suite-Command_line_suite"> (show)</a> <!-- show-methods passed suite-Command_line_suite -->
+                    </span>
+                    <div class="method-list-content passed suite-Command_line_suite">
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v3.AnyRemoteConverterTest" hash-for-method="convertFileWithAnonymousRealOnAny">convertFileWithAnonymousRealOnAny</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v3.AnyRemoteConverterTest" hash-for-method="convertFileWithoutAnonymousRealOnAny">convertFileWithoutAnonymousRealOnAny</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityVersionTest" hash-for-method="convertFromVersion1">convertFromVersion1</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityVersionTest" hash-for-method="convertFromVersion1Big">convertFromVersion1Big</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityVersionTest" hash-for-method="convertFromVersion2">convertFromVersion2</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityVersionTest" hash-for-method="convertFromVersion3">convertFromVersion3</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v1.AclsConverterTest" hash-for-method="convertOutputOfSimpleUserConverter">convertOutputOfSimpleUserConverter</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v2.RepoPathAclConverterTest" hash-for-method="convertOutputOfSimpleUserConverter">convertOutputOfSimpleUserConverter</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v1.UserPermissionsConverterTest" hash-for-method="convertOutputOfSimpleUserConverter">convertOutputOfSimpleUserConverter</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v6.LdapGroupSettingConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v125rc0.MdStatsConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v1.AclsConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v125rc0.MdFileConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta6.ChecksumsConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v2.RepoPathAclConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v125rc0.MdFolderConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v3.AclRepoKeysConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.v2.SimpleUserConverterTest" hash-for-method="convertValidFile">convertValidFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest" hash-for-method="convertValidFolderInfo">convertValidFolderInfo</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.MetadataVersionTest" hash-for-method="detectVersion125rc0">detectVersion125rc0</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.MetadataVersionTest" hash-for-method="detectVersion230">detectVersion230</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.MetadataVersionTest" hash-for-method="detectVersion30beta3">detectVersion30beta3</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.MetadataVersionTest" hash-for-method="detectVersion30beta6">detectVersion30beta6</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityInfoReaderTest" hash-for-method="readAllVersions">readAllVersions</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta3.MetadataReader130beta3Test" hash-for-method="readFileMetadata">readFileMetadata</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta6.MetadataReader130beta6Test" hash-for-method="readFileMetadata">readFileMetadata</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v125rc0.MetadataReader125Test" hash-for-method="readFileMetadata">readFileMetadata</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta6.MetadataReader130beta6Test" hash-for-method="readFolderMetadata">readFolderMetadata</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v130beta3.MetadataReader130beta3Test" hash-for-method="readFolderMetadata">readFolderMetadata</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.v125rc0.MetadataReader125Test" hash-for-method="readFolderMetadata">readFolderMetadata</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityInfoReaderTest" hash-for-method="readVersion5">readVersion5</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.test.ArtifactoryVersionTest" hash-for-method="testBackupPropertyFile">testBackupPropertyFile</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.test.FileIOTest" hash-for-method="testFileReturns">testFileReturns</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.test.ReadOldBackupsTest" hash-for-method="testReadingVersion">testReadingVersion</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.test.ReadOldBackupsTest" hash-for-method="testSecurityConversion">testSecurityConversion</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.security.SecurityVersionTest" hash-for-method="versionsCoverage">versionsCoverage</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                      <span>
+                        <img width="3%" src="passed.png"/>
+                        <a href="#" class="method navigator-link" panel-name="suite-Command_line_suite" title="org.artifactory.update.md.MetadataVersionTest" hash-for-method="versionsCoverage">versionsCoverage</a> <!-- method navigator-link -->
+                      </span>
+                      <br/>
+                    </div> <!-- method-list-content passed suite-Command_line_suite -->
+                  </li>
+                </ul>
+              </div> <!-- suite-section-content -->
+            </div> <!-- result-section -->
+          </div> <!-- navigator-suite-content -->
+        </div> <!-- rounded-window -->
+      </div> <!-- suite -->
+    </div> <!-- navigator-root -->
+    <div class="wrapper">
+      <div class="main-panel-root">
+        <div panel-name="suite-Command_line_suite" class="panel Command_line_suite">
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v125rc0.MdFileConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v125rc0.MdFolderConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v2.RepoPathAclConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertOutputOfSimpleUserConverter">
+                  </a> <!-- convertOutputOfSimpleUserConverter -->
+                  <span class="method-name">convertOutputOfSimpleUserConverter</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v1.AclsConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertOutputOfSimpleUserConverter">
+                  </a> <!-- convertOutputOfSimpleUserConverter -->
+                  <span class="method-name">convertOutputOfSimpleUserConverter</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v3.AnyRemoteConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertFileWithAnonymousRealOnAny">
+                  </a> <!-- convertFileWithAnonymousRealOnAny -->
+                  <span class="method-name">convertFileWithAnonymousRealOnAny</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertFileWithoutAnonymousRealOnAny">
+                  </a> <!-- convertFileWithoutAnonymousRealOnAny -->
+                  <span class="method-name">convertFileWithoutAnonymousRealOnAny</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v130beta3.MetadataReader130beta3Test</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="readFileMetadata">
+                  </a> <!-- readFileMetadata -->
+                  <span class="method-name">readFileMetadata</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="readFolderMetadata">
+                  </a> <!-- readFolderMetadata -->
+                  <span class="method-name">readFolderMetadata</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v6.LdapGroupSettingConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v125rc0.MetadataReader125Test</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="readFileMetadata">
+                  </a> <!-- readFileMetadata -->
+                  <span class="method-name">readFileMetadata</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="readFolderMetadata">
+                  </a> <!-- readFolderMetadata -->
+                  <span class="method-name">readFolderMetadata</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v3.AclRepoKeysConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v125rc0.MdStatsConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.test.FileIOTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="testFileReturns">
+                  </a> <!-- testFileReturns -->
+                  <span class="method-name">testFileReturns</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.test.ArtifactoryVersionTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="testBackupPropertyFile">
+                  </a> <!-- testBackupPropertyFile -->
+                  <span class="method-name">testBackupPropertyFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.SecurityVersionTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertFromVersion1">
+                  </a> <!-- convertFromVersion1 -->
+                  <span class="method-name">convertFromVersion1</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertFromVersion1Big">
+                  </a> <!-- convertFromVersion1Big -->
+                  <span class="method-name">convertFromVersion1Big</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertFromVersion2">
+                  </a> <!-- convertFromVersion2 -->
+                  <span class="method-name">convertFromVersion2</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertFromVersion3">
+                  </a> <!-- convertFromVersion3 -->
+                  <span class="method-name">convertFromVersion3</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="versionsCoverage">
+                  </a> <!-- versionsCoverage -->
+                  <span class="method-name">versionsCoverage</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.test.ReadOldBackupsTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="testReadingVersion">
+                  </a> <!-- testReadingVersion -->
+                  <span class="method-name">testReadingVersion</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="testSecurityConversion">
+                  </a> <!-- testSecurityConversion -->
+                  <span class="method-name">testSecurityConversion</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v130beta6.MetadataReader130beta6Test</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="readFileMetadata">
+                  </a> <!-- readFileMetadata -->
+                  <span class="method-name">readFileMetadata</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="readFolderMetadata">
+                  </a> <!-- readFolderMetadata -->
+                  <span class="method-name">readFolderMetadata</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.SecurityInfoReaderTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="readAllVersions">
+                  </a> <!-- readAllVersions -->
+                  <span class="method-name">readAllVersions</span>
+                  <em>
+(this test will try to read all the security files under the security test directory)                  </em>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="readVersion5">
+                  </a> <!-- readVersion5 -->
+                  <span class="method-name">readVersion5</span>
+                  <em>
+(just another test on version 6 with few assertions)                  </em>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v1.UserPermissionsConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertOutputOfSimpleUserConverter">
+                  </a> <!-- convertOutputOfSimpleUserConverter -->
+                  <span class="method-name">convertOutputOfSimpleUserConverter</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v130beta6.ChecksumsConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFolderInfo">
+                  </a> <!-- convertValidFolderInfo -->
+                  <span class="method-name">convertValidFolderInfo</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.MetadataVersionTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="detectVersion125rc0">
+                  </a> <!-- detectVersion125rc0 -->
+                  <span class="method-name">detectVersion125rc0</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="detectVersion230">
+                  </a> <!-- detectVersion230 -->
+                  <span class="method-name">detectVersion230</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="detectVersion30beta3">
+                  </a> <!-- detectVersion30beta3 -->
+                  <span class="method-name">detectVersion30beta3</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="detectVersion30beta6">
+                  </a> <!-- detectVersion30beta6 -->
+                  <span class="method-name">detectVersion30beta6</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+              <div class="method">
+                <div class="method-content">
+                  <a name="versionsCoverage">
+                  </a> <!-- versionsCoverage -->
+                  <span class="method-name">versionsCoverage</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v2.SimpleUserConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+          <div class="suite-Command_line_suite-class-passed">
+            <div class="main-panel-header rounded-window-top">
+              <img src="passed.png"/>
+              <span class="class-name">org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest</span>
+            </div> <!-- main-panel-header rounded-window-top -->
+            <div class="main-panel-content rounded-window-bottom">
+              <div class="method">
+                <div class="method-content">
+                  <a name="convertValidFile">
+                  </a> <!-- convertValidFile -->
+                  <span class="method-name">convertValidFile</span>
+                </div> <!-- method-content -->
+              </div> <!-- method -->
+            </div> <!-- main-panel-content rounded-window-bottom -->
+          </div> <!-- suite-Command_line_suite-class-passed -->
+        </div> <!-- panel Command_line_suite -->
+        <div panel-name="test-xml-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+            <pre>
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE suite SYSTEM &quot;http://testng.org/testng-1.0.dtd&quot;&gt;
+&lt;suite verbose=&quot;0&quot; name=&quot;Command line suite&quot;&gt;
+  &lt;test name=&quot;Command line test&quot; preserve-order=&quot;false&quot;&gt;
+    &lt;classes&gt;
+      &lt;class name=&quot;org.artifactory.update.md.MetadataVersionTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v130beta3.MetadataReader130beta3Test&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v130beta6.MetadataReader130beta6Test&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v130beta6.ChecksumsConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.MetadataConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v125rc0.MdFileConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v125rc0.MetadataReader125Test&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v125rc0.MdStatsConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.v125rc0.MdFolderConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.md.MetadataReaderBaseTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.test.ArtifactoryVersionTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.test.FileIOTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.test.ReadOldBackupsTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.SecurityVersionTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.SecurityConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.SecurityInfoReaderTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v6.LdapGroupSettingConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v2.SimpleUserConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v2.RepoPathAclConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v1.UserPermissionsConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v1.AclsConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v3.AclRepoKeysConverterTest&quot;/&gt;
+      &lt;class name=&quot;org.artifactory.update.security.v3.AnyRemoteConverterTest&quot;/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt; &lt;!-- Command line test --&gt;
+&lt;/suite&gt; &lt;!-- Command line suite --&gt;
+            </pre>
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+        <div panel-name="testlist-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+            <span class="header-content">Tests for Command line suite</span>
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+            <ul>
+              <li>
+                <span class="test-name">Command line test (27 classes)</span>
+              </li>
+            </ul>
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+        <div panel-name="group-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+            <span class="header-content">Groups for Command line suite</span>
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+        <div panel-name="times-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+            <span class="header-content">Times for Command line suite</span>
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+            <div class="times-div">
+              <script type="text/javascript">
+suiteTableInitFunctions.push('tableData_Command_line_suite');
+function tableData_Command_line_suite() {
+var data = new google.visualization.DataTable();
+data.addColumn('number', 'Number');
+data.addColumn('string', 'Method');
+data.addColumn('string', 'Class');
+data.addColumn('number', 'Time (ms)');
+data.addRows(40);
+data.setCell(0, 0, 0)
+data.setCell(0, 1, 'readAllVersions')
+data.setCell(0, 2, 'org.artifactory.update.security.SecurityInfoReaderTest')
+data.setCell(0, 3, 318);
+data.setCell(1, 0, 1)
+data.setCell(1, 1, 'convertValidFile')
+data.setCell(1, 2, 'org.artifactory.update.md.v130beta6.ChecksumsConverterTest')
+data.setCell(1, 3, 130);
+data.setCell(2, 0, 2)
+data.setCell(2, 1, 'convertFromVersion1')
+data.setCell(2, 2, 'org.artifactory.update.security.SecurityVersionTest')
+data.setCell(2, 3, 84);
+data.setCell(3, 0, 3)
+data.setCell(3, 1, 'testSecurityConversion')
+data.setCell(3, 2, 'org.artifactory.update.test.ReadOldBackupsTest')
+data.setCell(3, 3, 70);
+data.setCell(4, 0, 4)
+data.setCell(4, 1, 'convertValidFile')
+data.setCell(4, 2, 'org.artifactory.update.security.v3.AclRepoKeysConverterTest')
+data.setCell(4, 3, 67);
+data.setCell(5, 0, 5)
+data.setCell(5, 1, 'convertFromVersion1Big')
+data.setCell(5, 2, 'org.artifactory.update.security.SecurityVersionTest')
+data.setCell(5, 3, 39);
+data.setCell(6, 0, 6)
+data.setCell(6, 1, 'testBackupPropertyFile')
+data.setCell(6, 2, 'org.artifactory.update.test.ArtifactoryVersionTest')
+data.setCell(6, 3, 37);
+data.setCell(7, 0, 7)
+data.setCell(7, 1, 'readFileMetadata')
+data.setCell(7, 2, 'org.artifactory.update.md.v125rc0.MetadataReader125Test')
+data.setCell(7, 3, 34);
+data.setCell(8, 0, 8)
+data.setCell(8, 1, 'testReadingVersion')
+data.setCell(8, 2, 'org.artifactory.update.test.ReadOldBackupsTest')
+data.setCell(8, 3, 32);
+data.setCell(9, 0, 9)
+data.setCell(9, 1, 'readFileMetadata')
+data.setCell(9, 2, 'org.artifactory.update.md.v130beta3.MetadataReader130beta3Test')
+data.setCell(9, 3, 32);
+data.setCell(10, 0, 10)
+data.setCell(10, 1, 'readVersion5')
+data.setCell(10, 2, 'org.artifactory.update.security.SecurityInfoReaderTest')
+data.setCell(10, 3, 32);
+data.setCell(11, 0, 11)
+data.setCell(11, 1, 'convertFromVersion3')
+data.setCell(11, 2, 'org.artifactory.update.security.SecurityVersionTest')
+data.setCell(11, 3, 26);
+data.setCell(12, 0, 12)
+data.setCell(12, 1, 'convertFromVersion2')
+data.setCell(12, 2, 'org.artifactory.update.security.SecurityVersionTest')
+data.setCell(12, 3, 23);
+data.setCell(13, 0, 13)
+data.setCell(13, 1, 'convertValidFile')
+data.setCell(13, 2, 'org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest')
+data.setCell(13, 3, 21);
+data.setCell(14, 0, 14)
+data.setCell(14, 1, 'convertValidFile')
+data.setCell(14, 2, 'org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest')
+data.setCell(14, 3, 20);
+data.setCell(15, 0, 15)
+data.setCell(15, 1, 'convertOutputOfSimpleUserConverter')
+data.setCell(15, 2, 'org.artifactory.update.security.v1.AclsConverterTest')
+data.setCell(15, 3, 17);
+data.setCell(16, 0, 16)
+data.setCell(16, 1, 'convertFileWithAnonymousRealOnAny')
+data.setCell(16, 2, 'org.artifactory.update.security.v3.AnyRemoteConverterTest')
+data.setCell(16, 3, 16);
+data.setCell(17, 0, 17)
+data.setCell(17, 1, 'convertValidFile')
+data.setCell(17, 2, 'org.artifactory.update.security.v1.AclsConverterTest')
+data.setCell(17, 3, 13);
+data.setCell(18, 0, 18)
+data.setCell(18, 1, 'readFileMetadata')
+data.setCell(18, 2, 'org.artifactory.update.md.v130beta6.MetadataReader130beta6Test')
+data.setCell(18, 3, 12);
+data.setCell(19, 0, 19)
+data.setCell(19, 1, 'readFolderMetadata')
+data.setCell(19, 2, 'org.artifactory.update.md.v130beta3.MetadataReader130beta3Test')
+data.setCell(19, 3, 12);
+data.setCell(20, 0, 20)
+data.setCell(20, 1, 'convertValidFolderInfo')
+data.setCell(20, 2, 'org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest')
+data.setCell(20, 3, 11);
+data.setCell(21, 0, 21)
+data.setCell(21, 1, 'convertValidFile')
+data.setCell(21, 2, 'org.artifactory.update.security.v6.LdapGroupSettingConverterTest')
+data.setCell(21, 3, 10);
+data.setCell(22, 0, 22)
+data.setCell(22, 1, 'convertOutputOfSimpleUserConverter')
+data.setCell(22, 2, 'org.artifactory.update.security.v2.RepoPathAclConverterTest')
+data.setCell(22, 3, 9);
+data.setCell(23, 0, 23)
+data.setCell(23, 1, 'convertValidFile')
+data.setCell(23, 2, 'org.artifactory.update.security.v2.RepoPathAclConverterTest')
+data.setCell(23, 3, 9);
+data.setCell(24, 0, 24)
+data.setCell(24, 1, 'readFolderMetadata')
+data.setCell(24, 2, 'org.artifactory.update.md.v125rc0.MetadataReader125Test')
+data.setCell(24, 3, 8);
+data.setCell(25, 0, 25)
+data.setCell(25, 1, 'convertOutputOfSimpleUserConverter')
+data.setCell(25, 2, 'org.artifactory.update.security.v1.UserPermissionsConverterTest')
+data.setCell(25, 3, 7);
+data.setCell(26, 0, 26)
+data.setCell(26, 1, 'readFolderMetadata')
+data.setCell(26, 2, 'org.artifactory.update.md.v130beta6.MetadataReader130beta6Test')
+data.setCell(26, 3, 7);
+data.setCell(27, 0, 27)
+data.setCell(27, 1, 'convertFileWithoutAnonymousRealOnAny')
+data.setCell(27, 2, 'org.artifactory.update.security.v3.AnyRemoteConverterTest')
+data.setCell(27, 3, 6);
+data.setCell(28, 0, 28)
+data.setCell(28, 1, 'convertValidFile')
+data.setCell(28, 2, 'org.artifactory.update.security.v2.SimpleUserConverterTest')
+data.setCell(28, 3, 6);
+data.setCell(29, 0, 29)
+data.setCell(29, 1, 'convertValidFile')
+data.setCell(29, 2, 'org.artifactory.update.md.v125rc0.MdFolderConverterTest')
+data.setCell(29, 3, 5);
+data.setCell(30, 0, 30)
+data.setCell(30, 1, 'convertValidFile')
+data.setCell(30, 2, 'org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest')
+data.setCell(30, 3, 4);
+data.setCell(31, 0, 31)
+data.setCell(31, 1, 'convertValidFile')
+data.setCell(31, 2, 'org.artifactory.update.md.v125rc0.MdStatsConverterTest')
+data.setCell(31, 3, 4);
+data.setCell(32, 0, 32)
+data.setCell(32, 1, 'convertValidFile')
+data.setCell(32, 2, 'org.artifactory.update.md.v125rc0.MdFileConverterTest')
+data.setCell(32, 3, 4);
+data.setCell(33, 0, 33)
+data.setCell(33, 1, 'detectVersion230')
+data.setCell(33, 2, 'org.artifactory.update.md.MetadataVersionTest')
+data.setCell(33, 3, 3);
+data.setCell(34, 0, 34)
+data.setCell(34, 1, 'detectVersion30beta6')
+data.setCell(34, 2, 'org.artifactory.update.md.MetadataVersionTest')
+data.setCell(34, 3, 3);
+data.setCell(35, 0, 35)
+data.setCell(35, 1, 'versionsCoverage')
+data.setCell(35, 2, 'org.artifactory.update.md.MetadataVersionTest')
+data.setCell(35, 3, 1);
+data.setCell(36, 0, 36)
+data.setCell(36, 1, 'testFileReturns')
+data.setCell(36, 2, 'org.artifactory.update.test.FileIOTest')
+data.setCell(36, 3, 1);
+data.setCell(37, 0, 37)
+data.setCell(37, 1, 'versionsCoverage')
+data.setCell(37, 2, 'org.artifactory.update.security.SecurityVersionTest')
+data.setCell(37, 3, 0);
+data.setCell(38, 0, 38)
+data.setCell(38, 1, 'detectVersion125rc0')
+data.setCell(38, 2, 'org.artifactory.update.md.MetadataVersionTest')
+data.setCell(38, 3, 0);
+data.setCell(39, 0, 39)
+data.setCell(39, 1, 'detectVersion30beta3')
+data.setCell(39, 2, 'org.artifactory.update.md.MetadataVersionTest')
+data.setCell(39, 3, 0);
+window.suiteTableData['Command_line_suite']= { tableData: data, tableDiv: 'times-div-Command_line_suite'}
+return data;
+}
+              </script>
+              <span class="suite-total-time">Total running time: 1 seconds</span>
+              <div id="times-div-Command_line_suite">
+              </div> <!-- times-div-Command_line_suite -->
+            </div> <!-- times-div -->
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+        <div panel-name="reporter-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+            <span class="header-content">Reporter output for Command line suite</span>
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+        <div panel-name="ignored-methods-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+            <span class="header-content">0 ignored methods</span>
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+        <div panel-name="chronological-Command_line_suite" class="panel">
+          <div class="main-panel-header rounded-window-top">
+            <span class="header-content">Methods in chronological order</span>
+          </div> <!-- main-panel-header rounded-window-top -->
+          <div class="main-panel-content rounded-window-bottom">
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v3.AclRepoKeysConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">0 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">294 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">321 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">388 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v1.AclsConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">389 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">416 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertOutputOfSimpleUserConverter</span>
+                <span class="method-start">417 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">434 ms</span>
+              </div> <!-- configuration-method after -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">435 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">436 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">449 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v3.AnyRemoteConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">450 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">474 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertFileWithAnonymousRealOnAny</span>
+                <span class="method-start">475 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">491 ms</span>
+              </div> <!-- configuration-method after -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">492 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertFileWithoutAnonymousRealOnAny</span>
+                <span class="method-start">492 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">498 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">499 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">521 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">556 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">557 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">577 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">578 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">598 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">605 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">606 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">611 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.test.ArtifactoryVersionTest</div> <!-- chronological-class-name -->
+              <div class="test-method">
+                <span class="method-name">testBackupPropertyFile</span>
+                <span class="method-start">612 ms</span>
+              </div> <!-- test-method -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v130beta6.ChecksumsConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">649 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">670 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">677 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">678 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">808 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.test.FileIOTest</div> <!-- chronological-class-name -->
+              <div class="test-method">
+                <span class="method-name">testFileReturns</span>
+                <span class="method-start">809 ms</span>
+              </div> <!-- test-method -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">810 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">828 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">835 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFolderInfo</span>
+                <span class="method-start">835 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">847 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v6.LdapGroupSettingConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">847 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">866 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">866 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">877 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">877 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">894 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">895 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">916 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v125rc0.MdFileConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">917 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">933 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">939 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">940 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">945 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v125rc0.MdFolderConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">945 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">966 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">973 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">973 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">978 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v125rc0.MdStatsConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">979 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setupXStream</span>
+                <span class="method-start">1003 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1011 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">1011 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1015 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v125rc0.MetadataReader125Test</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">1016 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setup</span>
+                <span class="method-start">1033 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1039 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">readFileMetadata</span>
+                <span class="method-start">1040 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1074 ms</span>
+              </div> <!-- configuration-method after -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1075 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">readFolderMetadata</span>
+                <span class="method-start">1076 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1084 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v130beta3.MetadataReader130beta3Test</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">1085 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setup</span>
+                <span class="method-start">1102 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1109 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">readFileMetadata</span>
+                <span class="method-start">1109 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1141 ms</span>
+              </div> <!-- configuration-method after -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1142 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">readFolderMetadata</span>
+                <span class="method-start">1143 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1155 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.v130beta6.MetadataReader130beta6Test</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">1156 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-class before">
+                <span class="method-name">setup</span>
+                <span class="method-start">1172 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1178 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">readFileMetadata</span>
+                <span class="method-start">1179 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1191 ms</span>
+              </div> <!-- configuration-method after -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1192 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">readFolderMetadata</span>
+                <span class="method-start">1192 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1199 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.md.MetadataVersionTest</div> <!-- chronological-class-name -->
+              <div class="test-method">
+                <span class="method-name">detectVersion125rc0</span>
+                <span class="method-start">1200 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">detectVersion230</span>
+                <span class="method-start">1201 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">detectVersion30beta3</span>
+                <span class="method-start">1205 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">detectVersion30beta6</span>
+                <span class="method-start">1206 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">versionsCoverage</span>
+                <span class="method-start">1209 ms</span>
+              </div> <!-- test-method -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.test.ReadOldBackupsTest</div> <!-- chronological-class-name -->
+              <div class="test-method">
+                <span class="method-name">testReadingVersion</span>
+                <span class="method-start">1210 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">testSecurityConversion</span>
+                <span class="method-start">1243 ms</span>
+              </div> <!-- test-method -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v2.RepoPathAclConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">1313 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1329 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertOutputOfSimpleUserConverter</span>
+                <span class="method-start">1330 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1340 ms</span>
+              </div> <!-- configuration-method after -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1340 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">1341 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1350 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.SecurityInfoReaderTest</div> <!-- chronological-class-name -->
+              <div class="test-method">
+                <span class="method-name">readAllVersions</span>
+                <span class="method-start">1350 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">readVersion5</span>
+                <span class="method-start">1668 ms</span>
+              </div> <!-- test-method -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.SecurityVersionTest</div> <!-- chronological-class-name -->
+              <div class="test-method">
+                <span class="method-name">convertFromVersion1</span>
+                <span class="method-start">1700 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">convertFromVersion1Big</span>
+                <span class="method-start">1784 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">convertFromVersion2</span>
+                <span class="method-start">1823 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">convertFromVersion3</span>
+                <span class="method-start">1846 ms</span>
+              </div> <!-- test-method -->
+              <div class="test-method">
+                <span class="method-name">versionsCoverage</span>
+                <span class="method-start">1873 ms</span>
+              </div> <!-- test-method -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v2.SimpleUserConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">1873 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1886 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertValidFile</span>
+                <span class="method-start">1887 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1893 ms</span>
+              </div> <!-- configuration-method after -->
+            </div> <!-- chronological-class -->
+            <div class="chronological-class">
+              <div class="chronological-class-name">org.artifactory.update.security.v1.UserPermissionsConverterTest</div> <!-- chronological-class-name -->
+              <div class="configuration-class before">
+                <span class="method-name">readMimeTypes</span>
+                <span class="method-start">1894 ms</span>
+              </div> <!-- configuration-class before -->
+              <div class="configuration-method before">
+                <span class="method-name">bindArtifactoryHome</span>
+                <span class="method-start">1906 ms</span>
+              </div> <!-- configuration-method before -->
+              <div class="test-method">
+                <span class="method-name">convertOutputOfSimpleUserConverter</span>
+                <span class="method-start">1907 ms</span>
+              </div> <!-- test-method -->
+              <div class="configuration-method after">
+                <span class="method-name">unbindArtifactoryHome</span>
+                <span class="method-start">1914 ms</span>
+              </div> <!-- configuration-method after -->
+          </div> <!-- main-panel-content rounded-window-bottom -->
+        </div> <!-- panel -->
+      </div> <!-- main-panel-root -->
+    </div> <!-- wrapper -->
+  </body>
+</html>

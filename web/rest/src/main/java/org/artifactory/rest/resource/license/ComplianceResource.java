@@ -65,7 +65,7 @@ public class ComplianceResource {
         BlackDuckAddon blackDuckAddon = addonsManager.addonByType(BlackDuckAddon.class);
         RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
 
-        if (!repositoryService.exists(repoPath)) {
+        if (!repositoryService.existsSafe(repoPath)) {
             return Response.status(Response.Status.BAD_REQUEST).
                     entity("Could not find artifact for " + path).
                     build();

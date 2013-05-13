@@ -35,7 +35,6 @@ import java.io.OutputStream;
 public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryResponseBase.class);
 
-    private State state = State.UNSET;
     private int status = HttpStatus.SC_OK;
     private Exception exception;
     private long contentLength = -1;
@@ -43,9 +42,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     @Override
     public void sendStream(InputStream is) throws IOException {
         OutputStream os = getOutputStream();
-        if (state == State.UNSET) {
-            state = State.SUCCESS;
-        }
+        setStatus(status);
         try {
             long bytesCopied = IOUtils.copyLarge(is, os);
             if (bytesCopied == 0) {
@@ -72,9 +69,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     @Override
     public void setStatus(int status) {
         this.status = status;
-        if (HttpUtils.isSuccessfulResponseCode(status) && state == State.UNSET) {
-            state = State.SUCCESS;
-        }
     }
 
     @Override
@@ -84,8 +78,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
 
     @Override
     public void sendSuccess() {
-        //Update the current status
-        setStatus(status);
         if (isSuccessful()) {
             flush();
         } else {
@@ -104,7 +96,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         } else {
             LoggingUtils.warnOrDebug(logger, msg);
         }
-        state = State.ERROR;
         this.status = statusCode;
         sendErrorInternal(statusCode, reason);
     }
@@ -129,18 +120,17 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
             logger.debug(makeDebugMessage(status, reason), exception);
             logger.error(message);
         }
-        state = State.ERROR;
         sendErrorInternal(status, reason);
     }
 
     @Override
     public boolean isSuccessful() {
-        return state == State.SUCCESS;
+        return HttpUtils.isSuccessfulResponseCode(status);
     }
 
     @Override
     public boolean isError() {
-        return state == State.ERROR;
+        return !isSuccessful();
     }
 
     @Override
@@ -150,7 +140,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
 
     @Override
     public void setException(Exception exception) {
-        this.state = State.ERROR;
         this.exception = exception;
     }
 
@@ -168,15 +157,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;
-    }
-
-    public void clearState() {
-        state = State.UNSET;
-        clearException();
-    }
-
-    private void clearException() {
-        this.exception = null;
     }
 
     protected abstract void sendErrorInternal(int code, String reason) throws IOException;

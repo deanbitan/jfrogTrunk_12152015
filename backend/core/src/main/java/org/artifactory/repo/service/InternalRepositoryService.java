@@ -140,9 +140,19 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      *
      * @param repoPath A repo path in the repository
      * @return Local/cache repository matching the repo path repo key
+     * @throws IllegalArgumentException if repository not found
      */
     @Nonnull
     LocalRepo getLocalRepository(RepoPath repoPath);
+
+    /**
+     * Returns a local or local cache repository if found, otherwise returns null
+     *
+     * @param repoPath A repo path in the repository
+     * @return Local/cache repository matching the repo path repo key or null if not found
+     */
+    @Nullable
+    LocalRepo findLocalRepository(RepoPath repoPath);
 
     /**
      * Executes the maven metadata calculator on all the folders marked with the maven metadata recalculation flag. This

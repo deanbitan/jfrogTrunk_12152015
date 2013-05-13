@@ -18,6 +18,7 @@
 
 package org.artifactory.security;
 
+import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
@@ -1446,7 +1447,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
             return;
         }
 
-        if (!oldInfo.getExcludes().equals(newInfo.getExcludes())) {
+        Sets.SetView<String> excludes = Sets.symmetricDifference(Sets.newHashSet(oldInfo.getExcludes()),
+                Sets.newHashSet(newInfo.getExcludes()));
+        if (excludes != null && !excludes.isEmpty()) {
             alertModifiedField("excludes");
         }
 
@@ -1454,7 +1457,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
             alertModifiedField("excludes pattern");
         }
 
-        if (!oldInfo.getIncludes().equals(newInfo.getIncludes())) {
+        Sets.SetView<String> includes = Sets.symmetricDifference(Sets.newHashSet(oldInfo.getIncludes()),
+                Sets.newHashSet(newInfo.getIncludes()));
+        if (includes != null && !includes.isEmpty()) {
             alertModifiedField("includes");
         }
 
@@ -1462,7 +1467,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
             alertModifiedField("includes pattern");
         }
 
-        if (!oldInfo.getRepoKeys().equals(newInfo.getRepoKeys())) {
+        Sets.SetView<String> repoKeys = Sets.symmetricDifference(Sets.newHashSet(oldInfo.getRepoKeys()),
+                Sets.newHashSet(newInfo.getRepoKeys()));
+        if (repoKeys != null && !repoKeys.isEmpty()) {
             alertModifiedField("repositories");
         }
     }

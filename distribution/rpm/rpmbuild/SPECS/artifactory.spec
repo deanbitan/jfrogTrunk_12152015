@@ -78,6 +78,7 @@ rsync -r --exclude 'work' --exclude 'temp'  %{extracted_tomcat}/* "%{buildroot}%
 %__ln_s "%{target_artifactory_home}/work" "%{buildroot}%{target_tomcat_home}/work"
 %__ln_s "/etc/opt/jfrog/artifactory" "%{buildroot}/var/opt/jfrog/artifactory/etc"
 %__ln_s "%{target_artifactory_install}/misc" "%{buildroot}%{target_artifactory_home}/misc"
+%__ln_s "%{target_artifactory_install}/tomcat" "%{buildroot}%{target_artifactory_home}/tomcat"
 
 # log directories installation
 %__install -d "%{buildroot}%{target_artifactory_home}/logs/catalina"
@@ -165,7 +166,7 @@ if [ "$1" = "1" ]; then
   echo
   echo "The installation of Artifactory has completed successfully."
   echo
-  echo "PLEASE NOTE: You can recover a backup done with Artifactory RPM 2.6.0 and above using '/opt/jfrog/artifactory/bin/recover.backup.sh'."
+  echo "PLEASE NOTE: You can recover a backup done with Artifactory RPM 3.0 and above using '/opt/jfrog/artifactory/bin/recover.backup.sh'. For upgrading from previous version of Artifactory please refer to the wiki http://wiki.jfrog.org/confluence/display/RTF/Upgrading+Artifactory"
   echo "PLEASE NOTE: It is highly recommended to use Artifactory in conjunction with MySQL. You can easily configure this setup using '/opt/jfrog/artifactory/bin/configure.mysql.sh'."
   echo
 elif [ "$1" = "2" ]; then
@@ -197,28 +198,38 @@ if [ "$1" = "0" ]; then
   echo "Removing the artifactory service from auto-start"
   /sbin/chkconfig --del %{name} || exit $?
 
-  # if some files in data move them to a backup folder
-  if [ -d "%{target_artifactory_home}/data" ]; then
-    TIMESTAMP=`echo "$(date '+%T')" | tr -d ":"`
-    CURRENT_TIME="$(date '+%Y%m%d').$TIMESTAMP"
-    BACKUP_DIR="%{target_var_dir}/%{name}.backup.${CURRENT_TIME}"
+  # Create backups
+  echo "Creating a backup of the artifactory home folder in ${BACKUP_DIR}"
+  TIMESTAMP=`echo "$(date '+%T')" | tr -d ":"`
+  CURRENT_TIME="$(date '+%Y%m%d').$TIMESTAMP"
+  BACKUP_DIR="%{target_var_dir}/%{name}.backup.${CURRENT_TIME}"
 
-    echo "Creating a backup of the artifactory home folder in ${BACKUP_DIR}"
-    %__mkdir_p "${BACKUP_DIR}" && \
-     %__mv %{target_etc_dir} "${BACKUP_DIR}/etc" && \
-     %__mv %{target_artifactory_home}/data "${BACKUP_DIR}/data" && \
-     %__mv %{target_artifactory_home}/logs "${BACKUP_DIR}/logs" && \
-     %__rm -rf "${BACKUP_DIR}/data/tmp" && \
-     %__rm -rf "${BACKUP_DIR}/data/work" || exit $?
-    if [ -e %{target_tomcat_home}/lib/mysql-connector-java*.jar ]; then
-      echo "MySQL connector found"
-      %__mv %{target_tomcat_home}/lib/mysql-connector-java* "${BACKUP_DIR}" || exit $?
-    fi
-    if [ -e %{target_artifactory_home}/backup ]; then
-      %__mv %{target_artifactory_home}/backup "${BACKUP_DIR}/backup" || exit $?
+  %__mkdir_p "${BACKUP_DIR}" && \
+  %__mv %{target_etc_dir} "${BACKUP_DIR}/etc" && \
+  %__mv %{target_artifactory_home}/logs "${BACKUP_DIR}/logs" || exit $?
+
+  if [ -d "%{target_artifactory_home}/data" ]; then
+    %__rm -rf "%{target_artifactory_home}/data/tmp" && \
+    %__rm -rf "%{target_artifactory_home}/data/work" || exit $?
+
+    if [ $(stat -c "%d" %{target_artifactory_home}/data/) -eq $(stat -c "%d" ${BACKUP_DIR}) ]; then
+      echo "Backup %{target_artifactory_home}/data to ${BACKUP_DIR}/data"
+      %__mv %{target_artifactory_home}/data "${BACKUP_DIR}/data" || exit $?
+    else
+      echo "PLEASE NOTE: Skipped creating a backup of the Artifactory data folder because source and target are not in the same drive [%{target_artifactory_home}/data, ${BACKUP_DIR}/data/]"
+      %__cp -pr %{target_artifactory_home}/data ${BACKUP_DIR}/data
     fi
   fi
+
+  if [ -e %{target_tomcat_home}/lib/mysql-connector-java*.jar ]; then
+    echo "MySQL connector found"
+    %__mv %{target_tomcat_home}/lib/mysql-connector-java* "${BACKUP_DIR}" || exit $?
+  fi
+  if [ -e %{target_artifactory_home}/backup ]; then
+    %__mv %{target_artifactory_home}/backup "${BACKUP_DIR}/backup" || exit $?
+  fi
 fi
+
 exit 0
 
 %postun
@@ -232,7 +243,7 @@ if [ "$1" = "0" ]; then
 
   # Ignoring user folders since the home dir is deleted already by the RPM spec
   echo "Removing user %{username}"
-  %{_sbindir}/userdel -r %{username} || echo $?
+  %{_sbindir}/userdel -r %{username} 2>/dev/null || echo $?
 
   EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
   if [ "$EXISTING_GROUP" == "%{group_name}" ]; then

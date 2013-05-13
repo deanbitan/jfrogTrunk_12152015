@@ -163,7 +163,7 @@ public final class RequestResponseHelper {
             }
 
             // content disposition is not set only for archive resources when archived browsing is enabled
-            if (isNotZipResource(res) || archiveBrowsingDisabled(res)) {
+            if (contentBrowsingDisabled(res)) {
                 ((HttpArtifactoryResponse) response).setContentDispositionAttachment(fileName);
             }
             ((HttpArtifactoryResponse) response).setFilename(fileName);
@@ -182,7 +182,7 @@ public final class RequestResponseHelper {
         return !(res instanceof ZipEntryResource);
     }
 
-    private boolean archiveBrowsingDisabled(RepoResource res) {
+    private boolean contentBrowsingDisabled(RepoResource res) {
         boolean result = true;
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         String repoKey = res.getResponseRepoPath().getRepoKey();

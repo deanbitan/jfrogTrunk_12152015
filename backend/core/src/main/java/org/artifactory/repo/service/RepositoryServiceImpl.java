@@ -866,6 +866,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
+    public boolean existsSafe(RepoPath repoPath) {
+        LocalRepo localRepo = findLocalRepository(repoPath);
+        return localRepo != null && localRepo.itemExists(repoPath.getPath());
+    }
+
+    @Override
     public ItemMetaInfo getItemMetaInfo(RepoPath repoPath) {
         return ContextHelper.get().beanForType(NodeMetaInfoService.class).getNodeMetaInfo(repoPath);
     }
@@ -1840,6 +1846,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (localRepo == null) {
             throw new IllegalArgumentException("Repository '" + repoKey + "' is not a local repository");
         }
+        return localRepo;
+    }
+
+    @Override
+    public LocalRepo findLocalRepository(RepoPath repoPath) {
+        String repoKey = repoPath.getRepoKey();
+        LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
         return localRepo;
     }
 

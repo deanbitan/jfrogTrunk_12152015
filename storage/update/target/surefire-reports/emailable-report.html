@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>TestNG:  Unit Test</title>
+<style type="text/css">
+table caption,table.info_table,table.result,table.passed,table.failed {margin-bottom:10px;border:1px solid #000099;border-collapse:collapse;empty-cells:show;}
+table.info_table td,table.info_table th,table.result td,table.result th,table.passed td,table.passed th,table.failed td,table.failed th {
+border:1px solid #000099;padding:.25em .5em .25em .5em
+}
+table.result th {vertical-align:bottom}
+tr.param th {padding-left:1em;padding-right:1em}
+tr.param td {padding-left:.5em;padding-right:2em}
+td.numi,th.numi,td.numi_attn {
+text-align:right
+}
+tr.total td {font-weight:bold}
+table caption {
+text-align:center;font-weight:bold;
+}
+table.passed tr.stripe td,table tr.passedodd td {background-color: #00AA00;}
+table.passed td,table tr.passedeven td {background-color: #33FF33;}
+table.passed tr.stripe td,table tr.skippedodd td {background-color: #cccccc;}
+table.passed td,table tr.skippedodd td {background-color: #dddddd;}
+table.failed tr.stripe td,table tr.failedodd td,table.result td.numi_attn {background-color: #FF3333;}
+table.failed td,table tr.failedeven td,table.result tr.stripe td.numi_attn {background-color: #DD0000;}
+tr.stripe td,tr.stripe th {background-color: #E6EBF9;}
+p.totop {font-size:85%;text-align:center;border-bottom:2px black solid}
+div.shootout {padding:2em;border:3px #4854A8 solid}
+</style>
+</head>
+<body>
+<table cellspacing="0" cellpadding="0" class="result">
+<tr><th>Test</th><th class="numi">Methods<br/>Passed</th><th class="numi">Scenarios<br/>Passed</th><th class="numi"># skipped</th><th class="numi"># failed</th><th class="numi">Total<br/>Time</th><th class="numi">Included<br/>Groups</th><th class="numi">Excluded<br/>Groups</th></tr>
+<tr><td style="text-align:left;padding-right:2em">Command line test</td><td class="numi">40</td><td class="numi">40</td><td class="numi">0</td><td class="numi">0</td><td class="numi">1.9 seconds</td><td class="numi"></td><td class="numi"></td></tr>
+</table>
+<table cellspacing="0" cellpadding="0" class="passed" id="summary">
+<tr><th>Class</th><th>Method</th><th># of<br/>Scenarios</th><th>Start</th><th>Time<br/>(ms)</th></tr>
+<tr><th colspan="4">Command line test &#8212; passed</th></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.security.v3.AclRepoKeysConverterTest</td><td><a href="#m1"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450706510</td><td class="numi">67</td></tr>
+<tr class="passedeven"><td rowspan="2">org.artifactory.update.security.v1.AclsConverterTest</td><td><a href="#m2"><b>convertOutputOfSimpleUserConverter</b>  </a></td><td class="numi">1</td><td>1368450706606</td><td class="numi">17</td></tr><tr class="passedeven"><td><a href="#m3"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450706625</td><td class="numi">13</td></tr>
+<tr class="passedodd"><td rowspan="2">org.artifactory.update.security.v3.AnyRemoteConverterTest</td><td><a href="#m4"><b>convertFileWithAnonymousRealOnAny</b>  </a></td><td class="numi">1</td><td>1368450706664</td><td class="numi">16</td></tr><tr class="passedodd"><td><a href="#m5"><b>convertFileWithoutAnonymousRealOnAny</b>  </a></td><td class="numi">1</td><td>1368450706681</td><td class="numi">6</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest</td><td><a href="#m6"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450706746</td><td class="numi">20</td></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest</td><td><a href="#m7"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450706795</td><td class="numi">4</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.test.ArtifactoryVersionTest</td><td><a href="#m8"><b>testBackupPropertyFile</b>  </a></td><td class="numi">1</td><td>1368450706801</td><td class="numi">37</td></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.md.v130beta6.ChecksumsConverterTest</td><td><a href="#m9"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450706867</td><td class="numi">130</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.test.FileIOTest</td><td><a href="#m10"><b>testFileReturns</b>  </a></td><td class="numi">1</td><td>1368450706998</td><td class="numi">1</td></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest</td><td><a href="#m11"><b>convertValidFolderInfo</b>  </a></td><td class="numi">1</td><td>1368450707024</td><td class="numi">11</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.security.v6.LdapGroupSettingConverterTest</td><td><a href="#m12"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450707055</td><td class="numi">10</td></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest</td><td><a href="#m13"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450707084</td><td class="numi">21</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.md.v125rc0.MdFileConverterTest</td><td><a href="#m14"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450707129</td><td class="numi">4</td></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.md.v125rc0.MdFolderConverterTest</td><td><a href="#m15"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450707162</td><td class="numi">5</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.md.v125rc0.MdStatsConverterTest</td><td><a href="#m16"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450707200</td><td class="numi">4</td></tr>
+<tr class="passedodd"><td rowspan="2">org.artifactory.update.md.v125rc0.MetadataReader125Test</td><td><a href="#m17"><b>readFileMetadata</b>  </a></td><td class="numi">1</td><td>1368450707229</td><td class="numi">34</td></tr><tr class="passedodd"><td><a href="#m18"><b>readFolderMetadata</b>  </a></td><td class="numi">1</td><td>1368450707265</td><td class="numi">8</td></tr>
+<tr class="passedeven"><td rowspan="2">org.artifactory.update.md.v130beta3.MetadataReader130beta3Test</td><td><a href="#m19"><b>readFileMetadata</b>  </a></td><td class="numi">1</td><td>1368450707298</td><td class="numi">32</td></tr><tr class="passedeven"><td><a href="#m20"><b>readFolderMetadata</b>  </a></td><td class="numi">1</td><td>1368450707332</td><td class="numi">12</td></tr>
+<tr class="passedodd"><td rowspan="2">org.artifactory.update.md.v130beta6.MetadataReader130beta6Test</td><td><a href="#m21"><b>readFileMetadata</b>  </a></td><td class="numi">1</td><td>1368450707368</td><td class="numi">12</td></tr><tr class="passedodd"><td><a href="#m22"><b>readFolderMetadata</b>  </a></td><td class="numi">1</td><td>1368450707381</td><td class="numi">7</td></tr>
+<tr class="passedeven"><td rowspan="5">org.artifactory.update.md.MetadataVersionTest</td><td><a href="#m23"><b>detectVersion125rc0</b>  </a></td><td class="numi">1</td><td>1368450707389</td><td class="numi">0</td></tr><tr class="passedeven"><td><a href="#m24"><b>detectVersion230</b>  </a></td><td class="numi">1</td><td>1368450707390</td><td class="numi">3</td></tr><tr class="passedeven"><td><a href="#m25"><b>detectVersion30beta3</b>  </a></td><td class="numi">1</td><td>1368450707394</td><td class="numi">0</td></tr><tr class="passedeven"><td><a href="#m26"><b>detectVersion30beta6</b>  </a></td><td class="numi">1</td><td>1368450707395</td><td class="numi">3</td></tr><tr class="passedeven"><td><a href="#m27"><b>versionsCoverage</b>  </a></td><td class="numi">1</td><td>1368450707398</td><td class="numi">1</td></tr>
+<tr class="passedodd"><td rowspan="2">org.artifactory.update.test.ReadOldBackupsTest</td><td><a href="#m28"><b>testReadingVersion</b>  </a></td><td class="numi">1</td><td>1368450707399</td><td class="numi">32</td></tr><tr class="passedodd"><td><a href="#m29"><b>testSecurityConversion</b>  </a></td><td class="numi">1</td><td>1368450707432</td><td class="numi">70</td></tr>
+<tr class="passedeven"><td rowspan="2">org.artifactory.update.security.v2.RepoPathAclConverterTest</td><td><a href="#m30"><b>convertOutputOfSimpleUserConverter</b>  </a></td><td class="numi">1</td><td>1368450707519</td><td class="numi">9</td></tr><tr class="passedeven"><td><a href="#m31"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450707530</td><td class="numi">9</td></tr>
+<tr class="passedodd"><td rowspan="2">org.artifactory.update.security.SecurityInfoReaderTest</td><td><a href="#m32"><b>readAllVersions</b>  ("this test will try to read all the security files under the security test directory")</a></td><td class="numi">1</td><td>1368450707539</td><td class="numi">318</td></tr><tr class="passedodd"><td><a href="#m33"><b>readVersion5</b>  ("just another test on version 6 with few assertions")</a></td><td class="numi">1</td><td>1368450707857</td><td class="numi">32</td></tr>
+<tr class="passedeven"><td rowspan="5">org.artifactory.update.security.SecurityVersionTest</td><td><a href="#m34"><b>convertFromVersion1</b>  </a></td><td class="numi">1</td><td>1368450707889</td><td class="numi">84</td></tr><tr class="passedeven"><td><a href="#m35"><b>convertFromVersion1Big</b>  </a></td><td class="numi">1</td><td>1368450707973</td><td class="numi">39</td></tr><tr class="passedeven"><td><a href="#m36"><b>convertFromVersion2</b>  </a></td><td class="numi">1</td><td>1368450708012</td><td class="numi">23</td></tr><tr class="passedeven"><td><a href="#m37"><b>convertFromVersion3</b>  </a></td><td class="numi">1</td><td>1368450708035</td><td class="numi">26</td></tr><tr class="passedeven"><td><a href="#m38"><b>versionsCoverage</b>  </a></td><td class="numi">1</td><td>1368450708062</td><td class="numi">0</td></tr>
+<tr class="passedodd"><td rowspan="1">org.artifactory.update.security.v2.SimpleUserConverterTest</td><td><a href="#m39"><b>convertValidFile</b>  </a></td><td class="numi">1</td><td>1368450708076</td><td class="numi">6</td></tr>
+<tr class="passedeven"><td rowspan="1">org.artifactory.update.security.v1.UserPermissionsConverterTest</td><td><a href="#m40"><b>convertOutputOfSimpleUserConverter</b>  </a></td><td class="numi">1</td><td>1368450708096</td><td class="numi">7</td></tr>
+</table>
+<h1>Command line test</h1>
+<h2 id="m1">org.artifactory.update.security.SecurityInfoReaderTest:readAllVersions</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m2">org.artifactory.update.test.ReadOldBackupsTest:testReadingVersion</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m3">org.artifactory.update.security.v1.AclsConverterTest:convertOutputOfSimpleUserConverter</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m4">org.artifactory.update.test.ReadOldBackupsTest:testSecurityConversion</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m5">org.artifactory.update.md.v130beta3.MetadataReader130beta3Test:readFileMetadata</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m6">org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m7">org.artifactory.update.security.SecurityVersionTest:versionsCoverage</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m8">org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m9">org.artifactory.update.security.SecurityInfoReaderTest:readVersion5</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m10">org.artifactory.update.security.v6.LdapGroupSettingConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m11">org.artifactory.update.security.v2.RepoPathAclConverterTest:convertOutputOfSimpleUserConverter</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m12">org.artifactory.update.md.v125rc0.MdStatsConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m13">org.artifactory.update.security.SecurityVersionTest:convertFromVersion1</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m14">org.artifactory.update.security.v1.AclsConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m15">org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m16">org.artifactory.update.security.v1.UserPermissionsConverterTest:convertOutputOfSimpleUserConverter</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m17">org.artifactory.update.md.v125rc0.MdFileConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m18">org.artifactory.update.security.SecurityVersionTest:convertFromVersion1Big</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m19">org.artifactory.update.md.MetadataVersionTest:detectVersion230</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m20">org.artifactory.update.security.v3.AnyRemoteConverterTest:convertFileWithoutAnonymousRealOnAny</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m21">org.artifactory.update.security.SecurityVersionTest:convertFromVersion2</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m22">org.artifactory.update.md.MetadataVersionTest:detectVersion125rc0</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m23">org.artifactory.update.md.v130beta6.ChecksumsConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m24">org.artifactory.update.security.v3.AnyRemoteConverterTest:convertFileWithAnonymousRealOnAny</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m25">org.artifactory.update.md.MetadataVersionTest:versionsCoverage</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m26">org.artifactory.update.security.v2.RepoPathAclConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m27">org.artifactory.update.md.v130beta6.MetadataReader130beta6Test:readFileMetadata</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m28">org.artifactory.update.test.ArtifactoryVersionTest:testBackupPropertyFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m29">org.artifactory.update.md.v125rc0.MdFolderConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m30">org.artifactory.update.md.v130beta6.MetadataReader130beta6Test:readFolderMetadata</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m31">org.artifactory.update.security.v3.AclRepoKeysConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m32">org.artifactory.update.md.MetadataVersionTest:detectVersion30beta6</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m33">org.artifactory.update.md.v125rc0.MetadataReader125Test:readFileMetadata</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m34">org.artifactory.update.md.v130beta3.MetadataReader130beta3Test:readFolderMetadata</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m35">org.artifactory.update.md.MetadataVersionTest:detectVersion30beta3</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m36">org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest:convertValidFolderInfo</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m37">org.artifactory.update.security.v2.SimpleUserConverterTest:convertValidFile</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m38">org.artifactory.update.test.FileIOTest:testFileReturns</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m39">org.artifactory.update.security.SecurityVersionTest:convertFromVersion3</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+<h2 id="m40">org.artifactory.update.md.v125rc0.MetadataReader125Test:readFolderMetadata</h2>
+<p class="totop"><a href="#summary">back to summary</a></p>
+</body></html>

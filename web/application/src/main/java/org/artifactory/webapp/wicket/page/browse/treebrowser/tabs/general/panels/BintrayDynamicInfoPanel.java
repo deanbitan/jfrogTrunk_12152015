@@ -34,6 +34,7 @@ import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -171,7 +172,8 @@ public class BintrayDynamicInfoPanel extends Panel {
                 return BintrayInfoPanelBehavior.noBintrayAuthentication;
             }
             String sha1 = ((FileInfo) itemInfo).getChecksumsInfo().getSha1();
-            bintrayPackageInfo = bintrayService.getBintrayPackageInfo(sha1);
+            Map<String, String> headersMap = WicketUtils.getHeadersMap();
+            bintrayPackageInfo = bintrayService.getBintrayPackageInfo(sha1, headersMap);
             if (isPackageExsists()) {
                 return BintrayInfoPanelBehavior.normal;
             }

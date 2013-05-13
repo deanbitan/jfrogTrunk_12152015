@@ -128,10 +128,4 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
         }
         return sh;
     }
-
-    @Override
-    public void clearState() {
-        super.clearState();
-        statusMessage = null;
-    }
 }

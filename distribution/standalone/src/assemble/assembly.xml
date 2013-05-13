@@ -126,6 +126,7 @@
                 <exclude>bin/*.sh</exclude>
                 <exclude>conf/server.xml</exclude>
                 <exclude>conf/logging.properties</exclude>
+                <exclude>conf/web.xml</exclude>
                 <exclude>logs</exclude>
                 <exclude>temp/safeToDelete.tmp</exclude>
                 <exclude>webapps/**</exclude>
@@ -170,6 +171,7 @@
             <outputDirectory>tomcat/conf</outputDirectory>
             <includes>
                 <include>logging.properties</include>
+                <include>web.xml</include>
             </includes>
             <directoryMode>755</directoryMode>
         </fileSet>

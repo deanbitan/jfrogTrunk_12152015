@@ -311,7 +311,22 @@ public interface RepositoryService extends ImportableExportable {
 
     Set<String> getAllRepoKeys();
 
+    /**
+     * Return true if the given {@code repoPath} exists as a local or local cache repository. Throws an exception if not found
+     *
+     * @param repoPath A repo path in the repository
+     * @return Local/cache repository matching the repo path repo key
+     * @throws IllegalArgumentException if repoPath not found
+     */
     boolean exists(RepoPath repoPath);
+
+    /**
+     * Returns {@code true} if the given {@code repoPath} exists as a local or local cache repository, otherwise returns {@code false}
+     *
+     * @param repoPath A repo path in the repository
+     * @return Local/cache repository matching the repo path repo key
+     */
+    boolean existsSafe(RepoPath repoPath);
 
     /**
      * Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path.

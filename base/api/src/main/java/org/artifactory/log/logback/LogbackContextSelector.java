@@ -39,11 +39,11 @@ public class LogbackContextSelector implements ContextSelector {
     private final ConcurrentMap<String, LoggerContext> loggerContextsByContextId;
     private final LoggerContext defaultContext;
 
-    private static final ThreadLocal<LoggerContext> tlsLoggingContext = new ThreadLocal<LoggerContext>();
-    private static final ThreadLocal<LoggerConfigInfo> tlsConfigInfo = new ThreadLocal<LoggerConfigInfo>();
+    private static final ThreadLocal<LoggerContext> tlsLoggingContext = new ThreadLocal<>();
+    private static final ThreadLocal<LoggerConfigInfo> tlsConfigInfo = new ThreadLocal<>();
 
     public LogbackContextSelector(LoggerContext context) {
-        loggerContextsByContextId = new ConcurrentHashMap<String, LoggerContext>();
+        loggerContextsByContextId = new ConcurrentHashMap<>();
         defaultContext = context;
     }
 

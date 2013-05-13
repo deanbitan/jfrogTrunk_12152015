@@ -1,0 +1,409 @@
+<html>
+<head>
+<title>TestNG:  Command line test</title>
+<link href="../testng.css" rel="stylesheet" type="text/css" />
+<link href="../my-testng.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">
+.log { display: none;} 
+.stack-trace { display: none;} 
+</style>
+<script type="text/javascript">
+<!--
+function flip(e) {
+  current = e.style.display;
+  if (current == 'block') {
+    e.style.display = 'none';
+    return 0;
+  }
+  else {
+    e.style.display = 'block';
+    return 1;
+  }
+}
+
+function toggleBox(szDivId, elem, msg1, msg2)
+{
+  var res = -1;  if (document.getElementById) {
+    res = flip(document.getElementById(szDivId));
+  }
+  else if (document.all) {
+    // this is the way old msie versions work
+    res = flip(document.all[szDivId]);
+  }
+  if(elem) {
+    if(res == 0) elem.innerHTML = msg1; else elem.innerHTML = msg2;
+  }
+
+}
+
+function toggleAllBoxes() {
+  if (document.getElementsByTagName) {
+    d = document.getElementsByTagName('div');
+    for (i = 0; i < d.length; i++) {
+      if (d[i].className == 'log') {
+        flip(d[i]);
+      }
+    }
+  }
+}
+
+// -->
+</script>
+
+</head>
+<body>
+<h2 align='center'>Command line test</h2><table border='1' align="center">
+<tr>
+<td>Tests passed/Failed/Skipped:</td><td>56/0/0</td>
+</tr><tr>
+<td>Started on:</td><td>Mon May 13 13:12:35 GMT 2013</td>
+</tr>
+<tr><td>Total time:</td><td>0 seconds (596 ms)</td>
+</tr><tr>
+<td>Included groups:</td><td></td>
+</tr><tr>
+<td>Excluded groups:</td><td></td>
+</tr>
+</table><p/>
+<small><i>(Hover the method name to see the test class name)</i></small><p/>
+<table width='100%' border='1' class='invocation-passed'>
+<tr><td colspan='4' align='center'><b>PASSED TESTS</b></td></tr>
+<tr><td><b>Test method</b></td>
+<td width="30%"><b>Exception</b></td>
+<td width="10%"><b>Time (seconds)</b></td>
+<td><b>Instance</b></td>
+</tr>
+<tr>
+<td title='org.artifactory.api.search.SavedSearchResultsTest.addResultsWithDuplicates()'><b>addResultsWithDuplicates</b><br>Test class: org.artifactory.api.search.SavedSearchResultsTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.search.SavedSearchResultsTest@77e45af3</td></tr>
+<tr>
+<td title='org.artifactory.api.search.SavedSearchResultsTest.defaultConstructor()'><b>defaultConstructor</b><br>Test class: org.artifactory.api.search.SavedSearchResultsTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.search.SavedSearchResultsTest@77e45af3</td></tr>
+<tr>
+<td title='org.artifactory.api.security.UserInfoBuilderTest.emailBuild()'><b>emailBuild</b><br>Test class: org.artifactory.api.security.UserInfoBuilderTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.security.UserInfoBuilderTest@7b66258a</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fileExtensionAsNumber()'><b>fileExtensionAsNumber</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromInvalidPath()'><b>fromInvalidPath</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromPathNonUniqueSnapshotVersion()'><b>fromPathNonUniqueSnapshotVersion</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromPathUniqueMd5SnapshotVersion()'><b>fromPathUniqueMd5SnapshotVersion</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromPathUniqueSnapshotVersion()'><b>fromPathUniqueSnapshotVersion</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromPathWithClassifier()'><b>fromPathWithClassifier</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromPathWithNoGroupId()'><b>fromPathWithNoGroupId</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromPathWithOneDigitVersion()'><b>fromPathWithOneDigitVersion</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.fromSimplePath()'><b>fromSimplePath</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.search.SavedSearchResultsTest.intersectResults()'><b>intersectResults</b><br>Test class: org.artifactory.api.search.SavedSearchResultsTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.search.SavedSearchResultsTest@77e45af3</td></tr>
+<tr>
+<td title='org.artifactory.api.fs.VersionUnitTest.invalidPath()'><b>invalidPath</b><br>Test class: org.artifactory.api.fs.VersionUnitTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.fs.VersionUnitTest@43d7a5a</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.matrixParams()'><b>matrixParams</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.matrixParamsWithEncodedValues()'><b>matrixParamsWithEncodedValues</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+<tr>
+<td title='org.artifactory.api.search.SavedSearchResultsTest.mergeResults()'><b>mergeResults</b><br>Test class: org.artifactory.api.search.SavedSearchResultsTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.search.SavedSearchResultsTest@77e45af3</td></tr>
+<tr>
+<td title='org.artifactory.api.security.UserInfoBuilderTest.minimalBuild()'><b>minimalBuild</b><br>Test class: org.artifactory.api.security.UserInfoBuilderTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.security.UserInfoBuilderTest@7b66258a</td></tr>
+<tr>
+<td title='org.artifactory.api.security.UserInfoBuilderTest.noUsernameBuild()'><b>noUsernameBuild</b><br>Test class: org.artifactory.api.security.UserInfoBuilderTest</td>
+<td><div><pre>java.lang.IllegalStateException: User must have a username
+	at org.artifactory.api.security.UserInfoBuilder.build(UserInfoBuilder.java:61)
+	at org.artifactory.api.security.UserInfoBuilderTest.noUsernameBuild(UserInfoBuilderTest.java:66)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:77)
+	at org.apache.maven.surefire.testng.TestNGDirectoryTestSuite.executeMulti(TestNGDirectoryTestSuite.java:189)
+	at org.apache.maven.surefire.testng.TestNGDirectoryTestSuite.execute(TestNGDirectoryTestSuite.java:105)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:117)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:208)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:158)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:86)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:153)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:95)
+... Removed 25 stack frames</pre></div><a href='#' onClick='toggleBox("stack-trace652364872", this, "Click to show all stack frames", "Click to hide stack frames")'>Click to show all stack frames</a>
+<div class='stack-trace' id='stack-trace652364872'><pre>java.lang.IllegalStateException: User must have a username
+	at org.artifactory.api.security.UserInfoBuilder.build(UserInfoBuilder.java:61)
+	at org.artifactory.api.security.UserInfoBuilderTest.noUsernameBuild(UserInfoBuilderTest.java:66)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:601)
+	at org.testng.internal.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:80)
+	at org.testng.internal.Invoker.invokeMethod(Invoker.java:714)
+	at org.testng.internal.Invoker.invokeTestMethod(Invoker.java:901)
+	at org.testng.internal.Invoker.invokeTestMethods(Invoker.java:1231)
+	at org.testng.internal.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:127)
+	at org.testng.internal.TestMethodWorker.run(TestMethodWorker.java:111)
+	at org.testng.TestRunner.privateRun(TestRunner.java:767)
+	at org.testng.TestRunner.run(TestRunner.java:617)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:334)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:329)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:291)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:240)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:86)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1198)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1123)
+	at org.testng.TestNG.run(TestNG.java:1031)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:77)
+	at org.apache.maven.surefire.testng.TestNGDirectoryTestSuite.executeMulti(TestNGDirectoryTestSuite.java:189)
+	at org.apache.maven.surefire.testng.TestNGDirectoryTestSuite.execute(TestNGDirectoryTestSuite.java:105)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:117)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:601)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:208)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:158)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:86)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:153)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:95)
+</pre></div></td>
+<td>0</td>
+<td>org.artifactory.api.security.UserInfoBuilderTest@7b66258a</td></tr>
+<tr>
+<td title='org.artifactory.api.fs.VersionUnitTest.nodeConstructor()'><b>nodeConstructor</b><br>Test class: org.artifactory.api.fs.VersionUnitTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.fs.VersionUnitTest@43d7a5a</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.pathWithNonAscii()'><b>pathWithNonAscii</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.pathsWithSpaces()'><b>pathsWithSpaces</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+<tr>
+<td title='org.artifactory.api.security.UserInfoBuilderTest.saltBuild()'><b>saltBuild</b><br>Test class: org.artifactory.api.security.UserInfoBuilderTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.security.UserInfoBuilderTest@7b66258a</td></tr>
+<tr>
+<td title='org.artifactory.api.search.SavedSearchResultsTest.subtractResults()'><b>subtractResults</b><br>Test class: org.artifactory.api.search.SavedSearchResultsTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.search.SavedSearchResultsTest@77e45af3</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.testClassifierWithDot()'><b>testClassifierWithDot</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.testClassifierWithDotAndNumber()'><b>testClassifierWithDotAndNumber</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.testConfigPath()'><b>testConfigPath</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.testCustomUserType()'><b>testCustomUserType</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetContentLength()'><b>testGetContentLength</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetHeader()'><b>testGetHeader</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetIfModifiedSince()'><b>testGetIfModifiedSince</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetInputStream()'><b>testGetInputStream</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetLastModified()'><b>testGetLastModified</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetModificationTime()'><b>testGetModificationTime</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetName()'><b>testGetName</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetParameter()'><b>testGetParameter</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetParameterValues()'><b>testGetParameterValues</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetPath()'><b>testGetPath</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetProperties()'><b>testGetProperties</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetRepoKey()'><b>testGetRepoKey</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetRepoPath()'><b>testGetRepoPath</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetServletContextUrl()'><b>testGetServletContextUrl</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetSourceDescription()'><b>testGetSourceDescription</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testGetUri()'><b>testGetUri</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testHasProperties()'><b>testHasProperties</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testIsChecksum()'><b>testIsChecksum</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testIsFromAnotherArtifactory()'><b>testIsFromAnotherArtifactory</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testIsHeadOnly()'><b>testIsHeadOnly</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testIsMetadata()'><b>testIsMetadata</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testIsNewerThan()'><b>testIsNewerThan</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testIsRecursive()'><b>testIsRecursive</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.maven.MavenArtifactInfoTest.testTarGz()'><b>testTarGz</b><br>Test class: org.artifactory.api.maven.MavenArtifactInfoTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.maven.MavenArtifactInfoTest@430e0623</td></tr>
+<tr>
+<td title='org.artifactory.api.request.TranslatedArtifactoryRequestTest.testToString()'><b>testToString</b><br>Test class: org.artifactory.api.request.TranslatedArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.zipResourceAbsolute()'><b>zipResourceAbsolute</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.zipResourceEmptyPath()'><b>zipResourceEmptyPath</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+<tr>
+<td title='org.artifactory.api.request.ArtifactoryRequestTest.zipResourceRelative()'><b>zipResourceRelative</b><br>Test class: org.artifactory.api.request.ArtifactoryRequestTest</td>
+<td></td>
+<td>0</td>
+<td>org.artifactory.api.request.ArtifactoryRequestTest@602bace2</td></tr>
+</table><p>
+</body>
+</html>

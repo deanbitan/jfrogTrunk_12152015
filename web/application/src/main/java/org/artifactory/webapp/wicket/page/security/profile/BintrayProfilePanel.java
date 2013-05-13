@@ -41,8 +41,10 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author Shay Yaakov
@@ -91,8 +93,9 @@ public class BintrayProfilePanel extends TitledPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
+                    Map<String, String> headersMap = WicketUtils.getHeadersMap();
                     BintrayUser bintrayUser = bintrayService.getBintrayUser(profile.getBintrayUsername(),
-                            profile.getBintrayApiKey());
+                            profile.getBintrayApiKey(), headersMap);
                     info("Successfully authenticated '" + bintrayUser.getFullName() + "' with Bintray.");
                 } catch (IOException e) {
                     error("Connection failed with exception: " + e.getMessage());

@@ -319,8 +319,14 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
         UserInfoBuilder builder = new UserInfoBuilder(user.getUsername());
         Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>(user.getGroups().size());
         for (UserGroup userGroup : user.getGroups()) {
-            String groupname = userGroupsDao.findGroupById(userGroup.getGroupId()).getGroupName();
-            groups.add(InfoFactoryHolder.get().createUserGroup(groupname, userGroup.getRealm()));
+            Group groupById = userGroupsDao.findGroupById(userGroup.getGroupId());
+            if (groupById != null) {
+                String groupname = groupById.getGroupName();
+                groups.add(InfoFactoryHolder.get().createUserGroup(groupname, userGroup.getRealm()));
+            } else {
+                log.error("Group ID " + userGroup.getGroupId() + " does not exists!" +
+                        " Skipping add group for user " + user.getUsername());
+            }
         }
         builder.password(new SaltedPassword(user.getPassword(), user.getSalt())).email(user.getEmail())
                 .admin(user.isAdmin()).enabled(user.isEnabled()).updatableProfile(user.isUpdatableProfile())
@@ -351,7 +357,12 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
         Set<UserGroup> userGroups = new HashSet<>(groups.size());
         for (UserGroupInfo groupInfo : groups) {
             Group groupByName = userGroupsDao.findGroupByName(groupInfo.getGroupName());
-            userGroups.add(new UserGroup(u.getUserId(), groupByName.getGroupId(), groupInfo.getRealm()));
+            if (groupByName != null) {
+                userGroups.add(new UserGroup(u.getUserId(), groupByName.getGroupId(), groupInfo.getRealm()));
+            } else {
+                log.error("Group named " + groupInfo.getGroupName() + " does not exists!" +
+                        " Skipping add group for user " + userInfo.getUsername());
+            }
         }
         u.setGroups(userGroups);
         return u;

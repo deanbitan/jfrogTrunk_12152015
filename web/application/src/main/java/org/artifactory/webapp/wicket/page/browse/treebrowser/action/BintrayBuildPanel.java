@@ -19,7 +19,6 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
@@ -31,12 +30,14 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.WicketUtils;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Displays a list of Bintray properties and enables the user to push a build to Bintray
@@ -57,23 +58,18 @@ public class BintrayBuildPanel extends BintrayBasePanel {
     @Override
     protected void initBintrayModel() {
         bintrayModel = new BintrayParams();
-        setDefaultModel(new CompoundPropertyModel<BintrayParams>(bintrayModel));
+        setDefaultModel(new CompoundPropertyModel<>(bintrayModel));
+    }
+
+    @Override
+    protected boolean isFieldRequired() {
+        return false;
     }
 
     @Override
     protected void addExtraComponentsToForm(final Form form) {
         final StyledCheckbox useExistingPropsCheckbox = new StyledCheckbox("useExistingProps");
-        useExistingPropsCheckbox.setTitle("Use Artifact Properties for Repository, Package and Version");
-        useExistingPropsCheckbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
-            @Override
-            protected void onUpdate(AjaxRequestTarget target) {
-                boolean checked = useExistingPropsCheckbox.isChecked();
-                form.get("repo").setEnabled(!checked);
-                form.get("packageId").setEnabled(!checked);
-                form.get("version").setEnabled(!checked);
-                target.add(form);
-            }
-        });
+        useExistingPropsCheckbox.setTitle("Use Bintray-specific artifact properties");
         form.add(useExistingPropsCheckbox);
         form.add(new HelpBubble("useExistingProps.help", new ResourceModel("useExistingProps.help")));
 
@@ -95,7 +91,8 @@ public class BintrayBuildPanel extends BintrayBasePanel {
         TitledAjaxSubmitLink backgroundButton = new TitledAjaxSubmitLink("background", "Background Push", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                bintrayService.executeAsyncPushBuild(build, bintrayModel);
+                Map<String, String> headersMap = WicketUtils.getHeadersMap();
+                bintrayService.executeAsyncPushBuild(build, bintrayModel, headersMap);
                 String buildNameAndNumber = build.getName() + ":" + build.getNumber();
                 String message = String.format(
                         "Background Push of build '%s' to Bintray successfully scheduled to run.", buildNameAndNumber);
@@ -111,7 +108,8 @@ public class BintrayBuildPanel extends BintrayBasePanel {
     @Override
     protected void onPushClicked() {
         try {
-            MultiStatusHolder statusHolder = bintrayService.pushBuild(build, bintrayModel);
+            Map<String, String> headersMap = WicketUtils.getHeadersMap();
+            MultiStatusHolder statusHolder = bintrayService.pushBuild(build, bintrayModel, headersMap);
             if (statusHolder.hasErrors()) {
                 getPage().error(statusHolder.getLastError().getMessage());
             } else if (statusHolder.hasWarnings()) {

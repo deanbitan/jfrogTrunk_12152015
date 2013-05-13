@@ -28,8 +28,10 @@ import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides different Bintray related business methods
@@ -51,7 +53,6 @@ public interface BintrayService {
     String VERSION_SHOW_FILES = "version/show/files";
 
     final static BintrayItemInfo ITEM_NOT_FOUND = new BintrayItemInfo();
-    final static BintrayItemInfo ITEM_IN_PROCESS = new BintrayItemInfo();
     final static BintrayItemInfo ITEM_RETRIEVAL_ERROR = new BintrayItemInfo();
     final static BintrayPackageInfo PACKAGE_NOT_FOUND = new BintrayPackageInfo();
     final static BintrayPackageInfo PACKAGE_IN_PROCESS = new BintrayPackageInfo();
@@ -62,29 +63,34 @@ public interface BintrayService {
      *
      * @param itemInfo      The item info to push, in case of a folder all it's contect will get pushed
      * @param bintrayParams The Bintray model which holds the properties where to push
+     * @param headersMap    request header
      * @return Multi status holder containing all the logs during the process
      * @throws IOException In case of connection errors with Bintray
      */
-    MultiStatusHolder pushArtifact(ItemInfo itemInfo, BintrayParams bintrayParams) throws IOException;
+    MultiStatusHolder pushArtifact(ItemInfo itemInfo, BintrayParams bintrayParams,
+            @Nullable Map<String, String> headersMap) throws IOException;
 
     /**
      * Pushing synchronously all build artifacts to Bintray
      *
      * @param build         The build of which to collect the artifacts to push
      * @param bintrayParams The Bintray model which holds the properties where to push
+     * @param headersMap    request header
      * @return Multi status holder containing all the logs during the process
      * @throws IOException In case of connection errors with Bintray
      */
-    MultiStatusHolder pushBuild(Build build, BintrayParams bintrayParams) throws IOException;
+    MultiStatusHolder pushBuild(Build build, BintrayParams bintrayParams, @Nullable Map<String, String> headersMap)
+            throws IOException;
 
     /**
      * Pushing asynchronously all build artifacts to Bintray
      *
      * @param build         The build of which to collect the artifacts to push
      * @param bintrayParams The Bintray model which holds the properties where to push
+     * @param headersMap    request header
      */
     @Async
-    void executeAsyncPushBuild(Build build, BintrayParams bintrayParams);
+    void executeAsyncPushBuild(Build build, BintrayParams bintrayParams, @Nullable Map<String, String> headersMap);
 
     /**
      * Generates Bintray properties model from the metadata attached to a certain repo path
@@ -107,30 +113,35 @@ public interface BintrayService {
      * Get available repositories from Bintray
      * The list will contain repositories which the logged in user has permissions to deploy to
      *
+     * @param headersMap request header
      * @throws IOException      In case of connection errors with Bintray
      * @throws BintrayException In case we received any response other than 200 OK
      */
-    List<Repo> getReposToDeploy() throws IOException, BintrayException;
+    List<Repo> getReposToDeploy(@Nullable Map<String, String> headersMap) throws IOException, BintrayException;
 
     /**
      * Get available packages of specific repository from Bintray
      * The list will contain packages which the logged in user has permissions to deploy to
      *
-     * @param repoKey The repository key to search packages under
+     * @param repoKey    The repository key to search packages under
+     * @param headersMap request header
      * @throws IOException      In case of connection errors with Bintray
      * @throws BintrayException In case we received any response other than 200 OK
      */
-    List<String> getPackagesToDeploy(String repoKey) throws IOException, BintrayException;
+    List<String> getPackagesToDeploy(String repoKey, @Nullable Map<String, String> headersMap)
+            throws IOException, BintrayException;
 
     /**
      * Get available package versions of specific repository and package from Bintray
      *
-     * @param repoKey   The repository key to search packages under
-     * @param packageId The package name to search for versions
+     * @param repoKey    The repository key to search packages under
+     * @param packageId  The package name to search for versions
+     * @param headersMap request header
      * @throws IOException      In case of connection errors with Bintray
      * @throws BintrayException In case we received any response other than 200 OK
      */
-    List<String> getVersions(String repoKey, String packageId) throws IOException, BintrayException;
+    List<String> getVersions(String repoKey, String packageId, @Nullable Map<String, String> headersMap)
+            throws IOException, BintrayException;
 
     /**
      * Get the version URL in Bintray of which the user can browse into
@@ -142,12 +153,14 @@ public interface BintrayService {
     /**
      * Get a Bintray user information
      *
-     * @param username The username to search
-     * @param apiKey   The apiKey which belongs to the given username
+     * @param username   The username to search
+     * @param apiKey     The apiKey which belongs to the given username
+     * @param headersMap request header
      * @throws IOException      In case of connection errors with Bintray
      * @throws BintrayException In case we received any response other than 200 OK
      */
-    BintrayUser getBintrayUser(String username, String apiKey) throws IOException, BintrayException;
+    BintrayUser getBintrayUser(String username, String apiKey, @Nullable Map<String, String> headersMap)
+            throws IOException, BintrayException;
 
     /**
      * Validates that the user properly configured his Bintray credentials
@@ -163,7 +176,8 @@ public interface BintrayService {
     /**
      * Search for a files by name, can take the * and ? wildcard characters.
      */
-    BintrayItemSearchResults<BintrayItemInfo> searchByName(String query) throws IOException, BintrayException;
+    BintrayItemSearchResults<BintrayItemInfo> searchByName(String query, @Nullable Map<String, String> headersMap)
+            throws IOException, BintrayException;
 
     /**
      * Retrieves JCenter repo
@@ -171,19 +185,9 @@ public interface BintrayService {
     RemoteRepoDescriptor getJCenterRepo();
 
     /**
-     * Retrieves from  Bintray item info for item's sha1.
-     */
-    BintrayItemInfo getBintrayItemInfoByChecksum(String sha1);
-
-    /**
-     * Retrieves from  Bintray package info for the trio owner,repo,package.
-     */
-    BintrayPackageInfo getBintrayPackageInfo(String owner, String repo, String packageName);
-
-    /**
      * Retrieves from  Bintray package info for  item's sha1.
      */
-    BintrayPackageInfo getBintrayPackageInfo(String sha1);
+    BintrayPackageInfo getBintrayPackageInfo(String sha1, @Nullable Map<String, String> headersMap);
 
     /**
      * Retrieves true if system Bintray API key exists

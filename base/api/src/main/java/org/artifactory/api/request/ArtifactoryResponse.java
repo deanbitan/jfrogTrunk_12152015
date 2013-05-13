@@ -34,10 +34,6 @@ public interface ArtifactoryResponse {
 
     boolean isError();
 
-    enum State {
-        UNSET, SUCCESS, ERROR
-    }
-
     void setLastModified(long lastModified);
 
     void setEtag(String etag);

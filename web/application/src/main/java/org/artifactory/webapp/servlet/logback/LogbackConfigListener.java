@@ -19,6 +19,8 @@
 package org.artifactory.webapp.servlet.logback;
 
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.selector.ContextSelector;
+import ch.qos.logback.classic.util.ContextSelectorStaticBinder;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.log.BootstrapLogger;
 import org.artifactory.log.logback.LogbackContextHelper;
@@ -81,8 +83,10 @@ public class LogbackConfigListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         configWatchDog.interrupt();
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        lc.stop();
+        ContextSelector selector = ContextSelectorStaticBinder.getSingleton().getContextSelector();
+        String contextId = HttpUtils.getContextId(sce.getServletContext());
+        selector.detachLoggerContext(contextId);
+        configWatchDog.loggerContext.stop();
     }
 
     private static LoggerContext getOrInitLoggerContext() {

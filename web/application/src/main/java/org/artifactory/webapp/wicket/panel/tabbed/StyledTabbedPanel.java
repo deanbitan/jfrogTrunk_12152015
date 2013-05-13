@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.panel.tabbed;
 
 import org.apache.wicket.Component;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.tabs.AjaxTabbedPanel;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.ComponentTag;
@@ -28,6 +29,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.template.HtmlTemplate;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
+import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 
 import java.util.List;
@@ -84,6 +86,12 @@ public class StyledTabbedPanel extends AjaxTabbedPanel {
             baseTab.onNewTabItem(item);
         }
         return item;
+    }
+
+    @Override
+    protected void onAjaxUpdate(AjaxRequestTarget target) {
+        super.onAjaxUpdate(target);
+        AjaxUtils.refreshFeedback(target); //hack to clean feedback panel when switching tabs
     }
 
     private static class ScrollLink extends WebMarkupContainer {

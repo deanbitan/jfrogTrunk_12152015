@@ -155,6 +155,17 @@ public class ArchiveEntriesDao extends BaseDao {
         return updateCount > 0;
     }
 
+    /**
+     * @return True if there's already an entry with the given ids
+     */
+    public boolean hasIndexedArchivesEntries(long indexedArchiveId, long archivePathId, long archiveNameId)
+            throws SQLException {
+        int updateCount = jdbcHelper.executeSelectCount("SELECT count(*) FROM indexed_archives_entries " +
+                "WHERE indexed_archives_id = ? AND entry_path_id = ? AND entry_name_id = ?",
+                indexedArchiveId, archivePathId, archiveNameId);
+        return updateCount > 0;
+    }
+
     public int deleteUnusedPathIds() throws SQLException {
         return jdbcHelper.executeUpdate("DELETE FROM archive_paths WHERE path_id NOT IN " +
                 "(SELECT entry_path_id FROM indexed_archives_entries)");

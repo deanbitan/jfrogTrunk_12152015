@@ -35,6 +35,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MultiStatusHolder extends BasicStatusHolder {
     // save up to 500 messages. if exhausted, we manually drop the oldest element
     private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<>(500);
+    // save up to 2000 errors messages. if exhausted, we manually drop the oldest element
+    private final BlockingQueue<StatusEntry> errorEntries = new LinkedBlockingQueue<>(2000);
 
     @Override
     protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger, boolean debug) {
@@ -54,6 +56,11 @@ public class MultiStatusHolder extends BasicStatusHolder {
         // we don't really want to block if we reached the limit. remove the last element until offer is accepted
         while (!statusEntries.offer(entry)) {
             statusEntries.poll();
+        }
+        if (entry.isError()) {
+            while (!errorEntries.offer(entry)) {
+                errorEntries.poll();
+            }
         }
     }
 
@@ -90,9 +97,13 @@ public class MultiStatusHolder extends BasicStatusHolder {
 
     public List<StatusEntry> getEntries(StatusEntryLevel level) {
         List<StatusEntry> result = new ArrayList<>();
-        for (StatusEntry entry : statusEntries) {
-            if (level.equals(entry.getLevel())) {
-                result.add(entry);
+        if (level == StatusEntryLevel.ERROR) {
+            result.addAll(errorEntries);
+        } else {
+            for (StatusEntry entry : statusEntries) {
+                if (level.equals(entry.getLevel())) {
+                    result.add(entry);
+                }
             }
         }
         return result;

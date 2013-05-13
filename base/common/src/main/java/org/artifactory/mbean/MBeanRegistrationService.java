@@ -117,7 +117,11 @@ public class MBeanRegistrationService {
     }
 
     protected ObjectName createObjectName(String type, String mbeanProps) {
-        String nameStr = MBEANS_DOMAIN_NAME + ":" + "instance=" + ContextHelper.get().getContextId() + ", type=" + type;
+        String instanceId = ContextHelper.get().getContextId();
+        if (StringUtils.isBlank(instanceId)) {
+            instanceId = "Artifactory"; //default instanceId for tomcat ROOT
+        }
+        String nameStr = MBEANS_DOMAIN_NAME + ":" + "instance=" + instanceId + ", type=" + type;
         if (StringUtils.isNotBlank(mbeanProps)) {
             nameStr += ",prop=" + mbeanProps;
         }

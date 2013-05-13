@@ -42,6 +42,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -53,7 +54,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class ArtifactoryContextConfigListener implements ServletContextListener {
 
-    private static ArtifactoryLockFile artifactoryLockFile;
+    private static final String LOCK_FILENAME = ".lock";
+
+    private ArtifactoryLockFile artifactoryLockFile;
 
     @Override
     public void contextInitialized(ServletContextEvent event) {
@@ -193,7 +196,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
         warnIfJava7WithLoopPredicate(log);
 
-        artifactoryLockFile = new ArtifactoryLockFile(artifactoryHome);
+        artifactoryLockFile = new ArtifactoryLockFile(new File(artifactoryHome.getDataDir(), LOCK_FILENAME));
         artifactoryLockFile.tryLock();
 
         ApplicationContext context;

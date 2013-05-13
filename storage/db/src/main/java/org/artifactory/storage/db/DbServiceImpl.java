@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.db;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -56,6 +57,8 @@ import java.util.concurrent.Callable;
 @Reloadable(beanClass = DbService.class)
 public class DbServiceImpl implements DbService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(DbServiceImpl.class);
+
+    private static final double MYSQL_MIN_VERSION = 5.5;
 
     @Autowired
     private JdbcHelper jdbcHelper;
@@ -143,6 +146,12 @@ public class DbServiceImpl implements DbService, ContextReadinessListener {
             rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
             boolean schemaExists = rs.next();
             if (!schemaExists) {
+
+                // if using mySQL, check version compatibility
+                if (storageProperties.getDbType() == DbType.MYSQL) {
+                    checkMySqlMinVersion();
+                }
+
                 // read ddl from file and execute
                 log.info("***Creating database schema***");
                 DbUtils.executeSqlStream(con, getDbSchemaSql());
@@ -172,6 +181,36 @@ public class DbServiceImpl implements DbService, ContextReadinessListener {
             ContextHelper.get().beanForType(MBeanRegistrationService.class).
                     register(new ManagedDataSource((ArtifactoryDataSource) dataSource), "Storage", "Data Source");
         }
+    }
+
+    private boolean checkMySqlMinVersion() {
+        log.debug("Checking MySQL version compatibility");
+        ResultSet rs = null;
+        try {
+            rs = jdbcHelper.executeSelect("SELECT VERSION();");
+            if (rs.next()) {
+                String versionString = rs.getString(1);
+                int i = StringUtils.ordinalIndexOf(versionString, ".", 2);
+                if (i == -1) {
+                    i = versionString.length();
+                }
+                Double mysqlVersion = Double.valueOf(versionString.substring(0, i));
+                if (mysqlVersion >= MYSQL_MIN_VERSION) {
+                    return true;
+                } else {
+                    log.error("Unsupported MySQL version found [" + versionString + "]. " +
+                            "Minimum version required is " + MYSQL_MIN_VERSION + ". " +
+                            "Please follow the requirements on the wiki page.");
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Could not determine MySQL version due to an exception", e);
+        } finally {
+            DbUtils.close(rs);
+        }
+        log.error("Could not determine MySQL version. Minimum version should be " + MYSQL_MIN_VERSION + " and above.");
+        return false;
     }
 
     @Override

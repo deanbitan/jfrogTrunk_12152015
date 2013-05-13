@@ -105,8 +105,12 @@ public class ArchiveEntriesServiceImpl implements ArchiveEntriesService {
                     }
                 }
 
-                // insert to the many to many relation
-                archiveEntriesDao.createIndexedArchivesEntries(indexedArchiveId, archivePathId, archiveNameId);
+                // before inserting to the many to many relation check that such entry doesn't entry doesn't exist
+                // this might happen for example in case insensitive databases if the archive contains two entries
+                // with difference only is character casing
+                if (!archiveEntriesDao.hasIndexedArchivesEntries(indexedArchiveId, archivePathId, archiveNameId)) {
+                    archiveEntriesDao.createIndexedArchivesEntries(indexedArchiveId, archivePathId, archiveNameId);
+                }
             }
         } catch (SQLException e) {
             throw new StorageException("Failed to insert archive entries: " + e.getMessage(), e);

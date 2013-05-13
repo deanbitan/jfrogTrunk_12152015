@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results skipped="0" failed="0" total="40" passed="40">
+  <reporter-output>
+  </reporter-output>
+  <suite name="Command line suite" duration-ms="1928" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:48Z">
+    <groups>
+    </groups>
+    <test name="Command line test" duration-ms="1928" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:48Z">
+      <class name="org.artifactory.update.security.v2.SimpleUserConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v2.SimpleUserConverterTest@4618fa26]" name="readMimeTypes" is-config="true" duration-ms="13" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v2.SimpleUserConverterTest@4618fa26]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.security.v2.SimpleUserConverterTest@4618fa26]" name="convertValidFile" duration-ms="6" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v2.SimpleUserConverterTest@4618fa26]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v2.SimpleUserConverterTest -->
+      <class name="org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest@eafd67c]" name="readMimeTypes" is-config="true" duration-ms="17" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest@eafd67c]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest@eafd67c]" name="convertValidFile" duration-ms="21" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest@eafd67c]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v6.LowercaseUsernameXmlConverterTest -->
+      <class name="org.artifactory.update.security.v6.LdapGroupSettingConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v6.LdapGroupSettingConverterTest@45dc3dfb]" name="readMimeTypes" is-config="true" duration-ms="18" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.security.v6.LdapGroupSettingConverterTest@45dc3dfb]" name="convertValidFile" duration-ms="10" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v6.LdapGroupSettingConverterTest@45dc3dfb]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v6.LdapGroupSettingConverterTest@45dc3dfb]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v6.LdapGroupSettingConverterTest -->
+      <class name="org.artifactory.update.md.v130beta6.MetadataReader130beta6Test">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="readMimeTypes" is-config="true" duration-ms="16" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setup()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="setup" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setup -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="readFileMetadata()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="readFileMetadata" duration-ms="12" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readFileMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="readFolderMetadata()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="readFolderMetadata" duration-ms="7" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readFolderMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.MetadataReader130beta6Test@461d434f]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v130beta6.MetadataReader130beta6Test -->
+      <class name="org.artifactory.update.md.v125rc0.MdFolderConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFolderConverterTest@6c9ab5a]" name="readMimeTypes" is-config="true" duration-ms="21" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFolderConverterTest@6c9ab5a]" name="setupXStream" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFolderConverterTest@6c9ab5a]" name="convertValidFile" duration-ms="5" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFolderConverterTest@6c9ab5a]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFolderConverterTest@6c9ab5a]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v125rc0.MdFolderConverterTest -->
+      <class name="org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest@243cb948]" name="readMimeTypes" is-config="true" duration-ms="18" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest@243cb948]" name="setupXStream" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="convertValidFolderInfo()[pri:0, instance:org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest@243cb948]" name="convertValidFolderInfo" duration-ms="11" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFolderInfo -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest@243cb948]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest@243cb948]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v130beta6.FolderAdditionalInfoNameConverterTest -->
+      <class name="org.artifactory.update.test.ArtifactoryVersionTest">
+        <test-method status="PASS" signature="testBackupPropertyFile()[pri:0, instance:org.artifactory.update.test.ArtifactoryVersionTest@186909db]" name="testBackupPropertyFile" duration-ms="37" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testBackupPropertyFile -->
+      </class> <!-- org.artifactory.update.test.ArtifactoryVersionTest -->
+      <class name="org.artifactory.update.test.ReadOldBackupsTest">
+        <test-method status="PASS" signature="testReadingVersion()[pri:0, instance:org.artifactory.update.test.ReadOldBackupsTest@4772dd46]" name="testReadingVersion" duration-ms="32" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testReadingVersion -->
+        <test-method status="PASS" signature="testSecurityConversion()[pri:0, instance:org.artifactory.update.test.ReadOldBackupsTest@4772dd46]" name="testSecurityConversion" duration-ms="70" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testSecurityConversion -->
+      </class> <!-- org.artifactory.update.test.ReadOldBackupsTest -->
+      <class name="org.artifactory.update.md.MetadataVersionTest">
+        <test-method status="PASS" signature="detectVersion125rc0()[pri:0, instance:org.artifactory.update.md.MetadataVersionTest@ea8388e]" name="detectVersion125rc0" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- detectVersion125rc0 -->
+        <test-method status="PASS" signature="detectVersion230()[pri:0, instance:org.artifactory.update.md.MetadataVersionTest@ea8388e]" name="detectVersion230" duration-ms="3" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- detectVersion230 -->
+        <test-method status="PASS" signature="detectVersion30beta3()[pri:0, instance:org.artifactory.update.md.MetadataVersionTest@ea8388e]" name="detectVersion30beta3" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- detectVersion30beta3 -->
+        <test-method status="PASS" signature="detectVersion30beta6()[pri:0, instance:org.artifactory.update.md.MetadataVersionTest@ea8388e]" name="detectVersion30beta6" duration-ms="3" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- detectVersion30beta6 -->
+        <test-method status="PASS" signature="versionsCoverage()[pri:0, instance:org.artifactory.update.md.MetadataVersionTest@ea8388e]" name="versionsCoverage" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- versionsCoverage -->
+      </class> <!-- org.artifactory.update.md.MetadataVersionTest -->
+      <class name="org.artifactory.update.md.v125rc0.MdFileConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFileConverterTest@1b491b64]" name="readMimeTypes" is-config="true" duration-ms="16" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFileConverterTest@1b491b64]" name="setupXStream" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFileConverterTest@1b491b64]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFileConverterTest@1b491b64]" name="convertValidFile" duration-ms="4" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MdFileConverterTest@1b491b64]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v125rc0.MdFileConverterTest -->
+      <class name="org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest@18061562]" name="readMimeTypes" is-config="true" duration-ms="22" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest@18061562]" name="setupXStream" is-config="true" duration-ms="34" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest@18061562]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest@18061562]" name="convertValidFile" duration-ms="20" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest@18061562]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v130beta3.ArtifactoryFileConverterTest -->
+      <class name="org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest@3a2a6e6c]" name="readMimeTypes" is-config="true" duration-ms="20" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest@3a2a6e6c]" name="setupXStream" is-config="true" duration-ms="7" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest@3a2a6e6c]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest@3a2a6e6c]" name="convertValidFile" duration-ms="4" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest@3a2a6e6c]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v130beta3.ArtifactoryFolderConverterTest -->
+      <class name="org.artifactory.update.security.v1.AclsConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="readMimeTypes" is-config="true" duration-ms="26" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertOutputOfSimpleUserConverter()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="convertOutputOfSimpleUserConverter" duration-ms="17" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertOutputOfSimpleUserConverter -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="convertValidFile" duration-ms="13" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v1.AclsConverterTest@3c3d8fcd]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v1.AclsConverterTest -->
+      <class name="org.artifactory.update.security.SecurityInfoReaderTest">
+        <test-method status="PASS" signature="readAllVersions()[pri:0, instance:org.artifactory.update.security.SecurityInfoReaderTest@2b2e1b7f]" name="readAllVersions" duration-ms="318" started-at="2013-05-13T13:11:47Z" description="this test will try to read all the security files under the security test directory" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readAllVersions -->
+        <test-method status="PASS" signature="readVersion5()[pri:0, instance:org.artifactory.update.security.SecurityInfoReaderTest@2b2e1b7f]" name="readVersion5" duration-ms="32" started-at="2013-05-13T13:11:47Z" description="just another test on version 6 with few assertions" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readVersion5 -->
+      </class> <!-- org.artifactory.update.security.SecurityInfoReaderTest -->
+      <class name="org.artifactory.update.md.v125rc0.MetadataReader125Test">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="readMimeTypes" is-config="true" duration-ms="17" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setup()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="setup" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setup -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="readFileMetadata()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="readFileMetadata" duration-ms="34" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readFileMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="readFolderMetadata()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="readFolderMetadata" duration-ms="8" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readFolderMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MetadataReader125Test@548b9b76]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v125rc0.MetadataReader125Test -->
+      <class name="org.artifactory.update.security.v2.RepoPathAclConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="readMimeTypes" is-config="true" duration-ms="16" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertOutputOfSimpleUserConverter()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="convertOutputOfSimpleUserConverter" duration-ms="9" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertOutputOfSimpleUserConverter -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="convertValidFile" duration-ms="9" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v2.RepoPathAclConverterTest@3bd193c9]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v2.RepoPathAclConverterTest -->
+      <class name="org.artifactory.update.test.FileIOTest">
+        <test-method status="PASS" signature="testFileReturns()[pri:0, instance:org.artifactory.update.test.FileIOTest@198b8b57]" name="testFileReturns" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testFileReturns -->
+      </class> <!-- org.artifactory.update.test.FileIOTest -->
+      <class name="org.artifactory.update.md.v130beta6.ChecksumsConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v130beta6.ChecksumsConverterTest@a7ab0f7]" name="readMimeTypes" is-config="true" duration-ms="21" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v130beta6.ChecksumsConverterTest@a7ab0f7]" name="setupXStream" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.ChecksumsConverterTest@a7ab0f7]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.md.v130beta6.ChecksumsConverterTest@a7ab0f7]" name="convertValidFile" duration-ms="130" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta6.ChecksumsConverterTest@a7ab0f7]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v130beta6.ChecksumsConverterTest -->
+      <class name="org.artifactory.update.security.SecurityVersionTest">
+        <test-method status="PASS" signature="convertFromVersion1()[pri:0, instance:org.artifactory.update.security.SecurityVersionTest@49d71441]" name="convertFromVersion1" duration-ms="84" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertFromVersion1 -->
+        <test-method status="PASS" signature="convertFromVersion1Big()[pri:0, instance:org.artifactory.update.security.SecurityVersionTest@49d71441]" name="convertFromVersion1Big" duration-ms="39" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertFromVersion1Big -->
+        <test-method status="PASS" signature="convertFromVersion2()[pri:0, instance:org.artifactory.update.security.SecurityVersionTest@49d71441]" name="convertFromVersion2" duration-ms="23" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertFromVersion2 -->
+        <test-method status="PASS" signature="convertFromVersion3()[pri:0, instance:org.artifactory.update.security.SecurityVersionTest@49d71441]" name="convertFromVersion3" duration-ms="26" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertFromVersion3 -->
+        <test-method status="PASS" signature="versionsCoverage()[pri:0, instance:org.artifactory.update.security.SecurityVersionTest@49d71441]" name="versionsCoverage" duration-ms="0" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- versionsCoverage -->
+      </class> <!-- org.artifactory.update.security.SecurityVersionTest -->
+      <class name="org.artifactory.update.security.v3.AnyRemoteConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="readMimeTypes" is-config="true" duration-ms="24" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertFileWithAnonymousRealOnAny()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="convertFileWithAnonymousRealOnAny" duration-ms="16" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertFileWithAnonymousRealOnAny -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="convertFileWithoutAnonymousRealOnAny()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="convertFileWithoutAnonymousRealOnAny" duration-ms="6" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertFileWithoutAnonymousRealOnAny -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v3.AnyRemoteConverterTest@6dabfaa0]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v3.AnyRemoteConverterTest -->
+      <class name="org.artifactory.update.md.v130beta3.MetadataReader130beta3Test">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="readMimeTypes" is-config="true" duration-ms="17" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setup()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="setup" is-config="true" duration-ms="6" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setup -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="readFileMetadata()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="readFileMetadata" duration-ms="32" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readFileMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="readFolderMetadata()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="readFolderMetadata" duration-ms="12" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readFolderMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v130beta3.MetadataReader130beta3Test@35d356a0]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v130beta3.MetadataReader130beta3Test -->
+      <class name="org.artifactory.update.security.v1.UserPermissionsConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v1.UserPermissionsConverterTest@600f44fe]" name="readMimeTypes" is-config="true" duration-ms="12" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v1.UserPermissionsConverterTest@600f44fe]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertOutputOfSimpleUserConverter()[pri:0, instance:org.artifactory.update.security.v1.UserPermissionsConverterTest@600f44fe]" name="convertOutputOfSimpleUserConverter" duration-ms="7" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertOutputOfSimpleUserConverter -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v1.UserPermissionsConverterTest@600f44fe]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:48Z" finished-at="2013-05-13T13:11:48Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v1.UserPermissionsConverterTest -->
+      <class name="org.artifactory.update.md.v125rc0.MdStatsConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.md.v125rc0.MdStatsConverterTest@3363ab6d]" name="readMimeTypes" is-config="true" duration-ms="24" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setupXStream()[pri:0, instance:org.artifactory.update.md.v125rc0.MdStatsConverterTest@3363ab6d]" name="setupXStream" is-config="true" duration-ms="7" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setupXStream -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.md.v125rc0.MdStatsConverterTest@3363ab6d]" name="convertValidFile" duration-ms="4" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MdStatsConverterTest@3363ab6d]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.md.v125rc0.MdStatsConverterTest@3363ab6d]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:47Z" finished-at="2013-05-13T13:11:47Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.md.v125rc0.MdStatsConverterTest -->
+      <class name="org.artifactory.update.security.v3.AclRepoKeysConverterTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.update.security.v3.AclRepoKeysConverterTest@7e694d91]" name="readMimeTypes" is-config="true" duration-ms="290" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v3.AclRepoKeysConverterTest@7e694d91]" name="bindArtifactoryHome" is-config="true" duration-ms="27" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="convertValidFile()[pri:0, instance:org.artifactory.update.security.v3.AclRepoKeysConverterTest@7e694d91]" name="convertValidFile" duration-ms="67" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- convertValidFile -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.update.security.v3.AclRepoKeysConverterTest@7e694d91]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:11:46Z" finished-at="2013-05-13T13:11:46Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.update.security.v3.AclRepoKeysConverterTest -->
+    </test> <!-- Command line test -->
+  </suite> <!-- Command line suite -->
+</testng-results>

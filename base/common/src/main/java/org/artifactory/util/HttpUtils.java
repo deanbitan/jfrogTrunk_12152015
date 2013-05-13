@@ -36,7 +36,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.rmi.dgc.VMID;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.zip.GZIPInputStream;
 
@@ -244,5 +246,29 @@ public abstract class HttpUtils {
             log.warn("Could not decode uri '{}' with UTF-8 charset, returning the encoded value.", encodedUri);
         }
         return encodedUri;
+    }
+
+    public static String adjustRefererValue(Map<String, String> headersMap, String headerVal) {
+        //Append the artifactory user agent to the referer
+        if (headerVal == null) {
+            //Fallback to host
+            headerVal = headersMap.get("HOST");
+            if (headerVal == null) {
+                //Fallback to unknown
+                headerVal = "UNKNOWN";
+            }
+        }
+        if (!headerVal.startsWith("http")) {
+            headerVal = "http://" + headerVal;
+        }
+        try {
+            java.net.URL uri = new java.net.URL(headerVal);
+            //Only use the uri up to the path part
+            headerVal = uri.getProtocol() + "://" + uri.getAuthority();
+        } catch (MalformedURLException e) {
+            //Nothing
+        }
+        headerVal += "/" + HttpUtils.getArtifactoryUserAgent();
+        return headerVal;
     }
 }

@@ -41,7 +41,9 @@ public class BintrayParams implements Serializable {
     }
 
     public void setRepo(String repo) {
-        this.repo = repo;
+        if (StringUtils.isNotBlank(repo)) {
+            this.repo = repo;
+        }
     }
 
     public String getPackageId() {
@@ -49,7 +51,9 @@ public class BintrayParams implements Serializable {
     }
 
     public void setPackageId(String packageId) {
-        this.packageId = packageId;
+        if (StringUtils.isNotBlank(packageId)) {
+            this.packageId = packageId;
+        }
     }
 
     public String getVersion() {
@@ -57,7 +61,9 @@ public class BintrayParams implements Serializable {
     }
 
     public void setVersion(String version) {
-        this.version = version;
+        if (StringUtils.isNotBlank(version)) {
+            this.version = version;
+        }
     }
 
     public String getPath() {
@@ -65,7 +71,9 @@ public class BintrayParams implements Serializable {
     }
 
     public void setPath(String path) {
-        this.path = path;
+        if (StringUtils.isNotBlank(path)) {
+            this.path = path;
+        }
     }
 
     public boolean isUseExistingProps() {

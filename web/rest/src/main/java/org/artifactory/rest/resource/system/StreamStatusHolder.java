@@ -75,7 +75,7 @@ public class StreamStatusHolder extends MultiStatusHolder {
         if (!brokenPipe) {
             try {
                 PrintStream os = getResponseStream();
-                os.println("" + statusCode + " : " + statusMsg);
+                os.println("\n" + statusCode + " : " + statusMsg);
                 if ((throwable != null) && isVerbose()) {
                     throwable.printStackTrace(os);
                 }

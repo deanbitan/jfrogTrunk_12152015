@@ -19,6 +19,7 @@
 package org.artifactory.storage.db.security.service;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AceInfo;
@@ -40,6 +41,7 @@ import org.artifactory.storage.db.security.entity.Group;
 import org.artifactory.storage.db.security.entity.PermissionTarget;
 import org.artifactory.storage.db.security.entity.User;
 import org.artifactory.storage.security.service.AclStoreService;
+import org.artifactory.util.AlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,16 +93,15 @@ public class AclServiceImpl implements AclStoreService {
         try {
             PermissionTargetInfo permTargetInfo = entity.getPermissionTarget();
             PermissionTarget dbPermTarget = permTargetsDao.findPermissionTarget(permTargetInfo.getName());
-            if (dbPermTarget == null) {
-                dbPermTarget = new PermissionTarget(
-                        dbService.nextId(), permTargetInfo.getName(),
-                        permTargetInfo.getIncludes(), permTargetInfo.getExcludes()
-                );
-                dbPermTarget.setRepoKeys(new HashSet<String>(permTargetInfo.getRepoKeys()));
-                permTargetsDao.createPermissionTarget(dbPermTarget);
-            } else {
-                log.debug("Permission target " + dbPermTarget + " already exists... Reusing it!");
+            if (dbPermTarget != null) {
+                throw new AlreadyExistsException("Could not create ACL. Permission target already exist: " +
+                        permTargetInfo.getName());
             }
+
+            dbPermTarget = new PermissionTarget(dbService.nextId(), permTargetInfo.getName(),
+                    permTargetInfo.getIncludes(), permTargetInfo.getExcludes());
+            dbPermTarget.setRepoKeys(Sets.newHashSet(permTargetInfo.getRepoKeys()));
+            permTargetsDao.createPermissionTarget(dbPermTarget);
             Acl acl = aclFromInfo(dbService.nextId(), entity, dbPermTarget.getPermTargetId());
             aclsDao.createAcl(acl);
         } catch (SQLException e) {
@@ -225,16 +226,14 @@ public class AclServiceImpl implements AclStoreService {
 
         // create or update read permissions on "anything"
         AclInfo anyAnyAcl = getAcl(ANY_PERMISSION_TARGET_NAME);
-        HashSet<AceInfo> anyAnyAces = new HashSet<AceInfo>(2);
+        Set<AceInfo> anyAnyAces = new HashSet<>(2);
         anyAnyAces.add(InfoFactoryHolder.get().createAce(
                 anonUser.getUsername(), false, READ.getMask()));
         anyAnyAces.add(InfoFactoryHolder.get().createAce(
                 readersGroup.getGroupName(), true, READ.getMask()));
         if (anyAnyAcl == null) {
             MutablePermissionTargetInfo anyAnyTarget = InfoFactoryHolder.get().createPermissionTarget(
-                    ANY_PERMISSION_TARGET_NAME, new ArrayList<String>() {{
-                add(ANY_REPO);
-            }});
+                    ANY_PERMISSION_TARGET_NAME, Lists.newArrayList((ANY_REPO)));
             anyAnyTarget.setIncludesPattern(ANY_PATH);
             anyAnyAcl = InfoFactoryHolder.get().createAcl(anyAnyTarget, anyAnyAces, currentUsername);
             createAcl(anyAnyAcl);
@@ -244,7 +243,7 @@ public class AclServiceImpl implements AclStoreService {
 
         // create or update read and deploy permissions on all remote repos
         AclInfo anyRemoteAcl = getAcl(ANY_REMOTE_PERMISSION_TARGET_NAME);
-        HashSet<AceInfo> anyRemoteAces = new HashSet<AceInfo>(2);
+        HashSet<AceInfo> anyRemoteAces = new HashSet<>(2);
         anyRemoteAces.add(InfoFactoryHolder.get().createAce(
                 anonUser.getUsername(), false,
                 READ.getMask() | DEPLOY.getMask()));
@@ -279,15 +278,15 @@ public class AclServiceImpl implements AclStoreService {
         if (result == null) {
             try {
                 Collection<Acl> allAcls = aclsDao.getAllAcls();
-                result = new HashMap<String, AclInfo>(allAcls.size());
+                result = new HashMap<>(allAcls.size());
                 for (Acl acl : allAcls) {
                     PermissionTarget permTarget = permTargetsDao.findPermissionTarget(acl.getPermTargetId());
                     MutablePermissionTargetInfo permissionTarget = InfoFactoryHolder.get().createPermissionTarget(
-                            permTarget.getName(), new ArrayList<String>(permTarget.getRepoKeys()));
+                            permTarget.getName(), new ArrayList<>(permTarget.getRepoKeys()));
                     permissionTarget.setIncludes(permTarget.getIncludes());
                     permissionTarget.setExcludes(permTarget.getExcludes());
                     ImmutableSet<Ace> dbAces = acl.getAces();
-                    HashSet<AceInfo> aces = new HashSet<AceInfo>(dbAces.size());
+                    HashSet<AceInfo> aces = new HashSet<>(dbAces.size());
                     for (Ace dbAce : dbAces) {
                         MutableAceInfo ace;
                         if (dbAce.isOnGroup()) {
@@ -315,7 +314,7 @@ public class AclServiceImpl implements AclStoreService {
         Acl acl = new Acl(aclId, permTargetId, System.currentTimeMillis(),
                 aclInfo.getUpdatedBy());
         Set<AceInfo> aces = aclInfo.getAces();
-        HashSet<Ace> dbAces = new HashSet<Ace>(aces.size());
+        HashSet<Ace> dbAces = new HashSet<>(aces.size());
         for (AceInfo ace : aces) {
             Ace dbAce = null;
             if (ace.isGroup()) {

@@ -26,7 +26,7 @@ STORAGE_PROPS="$ARTIFACTORY_HOME/etc/storage.properties"
 MYSQL_PROPS_SERVICE="/opt/jfrog/artifactory/misc/db/mysql.properties"
 MYSQL_PROPS_SOURCE="$ARTIFACTORY_HOME/misc/db/mysql.properties"
 TOMCAT_LIB="$TOMCAT_HOME/lib"
-MYSQL_MIN_VERION="5.5"
+MYSQL_MIN_VERSION="5.5"
 JDBC_VERSION=5.1.24
 ROOT_REPO="http://repo.jfrog.org/artifactory/remote-repos"
 DEFAULT_DATABASE_USERNAME=artifactory
@@ -165,7 +165,7 @@ if [ ! -z "$MYSQL_ADMIN_PASSWORD" ];then
 fi
 
 ###
-# Check MySQL version is at least $MYSQL_MIN_VERION
+# Check MySQL version is at least $MYSQL_MIN_VERSION
 ###
 ver=$($MYSQL_LOGIN <<EOF
 SELECT VERSION();
@@ -173,15 +173,12 @@ EOF
 )
 
 if [ $? -ne 0 ]; then
-    echo "Failed to check MySQL version. Please verify the version is at least $MYSQL_MIN_VERION"
+    error "Failed to check MySQL version. Please verify the version is at least $MYSQL_MIN_VERSION"
 else
-    ver=${ver:10}
-    i=`expr index "$ver" -`
-    ver=${ver:0:i-1}
-    if [ "$ver" \< $MYSQL_MIN_VERION ]
+    ver=$(echo $ver | awk '{print $2}' | awk -F'-' {'print $1'})
+    if [ "$ver" \< $MYSQL_MIN_VERSION ]
     then
-        echo -e "\033[31m** ERROR: Found MySQL version $ver. should be at least $MYSQL_MIN_VERION\033[0m"
-        exit 1
+        error "Found MySQL version $ver. should be at least $MYSQL_MIN_VERSION"
     fi
 fi
 

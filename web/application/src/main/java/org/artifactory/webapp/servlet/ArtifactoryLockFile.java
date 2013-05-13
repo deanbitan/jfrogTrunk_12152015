@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.servlet;
 
-import org.artifactory.common.ArtifactoryHome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,15 +35,12 @@ import java.nio.channels.FileLock;
 public class ArtifactoryLockFile {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryLockFile.class);
 
-    private static final String LOCK_FILENAME = ".lock";
-
     private File file;
     private RandomAccessFile randomAccessFile;
     private FileLock fileLock;
 
-    public ArtifactoryLockFile(ArtifactoryHome artifactoryHome) {
-        File dataDir = artifactoryHome.getDataDir();
-        file = new File(dataDir, LOCK_FILENAME);
+    public ArtifactoryLockFile(File lockFile) {
+        file = lockFile;
     }
 
     public ArtifactoryLockFile tryLock() {

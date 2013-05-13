@@ -48,7 +48,7 @@ public abstract class SearcherBase<C extends SearchControls, R extends ItemSearc
     private final InternalRepositoryService repoService;
 
     //Cache this calculation (and don't make it a static...)
-    private final int maxResults = ConstantValues.searchMaxResults.getInt() + 1;
+    private final int maxResults = ConstantValues.searchUserQueryLimit.getInt();
 
     protected SearcherBase() {
         ArtifactoryContext context = ContextHelper.get();

@@ -118,6 +118,9 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             String buildStarted = build.getStarted();
             Date parsedDate = parseStringToDate(buildStarted);
 
+            // TODO: [by fsi] we are loosing the timezone information written in the JSON
+            // Generates a big inconsistency between DB entry and JSON data
+
             BuildEntity dbBuild = new BuildEntity(dbService.nextId(), build.getName(), build.getNumber(),
                     parsedDate.getTime(),
                     build.getUrl(), System.currentTimeMillis(), build.getArtifactoryPrincipal(),

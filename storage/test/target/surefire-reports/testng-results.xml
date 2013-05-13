@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testng-results skipped="0" failed="0" total="56" passed="56">
+  <reporter-output>
+  </reporter-output>
+  <suite name="Command line suite" duration-ms="596" started-at="2013-05-13T13:12:35Z" finished-at="2013-05-13T13:12:36Z">
+    <groups>
+    </groups>
+    <test name="Command line test" duration-ms="596" started-at="2013-05-13T13:12:35Z" finished-at="2013-05-13T13:12:36Z">
+      <class name="org.artifactory.api.request.ArtifactoryRequestTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="readMimeTypes" is-config="true" duration-ms="293" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="26" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="matrixParams()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="matrixParams" duration-ms="16" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- matrixParams -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="matrixParamsWithEncodedValues()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="matrixParamsWithEncodedValues" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- matrixParamsWithEncodedValues -->
+        <test-method status="PASS" signature="pathWithNonAscii()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="pathWithNonAscii" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- pathWithNonAscii -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="pathsWithSpaces()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="pathsWithSpaces" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- pathsWithSpaces -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="zipResourceAbsolute()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="zipResourceAbsolute" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- zipResourceAbsolute -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="zipResourceEmptyPath()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="zipResourceEmptyPath" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- zipResourceEmptyPath -->
+        <test-method status="PASS" signature="zipResourceRelative()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="zipResourceRelative" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- zipResourceRelative -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.ArtifactoryRequestTest@602bace2]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.api.request.ArtifactoryRequestTest -->
+      <class name="org.artifactory.api.fs.VersionUnitTest">
+        <test-method status="PASS" signature="invalidPath()[pri:0, instance:org.artifactory.api.fs.VersionUnitTest@43d7a5a]" name="invalidPath" duration-ms="13" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- invalidPath -->
+        <test-method status="PASS" signature="nodeConstructor()[pri:0, instance:org.artifactory.api.fs.VersionUnitTest@43d7a5a]" name="nodeConstructor" duration-ms="3" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- nodeConstructor -->
+      </class> <!-- org.artifactory.api.fs.VersionUnitTest -->
+      <class name="org.artifactory.api.request.TranslatedArtifactoryRequestTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="readMimeTypes" is-config="true" duration-ms="24" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setUp()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="setUp" is-config="true" duration-ms="41" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetContentLength()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetContentLength" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetContentLength -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetHeader()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetHeader" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetHeader -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetIfModifiedSince()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetIfModifiedSince" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetIfModifiedSince -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetInputStream()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetInputStream" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetInputStream -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetLastModified()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetLastModified" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetLastModified -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetModificationTime()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetModificationTime" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetModificationTime -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetName()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetName" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetName -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetParameter()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetParameter" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetParameter -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetParameterValues()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetParameterValues" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetParameterValues -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetPath()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetPath" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetPath -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetProperties()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetProperties" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetProperties -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetRepoKey()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetRepoKey" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetRepoKey -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetRepoPath()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetRepoPath" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetRepoPath -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetServletContextUrl()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetServletContextUrl" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetServletContextUrl -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetSourceDescription()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetSourceDescription" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetSourceDescription -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testGetUri()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testGetUri" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testGetUri -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testHasProperties()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testHasProperties" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testHasProperties -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testIsChecksum()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testIsChecksum" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testIsChecksum -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testIsFromAnotherArtifactory()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testIsFromAnotherArtifactory" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testIsFromAnotherArtifactory -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testIsHeadOnly()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testIsHeadOnly" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testIsHeadOnly -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testIsMetadata()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testIsMetadata" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testIsMetadata -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testIsNewerThan()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testIsNewerThan" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testIsNewerThan -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testIsRecursive()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testIsRecursive" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testIsRecursive -->
+        <test-method status="PASS" signature="testToString()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="testToString" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testToString -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.request.TranslatedArtifactoryRequestTest@53635ac1]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.api.request.TranslatedArtifactoryRequestTest -->
+      <class name="org.artifactory.api.security.UserInfoBuilderTest">
+        <test-method status="PASS" signature="emailBuild()[pri:0, instance:org.artifactory.api.security.UserInfoBuilderTest@7b66258a]" name="emailBuild" duration-ms="4" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- emailBuild -->
+        <test-method status="PASS" signature="minimalBuild()[pri:0, instance:org.artifactory.api.security.UserInfoBuilderTest@7b66258a]" name="minimalBuild" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- minimalBuild -->
+        <test-method status="PASS" signature="noUsernameBuild()[pri:0, instance:org.artifactory.api.security.UserInfoBuilderTest@7b66258a]" name="noUsernameBuild" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <exception class="java.lang.IllegalStateException">
+            <message>
+              <![CDATA[User must have a username]]>
+            </message>
+            <full-stacktrace>
+              <![CDATA[java.lang.IllegalStateException: User must have a username
+	at org.artifactory.api.security.UserInfoBuilder.build(UserInfoBuilder.java:61)
+	at org.artifactory.api.security.UserInfoBuilderTest.noUsernameBuild(UserInfoBuilderTest.java:66)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:601)
+	at org.testng.internal.MethodInvocationHelper.invokeMethod(MethodInvocationHelper.java:80)
+	at org.testng.internal.Invoker.invokeMethod(Invoker.java:714)
+	at org.testng.internal.Invoker.invokeTestMethod(Invoker.java:901)
+	at org.testng.internal.Invoker.invokeTestMethods(Invoker.java:1231)
+	at org.testng.internal.TestMethodWorker.invokeTestMethods(TestMethodWorker.java:127)
+	at org.testng.internal.TestMethodWorker.run(TestMethodWorker.java:111)
+	at org.testng.TestRunner.privateRun(TestRunner.java:767)
+	at org.testng.TestRunner.run(TestRunner.java:617)
+	at org.testng.SuiteRunner.runTest(SuiteRunner.java:334)
+	at org.testng.SuiteRunner.runSequentially(SuiteRunner.java:329)
+	at org.testng.SuiteRunner.privateRun(SuiteRunner.java:291)
+	at org.testng.SuiteRunner.run(SuiteRunner.java:240)
+	at org.testng.SuiteRunnerWorker.runSuite(SuiteRunnerWorker.java:52)
+	at org.testng.SuiteRunnerWorker.run(SuiteRunnerWorker.java:86)
+	at org.testng.TestNG.runSuitesSequentially(TestNG.java:1198)
+	at org.testng.TestNG.runSuitesLocally(TestNG.java:1123)
+	at org.testng.TestNG.run(TestNG.java:1031)
+	at org.apache.maven.surefire.testng.TestNGExecutor.run(TestNGExecutor.java:77)
+	at org.apache.maven.surefire.testng.TestNGDirectoryTestSuite.executeMulti(TestNGDirectoryTestSuite.java:189)
+	at org.apache.maven.surefire.testng.TestNGDirectoryTestSuite.execute(TestNGDirectoryTestSuite.java:105)
+	at org.apache.maven.surefire.testng.TestNGProvider.invoke(TestNGProvider.java:117)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:601)
+	at org.apache.maven.surefire.util.ReflectionUtils.invokeMethodWithArray2(ReflectionUtils.java:208)
+	at org.apache.maven.surefire.booter.ProviderFactory$ProviderProxy.invoke(ProviderFactory.java:158)
+	at org.apache.maven.surefire.booter.ProviderFactory.invokeProvider(ProviderFactory.java:86)
+	at org.apache.maven.surefire.booter.ForkedBooter.runSuitesInProcess(ForkedBooter.java:153)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:95)
+]]>
+            </full-stacktrace>
+          </exception> <!-- java.lang.IllegalStateException -->
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- noUsernameBuild -->
+        <test-method status="PASS" signature="saltBuild()[pri:0, instance:org.artifactory.api.security.UserInfoBuilderTest@7b66258a]" name="saltBuild" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- saltBuild -->
+      </class> <!-- org.artifactory.api.security.UserInfoBuilderTest -->
+      <class name="org.artifactory.api.search.SavedSearchResultsTest">
+        <test-method status="PASS" signature="addResultsWithDuplicates()[pri:0, instance:org.artifactory.api.search.SavedSearchResultsTest@77e45af3]" name="addResultsWithDuplicates" duration-ms="8" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- addResultsWithDuplicates -->
+        <test-method status="PASS" signature="defaultConstructor()[pri:0, instance:org.artifactory.api.search.SavedSearchResultsTest@77e45af3]" name="defaultConstructor" duration-ms="4" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- defaultConstructor -->
+        <test-method status="PASS" signature="intersectResults()[pri:0, instance:org.artifactory.api.search.SavedSearchResultsTest@77e45af3]" name="intersectResults" duration-ms="3" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- intersectResults -->
+        <test-method status="PASS" signature="mergeResults()[pri:0, instance:org.artifactory.api.search.SavedSearchResultsTest@77e45af3]" name="mergeResults" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- mergeResults -->
+        <test-method status="PASS" signature="subtractResults()[pri:0, instance:org.artifactory.api.search.SavedSearchResultsTest@77e45af3]" name="subtractResults" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- subtractResults -->
+      </class> <!-- org.artifactory.api.search.SavedSearchResultsTest -->
+      <class name="org.artifactory.api.maven.MavenArtifactInfoTest">
+        <test-method status="PASS" signature="readMimeTypes()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="readMimeTypes" is-config="true" duration-ms="28" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- readMimeTypes -->
+        <test-method status="PASS" signature="setUp()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="setUp" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- setUp -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="fileExtensionAsNumber()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fileExtensionAsNumber" duration-ms="5" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fileExtensionAsNumber -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="fromInvalidPath()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromInvalidPath" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromInvalidPath -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="fromPathNonUniqueSnapshotVersion()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromPathNonUniqueSnapshotVersion" duration-ms="14" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromPathNonUniqueSnapshotVersion -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="fromPathUniqueMd5SnapshotVersion()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromPathUniqueMd5SnapshotVersion" duration-ms="8" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromPathUniqueMd5SnapshotVersion -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="fromPathUniqueSnapshotVersion()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromPathUniqueSnapshotVersion" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromPathUniqueSnapshotVersion -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="fromPathWithClassifier()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromPathWithClassifier" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromPathWithClassifier -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="fromPathWithNoGroupId()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromPathWithNoGroupId" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromPathWithNoGroupId -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="fromPathWithOneDigitVersion()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromPathWithOneDigitVersion" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromPathWithOneDigitVersion -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="2" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="fromSimplePath()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="fromSimplePath" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- fromSimplePath -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testClassifierWithDot()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="testClassifierWithDot" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testClassifierWithDot -->
+        <test-method status="PASS" signature="testClassifierWithDotAndNumber()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="testClassifierWithDotAndNumber" duration-ms="2" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testClassifierWithDotAndNumber -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testConfigPath()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="testConfigPath" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testConfigPath -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="testCustomUserType()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="testCustomUserType" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testCustomUserType -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+        <test-method status="PASS" signature="testTarGz()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="testTarGz" duration-ms="1" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- testTarGz -->
+        <test-method status="PASS" signature="bindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="bindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- bindArtifactoryHome -->
+        <test-method status="PASS" signature="tearDown()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="tearDown" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- tearDown -->
+        <test-method status="PASS" signature="unbindArtifactoryHome()[pri:0, instance:org.artifactory.api.maven.MavenArtifactInfoTest@430e0623]" name="unbindArtifactoryHome" is-config="true" duration-ms="0" started-at="2013-05-13T13:12:36Z" finished-at="2013-05-13T13:12:36Z">
+          <reporter-output>
+          </reporter-output>
+        </test-method> <!-- unbindArtifactoryHome -->
+      </class> <!-- org.artifactory.api.maven.MavenArtifactInfoTest -->
+    </test> <!-- Command line test -->
+  </suite> <!-- Command line suite -->
+</testng-results>

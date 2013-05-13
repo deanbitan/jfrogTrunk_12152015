@@ -32,17 +32,17 @@ public class BintrayInfoPanel extends Panel {
             }
         };
         // Add title link to panel
-        AddTitleLinkToPanel(packageInfo);
+        addTitleLinkToPanel(packageInfo);
         // Add Icon to panel
-        AddIconToPanel(imageUrl);
+        addIconToPanel(imageUrl);
         // Add information label
-        AddInformationLabelToPanel(information);
+        addInformationLabelToPanel(information);
         // Add latest version link
-        AddLatestVersionToPanel(packageInfo);
+        addLatestVersionToPanel(packageInfo);
         add(infoBorder);
     }
 
-    private void AddLatestVersionToPanel(final BintrayPackageInfo packageInfo) {
+    private void addLatestVersionToPanel(final BintrayPackageInfo packageInfo) {
         String latestVersion = String.format("%s", packageInfo.getLatest_version());
         TitledPageLink latestVersionLink = new TitledPageLink("latestVersion", latestVersion, null) {
             @Override
@@ -60,11 +60,11 @@ public class BintrayInfoPanel extends Panel {
         infoBorder.add(latestVersionLink);
     }
 
-    private void AddInformationLabelToPanel(String information) {
+    private void addInformationLabelToPanel(String information) {
         infoBorder.add(new Label("information", Model.of(information)));
     }
 
-    private void AddIconToPanel(final String imageUrl) {
+    private void addIconToPanel(final String imageUrl) {
         Image packageIcon = new Image("packageIcon", "Icon");
         packageIcon.add(new AttributeModifier("src", new AbstractReadOnlyModel() {
             @Override
@@ -75,7 +75,7 @@ public class BintrayInfoPanel extends Panel {
         infoBorder.add(packageIcon);
     }
 
-    private void AddTitleLinkToPanel(final BintrayPackageInfo packageInfo) {
+    private void addTitleLinkToPanel(final BintrayPackageInfo packageInfo) {
         TitledPageLink titleLink = new TitledPageLink("titleLink", packageInfo.getName(), null) {
             @Override
             protected CharSequence getURL() {

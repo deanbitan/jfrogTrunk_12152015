@@ -40,7 +40,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
-import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -177,35 +176,11 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     private void setHeader(GetMethod getMethod, Map<String, String> headersMap, String headerKey) {
         String headerVal = headersMap.get(headerKey.toUpperCase());
         if ("Referer".equalsIgnoreCase(headerKey)) {
-            headerVal = adjustRefererValue(headersMap, headerVal);
+            headerVal = HttpUtils.adjustRefererValue(headersMap, headerVal);
         }
         if (headerVal != null) {
             getMethod.setRequestHeader(headerKey, headerVal);
         }
-    }
-
-    private String adjustRefererValue(Map<String, String> headersMap, String headerVal) {
-        //Append the artifactory user agent to the referer
-        if (headerVal == null) {
-            //Fallback to host
-            headerVal = headersMap.get("HOST");
-            if (headerVal == null) {
-                //Fallback to unknown
-                headerVal = "UNKNOWN";
-            }
-        }
-        if (!headerVal.startsWith("http")) {
-            headerVal = "http://" + headerVal;
-        }
-        try {
-            java.net.URL uri = new java.net.URL(headerVal);
-            //Only use the uri up to the path part
-            headerVal = uri.getProtocol() + "://" + uri.getAuthority();
-        } catch (MalformedURLException e) {
-            //Nothing
-        }
-        headerVal += "/" + HttpUtils.getArtifactoryUserAgent();
-        return headerVal;
     }
 
     private ArtifactoryVersioning createServiceUnavailableVersioning() {

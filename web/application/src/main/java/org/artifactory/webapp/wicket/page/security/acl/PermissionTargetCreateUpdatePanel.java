@@ -213,7 +213,6 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                     } catch (Exception e) {
                         String msg;
                         if (e instanceof AlreadyExistsException) {
-                            //Workaround acegi's annoyances
                             msg = "Permission target '" + name + "' already exists.";
                         } else {
                             msg = "Failed to create permissions target: " + e.getMessage();
