@@ -43,15 +43,6 @@ public abstract class FileWatchDog extends Thread {
     private boolean interrupted = false;
 
     /**
-     * Creates new watch dog thread and check immediatlly the file status.
-     *
-     * @param file The file to watch
-     */
-    protected FileWatchDog(File file) {
-        this(file, true);
-    }
-
-    /**
      * Creates a new watch dog thread.
      *
      * @param file     The file to watch

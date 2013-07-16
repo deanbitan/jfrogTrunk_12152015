@@ -64,7 +64,7 @@ public abstract class Files {
             try {
                 org.apache.commons.io.FileUtils.moveFile(oldFile, newdFile);
             } catch (IOException e) {
-                log.warn("Cannot rename {} to {}: {}", new Object[]{oldFile, newdFile, e.getMessage()});
+                log.warn("Cannot rename {} to {}: {}", oldFile, newdFile, e.getMessage());
             }
             return;
         }
@@ -118,7 +118,7 @@ public abstract class Files {
             org.apache.commons.io.FileUtils.moveFile(oldFile, destFile);
         } catch (IOException e) {
             log.warn("Cannot rename {} to {} or {} to {}: {}",
-                    new Object[]{newdFile, backupOrigFileName, oldFile, destFile, e.getMessage()});
+                    newdFile, backupOrigFileName, oldFile, destFile, e.getMessage());
         }
     }
 
@@ -251,8 +251,8 @@ public abstract class Files {
             int maxFiles = ConstantValues.fileRollerMaxFilesToRetain.getInt();
             if (maxFiles < 0) {
                 log.warn("A negative integer value '{}' was provided for '{}'. Ignoring and falling back to '{}'.",
-                        new Object[]{maxFiles, ConstantValues.fileRollerMaxFilesToRetain.getPropertyName(),
-                                ConstantValues.fileRollerMaxFilesToRetain.getDefValue()});
+                        maxFiles, ConstantValues.fileRollerMaxFilesToRetain.getPropertyName(),
+                        ConstantValues.fileRollerMaxFilesToRetain.getDefValue());
                 maxFiles = Integer.parseInt(ConstantValues.fileRollerMaxFilesToRetain.getDefValue());
             }
 

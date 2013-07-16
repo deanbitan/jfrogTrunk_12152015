@@ -26,9 +26,9 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
-import org.artifactory.storage.db.util.BlobWrapper;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.storage.db.util.blob.BlobWrapperFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,14 +47,16 @@ import static org.artifactory.storage.db.binstore.dao.BinariesDao.TEMP_SHA1_PREF
  *
  * @author freds
  */
-class BlobBinaryProviderImpl extends BinaryProviderBase {
+public class BlobBinaryProviderImpl extends BinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(BlobBinaryProviderImpl.class);
 
     private final JdbcHelper jdbcHelper;
     private final DbType databaseType;
+    private final BlobWrapperFactory blobsFactory;
 
-    public BlobBinaryProviderImpl(JdbcHelper jdbcHelper, DbType databaseType) {
+    public BlobBinaryProviderImpl(JdbcHelper jdbcHelper, DbType databaseType, BlobWrapperFactory blobsFactory) {
         this.databaseType = databaseType;
+        this.blobsFactory = blobsFactory;
         if (jdbcHelper == null) {
             throw new IllegalArgumentException("Cannot create Blob binary provider without JDBC Helper!");
         }
@@ -120,7 +122,7 @@ class BlobBinaryProviderImpl extends BinaryProviderBase {
             // Create a dummy ID
             String randomId = TEMP_SHA1_PREFIX + RandomStringUtils.randomAlphanumeric(40 - TEMP_SHA1_PREFIX.length());
             int inserted = jdbcHelper.executeUpdate("INSERT INTO binary_blobs VALUES (?,?)", randomId,
-                    new BlobWrapper(checksumStream));
+                    blobsFactory.create(checksumStream));
             if (inserted != 1) {
                 throw new StorageException("Stream failed with unknown reason! Total line inserted was " + inserted);
             }

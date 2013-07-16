@@ -58,11 +58,25 @@ public class ReplicationEventInterceptor extends StorageInterceptorAdapter {
         queueCreateEvent(targetItem);
     }
 
+    @Override
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+        getReplicationAddon().offerLocalReplicationPropertiesChangeEvent(fsItem.getRepoPath());
+    }
+
+
+    @Override
+    public void afterPropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
+        getReplicationAddon().offerLocalReplicationPropertiesChangeEvent(fsItem.getRepoPath());
+    }
+
     private void queueCreateEvent(VfsItem fsItem) {
         if (fsItem.isFile()) {
             getReplicationAddon().offerLocalReplicationDeploymentEvent(fsItem.getRepoPath());
         } else {
             getReplicationAddon().offerLocalReplicationMkDirEvent(fsItem.getRepoPath());
+        }
+        if (!fsItem.getProperties().isEmpty()) {
+            getReplicationAddon().offerLocalReplicationPropertiesChangeEvent(fsItem.getRepoPath());
         }
     }
 

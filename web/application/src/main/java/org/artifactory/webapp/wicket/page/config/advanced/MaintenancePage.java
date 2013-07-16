@@ -190,16 +190,16 @@ public class MaintenancePage extends AuthenticatedPage {
         quotaBorder.add(new SchemaHelpBubble("enabled.help"));
         boolean quotaEnabled = quotaConfigDescriptor.isEnabled();
 
-        final TextField<Integer> diskSpaceLimitPercentage = new TextField<Integer>("diskSpaceLimitPercentage",
+        final TextField<Integer> diskSpaceLimitPercentage = new TextField<>("diskSpaceLimitPercentage",
                 Integer.class);
-        diskSpaceLimitPercentage.add(new RangeValidator<Integer>(0, 99));
+        diskSpaceLimitPercentage.add(new RangeValidator<>(0, 99));
         diskSpaceLimitPercentage.setEnabled(quotaEnabled).setOutputMarkupId(true);
         quotaBorder.add(diskSpaceLimitPercentage);
         quotaBorder.add(new SchemaHelpBubble("diskSpaceLimitPercentage.help"));
 
-        final TextField<Integer> diskSpaceWarningPercentage = new TextField<Integer>("diskSpaceWarningPercentage",
+        final TextField<Integer> diskSpaceWarningPercentage = new TextField<>("diskSpaceWarningPercentage",
                 Integer.class);
-        diskSpaceWarningPercentage.add(new RangeValidator<Integer>(0, 99));
+        diskSpaceWarningPercentage.add(new RangeValidator<>(0, 99));
         diskSpaceWarningPercentage.setEnabled(quotaEnabled).setOutputMarkupId(true);
         quotaBorder.add(diskSpaceWarningPercentage);
         quotaBorder.add(new SchemaHelpBubble("diskSpaceWarningPercentage.help"));
@@ -218,7 +218,7 @@ public class MaintenancePage extends AuthenticatedPage {
     private void addGarbageCollectorMaintenance(Form form) {
         final Border gcBorder = new TitledBorder("gcBorder", new CompoundPropertyModel(gcConfigDescriptor));
         form.add(gcBorder);
-        TextField<String> cronExpTextField = new TextField<String>("cronExp");
+        TextField<String> cronExpTextField = new TextField<>("cronExp");
         cronExpTextField.setRequired(true);
         cronExpTextField.add(CronExpValidator.getInstance());
         gcBorder.add(cronExpTextField);
@@ -246,7 +246,7 @@ public class MaintenancePage extends AuthenticatedPage {
         final Border cleanupBorder = new TitledBorder("cleanupBorder",
                 new CompoundPropertyModel(cleanupConfigDescriptor));
         form.add(cleanupBorder);
-        TextField<String> cronExpTextField = new TextField<String>("cronExp");
+        TextField<String> cronExpTextField = new TextField<>("cronExp");
         cronExpTextField.setRequired(true);
         cronExpTextField.add(CronExpValidator.getInstance());
         cleanupBorder.add(cronExpTextField);

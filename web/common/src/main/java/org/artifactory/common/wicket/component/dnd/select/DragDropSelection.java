@@ -58,11 +58,11 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
     private List<T> unselectedItems;
 
     public DragDropSelection(final String id, final List<? extends T> choices) {
-        this(id, new WildcardListModel<T>(choices), new ChoiceRenderer<T>());
+        this(id, new WildcardListModel<>(choices), new ChoiceRenderer<T>());
     }
 
     public DragDropSelection(final String id, IModel<T> model, final List<? extends T> choices) {
-        this(id, model, new WildcardListModel<T>(choices), new ChoiceRenderer<T>());
+        this(id, model, new WildcardListModel<>(choices), new ChoiceRenderer<T>());
     }
 
     public DragDropSelection(final String id, final IModel<? extends List<? extends T>> choicesModel,
@@ -176,7 +176,7 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
     }
 
     protected Collection<T> createNewSelectionCollection(int length) {
-        return new ArrayList<T>(length);
+        return new ArrayList<>(length);
     }
 
     @Override
@@ -213,7 +213,7 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
 
     @SuppressWarnings({"unchecked"})
     private void updateSourceList() {
-        unselectedItems = new ArrayList<T>(choicesModel.getObject());
+        unselectedItems = new ArrayList<>(choicesModel.getObject());
         Collection<T> selected = (Collection<T>) getDefaultModelObject();
         if (isNotEmpty(selected)) {
             unselectedItems.removeAll(selected);
@@ -242,7 +242,7 @@ public class DragDropSelection<T extends Serializable> extends FormComponentPane
             if (isEmpty(selected)) {
                 return Collections.emptyList();
             }
-            return new ArrayList<T>(selected);
+            return new ArrayList<>(selected);
         }
     }
 

@@ -18,11 +18,9 @@
 
 package org.artifactory.storage.db.build.service;
 
+import org.artifactory.build.BuildInfoUtils;
 import org.artifactory.build.BuildRun;
-import org.jfrog.build.api.Build;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -40,7 +38,7 @@ public class BuildRunImpl implements BuildRun {
     private final String releaseStatus;
 
     public BuildRunImpl(String name, String number, Date started) {
-        this(name, number, new SimpleDateFormat(Build.STARTED_FORMAT).format(started));
+        this(name, number, BuildInfoUtils.formatBuildTime(started.getTime()));
     }
 
     /**
@@ -61,16 +59,6 @@ public class BuildRunImpl implements BuildRun {
      */
     public BuildRunImpl(String name, String number, String started, String ciUrl, String releaseStatus) {
         this(0L, name, number, started, ciUrl, releaseStatus);
-    }
-
-    /**
-     * Adding a build ID from a found BuildRun
-     *
-     * @param id
-     * @param b
-     */
-    public BuildRunImpl(long id, BuildRun b) {
-        this(id, b.getName(), b.getNumber(), b.getStarted(), b.getCiUrl(), b.getReleaseStatus());
     }
 
     /**
@@ -132,12 +120,7 @@ public class BuildRunImpl implements BuildRun {
      */
     @Override
     public Date getStartedDate() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(Build.STARTED_FORMAT);
-        try {
-            return simpleDateFormat.parse(getStarted());
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        return new Date(BuildInfoUtils.parseBuildTime(getStarted()));
     }
 
     @Override

@@ -26,7 +26,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.repo.BackupService;
 import org.artifactory.api.repo.RepositoryService;
@@ -84,7 +84,7 @@ public class ExportRepoPanel extends TitledPanel {
         Form exportForm = new Form("exportForm");
         add(exportForm);
 
-        IModel<String> sourceRepoModel = new PropertyModel<String>(this, "sourceRepoKey");
+        IModel<String> sourceRepoModel = new PropertyModel<>(this, "sourceRepoKey");
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
         Collections.sort(localRepos, new LocalRepoAlphaComparator());
         List<String> repoKeys = Lists.newArrayListWithExpectedSize(localRepos.size() + 1);
@@ -94,12 +94,12 @@ public class ExportRepoPanel extends TitledPanel {
             String key = localRepo.getKey();
             repoKeys.add(key);
         }
-        DropDownChoice sourceRepoDdc = new DropDownChoice<String>("sourceRepo", sourceRepoModel, repoKeys);
+        DropDownChoice sourceRepoDdc = new DropDownChoice<>("sourceRepo", sourceRepoModel, repoKeys);
         //Needed because get getDefaultChoice does not update the actual selection object
         sourceRepoDdc.setDefaultModelObject(ImportExportReposPage.ALL_REPOS);
         exportForm.add(sourceRepoDdc);
 
-        PropertyModel<File> pathModel = new PropertyModel<File>(this, "exportToPath");
+        PropertyModel<File> pathModel = new PropertyModel<>(this, "exportToPath");
         final PathAutoCompleteTextField exportToPathTf = new PathAutoCompleteTextField("exportToPath", pathModel);
         exportToPathTf.setMask(PathMask.FOLDERS);
         exportToPathTf.setRequired(true);
@@ -121,7 +121,7 @@ public class ExportRepoPanel extends TitledPanel {
 
         exportForm.add(new StyledCheckbox("excludeMetadata", new PropertyModel<Boolean>(this, "excludeMetadata")));
         exportForm.add(new HelpBubble("excludeMetadataHelp",
-                "Excludes repositories metadata from the export.\n"+
+                "Excludes repositories metadata from the export.\n" +
                         "(Maven 2 metadata is unaffected by this setting)"));
 
         StyledCheckbox verboseCheckbox = new StyledCheckbox("verbose", new PropertyModel<Boolean>(this, "verbose"));
@@ -138,7 +138,7 @@ public class ExportRepoPanel extends TitledPanel {
                 try {
                     Session.get().cleanupFeedbackMessages();
                     //If we chose "All" run manual backup to dest dir, else export a single repo
-                    MultiStatusHolder status = new MultiStatusHolder();
+                    ImportExportStatusHolder status = new ImportExportStatusHolder();
                     ExportSettingsImpl exportSettings = new ExportSettingsImpl(exportToPath, status);
                     exportSettings.setIncludeMetadata(!excludeMetadata);
                     exportSettings.setM2Compatible(m2Compatible);

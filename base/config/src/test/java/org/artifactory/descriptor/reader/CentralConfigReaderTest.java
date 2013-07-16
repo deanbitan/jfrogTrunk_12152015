@@ -32,10 +32,12 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.artifactory.common.ConstantValues.substituteRepoKeys;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 /**
  * Test the {@link CentralConfigReader}
@@ -53,7 +55,8 @@ public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
         Assert.assertEquals(descriptorOrderedMap.size(), 12, "Should contain 12 remote repository");
     }
 
-    @SuppressWarnings("unchecked")
+    private String failureMessage;
+
     public void readAllConfigFiles() throws Exception {
         getBound().setProperty(substituteRepoKeys.getPropertyName() + "3rdp-releases", "third-party-releases")
                 .setProperty(substituteRepoKeys.getPropertyName() + "3rdp-snapshots", "third-party-snapshots")
@@ -63,19 +66,38 @@ public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
         File backupDirs = ResourceUtils.getResourceAsFile("/config");
         Collection<File> oldArtifactoryConfigs = FileUtils.listFiles(backupDirs, new String[]{"xml"}, true);
         assertTrue(oldArtifactoryConfigs.size() > 10, "Where are all my test files??");
-        CentralConfigReader centralConfigReader = new CentralConfigReader();
-        for (Object oldArtifactoryConfig : oldArtifactoryConfigs) {
-            File file = (File) oldArtifactoryConfig;
-            CentralConfigDescriptor newConfig;
+
+        // run in parallel for better speed
+        ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        for (File oldArtifactoryConfig : oldArtifactoryConfigs) {
+            executorService.submit(new ConfigReadWriteTester(oldArtifactoryConfig));
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(15, TimeUnit.SECONDS);
+
+        assertNull(failureMessage, failureMessage);
+    }
+
+    private class ConfigReadWriteTester implements Runnable {
+        private final File configFile;
+
+        private ConfigReadWriteTester(File configFile) {
+            this.configFile = configFile;
+        }
+
+        @Override
+        public void run() {
             try {
-                newConfig = centralConfigReader.read(file);
-            } catch (Exception e) {
-                throw new Exception("Caught exception while trying to read config: " + file.getAbsolutePath(), e);
+                CentralConfigReader centralConfigReader = new CentralConfigReader();
+                CentralConfigDescriptor newConfig = centralConfigReader.read(configFile);
+                ArtifactoryConfigVersion configVersion =
+                        ArtifactoryConfigVersion.getConfigVersion(JaxbHelper.toXml(newConfig));
+                assertNotNull(configVersion,
+                        "Null value returned from config reader for file " + configFile.getAbsolutePath());
+                assertTrue(configVersion.isCurrent(), "Artifactory config version is not up to date");
+            } catch (Throwable t) {
+                failureMessage = "Failed to convert " + configFile + ": " + t.getMessage();
             }
-            ArtifactoryConfigVersion configVersion =
-                    ArtifactoryConfigVersion.getConfigVersion(JaxbHelper.toXml(newConfig));
-            assertNotNull(configVersion, "Null value returned from security reader for file " + file.getAbsolutePath());
-            assertTrue(configVersion.isCurrent(), "Artifactory config version is not up to date");
         }
     }
 }

@@ -83,12 +83,12 @@ public class TextEditorPanel extends TitledPanel {
     }
 
     private void addTextArea() {
-        editorTextArea = new TextArea<String>("editorTextArea", newTextModel());
+        editorTextArea = new TextArea<>("editorTextArea", newTextModel());
         editorTextArea.setOutputMarkupId(true);
         add(editorTextArea);
     }
 
     protected IModel<String> newTextModel() {
-        return new PropertyModel<String>(this, "editorValue");
+        return new PropertyModel<>(this, "editorValue");
     }
 }

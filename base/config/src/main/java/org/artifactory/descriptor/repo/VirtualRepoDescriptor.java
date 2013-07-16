@@ -37,7 +37,7 @@ public class VirtualRepoDescriptor extends RepoBaseDescriptor {
     @XmlIDREF
     @XmlElementWrapper(name = "repositories")
     @XmlElement(name = "repositoryRef", type = RepoBaseDescriptor.class, required = false)
-    private List<RepoDescriptor> repositories = new ArrayList<RepoDescriptor>();
+    private List<RepoDescriptor> repositories = new ArrayList<>();
 
     @XmlElement(defaultValue = "false", required = false)
     private boolean artifactoryRequestsCanRetrieveRemoteArtifacts;

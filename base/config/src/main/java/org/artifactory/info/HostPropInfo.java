@@ -90,7 +90,7 @@ public class HostPropInfo extends BasePropInfoGroup {
      */
     @Override
     public InfoObject[] getInfo() {
-        ArrayList<InfoObject> infoList = new ArrayList<InfoObject>();
+        ArrayList<InfoObject> infoList = new ArrayList<>();
 
         Set<String> keys = propertyMap.keySet();
         for (String key : keys) {

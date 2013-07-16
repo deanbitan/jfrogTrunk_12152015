@@ -49,7 +49,7 @@ public class PermissionTargetAceInfoRowDataProvider extends BaseSortableAceInfoR
     public void loadData() {
         //Restore the roles
         Set<MutableAceInfo> aceInfos = aclInfo.getMutableAces();
-        Map<AceInfo, MutableAceInfo> acesMap = new HashMap<AceInfo, MutableAceInfo>(aceInfos.size());
+        Map<AceInfo, MutableAceInfo> acesMap = new HashMap<>(aceInfos.size());
         for (MutableAceInfo aceInfo : aceInfos) {
             acesMap.put(aceInfo, aceInfo);
         }
@@ -58,7 +58,7 @@ public class PermissionTargetAceInfoRowDataProvider extends BaseSortableAceInfoR
         List<GroupInfo> groups = getGroups();
         //Create a list of acls for *all* users and groups
         //Stored acls are only the non empty ones
-        List<AceInfoRow> rows = new ArrayList<AceInfoRow>(users.size());
+        List<AceInfoRow> rows = new ArrayList<>(users.size());
         for (UserInfo user : users) {
             addAceRow(rows, acesMap, user.getUsername(), false);
         }

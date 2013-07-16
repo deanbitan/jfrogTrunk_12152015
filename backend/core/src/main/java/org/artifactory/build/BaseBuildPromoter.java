@@ -20,7 +20,6 @@ package org.artifactory.build;
 
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
-import org.apache.commons.collections.CollectionUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
@@ -44,6 +43,7 @@ import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;

@@ -101,7 +101,7 @@ public class MavenSettingsPanel<T extends RepoDescriptor> extends BaseSettingsGe
         addChoice("pluginReleases", true, false, true, false);
         addChoice("pluginSnapshots", false, true, true, false);
 
-        final DropDownChoice mirrorDropDownChoice = new DropDownChoice<T>("mirrorAnySelection",
+        final DropDownChoice mirrorDropDownChoice = new DropDownChoice<>("mirrorAnySelection",
                 new PropertyModel<T>(this, "mirrorAnySelection"), virtualRepoDescriptors);
         mirrorDropDownChoice.setOutputMarkupId(true);
         if (!virtualRepoDescriptors.isEmpty()) {
@@ -300,7 +300,7 @@ public class MavenSettingsPanel<T extends RepoDescriptor> extends BaseSettingsGe
      * @param id Object ID
      */
     private void addChoice(String id, boolean isRelease, boolean isSnapshot, boolean isPlugin, boolean isRemote) {
-        DropDownChoice<T> choice = new DropDownChoice<T>(id, new PropertyModel<T>(this, id), virtualRepoDescriptors);
+        DropDownChoice<T> choice = new DropDownChoice<>(id, new PropertyModel<T>(this, id), virtualRepoDescriptors);
         if (!virtualRepoDescriptors.isEmpty()) {
             choice.setDefaultModelObject(getDefaultChoice(isRelease, isSnapshot, isPlugin, isRemote));
         }

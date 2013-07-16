@@ -72,7 +72,7 @@ public class ProfileLockPanel extends TitledPanel {
                 } else {
                     unlockProfile(userInfo, target);
                 }
-                target.add(profilePage);
+                target.add(profilePanel);
                 AjaxUtils.refreshFeedback(target);
 
             }

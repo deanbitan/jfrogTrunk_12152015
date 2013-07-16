@@ -115,7 +115,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         tabs.add(new AbstractTab(Model.of("Packages")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new HttpRepoPackagesPanel<HttpRepoDescriptor>(panelId, entity);
+                return new HttpRepoPackagesPanel<>(panelId, entity);
             }
         });
         return tabs;

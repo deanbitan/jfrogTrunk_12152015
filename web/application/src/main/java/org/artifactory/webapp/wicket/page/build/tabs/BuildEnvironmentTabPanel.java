@@ -65,11 +65,11 @@ public class BuildEnvironmentTabPanel extends Panel {
         List<SerializablePair<String, String>> propertyPairs = getPropertiesAsPairs(build);
 
         PropertiesDataProvider envDataProvider = new PropertiesDataProvider(filterEnvProperties(propertyPairs));
-        environmentVariablesPanel.add(new SortableTable<SerializablePair<String, String>>(
+        environmentVariablesPanel.add(new SortableTable<>(
                 "envTable", columns, envDataProvider, Integer.MAX_VALUE));
 
         PropertiesDataProvider sysDataProvider = new PropertiesDataProvider(filterSystemProperties(propertyPairs));
-        systemVariablesPanel.add(new SortableTable<SerializablePair<String, String>>(
+        systemVariablesPanel.add(new SortableTable<>(
                 "systemTable", columns, sysDataProvider, Integer.MAX_VALUE));
     }
 
@@ -107,7 +107,7 @@ public class BuildEnvironmentTabPanel extends Panel {
         if (properties != null) {
             for (Object key : properties.keySet()) {
                 String keyString = String.valueOf(key);
-                list.add(new SerializablePair<String, String>(keyString, properties.getProperty(keyString)));
+                list.add(new SerializablePair<>(keyString, properties.getProperty(keyString)));
             }
         }
 
@@ -145,7 +145,7 @@ public class BuildEnvironmentTabPanel extends Panel {
 
         @Override
         public IModel<SerializablePair<String, String>> model(SerializablePair<String, String> object) {
-            return new Model<SerializablePair<String, String>>(object);
+            return new Model<>(object);
         }
     }
 }

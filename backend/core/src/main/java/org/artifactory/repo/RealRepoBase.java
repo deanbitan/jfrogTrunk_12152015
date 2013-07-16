@@ -87,7 +87,8 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
 
     @Override
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    public BasicStatusHolder assertValidPath(String path, boolean downloadRequest) {
+    public BasicStatusHolder assertValidPath(RepoPath repoPath, boolean downloadRequest) {
+        String path = repoPath.getPath();
         BasicStatusHolder statusHolder = new BasicStatusHolder();
         statusHolder.setActivateLogging(log.isDebugEnabled());
         if (isBlackedOut()) {
@@ -96,7 +97,7 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         } else if (!handlesReleaseSnapshot(path)) {
             SnapshotPolicyException exception = new SnapshotPolicyException(this.getDescriptor(), getRepoPath(path));
             statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
-        } else if (!accepts(path)) {
+        } else if (!accepts(repoPath)) {
             IncludeExcludeException exception = new IncludeExcludeException(
                     downloadRequest ? HttpStatus.SC_NOT_FOUND : HttpStatus.SC_CONFLICT, this.getDescriptor(),
                     getRepoPath(path));

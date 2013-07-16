@@ -67,12 +67,7 @@ public class LoginPanel extends TitledActionPanel {
         Label defaultCredentialsLabel = new Label("defaultCredentials", " (default: admin/password)");
         try {
             UserInfo userInfo = userGroupService.findUser("admin");
-            boolean neverLoggedIn =
-                    (userInfo.getLastLoginTimeMillis() == 0) && (StringUtils.isEmpty(userInfo.getLastLoginClientIp()));
-            String password = userInfo.getPassword();
-            boolean defaultPassword = (securityService.generateSaltedPassword(userInfo.getSalt(),
-                    SecurityService.DEFAULT_ADMIN_PASSWORD).equals(password));
-            defaultCredentialsLabel.setVisible(neverLoggedIn && defaultPassword);
+            defaultCredentialsLabel.setVisible(neverLoggedIn(userInfo) && defaultAdminPassword(userInfo));
         } catch (Exception ignored) {
             defaultCredentialsLabel.setVisible(false);
         }
@@ -86,7 +81,6 @@ public class LoginPanel extends TitledActionPanel {
         username.add(new AttributeModifier("autocomplete", new AbstractReadOnlyModel<String>() {
             @Override
             public String getObject() {
-
                 return ConstantValues.useUserNameAutoCompleteOnLogin.getString();
             }
         }));
@@ -144,6 +138,15 @@ public class LoginPanel extends TitledActionPanel {
         }
     }
 
+    private boolean neverLoggedIn(UserInfo userInfo) {
+        return (userInfo.getLastLoginTimeMillis() == 0) && (StringUtils.isEmpty(userInfo.getLastLoginClientIp()));
+    }
+
+    private boolean defaultAdminPassword(UserInfo userInfo) {
+        String defaultPassword = securityService.generateSaltedPassword(SecurityService.DEFAULT_ADMIN_PASSWORD,
+                userInfo.getSalt()).getPassword();
+        return defaultPassword.equals(userInfo.getPassword());
+    }
 
     /**
      * Checks if the mail server is configured (central config descriptor and mail server descriptor are not null)

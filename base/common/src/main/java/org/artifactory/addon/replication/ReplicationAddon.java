@@ -63,9 +63,7 @@ public interface ReplicationAddon extends Addon {
 
     void offerLocalReplicationDeleteEvent(RepoPath repoPath);
 
-    void offerLocalReplicationPropertiesDeploymentEvent(RepoPath repoPath);
-
-    void offerLocalReplicationPropertiesDeleteEvent(RepoPath repoPath);
+    void offerLocalReplicationPropertiesChangeEvent(RepoPath repoPath);
 
     void validateTargetIsDifferentInstance(ReplicationBaseDescriptor descriptor, RealRepoDescriptor repoDescriptor)
             throws IOException;

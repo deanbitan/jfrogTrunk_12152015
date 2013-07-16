@@ -83,7 +83,7 @@ public class GavcSearcher extends SearcherBase<GavcSearchControls, GavcSearchRes
             }
         }
 
-        return new ItemSearchResults<GavcSearchResult>(results, queryResult.getCount());
+        return new ItemSearchResults<>(results, queryResult.getCount());
     }
 
     /**

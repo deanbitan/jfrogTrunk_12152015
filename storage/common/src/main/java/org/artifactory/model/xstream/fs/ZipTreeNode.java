@@ -97,7 +97,7 @@ public class ZipTreeNode implements TreeNode<ZipEntryInfo>, Serializable, Compar
             throw new IllegalStateException("Cannot add children to a leaf node");
         }
         if (children == null) {
-            children = new TreeSet<ZipTreeNode>();
+            children = new TreeSet<>();
         }
         children.add(child);
     }

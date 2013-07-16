@@ -241,7 +241,7 @@ public abstract class OrderedListPanel<T extends Serializable> extends TitledPan
             }
 
             // reorder list according to indices
-            List<T> newList = new ArrayList<T>(indices.length);
+            List<T> newList = new ArrayList<>(indices.length);
             List<T> choices = getList();
             for (int index : indices) {
                 newList.add(choices.get(index));

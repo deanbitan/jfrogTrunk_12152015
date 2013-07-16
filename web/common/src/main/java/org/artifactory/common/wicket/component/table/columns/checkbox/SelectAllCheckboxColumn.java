@@ -40,7 +40,7 @@ import static org.artifactory.common.wicket.component.table.columns.panel.checkb
  * @author Yoav Aharoni
  */
 public class SelectAllCheckboxColumn<T> extends AjaxCheckboxColumn<T> {
-    private IModel<Boolean> selectAllModel = new Model<Boolean>(false);
+    private IModel<Boolean> selectAllModel = new Model<>(false);
     private StyledCheckbox selectAllCheckbox;
 
     public SelectAllCheckboxColumn(String title, String expression, String sortProperty) {

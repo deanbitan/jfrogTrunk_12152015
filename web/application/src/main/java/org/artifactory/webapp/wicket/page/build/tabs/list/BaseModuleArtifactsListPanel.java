@@ -73,7 +73,7 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
         columns.add(new ModuleArtifactPropertyColumn(Model.of("Name"), "name", "artifact.name"));
         columns.add(new ModuleArtifactPropertyColumn(Model.of("Type"), "type", "artifact.type"));
         columns.add(new ModuleArtifactPropertyColumn(Model.of("Repo Path"), null, "repoPath"));
-        add(new SortableTable<ModuleArtifactActionableItem>(
+        add(new SortableTable<>(
                 "artifacts", columns, new ModuleArtifactsDataProvider(), 10));
     }
 
@@ -124,7 +124,7 @@ public abstract class BaseModuleArtifactsListPanel extends TitledPanel {
 
         @Override
         public IModel<ModuleArtifactActionableItem> model(ModuleArtifactActionableItem object) {
-            return new Model<ModuleArtifactActionableItem>(object);
+            return new Model<>(object);
         }
 
         public void setArtifactsList(List<ModuleArtifactActionableItem> artifactsList) {

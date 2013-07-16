@@ -45,6 +45,16 @@ public interface FilteredResourcesAddon extends Addon {
     boolean isFilteredResourceFile(RepoPath repoPath);
 
     /**
+     * Indicates whether this file is marked as a resource that can be filtered based on the file properties given as
+     * parameter.
+     *
+     * @param repoPath Item to check
+     * @param props    The item current properties
+     * @return True if the file is marked as a filtered resource
+     */
+    boolean isFilteredResourceFile(RepoPath repoPath, Properties props);
+
+    /**
      * Returns the file's content after filtering it. Always auto closes the input stream
      *
      * @param request         File request

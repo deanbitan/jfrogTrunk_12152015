@@ -34,9 +34,9 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
     private static final String DELIMITER = ",";
 
     private String name;
-    private List<String> repoKeys = new ArrayList<String>();
-    private List<String> includes = new ArrayList<String>();
-    private List<String> excludes = new ArrayList<String>();
+    private List<String> repoKeys = new ArrayList<>();
+    private List<String> includes = new ArrayList<>();
+    private List<String> excludes = new ArrayList<>();
 
     public PermissionTargetImpl() {
         this("", Arrays.asList(ANY_REPO));
@@ -48,7 +48,7 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
 
     public PermissionTargetImpl(String name, List<String> repoKeys) {
         this.name = name;
-        this.repoKeys = new ArrayList<String>(repoKeys);
+        this.repoKeys = new ArrayList<>(repoKeys);
         this.includes.add(ANY_PATH);
     }
 
@@ -61,9 +61,9 @@ public class PermissionTargetImpl implements MutablePermissionTargetInfo {
 
     public PermissionTargetImpl(PermissionTargetInfo copy) {
         this(copy.getName(),
-                new ArrayList<String>(copy.getRepoKeys()),
-                new ArrayList<String>(copy.getIncludes()),
-                new ArrayList<String>(copy.getExcludes())
+                new ArrayList<>(copy.getRepoKeys()),
+                new ArrayList<>(copy.getIncludes()),
+                new ArrayList<>(copy.getExcludes())
         );
     }
 

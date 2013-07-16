@@ -77,7 +77,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     public VirtualRepo(VirtualRepoDescriptor descriptor, InternalRepositoryService repositoryService) {
         super(descriptor, repositoryService);
-        dbStorageMixin = new DbStoringRepoMixin<VirtualRepoDescriptor>(descriptor, null);
+        dbStorageMixin = new DbStoringRepoMixin<>(descriptor, null);
     }
 
     /**
@@ -140,32 +140,32 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     public List<RealRepo> getLocalAndRemoteRepositories() {
-        List<RealRepo> repos = new ArrayList<RealRepo>();
+        List<RealRepo> repos = new ArrayList<>();
         repos.addAll(localRepositoriesMap.values());
         repos.addAll(remoteRepositoriesMap.values());
         return repos;
     }
 
     public List<VirtualRepo> getVirtualRepositories() {
-        return new ArrayList<VirtualRepo>(virtualRepositoriesMap.values());
+        return new ArrayList<>(virtualRepositoriesMap.values());
     }
 
     public List<RemoteRepo> getRemoteRepositories() {
-        return new ArrayList<RemoteRepo>(remoteRepositoriesMap.values());
+        return new ArrayList<>(remoteRepositoriesMap.values());
     }
 
     public List<LocalCacheRepo> getLocalCaches() {
-        return new ArrayList<LocalCacheRepo>(localCacheRepositoriesMap.values());
+        return new ArrayList<>(localCacheRepositoriesMap.values());
     }
 
     public List<LocalRepo> getLocalRepositories() {
-        return new ArrayList<LocalRepo>(localRepositoriesMap.values());
+        return new ArrayList<>(localRepositoriesMap.values());
     }
 
     public List<LocalRepo> getLocalAndCachedRepositories() {
         List<LocalRepo> localRepos = getLocalRepositories();
         List<LocalCacheRepo> localCaches = getLocalCaches();
-        List<LocalRepo> repos = new ArrayList<LocalRepo>(localRepos);
+        List<LocalRepo> repos = new ArrayList<>(localRepos);
         repos.addAll(localCaches);
         return repos;
     }
@@ -331,7 +331,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     public List<VirtualRepo> getResolvedVirtualRepos() {
         //Add items from contained virtual repositories
-        List<VirtualRepo> virtualRepos = new ArrayList<VirtualRepo>();
+        List<VirtualRepo> virtualRepos = new ArrayList<>();
         //Assemble the virtual repo deep search lists
         resolveVirtualRepos(virtualRepos);
         return virtualRepos;
@@ -487,8 +487,10 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     @Override
-    public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite) {
-        return dbStorageMixin.shouldProtectPathDeletion(path, assertOverwrite);
+    public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite, String requestSha1) {
+        // permissions only apply for real repositories. other methods (i.e., webdav delete) shouldn't allow virtual
+        // repo deletion from the outside.
+        return false;
     }
 
     @Override

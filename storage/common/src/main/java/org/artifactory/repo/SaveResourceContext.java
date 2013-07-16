@@ -89,20 +89,14 @@ public class SaveResourceContext {
         private String modifiedBy;
         private ResourceStreamHandle handle;
 
+        public Builder(RepoResource repoResource, ResourceStreamHandle handle) {
+            this(repoResource, handle.getInputStream());
+            this.handle = handle;
+        }
+
         public Builder(RepoResource repoResource, InputStream inputStream) {
             this.repoResource = repoResource;
             this.inputStream = inputStream;
-        }
-
-        public Builder(RepoResource repoResource, ResourceStreamHandle handle) {
-            this.repoResource = repoResource;
-            this.handle = handle;
-            this.inputStream = handle.getInputStream();
-        }
-
-        public Builder inputStream(InputStream inputStream) {
-            this.inputStream = inputStream;
-            return this;
         }
 
         public Builder properties(Properties properties) {

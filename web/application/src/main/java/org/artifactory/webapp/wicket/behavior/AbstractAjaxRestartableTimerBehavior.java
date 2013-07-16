@@ -50,19 +50,6 @@ public abstract class AbstractAjaxRestartableTimerBehavior extends AbstractDefau
 
     private String id;
 
-    /**
-     * Construct.
-     *
-     * @param updateInterval Duration between AJAX callbacks
-     */
-    public AbstractAjaxRestartableTimerBehavior(final Duration updateInterval) {
-        if (updateInterval == null || updateInterval.getMilliseconds() <= 0) {
-            throw new IllegalArgumentException("Invalid update interval");
-        }
-        this.updateInterval = updateInterval;
-        this.id = null;
-    }
-
     public AbstractAjaxRestartableTimerBehavior(final Duration updateInterval, String id) {
         if (updateInterval == null || updateInterval.getMilliseconds() <= 0) {
             throw new IllegalArgumentException("Invalid update interval");

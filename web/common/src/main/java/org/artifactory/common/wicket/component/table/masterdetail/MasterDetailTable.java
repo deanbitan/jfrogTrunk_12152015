@@ -29,7 +29,7 @@ import java.util.Set;
  * @author Yoav Aharoni
  */
 public abstract class MasterDetailTable<M extends Serializable, D extends Serializable> extends SortableTable {
-    private Set<M> openedItems = new HashSet<M>();
+    private Set<M> openedItems = new HashSet<>();
 
     @SuppressWarnings({"unchecked"})
     public MasterDetailTable(String id, List<IColumn> columns, List<M> masterList, String defaultSortProp,
@@ -58,7 +58,7 @@ public abstract class MasterDetailTable<M extends Serializable, D extends Serial
 
         // add master panel
         final M masterObject = ((MasterDetailEntry<M, D>) rowModel.getObject()).getMaster();
-        cellItem.add(new MasterDetailRowPanel<M, D>("cell", masterObject, this));
+        cellItem.add(new MasterDetailRowPanel<>("cell", masterObject, this));
         return rowItem;
     }
 

@@ -68,13 +68,13 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         fileUploadLogo = new DefaultFileUploadForm("logoPath", this);
         add(fileUploadLogo);
 
-        TextField<String> urlLogo = new TextField<String>("logo");
+        TextField<String> urlLogo = new TextField<>("logo");
         urlLogo.add(new UriValidator("http", "https"));
         urlLogo.add(new UrlChangedBehavior());
         urlLogo.setOutputMarkupId(true);
         fileUploadLogo.add(urlLogo);
 
-        TextField<String> footer = new TextField<String>("footer");
+        TextField<String> footer = new TextField<>("footer");
 
         fileUploadLogo.add(new ResetLink("reset", fileUploadLogo));
         footer.add(StringValidator.maximumLength(MAX_FOOTER_LENGTH));

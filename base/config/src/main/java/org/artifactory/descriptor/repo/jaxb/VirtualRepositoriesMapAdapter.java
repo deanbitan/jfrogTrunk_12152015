@@ -61,7 +61,7 @@ public class VirtualRepositoriesMapAdapter
     @XmlType(name = "VirtualRepositoriesType", namespace = Descriptor.NS)
     public static class Wrappper {
         @XmlElement(name = "virtualRepository", required = true, namespace = Descriptor.NS)
-        private List<VirtualRepoDescriptor> list = new ArrayList<VirtualRepoDescriptor>();
+        private List<VirtualRepoDescriptor> list = new ArrayList<>();
 
 
         public Wrappper() {

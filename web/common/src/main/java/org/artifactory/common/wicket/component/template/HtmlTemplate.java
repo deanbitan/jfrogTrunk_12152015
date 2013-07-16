@@ -37,7 +37,7 @@ public class HtmlTemplate extends WebComponent {
     public HtmlTemplate(String id) {
         super(id);
 
-        parametersMap = new HashMap<String, IModel>();
+        parametersMap = new HashMap<>();
         setEscapeModelStrings(false);
     }
 

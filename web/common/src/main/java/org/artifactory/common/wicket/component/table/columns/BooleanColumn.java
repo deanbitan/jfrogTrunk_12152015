@@ -54,7 +54,7 @@ public class BooleanColumn<T> extends TitlePropertyColumn<T> {
      */
     @Override
     public void populateItem(Item<ICellPopulator<T>> item, String componentId, IModel<T> model) {
-        PropertyModel<Boolean> booleanModel = new PropertyModel<Boolean>(model, getPropertyExpression());
+        PropertyModel<Boolean> booleanModel = new PropertyModel<>(model, getPropertyExpression());
         Boolean value = booleanModel.getObject();
         Label label = new Label(componentId, "<span>" + value + "</span>");
         label.setEscapeModelStrings(false);

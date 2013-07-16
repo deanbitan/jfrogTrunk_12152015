@@ -29,7 +29,7 @@ import org.artifactory.storage.db.build.entity.BuildPromotionStatus;
 import org.artifactory.storage.db.build.entity.BuildProperty;
 import org.artifactory.storage.db.build.entity.ModuleProperty;
 import org.artifactory.storage.db.itest.DbBaseTest;
-import org.artifactory.storage.db.util.BlobWrapper;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.Assert;
 

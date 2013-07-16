@@ -18,6 +18,7 @@
 
 package org.artifactory.util;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 /**
@@ -30,12 +31,25 @@ public abstract class CollectionUtils {
         // utility class
     }
 
-    public static boolean isNullOrEmpty(Collection c) {
+    /**
+     * @return  True if the input collection is null of empty
+     */
+    public static boolean isNullOrEmpty(@Nullable Collection c) {
         return c == null || c.isEmpty();
     }
 
-    public static boolean notNullOrEmpty(Collection c) {
+    /**
+     * @return  True if the input collection is not empty
+     */
+    public static boolean notNullOrEmpty(@Nullable Collection c) {
         return !isNullOrEmpty(c);
+    }
+
+    /**
+     * @return  True if the input array is null of empty
+     */
+    public static <T> boolean isNullOrEmpty(@Nullable T[] a) {
+        return a == null || a.length == 0;
     }
 
 }

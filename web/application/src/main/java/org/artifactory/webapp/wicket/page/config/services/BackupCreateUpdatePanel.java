@@ -106,7 +106,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         form.add(simpleFields);
 
         // Backup key
-        RequiredTextField<String> keyField = new RequiredTextField<String>("key");
+        RequiredTextField<String> keyField = new RequiredTextField<>("key");
         setDefaultFocusField(keyField);
         keyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
@@ -127,14 +127,14 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         });
         simpleFields.add(enabledCheckBox);
 
-        final TextField<String> cronExpField = new TextField<String>("cronExp");
+        final TextField<String> cronExpField = new TextField<>("cronExp");
         cronExpField.add(CronExpValidator.getInstance());
         simpleFields.add(cronExpField);
         simpleFields.add(new SchemaHelpBubble("cronExp.help"));
 
         simpleFields.add(new CronNextDatePanel("cronNextDatePanel", cronExpField));
 
-        PropertyModel<File> pathModel = new PropertyModel<File>(backupDescriptor, "dir");
+        PropertyModel<File> pathModel = new PropertyModel<>(backupDescriptor, "dir");
 
         backupDir = new PathAutoCompleteTextField("dir", pathModel);
         backupDir.setMask(PathMask.FOLDERS);
@@ -205,7 +205,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         advancedFields.add(createIncremental);
 
         List<RepoDescriptor> repos = repositoryService.getLocalAndRemoteRepoDescriptors();
-        advancedFields.add(new SortedRepoDragDropSelection<RepoDescriptor>("excludedRepositories", repos));
+        advancedFields.add(new SortedRepoDragDropSelection<>("excludedRepositories", repos));
         advancedFields.add(new SchemaHelpBubble("excludedRepositories.help"));
 
         // Cancel button

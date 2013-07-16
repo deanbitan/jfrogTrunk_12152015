@@ -87,7 +87,7 @@ public class PublishedModulesTabPanel extends Panel {
 
         ModulesDataProvider dataProvider = new ModulesDataProvider(build.getModules());
 
-        add(new SortableTable<Module>("modules", columns, dataProvider, 50));
+        add(new SortableTable<>("modules", columns, dataProvider, 50));
     }
 
     /**
@@ -150,7 +150,7 @@ public class PublishedModulesTabPanel extends Panel {
 
         @Override
         public IModel<Module> model(Module object) {
-            return new Model<Module>(object);
+            return new Model<>(object);
         }
     }
 }

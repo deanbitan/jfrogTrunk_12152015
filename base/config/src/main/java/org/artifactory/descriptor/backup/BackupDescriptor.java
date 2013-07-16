@@ -64,7 +64,7 @@ public class BackupDescriptor implements TaskDescriptor {
     @XmlIDREF
     @XmlElementWrapper(name = "excludedRepositories")
     @XmlElement(name = "repositoryRef", type = RealRepoDescriptor.class, required = false)
-    private List<RealRepoDescriptor> excludedRepositories = new ArrayList<RealRepoDescriptor>();
+    private List<RealRepoDescriptor> excludedRepositories = new ArrayList<>();
 
     @XmlElement(defaultValue = "true")
     private boolean sendMailOnError = true;

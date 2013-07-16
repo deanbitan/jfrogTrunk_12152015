@@ -60,7 +60,7 @@ class PermissionsTabTableDataProvider extends BaseSortableAceInfoRowDataProvider
         List<GroupInfo> groups = userGroupService.getAllGroups();
 
         //Create a list of acls for *all* users and groups
-        List<AceInfoRow> rows = new ArrayList<AceInfoRow>(users.size());
+        List<AceInfoRow> rows = new ArrayList<>(users.size());
         for (UserInfo user : users) {
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
             CoreAddons addons = addonsManager.addonByType(CoreAddons.class);

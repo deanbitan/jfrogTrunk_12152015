@@ -37,7 +37,6 @@ public abstract class MavenNaming {
     private static final Pattern UNIQUE_SNAPSHOT_NAME_PATTERN =
             Pattern.compile("^((.+)-(.+))-(([0-9]{8}.[0-9]{6})-([0-9]+))[\\.-].+$");
 
-    public static final String METADATA_PREFIX = "maven-metadata";
     public static final String MAVEN_METADATA_NAME = "maven-metadata.xml";
     public static final String SNAPSHOT = "SNAPSHOT";
     public static final String NEXUS_INDEX_DIR = ".index";

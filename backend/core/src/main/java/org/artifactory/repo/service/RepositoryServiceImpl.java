@@ -316,7 +316,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     private Set<String> getConfigRepoKeys(CentralConfigDescriptor descriptor) {
-        Set<String> repoKeys = new HashSet<String>();
+        Set<String> repoKeys = new HashSet<>();
         repoKeys.addAll(descriptor.getLocalRepositoriesMap().keySet());
         repoKeys.addAll(descriptor.getRemoteRepositoriesMap().keySet());
         repoKeys.addAll(descriptor.getVirtualRepositoriesMap().keySet());
@@ -382,7 +382,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
                 }
             }
-            LocalRepo repo = new DbLocalRepo<LocalRepoDescriptor>(repoDescriptor, transactionalMe, oldLocalRepo);
+            LocalRepo repo = new DbLocalRepo<>(repoDescriptor, transactionalMe, oldLocalRepo);
             try {
                 repo.init();
             } catch (Exception e) {
@@ -419,7 +419,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         // create on-the-fly repo descriptor to be used by the global virtual repo
-        List<RepoDescriptor> localAndRemoteRepoDescriptors = new ArrayList<RepoDescriptor>();
+        List<RepoDescriptor> localAndRemoteRepoDescriptors = new ArrayList<>();
         localAndRemoteRepoDescriptors.addAll(localRepoDescriptorMap.values());
         localAndRemoteRepoDescriptors.addAll(remoteRepoDescriptorMap.values());
         VirtualRepoDescriptor vrd = new VirtualRepoDescriptor();
@@ -861,13 +861,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public boolean exists(RepoPath repoPath) {
-        LocalRepo localRepo = getLocalRepository(repoPath);
-        return localRepo.itemExists(repoPath.getPath());
-    }
-
-    @Override
-    public boolean existsSafe(RepoPath repoPath) {
-        LocalRepo localRepo = findLocalRepository(repoPath);
+        String repoKey = repoPath.getRepoKey();
+        LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
         return localRepo != null && localRepo.itemExists(repoPath.getPath());
     }
 
@@ -917,12 +912,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         mutableItem.setProperties(properties);
 
         ReplicationAddon replicationAddon = addonsManager.addonByType(ReplicationAddon.class);
-        if (!properties.isEmpty()) {
-            replicationAddon.offerLocalReplicationPropertiesDeploymentEvent(repoPath);
-        } else {
-            replicationAddon.offerLocalReplicationPropertiesDeleteEvent(repoPath);
-        }
-
+        replicationAddon.offerLocalReplicationPropertiesChangeEvent(repoPath);
         return true;
     }
 
@@ -1080,7 +1070,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             statusHolder.setError("Could find storing repository by key '" + repoKey + "'", log);
             return statusHolder;
         }
-        assertDelete(storingRepo, repoPath.getPath(), false, statusHolder);
+        assertDelete(storingRepo, repoPath.getPath(), false, statusHolder, null);
         if (!statusHolder.isError()) {
             storingRepo.undeploy(repoPath, calcMavenMetadata);
         }
@@ -1422,7 +1412,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (localRepo == null) {
             throw new RepoRejectException("The repository '" + repoKey + "' is not configured.");
         }
-        assertValidDeployPath(localRepo, repoPath.getPath(), contentLength);
+        assertValidDeployPath(localRepo, repoPath, contentLength, null);
     }
 
     @Override
@@ -1452,11 +1442,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public void assertValidDeployPath(LocalRepo repo, String path, long contentLength) throws RepoRejectException {
-        BasicStatusHolder status = repo.assertValidPath(path, false);
+    public void assertValidDeployPath(LocalRepo repo, RepoPath repoPath, long contentLength,
+            @Nullable String requestSha1) throws RepoRejectException {
 
+        BasicStatusHolder status = repo.assertValidPath(repoPath, false);
+        String path = repoPath.getPath();
         if (!status.isError()) {
-            RepoPath repoPath = InternalRepoPathFactory.create(repo.getKey(), path);
             // if it is metadata, assert annotate privileges. Maven metadata is treated as regular file
             // (needs deploy permissions).
             if (NamingUtils.isMetadata(path)) {
@@ -1477,7 +1468,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 }
             }
             if (!status.isError()) {
-                assertDelete(repo, path, true, status);
+                assertDelete(repo, path, true, status, requestSha1);
             }
 
             if (!status.isError()) {
@@ -1648,12 +1639,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public boolean isRepoPathAccepted(RepoPath repoPath) {
-        String path = repoPath.getPath();
         if (repoPath.isRoot()) {
             return true;
         }
         LocalRepo repo = getLocalOrCachedRepository(repoPath);
-        return repo.accepts(path);
+        return repo.accepts(repoPath);
     }
 
     @Override
@@ -1849,13 +1839,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return localRepo;
     }
 
-    @Override
-    public LocalRepo findLocalRepository(RepoPath repoPath) {
-        String repoKey = repoPath.getRepoKey();
-        LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
-        return localRepo;
-    }
-
     /**
      * Do the actual full import.
      *
@@ -1978,10 +1961,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return InternalContextHelper.get().beanForType(InternalRepositoryService.class);
     }
 
-    private void assertDelete(StoringRepo repo, String path, boolean assertOverwrite, BasicStatusHolder status) {
+    private void assertDelete(StoringRepo repo, String path, boolean assertOverwrite, BasicStatusHolder status,
+            @Nullable String requestSha1) {
         RepoPath repoPath = InternalRepoPathFactory.create(repo.getKey(), path);
         //Check that has delete rights to replace an exiting item
-        if (repo.shouldProtectPathDeletion(path, assertOverwrite)) {
+        if (repo.shouldProtectPathDeletion(path, assertOverwrite, requestSha1)) {
             if (!authService.canDelete(repoPath)) {
                 AccessLogger.deleteDenied(repoPath);
                 if (centralConfigService.getDescriptor().getSecurity().isHideUnauthorizedResources()) {

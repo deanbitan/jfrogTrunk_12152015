@@ -20,7 +20,7 @@ package org.artifactory.storage.db.fs.service;
 
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.fs.dao.ConfigsDao;
-import org.artifactory.storage.db.util.BlobWrapper;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.artifactory.storage.fs.service.ConfigsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,19 +50,17 @@ public class ConfigsServiceImpl implements ConfigsService {
                 throw new IllegalStateException("Attempt to add an existing config: '" + name + "'");
             }
             configsDao.createConfig(name, data);
-        } catch (SQLException e) {
-            throw new StorageException("Failed to create config '" + name + "': " + e.getMessage(), e);
-        } catch (UnsupportedEncodingException e) {
+        } catch (SQLException | UnsupportedEncodingException e) {
             throw new StorageException("Failed to create config '" + name + "': " + e.getMessage(), e);
         }
     }
 
-    public void addConfig(String name, InputStream data) {
+    private void addConfig(String name, InputStream data, long length) {
         try {
             if (hasConfig(name)) {
                 throw new IllegalStateException("Attempt to add an existing config: '" + name + "'");
             }
-            configsDao.createConfig(name, new BlobWrapper(data));
+            configsDao.createConfig(name, new BlobWrapper(data, length));
         } catch (SQLException e) {
             throw new StorageException("Failed to create config '" + name + "': " + e.getMessage(), e);
         }
@@ -116,16 +114,14 @@ public class ConfigsServiceImpl implements ConfigsService {
             if (updateCount == 0) {
                 throw new IllegalStateException("Failed to update config '" + name + "'. Config doesn't exist");
             }
-        } catch (UnsupportedEncodingException e) {
-            throw new StorageException("Failed to update config '" + name + "': " + e.getMessage(), e);
-        } catch (SQLException e) {
+        } catch (UnsupportedEncodingException | SQLException e) {
             throw new StorageException("Failed to update config '" + name + "': " + e.getMessage(), e);
         }
     }
 
-    public void updateConfig(String name, InputStream data) {
+    private void updateConfig(String name, InputStream data, long length) {
         try {
-            int updateCount = configsDao.updateConfig(name, new BlobWrapper(data));
+            int updateCount = configsDao.updateConfig(name, new BlobWrapper(data, length));
             if (updateCount == 0) {
                 throw new IllegalStateException("Failed to update config '" + name + "'. Config doesn't exist");
             }
@@ -135,12 +131,12 @@ public class ConfigsServiceImpl implements ConfigsService {
     }
 
     @Override
-    public boolean addOrUpdateConfig(String name, InputStream data) {
+    public boolean addOrUpdateConfig(String name, InputStream data, long length) {
         if (hasConfig(name)) {
-            updateConfig(name, data);
+            updateConfig(name, data, length);
             return false;
         } else {
-            addConfig(name, data);
+            addConfig(name, data, length);
             return true;
         }
     }

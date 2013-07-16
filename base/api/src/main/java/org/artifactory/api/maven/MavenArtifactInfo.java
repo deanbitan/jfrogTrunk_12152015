@@ -209,7 +209,7 @@ public class MavenArtifactInfo implements UnitInfo {
 
         //The format of the relative path in maven is a/b/c/artifactId/baseVer/fileName where
         //groupId="a.b.c". We split the path to elements and analyze the needed fields.
-        LinkedList<String> pathElements = new LinkedList<String>();
+        LinkedList<String> pathElements = new LinkedList<>();
         StringTokenizer tokenizer = new StringTokenizer(path, "/");
         while (tokenizer.hasMoreTokens()) {
             pathElements.add(tokenizer.nextToken());

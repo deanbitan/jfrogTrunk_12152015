@@ -59,7 +59,7 @@ public abstract class BaseLogoPanel extends Panel {
         if (pageClass == null) {
             return new WebMarkupContainer("homeLink");
         }
-        return new BookmarkablePageLink<Object>("homeLink", pageClass);
+        return new BookmarkablePageLink<>("homeLink", pageClass);
     }
 
     protected abstract Class<? extends Page> getLinkPage();

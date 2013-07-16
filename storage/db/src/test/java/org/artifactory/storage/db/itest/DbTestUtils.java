@@ -96,14 +96,13 @@ public class DbTestUtils {
     }
 
     private static boolean tableExists(String tableName, Connection con) throws SQLException {
-        ResultSet rs = null;
         DatabaseMetaData metaData = con.getMetaData();
         if (metaData.storesLowerCaseIdentifiers()) {
             tableName = tableName.toLowerCase();
         } else if (metaData.storesUpperCaseIdentifiers()) {
             tableName = tableName.toUpperCase();
         }
-        rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
+        ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
         boolean tableExists = rs.next();
         return tableExists;
     }

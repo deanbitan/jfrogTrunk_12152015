@@ -30,7 +30,6 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.model.xstream.fs.FileInfoImpl;
 import org.artifactory.model.xstream.fs.FolderInfoImpl;
 import org.artifactory.repo.RepoPath;
@@ -282,7 +281,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public long getFilesTotalCount(RepoPathImpl repoPath) {
+    public long getFilesTotalCount(RepoPath repoPath) {
         try {
             if (repoPath.isRoot()) {
                 return nodesDao.getFilesTotalSize(repoPath.getRepoKey());

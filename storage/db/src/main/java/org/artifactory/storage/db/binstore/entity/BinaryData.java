@@ -69,10 +69,6 @@ public class BinaryData {
 
     @Override
     public String toString() {
-        return "BinaryData{" +
-                "sha1='" + sha1 + '\'' +
-                ", md5='" + md5 + '\'' +
-                ", length=" + length +
-                '}';
+        return "{" + sha1 + ',' + md5 + ',' + length + '}';
     }
 }

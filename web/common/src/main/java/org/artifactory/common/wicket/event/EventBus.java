@@ -32,7 +32,7 @@ public class EventBus implements Serializable {
 
     public <T> void addListener(Class<T> eventClass, Listener<T> listener) {
         if (listenerMap == null) {
-            listenerMap = new LinkedMultiValueMap<Class, Listener>();
+            listenerMap = new LinkedMultiValueMap<>();
         }
         listenerMap.add(eventClass, listener);
     }

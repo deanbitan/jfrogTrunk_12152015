@@ -271,7 +271,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public TextField getUrlBaseTextField(String id) {
-        TextField<String> urlBaseTextField = new TextField<String>(id);
+        TextField<String> urlBaseTextField = new TextField<>(id);
         urlBaseTextField.add(new UriValidator("http", "https"));
         return urlBaseTextField;
     }
@@ -544,7 +544,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public WebMarkupContainer getKeyPairContainer(String wicketId, String virtualRepoKey, boolean isCreate) {
         WebMarkupContainer container = new WebMarkupContainer(wicketId);
-        DropDownChoice<Object> keyPairDropDown = new DropDownChoice<Object>("keyPair", Collections.emptyList());
+        DropDownChoice<Object> keyPairDropDown = new DropDownChoice<>("keyPair", Collections.emptyList());
         keyPairDropDown.setEnabled(false);
         keyPairDropDown.add(new DisabledAddonBehavior(WEBSTART));
         container.add(keyPairDropDown);
@@ -991,9 +991,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         nuGetBorder.add(new SchemaHelpBubble("enableNuGetSupport.help"));
         if (repoDescriptor instanceof RemoteRepoDescriptor) {
             NuGetConfiguration dummyConf = new NuGetConfiguration();
-            nuGetBorder.add(new TextField<String>("feedContextPath",
+            nuGetBorder.add(new TextField<>("feedContextPath",
                     new PropertyModel<String>(dummyConf, "feedContextPath")).setEnabled(false));
-            nuGetBorder.add(new TextField<String>("downloadContextPath",
+            nuGetBorder.add(new TextField<>("downloadContextPath",
                     new PropertyModel<String>(dummyConf, "downloadContextPath")).setEnabled(false));
             nuGetBorder.add(new SchemaHelpBubble("feedContextPath.help",
                     new SchemaHelpModel(dummyConf, "feedContextPath")));

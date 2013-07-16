@@ -88,11 +88,6 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
-    public void refresh() {
-
-    }
-
-    @Override
     public boolean isLicenseInstalled() {
         return false;
     }
@@ -105,11 +100,6 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     @Override
     public String getAddonProperty(String addonName, String addonKey) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isAddonActivated(String addonName) {
-        return false;
     }
 
     @Override

@@ -109,7 +109,7 @@ public abstract class NamingUtils {
                 parent = file.getParent();
             }
         }
-        return new SerializablePair<String, String>(name, parent);
+        return new SerializablePair<>(name, parent);
     }
 
     public static boolean isMetadata(String path) {

@@ -346,10 +346,10 @@ public class BintrayServiceImpl implements BintrayService {
         }
 
         if (!authorizationService.canAnnotate(fileInfo.getRepoPath())) {
-            String message = String.format("Skipping push for '%s' since user doesn't have annotate permissions on it.",
-                    fileInfo.getRelPath());
+            String message = String.format(
+                    "You do not have annotate permissions on the published files in Artifactory. " +
+                            "Bintray package and version properties will not be recorded.");
             status.setWarning(message, log);
-            return;
         }
 
         String path = bintrayParams.getPath();
@@ -357,8 +357,12 @@ public class BintrayServiceImpl implements BintrayService {
         String requestUrl = getBaseBintrayApiUrl() + PATH_CONTENT + "/" + bintrayParams.getRepo() + "/"
                 + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion() + "/" + path;
 
-        PutMethod putMethod = createPutMethod(fileInfo, requestUrl, headersMap);
+        InputStream elementInputStream = null;
+        PutMethod putMethod = null;
         try {
+            elementInputStream = binaryStore.getBinary(fileInfo.getSha1());
+            RequestEntity requestEntity = new InputStreamRequestEntity(elementInputStream, fileInfo.getSize());
+            putMethod = createPutMethod(requestUrl, headersMap, requestEntity);
             int statusCode = client.executeMethod(putMethod);
             String message;
             if (statusCode != HttpStatus.SC_CREATED) {
@@ -375,7 +379,10 @@ public class BintrayServiceImpl implements BintrayService {
                 }
             }
         } finally {
-            putMethod.releaseConnection();
+            if (putMethod != null) {
+                putMethod.releaseConnection();
+            }
+            IOUtils.closeQuietly(elementInputStream);
         }
     }
 
@@ -448,14 +455,13 @@ public class BintrayServiceImpl implements BintrayService {
 
     @Override
     public String getVersionFilesUrl(BintrayParams bintrayParams) {
-        return getBaseBintrayUrl() + VERSION_SHOW_FILES + "/" + bintrayParams.getRepo() + "/"
-                + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion();
+        return getBaseBintrayUrl() + bintrayParams.getRepo() + "/"
+                + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion() + "/files";
     }
 
     @Override
     public BintrayUser getBintrayUser(String username, String apiKey, @Nullable Map<String, String> headersMap)
-            throws IOException,
-            BintrayException {
+            throws IOException, BintrayException {
         String requestUrl = getBaseBintrayApiUrl() + PATH_USERS + "/" + username;
         InputStream responseStream = null;
         try {
@@ -468,6 +474,11 @@ public class BintrayServiceImpl implements BintrayService {
             IOUtils.closeQuietly(responseStream);
         }
         return null;
+    }
+
+    @Override
+    public BintrayUser getBintrayUser(String username, String apiKey) throws IOException, BintrayException {
+        return getBintrayUser(username, apiKey, null);
     }
 
     @Override
@@ -735,10 +746,9 @@ public class BintrayServiceImpl implements BintrayService {
         return PathUtils.addTrailingSlash(ConstantValues.bintrayApiUrl.getString());
     }
 
-    private PutMethod createPutMethod(FileInfo fileInfo, String requestUrl, @Nullable Map<String, String> headersMap) {
+    private PutMethod createPutMethod(String requestUrl, @Nullable Map<String, String> headersMap,
+            RequestEntity requestEntity) {
         PutMethod putMethod = new PutMethod(HttpUtils.encodeQuery(requestUrl));
-        InputStream elementInputStream = binaryStore.getBinary(fileInfo.getSha1());
-        RequestEntity requestEntity = new InputStreamRequestEntity(elementInputStream, fileInfo.getSize());
         putMethod.setRequestEntity(requestEntity);
         updateHeaders(headersMap, putMethod);
         return putMethod;

@@ -122,7 +122,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(scheme + baseUrl);
         contextSource.setBase(adjustBase(url.substring((scheme + baseUrl).length())));
         // set default connection timeout
-        HashMap<String, String> env = new HashMap<String, String>();
+        HashMap<String, String> env = new HashMap<>();
         //TODO: [by yl] check how timeout is set on other jdks
         env.put("com.sun.jndi.ldap.connect.timeout", "10000");
         env.put(Context.REFERRAL, "follow");

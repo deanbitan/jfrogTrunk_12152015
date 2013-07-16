@@ -89,7 +89,8 @@ public enum ArtifactoryVersion {
     v266("2.6.6", 13183),
     v267("2.6.7", 13201),
     v300("3.0.0", 30001),
-    v301("3.0.1", Integer.MAX_VALUE);
+    v301("3.0.1", 30008),
+    v302("3.0.2", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();
@@ -99,7 +100,7 @@ public enum ArtifactoryVersion {
     private final String value;
     private final int revision;
     private final Map<String, SubConfigElementVersion> subConfigElementVersionsByClass =
-            new HashMap<String, SubConfigElementVersion>();
+            new HashMap<>();
 
     ArtifactoryVersion(String value, int revision) {
         this.value = value;

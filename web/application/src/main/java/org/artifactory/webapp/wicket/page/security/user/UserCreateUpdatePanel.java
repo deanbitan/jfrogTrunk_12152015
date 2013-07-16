@@ -107,7 +107,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         final boolean create = isCreate();
 
         //Username
-        RequiredTextField<String> usernameField = new RequiredTextField<String>("username");
+        RequiredTextField<String> usernameField = new RequiredTextField<>("username");
         setDefaultFocusField(usernameField);
         usernameField.setEnabled(create);
         usernameField.add(StringValidator.maximumLength(100));
@@ -187,7 +187,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         });
 
         //Email
-        RequiredTextField<String> emailTf = new RequiredTextField<String>("email");
+        RequiredTextField<String> emailTf = new RequiredTextField<>("email");
         emailTf.add(EmailAddressValidator.getInstance());
         border.add(emailTf);
 
@@ -249,7 +249,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
         }
 
         final DeletableLabelGroup<UserGroupInfo> groupsListView =
-                new DeletableLabelGroup<UserGroupInfo>("groups", userGroups);
+                new DeletableLabelGroup<>("groups", userGroups);
         groupsListView.setLabelClickable(false);
         groupsListView.setVisible(!create);
         border.add(groupsListView);
@@ -317,7 +317,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 userInfo.setEmail(entity.getEmail());
                 userInfo.setAdmin(entity.isAdmin());
                 userInfo.setUpdatableProfile(entity.isUpdatableProfile());
-                userInfo.setGroups(new HashSet<UserGroupInfo>(groupsListView.getData()));
+                userInfo.setGroups(new HashSet<>(groupsListView.getData()));
                 if (entity.isDisableInternalPassword()) {
                     // user should authenticate externally - set password to invalid
                     userInfo.setPassword(SaltedPassword.INVALID_PASSWORD);

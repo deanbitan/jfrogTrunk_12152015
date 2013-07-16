@@ -55,7 +55,7 @@ public class UsersFilterPanel extends FieldSetPanel {
         Form form = new Form("usersFilterForm");
         add(form);
 
-        form.add(new TextField<String>("usernameFilter", new PropertyModel<String>(this, "usernameFilter")));
+        form.add(new TextField<>("usernameFilter", new PropertyModel<String>(this, "usernameFilter")));
 
         TitledAjaxSubmitLink filterButton = new TitledAjaxSubmitLink("filter", "Filter", form) {
             @Override

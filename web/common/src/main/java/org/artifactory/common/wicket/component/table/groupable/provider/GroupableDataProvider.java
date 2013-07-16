@@ -66,7 +66,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
 
     @Override
     public IModel<T> model(T object) {
-        return new Model<T>(object);
+        return new Model<>(object);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class GroupableDataProvider<T extends Serializable> extends SortableDataP
     public final IChoiceRenderer<T> getGroupRenderer(String property) {
         IChoiceRenderer<T> choiceRenderer = groupRendererMap.get(property);
         if (choiceRenderer == null) {
-            choiceRenderer = new ChoiceRenderer<T>(property, property);
+            choiceRenderer = new ChoiceRenderer<>(property, property);
             groupRendererMap.put(property, choiceRenderer);
         }
         return choiceRenderer;

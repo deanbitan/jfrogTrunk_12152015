@@ -62,7 +62,7 @@ public class LocalRepoBasicPanel extends Panel {
 
         // snapshotVersionBehavior
         LocalRepoChecksumPolicyType[] checksumPolicyTypes = LocalRepoChecksumPolicyType.values();
-        DropDownChoice checksumPolicyDropDown = new DropDownChoice<LocalRepoChecksumPolicyType>("checksumPolicyType",
+        DropDownChoice checksumPolicyDropDown = new DropDownChoice<>("checksumPolicyType",
                 Arrays.asList(checksumPolicyTypes), new ChecksumPolicyChoiceRenderer());
         add(checksumPolicyDropDown);
         add(new SchemaHelpBubble("localRepoChecksumPolicyType.help", "checksumPolicyType"));
@@ -91,7 +91,7 @@ public class LocalRepoBasicPanel extends Panel {
 
         // snapshotVersionBehavior
         SnapshotVersionBehavior[] versions = SnapshotVersionBehavior.values();
-        snapshotVersionDropDown = new DropDownChoice<SnapshotVersionBehavior>(
+        snapshotVersionDropDown = new DropDownChoice<>(
                 "snapshotVersionBehavior", Arrays.asList(versions));
 
         boolean isMavenRepoLayout = descriptor.isMavenRepoLayout() || (repoDescriptor.getRepoLayout() == null);
@@ -122,7 +122,7 @@ public class LocalRepoBasicPanel extends Panel {
 
         List<RepoLayout> layouts = centralConfigService.getDescriptor().getRepoLayouts();
 
-        DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<RepoLayout>("repoLayout", layouts,
+        DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<>("repoLayout", layouts,
                 new ChoiceRenderer<RepoLayout>("name"));
         repoLayout.setRequired(true);
         repoLayout.setNullValid(false);
@@ -149,7 +149,7 @@ public class LocalRepoBasicPanel extends Panel {
     private class MaxUniqueSnapshotsTextField extends TextField<Integer> {
         public MaxUniqueSnapshotsTextField(String id) {
             super(id, Integer.class);
-            add(new RangeValidator<Integer>(0, Integer.MAX_VALUE));
+            add(new RangeValidator<>(0, Integer.MAX_VALUE));
             setRequired(true);
             setOutputMarkupId(true);
         }

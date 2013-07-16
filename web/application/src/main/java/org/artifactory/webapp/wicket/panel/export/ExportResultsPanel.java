@@ -25,7 +25,7 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SavedSearchResults;
@@ -86,7 +86,7 @@ public class ExportResultsPanel extends FieldSetPanel {
         searchResultName = actionableItem.getDisplayName();
         Form exportForm = new Form("exportForm");
         add(exportForm);
-        PropertyModel<File> pathModel = new PropertyModel<File>(this, "exportToPath");
+        PropertyModel<File> pathModel = new PropertyModel<>(this, "exportToPath");
         final PathAutoCompleteTextField exportToPathTf = new PathAutoCompleteTextField("exportToPath", pathModel);
         exportToPathTf.setMask(PathMask.FOLDERS);
         exportToPathTf.setRequired(true);
@@ -119,7 +119,7 @@ public class ExportResultsPanel extends FieldSetPanel {
                     Session.get().cleanupFeedbackMessages();
                     SavedSearchResults searchResults = ArtifactoryWebSession.get().getResults(searchResultName);
 
-                    MultiStatusHolder status = new MultiStatusHolder();
+                    ImportExportStatusHolder status = new ImportExportStatusHolder();
                     ExportSettingsImpl baseSettings = new ExportSettingsImpl(exportToPath, status);
                     baseSettings.setIncludeMetadata(!excludeMetadata);
                     baseSettings.setM2Compatible(m2Compatible);

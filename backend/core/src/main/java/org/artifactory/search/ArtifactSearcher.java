@@ -68,7 +68,7 @@ public class ArtifactSearcher extends SearcherBase<ArtifactSearchControls, Artif
                 results.add(new ArtifactSearchResult(item));
             }
         }
-        return new ItemSearchResults<ArtifactSearchResult>(results, queryResult.getCount());
+        return new ItemSearchResults<>(results, queryResult.getCount());
     }
 
     /**

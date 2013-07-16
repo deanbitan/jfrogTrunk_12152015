@@ -83,9 +83,9 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
         add(uploadBorder);
         uploadBorder.add(deployForm);
 
-        PropertyModel<LocalRepoDescriptor> targetRepoModel = new PropertyModel<LocalRepoDescriptor>(this, "targetRepo");
+        PropertyModel<LocalRepoDescriptor> targetRepoModel = new PropertyModel<>(this, "targetRepo");
         List<LocalRepoDescriptor> deployableRepos = getDeployableRepos();
-        DropDownChoice targetRepo = new DropDownChoice<LocalRepoDescriptor>(
+        DropDownChoice targetRepo = new DropDownChoice<>(
                 "targetRepo", targetRepoModel, deployableRepos);
         if (deployableRepos.size() > 0) {
             LocalRepoDescriptor defaultTarget = deployableRepos.get(0);

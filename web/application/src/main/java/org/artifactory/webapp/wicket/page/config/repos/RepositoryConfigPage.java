@@ -174,7 +174,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             protected void resetListOrder(AjaxRequestTarget target) {
                 MutableCentralConfigDescriptor configDescriptor = cachingDescriptorHelper.getSavedMutableDescriptor();
                 List<LocalRepoDescriptor> repoDescriptorList =
-                        new ArrayList<LocalRepoDescriptor>(configDescriptor.getLocalRepositoriesMap().values());
+                        new ArrayList<>(configDescriptor.getLocalRepositoriesMap().values());
                 repoListModel.setObject(repoDescriptorList);
                 ((RepositoryConfigPage) getPage()).refresh(target);
             }
@@ -269,7 +269,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             protected void resetListOrder(AjaxRequestTarget target) {
                 MutableCentralConfigDescriptor configDescriptor = cachingDescriptorHelper.getSavedMutableDescriptor();
                 List<RemoteRepoDescriptor> remoteRepoDescriptors =
-                        new ArrayList<RemoteRepoDescriptor>(configDescriptor.getRemoteRepositoriesMap().values());
+                        new ArrayList<>(configDescriptor.getRemoteRepositoriesMap().values());
                 repoListModel.setObject(remoteRepoDescriptors);
                 ((RepositoryConfigPage) getPage()).refresh(target);
             }
@@ -353,7 +353,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
             protected void resetListOrder(AjaxRequestTarget target) {
                 MutableCentralConfigDescriptor configDescriptor = cachingDescriptorHelper.getSavedMutableDescriptor();
                 ArrayList<VirtualRepoDescriptor> virtualRepoDescriptors =
-                        new ArrayList<VirtualRepoDescriptor>(configDescriptor.getVirtualRepositoriesMap().values());
+                        new ArrayList<>(configDescriptor.getVirtualRepositoriesMap().values());
                 repoListModel.setObject(virtualRepoDescriptors);
                 ((RepositoryConfigPage) getPage()).refresh(target);
             }
@@ -519,7 +519,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
 
         @Override
         protected List<AbstractLink> getItemActions(final T itemObject, String linkId) {
-            List<AbstractLink> links = new ArrayList<AbstractLink>();
+            List<AbstractLink> links = new ArrayList<>();
             links.add(new EditLink(linkId) {
                 @Override
                 protected BaseModalPanel getModelPanel() {
@@ -545,7 +545,7 @@ public class RepositoryConfigPage extends AuthenticatedPage {
     private abstract class RepoListModel<T extends RepoDescriptor> implements IModel<List<T>> {
         @Override
         public List<T> getObject() {
-            return new ArrayList<T>(getRepos());
+            return new ArrayList<>(getRepos());
         }
 
         @Override

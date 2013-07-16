@@ -25,6 +25,7 @@ public interface TestRestConstants {
     String PATH_ROOT = "test";
     String PATH_FLUSH_STATS = "flushStats";
     String PATH_ARCHIVE_INDEXER_DONE = "archiveIndexerDone";
+    String PATH_MAVEN_METADATA_DONE = "mavenMetadataDone";
     String PATH_MAVEN_INDEXER_DONE = "mavenIndexerDone";
     String PATH_All_ASYNC_DONE = "asyncDone";
 }

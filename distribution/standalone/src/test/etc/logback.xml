@@ -117,7 +117,7 @@
         <level value="debug"/>
         <appender-ref ref="ACCESS"/>
     </logger>
-    <logger name="org.artifactory.api.common.BasicStatusHolder" additivity="false">
+    <logger name="org.artifactory.api.common.ImportExportStatusHolder" additivity="false">
         <level value="debug"/>
         <appender-ref ref="IMPORT.EXPORT"/>
     </logger>

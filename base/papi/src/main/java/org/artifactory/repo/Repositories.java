@@ -32,6 +32,7 @@ import java.util.Set;
 /**
  * Public API for working with repositories
  */
+@SuppressWarnings("UnusedDeclaration")
 public interface Repositories {
 
     /**
@@ -235,5 +236,22 @@ public interface Repositories {
      * @return the repository path to the file
      */
     RepoPath getDescriptorRepoPath(FileLayoutInfo layoutInfo, String repoKey);
+
+    /**
+     * Returns the total number of file artifacts under the provided directory repo path. Repository root repo path will
+     * return the total number of artifacts in the given repository.
+     *
+     * @param repoPath Repo path to count artifacts under
+     * @return Total number of artifacts under the given repo path.
+     */
+    long getArtifactsCount(RepoPath repoPath);
+
+    /**
+     * Returns the total storage size of the file artifacts under the given directory repo path.
+     *
+     * @param repoPath Repo path to return total storage under
+     * @return Total size (in bytes) of the artifacts under the given repo path
+     */
+    long getArtifactsSize(RepoPath repoPath);
 
 }

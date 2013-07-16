@@ -22,6 +22,8 @@ import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualResolverFilter;
+import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.RepoRequests;
 import org.slf4j.Logger;
@@ -36,14 +38,14 @@ public class VirtualResolverRequestFilter implements VirtualResolverFilter {
     private static final Logger log = LoggerFactory.getLogger(VirtualResolverRequestFilter.class);
 
     private VirtualRepo virtualRepo;
-    private String path;
+    private RepoPath repoPath;
     private InternalRepositoryService repositoryService;
     private LayoutsCoreAddon layoutsCoreAddon;
 
-    public VirtualResolverRequestFilter(VirtualRepo virtualRepo, String path,
+    public VirtualResolverRequestFilter(VirtualRepo virtualRepo, RepoPath repoPath,
             InternalRepositoryService repositoryService, LayoutsCoreAddon layoutsCoreAddon) {
         this.virtualRepo = virtualRepo;
-        this.path = path;
+        this.repoPath = repoPath;
         this.repositoryService = repositoryService;
         this.layoutsCoreAddon = layoutsCoreAddon;
     }
@@ -57,13 +59,15 @@ public class VirtualResolverRequestFilter implements VirtualResolverFilter {
             return false;
         }
 
+        String path = repoPath.getPath();
         String translatedPath = translateRepoPath(virtualRepo.getDescriptor(), childDescriptor, path);
         if (!translatedPath.equals(path)) {
             RepoRequests.logToContext("Resource was translated to '%s' in order to search within '%s'",
                     translatedPath, childVirtualRepoKey);
         }
-
-        if (!childVirtualRepo.accepts(translatedPath)) {
+        RepoPath translatedRepoPath = InternalRepoPathFactory.create(childVirtualRepoKey, translatedPath,
+                repoPath.isFolder());
+        if (!childVirtualRepo.accepts(translatedRepoPath)) {
             // includes/excludes should not affect system paths
             RepoRequests.logToContext("Adding no aggregated repositories - requested artifact is rejected by the " +
                     "include exclude patterns of '%s'", childVirtualRepoKey);

@@ -26,7 +26,7 @@ import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -80,7 +80,7 @@ public class ImportSystemPanel extends TitledPanel {
 
         Form importForm = new Form("importForm");
         add(importForm);
-        PropertyModel<File> pathModel = new PropertyModel<File>(this, "importFromPath");
+        PropertyModel<File> pathModel = new PropertyModel<>(this, "importFromPath");
         final PathAutoCompleteTextField importToPathTf =
                 new PathAutoCompleteTextField("importFromPath", pathModel);
         importToPathTf.setRequired(true);
@@ -155,7 +155,7 @@ public class ImportSystemPanel extends TitledPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 Session.get().cleanupFeedbackMessages();
-                MultiStatusHolder status = new MultiStatusHolder();
+                ImportExportStatusHolder status = new ImportExportStatusHolder();
                 //If the path denotes an archive extract it first, else use the directory
                 File importFromFolder = null;
                 try {

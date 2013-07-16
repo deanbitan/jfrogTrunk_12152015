@@ -173,7 +173,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         };
         add(form);
 
-        final TextField<String> searchTextField = new TextField<String>("query", Model.of(""));
+        final TextField<String> searchTextField = new TextField<>("query", Model.of(""));
         form.add(searchTextField);
 
         TitledAjaxSubmitLink searchButton = new TitledAjaxSubmitLink("searchButton", "Search", form) {

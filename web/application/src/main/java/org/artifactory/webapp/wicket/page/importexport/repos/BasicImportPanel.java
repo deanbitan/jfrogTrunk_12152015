@@ -26,6 +26,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.repo.RepositoryService;
@@ -100,7 +101,7 @@ public abstract class BasicImportPanel extends TitledPanel {
         Form importForm = new Form("importForm");
         add(importForm);
         //Add the drop down choice for the targetRepo
-        IModel<String> targetRepoModel = new PropertyModel<String>(this, "targetRepoKey");
+        IModel<String> targetRepoModel = new PropertyModel<>(this, "targetRepoKey");
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
         Collections.sort(localRepos, new LocalRepoAlphaComparator());
         List<String> repoKeys = Lists.newArrayListWithExpectedSize(localRepos.size() + 1);
@@ -110,10 +111,10 @@ public abstract class BasicImportPanel extends TitledPanel {
             String key = localRepo.getKey();
             repoKeys.add(key);
         }
-        DropDownChoice<String> targetRepoDdc = new DropDownChoice<String>("targetRepo", targetRepoModel, repoKeys);
+        DropDownChoice<String> targetRepoDdc = new DropDownChoice<>("targetRepo", targetRepoModel, repoKeys);
         targetRepoDdc.setDefaultModelObject(ImportExportReposPage.ALL_REPOS);
         importForm.add(targetRepoDdc);
-        final MultiStatusHolder status = new MultiStatusHolder();
+        final ImportExportStatusHolder status = new ImportExportStatusHolder();
         TitledAjaxSubmitLink importButton = new TitledAjaxSubmitLink("import", "Import", importForm) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {

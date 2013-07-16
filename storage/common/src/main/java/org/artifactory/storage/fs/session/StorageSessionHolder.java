@@ -25,7 +25,7 @@ package org.artifactory.storage.fs.session;
  */
 public class StorageSessionHolder {
 
-    private static final ThreadLocal<StorageSession> sessionHolder = new ThreadLocal<StorageSession>();
+    private static final ThreadLocal<StorageSession> sessionHolder = new ThreadLocal<>();
 
     public static StorageSession getSession() {
         return sessionHolder.get();

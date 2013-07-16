@@ -114,7 +114,11 @@ public class BuildModulesDaoTest extends BuildsDaoBaseTest {
         Collections.sort(b, new Comparator<BuildModule>() {
             @Override
             public int compare(BuildModule o1, BuildModule o2) {
-                return Long.compare(o1.getBuildId(), o2.getBuildId());
+                if (o1.getBuildId() != o2.getBuildId()) {
+                    return Long.compare(o1.getBuildId(), o2.getBuildId());
+                } else {
+                    return Long.compare(o1.getModuleId(), o2.getModuleId());
+                }
             }
         });
         long buildId = b.get(0).getBuildId();

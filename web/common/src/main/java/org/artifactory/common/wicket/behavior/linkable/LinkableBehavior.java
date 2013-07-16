@@ -17,7 +17,7 @@ public class LinkableBehavior extends ResourcePackage {
 
     @Override
     public void bind(Component component) {
-        component.add(new TooltipBehavior(new Model<String>("[Ctrl] + Click to open this URL.")));
+        component.add(new TooltipBehavior(new Model<>("[Ctrl] + Click to open this URL.")));
     }
 
     @Override

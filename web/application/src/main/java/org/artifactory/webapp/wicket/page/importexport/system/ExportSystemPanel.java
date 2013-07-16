@@ -27,7 +27,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -164,7 +164,7 @@ public class ExportSystemPanel extends TitledPanel {
                         "standard log to the import-export log." + "\nHint: You can monitor the log in the <a href=\"" +
                         systemLogsPage + "\">'System Logs'</a> page."));
 
-        final MultiStatusHolder status = new MultiStatusHolder();
+        final ImportExportStatusHolder status = new ImportExportStatusHolder();
         TitledAjaxSubmitLink exportButton = new TitledAjaxSubmitLink("export", "Export", exportForm) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
@@ -224,7 +224,7 @@ public class ExportSystemPanel extends TitledPanel {
     }
 
     private List<String> getAllLocalRepoKeys() {
-        List<String> repoKeys = new ArrayList<String>();
+        List<String> repoKeys = new ArrayList<>();
         for (LocalRepoDescriptor localRepoDescriptor : repositoryService.getLocalAndCachedRepoDescriptors()) {
             repoKeys.add(localRepoDescriptor.getKey());
         }

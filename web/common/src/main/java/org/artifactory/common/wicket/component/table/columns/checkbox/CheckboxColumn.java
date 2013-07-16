@@ -63,7 +63,7 @@ public class CheckboxColumn<T> extends AbstractColumn<T> {
     }
 
     protected IModel<Boolean> newPropertyModel(T rowObject) {
-        return new PropertyModel<Boolean>(rowObject, expression);
+        return new PropertyModel<>(rowObject, expression);
     }
 
     protected boolean isEnabled(T rowObject) {

@@ -51,7 +51,8 @@ public abstract class BaseRepoBrowserPanel extends TitledPanel {
             upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true,
                     0, 0, 0, InternalRepoPathFactory.create(repoKey, repoPath.getParent().getPath()));
         } else {
-            upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true, 0, 0, 0, InternalRepoPathFactory.create("", "/"));
+            upDirItem = new BrowsableItem(BaseBrowsableItem.UP, true, 0, 0, 0,
+                    InternalRepoPathFactory.create(repoPath.getRepoKey(), "/"));
         }
         return upDirItem;
     }

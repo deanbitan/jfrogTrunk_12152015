@@ -19,6 +19,7 @@
 package org.artifactory.storage.db.util;
 
 import org.apache.commons.io.IOUtils;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
@@ -28,7 +29,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
 
 /**
- * Tests {@link org.artifactory.storage.db.util.BlobWrapper}.
+ * Tests {@link org.artifactory.storage.db.util.blob.BlobWrapper}.
  *
  * @author Yossi Shaul
  */

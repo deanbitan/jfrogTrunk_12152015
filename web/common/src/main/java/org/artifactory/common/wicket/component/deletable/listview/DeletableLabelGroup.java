@@ -149,7 +149,7 @@ public class DeletableLabelGroup<T extends Serializable> extends Panel {
 
         @Override
         public IModel<T> model(T object) {
-            return new Model<T>(object);
+            return new Model<>(object);
         }
 
 

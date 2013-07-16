@@ -43,7 +43,7 @@ public class DefaultSubmit extends Panel {
     }
 
     private String getScript(Component... submitButtons) {
-        List<String> ids = new ArrayList<String>();
+        List<String> ids = new ArrayList<>();
         for (Component submitButton : submitButtons) {
             submitButton.setOutputMarkupId(true);
             ids.add(submitButton.getMarkupId());

@@ -63,7 +63,7 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     protected void addSearchComponents(Form form) {
         searchControls = new ChecksumSearchControls();
 
-        TextField searchControl = new TextField<String>("query", new PropertyModel<String>(this, "query"));
+        TextField searchControl = new TextField<>("query", new PropertyModel<String>(this, "query"));
         searchControl.setOutputMarkupId(true);
         form.add(searchControl);
         form.add(new HelpBubble("searchHelp", "Artifact SHA-1 or MD5 checksum."));
@@ -130,7 +130,7 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
 
     @Override
     protected ActionableSearchResult<ArtifactSearchResult> getActionableResult(ArtifactSearchResult searchResult) {
-        return new ActionableArtifactSearchResult<ArtifactSearchResult>(searchResult);
+        return new ActionableArtifactSearchResult<>(searchResult);
     }
 
     @Override

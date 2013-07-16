@@ -20,12 +20,8 @@ package org.artifactory.version;
 
 import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Comment;
-import org.jdom.Content;
 import org.jdom.Document;
-import org.jdom.Text;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -51,41 +47,4 @@ public abstract class XmlConverterUtils {
         return XmlUtils.outputString(doc);
     }
 
-    /**
-     * Returns a comment that states that a line was added by Artifactory's update mechanism
-     *
-     * @return Added comment
-     */
-    public static Comment getAddedComment() {
-        return getChangedComment("Added");
-    }
-
-    /**
-     * Returns a comment that states that a line was edited by Artifactory's update mechanism
-     *
-     * @return Edited comment
-     */
-    public static Comment getEditedComment() {
-        return getChangedComment("Edited");
-    }
-
-    /**
-     * Returns a "new line" element
-     *
-     * @return "New line" element
-     */
-    public static Content getNewLine() {
-        return new Text("\n");
-    }
-
-    /**
-     * Returns a "changed" comment element
-     *
-     * @param changedType Type of change ("Added", "Edited", etc)
-     * @return Comment element
-     */
-    private static Comment getChangedComment(String changedType) {
-        return new Comment(new StringBuilder().append(changedType).append(" by Artifactory update (").
-                append(new Date().toString()).append(")").toString());
-    }
 }

@@ -278,7 +278,7 @@ public class UsersTable extends ModalListPanel<UserModel> {
     }
 
     List<String> getSelectedUsernames() {
-        List<String> selectedUsernames = new ArrayList<String>();
+        List<String> selectedUsernames = new ArrayList<>();
         for (UserModel userModel : dataProvider.getUsers()) {
             if (userModel.isSelected()) {
                 selectedUsernames.add(userModel.getUsername());

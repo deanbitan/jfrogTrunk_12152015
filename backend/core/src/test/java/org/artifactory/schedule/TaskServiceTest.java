@@ -36,11 +36,11 @@ import static org.testng.Assert.assertTrue;
  * @author Yoav Landman
  * @author Fred Simon
  */
-@Test(sequential = true, enabled = true)
+@Test(sequential = true, enabled = false)
 public class TaskServiceTest extends TaskServiceTestBase {
     private static final Logger log = LoggerFactory.getLogger(TaskServiceTest.class);
 
-    @Test(enabled = true, invocationCount = 6, threadPoolSize = 3)
+    @Test(enabled = false, invocationCount = 6, threadPoolSize = 3)
     public void testServiceSynchronization() throws Exception {
         TaskBase task1 = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 100, 200);
         ArtifactoryHomeTaskTestStub homeStub = getOrCreateArtifactoryHomeStub();
@@ -61,7 +61,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         Assert.assertNull(taskService.getInternalActiveTask(task2.getToken(), false));
     }
 
-    @Test
+    @Test(enabled = false)
     public void testStopWhileRunning() throws Exception {
         TaskBase task1 = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 0, 0);
         ArtifactoryHomeTaskTestStub homeStub = getOrCreateArtifactoryHomeStub();
@@ -80,7 +80,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         homeStub.getTaskData(task1.getToken()).assertNbs(1, 1);
     }
 
-    @Test
+    @Test(enabled = false)
     public void testCancelWhileRunning() throws Exception {
         TaskBase task1 = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 0, 0);
         ArtifactoryHomeTaskTestStub homeStub = getOrCreateArtifactoryHomeStub();
@@ -93,7 +93,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         homeStub.getTaskData(task1.getToken()).assertNbs(1, 1);
     }
 
-    @Test(enabled = true, invocationCount = 6, threadPoolSize = 3)
+    @Test(enabled = false, invocationCount = 6, threadPoolSize = 3)
     public void testMutliResume() throws Exception {
         final CyclicBarrier pauseBarrier1 = new CyclicBarrier(2);
         final CyclicBarrier pauseBarrier2 = new CyclicBarrier(2);
@@ -153,7 +153,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         Assert.assertNull(taskService.getInternalActiveTask(tsk.getToken(), false));
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testCancelWhenWaitingOnStateTransition() throws Exception {
         final TaskBase tsk = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 1000, 0);
         final String tskToken = taskService.startTask(tsk, true);
@@ -167,7 +167,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         taskData.assertNbs(1, 1);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testMultiSingleExecution() throws Exception {
         taskService.cancelAllTasks(true);
         QuartzCommand cmd = new DummyQuartzCommand();
@@ -189,7 +189,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         Assert.assertTrue(taskService.waitForTaskCompletion(tsk2.getToken()));
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testSingleExecutionWithError() throws Exception {
         taskService.cancelAllTasks(true);
         QuartzCommand cmd = new DummyQuartzCommand();
@@ -213,7 +213,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         Assert.assertNull(taskService.getInternalActiveTask(tsk2.getToken(), false));
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testConcurrentStopResumes() throws Exception {
         final CyclicBarrier barrier1 = new CyclicBarrier(2);
         final CyclicBarrier barrier2 = new CyclicBarrier(2);
@@ -247,7 +247,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         taskService.cancelTask(tsk.getToken(), true);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testDoubleResume() throws Exception {
         TaskBase task1 = TaskUtils.createRepeatingTask(DummyQuartzCommand.class, 1000, 0);
         taskService.startTask(task1, true);
@@ -265,7 +265,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         taskService.cancelTask(task1.getToken(), true);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testMisfireIgnored() throws Exception {
         // Create task running every second and lasting for 1.2s
         TaskBase task1 = TaskUtils.createCronTask(DummyQuartzCommand.class, "* * * * * ?");
@@ -277,7 +277,7 @@ public class TaskServiceTest extends TaskServiceTestBase {
         getOrCreateArtifactoryHomeStub().getTaskData(task1.getToken()).assertNbs(3, 1);
     }
 
-    @Test(enabled = true)
+    @Test(enabled = false)
     public void testMisfireIgnoredOnPause() throws Exception {
         // Create task running every second and pause for 1.2s
         TaskBase task1 = TaskUtils.createCronTask(DummyQuartzCommand.class, "* * * * * ?");

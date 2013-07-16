@@ -18,11 +18,15 @@
 
 package org.artifactory.rest.resource.search.types;
 
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
+import org.artifactory.api.rest.search.result.VersionEntry;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
+import org.springframework.util.AntPathMatcher;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -30,6 +34,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Resource class that handles artifact versions search action
@@ -61,11 +66,29 @@ public class ArtifactVersionsSearchResource {
             if (artifactVersions.getResults().isEmpty()) {
                 RestUtils.sendNotFoundResponse(response);
             } else {
-                return artifactVersions;
+                char[] wildcardsArr = {'*', '?'};
+                if (StringUtils.containsAny(version, wildcardsArr)) {
+                    return matchByPattern(artifactVersions, version);
+                } else {
+                    return artifactVersions;
+                }
             }
         } catch (IllegalArgumentException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
         return null;
+    }
+
+    private ArtifactVersionsResult matchByPattern(ArtifactVersionsResult artifactVersions, String version) {
+        List<VersionEntry> filteredResults = Lists.newArrayList();
+        AntPathMatcher matcher = new AntPathMatcher();
+        for (VersionEntry result : artifactVersions.getResults()) {
+            if (matcher.match(version, result.getVersion())) {
+                filteredResults.add(result);
+            }
+        }
+
+        artifactVersions.setResults(filteredResults);
+        return artifactVersions;
     }
 }

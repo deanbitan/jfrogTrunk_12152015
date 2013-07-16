@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.fs.itest.service;
 
-import org.artifactory.model.common.RepoPathImpl;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.artifactory.storage.fs.service.TasksService;
@@ -50,17 +50,18 @@ public class TasksServiceImplTest extends DbBaseTest {
         Set<RepoPath> checksumsToIndex = tasksService.getIndexTasks();
         assertNotNull(checksumsToIndex);
         assertEquals(checksumsToIndex.size(), 2);
-        assertTrue(checksumsToIndex.contains(new RepoPathImpl("repo1:ant/ant/1.5/ant-1.5.jar")));
-        assertTrue(checksumsToIndex.contains(new RepoPathImpl("reponone:ant/ant/1.5/ant-1.5.jar")));
+        assertTrue(checksumsToIndex.contains(InternalRepoPathFactory.createRepoPath("repo1:ant/ant/1.5/ant-1.5.jar")));
+        assertTrue(
+                checksumsToIndex.contains(InternalRepoPathFactory.createRepoPath("reponone:ant/ant/1.5/ant-1.5.jar")));
     }
 
     public void hasIndexTask() {
-        assertTrue(tasksService.hasIndexTask(new RepoPathImpl("repo1:ant/ant/1.5/ant-1.5.jar")));
+        assertTrue(tasksService.hasIndexTask(InternalRepoPathFactory.createRepoPath("repo1:ant/ant/1.5/ant-1.5.jar")));
     }
 
     @Test(dependsOnMethods = "getIndexTasks")
     public void addIndexTask() {
-        RepoPathImpl repoPath = new RepoPathImpl("repo2:test");
+        RepoPath repoPath = InternalRepoPathFactory.createRepoPath("repo2:test");
         assertFalse(tasksService.hasIndexTask(repoPath));
         tasksService.addIndexTask(repoPath);
         assertTrue(tasksService.hasIndexTask(repoPath));
@@ -68,16 +69,17 @@ public class TasksServiceImplTest extends DbBaseTest {
 
     @Test(dependsOnMethods = "addIndexTask")
     public void removeIndexTask() {
-        assertTrue(tasksService.removeIndexTask(new RepoPathImpl("repo2:test")));
-        assertFalse(tasksService.hasIndexTask(new RepoPathImpl("repo2:test")));
+        assertTrue(tasksService.removeIndexTask(InternalRepoPathFactory.createRepoPath("repo2:test")));
+        assertFalse(tasksService.hasIndexTask(InternalRepoPathFactory.createRepoPath("repo2:test")));
     }
 
     @Test(dependsOnMethods = "hasIndexTask")
     public void removeIndexTaskByRepoPath() {
-        assertTrue(tasksService.removeIndexTask(new RepoPathImpl("repo1:ant/ant/1.5/ant-1.5.jar")));
+        assertTrue(
+                tasksService.removeIndexTask(InternalRepoPathFactory.createRepoPath("repo1:ant/ant/1.5/ant-1.5.jar")));
     }
 
     public void removeIndexTaskByRepoPathNotExist() {
-        assertFalse(tasksService.removeIndexTask(new RepoPathImpl("nosuch:path.txt")));
+        assertFalse(tasksService.removeIndexTask(InternalRepoPathFactory.createRepoPath("nosuch:path.txt")));
     }
 }

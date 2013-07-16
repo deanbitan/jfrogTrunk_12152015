@@ -191,10 +191,12 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
             return;
         }
         try {
-            log.info("Scheduling indexing for marked archives.");
+            log.debug("Scheduling indexing for marked archives.");
             Set<RepoPath> archiveRepoPaths = tasksService.getIndexTasks();
-            indexingQueue.addAll(archiveRepoPaths);
-            triggerQueueIndexing();
+            if (!archiveRepoPaths.isEmpty()) {
+                indexingQueue.addAll(archiveRepoPaths);
+                triggerQueueIndexing();
+            }
         } finally {
             indexMarkedArchivesSemaphore.release();
         }

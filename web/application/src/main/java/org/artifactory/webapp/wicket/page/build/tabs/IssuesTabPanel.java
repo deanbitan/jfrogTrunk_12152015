@@ -98,7 +98,7 @@ public class IssuesTabPanel extends Panel {
 
         IssueDataProvider dataProvider = new IssueDataProvider(affectedIssues);
 
-        affectedIssuesBorder.add(new SortableTable<Issue>("issues", columns, dataProvider, 50));
+        affectedIssuesBorder.add(new SortableTable<>("issues", columns, dataProvider, 50));
     }
 
     private static class IssueDataProvider extends SortableDataProvider<Issue> {
@@ -129,7 +129,7 @@ public class IssuesTabPanel extends Panel {
 
         @Override
         public IModel<Issue> model(Issue object) {
-            return new Model<Issue>(object);
+            return new Model<>(object);
         }
     }
 }

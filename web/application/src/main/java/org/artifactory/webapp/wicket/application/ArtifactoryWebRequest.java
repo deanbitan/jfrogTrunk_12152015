@@ -235,7 +235,7 @@ public class ArtifactoryWebRequest extends ServletWebRequest {
     @SuppressWarnings("unchecked")
     @Override
     public List<String> getHeaders(String name) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         Enumeration<String> e = httpServletRequest.getHeaders(name);
         while (e.hasMoreElements()) {
             result.add(e.nextElement());
@@ -251,7 +251,7 @@ public class ArtifactoryWebRequest extends ServletWebRequest {
     }
 
     protected Map<String, List<StringValue>> generatePostParameters() {
-        Map<String, List<StringValue>> postParameters = new HashMap<String, List<StringValue>>();
+        Map<String, List<StringValue>> postParameters = new HashMap<>();
 
         IRequestParameters queryParams = getQueryParameters();
 
@@ -266,11 +266,11 @@ public class ArtifactoryWebRequest extends ServletWebRequest {
             if (queryValues == null) {
                 queryValues = Collections.emptyList();
             } else {
-                queryValues = new ArrayList<StringValue>(queryValues);
+                queryValues = new ArrayList<>(queryValues);
             }
 
             // the list that will contain accepted post param values
-            List<StringValue> postValues = new ArrayList<StringValue>();
+            List<StringValue> postValues = new ArrayList<>();
 
             for (String value : values) {
                 StringValue val = StringValue.valueOf(value);

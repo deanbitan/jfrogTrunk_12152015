@@ -18,7 +18,6 @@
 
 package org.artifactory.api.config;
 
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.sapi.common.BaseSettings;
 import org.slf4j.Logger;
@@ -38,23 +37,20 @@ public class ImportExportSettingsImpl implements BaseSettings {
     private boolean failFast;
     private boolean failIfEmpty;
     protected boolean excludeContent;
-    private MutableStatusHolder statusHolder = new MultiStatusHolder();
+    private MutableStatusHolder statusHolder;
     /**
      * List of repositories to do export or import on. When empty - export or import all
      */
     private List<String> repositories = Collections.emptyList();
 
-    public ImportExportSettingsImpl(File baseDir) {
-        this.baseDir = baseDir;
-    }
 
-    public ImportExportSettingsImpl(File baseDir, MultiStatusHolder statusHolder) {
+    public ImportExportSettingsImpl(File baseDir, MutableStatusHolder statusHolder) {
         this.baseDir = baseDir;
         this.statusHolder = statusHolder;
     }
 
-    public ImportExportSettingsImpl(File baseDir, BaseSettings baseSettings) {
-        this(baseDir);
+    public ImportExportSettingsImpl(File baseDir, BaseSettings baseSettings, MutableStatusHolder statusHolder) {
+        this(baseDir, statusHolder);
         ImportExportSettingsImpl settings = (ImportExportSettingsImpl) baseSettings;
         this.includeMetadata = settings.includeMetadata;
         this.repositories = settings.repositories;
@@ -62,12 +58,6 @@ public class ImportExportSettingsImpl implements BaseSettings {
         this.failFast = settings.failFast;
         this.failIfEmpty = settings.failIfEmpty;
         this.excludeContent = settings.excludeContent;
-        this.statusHolder = settings.statusHolder;
-    }
-
-    public ImportExportSettingsImpl(File baseDir, BaseSettings settings, MutableStatusHolder statusHolder) {
-        this(baseDir, settings);
-        this.statusHolder = statusHolder;
     }
 
     /**

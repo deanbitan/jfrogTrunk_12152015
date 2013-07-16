@@ -106,7 +106,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
         columns.add(new LinksColumn<T>() {
             @Override
             protected Collection<? extends AbstractLink> getLinks(T rowObject, String linkId) {
-                List<AbstractLink> links = new ArrayList<AbstractLink>();
+                List<AbstractLink> links = new ArrayList<>();
                 addLinks(links, rowObject, linkId);
                 return links;
             }
@@ -165,7 +165,7 @@ public abstract class BaseListPanel<T extends Serializable> extends TitledPanel 
 
         @Override
         public IModel<T> model(T object) {
-            return new Model<T>(object);
+            return new Model<>(object);
         }
     }
 

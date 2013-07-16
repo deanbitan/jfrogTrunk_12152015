@@ -120,7 +120,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             model.repos = getRepos();
             model.targetRepo = getPersistentTargetRepo();
 
-            setDefaultModel(new CompoundPropertyModel<DeployModel>(model));
+            setDefaultModel(new CompoundPropertyModel<>(model));
 
             add(new Label("file.name"));
             addPathField();
@@ -184,7 +184,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
             TextEditorPanel pomEditPanel = new TextEditorPanel("pomEditPanel", "POM Editor", helpMessage) {
                 @Override
                 protected IModel<String> newTextModel() {
-                    return new PropertyModel<String>(model, "pomXml");
+                    return new PropertyModel<>(model, "pomXml");
                 }
 
                 @Override
@@ -254,7 +254,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addTargetRepoDropDown() {
-            FormComponent targetRepo = new DropDownChoice<LocalRepoDescriptor>(TARGET_REPO, model.repos);
+            FormComponent targetRepo = new DropDownChoice<>(TARGET_REPO, model.repos);
             setPersistent(targetRepo);
             targetRepo.setRequired(true);
             add(targetRepo);

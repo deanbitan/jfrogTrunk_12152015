@@ -32,7 +32,9 @@ import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
@@ -40,6 +42,7 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
+import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
@@ -100,6 +103,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -109,6 +113,9 @@ import java.util.jar.JarInputStream;
 
 public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements StoringRepo<T> */ implements StoringRepo {
     private static final Logger log = LoggerFactory.getLogger(DbStoringRepoMixin.class);
+
+    private final static String CONTENT_TYPE_PROP_KEY = PropertySet.ARTIFACTORY_RESERVED_PROP_SET + "." +
+            PropertiesService.CONTENT_TYPE_PROPERTY_NAME;
 
     private final T descriptor;
 
@@ -398,11 +405,11 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         }
 
         //Handle query-aware get
+        Properties properties = repositoryService.getProperties(repoPath);
         Properties queryProperties = context.getProperties();
         boolean exactMatch = true;
         if (!queryProperties.isEmpty()) {
             RepoRequests.logToContext("Request includes query properties");
-            Properties properties = repositoryService.getProperties(repoPath);
             Properties.MatchResult matchResult;
             if (properties != null) {
                 matchResult = properties.matchQuery(queryProperties);
@@ -421,14 +428,19 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
             }
         }
 
-        VfsFile vfsFile = getImmutableFile(repoPath);
-        RepoResource localRes = getFilteredOrFileResource(vfsFile, repoPath, context, exactMatch);
+        RepoResource localResource = getFilteredOrFileResource(repoPath, context, properties, exactMatch);
+        setMimeType(localResource, properties);
+        return localResource;
+    }
 
-        if (!localRes.isFound()) {
-            return localRes;
+    private void setMimeType(RepoResource localResource, Properties properties) {
+        if (!localResource.isFound() || !(localResource instanceof FileResource) || (properties == null)) {
+            return;
         }
-
-        return localRes;
+        String customMimeType = properties.getFirst(CONTENT_TYPE_PROP_KEY);
+        if (StringUtils.isNotBlank(customMimeType)) {
+            ((FileResource) localResource).setMimeType(customMimeType);
+        }
     }
 
     private org.artifactory.repo.StoringRepo getOwningRepo() {
@@ -499,16 +511,17 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         return fileService.exists(new RepoPathImpl(getKey(), relativePath));
     }
 
-    private RepoResource getFilteredOrFileResource(VfsFile file, RepoPath repoPath, RequestContext context,
-            boolean exactMatch) {
+    private RepoResource getFilteredOrFileResource(RepoPath repoPath, RequestContext context,
+            Properties properties, boolean exactMatch) {
+        VfsFile vfsFile = getImmutableFile(repoPath);
         Request request = context.getRequest();
         if (request != null && descriptor.isReal()) {
             FilteredResourcesAddon filteredResourcesAddon = addonsManager.addonByType(FilteredResourcesAddon.class);
-            if (filteredResourcesAddon.isFilteredResourceFile(repoPath)) {
+            if (filteredResourcesAddon.isFilteredResourceFile(repoPath, properties)) {
                 RepoRequests.logToContext("Resource is marked as filtered - sending it through the engine");
-                InputStream stream = file.getStream();
+                InputStream stream = vfsFile.getStream();
                 try {
-                    return filteredResourcesAddon.getFilteredResource(request, file.getInfo(), stream);
+                    return filteredResourcesAddon.getFilteredResource(request, vfsFile.getInfo(), stream);
                 } finally {
                     IOUtils.closeQuietly(stream);
                 }
@@ -517,16 +530,16 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
 
         if (request != null && request.isZipResourceRequest()) {
             RepoRequests.logToContext("Resource is contained within an archiving - retrieving");
-            InputStream stream = file.getStream();
+            InputStream stream = vfsFile.getStream();
             try {
                 return addonsManager.addonByType(FilteredResourcesAddon.class).getZipResource(
-                        request, file.getInfo(), stream);
+                        request, vfsFile.getInfo(), stream);
             } finally {
                 IOUtils.closeQuietly(stream);
             }
         }
 
-        return new FileResource(file.getInfo(), exactMatch);
+        return new FileResource(vfsFile.getInfo(), exactMatch);
     }
 
     public T getDescriptor() {
@@ -693,7 +706,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         }
     }
 
-    public boolean shouldProtectPathDeletion(String path, boolean overwrite) {
+    public boolean shouldProtectPathDeletion(String path, boolean overwrite, @Nullable String requestSha1) {
         if (NamingUtils.isChecksum(path)) {
             //Never protect checksums
             return false;
@@ -717,15 +730,29 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
                 }
             }
 
-            // if the path exists and is a file - protect
-            RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
-            //TODO: [by YS] can we override folder with file??
-            //if (!fileService.isFile(repoPath)) {
-            if (!repositoryService.exists(repoPath)) {
-                return false;
-            }
+            return shouldProtectPathDeletion(path, requestSha1);
         }
 
         return true;
+    }
+
+    /**
+     * Should protect path deletion for these conditions:
+     * - If the item is a file (means that is also exists), protect.
+     * - If this is a deploy with checksum, and the request checksum matches the repoPath one, don't protect.
+     * - If the item is not a file (it's either a folder or doesn't exist), don't protect.
+     */
+    protected boolean shouldProtectPathDeletion(String path, @Nullable String requestSha1) {
+        RepoPath repoPath = InternalRepoPathFactory.create(getKey(), path);
+        if (requestSha1 == null) {
+            return repositoryService.exists(repoPath);
+        } else {
+            try {
+                String existingSha1 = repositoryService.getFileInfo(repoPath).getSha1();
+                return !existingSha1.equals(requestSha1); //protect if requestSha1 not equal to existing one
+            } catch (ItemNotFoundRuntimeException e) {
+                return false;
+            }
+        }
     }
 }

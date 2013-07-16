@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
@@ -88,6 +89,7 @@ public class BackupServiceImpl implements InternalBackupService {
     @Autowired
     private AddonsManager addonsManager;
 
+    @Override
     public void init() {
         reload(null);
     }
@@ -133,7 +135,7 @@ public class BackupServiceImpl implements InternalBackupService {
         public Predicate<Task> getAllPredicate() {
             return new Predicate<Task>() {
                 @Override
-                public boolean apply(@Nullable Task input) {
+                public boolean apply(Task input) {
                     return BackupJob.class.isAssignableFrom(input.getType());
                 }
             };
@@ -143,7 +145,7 @@ public class BackupServiceImpl implements InternalBackupService {
         public Predicate<Task> getPredicate(@Nonnull final BackupDescriptor descriptor) {
             return new Predicate<Task>() {
                 @Override
-                public boolean apply(@Nullable Task input) {
+                public boolean apply(Task input) {
                     return BackupJob.class.isAssignableFrom(input.getType()) &&
                             descriptor.getKey().equals(input.getAttribute(BackupJob.BACKUP_KEY));
                 }
@@ -228,7 +230,7 @@ public class BackupServiceImpl implements InternalBackupService {
 
     @Override
     public MultiStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup) {
-        MultiStatusHolder status = new MultiStatusHolder();
+        ImportExportStatusHolder status = new ImportExportStatusHolder();
         if (!backup.isEnabled()) {
             status.setError("Backup: '" + backup.getKey() + "' is disabled. Backup was not performed.", log);
             return status;
@@ -267,19 +269,20 @@ public class BackupServiceImpl implements InternalBackupService {
         if (retentionPeriodHours <= 0) {
             return;
         }
+        File backupDir = getBackupDir(descriptor);
+        File[] children = backupDir.listFiles();
+        if (children == null || CollectionUtils.isNullOrEmpty(children)) {
+            log.debug("No old backup files to remove.");
+            return;
+        }
+
         //Calculate last valid time
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(now);
         calendar.add(Calendar.HOUR, -retentionPeriodHours);
         Date validFrom = calendar.getTime();
-        File backupDir = getBackupDir(descriptor);
-        File[] children = backupDir.listFiles();
+        log.debug("Removing backups older than {}.", validFrom);
         //Delete anything not newer than the last valid time
-        if (children.length > 0) {
-            log.debug("Removing backups older than {}.", validFrom);
-        } else {
-            log.debug("No old backup files to remove.");
-        }
         for (File child : children) {
             if (!FileUtils.isFileNewer(child, validFrom)) {
                 try {
@@ -361,7 +364,7 @@ public class BackupServiceImpl implements InternalBackupService {
     }
 
     private List<String> getBackedupRepos(List<RealRepoDescriptor> excludeRepositories) {
-        List<String> localRepoKeys = new ArrayList<String>();
+        List<String> localRepoKeys = new ArrayList<>();
         List<LocalRepoDescriptor> localRepos = repositoryService.getLocalAndCachedRepoDescriptors();
         for (LocalRepoDescriptor localRepoDescriptor : localRepos) {
             localRepoKeys.add(localRepoDescriptor.getKey());
@@ -369,7 +372,7 @@ public class BackupServiceImpl implements InternalBackupService {
         if (CollectionUtils.isNullOrEmpty(excludeRepositories)) {
             return localRepoKeys; // nothing is excluded return all local repositories
         }
-        List<String> backedupRepos = new ArrayList<String>();
+        List<String> backedupRepos = new ArrayList<>();
         for (LocalRepoDescriptor repo : localRepos) {
             //Skip excluded repositories
             RealRepoDescriptor checkForExclusionRepo;

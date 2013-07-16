@@ -18,8 +18,6 @@
 
 package org.artifactory.security;
 
-import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,23 +37,8 @@ public abstract class AccessLogger {
         // utility class
     }
 
-    public static void annotated(RepoPath repoPath, String metadataName) {
-        if (!MavenNaming.MAVEN_METADATA_NAME.equals(metadataName)) {
-            // don't log maven metadata since it is mostly internal
-            RepoPath metadataPath = InfoFactoryHolder.get()
-                    .createRepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
-            annotated(metadataPath);
-        }
-    }
-
     public static void annotated(RepoPath repoPath) {
         annotated(repoPath, false, AuthenticationHelper.getAuthentication());
-    }
-
-    public static void annotationDeleted(RepoPath repoPath, String metadataName) {
-        RepoPath metadataPath = InfoFactoryHolder.get()
-                .createRepoPath(repoPath.getRepoKey(), repoPath.getPath() + ":" + metadataName);
-        logAction(metadataPath, Action.ANNOTATE_DELETE, false, AuthenticationHelper.getAuthentication(), null);
     }
 
     public static void annotateDenied(RepoPath repoPath) {

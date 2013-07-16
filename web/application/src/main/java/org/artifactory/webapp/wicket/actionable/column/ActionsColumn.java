@@ -60,7 +60,7 @@ public class ActionsColumn<T extends ActionableItem> extends LinksColumn<T> {
 
     @Override
     protected Collection<? extends AbstractLink> getLinks(final T actionableItem, String linkId) {
-        List<TitledAjaxLink> links = new ArrayList<TitledAjaxLink>();
+        List<TitledAjaxLink> links = new ArrayList<>();
         for (final ItemAction action : getActions(actionableItem)) {
             if (action.isEnabled()) {
                 links.add(new ActionLink(linkId, action, actionableItem));

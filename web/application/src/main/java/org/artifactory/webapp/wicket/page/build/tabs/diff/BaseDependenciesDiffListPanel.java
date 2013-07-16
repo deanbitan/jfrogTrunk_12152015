@@ -66,7 +66,7 @@ public abstract class BaseDependenciesDiffListPanel extends TitledPanel {
                 "model.diffName", "model.diffName"));
         columns.add(new BuildDiffGroupableColumn(Model.of("Status"), "model.status", "model.status"));
         columns.add(new BuildDiffGroupableColumn(Model.of("Module"), "model.module", "model.module"));
-        add(new GroupableTable<BuildsDiffActionableItem>("dependenciesDiff", columns,
+        add(new GroupableTable<>("dependenciesDiff", columns,
                 new DependenciesDiffDataProvider(), 10));
     }
 

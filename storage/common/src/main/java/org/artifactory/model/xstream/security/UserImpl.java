@@ -49,7 +49,7 @@ public class UserImpl implements MutableUserInfo {
     private String publicKey;
     private boolean transientUser;
 
-    private Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>(1);
+    private Set<UserGroupInfo> groups = new HashSet<>(1);
 
     private long lastLoginTimeMillis;
     private String lastLoginClientIp;
@@ -82,9 +82,9 @@ public class UserImpl implements MutableUserInfo {
 
         Set<UserGroupInfo> groups = user.getGroups();
         if (groups != null) {
-            this.groups = new HashSet<UserGroupInfo>(groups);
+            this.groups = new HashSet<>(groups);
         } else {
-            this.groups = new HashSet<UserGroupInfo>(1);
+            this.groups = new HashSet<>(1);
         }
 
         setPrivateKey(user.getPrivateKey());
@@ -291,7 +291,7 @@ public class UserImpl implements MutableUserInfo {
     // Needed because XStream inject nulls :(
     private Set<UserGroupInfo> _groups() {
         if (groups == null) {
-            this.groups = new HashSet<UserGroupInfo>(1);
+            this.groups = new HashSet<>(1);
         }
         return groups;
     }
@@ -299,16 +299,16 @@ public class UserImpl implements MutableUserInfo {
     @Override
     public void setGroups(Set<UserGroupInfo> groups) {
         if (groups == null) {
-            this.groups = new HashSet<UserGroupInfo>(1);
+            this.groups = new HashSet<>(1);
         } else {
-            this.groups = new HashSet<UserGroupInfo>(groups);
+            this.groups = new HashSet<>(groups);
         }
     }
 
     @Override
     public void setInternalGroups(Set<String> groups) {
         if (groups == null) {
-            this.groups = new HashSet<UserGroupInfo>(1);
+            this.groups = new HashSet<>(1);
             return;
         }
         //Add groups with the default internal realm

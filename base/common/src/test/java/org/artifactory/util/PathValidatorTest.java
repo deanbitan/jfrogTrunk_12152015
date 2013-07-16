@@ -14,7 +14,7 @@ public class PathValidatorTest {
 
     @Test(expectedExceptions = InvalidPathException.class)
     public void invalidSingleSlash() {
-        PathValidator.validate("/");
+        PathValidator.validate("");
     }
 
     @Test(expectedExceptions = InvalidPathException.class)

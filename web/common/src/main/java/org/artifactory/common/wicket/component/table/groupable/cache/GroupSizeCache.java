@@ -33,7 +33,7 @@ public class GroupSizeCache<T> implements Serializable {
     private List<GroupMetaData> indicesList;
 
     public GroupSizeCache(Collection<T> collection, IChoiceRenderer<T> renderer) {
-        indicesList = new ArrayList<GroupMetaData>();
+        indicesList = new ArrayList<>();
         int index = 0;
         int beginIndex = 0;
         String prevId = null;
@@ -51,7 +51,7 @@ public class GroupSizeCache<T> implements Serializable {
     }
 
     public static <T> GroupSizeCache getSizeCache(Collection<T> collection, IChoiceRenderer<T> renderer) {
-        return new GroupSizeCache<T>(collection, renderer);
+        return new GroupSizeCache<>(collection, renderer);
     }
 
     public int getGroupSize(int index) {

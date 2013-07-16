@@ -42,7 +42,7 @@ public class P2Configuration implements Descriptor {
 
     @XmlElementWrapper(name = "urls")
     @XmlElement(name = "url", type = String.class, required = false)
-    private List<String> urls = new ArrayList<String>();
+    private List<String> urls = new ArrayList<>();
 
     public boolean isEnabled() {
         return enabled;

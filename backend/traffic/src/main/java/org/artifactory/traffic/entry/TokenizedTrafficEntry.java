@@ -20,7 +20,6 @@ package org.artifactory.traffic.entry;
 
 import org.apache.commons.lang.StringUtils;
 
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,7 +35,7 @@ public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
      */
     public static final String COLUMN_SEPARATOR = "|";
 
-    protected AtomicReference<String> tokenizedValue = new AtomicReference<String>();
+    protected AtomicReference<String> tokenizedValue = new AtomicReference<>();
 
     protected String[] tokens;
 
@@ -115,11 +114,7 @@ public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
 
         // Date should always be located in the first token
         String dateToken = tokens[0];
-        try {
-            date = entryDateFormat.parse(dateToken);
-        } catch (ParseException e) {
-            throw new IllegalArgumentException("Invalid date token: " + dateToken);
-        }
+        time = ENTRY_DATE_FORMATTER.parseMillis(dateToken);
         // Duration should always be located in the second token
         String durationToken = tokens[1];
         try {

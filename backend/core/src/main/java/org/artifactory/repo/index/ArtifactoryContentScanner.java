@@ -75,7 +75,7 @@ public class ArtifactoryContentScanner extends AbstractLogEnabled implements Sca
             return;
         }
 
-        Set<File> files = new TreeSet<File>(new ScannerFileComparator());
+        Set<File> files = new TreeSet<>(new ScannerFileComparator());
 
         files.addAll(Arrays.asList(fileArray));
 

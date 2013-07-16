@@ -18,6 +18,7 @@
 
 package org.artifactory.resource;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
@@ -39,6 +40,7 @@ public class FileResource implements RepoResource {
      */
     private RepoPath responseRepoPath;
     private boolean exactQueryMatch;
+    private String mimeType;
 
     public FileResource(FileInfo fileInfo) {
         this(fileInfo, true);
@@ -109,8 +111,20 @@ public class FileResource implements RepoResource {
 
     @Override
     public String getMimeType() {
-        MimeType contentType = NamingUtils.getMimeType(info.getRelPath());
-        return contentType.getType();
+        if (StringUtils.isNotBlank(mimeType)) {
+            return mimeType;
+        } else {
+            MimeType contentType = NamingUtils.getMimeType(info.getRelPath());
+            return contentType.getType();
+        }
+    }
+
+    /**
+     * Set custom mime type for this resource. If not set the mime types file is consulted.
+     * @param mimeType  Custom mime type to set on this resource
+     */
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
     }
 
     @Override

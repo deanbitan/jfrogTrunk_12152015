@@ -91,16 +91,18 @@ public class RepoFilter extends DelayedFilterBase {
         if (log.isDebugEnabled()) {
             log.debug("Entering request {}.", requestDebugString(request));
         }
-
-        ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
-        if (servletPath != null && servletPath.startsWith("/" + ArtifactoryRequest.LIST_BROWSING_PATH)
+        boolean repoRequest = servletPath != null && RequestUtils.isRepoRequest(request, true);
+        if (repoRequest && servletPath.startsWith("/" + ArtifactoryRequest.LIST_BROWSING_PATH)
                 && servletPath.endsWith("/")) {
+            ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
             doRepoListing(request, response, servletPath, artifactoryRequest);
             return;
         }
 
         String method = request.getMethod().toLowerCase().intern();
-        if (servletPath != null && RequestUtils.isRepoRequest(request, true)) {
+
+        if (repoRequest) {
+            ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
             //Handle upload and download requests
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
 

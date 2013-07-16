@@ -3132,7 +3132,7 @@ div.w_content_scroll {
 
 .Chrome .browseButton {
     position: relative;
-    top: -5px;
+    top: 6px;
 }
 
 .browseButton:hover, .browseButton:focus {
@@ -6598,6 +6598,6 @@ img.bintrayPkgMsg {
     text-align: center;
 }
 
-.miniFeedback a{
+.miniFeedback a {
     color: white;
 }

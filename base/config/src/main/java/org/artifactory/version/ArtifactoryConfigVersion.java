@@ -227,7 +227,7 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
 
     public String convert(String in) {
         // First create the list of converters to apply
-        List<XmlConverter> converters = new ArrayList<XmlConverter>();
+        List<XmlConverter> converters = new ArrayList<>();
 
         // First thing to do is to change the namespace and schema location
         converters.add(new NamespaceConverter());

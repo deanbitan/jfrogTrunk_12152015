@@ -93,7 +93,7 @@ public class ActionableItemsTree extends Tree implements ItemActionListener, Com
         }
         ActionableItemTreeNode rootNode = new ActionableItemTreeNode(root);
         DefaultTreeModel treeModel = new DefaultTreeModel(rootNode);
-        setDefaultModel(new Model<DefaultTreeModel>(treeModel));
+        setDefaultModel(new Model<>(treeModel));
         List<? extends ActionableItem> children = this.itemsProvider.getChildren(root);
         setChildren(rootNode, children);
         getTreeState().expandNode(rootNode);

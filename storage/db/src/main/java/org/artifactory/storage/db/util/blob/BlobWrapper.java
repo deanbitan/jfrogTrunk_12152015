@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.storage.db.util;
+package org.artifactory.storage.db.util.blob;
 
 import org.artifactory.util.StringInputStream;
 
@@ -29,28 +29,28 @@ import java.io.UnsupportedEncodingException;
  * @author Yossi Shaul
  */
 public class BlobWrapper {
+    public static final int LENGTH_UNKNOWN = -1;
 
     private final InputStream in;
     private final long length;
 
     /**
-     * Build a wrapper around a string. The string is expected to be UTF-8 encoded.
+     * Builds a wrapper around an input stream with unknown length.
+     * This constructor is protected to prevent accidental creation when using PostgreSQL.
      *
-     * @param data The data to use as the input stream
+     * @param in The input stream to wrap
+     * @see
      */
-    public BlobWrapper(String data) throws UnsupportedEncodingException {
-        if (data == null) {
-            throw new NullPointerException("Data cannot be null");
-        }
-        StringInputStream sis = new StringInputStream(data);
-        this.in = sis;
-        this.length = sis.getLength();
+    BlobWrapper(InputStream in) {
+        this(in, LENGTH_UNKNOWN);
     }
 
-    public BlobWrapper(InputStream in) {
-        this(in, -1);
-    }
-
+    /**
+     * Builds a wrapper around an input stream with known length
+     *
+     * @param in     The input stream to wrap
+     * @param length The length of the wrapped input stream (in bytes)
+     */
     public BlobWrapper(InputStream in, long length) {
         if (in == null) {
             throw new NullPointerException("Input stream cannot be null");
@@ -59,10 +59,36 @@ public class BlobWrapper {
         this.length = length;
     }
 
+    /**
+     * Build a wrapper around a string. The string is expected to be UTF-8 encoded.
+     *
+     * @param data The data to use as the input stream
+     */
+    public BlobWrapper(String data) {
+        if (data == null) {
+            throw new NullPointerException("Data cannot be null");
+        }
+        StringInputStream sis;
+        try {
+            sis = new StringInputStream(data);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        this.in = sis;
+        this.length = sis.getLength();
+    }
+
+    /**
+     * @return The wrapped input stream
+     */
     public InputStream getInputStream() {
         return in;
     }
 
+    /**
+     * @return The length (in bytes) of the wrapped input stream or {@link BlobWrapper#LENGTH_UNKNOWN} if the size is
+     *         not known.
+     */
     public long getLength() {
         return length;
     }

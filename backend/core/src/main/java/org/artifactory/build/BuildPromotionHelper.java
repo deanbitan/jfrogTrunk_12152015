@@ -131,11 +131,12 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
         }
 
         if (promotion.isDryRun()) {
-            statusHolder.setStatus("Skipping promotion status update: running in dry run mode.", log);
             return;
         }
 
         buildService.addPromotionStatus(build, statusBuilder.build());
+        log.info("Promotion completed successfully for build name '{}' and number '{}' with status of '{}'",
+                build.getName(), build.getNumber(), status);
     }
 
     private void promoteBuildItems(Promotion promotion, MultiStatusHolder status, Set<RepoPath> itemsToMove) {

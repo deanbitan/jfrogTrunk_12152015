@@ -25,6 +25,7 @@ import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.build.BuildInfoUtils;
 import org.artifactory.build.BuildRun;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.DoesNotExistException;
@@ -39,8 +40,6 @@ import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Set;
 
 import static org.artifactory.webapp.wicket.page.build.BuildBrowserConstants.*;
@@ -158,10 +157,10 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
 
         buildStarted = getStringParameter(BUILD_STARTED);
         try {
-            new SimpleDateFormat(Build.STARTED_FORMAT).parse(buildStarted);
+            BuildInfoUtils.parseBuildTime(buildStarted);
             Build build = getBuild(buildName, buildNumber, buildStarted);
             return new BuildTabbedPanel(CHILD_PANEL_ID, build, null);
-        } catch (ParseException e) {
+        } catch (IllegalArgumentException e) {
             /**
              * If the build started param was specified, but didn't parse properly, then the request contains a build
              * number And build module id, which means we select to display the specified module of the latest build of

@@ -47,7 +47,7 @@ import java.util.Set;
 @Consumes({MediaType.APPLICATION_XML, MediaType.TEXT_XML, MediaType.WILDCARD})
 @Provider
 public class XStreamAliasProvider extends AbstractMessageReaderWriterProvider<Object> {
-    private static final Set<Class> processed = new HashSet<Class>();
+    private static final Set<Class> processed = new HashSet<>();
     private static final XStream xstream = XStreamFactory.create();
     private static final String DEFAULT_ENCODING = "utf-8";
 

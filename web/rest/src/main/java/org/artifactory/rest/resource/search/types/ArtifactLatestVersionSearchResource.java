@@ -25,6 +25,7 @@ import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.VersionEntry;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
+import org.springframework.util.AntPathMatcher;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -77,7 +78,12 @@ public class ArtifactLatestVersionSearchResource {
                     notFoundMessage = "Latest release version not found";
                 }
             } else {
-                latest = getLatestIntegrationVersion(results);
+                char[] wildcardsArr = {'*', '?'};
+                if (StringUtils.containsAny(version, wildcardsArr)) {
+                    latest = matchLatestByPattern(results, version);
+                } else {
+                    latest = getLatestIntegrationVersion(results);
+                }
                 if (latest == null) {
                     notFoundMessage = "Latest integration version not found";
                 }
@@ -99,6 +105,16 @@ public class ArtifactLatestVersionSearchResource {
     private VersionEntry getLatestReleaseVersion(List<VersionEntry> results) {
         for (VersionEntry result : results) {
             if (!result.isIntegration()) {
+                return result;
+            }
+        }
+        return null;
+    }
+
+    private VersionEntry matchLatestByPattern(List<VersionEntry> results, String version) {
+        AntPathMatcher matcher = new AntPathMatcher();
+        for (VersionEntry result : results) {
+            if (matcher.match(version, result.getVersion())) {
                 return result;
             }
         }

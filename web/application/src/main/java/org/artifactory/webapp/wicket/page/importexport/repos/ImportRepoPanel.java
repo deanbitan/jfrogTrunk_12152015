@@ -37,7 +37,7 @@ public class ImportRepoPanel extends BasicImportPanel {
     public ImportRepoPanel(String string) {
         super(string);
         Form form = getImportForm();
-        PropertyModel<File> pathModel = new PropertyModel<File>(this, "importFromPath");
+        PropertyModel<File> pathModel = new PropertyModel<>(this, "importFromPath");
         final PathAutoCompleteTextField importFromPathTf = new PathAutoCompleteTextField("importFromPath", pathModel);
         importFromPathTf.setMask(PathMask.FOLDERS);
         importFromPathTf.setRequired(true);

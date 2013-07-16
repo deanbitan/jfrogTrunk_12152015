@@ -386,8 +386,7 @@ public class BuildServiceImpl implements InternalBuildService {
             Set<RepoPath> repoPaths = Sets.newHashSet(
                     Iterables.transform(resultList, new Function<ItemSearchResult, RepoPath>() {
                         @Override
-                        public RepoPath apply(@Nullable ItemSearchResult input) {
-                            //noinspection ConstantConditions
+                        public RepoPath apply(ItemSearchResult input) {
                             return input.getItemInfo().getRepoPath();
                         }
                     })

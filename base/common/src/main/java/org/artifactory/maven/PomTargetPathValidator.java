@@ -25,7 +25,6 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.RepoPath;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,9 +75,10 @@ public class PomTargetPathValidator {
                 //Do not validate paths that contain property references
                 if (pathPrefix != null && !pathPrefix.contains("${")
                         && !StringUtils.startsWithIgnoreCase(relPath, pathPrefix)) {
-                    String msg = String.format("The target deployment path '%s' does not match the POM's expected path " +
-                            "prefix '%s'. Please verify your POM content for correctness and make sure the source path " +
-                            "is a valid Maven repository root path.", relPath, pathPrefix);
+                    String msg = String.format(
+                            "The target deployment path '%s' does not match the POM's expected path " +
+                                    "prefix '%s'. Please verify your POM content for correctness and make sure the source path " +
+                                    "is a valid Maven repository root path.", relPath, pathPrefix);
                     if (suppressPomConsistencyChecks) {
                         log.warn("{} POM consistency checks are suppressed. Broken artifacts might have been " +
                                 "stored in the repository - please resolve this manually.", msg);

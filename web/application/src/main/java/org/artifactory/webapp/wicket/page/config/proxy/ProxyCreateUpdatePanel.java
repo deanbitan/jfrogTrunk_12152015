@@ -73,7 +73,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
         form.add(border);
 
         // Proxy key
-        RequiredTextField<String> proxyKeyField = new RequiredTextField<String>("key");
+        RequiredTextField<String> proxyKeyField = new RequiredTextField<>("key");
         setDefaultFocusField(proxyKeyField);
         proxyKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
@@ -87,7 +87,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
         border.add(new RequiredTextField("host"));
         border.add(new SchemaHelpBubble("host.help"));
 
-        RequiredTextField<Integer> portField = new RequiredTextField<Integer>("port");
+        RequiredTextField<Integer> portField = new RequiredTextField<>("port");
         portField.add(new PortNumberValidator());
         border.add(portField);
         border.add(new SchemaHelpBubble("port.help"));
@@ -161,7 +161,7 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
 
     private class SystemDefaultCheckbox extends StyledCheckbox {
         private SystemDefaultCheckbox(final boolean checked) {
-            super("sysCheckbox", new Model<Boolean>(checked));
+            super("sysCheckbox", new Model<>(checked));
             setOutputMarkupId(true);
             add(new AjaxFormComponentUpdatingBehavior("onclick") {
                 @Override

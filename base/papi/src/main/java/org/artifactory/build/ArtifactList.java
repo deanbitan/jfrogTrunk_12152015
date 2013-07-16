@@ -22,7 +22,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -108,7 +107,7 @@ public class ArtifactList implements List<Artifact> {
     public boolean containsAll(Collection<?> c) {
         return artifactList.containsAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((Artifact) input).getBuildArtifact();
             }
         })));
@@ -119,7 +118,7 @@ public class ArtifactList implements List<Artifact> {
         return artifactList.addAll(Lists.newArrayList(Iterables.transform(c,
                 new Function<Object, org.jfrog.build.api.Artifact>() {
                     @Override
-                    public org.jfrog.build.api.Artifact apply(@Nullable Object input) {
+                    public org.jfrog.build.api.Artifact apply(Object input) {
                         return ((Artifact) input).getBuildArtifact();
                     }
                 })));
@@ -130,7 +129,7 @@ public class ArtifactList implements List<Artifact> {
         return artifactList.addAll(index, Lists.newArrayList(Iterables.transform(c,
                 new Function<Object, org.jfrog.build.api.Artifact>() {
                     @Override
-                    public org.jfrog.build.api.Artifact apply(@Nullable Object input) {
+                    public org.jfrog.build.api.Artifact apply(Object input) {
                         return ((Artifact) input).getBuildArtifact();
                     }
                 })));
@@ -140,7 +139,7 @@ public class ArtifactList implements List<Artifact> {
     public boolean removeAll(Collection<?> c) {
         return artifactList.removeAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((Artifact) input).getBuildArtifact();
             }
         })));
@@ -150,7 +149,7 @@ public class ArtifactList implements List<Artifact> {
     public boolean retainAll(Collection<?> c) {
         return artifactList.retainAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((Artifact) input).getBuildArtifact();
             }
         })));
@@ -214,7 +213,7 @@ public class ArtifactList implements List<Artifact> {
         return Lists.newArrayList(Iterables.transform(artifactList.subList(fromIndex, toIndex),
                 new Function<org.jfrog.build.api.Artifact, Artifact>() {
                     @Override
-                    public Artifact apply(@Nullable org.jfrog.build.api.Artifact input) {
+                    public Artifact apply(org.jfrog.build.api.Artifact input) {
                         return new Artifact(input);
                     }
                 }));

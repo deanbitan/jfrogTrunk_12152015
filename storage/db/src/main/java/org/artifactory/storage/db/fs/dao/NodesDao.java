@@ -276,19 +276,9 @@ public class NodesDao extends BaseDao {
     }
 
     public long getFilesTotalSize(NodePath nodePath) throws SQLException {
-        ResultSet resultSet = null;
-        long result = 0;
-        try {
-            resultSet = jdbcHelper.executeSelect(
-                    "SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and node_path like ?",
-                    nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
-            if (resultSet.next()) {
-                result += resultSet.getInt(1);
-            }
-        } finally {
-            DbUtils.close(resultSet);
-        }
-        return result;
+        return jdbcHelper.executeSelectCount(
+                "SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and node_path like ?",
+                nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
     }
 
     public int getNodesCount(String repoKey) throws SQLException {
@@ -314,7 +304,7 @@ public class NodesDao extends BaseDao {
 
     public List<Node> searchFileByName(String name) throws SQLException {
         ResultSet resultSet = null;
-        List<Node> results = new ArrayList<Node>();
+        List<Node> results = new ArrayList<>();
         try {
             resultSet = jdbcHelper.executeSelect(SELECT_NODE_QUERY +
                     "WHERE ftype = 1 and pname like '" + name + "'");
@@ -387,7 +377,7 @@ public class NodesDao extends BaseDao {
     //TODO: [by YS] this is a just a temp naive search for maven plugin metadata
     public List<Node> searchFilesByProperty(String repo, String propKey, String propValue) throws SQLException {
         ResultSet resultSet = null;
-        List<Node> results = new ArrayList<Node>();
+        List<Node> results = new ArrayList<>();
         try {
             resultSet = jdbcHelper.executeSelect("SELECT n.* FROM nodes n " +
                     "JOIN node_props p ON n.node_id = p.node_id " +

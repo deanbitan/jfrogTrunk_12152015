@@ -27,7 +27,7 @@ import java.util.List;
  * @author Eli Givoni
  */
 public class ArchiveRestSearchResult {
-    public List<ArchiveEntry> results = new ArrayList<ArchiveEntry>();
+    public List<ArchiveEntry> results = new ArrayList<>();
 
     public static class ArchiveEntry {
         public String entry;

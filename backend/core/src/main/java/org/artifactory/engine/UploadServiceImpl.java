@@ -51,6 +51,7 @@ import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.model.xstream.fs.PropertiesImpl;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
@@ -142,8 +143,6 @@ public class UploadServiceImpl implements InternalUploadService {
             createDirectory(request, response);
         } else if (request.isChecksum()) {
             validateAndUploadChecksum(request, response, repo);
-        } else if (NamingUtils.isProperties(request.getPath())) {
-            validateAndUploadProperties(request, response, repo);
         } else if (NamingUtils.isMetadata(request.getPath())) {
             response.sendError(HttpStatus.SC_CONFLICT, "Old metadata notation is not supported anymore: " +
                     request.getRepoPath(), log);
@@ -169,11 +168,20 @@ public class UploadServiceImpl implements InternalUploadService {
             return;
         }
 
+        if (NamingUtils.isProperties(request.getPath())) {
+            validateAndUploadProperties(request, response, targetRepository);
+            return;
+        }
+
         try {
             // Servlet container doesn't support long values so we take it manually from the header
             String contentLengthHeader = request.getHeader("Content-Length");
             long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
-            repoService.assertValidDeployPath(targetRepository, request.getPath(), contentLength);
+            boolean directoryRequest = request.isDirectoryRequest();
+            RepoPath repoPath = InternalRepoPathFactory.create(targetRepository.getKey(), request.getPath(),
+                    directoryRequest);
+            String requestSha1 = HttpUtils.getSha1Checksum(request);
+            repoService.assertValidDeployPath(targetRepository, repoPath, contentLength, requestSha1);
         } catch (RepoRejectException e) {
             handleInvalidDeployPathError(response, e);
             return;

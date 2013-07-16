@@ -58,7 +58,7 @@ public class AclsConverter implements XmlConverter {
         root.addContent(newAclsElement);
 
         Map<Integer, String> objectIdentitiesMap = buildObjectIdentitiesMap(acls);
-        HashMap<String, Element> newAclsByIdentity = new HashMap<String, Element>();
+        HashMap<String, Element> newAclsByIdentity = new HashMap<>();
 
         for (Element oldAcl : acls) {
             if ("org.acegisecurity.acl.basic.SimpleAclEntry".equals(oldAcl.getName())) {
@@ -116,7 +116,7 @@ public class AclsConverter implements XmlConverter {
     }
 
     private Map<Integer, String> buildObjectIdentitiesMap(List<Element> acls) {
-        HashMap<Integer, String> identities = new HashMap<Integer, String>();
+        HashMap<Integer, String> identities = new HashMap<>();
         for (int i = 0; i < acls.size(); i++) {
             Element acl = acls.get(i);
             Element objectIdentity = acl.getChild("aclObjectIdentity");

@@ -62,7 +62,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
         forgotForm.add(new Label("description",
                 "Please enter your user name to receive a password reset link by email."));
 
-        final TextField<String> usernameTextField = new TextField<String>("username", new Model<String>());
+        final TextField<String> usernameTextField = new TextField<>("username", new Model<String>());
         usernameTextField.setRequired(true);
         forgotForm.add(usernameTextField);
 

@@ -19,7 +19,6 @@
 package org.artifactory.logging;
 
 import org.artifactory.api.config.ImportableExportable;
-import org.artifactory.spring.ReloadableBean;
 
 /**
  * Logging service main interface

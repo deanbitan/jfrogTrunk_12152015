@@ -40,7 +40,7 @@ public class HttpRepoPackagesPanel<T extends RemoteRepoDescriptor> extends Panel
     public HttpRepoPackagesPanel(String id, T descriptor) {
         super(id);
 
-        Form<T> form = new Form<T>("form", new CompoundPropertyModel<T>(descriptor));
+        Form<T> form = new Form<>("form", new CompoundPropertyModel<>(descriptor));
         add(form);
 
         addonsManager.addonByType(NuGetWebAddon.class).createAndAddRepoConfigNuGetSection(form, descriptor);

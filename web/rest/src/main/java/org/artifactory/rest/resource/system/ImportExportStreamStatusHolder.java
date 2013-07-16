@@ -19,7 +19,8 @@
 package org.artifactory.rest.resource.system;
 
 
-import org.artifactory.api.common.MultiStatusHolder;
+import com.google.common.base.Charsets;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.common.StatusEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,60 +33,55 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * User: freds Date: Aug 12, 2008 Time: 7:49:54 PM
  */
-public class StreamStatusHolder extends MultiStatusHolder {
-    private static final Logger log = LoggerFactory.getLogger(StreamStatusHolder.class);
-
+public class ImportExportStreamStatusHolder extends ImportExportStatusHolder {
+    private static final Logger log = LoggerFactory.getLogger(ImportExportStreamStatusHolder.class);
+    private boolean verbose;
     private HttpServletResponse response;
     private PrintStream out;
     private boolean brokenPipe = false;
     private AtomicInteger doingDots = new AtomicInteger(0);
 
-    public StreamStatusHolder(HttpServletResponse response) {
+    public ImportExportStreamStatusHolder(HttpServletResponse response) {
         this.response = response;
         setActivateLogging(true);
     }
 
     @Override
-    protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger, boolean debug) {
-        StatusEntry result = super.addStatus(statusMsg, statusCode, logger, debug);
-        if (isVerbose() || !result.isDebug()) {
-            String msg = result.getMessage() + "\n";
-            int dots = doingDots.getAndSet(0);
-            if (dots > 0) {
-                msg = "\n" + msg;
-            }
-            sendToClient(msg);
-        } else {
-            int dots = doingDots.incrementAndGet();
-            if (dots == 80) {
-                doingDots.getAndAdd(-80);
-                sendToClient("\n");
-            } else {
-                sendToClient(".");
-            }
-        }
-        return result;
-    }
-
-    @Override
-    protected StatusEntry addError(String statusMsg, int statusCode, Throwable throwable,
-            Logger logger,
-            boolean warn) {
-        StatusEntry result = super.addError(statusMsg, statusCode, throwable, logger, warn);
-        if (!brokenPipe) {
-            try {
-                PrintStream os = getResponseStream();
-                os.println("\n" + statusCode + " : " + statusMsg);
-                if ((throwable != null) && isVerbose()) {
-                    throwable.printStackTrace(os);
+    public void addStatusEntry(StatusEntry entry) {
+        super.addStatusEntry(entry);
+        if (entry.isDebug() || entry.isInfo()) {
+            if (isVerbose() || !entry.isDebug()) {
+                String msg = entry.getMessage() + "\n";
+                int dots = doingDots.getAndSet(0);
+                if (dots > 0) {
+                    msg = "\n" + msg;
                 }
-                os.flush();
-            } catch (Exception e) {
-                log.error("Cannot send status to client. Will stop sending them.", e);
-                brokenPipe = true;
+                sendToClient(msg);
+            } else {
+                int dots = doingDots.incrementAndGet();
+                if (dots == 80) {
+                    doingDots.getAndAdd(-80);
+                    sendToClient("\n");
+                } else {
+                    sendToClient(".");
+                }
+            }
+        } else {
+            if (!brokenPipe) {
+                try {
+                    PrintStream os = getResponseStream();
+                    os.println("\n" + entry.getStatusCode() + " : " + entry.getMessage());
+                    Throwable throwable = entry.getException();
+                    if ((throwable != null) && isVerbose()) {
+                        throwable.printStackTrace(os);
+                    }
+                    os.flush();
+                } catch (Exception e) {
+                    log.error("Cannot send status to client. Will stop sending them.", e);
+                    brokenPipe = true;
+                }
             }
         }
-        return result;
     }
 
     private void sendToClient(String statusMsg) {
@@ -106,7 +102,7 @@ public class StreamStatusHolder extends MultiStatusHolder {
             try {
                 response.setContentType("text/plain;charset=utf-8");
                 response.setStatus(200);
-                out = new PrintStream(response.getOutputStream());
+                out = new PrintStream(response.getOutputStream(), false, Charsets.UTF_8.displayName());
             } catch (IOException e) {
                 log.error("Cannot create writer stream to client " + e.getMessage(), e);
                 brokenPipe = true;
@@ -114,4 +110,15 @@ public class StreamStatusHolder extends MultiStatusHolder {
         }
         return out;
     }
+
+    @Override
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
+    @Override
+    public boolean isVerbose() {
+        return verbose;
+    }
+
 }

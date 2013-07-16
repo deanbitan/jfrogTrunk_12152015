@@ -20,6 +20,7 @@ package org.artifactory.storage.db.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.artifactory.util.PerfTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,7 +153,6 @@ public class JdbcHelper {
      * @param query  The select query to execute
      * @param params The query parameters
      * @return Long value if a result was found or {@link org.artifactory.storage.db.DbService.NO_DB_ID} if not found
-     * @throws SQLException
      */
     public long executeSelectLong(String query, Object... params) throws SQLException {
         try (ResultSet resultSet = executeSelect(query, params)) {
@@ -167,7 +167,7 @@ public class JdbcHelper {
     private String parseInListQuery(String sql, Object... params) {
         int idx = sql.indexOf("(#)");
         if (idx != -1) {
-            List<Integer> iterableSizes = new ArrayList<Integer>(1);
+            List<Integer> iterableSizes = new ArrayList<>(1);
             for (Object param : params) {
                 if (param instanceof Collection) {
                     int size = ((Collection) param).size();
@@ -202,11 +202,10 @@ public class JdbcHelper {
                 }
             } else if (param instanceof BlobWrapper) {
                 BlobWrapper blobWrapper = (BlobWrapper) param;
-                long blobLength = blobWrapper.getLength();
-                if (blobLength < 0) {
+                if (blobWrapper.getLength() < 0) {
                     pstmt.setBinaryStream(i++, blobWrapper.getInputStream());
                 } else {
-                    pstmt.setBinaryStream(i++, blobWrapper.getInputStream(), blobLength);
+                    pstmt.setBinaryStream(i++, blobWrapper.getInputStream(), blobWrapper.getLength());
                 }
             } else {
                 pstmt.setObject(i++, param);

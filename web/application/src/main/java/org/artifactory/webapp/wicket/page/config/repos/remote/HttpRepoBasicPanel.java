@@ -47,12 +47,12 @@ public class HttpRepoBasicPanel extends Panel {
         add(generalSettings);
 
         // url
-        TextField<String> urlField = new TextField<String>("url");
+        TextField<String> urlField = new TextField<>("url");
         urlField.add(new UriValidator("http", "https"));
         generalSettings.add(urlField);
         generalSettings.add(new SchemaHelpBubble("url.help"));
 
-        final TextField<Integer> maxUniqueSnapshots = new TextField<Integer>("maxUniqueSnapshots", Integer.class);
+        final TextField<Integer> maxUniqueSnapshots = new TextField<>("maxUniqueSnapshots", Integer.class);
         maxUniqueSnapshots.setEnabled(repoDescriptor.isHandleSnapshots());
         maxUniqueSnapshots.setRequired(true);
         maxUniqueSnapshots.setOutputMarkupId(true);
@@ -61,7 +61,7 @@ public class HttpRepoBasicPanel extends Panel {
 
         // checksumPolicyType
         ChecksumPolicyType[] checksumPolicies = ChecksumPolicyType.values();
-        DropDownChoice<ChecksumPolicyType> checksumPoliciesDC = new DropDownChoice<ChecksumPolicyType>(
+        DropDownChoice<ChecksumPolicyType> checksumPoliciesDC = new DropDownChoice<>(
                 "checksumPolicyType", Arrays.asList(checksumPolicies));
         checksumPoliciesDC.setChoiceRenderer(new ChecksumPolicyChoiceRenderer());
         add(checksumPoliciesDC);

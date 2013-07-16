@@ -29,6 +29,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -141,7 +142,7 @@ public class ProfilePage extends AuthenticatedPage {
                             mutableUser.setPassword(securityService.generateSaltedPassword(newPassword));
                             profile.setCurrentPassword(newPassword);
                             profilePanel.displayEncryptedPassword(mutableUser);
-                            if (mavenSettingsPanel != null) {
+                            if (mavenSettingsPanel != null && !ConstantValues.uiHideEncryptedPassword.getBoolean()) {
                                 mavenSettingsPanel.displayEncryptedPassword(mutableUser);
                                 target.add(mavenSettingsPanel);
                             }
@@ -198,8 +199,10 @@ public class ProfilePage extends AuthenticatedPage {
             cancelLink.setEnabled(updatableProfile);
 
             ProfileModel userProfile = getUserProfile();
-            mavenSettingsPanel = new MavenSettingsPanel("mavenSettingsPanel", userProfile);
-            form.replace(mavenSettingsPanel);
+            if (!ConstantValues.uiHideEncryptedPassword.getBoolean()) {
+                mavenSettingsPanel = new MavenSettingsPanel("mavenSettingsPanel", userProfile);
+                form.replace(mavenSettingsPanel);
+            }
             bintrayProfilePanel.updateDefaultModel(userProfile, updatableProfile);
             profileEvent.getTarget().add(this, bintrayProfilePanel);
         }

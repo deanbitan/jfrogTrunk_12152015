@@ -36,7 +36,7 @@ public class VfsZipFile implements Closeable {
 
     private VfsFile vfsFile;
     private List<ZipEntry> entries;
-    private List<InputStream> streams = new ArrayList<InputStream>();
+    private List<InputStream> streams = new ArrayList<>();
 
     public VfsZipFile(VfsFile vfsFile) {
         this.vfsFile = vfsFile;
@@ -69,7 +69,7 @@ public class VfsZipFile implements Closeable {
 
     public List<? extends ZipEntry> entries() throws IOException {
         if (entries == null) {
-            entries = new ArrayList<ZipEntry>();
+            entries = new ArrayList<>();
             ZipInputStream zis = getZipInputStream();
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {

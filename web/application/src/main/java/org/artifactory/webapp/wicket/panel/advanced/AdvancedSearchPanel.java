@@ -54,7 +54,7 @@ public class AdvancedSearchPanel extends WhiteTitlePanel {
         add(new CssClass("advanced-search-panel"));
 
         List<String> repoList = getOrderdRepoKeys();
-        ListMultipleChoice choice = new ListMultipleChoice<String>("selectedRepoForSearch", repoList);
+        ListMultipleChoice choice = new ListMultipleChoice<>("selectedRepoForSearch", repoList);
         choice.setOutputMarkupId(true);
         add(choice);
 

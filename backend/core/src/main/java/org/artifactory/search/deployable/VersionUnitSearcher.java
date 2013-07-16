@@ -53,7 +53,7 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
 
         Repo repo = getRepoService().repositoryByKey(pathToSearch.getRepoKey());
         if (repo == null) {
-            return new ItemSearchResults<VersionUnitSearchResult>(Lists.<VersionUnitSearchResult>newArrayList());
+            return new ItemSearchResults<>(Lists.<VersionUnitSearchResult>newArrayList());
         }
 
         VfsQuery repoQuery = createQuery(controls)
@@ -73,7 +73,7 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
             }
         }
         Set<VersionUnitSearchResult> results = getVersionUnitResults(moduleInfoToRepoPaths);
-        return new ItemSearchResults<VersionUnitSearchResult>(Lists.newArrayList(results), queryResult.getCount());
+        return new ItemSearchResults<>(Lists.newArrayList(results), queryResult.getCount());
     }
 
     private Set<VersionUnitSearchResult> getVersionUnitResults(Multimap<ModuleInfo, RepoPath> moduleInfoToRepoPaths) {

@@ -19,9 +19,9 @@
 package org.artifactory.traffic.entry;
 
 import org.artifactory.traffic.TrafficAction;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -31,28 +31,28 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Yoav Landman
  */
 public abstract class TrafficEntryBase implements TrafficEntry {
-    protected final SimpleDateFormat entryDateFormat = new SimpleDateFormat("yyyyMMddHHmmss"); //Not synchronized!
+    protected static final DateTimeFormatter ENTRY_DATE_FORMATTER = DateTimeFormat.forPattern("yyyyMMddHHmmss");
 
-    protected Date date;
+    protected long time;
     protected long duration;
-    protected AtomicReference<String> formattedDate = new AtomicReference<String>();
+    protected AtomicReference<String> formattedDate = new AtomicReference<>();
 
     /**
      * Default constructor
      */
     protected TrafficEntryBase() {
-        this.date = new Date();
+        this.time = System.currentTimeMillis();
         this.duration = 0;
     }
 
     protected TrafficEntryBase(long duration) {
-        this.date = new Date();
+        this.time = System.currentTimeMillis();
         this.duration = duration;
     }
 
     @Override
-    public Date getDate() {
-        return date;
+    public long getTime() {
+        return time;
     }
 
     @Override
@@ -66,13 +66,12 @@ public abstract class TrafficEntryBase implements TrafficEntry {
     /**
      * Compares the entry by date
      *
-     * @param o Entry to compare to
+     * @param that Entry to compare to
      * @return int - Date comparison result
      */
     @Override
     public int compareTo(TrafficEntry that) {
-        Date dateToCompare = that.getDate();
-        return date.compareTo(dateToCompare);
+        return Long.compare(time, that.getTime());
     }
 
     /**
@@ -82,7 +81,7 @@ public abstract class TrafficEntryBase implements TrafficEntry {
      */
     String getFormattedDate() {
         //Lazy initialize if null
-        formattedDate.compareAndSet(null, entryDateFormat.format(date));
+        formattedDate.compareAndSet(null, ENTRY_DATE_FORMATTER.print(time));
         return formattedDate.get();
     }
 }

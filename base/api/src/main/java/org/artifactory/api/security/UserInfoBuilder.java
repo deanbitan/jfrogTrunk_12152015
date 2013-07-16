@@ -45,7 +45,7 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
     private boolean enabled = true;
     private boolean updatableProfile = false;
     private boolean transientUser = false;
-    private Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>();
+    private Set<UserGroupInfo> groups = new HashSet<>();
     private String bintrayAuth;
 
     public UserInfoBuilder(String username) {
@@ -125,7 +125,7 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
         return this;
     }
 
-    public UserInfoBuilder bintrayAuth(String bintrayAuth){
+    public UserInfoBuilder bintrayAuth(String bintrayAuth) {
         this.bintrayAuth = bintrayAuth;
         return this;
     }

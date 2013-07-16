@@ -44,6 +44,7 @@ public class StorageProperties {
     private final static String DEFAULT_MAX_CACHE_SIZE = "5GB";
 
     private final Properties props;
+    private final DbType dbType;
 
     public StorageProperties(File storagePropsFile) throws IOException {
         props = new Properties();
@@ -53,12 +54,15 @@ public class StorageProperties {
 
         assertMandatoryProperties();
 
+        // cache commonly used properties
+        dbType = DbType.parse(getProperty(Key.type));
+
         // verify that the database is supported (will throw an exception if not found)
         log.debug("Loaded storage properties for supported database type: {}", getDbType());
     }
 
     public DbType getDbType() {
-        return DbType.parse(getProperty(Key.type));
+        return dbType;
     }
 
     public String getConnectionUrl() {
@@ -132,6 +136,14 @@ public class StorageProperties {
                 throw new IllegalStateException("Mandatory storage property '" + mandatoryProperty + "' doesn't exist");
             }
         }
+    }
+
+    public boolean isDerby() {
+        return dbType == DbType.DERBY;
+    }
+
+    public boolean isPostgres() {
+        return dbType == DbType.POSTGRESQL;
     }
 
     public enum Key {

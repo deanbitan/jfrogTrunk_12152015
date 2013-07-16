@@ -56,7 +56,7 @@ public class AsyncAdvice implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger(AsyncAdvice.class);
 
     private static ConcurrentHashMap<MethodInvocation, MethodInvocation> pendingInvocations =
-            new ConcurrentHashMap<MethodInvocation, MethodInvocation>();
+            new ConcurrentHashMap<>();
 
     public AsyncAdvice() {
         log.debug("Creating async advice interceptor");

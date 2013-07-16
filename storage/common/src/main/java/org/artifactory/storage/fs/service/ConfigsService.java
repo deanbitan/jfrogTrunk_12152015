@@ -72,7 +72,7 @@ public interface ConfigsService {
     boolean addOrUpdateConfig(String name, String data);
 
     @Lock
-    boolean addOrUpdateConfig(String name, InputStream data);
+    boolean addOrUpdateConfig(String name, InputStream data, long length);
 
     InputStream getStreamConfig(String name);
 

@@ -20,19 +20,24 @@ package org.artifactory.api.bintray;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
+import java.util.List;
+
 /**
  * @author Shay Yaakov
  */
 public class BintrayUser {
 
     @JsonProperty(value = "name")
-    String username;
+    private String username;
 
     @JsonProperty(value = "full_name")
-    String fullName;
+    private String fullName;
 
     @JsonProperty(value = "gravatar_id")
-    String gravatarUrl;
+    private String gravatarUrl;
+
+    @JsonProperty
+    private List<String> organizations;
 
     public String getUsername() {
         return username;
@@ -56,5 +61,13 @@ public class BintrayUser {
 
     public void setGravatarUrl(String gravatarUrl) {
         this.gravatarUrl = gravatarUrl;
+    }
+
+    public List<String> getOrganizations() {
+        return organizations;
+    }
+
+    public void setOrganizations(List<String> organizations) {
+        this.organizations = organizations;
     }
 }

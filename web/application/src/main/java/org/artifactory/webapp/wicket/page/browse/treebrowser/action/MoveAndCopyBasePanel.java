@@ -97,7 +97,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                 return displayValueBuilder.toString();
             }
         };
-        targetRepos = new DropDownChoice<LocalRepoDescriptor>("targetRepos", new Model<LocalRepoDescriptor>(),
+        targetRepos = new DropDownChoice<>("targetRepos", new Model<LocalRepoDescriptor>(),
                 localRepos, choiceRenderer);
         targetRepos.setLabel(Model.of("Target Repository"));
         targetRepos.setRequired(true);
@@ -215,7 +215,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         SavedSearchResults searchResults = ArtifactoryWebSession.get().getResults(resultName);
 
         // collect all the repo paths that needs to be handled
-        Set<RepoPath> pathsToReturn = new HashSet<RepoPath>();
+        Set<RepoPath> pathsToReturn = new HashSet<>();
         for (FileInfo fileInfo : searchResults.getResults()) {
             pathsToReturn.add(fileInfo.getRepoPath());
         }

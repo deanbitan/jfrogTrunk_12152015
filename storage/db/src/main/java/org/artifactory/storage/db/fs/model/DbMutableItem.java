@@ -48,8 +48,6 @@ import java.util.List;
 public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<T> implements MutableVfsItem<T> {
     private static final Logger log = LoggerFactory.getLogger(DbMutableItem.class);
 
-    private final StoringRepo repo;
-
     /**
      * The mutable item info. All item the modifications done during this session are saved in this object.
      */
@@ -84,7 +82,6 @@ public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<
 
     public DbMutableItem(StoringRepo repo, long id, T info) {
         super(repo, id, info);
-        this.repo = repo;
         this.id = id;
         this.mutableInfo = info;
         originalInfo = new XStreamInfoFactory().copyItemInfo(info);

@@ -94,7 +94,7 @@ public class PagingNavigatorWithDropDown extends Panel {
         add(link);
 
         // pageable drop down
-        pageableDropDown = new DropDownChoice<Integer>("pageableDropDown", new Model<Integer>() {
+        pageableDropDown = new DropDownChoice<>("pageableDropDown", new Model<Integer>() {
             @Override
             public Integer getObject() {
                 return currentPageIndex;
@@ -205,7 +205,7 @@ public class PagingNavigatorWithDropDown extends Panel {
     }
 
     private List<Integer> getPagesNumbers() {
-        List<Integer> pages = new ArrayList<Integer>(pageable.getPageCount());
+        List<Integer> pages = new ArrayList<>(pageable.getPageCount());
 
         // filling the list
         for (int i = 0; i < pageable.getPageCount(); i++) {

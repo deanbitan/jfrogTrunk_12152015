@@ -20,6 +20,7 @@ package org.artifactory.repo.interceptor;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.replication.ReplicationAddon;
+import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.sapi.fs.VfsItem;
@@ -115,10 +116,12 @@ public class ReplicationEventInterceptorTest {
     }
 
     private IExpectationSetters<Boolean> prepareTargetAsFile() {
+        expect(targetMock.getProperties()).andReturn(new PropertiesImpl());
         return expect(targetMock.isFile()).andReturn(true);
     }
 
     private void prepareTargetAsCreatedFolder() {
+        expect(targetMock.getProperties()).andReturn(new PropertiesImpl());
         prepareTargetAsFolder();
         replicationAddon.offerLocalReplicationMkDirEvent(targetRepoPath);
         expectLastCall();

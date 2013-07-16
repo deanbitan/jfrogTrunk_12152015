@@ -68,7 +68,7 @@ public abstract class AbstractInfoFactory implements InfoFactory {
             return null;
         }
         //Create a list of default groups
-        Set<UserGroupInfo> userGroupInfos = new HashSet<UserGroupInfo>(names.size());
+        Set<UserGroupInfo> userGroupInfos = new HashSet<>(names.size());
         for (String name : names) {
             UserGroupInfo userGroupInfo = createUserGroup(name);
             userGroupInfos.add(userGroupInfo);

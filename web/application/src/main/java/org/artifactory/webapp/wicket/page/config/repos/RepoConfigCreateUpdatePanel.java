@@ -75,7 +75,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
         add(new CssClass("repo-config"));
         setWidth(650);
         TitledBorder repoConfigBorder = new TitledBorder("repoConfigBorder");
-        TextField<String> repoKeyField = new TextField<String>("key");
+        TextField<String> repoKeyField = new TextField<>("key");
         setDefaultFocusField(repoKeyField);
 
         boolean create = isCreate();

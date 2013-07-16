@@ -22,7 +22,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -108,7 +107,7 @@ public class DependencyList implements List<Dependency> {
     public boolean containsAll(Collection<?> c) {
         return dependencyList.containsAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((Dependency) input).getBuildDependency();
             }
         })));
@@ -119,7 +118,7 @@ public class DependencyList implements List<Dependency> {
         return dependencyList.addAll(Lists.newArrayList(Iterables.transform(c,
                 new Function<Object, org.jfrog.build.api.Dependency>() {
                     @Override
-                    public org.jfrog.build.api.Dependency apply(@Nullable Object input) {
+                    public org.jfrog.build.api.Dependency apply(Object input) {
                         return ((Dependency) input).getBuildDependency();
                     }
                 })));
@@ -130,7 +129,7 @@ public class DependencyList implements List<Dependency> {
         return dependencyList.addAll(index, Lists.newArrayList(Iterables.transform(c,
                 new Function<Object, org.jfrog.build.api.Dependency>() {
                     @Override
-                    public org.jfrog.build.api.Dependency apply(@Nullable Object input) {
+                    public org.jfrog.build.api.Dependency apply(Object input) {
                         return ((Dependency) input).getBuildDependency();
                     }
                 })));
@@ -140,7 +139,7 @@ public class DependencyList implements List<Dependency> {
     public boolean removeAll(Collection<?> c) {
         return dependencyList.removeAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((Dependency) input).getBuildDependency();
             }
         })));
@@ -150,7 +149,7 @@ public class DependencyList implements List<Dependency> {
     public boolean retainAll(Collection<?> c) {
         return dependencyList.retainAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((Dependency) input).getBuildDependency();
             }
         })));
@@ -214,7 +213,7 @@ public class DependencyList implements List<Dependency> {
         return Lists.newArrayList(Iterables.transform(dependencyList.subList(fromIndex, toIndex),
                 new Function<org.jfrog.build.api.Dependency, Dependency>() {
                     @Override
-                    public Dependency apply(@Nullable org.jfrog.build.api.Dependency input) {
+                    public Dependency apply(org.jfrog.build.api.Dependency input) {
                         return new Dependency(input);
                     }
                 }));

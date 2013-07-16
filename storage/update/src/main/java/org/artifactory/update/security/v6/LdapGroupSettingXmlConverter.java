@@ -45,7 +45,7 @@ public class LdapGroupSettingXmlConverter implements XmlConverter {
                 Element groups = userElement.getChild("groups", namespace);
                 if (groups != null) {
                     List groupNames = groups.getChildren("string", namespace);
-                    List<String> listOfGroupNames = new ArrayList<String>();
+                    List<String> listOfGroupNames = new ArrayList<>();
                     for (Object groupName : groupNames) {
                         Element group = (Element) groupName;
                         listOfGroupNames.add(group.getText());

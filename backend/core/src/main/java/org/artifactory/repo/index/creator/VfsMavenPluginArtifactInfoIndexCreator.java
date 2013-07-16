@@ -10,6 +10,7 @@
 
 package org.artifactory.repo.index.creator;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.index.ArtifactContext;
 import org.apache.maven.index.ArtifactInfo;
@@ -79,10 +80,10 @@ public class VfsMavenPluginArtifactInfoIndexCreator extends MavenPluginArtifactI
     private void parsePluginDetails(ArtifactInfo ai, ZipInputStream zis)
             throws XmlPullParserException, IOException, PlexusConfigurationException {
         PlexusConfiguration plexusConfig =
-                new XmlPlexusConfiguration(Xpp3DomBuilder.build(new InputStreamReader(zis)));
+                new XmlPlexusConfiguration(Xpp3DomBuilder.build(new InputStreamReader(zis, Charsets.UTF_8)));
 
         ai.prefix = plexusConfig.getChild("goalPrefix").getValue();
-        ai.goals = new ArrayList<String>();
+        ai.goals = new ArrayList<>();
         PlexusConfiguration[] mojoConfigs = plexusConfig.getChild("mojos").getChildren("mojo");
         for (PlexusConfiguration mojoConfig : mojoConfigs) {
             ai.goals.add(mojoConfig.getChild("goal").getValue());

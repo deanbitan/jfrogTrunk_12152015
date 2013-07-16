@@ -40,25 +40,25 @@ public class BuildsDiff implements Serializable {
 
     public static class ArtifactsEntry {
         @XmlElement(name = "new")
-        public List<BuildsDiffArtifactModel> newItems = new ArrayList<BuildsDiffArtifactModel>();
-        public List<BuildsDiffArtifactModel> updated = new ArrayList<BuildsDiffArtifactModel>();
-        public List<BuildsDiffArtifactModel> unchanged = new ArrayList<BuildsDiffArtifactModel>();
-        public List<BuildsDiffArtifactModel> removed = new ArrayList<BuildsDiffArtifactModel>();
+        public List<BuildsDiffArtifactModel> newItems = new ArrayList<>();
+        public List<BuildsDiffArtifactModel> updated = new ArrayList<>();
+        public List<BuildsDiffArtifactModel> unchanged = new ArrayList<>();
+        public List<BuildsDiffArtifactModel> removed = new ArrayList<>();
     }
 
     public static class DependenciesEntry {
         @XmlElement(name = "new")
-        public List<BuildsDiffDependencyModel> newItems = new ArrayList<BuildsDiffDependencyModel>();
-        public List<BuildsDiffDependencyModel> updated = new ArrayList<BuildsDiffDependencyModel>();
-        public List<BuildsDiffDependencyModel> unchanged = new ArrayList<BuildsDiffDependencyModel>();
-        public List<BuildsDiffDependencyModel> removed = new ArrayList<BuildsDiffDependencyModel>();
+        public List<BuildsDiffDependencyModel> newItems = new ArrayList<>();
+        public List<BuildsDiffDependencyModel> updated = new ArrayList<>();
+        public List<BuildsDiffDependencyModel> unchanged = new ArrayList<>();
+        public List<BuildsDiffDependencyModel> removed = new ArrayList<>();
     }
 
     public static class PropertiesEntry {
         @XmlElement(name = "new")
-        public List<BuildsDiffPropertyModel> newItems = new ArrayList<BuildsDiffPropertyModel>();
-        public List<BuildsDiffPropertyModel> updated = new ArrayList<BuildsDiffPropertyModel>();
-        public List<BuildsDiffPropertyModel> unchanged = new ArrayList<BuildsDiffPropertyModel>();
-        public List<BuildsDiffPropertyModel> removed = new ArrayList<BuildsDiffPropertyModel>();
+        public List<BuildsDiffPropertyModel> newItems = new ArrayList<>();
+        public List<BuildsDiffPropertyModel> updated = new ArrayList<>();
+        public List<BuildsDiffPropertyModel> unchanged = new ArrayList<>();
+        public List<BuildsDiffPropertyModel> removed = new ArrayList<>();
     }
 }

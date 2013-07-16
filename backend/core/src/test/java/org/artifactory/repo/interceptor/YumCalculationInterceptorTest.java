@@ -45,13 +45,13 @@ public class YumCalculationInterceptorTest {
         InternalRepositoryService repoServiceMock = EasyMock.createMock(InternalRepositoryService.class);
         yumCalculationInterceptor.repositoryService = repoServiceMock;
 
-        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(2);
-        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(1);
-        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(1);
-        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.zip")).times(1);
+        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.zip")).times(2);
+        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.zip")).times(1);
+        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.zip")).times(1);
+        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.zip")).times(1);
         EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
         EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
-        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("repoKey")).andReturn(descriptorMock).anyTimes();
         EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
@@ -60,13 +60,13 @@ public class YumCalculationInterceptorTest {
         EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
 
-        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(2);
-        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(1);
-        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(1);
-        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.jar")).times(1);
+        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.jar")).times(2);
+        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.jar")).times(1);
+        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.jar")).times(1);
+        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.jar")).times(1);
         EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
         EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
-        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("repoKey")).andReturn(descriptorMock).anyTimes();
         EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
@@ -75,13 +75,13 @@ public class YumCalculationInterceptorTest {
         EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
 
-        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(2);
-        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(1);
-        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(1);
-        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.pom")).times(1);
+        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.pom")).times(2);
+        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.pom")).times(1);
+        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.pom")).times(1);
+        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.pom")).times(1);
         EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
         EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
-        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("repoKey")).andReturn(descriptorMock).anyTimes();
         EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);
@@ -90,13 +90,13 @@ public class YumCalculationInterceptorTest {
         EasyMock.verify(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         EasyMock.reset(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
 
-        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(2);
-        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(1);
-        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(1);
-        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("", "momo.xml")).times(1);
+        EasyMock.expect(vfsFileMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.xml")).times(2);
+        EasyMock.expect(copyTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.xml")).times(1);
+        EasyMock.expect(moveSourceMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.xml")).times(1);
+        EasyMock.expect(moveTargetMock.getRepoPath()).andReturn(new RepoPathImpl("repoKey", "momo.xml")).times(1);
         EasyMock.expect(descriptorMock.isCalculateYumMetadata()).andReturn(true).anyTimes();
         EasyMock.expect(descriptorMock.getYumGroupFileNames()).andReturn("").anyTimes();
-        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("")).andReturn(descriptorMock).anyTimes();
+        EasyMock.expect(repoServiceMock.localRepoDescriptorByKey("repoKey")).andReturn(descriptorMock).anyTimes();
         EasyMock.replay(vfsFileMock, copyTargetMock, moveSourceMock, moveTargetMock, descriptorMock, repoServiceMock);
         yumCalculationInterceptor.afterCreate(vfsFileMock, null);
         yumCalculationInterceptor.afterDelete(vfsFileMock, null);

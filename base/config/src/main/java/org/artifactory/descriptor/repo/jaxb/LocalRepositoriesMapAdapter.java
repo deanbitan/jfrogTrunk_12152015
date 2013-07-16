@@ -59,7 +59,7 @@ public class LocalRepositoriesMapAdapter extends
     @XmlType(name = "LocalRepositoriesType", namespace = Descriptor.NS)
     public static class Wrappper {
         @XmlElement(name = "localRepository", required = true, namespace = Descriptor.NS)
-        private List<LocalRepoDescriptor> list = new ArrayList<LocalRepoDescriptor>();
+        private List<LocalRepoDescriptor> list = new ArrayList<>();
 
         public Wrappper() {
         }

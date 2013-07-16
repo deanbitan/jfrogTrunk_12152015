@@ -37,7 +37,7 @@ import static org.artifactory.checksum.ChecksumInfo.TRUSTED_FILE_MARKER;
 public class ChecksumsInfo implements Serializable {
 
     private final EnumMap<ChecksumType, ChecksumInfo> checksums =
-            new EnumMap<ChecksumType, ChecksumInfo>(ChecksumType.class);
+            new EnumMap<>(ChecksumType.class);
 
     public ChecksumsInfo() {
         // default empty constructor
@@ -60,6 +60,9 @@ public class ChecksumsInfo implements Serializable {
         return checksums.size();
     }
 
+    /**
+     * @return The actual SHA1 checksum or null if not found
+     */
     public String getSha1() {
         ChecksumInfo sha1 = getChecksumInfo(ChecksumType.sha1);
         return sha1 == null ? null : sha1.getActual();
@@ -81,7 +84,7 @@ public class ChecksumsInfo implements Serializable {
     }
 
     public Set<ChecksumInfo> getChecksums() {
-        return new HashSet<ChecksumInfo>(checksums.values());
+        return new HashSet<>(checksums.values());
     }
 
     public ChecksumInfo getChecksumInfo(ChecksumType type) {

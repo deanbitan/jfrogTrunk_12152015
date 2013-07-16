@@ -75,9 +75,7 @@ public class ArtifactoryHome {
     private File tempWorkDir;
     private File tempUploadDir;
     private File pluginsDir;
-
     private File logoDir;
-    private boolean newDataDir;
 
     /**
      * protected constructor for testing usage only.
@@ -154,10 +152,6 @@ public class ArtifactoryHome {
         return logoDir;
     }
 
-    public boolean isNewDataDir() {
-        return newDataDir;
-    }
-
     public File getOrCreateSubDir(String subDirName) throws IOException {
         return getOrCreateSubDir(getHomeDir(), subDirName);
     }
@@ -172,9 +166,6 @@ public class ArtifactoryHome {
         try {
             // Create or find all the needed sub folders
             etcDir = getOrCreateSubDir("etc");
-            if (!new File(getHomeDir(), "data").exists()) {
-                newDataDir = true;
-            }
             dataDir = getOrCreateSubDir("data");
             logDir = getOrCreateSubDir("logs");
             backupDir = getOrCreateSubDir("backup");
@@ -479,12 +470,5 @@ public class ArtifactoryHome {
      */
     public interface SimpleLog {
         public void log(String message);
-    }
-
-    public static class SystemOutLog implements SimpleLog {
-        @Override
-        public void log(String message) {
-            System.out.println(message);
-        }
     }
 }

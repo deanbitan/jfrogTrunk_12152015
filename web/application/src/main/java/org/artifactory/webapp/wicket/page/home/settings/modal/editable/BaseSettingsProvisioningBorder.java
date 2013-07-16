@@ -48,11 +48,11 @@ public abstract class BaseSettingsProvisioningBorder extends TitledBorder {
         super(id);
         deploymentPath = saveToFileName;
 
-        add(new DropDownChoice<LocalRepoDescriptor>("repoSelect",
+        add(new DropDownChoice<>("repoSelect",
                 new PropertyModel<LocalRepoDescriptor>(this, "selectedRepo"),
                 getDeployableRepoDescriptors(), new RepoKeyChoiceRenderer()));
 
-        add(new TextField<String>("deploymentPath", new PropertyModel<String>(this, "deploymentPath")));
+        add(new TextField<>("deploymentPath", new PropertyModel<String>(this, "deploymentPath")));
 
         add(getDeploymentLink("deploy", "Deploy", form, content));
     }

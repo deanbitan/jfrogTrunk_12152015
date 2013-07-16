@@ -63,7 +63,7 @@ public class NodeBuilder implements Builder<Node> {
         // only build if node path is not set
         if (nodePath == null) {
             // node path will validate and normalize the paths
-            nodePath = new NodePath(repo, path, name);
+            nodePath = new NodePath(repo, path, name, file);
         }
 
         return new Node(nodeId, file, nodePath.getRepo(), nodePath.getPath(), nodePath.getName(), nodePath.getDepth(),

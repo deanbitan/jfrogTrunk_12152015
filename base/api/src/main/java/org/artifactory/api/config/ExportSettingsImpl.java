@@ -22,7 +22,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamOmitField;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.FileExportCallback;
 import org.artifactory.sapi.common.FileExportEvent;
@@ -58,19 +58,23 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
     private SetMultimap<FileExportEvent, FileExportCallback> callbacks;
 
     public ExportSettingsImpl(File baseDir) {
-        super(baseDir);
+        super(baseDir, new ImportExportStatusHolder());
         time = new Date();
         callbacks = HashMultimap.create();
     }
 
-    public ExportSettingsImpl(File baseDir, MultiStatusHolder statusHolder) {
+    public ExportSettingsImpl(File baseDir, ImportExportStatusHolder statusHolder) {
         super(baseDir, statusHolder);
         time = new Date();
         callbacks = HashMultimap.create();
     }
 
     public ExportSettingsImpl(File baseDir, ExportSettings exportSettings) {
-        super(baseDir, exportSettings);
+        this(baseDir, exportSettings, (ImportExportStatusHolder) exportSettings.getStatusHolder());
+    }
+
+    public ExportSettingsImpl(File baseDir, ExportSettings exportSettings, ImportExportStatusHolder statusHolder) {
+        super(baseDir, exportSettings, statusHolder);
         ExportSettingsImpl settings = (ExportSettingsImpl) exportSettings;
         this.ignoreRepositoryFilteringRulesOn = settings.ignoreRepositoryFilteringRulesOn;
         this.createArchive = settings.createArchive;
@@ -79,6 +83,7 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
         this.incremental = settings.incremental;
         this.callbacks = settings.callbacks;
         this.excludeBuilds = settings.excludeBuilds;
+
     }
 
     @Override

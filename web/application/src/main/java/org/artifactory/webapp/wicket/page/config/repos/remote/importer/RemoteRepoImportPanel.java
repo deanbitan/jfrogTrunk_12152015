@@ -114,7 +114,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
         loadBorder.add(new HelpBubble("urlHelp",
                 "Enter the base URL of another Artifactory server you want to import repository definitions from."));
-        FormComponent<String> urlTextField = new TextField<String>("url", new PropertyModel<String>(this, "url"));
+        FormComponent<String> urlTextField = new TextField<>("url", new PropertyModel<String>(this, "url"));
         urlTextField.add(new UriValidator("http", "https"));
         setPersistent(urlTextField);
         urlTextField.setOutputMarkupId(true);
@@ -214,7 +214,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
                         int selectedRepoCount = reposToImport.size();
                         Map<String, RemoteRepoDescriptor> existingRepos =
                                 mutableCentralConfigDescriptor.getRemoteRepositoriesMap();
-                        Collection<RepoPath> reposToZap = new ArrayList<RepoPath>();
+                        Collection<RepoPath> reposToZap = new ArrayList<>();
 
                         //Remove existing remote repositories that will be re-imported
                         for (RemoteRepoDescriptor repoToImport : reposToImport.values()) {
@@ -372,7 +372,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
      */
     private void createRepositoryList(MarkupContainer listBorder) {
         provider = new RepoDataProvider();
-        repoTable = new SortableTable<ImportableRemoteRepo>("repoTable", getColumns(), provider, 10);
+        repoTable = new SortableTable<>("repoTable", getColumns(), provider, 10);
         repoTable.setOutputMarkupId(true);
         listBorder.add(repoTable);
     }
@@ -476,7 +476,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
 
         @Override
         public IModel<ImportableRemoteRepo> model(ImportableRemoteRepo object) {
-            return new Model<ImportableRemoteRepo>(object);
+            return new Model<>(object);
         }
 
         /**

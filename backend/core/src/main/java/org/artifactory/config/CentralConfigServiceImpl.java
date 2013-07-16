@@ -18,6 +18,7 @@
 
 package org.artifactory.config;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
@@ -59,9 +60,10 @@ import org.springframework.stereotype.Repository;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -317,7 +319,8 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         if (logoUrlFile.exists()) {
             BufferedReader fileReader = null;
             try {
-                fileReader = new BufferedReader(new FileReader(logoUrlFile));
+                fileReader = new BufferedReader(
+                        new InputStreamReader(new FileInputStream(logoUrlFile), Charsets.UTF_8));
                 String url = fileReader.readLine();
                 IOUtils.closeQuietly(fileReader);
                 if (StringUtils.isNotBlank(url)) {
@@ -408,7 +411,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
 
     private void checkUniqueProxies() {
         List<ProxyDescriptor> proxies = getDescriptor().getProxies();
-        Map<String, ProxyDescriptor> map = new HashMap<String, ProxyDescriptor>(proxies.size());
+        Map<String, ProxyDescriptor> map = new HashMap<>(proxies.size());
         for (ProxyDescriptor proxy : proxies) {
             String key = proxy.getKey();
             ProxyDescriptor oldProxy = map.put(key, proxy);

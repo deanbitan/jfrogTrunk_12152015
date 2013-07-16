@@ -48,8 +48,7 @@ public class StorageResource {
     private InternalBinaryStore binaryStore;
 
     public StorageResource(StorageService storageService, InternalBackupService backupService,
-            InternalBinaryStore binaryStore,
-            HttpServletResponse httpResponse) {
+            InternalBinaryStore binaryStore, HttpServletResponse httpResponse) {
         this.storageService = storageService;
         this.httpResponse = httpResponse;
         this.binaryStore = binaryStore;
@@ -59,7 +58,7 @@ public class StorageResource {
     @POST
     @Path("compress")
     public Response compress() {
-        MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         storageService.compress(statusHolder);
         return response(statusHolder);
     }
@@ -95,7 +94,7 @@ public class StorageResource {
         if (StringUtils.isNotBlank(mode)) {
             connectMode = ProviderConnectMode.getConnectMode(mode);
         }
-        StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
+        ImportExportStreamStatusHolder holder = new ImportExportStreamStatusHolder(httpResponse);
         holder.setVerbose(verbose);
         binaryStore.disconnectExternalFilestore(extDir, connectMode, holder);
     }
@@ -110,7 +109,7 @@ public class StorageResource {
     @POST
     @Path("gc")
     public Response activateGc() {
-        MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         storageService.callManualGarbageCollect(statusHolder);
         return response(statusHolder);
     }
@@ -118,7 +117,7 @@ public class StorageResource {
     @POST
     @Path("prune")
     public Response activatePruneEmptyDirs() {
-        MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         binaryStore.prune(statusHolder);
         return response(statusHolder);
     }
@@ -126,7 +125,7 @@ public class StorageResource {
     @POST
     @Path("backup")
     public Response activateBackup(@QueryParam("key") String backupKey) {
-        final MultiStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        final MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         BackupDescriptor backupDescriptor = backupService.getBackup(backupKey);
         if (backupDescriptor != null) {
             if (backupDescriptor.isEnabled()) {

@@ -27,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.build.ImportableExportableBuild;
 import org.artifactory.api.jackson.JacksonReader;
 import org.artifactory.binstore.BinaryInfo;
+import org.artifactory.build.BuildInfoUtils;
 import org.artifactory.build.BuildRun;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.storage.StorageException;
@@ -45,7 +46,7 @@ import org.artifactory.storage.db.build.entity.BuildModule;
 import org.artifactory.storage.db.build.entity.BuildPromotionStatus;
 import org.artifactory.storage.db.build.entity.BuildProperty;
 import org.artifactory.storage.db.build.entity.ModuleProperty;
-import org.artifactory.storage.db.util.JsonBlobWrapper;
+import org.artifactory.storage.db.util.blob.BlobWrapperFactory;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
@@ -60,8 +61,6 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -103,6 +102,9 @@ public class BuildStoreServiceImpl implements BuildStoreService {
     @Autowired
     private BuildDependenciesDao buildDependenciesDao;
 
+    @Autowired
+    private BlobWrapperFactory blobsFactory;
+
     @Override
     public void addBuild(String buildJson) {
         try {
@@ -128,7 +130,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             long buildId = dbBuild.getBuildId();
             dbBuild.setProperties(createProperties(buildId, build));
             dbBuild.setPromotions(createPromotions(buildId, build));
-            buildsDao.createBuild(dbBuild, new JsonBlobWrapper(build));
+            buildsDao.createBuild(dbBuild, blobsFactory.createJsonObjectWrapper(build));
             insertModules(buildId, build);
         } catch (SQLException e) {
             throw new StorageException("Could not insert build " + build, e);
@@ -140,12 +142,12 @@ public class BuildStoreServiceImpl implements BuildStoreService {
         List<PromotionStatus> statuses = build.getStatuses();
         ArrayList<BuildPromotionStatus> buildPromotions;
         if (statuses != null && !statuses.isEmpty()) {
-            buildPromotions = new ArrayList<BuildPromotionStatus>(statuses.size());
+            buildPromotions = new ArrayList<>(statuses.size());
             for (PromotionStatus status : statuses) {
                 buildPromotions.add(convertPromotionStatus(buildId, status));
             }
         } else {
-            buildPromotions = new ArrayList<BuildPromotionStatus>(1);
+            buildPromotions = new ArrayList<>(1);
         }
         return buildPromotions;
     }
@@ -164,14 +166,14 @@ public class BuildStoreServiceImpl implements BuildStoreService {
         Properties properties = build.getProperties();
         Set<BuildProperty> buildProperties;
         if (properties != null && !properties.isEmpty()) {
-            buildProperties = new HashSet<BuildProperty>(properties.size());
+            buildProperties = new HashSet<>(properties.size());
             for (Map.Entry<Object, Object> entry : properties.entrySet()) {
                 buildProperties.add(
                         new BuildProperty(dbService.nextId(), buildId, entry.getKey().toString(),
                                 entry.getValue().toString()));
             }
         } else {
-            buildProperties = new HashSet<BuildProperty>(1);
+            buildProperties = new HashSet<>(1);
         }
         return buildProperties;
     }
@@ -232,17 +234,11 @@ public class BuildStoreServiceImpl implements BuildStoreService {
     }
 
     public static Date parseStringToDate(String dateString) {
-        Date parsedDate;
-        try {
-            parsedDate = new SimpleDateFormat(Build.STARTED_FORMAT).parse(dateString);
-        } catch (ParseException e) {
-            throw new IllegalStateException("Could not parse given build start date.", e);
-        }
-        return parsedDate;
+        return new Date(BuildInfoUtils.parseBuildTime(dateString));
     }
 
-    public static String formatDateToString(Date buildStarted) {
-        return new SimpleDateFormat(Build.STARTED_FORMAT).format(buildStarted);
+    public static String formatDateToString(long buildStarted) {
+        return BuildInfoUtils.formatBuildTime(buildStarted);
     }
 
     @Override
@@ -289,8 +285,8 @@ public class BuildStoreServiceImpl implements BuildStoreService {
         try {
             long buildId = findIdFromBuildRun(originalBuildRun);
             if (buildId > 0L) {
-                buildsDao.rename(buildId, renamedBuild.getName(), new JsonBlobWrapper(renamedBuild), currentUser,
-                        System.currentTimeMillis());
+                buildsDao.rename(buildId, renamedBuild.getName(), blobsFactory.createJsonObjectWrapper(renamedBuild),
+                        currentUser, System.currentTimeMillis());
             } else {
                 throw new StorageException("Could not find build to rename " + originalBuildRun);
             }
@@ -309,7 +305,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             long buildId = findIdFromBuildRun(buildRun);
             build.addStatus(promotion);
             buildsDao.addPromotionStatus(buildId, convertPromotionStatus(buildId, promotion),
-                    new JsonBlobWrapper(build), currentUser, System.currentTimeMillis());
+                    blobsFactory.createJsonObjectWrapper(build), currentUser, System.currentTimeMillis());
         } catch (SQLException e) {
             throw new StorageException("Could not add promotion " + promotion + " for build " + buildRun, e);
         }
@@ -335,7 +331,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
         try {
             buildDate = buildsDao.findLatestBuildDate(buildName, buildNumber);
             if (buildDate > 0L) {
-                fullBuildDate = formatDateToString(new Date(buildDate));
+                fullBuildDate = formatDateToString(buildDate);
                 return getBuildJson(new BuildRunImpl(buildName, buildNumber, fullBuildDate));
             }
         } catch (SQLException e) {
@@ -358,7 +354,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             exportedBuild.setVersion(EXPORTABLE_BUILD_VERSION);
             exportedBuild.setBuildName(buildEntity.getBuildName());
             exportedBuild.setBuildNumber(buildEntity.getBuildNumber());
-            exportedBuild.setBuildStarted(formatDateToString(new Date(buildEntity.getBuildDate())));
+            exportedBuild.setBuildStarted(formatDateToString(buildEntity.getBuildDate()));
 
             String jsonString = buildsDao.getJsonBuild(buildEntity.getBuildId(), String.class);
             exportedBuild.setJson(jsonString);
@@ -469,7 +465,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
     public Set<BuildRun> getLatestBuildsByName() {
         try {
             List<String> allBuildNames = buildsDao.getAllBuildNames();
-            LinkedHashSet<BuildRun> results = new LinkedHashSet<BuildRun>(allBuildNames.size());
+            LinkedHashSet<BuildRun> results = new LinkedHashSet<>(allBuildNames.size());
             for (String buildName : allBuildNames) {
                 BuildEntity buildEntity = buildsDao.getLatestBuild(buildName);
                 if (buildEntity != null) {
@@ -543,7 +539,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             releaseStatus = buildEntity.getPromotions().last().getStatus();
         }
         return new BuildRunImpl(buildEntity.getBuildId(), buildEntity.getBuildName(), buildEntity.getBuildNumber(),
-                formatDateToString(new Date(buildEntity.getBuildDate())), buildEntity.getCiUrl(), releaseStatus);
+                formatDateToString(buildEntity.getBuildDate()), buildEntity.getCiUrl(), releaseStatus);
     }
 
     /**

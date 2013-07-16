@@ -52,16 +52,11 @@ public class BinariesDao extends BaseDao {
     }
 
     public boolean exists(String sha1) throws SQLException {
-        ResultSet resultSet = null;
-        try {
-            int count = jdbcHelper.executeSelectCount("SELECT count(1) FROM binaries WHERE sha1 = ?", sha1);
-            if (count > 1) {
-                log.warn("Unexpected binaries count for checksum: '{}' - {}", sha1, count);
-            }
-            return count > 0;
-        } finally {
-            DbUtils.close(resultSet);
+        int count = jdbcHelper.executeSelectCount("SELECT count(1) FROM binaries WHERE sha1 = ?", sha1);
+        if (count > 1) {
+            log.warn("Unexpected binaries count for checksum: '{}' - {}", sha1, count);
         }
+        return count > 0;
     }
 
     @Nullable

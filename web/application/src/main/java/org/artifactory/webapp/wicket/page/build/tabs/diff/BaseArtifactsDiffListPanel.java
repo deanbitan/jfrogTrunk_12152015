@@ -66,7 +66,7 @@ public abstract class BaseArtifactsDiffListPanel extends TitledPanel {
                 "model.secondItemName", "model.diffName"));
         columns.add(new BuildDiffGroupableColumn(Model.of("Status"), "model.status", "model.status"));
         columns.add(new BuildDiffGroupableColumn(Model.of("Module"), "model.module", "model.module"));
-        add(new GroupableTable<BuildsDiffActionableItem>("artifactsDiff", columns, new ArtifactsDiffDataProvider(),
+        add(new GroupableTable<>("artifactsDiff", columns, new ArtifactsDiffDataProvider(),
                 10));
     }
 

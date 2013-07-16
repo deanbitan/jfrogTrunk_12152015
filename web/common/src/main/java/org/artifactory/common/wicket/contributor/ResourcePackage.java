@@ -43,7 +43,7 @@ import java.util.List;
  * @author Yoav Aharoni
  */
 public class ResourcePackage extends Behavior {
-    private List<IHeaderContributor> contributors = new ArrayList<IHeaderContributor>();
+    private List<IHeaderContributor> contributors = new ArrayList<>();
     private Class<?> scope;
 
     protected ResourcePackage() {

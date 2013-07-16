@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.service;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -49,7 +50,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.request.InternalArtifactoryResponse;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.util.PathMatcher;
+import org.artifactory.util.GlobalExcludes;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.ZipUtils;
 import org.slf4j.Logger;
@@ -130,7 +131,7 @@ public class DeployServiceImpl implements DeployService {
             RepoPath uploadPomPath = InternalRepoPathFactory.create(targetRepo.getKey(), pomPath.getPath());
             try {
                 ArtifactoryDeployRequest pomRequest = new ArtifactoryDeployRequestBuilder(uploadPomPath)
-                        .inputStream(IOUtils.toInputStream(pomString))
+                        .inputStream(IOUtils.toInputStream(pomString, Charsets.UTF_8.name()))
                         .contentLength(pomString.getBytes().length)
                         .lastModified(fileToDeploy.lastModified())
                         .properties(properties)
@@ -200,7 +201,7 @@ public class DeployServiceImpl implements DeployService {
             IOFileFilter deployableFilesFilter = new AbstractFileFilter() {
                 @Override
                 public boolean accept(File file) {
-                    if (NamingUtils.isSystem(file.getAbsolutePath()) || PathMatcher.isInGlobalExcludes(file) ||
+                    if (NamingUtils.isSystem(file.getAbsolutePath()) || GlobalExcludes.isInGlobalExcludes(file) ||
                             file.getName().contains(MavenNaming.MAVEN_METADATA_NAME)) {
                         status.setDebug("Excluding '" + file.getAbsolutePath() + "' from bundle deployment.", log);
                         return false;
@@ -270,7 +271,7 @@ public class DeployServiceImpl implements DeployService {
 
     private File extractArchive(BasicStatusHolder status, File archive) throws Exception {
         String archiveName = archive.getName();
-        String fixedArchiveName = new String(archiveName.getBytes("utf-8"));
+        String fixedArchiveName = new String(archiveName.getBytes(Charsets.UTF_8.name()), Charsets.UTF_8);
         File fixedArchive = new File(archive.getParentFile(), fixedArchiveName);
         try {
             if (!fixedArchive.exists()) {

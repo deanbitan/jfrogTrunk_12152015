@@ -124,7 +124,7 @@ public class StorageInfoHelper {
 
         RepoPath folderRepoPath = InternalRepoPathFactory.create(itemInfo.getRepoKey(),
                 itemInfo.getRepoPath().getPath());
-        folderInfo.children = new ArrayList<RestFolderInfo.DirItem>();
+        folderInfo.children = new ArrayList<>();
 
         //if local or cache repo
         if (isLocalRepo(itemInfo.getRepoKey())) {

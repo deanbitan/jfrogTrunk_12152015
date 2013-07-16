@@ -78,7 +78,7 @@ public class MimeTypes implements Serializable {
 
     private synchronized void initializeTypeByExtensionIfNeeded() {
         if (typeByExtension == null) {
-            typeByExtension = new HashMap<String, MimeType>(mimeTypes.size());
+            typeByExtension = new HashMap<>(mimeTypes.size());
             for (MimeType mimeType : mimeTypes) {
                 for (String extension : mimeType.getExtensions()) {
                     typeByExtension.put(extension, mimeType);

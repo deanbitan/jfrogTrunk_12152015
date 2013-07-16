@@ -44,7 +44,7 @@ public class MavenSettingsPanel extends TitledPanel {
         super(id);
         setOutputMarkupId(true);
         add(new CssClass("profile-panel"));
-        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
+        setDefaultModel(new CompoundPropertyModel<>(profile));
 
         WebMarkupContainer settingsSnippet = new WebMarkupContainer("settingsSnippet");
         settingsSnippet.setVisible(false);

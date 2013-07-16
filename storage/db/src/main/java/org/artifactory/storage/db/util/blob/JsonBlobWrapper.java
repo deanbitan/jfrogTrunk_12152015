@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.storage.db.util;
+package org.artifactory.storage.db.util.blob;
 
 import com.gc.iotools.stream.is.InputStreamFromOutputStream;
 import org.artifactory.api.jackson.JacksonFactory;
@@ -25,13 +25,12 @@ import org.codehaus.jackson.JsonGenerator;
 import java.io.OutputStream;
 
 /**
- * Date: 11/22/12
- * Time: 12:08 PM
+ * A blob wrapper that lazily creates an input stream out of an Object using JSON serialization.
  *
  * @author freds
  */
 public class JsonBlobWrapper extends BlobWrapper {
-    public JsonBlobWrapper(final Object jsonObject) {
+    JsonBlobWrapper(final Object jsonObject) {
         // TODO: Make sure the Global Artifactory executor is used
         super(new InputStreamFromOutputStream() {
             @Override

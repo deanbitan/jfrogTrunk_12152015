@@ -202,7 +202,7 @@ public class PathUtils {
     }
 
     public static List<String> delimitedListToStringList(String str, String delimiter, String charsToDelete) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if (str == null) {
             return result;
         }
@@ -266,6 +266,7 @@ public class PathUtils {
         }
     }
 
+    // todo: change to return string
     public static CharSequence trimSlashes(CharSequence path) {
         if (path == null) {
             return null;

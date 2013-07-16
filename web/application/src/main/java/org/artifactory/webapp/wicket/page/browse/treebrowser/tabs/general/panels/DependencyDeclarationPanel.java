@@ -73,7 +73,7 @@ public class DependencyDeclarationPanel extends Panel {
         declarationBorder.add(mavenWarningLabel);
 
         DropDownChoice<DependencyDeclarationProviderType> buildToolSelector =
-                new DropDownChoice<DependencyDeclarationProviderType>("buildToolSelector",
+                new DropDownChoice<>("buildToolSelector",
                         new PropertyModel<DependencyDeclarationProviderType>(this, "selectedDependencyDeclaration"),
                         Lists.newArrayList(DependencyDeclarationProviderType.values()));
         buildToolSelector.add(new AjaxFormComponentUpdatingBehavior("onchange") {

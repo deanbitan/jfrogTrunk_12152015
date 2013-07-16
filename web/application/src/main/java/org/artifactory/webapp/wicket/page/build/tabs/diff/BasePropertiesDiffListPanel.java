@@ -64,7 +64,7 @@ public abstract class BasePropertiesDiffListPanel extends TitledPanel {
         columns.add(new BuildDiffPropertyColumn(new PropertyModel<String>(this, "secondItemName"),
                 "model.compoundDiffKeyValue", "model.compoundDiffKeyValue"));
         columns.add(new BuildDiffGroupableColumn(Model.of("Status"), "model.status", "model.status"));
-        add(new GroupableTable<BuildsDiffActionableItem>("envDiff", columns, new PropertiesDiffDataProvider(), 10));
+        add(new GroupableTable<>("envDiff", columns, new PropertiesDiffDataProvider(), 10));
     }
 
     public PropertiesDiffDataProvider getTableDataProvider() {

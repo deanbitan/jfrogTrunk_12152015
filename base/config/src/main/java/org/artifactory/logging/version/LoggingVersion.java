@@ -77,7 +77,7 @@ public enum LoggingVersion implements SubConfigElementVersion {
      */
     public void convert(ArtifactoryHome artifactoryHome) {
         // First create the list of converters to apply
-        List<XmlConverter> converters = new ArrayList<XmlConverter>();
+        List<XmlConverter> converters = new ArrayList<>();
 
         // All converters of versions above me needs to be executed in sequence
         LoggingVersion[] versions = LoggingVersion.values();

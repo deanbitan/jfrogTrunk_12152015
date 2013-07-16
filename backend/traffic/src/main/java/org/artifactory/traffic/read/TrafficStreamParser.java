@@ -20,7 +20,6 @@ package org.artifactory.traffic.read;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.traffic.TrafficUtils;
 import org.artifactory.traffic.entry.TokenizedTrafficEntryFactory;
 import org.artifactory.traffic.entry.TrafficEntry;
 
@@ -66,14 +65,14 @@ public abstract class TrafficStreamParser {
         BufferedReader source = null;
         try {
             source = new BufferedReader(entries);
-            List<TrafficEntry> entryList = new ArrayList<TrafficEntry>();
+            List<TrafficEntry> entryList = new ArrayList<>();
             String entryRow;
             while ((entryRow = source.readLine()) != null) {
                 if (StringUtils.isNotBlank(entryRow)) {
                     TrafficEntry trafficEntry = TokenizedTrafficEntryFactory.newTrafficEntry(entryRow);
                     if (isWithinDateRange(trafficEntry, startDate, endDate)) {
                         entryList.add(trafficEntry);
-                    } else if (trafficEntry.getDate().after(endDate)) {
+                    } else if (trafficEntry.getTime() > endDate.getTime()) {
                         // file entries are sorted, once we reach an entry after the endDate we can stop parsing
                         break;
                     }
@@ -95,7 +94,7 @@ public abstract class TrafficStreamParser {
      * @return boolean - True if the given entry is relevant to the given time window. False if not
      */
     private static boolean isWithinDateRange(TrafficEntry baseEntry, Date startDate, Date endDate) {
-        Date date = baseEntry.getDate();
-        return (TrafficUtils.dateEqualsAfter(date, startDate) && TrafficUtils.dateEqualsBefore(date, endDate));
+        long entryTime = baseEntry.getTime();
+        return startDate.getTime() <= entryTime && entryTime <= endDate.getTime();
     }
 }

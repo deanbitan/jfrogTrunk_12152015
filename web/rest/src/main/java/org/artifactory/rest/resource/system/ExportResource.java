@@ -78,7 +78,7 @@ public class ExportResource {
     @Path(ImportRestConstants.SYSTEM_PATH)
     @Consumes({SystemRestConstants.MT_EXPORT_SETTINGS, MediaType.APPLICATION_JSON})
     public Response activateExport(ExportSettingsConfigurationImpl settings) {
-        StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
+        ImportExportStreamStatusHolder holder = new ImportExportStreamStatusHolder(httpResponse);
         ExportSettingsImpl exportSettings = new ExportSettingsImpl(new File(settings.getExportPath()), holder);
         exportSettings.setIncludeMetadata(settings.isIncludeMetadata());
         exportSettings.setCreateArchive(settings.isCreateArchive());
@@ -110,7 +110,7 @@ public class ExportResource {
     }
 
     private List<String> getAllLocalRepoKeys() {
-        List<String> repoKeys = new ArrayList<String>();
+        List<String> repoKeys = new ArrayList<>();
         for (LocalRepoDescriptor localRepoDescriptor : repoService.getLocalAndCachedRepoDescriptors()) {
             repoKeys.add(localRepoDescriptor.getKey());
         }

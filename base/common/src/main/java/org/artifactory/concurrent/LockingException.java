@@ -23,22 +23,13 @@ package org.artifactory.concurrent;
  * @date Sep 5, 2008
  */
 public class LockingException extends RuntimeException {
-    public LockingException() {
-    }
 
     public LockingException(String message) {
         super(message);
-    }
-
-    public LockingException(String message, String... args) {
-        super(String.format(message, new Object[]{args}));
     }
 
     public LockingException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public LockingException(Throwable cause) {
-        super(cause);
-    }
 }

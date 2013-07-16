@@ -375,7 +375,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         SimpleUser user = createNonAdminUser("shay");
         UserInfo userInfo = user.getDescriptor();
 
-        RepoPath testRepo1Path = InternalRepoPathFactory.create("specific-repo", "com");
+        RepoPath testRepo1Path = InternalRepoPathFactory.create("specific-repo", "com", true);
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("specific-repo")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();

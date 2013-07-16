@@ -136,7 +136,7 @@ public class UserModel extends ProfileModel {
      * @return A copy of the user group. We deliberately Don't allow updating it directly.
      */
     public Set<UserGroupInfo> getGroups() {
-        return (groups == null ? groups : new HashSet<UserGroupInfo>(groups));
+        return (groups == null ? groups : new HashSet<>(groups));
     }
 
     public long getLastLoginTimeMillis() {

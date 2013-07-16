@@ -56,7 +56,7 @@ public class RepositoriesListAdapter
         @XmlIDREF
         @XmlElement(name = "repositoryRef", type = RepoBaseDescriptor.class,
                 namespace = Descriptor.NS)
-        private List<RepoDescriptor> list = new ArrayList<RepoDescriptor>();
+        private List<RepoDescriptor> list = new ArrayList<>();
 
         public Wrappper() {
         }

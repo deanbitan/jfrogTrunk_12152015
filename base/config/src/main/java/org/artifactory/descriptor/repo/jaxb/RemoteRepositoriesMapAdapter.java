@@ -65,7 +65,7 @@ public class RemoteRepositoriesMapAdapter extends
     @XmlType(name = "RemoteRepositoriesType", namespace = Descriptor.NS)
     public static class Wrappper {
         @XmlElement(name = "remoteRepository", required = true, namespace = Descriptor.NS)
-        private List<HttpRepoDescriptor> list = new ArrayList<HttpRepoDescriptor>();
+        private List<HttpRepoDescriptor> list = new ArrayList<>();
 
 
         public Wrappper() {

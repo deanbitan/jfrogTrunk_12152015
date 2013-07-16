@@ -21,6 +21,7 @@ package org.artifactory.repo;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.PermissionTargetInfo;
+import org.artifactory.util.PathUtils;
 
 /**
  * An internal factory for creating RepoPath objects.
@@ -29,6 +30,10 @@ import org.artifactory.security.PermissionTargetInfo;
  * @author Yoav Landman
  */
 public abstract class InternalRepoPathFactory extends RepoPathFactory {
+
+    public static RepoPath create(String repoKey, String path, boolean folder) {
+        return InfoFactoryHolder.get().createRepoPath(repoKey, path, folder);
+    }
 
     public static RepoPath create(String repoKey, String path) {
         return InfoFactoryHolder.get().createRepoPath(repoKey, path);
@@ -84,6 +89,25 @@ public abstract class InternalRepoPathFactory extends RepoPathFactory {
     }
 
     public static RepoPath cacheRepoPath(RepoPath remoteRepoPath) {
-        return create(remoteRepoPath.getRepoKey() + RepoPath.REMOTE_CACHE_SUFFIX, remoteRepoPath.getPath());
+        return create(remoteRepoPath.getRepoKey() + RepoPath.REMOTE_CACHE_SUFFIX, remoteRepoPath.getPath(),
+                remoteRepoPath.isFolder());
     }
+
+
+    public static RepoPath createRepoPath(String id) {
+        if (id == null || id.length() == 0) {
+            throw new IllegalArgumentException(
+                    "RepoAndPathIdIdentity cannot have a null id");
+        }
+        int idx = id.indexOf(RepoPath.REPO_PATH_SEP);
+        if (idx <= 0) {
+            throw new IllegalArgumentException(
+                    "Could not determine both repository key and path from '" +
+                            id + "'.");
+        }
+        String repoKey = id.substring(0, idx);
+        String path = PathUtils.formatRelativePath(id.substring(idx + 1));
+        return create(repoKey, path);
+    }
+
 }

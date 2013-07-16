@@ -97,7 +97,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
     private IndexerDescriptor getAndCheckDescriptor() {
         IndexerDescriptor descriptor = centralConfig.getDescriptor().getIndexer();
         if (descriptor != null) {
-            SortedSet<RepoBaseDescriptor> set = new TreeSet<RepoBaseDescriptor>();
+            SortedSet<RepoBaseDescriptor> set = new TreeSet<>();
             if (descriptor.getExcludedRepositories() == null) {
                 //Auto exclude all remote and virtual repos
                 set.addAll(repositoryService.getRemoteRepoDescriptors());
@@ -146,7 +146,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
         public Predicate<Task> getAllPredicate() {
             return new Predicate<Task>() {
                 @Override
-                public boolean apply(@Nullable Task input) {
+                public boolean apply(Task input) {
                     return AbstractMavenIndexerJobs.class.isAssignableFrom(input.getType());
                 }
             };
@@ -313,7 +313,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
     private List<RealRepo> getNonVirtualRepositoriesToIndex(
             @Nullable Set<? extends RepoDescriptor> excludedRepositories) {
         List<RealRepo> realRepositories = repositoryService.getLocalAndRemoteRepositories();
-        List<RealRepo> indexedRepos = new ArrayList<RealRepo>();
+        List<RealRepo> indexedRepos = new ArrayList<>();
         //Skip excluded repositories and remote repositories that are currently offline
         for (RealRepo repo : realRepositories) {
             boolean excluded = false;
@@ -338,7 +338,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
         List<VirtualRepo> virtualRepos = filterExcludedVirtualRepos(excludedRepositories);
         log.info("Virtual repositories to index: {}", virtualRepos);
         //Keep a list of extracted index dirs for all the local repo indexes for merging
-        Map<StoringRepo, FSDirectory> extractedLocalRepoIndexes = new HashMap<StoringRepo, FSDirectory>();
+        Map<StoringRepo, FSDirectory> extractedLocalRepoIndexes = new HashMap<>();
         try {
             //Merge virtual repo indexes
             for (VirtualRepo virtualRepo : virtualRepos) {
@@ -347,7 +347,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
                     log.info("Stopped indexing on demand");
                     return;
                 }
-                Set<LocalRepo> localRepos = new HashSet<LocalRepo>();
+                Set<LocalRepo> localRepos = new HashSet<>();
                 localRepos.addAll(virtualRepo.getResolvedLocalRepos());
                 localRepos.addAll(virtualRepo.getResolvedLocalCachedRepos());
                 //Create a temp lucene dir and merge each local into it
@@ -415,7 +415,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
      */
     private List<VirtualRepo> filterExcludedVirtualRepos(Set<? extends RepoDescriptor> excludedRepositories) {
         List<VirtualRepo> virtualRepositories = repositoryService.getVirtualRepositories();
-        List<VirtualRepo> virtualRepositoriesCopy = new ArrayList<VirtualRepo>(virtualRepositories);
+        List<VirtualRepo> virtualRepositoriesCopy = new ArrayList<>(virtualRepositories);
         for (RepoDescriptor excludedRepository : excludedRepositories) {
             String excludedKey = excludedRepository.getKey();
             for (VirtualRepo virtualRepository : virtualRepositories) {
@@ -434,7 +434,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
      */
     private List<VirtualRepoDescriptor> getAllVirtualReposExceptGlobal() {
         List<VirtualRepoDescriptor> virtualRepositoriesCopy =
-                new ArrayList<VirtualRepoDescriptor>(repositoryService.getVirtualRepoDescriptors());
+                new ArrayList<>(repositoryService.getVirtualRepoDescriptors());
         VirtualRepoDescriptor dummyGlobal = new VirtualRepoDescriptor();
         dummyGlobal.setKey(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY);
         virtualRepositoriesCopy.remove(dummyGlobal);

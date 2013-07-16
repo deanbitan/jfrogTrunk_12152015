@@ -69,20 +69,13 @@ public abstract class SpringConfigResourceLoader {
         //Load the default config locations
         String[] springConfigs = {"applicationContext.xml", "scheduling.xml", "security.xml",
                 "addons.xml", "interceptors.xml"};
-        List<String> paths = new ArrayList<String>();
+        List<String> paths = new ArrayList<>();
 
         for (String springConfig : springConfigs) {
             String path = getPath(springConfig, artifactoryHome);
-            if (path == null) {
-                throw new RuntimeException("Cannot find the resource: " + springConfig + " at any specified location");
-            }
             paths.add(path);
         }
         Collections.sort(paths);
-
-        if (paths.size() == 0) {
-            throw new RuntimeException("Did not find any of the required resources");
-        }
 
         Map<String, AddonInfo> addonContextPaths = loadEnabledAddons(artifactoryHome.getArtifactoryProperties());
 
@@ -104,7 +97,7 @@ public abstract class SpringConfigResourceLoader {
         try {
             Enumeration<URL> addonsPropsUrls =
                     Thread.currentThread().getContextClassLoader().getResources("META-INF/addon.properties");
-            Map<String, AddonInfo> addonsContextPathsByAddonName = new TreeMap<String, AddonInfo>();
+            Map<String, AddonInfo> addonsContextPathsByAddonName = new TreeMap<>();
             while (addonsPropsUrls.hasMoreElements()) {
                 URL addonPropsUrl = addonsPropsUrls.nextElement();
                 log.debug("Inspecting addon properties: {}", addonPropsUrl.toExternalForm());
@@ -164,15 +157,14 @@ public abstract class SpringConfigResourceLoader {
 
             File requestedResource = new File(springConfPath, resourceName);
             if (requestedResource.exists()) {
-                URL url;
                 try {
-                    url = requestedResource.toURI().toURL();
+                    URL url = requestedResource.toURI().toURL();
+                    if (url != null) {
+                        return url.toExternalForm();
+                    }
                 } catch (MalformedURLException e) {
                     throw new RuntimeException(
                             "Given url at: " + requestedResource.getAbsolutePath() + " is malformed");
-                }
-                if (url != null) {
-                    return url.toExternalForm();
                 }
             }
         }

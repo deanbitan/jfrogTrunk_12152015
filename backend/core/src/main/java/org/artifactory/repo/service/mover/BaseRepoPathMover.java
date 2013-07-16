@@ -138,7 +138,7 @@ public abstract class BaseRepoPathMover {
             return false;
         }
 
-        if (!targetRepo.accepts(targetPath)) {
+        if (!targetRepo.accepts(targetRepoPath)) {
             status.setWarning("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
                     + "' due to its include/exclude patterns.", log);
             return false;

@@ -18,14 +18,16 @@
 
 package org.artifactory.util;
 
+import com.google.common.base.Charsets;
 import org.jdom.Document;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.XMLOutputter;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 
 /**
@@ -53,7 +55,7 @@ public abstract class XmlUtils {
     public static Document parse(File input) {
         SAXBuilder sb = createSaxBuilder();
         try {
-            return sb.build(new BufferedReader(new FileReader(input)));
+            return sb.build(new BufferedReader(new InputStreamReader(new FileInputStream(input), Charsets.UTF_8)));
         } catch (Exception e) {
             throw new RuntimeException("Failed to build dom document", e);
         }

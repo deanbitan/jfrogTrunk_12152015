@@ -41,7 +41,7 @@ public class Property implements Descriptor {
 
     @XmlElementWrapper(name = "predefinedValues")
     @XmlElement(name = "predefinedValue", required = false)
-    private List<PredefinedValue> predefinedValues = new ArrayList<PredefinedValue>();
+    private List<PredefinedValue> predefinedValues = new ArrayList<>();
 
     public Property() {
     }

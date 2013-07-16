@@ -289,7 +289,7 @@ public class FileBrowserPanel extends BaseModalPanel {
 
     private class BreadCrumbsDropDownChoice extends DropDownChoice<File> {
         private BreadCrumbsDropDownChoice(String id) {
-            super(id, new Model<File>(new File(getCurrentFolder())), new BreadCrumbsModel(),
+            super(id, new Model<>(new File(getCurrentFolder())), new BreadCrumbsModel(),
                     new ChoiceRenderer<File>("name", "path"));
 
             add(new AjaxFormComponentUpdatingBehavior("onchange") {
@@ -355,7 +355,7 @@ public class FileBrowserPanel extends BaseModalPanel {
             if (root == null) {
                 root = new File("/").getAbsolutePath();
             }
-            List<File> breadCrumbs = new ArrayList<File>();
+            List<File> breadCrumbs = new ArrayList<>();
             for (File folder = new File(getCurrentFolder()); folder != null;
                  folder = folder.getParentFile()) {
                 if (root.equals(folder.getAbsolutePath())) {
@@ -393,19 +393,19 @@ public class FileBrowserPanel extends BaseModalPanel {
             super(id);
             if (chRoot != null) {
                 // allow only chRoot
-                ArrayList<File> files = new ArrayList<File>(1);
+                ArrayList<File> files = new ArrayList<>(1);
                 File rootFile = new File(chRoot);
                 files.add(rootFile);
                 setChoices(files);
                 setChoiceRenderer(new RootOnlyChoiceRenderer());
-                setDefaultModel(new Model<File>(rootFile));
+                setDefaultModel(new Model<>(rootFile));
             } else {
                 // allow changing root
                 List<File> roots = Arrays.asList(File.listRoots());
                 setChoices(roots);
                 setVisible(!roots.isEmpty());
                 File defaultRoot = new File(FilenameUtils.getPrefix(getCurrentFolder())).getAbsoluteFile();
-                setDefaultModel(new Model<File>(defaultRoot));
+                setDefaultModel(new Model<>(defaultRoot));
             }
 
             add(new AjaxFormComponentUpdatingBehavior("onchange") {

@@ -90,7 +90,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
 
         boolean disableFields = !isCreate() && RepoLayoutUtils.isReservedName(layout.getName());
 
-        FormComponent<String> nameTextField = new TextField<String>("name");
+        FormComponent<String> nameTextField = new TextField<>("name");
         setDefaultFocusField(nameTextField);
 
         if (isCreate()) {
@@ -197,7 +197,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
 
     private TextField<String> addLayoutField(String id, MarkupContainer titledBorder, boolean required,
             boolean disableFields, IValidator<String>... validators) {
-        TextField<String> textField = new ReadOnlyOnDisabledTextField<String>(id);
+        TextField<String> textField = new ReadOnlyOnDisabledTextField<>(id);
         textField.setRequired(required).setOutputMarkupId(true).setEnabled(!disableFields);
         textField.add(validators);
         titledBorder.add(textField);
@@ -264,7 +264,7 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
         final RepeatingView customFieldsView = new RepeatingView("customFields");
         testBorder.add(customFieldsView);
 
-        testBorder.add(new TextField<String>("pathToTest", new PropertyModel<String>(this, "pathToTest")));
+        testBorder.add(new TextField<>("pathToTest", new PropertyModel<String>(this, "pathToTest")));
 
         TitledAjaxSubmitLink testPatternsButton = new TitledAjaxSubmitLink("testPatterns", "Test", form) {
 

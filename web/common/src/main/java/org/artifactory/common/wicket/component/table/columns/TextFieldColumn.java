@@ -70,11 +70,11 @@ public class TextFieldColumn<T> extends AbstractColumn<T> {
      * @return Construct a new text field.
      */
     protected TextField<String> newTextField(String id, IModel<String> valueModel, T rowObject) {
-        return new TextField<String>(id, valueModel);
+        return new TextField<>(id, valueModel);
     }
 
     protected PropertyModel<String> newPropertyModel(T rowObject) {
-        return new PropertyModel<String>(rowObject, expression);
+        return new PropertyModel<>(rowObject, expression);
     }
 
     public final String getExpression() {

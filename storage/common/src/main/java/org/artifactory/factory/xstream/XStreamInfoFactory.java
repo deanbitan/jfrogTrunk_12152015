@@ -35,6 +35,7 @@ import org.artifactory.model.xstream.security.PermissionTargetImpl;
 import org.artifactory.model.xstream.security.SecurityDataImpl;
 import org.artifactory.model.xstream.security.UserGroupImpl;
 import org.artifactory.model.xstream.security.UserImpl;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.MutableRepoResourceInfo;
 import org.artifactory.resource.RepoResourceInfo;
@@ -54,7 +55,7 @@ import java.util.zip.ZipEntry;
 public class XStreamInfoFactory extends AbstractInfoFactory {
     @Override
     public RepoPath createRepoPathFromId(String repoPathId) {
-        return new RepoPathImpl(repoPathId);
+        return InternalRepoPathFactory.createRepoPath(repoPathId);
     }
 
     @Override
@@ -65,6 +66,11 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
     @Override
     public RepoPath createRepoPath(RepoPath parent, String relPath) {
         return new RepoPathImpl(parent, relPath);
+    }
+
+    @Override
+    public RepoPath createRepoPath(String repoKey, String path, boolean folder) {
+        return new RepoPathImpl(repoKey, path, folder);
     }
 
     @Override

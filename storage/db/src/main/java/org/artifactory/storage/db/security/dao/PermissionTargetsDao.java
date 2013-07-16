@@ -121,7 +121,7 @@ public class PermissionTargetsDao extends BaseDao {
             resultSet = jdbcHelper.executeSelect(
                     "SELECT repo_key FROM permission_target_repos WHERE perm_target_id = ?",
                     permTargetId);
-            repoKeys = new HashSet<String>(3);
+            repoKeys = new HashSet<>(3);
             while (resultSet.next()) {
                 repoKeys.add(resultSet.getString(1));
             }

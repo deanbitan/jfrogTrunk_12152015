@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public abstract class RepoRequests {
 
-    private static ThreadLocal<RepoRequestContext> context = new ThreadLocal<RepoRequestContext>();
+    private static ThreadLocal<RepoRequestContext> context = new ThreadLocal<>();
 
     private RepoRequests() {
     }

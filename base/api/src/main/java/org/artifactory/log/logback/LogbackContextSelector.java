@@ -92,7 +92,7 @@ public class LogbackContextSelector implements ContextSelector {
 
     @Override
     public List<String> getContextNames() {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         list.addAll(loggerContextsByContextId.keySet());
         return list;
     }

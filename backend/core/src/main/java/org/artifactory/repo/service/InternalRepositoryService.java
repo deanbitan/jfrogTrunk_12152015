@@ -108,11 +108,12 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * This will verify the permission to deploy to the path, and will not acquire any FsItem. ATTENTION: No read lock
      * acquire, pure DB and ACL tests are done.
      *
+     * @param requestSha1
      * @param repo The storing repository (cache or local) to deploy to
      * @param path The path for deployment
      * @return A status holder with info on error
      */
-    void assertValidDeployPath(LocalRepo repo, String path, long contentLength) throws RepoRejectException;
+    void assertValidDeployPath(LocalRepo repo, RepoPath repoPath, long contentLength, String requestSha1) throws RepoRejectException;
 
     @Lock
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,
@@ -144,15 +145,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      */
     @Nonnull
     LocalRepo getLocalRepository(RepoPath repoPath);
-
-    /**
-     * Returns a local or local cache repository if found, otherwise returns null
-     *
-     * @param repoPath A repo path in the repository
-     * @return Local/cache repository matching the repo path repo key or null if not found
-     */
-    @Nullable
-    LocalRepo findLocalRepository(RepoPath repoPath);
 
     /**
      * Executes the maven metadata calculator on all the folders marked with the maven metadata recalculation flag. This

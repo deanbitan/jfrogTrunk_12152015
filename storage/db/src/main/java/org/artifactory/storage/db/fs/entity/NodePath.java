@@ -38,8 +38,9 @@ public class NodePath implements Serializable {
     private final String repo;
     private final String path;
     private final String name;
+    private final boolean file;
 
-    public NodePath(String repo, String path, String name) {
+    public NodePath(String repo, String path, String name, boolean file) {
         if (StringUtils.isBlank(repo)) {
             throw new IllegalArgumentException("repo cannot be empty");
         }
@@ -51,6 +52,7 @@ public class NodePath implements Serializable {
         this.repo = repo;
         this.path = PathUtils.trimSlashes(StringUtils.trimToEmpty(path)).toString();
         this.name = StringUtils.trimToEmpty(name);
+        this.file = file;
     }
 
     public String getRepo() {
@@ -104,13 +106,13 @@ public class NodePath implements Serializable {
 
     public RepoPath toRepoPath() {
         String pathAndName = StringUtils.isBlank(path) ? name : path + "/" + name;
-        return new RepoPathImpl(repo, pathAndName);
+        return new RepoPathImpl(repo, pathAndName, !file);
     }
 
     public static NodePath fromRepoPath(RepoPath repoPath) {
         String path = PathUtils.getParent(repoPath.getPath());
         String name = repoPath.getName();
-        return new NodePath(repoPath.getRepoKey(), path, name);
+        return new NodePath(repoPath.getRepoKey(), path, name, repoPath.isFile());
     }
 
     @Override

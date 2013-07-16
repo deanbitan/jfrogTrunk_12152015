@@ -53,7 +53,7 @@ import java.util.List;
 @SuppressWarnings({"unchecked"})
 class MasterDetailRowPanel<M extends Serializable, D extends Serializable> extends Panel {
     MasterDetailRowPanel(String id, M masterObject, MasterDetailTable<M, D> table) {
-        super(id, new Model<M>(masterObject));
+        super(id, new Model<>(masterObject));
 
         final boolean expanded = table.isMasterExpanded(masterObject);
         addMasterRow(table, masterObject, expanded);
@@ -108,7 +108,7 @@ class MasterDetailRowPanel<M extends Serializable, D extends Serializable> exten
         final SortParam sortParam = getSortParam(table);
         sortList(list, sortParam);
 
-        final ListDataProvider dataProvider = new DetailsDataProvider<M, D>(list, masterObject);
+        final ListDataProvider dataProvider = new DetailsDataProvider<>(list, masterObject);
         add(new DetailsGridView("rows", table.getColumns(), dataProvider));
     }
 

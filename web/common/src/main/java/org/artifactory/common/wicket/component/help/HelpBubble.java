@@ -70,7 +70,7 @@ public class HelpBubble extends Label {
     }
 
     protected String getComponentMarkup() {
-        Map<String, String> variables = new HashMap<String, String>();
+        Map<String, String> variables = new HashMap<>();
         variables.put("message", getTooltipMarkup());
         variables.put("enabled", String.valueOf(isEnabled()));
         variables.put("id", getMarkupId());

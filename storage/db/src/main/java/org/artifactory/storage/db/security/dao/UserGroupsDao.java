@@ -169,8 +169,8 @@ public class UserGroupsDao extends BaseDao {
 
     public Collection<User> getAllUsers(boolean includeAdmins) throws SQLException {
         ResultSet resultSet = null;
-        Map<Long, User> results = new HashMap<Long, User>();
-        Map<Long, Set<UserGroup>> groups = new HashMap<Long, Set<UserGroup>>();
+        Map<Long, User> results = new HashMap<>();
+        Map<Long, Set<UserGroup>> groups = new HashMap<>();
         try {
             String query = "SELECT * FROM users";
             if (!includeAdmins) {
@@ -293,7 +293,7 @@ public class UserGroupsDao extends BaseDao {
                     " AND u.username IN (#)", groupId, usernames);
             if (resultSet.next()) {
                 // Found some usernames that needs to be removed
-                toAddUsernames = new HashSet<String>(usernames);
+                toAddUsernames = new HashSet<>(usernames);
                 toAddUsernames.remove(resultSet.getString(1));
                 while (resultSet.next()) {
                     toAddUsernames.remove(resultSet.getString(1));
@@ -330,7 +330,7 @@ public class UserGroupsDao extends BaseDao {
     }
 
     public Collection<Group> findGroups(GroupFilter filter) throws SQLException {
-        List<Group> results = new ArrayList<Group>();
+        List<Group> results = new ArrayList<>();
         ResultSet resultSet = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM groups" + filter.filter);
@@ -344,7 +344,7 @@ public class UserGroupsDao extends BaseDao {
     }
 
     private Set<UserGroup> findUserGroupByUserId(long userId) throws SQLException {
-        final Set<UserGroup> result = new HashSet<UserGroup>(1);
+        final Set<UserGroup> result = new HashSet<>(1);
         ResultSet resultSet = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM users_groups WHERE user_id = ?", userId);
@@ -358,7 +358,7 @@ public class UserGroupsDao extends BaseDao {
     }
 
     public List<User> findUsersInGroup(long groupId) throws SQLException {
-        List<User> results = new ArrayList<User>();
+        List<User> results = new ArrayList<>();
         Set<UserGroup> userGroups = findUserGroupByGroupId(groupId);
         for (UserGroup userGroup : userGroups) {
             results.add(findUserById(userGroup.getUserId()));
@@ -387,7 +387,7 @@ public class UserGroupsDao extends BaseDao {
     }
 
     private Set<UserGroup> findUserGroupByGroupId(long groupId) throws SQLException {
-        Set<UserGroup> result = new HashSet<UserGroup>(1);
+        Set<UserGroup> result = new HashSet<>(1);
         ResultSet resultSet = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM users_groups WHERE group_id = ?", groupId);

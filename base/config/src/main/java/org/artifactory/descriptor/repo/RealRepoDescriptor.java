@@ -56,7 +56,7 @@ public abstract class RealRepoDescriptor extends RepoBaseDescriptor {
     @XmlIDREF
     @XmlElementWrapper(name = "propertySets")
     @XmlElement(name = "propertySetRef", type = PropertySet.class, required = false)
-    private List<PropertySet> propertySets = new ArrayList<PropertySet>();
+    private List<PropertySet> propertySets = new ArrayList<>();
 
     public boolean isHandleReleases() {
         return handleReleases;

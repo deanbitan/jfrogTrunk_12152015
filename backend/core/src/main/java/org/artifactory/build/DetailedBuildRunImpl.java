@@ -25,8 +25,6 @@ import org.jfrog.build.api.Build;
 import org.jfrog.build.api.release.PromotionStatus;
 
 import javax.annotation.Nonnull;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -62,11 +60,7 @@ public class DetailedBuildRunImpl implements DetailedBuildRun {
 
     @Override
     public Date getStartedDate() {
-        try {
-            return new SimpleDateFormat(Build.STARTED_FORMAT).parse(getStarted());
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        return new Date(BuildInfoUtils.parseBuildTime(getStarted()));
     }
 
     @Override

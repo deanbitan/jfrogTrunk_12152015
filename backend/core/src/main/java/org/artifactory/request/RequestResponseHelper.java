@@ -65,7 +65,7 @@ public final class RequestResponseHelper {
         final long start = System.currentTimeMillis();
         if (log.isDebugEnabled()) {
             log.debug("Sending back body response for '{}'. Original resource size: {}, actual size: {}.",
-                    new Object[]{repoPath, res.getSize(), handle.getSize()});
+                    repoPath, res.getSize(), handle.getSize());
         }
         response.sendStream(inputStream);
 

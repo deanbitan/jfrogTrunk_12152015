@@ -42,7 +42,7 @@ public class AclImpl implements MutableAclInfo {
 
     public AclImpl() {
         this.permissionTarget = new PermissionTargetImpl();
-        this.aces = new HashSet<AceImpl>();
+        this.aces = new HashSet<>();
     }
 
     public AclImpl(AclInfo copy) {
@@ -55,12 +55,12 @@ public class AclImpl implements MutableAclInfo {
 
     public AclImpl(PermissionTargetInfo permissionTarget) {
         this.permissionTarget = new PermissionTargetImpl(permissionTarget);
-        this.aces = new HashSet<AceImpl>();
+        this.aces = new HashSet<>();
     }
 
     public AclImpl(PermissionTargetInfo permissionTarget, Set<AceInfo> aces, String updatedBy) {
         this.permissionTarget = new PermissionTargetImpl(permissionTarget);
-        this.aces = new HashSet<AceImpl>();
+        this.aces = new HashSet<>();
         for (AceInfo ace : aces) {
             this.aces.add(new AceImpl(ace));
         }

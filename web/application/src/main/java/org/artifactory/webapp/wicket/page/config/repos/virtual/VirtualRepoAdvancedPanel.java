@@ -73,7 +73,7 @@ public class VirtualRepoAdvancedPanel extends Panel {
         add(new CssClass("virtual-repo-panel-advanced-settings"));
 
         List<RepoLayout> layouts = centralConfigService.getDescriptor().getRepoLayouts();
-        DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<RepoLayout>("repoLayout", layouts,
+        DropDownChoice<RepoLayout> repoLayout = new DropDownChoice<>("repoLayout", layouts,
                 new ChoiceRenderer<RepoLayout>("name"));
         repoLayout.setNullValid(true);
 
@@ -87,7 +87,7 @@ public class VirtualRepoAdvancedPanel extends Panel {
         // pomRepositoryReferencesCleanupPolicy
         PomCleanupPolicy[] policies = PomCleanupPolicy.values();
         DropDownChoice pomCleanPolicy =
-                new DropDownChoice<PomCleanupPolicy>("pomRepositoryReferencesCleanupPolicy", Arrays.asList(policies),
+                new DropDownChoice<>("pomRepositoryReferencesCleanupPolicy", Arrays.asList(policies),
                         new ChoiceRenderer<PomCleanupPolicy>("message"));
         add(pomCleanPolicy);
         add(new SchemaHelpBubble("pomRepositoryReferencesCleanupPolicy.help"));

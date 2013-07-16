@@ -29,7 +29,7 @@ import java.util.List;
 public class BuildsByName implements Serializable {
     @XmlElement(name = "uri")
     public String slf;
-    public List<Build> buildsNumbers = new ArrayList<Build>();
+    public List<Build> buildsNumbers = new ArrayList<>();
 
     public static class Build {
         public String uri;

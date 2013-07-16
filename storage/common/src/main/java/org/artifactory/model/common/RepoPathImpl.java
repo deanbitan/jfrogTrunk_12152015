@@ -35,14 +35,15 @@ public final class RepoPathImpl implements RepoPath {
 
     private final String repoKey;
     private final String path;
+    private boolean folder; // true if file false otherwise /
+
 
     /**
      * @param repoKey The key of any repo
      * @param path    The relative path inside the repo
      */
     public RepoPathImpl(String repoKey, String path) {
-        this.repoKey = repoKey;
-        this.path = PathUtils.formatRelativePath(path);
+        this(repoKey, path, path != null && path.endsWith("/"));
     }
 
     /**
@@ -52,23 +53,16 @@ public final class RepoPathImpl implements RepoPath {
      * @param child  the child name
      */
     public RepoPathImpl(RepoPath parent, String child) {
-        this.repoKey = parent.getRepoKey();
-        this.path = PathUtils.formatRelativePath(parent.getPath() + "/" + child);
+        this(parent.getRepoKey(), parent.getPath() + "/" + child);
     }
 
-    public RepoPathImpl(String id) {
-        if (id == null || id.length() == 0) {
-            throw new IllegalArgumentException(
-                    "RepoAndPathIdIdentity cannot have a null id");
+    public RepoPathImpl(String repoKey, String path, boolean folder) {
+        this.repoKey = StringUtils.trimToNull(repoKey);
+        if (this.repoKey == null) {
+            throw new IllegalArgumentException("Repo key cannot be empty. Path " + path);
         }
-        int idx = id.indexOf(REPO_PATH_SEP);
-        if (idx <= 0) {
-            throw new IllegalArgumentException(
-                    "Could not determine both repository key and path from '" +
-                            id + "'.");
-        }
-        this.repoKey = id.substring(0, idx);
-        this.path = PathUtils.formatRelativePath(id.substring(idx + 1));
+        this.path = PathUtils.trimSlashes(StringUtils.trimToEmpty(path)).toString();
+        this.folder = folder;
     }
 
     @Override
@@ -93,7 +87,7 @@ public final class RepoPathImpl implements RepoPath {
 
     @Override
     public String toPath() {
-        return repoKey + (StringUtils.isNotBlank(path) ? "/" + path : "");
+        return repoKey + "/" + path + (isFolder() && !isRoot() ? "/" : "");
     }
 
     /**
@@ -105,7 +99,7 @@ public final class RepoPathImpl implements RepoPath {
         if (isRoot()) {
             return null;
         } else {
-            return new RepoPathImpl(repoKey, PathUtils.getParent(path));
+            return new RepoPathImpl(repoKey, PathUtils.getParent(path), true);
         }
     }
 
@@ -115,6 +109,16 @@ public final class RepoPathImpl implements RepoPath {
     @Override
     public boolean isRoot() {
         return StringUtils.isBlank(getPath());
+    }
+
+    @Override
+    public boolean isFile() {
+        return !folder;
+    }
+
+    @Override
+    public boolean isFolder() {
+        return folder || isRoot();
     }
 
     @Override

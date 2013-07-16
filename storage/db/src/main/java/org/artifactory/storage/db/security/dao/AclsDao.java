@@ -126,7 +126,7 @@ public class AclsDao extends BaseDao {
     }
 
     private Set<Ace> findAces(long aclId) throws SQLException {
-        Set<Ace> aces = new HashSet<Ace>(3);
+        Set<Ace> aces = new HashSet<>(3);
         ResultSet resultSet = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM aces WHERE acl_id = ?", aclId);
@@ -141,8 +141,8 @@ public class AclsDao extends BaseDao {
 
     public Collection<Acl> getAllAcls() throws SQLException {
         ResultSet resultSet = null;
-        Map<Long, Acl> aclsMap = new HashMap<Long, Acl>();
-        Map<Long, Set<Ace>> acesMap = new HashMap<Long, Set<Ace>>();
+        Map<Long, Acl> aclsMap = new HashMap<>();
+        Map<Long, Set<Ace>> acesMap = new HashMap<>();
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM acls");
             while (resultSet.next()) {

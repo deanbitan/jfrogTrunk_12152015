@@ -41,6 +41,7 @@
         </backup>
         <backup>
             <key>backup-weekly</key>
+            <enabled>false</enabled>
             <!-- backup on Saturday at 2:00 AM -->
             <cronExp>0 0 2 ? * SAT</cronExp>
             <!-- keep backups for 2 weeks. -->

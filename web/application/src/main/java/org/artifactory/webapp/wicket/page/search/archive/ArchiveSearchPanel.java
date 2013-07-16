@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.search.archive;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;

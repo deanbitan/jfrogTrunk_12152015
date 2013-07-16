@@ -19,6 +19,7 @@
 package org.artifactory.message;
 
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.MapMaker;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -110,7 +111,7 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
      * @return unique message id
      */
     private String messageId(String body) {
-        return new String(Base64.encodeBase64(DigestUtils.md5(body)))
+        return new String(Base64.encodeBase64(DigestUtils.md5(body)), Charsets.UTF_8)
                 .replaceAll("=", "").replaceAll("\\+", "-").replaceAll("/", "_");
     }
 

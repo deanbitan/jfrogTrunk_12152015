@@ -66,7 +66,7 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
     }
 
     protected Item newGroupRowItem(String id, int index, IModel<T> model) {
-        Item<T> item = new Item<T>(id, index, model);
+        Item<T> item = new Item<>(id, index, model);
         item.add(new CssClass("group-header-row"));
         if (isGroupExpanded(item)) {
             item.add(new CssClass("group-expanded"));
@@ -77,7 +77,7 @@ public class GroupableTable<T extends Serializable> extends SortableTable<T> {
     }
 
     protected Item newGroupCellItem(String id, int index, IModel<T> model) {
-        Item item = new Item<T>(id, index, model);
+        Item item = new Item<>(id, index, model);
         String colspan = String.valueOf(getColumns().size());
         item.add(new AttributeModifier("colspan", colspan));
         item.add(new CssClass("first-cell last-cell"));

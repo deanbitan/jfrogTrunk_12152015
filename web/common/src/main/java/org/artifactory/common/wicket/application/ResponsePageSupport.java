@@ -30,7 +30,7 @@ import org.apache.wicket.request.handler.IPageRequestHandler;
  * @author Yoav Aharoni
  */
 public class ResponsePageSupport extends AbstractRequestCycleListener {
-    private final static ThreadLocal<Page> PAGE_HOLDER = new ThreadLocal<Page>();
+    private final static ThreadLocal<Page> PAGE_HOLDER = new ThreadLocal<>();
 
     @Override
     public void onRequestHandlerResolved(RequestCycle cycle, IRequestHandler handler) {

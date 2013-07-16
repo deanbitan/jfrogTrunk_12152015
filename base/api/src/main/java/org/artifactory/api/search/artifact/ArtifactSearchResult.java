@@ -20,22 +20,24 @@ package org.artifactory.api.search.artifact;
 
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.SearchResultBase;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
-import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 /**
  * @author Yoav Landman
  */
 public class ArtifactSearchResult extends SearchResultBase {
-    private static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+    private static final DateTimeFormatter DAY_FORMAT = DateTimeFormat.forPattern("yyyy-MM-dd")
+            .withLocale(Locale.ENGLISH);
 
     public ArtifactSearchResult(org.artifactory.fs.ItemInfo itemInfo) {
         super(itemInfo);
     }
 
     public String getLastModifiedDay() {
-        return DAY_FORMAT.format(getLastModified());
+        return DAY_FORMAT.print(getLastModified());
     }
 
     // Used by Wicket

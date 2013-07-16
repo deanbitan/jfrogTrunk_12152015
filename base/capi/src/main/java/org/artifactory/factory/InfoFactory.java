@@ -129,4 +129,6 @@ public interface InfoFactory {
     MutableWatchersInfo copyWatchers(WatchersInfo copy);
 
     MutableMetadataInfo createMetadata(RepoPath repoPath, String metadataName);
+
+    RepoPath createRepoPath(String repoKey, String path, boolean file);
 }

@@ -28,7 +28,7 @@ import java.util.List;
  * @author Eli Givoni
  */
 public class CreatedInRangeRestSearchResult {
-    public List<CreatedEntry> results = new ArrayList<CreatedEntry>();
+    public List<CreatedEntry> results = new ArrayList<>();
 
     public static class CreatedEntry {
         public String uri;

@@ -37,6 +37,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
 /**
  * @author Noam Tenne
  */
@@ -50,7 +53,7 @@ public class TrafficReaderTest {
         URL logConfigResource = getClass().getResource("/org/artifactory/traffic/logback.xml");
         File logConfigFile = new File(logConfigResource.getFile());
         Assert.assertNotNull(logConfigFile, "Cannot locate logback configuration file.");
-        Assert.assertTrue(logConfigFile.exists(), "Cannot locate logback configuration file.");
+        assertTrue(logConfigFile.exists(), "Cannot locate logback configuration file.");
 
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         JoranConfigurator configurator = new JoranConfigurator();
@@ -112,7 +115,7 @@ public class TrafficReaderTest {
         Date startDate = dateRange[0];
         Date endDate = dateRange[1];
         long charsWritten = trafficReader.writeFileToStream(new NullOutputStream(), startDate, endDate);
-        Assert.assertTrue(charsWritten > 0);
+        assertTrue(charsWritten > 0);
     }
 
     /**
@@ -124,19 +127,19 @@ public class TrafficReaderTest {
         Date startDate = dateRange[0];
         Date endDate = dateRange[1];
 
-        Date lastEntryDate = null;
+        long lastEntryDate = 0;
         List<TrafficEntry> entries = trafficReader.getEntries(startDate, endDate);
 
-        Assert.assertFalse(entries.isEmpty(), "Entry list shouldn't be empty.");
+        assertFalse(entries.isEmpty(), "Entry list shouldn't be empty.");
 
         for (TrafficEntry currentEntry : entries) {
-            Date currentEntryDate = currentEntry.getDate();
+            long currentEntryDate = currentEntry.getTime();
 
-            if (lastEntryDate != null) {
-                Assert.assertFalse(currentEntry.getDate().before(lastEntryDate), "Entry list should be sorted.");
+            if (lastEntryDate > 0) {
+                assertFalse(currentEntry.getTime() < lastEntryDate, "Entry list should be sorted.");
             }
-            Assert.assertTrue(currentEntryDate.after(startDate), "Current entry date should be within range.");
-            Assert.assertTrue(currentEntryDate.before(endDate), "Current entry date should be within range.");
+            assertTrue(currentEntryDate > startDate.getTime(), "Current entry date should be within range.");
+            assertTrue(currentEntryDate < endDate.getTime(), "Current entry date should be within range.");
             lastEntryDate = currentEntryDate;
         }
     }
@@ -149,7 +152,7 @@ public class TrafficReaderTest {
     public void testOutOfRange() throws IOException {
         trafficReader = new TrafficReader(new File(trafficLogDir.getFile()));
         List<TrafficEntry> trafficEntryList = trafficReader.getEntries(new Date(), new Date());
-        Assert.assertTrue(trafficEntryList.isEmpty(), "Entry list shouldn't be empty.");
+        assertTrue(trafficEntryList.isEmpty(), "Entry list shouldn't be empty.");
     }
 
     private Date[] findDateRange() {
@@ -164,11 +167,11 @@ public class TrafficReaderTest {
         for (File logFile : logFiles) {
             String logFileName = logFile.getName();
             Assert.assertNotNull(logFileName, "Unable to find dummy log file.");
-            Assert.assertTrue(logFileName.length() > 0, "Dummy log file name is empty");
+            assertTrue(logFileName.length() > 0, "Dummy log file name is empty");
             String timeRange =
                     logFileName.substring(trafficPrefix.length(), (logFileName.length() - logSuffix.length()));
             String[] logTimes = timeRange.split("-");
-            Assert.assertFalse(logTimes.length == 0);
+            assertFalse(logTimes.length == 0);
             String logStartTime = logTimes[0];
             Assert.assertNotNull(logStartTime);
             Date logFileStartDate = new Date(Long.parseLong(logStartTime));

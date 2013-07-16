@@ -92,7 +92,7 @@ public class HttpRepoAdvancedPanel extends Panel {
         List<RepoLayout> layouts = centralConfigService.getDescriptor().getRepoLayouts();
 
         DropDownChoice<RepoLayout> repoLayout =
-                new DropDownChoice<RepoLayout>("repoLayout", layouts, new ChoiceRenderer<RepoLayout>("name"));
+                new DropDownChoice<>("repoLayout", layouts, new ChoiceRenderer<RepoLayout>("name"));
         repoLayout.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {
@@ -115,7 +115,7 @@ public class HttpRepoAdvancedPanel extends Panel {
         layoutBorder.add(repoLayout);
         layoutBorder.add(new SchemaHelpBubble("repoLayout.help"));
 
-        DropDownChoice<RepoLayout> remoteRepoLayout = new DropDownChoice<RepoLayout>("remoteRepoLayout", layouts,
+        DropDownChoice<RepoLayout> remoteRepoLayout = new DropDownChoice<>("remoteRepoLayout", layouts,
                 new ChoiceRenderer<RepoLayout>("name"));
         remoteRepoLayout.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override
@@ -163,24 +163,24 @@ public class HttpRepoAdvancedPanel extends Panel {
 
         // proxy
         List<ProxyDescriptor> proxies = mutableDescriptor.getProxies();
-        DropDownChoice<ProxyDescriptor> proxiesDropDown = new DropDownChoice<ProxyDescriptor>("proxy", proxies,
+        DropDownChoice<ProxyDescriptor> proxiesDropDown = new DropDownChoice<>("proxy", proxies,
                 new ChoiceRenderer<ProxyDescriptor>("key", "key"));
         ProxyDescriptor defaultProxyDescriptor = mutableDescriptor.getDefaultProxy();
         if (defaultProxyDescriptor != null && CreateUpdateAction.CREATE.equals(action)) {
-            proxiesDropDown.setDefaultModel(new Model<ProxyDescriptor>(defaultProxyDescriptor));
+            proxiesDropDown.setDefaultModel(new Model<>(defaultProxyDescriptor));
         }
         proxiesDropDown.setNullValid(true);
         networkBorder.add(proxiesDropDown);
         networkBorder.add(new SchemaHelpBubble("proxy.help"));
 
         // localAddress
-        TextField<String> localAddressField = new TextField<String>("localAddress");
+        TextField<String> localAddressField = new TextField<>("localAddress");
         localAddressField.add(new LocalAddressValidator());
         networkBorder.add(localAddressField);
         networkBorder.add(new SchemaHelpBubble("localAddress.help"));
 
         // socketTimeout
-        networkBorder.add(new TextField<Integer>("socketTimeoutMillis", Integer.class).setRequired(true));
+        networkBorder.add(new TextField<>("socketTimeoutMillis", Integer.class).setRequired(true));
         networkBorder.add(new SchemaHelpBubble("socketTimeoutMillis.help"));
 
         // username
@@ -201,9 +201,9 @@ public class HttpRepoAdvancedPanel extends Panel {
         add(cacheBorder);
 
         // unusedArtifactsCleanupPeriodHours
-        final TextField<Integer> unusedCleanupTextField = new TextField<Integer>("unusedArtifactsCleanupPeriodHours",
+        final TextField<Integer> unusedCleanupTextField = new TextField<>("unusedArtifactsCleanupPeriodHours",
                 Integer.class);
-        unusedCleanupTextField.add(new MinimumValidator<Integer>(0)).setRequired(true);
+        unusedCleanupTextField.add(new MinimumValidator<>(0)).setRequired(true);
         unusedCleanupTextField.setOutputMarkupId(true);
         cacheBorder.add(unusedCleanupTextField);
         cacheBorder.add(new SchemaHelpBubble("unusedArtifactsCleanupPeriodHours.help"));
@@ -214,8 +214,8 @@ public class HttpRepoAdvancedPanel extends Panel {
     }
 
     private void addDurationField(WebMarkupContainer cacheBorder, String fieldName) {
-        cacheBorder.add(new TextField<Long>(fieldName, Long.class).setRequired(true).
-                add(new MinimumValidator<Long>(0L)));
+        cacheBorder.add(new TextField<>(fieldName, Long.class).setRequired(true).
+                add(new MinimumValidator<>(0L)));
         cacheBorder.add(new SchemaHelpBubble(fieldName + ".help"));
     }
 
@@ -251,7 +251,7 @@ public class HttpRepoAdvancedPanel extends Panel {
         final StyledCheckbox checkbox = new StyledCheckbox("storeArtifactsLocally");
         boolean storeArtifactsLocallyValue = CreateUpdateAction.UPDATE.equals(action)
                 && !repoDescriptor.isStoreArtifactsLocally();
-        checkbox.setDefaultModel(new Model<Boolean>(storeArtifactsLocallyValue));
+        checkbox.setDefaultModel(new Model<>(storeArtifactsLocallyValue));
         checkbox.add(new AjaxFormComponentUpdatingBehavior("onclick") {
             @Override
             protected void onUpdate(AjaxRequestTarget target) {

@@ -301,7 +301,7 @@ public abstract class ZipUtils {
             return null;
         }
 
-        List<String> outputSegments = new LinkedList<String>();
+        List<String> outputSegments = new LinkedList<>();
 
         while (path.length() > 0) {
             if (path.startsWith("../")) {   // rule 2A

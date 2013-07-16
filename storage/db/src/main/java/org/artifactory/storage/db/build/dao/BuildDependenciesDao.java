@@ -77,7 +77,7 @@ public class BuildDependenciesDao extends BaseDao {
         List<BuildDependency> dependencies = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM build_dependencies WHERE module_id IN (#)", moduleIds);
-            dependencies = new ArrayList<BuildDependency>();
+            dependencies = new ArrayList<>();
             while (resultSet.next()) {
                 dependencies.add(resultSetToBuildDependency(resultSet));
             }
@@ -92,7 +92,7 @@ public class BuildDependenciesDao extends BaseDao {
         List<BuildDependency> dependencies = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM build_dependencies WHERE module_id = ?", moduleId);
-            dependencies = new ArrayList<BuildDependency>();
+            dependencies = new ArrayList<>();
             while (resultSet.next()) {
                 dependencies.add(resultSetToBuildDependency(resultSet));
             }
@@ -109,7 +109,7 @@ public class BuildDependenciesDao extends BaseDao {
         try {
             resultSet = jdbcHelper.executeSelect(
                     "SELECT * FROM build_dependencies WHERE " + type.name() + " = ?", checksum);
-            dependencies = new ArrayList<BuildDependency>();
+            dependencies = new ArrayList<>();
             while (resultSet.next()) {
                 dependencies.add(resultSetToBuildDependency(resultSet));
             }

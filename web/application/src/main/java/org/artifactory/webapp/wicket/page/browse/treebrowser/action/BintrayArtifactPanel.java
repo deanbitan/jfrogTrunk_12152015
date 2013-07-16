@@ -24,7 +24,6 @@ import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
-import org.artifactory.api.bintray.BintrayParams;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -65,7 +64,7 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
             }
         }
 
-        setDefaultModel(new CompoundPropertyModel<BintrayParams>(bintrayModel));
+        setDefaultModel(new CompoundPropertyModel<>(bintrayModel));
     }
 
     @Override
@@ -75,7 +74,7 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
 
     @Override
     protected void addExtraComponentsToForm(Form form) {
-        FormComponent<String> relativePathTextField = new TextField<String>("path");
+        FormComponent<String> relativePathTextField = new TextField<>("path");
         relativePathTextField.setRequired(true);
         form.add(relativePathTextField);
         form.add(new HelpBubble("path.help", new ResourceModel("path.help")));
@@ -91,11 +90,12 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
     @Override
     protected void onPushClicked() {
         try {
-            bintrayService.savePropertiesOnRepoPath(pathToPush.getRepoPath(), bintrayModel);
             Map<String, String> headersMap = WicketUtils.getHeadersMap();
             MultiStatusHolder statusHolder = bintrayService.pushArtifact(pathToPush, bintrayModel, headersMap);
             if (statusHolder.hasErrors()) {
                 getPage().error(statusHolder.getLastError().getMessage());
+            } else if (statusHolder.getWarnings().size() != 0) {
+                getPage().warn(statusHolder.getWarnings().get(0).getMessage());
             } else {
                 StringBuilder successMessagesBuilder = new StringBuilder();
                 successMessagesBuilder.append("Successfully pushed '").append(pathToPush.getRelPath()).append("' to ");

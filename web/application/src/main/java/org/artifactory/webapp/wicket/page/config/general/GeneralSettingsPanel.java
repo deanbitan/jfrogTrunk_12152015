@@ -50,10 +50,10 @@ public class GeneralSettingsPanel extends TitledPanel {
 
         add(applicationAddon.getUrlBaseLabel("urlBaseLabel"));
         add(applicationAddon.getUrlBaseTextField("urlBase"));
-        RequiredTextField<Integer> uploadSizeField = new RequiredTextField<Integer>("fileUploadMaxSizeMb");
-        uploadSizeField.add(new RangeValidator<Integer>(0, Integer.MAX_VALUE));
+        RequiredTextField<Integer> uploadSizeField = new RequiredTextField<>("fileUploadMaxSizeMb");
+        uploadSizeField.add(new RangeValidator<>(0, Integer.MAX_VALUE));
         add(uploadSizeField);
-        RequiredTextField<String> dateFormatField = new RequiredTextField<String>("dateFormat");
+        RequiredTextField<String> dateFormatField = new RequiredTextField<>("dateFormat");
         dateFormatField.add(new DateFormatValidator());
         add(dateFormatField);
         add(new StyledCheckbox("offlineMode"));

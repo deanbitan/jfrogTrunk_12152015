@@ -56,7 +56,8 @@ public class GarbageCollectorInfo {
      */
     public void printCollectionInfo(long dataStoreSize) {
         String duration = TimeUnitFormat.getTimeString((gcEndTime - gcStartTime), TimeUnit.MILLISECONDS);
-        StringBuilder msg = new StringBuilder("\nStorage garbage collector report:\n").append(
+        StringBuilder msg = new StringBuilder("Storage garbage collector report:\n").append(
+                "Number of binaries:      ").append(initialCount).append("\n").append(
                 "Total execution time:    ").append(duration).append("\n").append(
                 "Candidates for deletion: ").append(candidatesForDeletion).append("\n").append(
                 "Checksums deleted:       ").append(checksumsCleaned).append("\n").append(

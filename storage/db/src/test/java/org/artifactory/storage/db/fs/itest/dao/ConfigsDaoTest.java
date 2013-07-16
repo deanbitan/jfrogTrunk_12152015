@@ -21,7 +21,7 @@ package org.artifactory.storage.db.fs.itest.dao;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.storage.db.fs.dao.ConfigsDao;
 import org.artifactory.storage.db.itest.DbBaseTest;
-import org.artifactory.storage.db.util.BlobWrapper;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.annotations.Test;
 

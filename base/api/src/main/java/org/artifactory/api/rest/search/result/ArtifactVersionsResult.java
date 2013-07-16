@@ -59,4 +59,8 @@ public class ArtifactVersionsResult {
     public List<VersionEntry> getResults() {
         return results;
     }
+
+    public void setResults(List<VersionEntry> results) {
+        this.results = results;
+    }
 }

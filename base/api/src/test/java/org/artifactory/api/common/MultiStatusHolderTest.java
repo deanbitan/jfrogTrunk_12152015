@@ -18,6 +18,8 @@
 
 package org.artifactory.api.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -30,6 +32,7 @@ import static org.testng.Assert.*;
  */
 @Test
 public class MultiStatusHolderTest {
+    private static final Logger log = LoggerFactory.getLogger(MultiStatusHolderTest.class);
     private MultiStatusHolder toMerge;
     private MultiStatusHolder target;
 
@@ -42,11 +45,11 @@ public class MultiStatusHolderTest {
     }
 
     public void mergeTwoStatusHolders() {
-        toMerge.setWarning("warninig", null);
-        toMerge.setStatus("ok", null);
+        toMerge.setWarning("warninig", log);
+        toMerge.setStatus("ok", log);
 
-        target.setStatus("target1", null);
-        target.setStatus("target2", null);
+        target.setStatus("target1", log);
+        target.setStatus("target2", log);
 
         assertFalse(target.hasWarnings());
         assertEquals(target.getAllEntries().size(), 2);
@@ -61,8 +64,8 @@ public class MultiStatusHolderTest {
 
     public void mergeWithEmptyStatusHolder() {
         target.setActivateLogging(false);
-        target.setError("target1", null);
-        target.setStatus("target2", null);
+        target.setError("target1", log);
+        target.setStatus("target2", log);
 
         target.merge(toMerge);
 
@@ -72,8 +75,8 @@ public class MultiStatusHolderTest {
     }
 
     public void mergeWithErrorOverride() {
-        toMerge.setError("toMergeError", null);
-        target.setError("targetError", null);
+        toMerge.setError("toMergeError", log);
+        target.setError("targetError", log);
 
         target.merge(toMerge);
 
@@ -84,10 +87,10 @@ public class MultiStatusHolderTest {
 
     public void mergeWithSingleStatusHolder() {
         BasicStatusHolder single = new BasicStatusHolder();
-        single.setError("error", null);
+        single.setError("error", log);
 
-        target.setStatus("target1", null);
-        target.setStatus("target2", null);
+        target.setStatus("target1", log);
+        target.setStatus("target2", log);
 
         assertFalse(target.hasWarnings());
         assertEquals(target.getAllEntries().size(), 2);
@@ -100,7 +103,7 @@ public class MultiStatusHolderTest {
         assertEquals(target.getAllEntries().size(), 3);
 
         single = new BasicStatusHolder();
-        single.setWarning("warning", null);
+        single.setWarning("warning", log);
 
         // merge again
         target.merge(single);

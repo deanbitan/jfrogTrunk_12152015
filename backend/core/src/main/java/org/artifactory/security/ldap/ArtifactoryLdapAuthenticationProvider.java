@@ -91,7 +91,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
      */
     public Map<String, LdapAuthenticationProvider> getLdapAuthenticationProviders() {
         if (ldapAuthenticationProviders == null) {
-            ldapAuthenticationProviders = new HashMap<String, LdapAuthenticationProvider>();
+            ldapAuthenticationProviders = new HashMap<>();
             Map<String, BindAuthenticator> authMap = authenticator.getAuthenticators();
             for (Map.Entry<String, BindAuthenticator> entry : authMap.entrySet()) {
                 LdapAuthenticationProvider ldapAuthenticationProvider =

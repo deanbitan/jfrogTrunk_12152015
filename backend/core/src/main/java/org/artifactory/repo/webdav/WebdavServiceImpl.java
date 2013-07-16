@@ -237,7 +237,7 @@ public class WebdavServiceImpl implements WebdavService {
             // Servlet container doesn't support long values so we take it manually from the header
             String contentLengthHeader = request.getHeader("Content-Length");
             long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
-            repoService.assertValidDeployPath(repo, path, contentLength);
+            repoService.assertValidDeployPath(repo, repoPath, contentLength, null);
         } catch (RepoRejectException rre) {
             response.sendError(rre.getErrorCode(), rre.getMessage(), log);
             return;
@@ -368,7 +368,7 @@ public class WebdavServiceImpl implements WebdavService {
 
     private List<String> getPropertiesFromXml(Node propNode) {
         List<String> properties;
-        properties = new ArrayList<String>();
+        properties = new ArrayList<>();
         NodeList childList = propNode.getChildNodes();
         for (int i = 0; i < childList.getLength(); i++) {
             Node currentNode = childList.item(i);
@@ -489,7 +489,7 @@ public class WebdavServiceImpl implements WebdavService {
                 break;
             case FIND_BY_PROPERTY:
                 //noinspection MismatchedQueryAndUpdateOfCollection
-                List<String> propertiesNotFound = new ArrayList<String>();
+                List<String> propertiesNotFound = new ArrayList<>();
                 // Parse the list of properties
                 xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
                 xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);

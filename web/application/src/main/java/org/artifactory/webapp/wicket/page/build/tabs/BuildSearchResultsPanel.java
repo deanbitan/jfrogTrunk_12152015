@@ -122,7 +122,7 @@ public class BuildSearchResultsPanel extends SaveSearchResultsPanel {
 
         for (String scope : scopes) {
             StyledCheckbox checkbox =
-                    new StyledCheckbox(scopesView.newChildId(), new SelectedItemModel<String>(selectedScopes, scope)) {
+                    new StyledCheckbox(scopesView.newChildId(), new SelectedItemModel<>(selectedScopes, scope)) {
                         @Override
                         public boolean isEnabled() {
                             return dependencies && super.isEnabled();

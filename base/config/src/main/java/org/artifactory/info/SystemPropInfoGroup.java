@@ -61,7 +61,7 @@ public class SystemPropInfoGroup extends BasePropInfoGroup {
      */
     @Override
     public InfoObject[] getInfo() {
-        List<InfoObject> infoList = new ArrayList<InfoObject>();
+        List<InfoObject> infoList = new ArrayList<>();
 
         for (String prop : properties) {
             String value = getSystemProperty(prop);

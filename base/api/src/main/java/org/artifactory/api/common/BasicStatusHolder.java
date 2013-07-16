@@ -27,6 +27,7 @@ import org.artifactory.exception.CancelException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 
 /**
@@ -43,13 +44,13 @@ public class BasicStatusHolder implements MutableStatusHolder {
     public static final int CODE_OK = 200;
     public static final int CODE_INTERNAL_ERROR = 500;
 
-    private boolean activateLogging;
+    protected boolean activateLogging;
     // the latest status
     private StatusEntry statusEntry;
-    private File outputFile;
+    protected File outputFile;
     private StatusEntry lastError = null;
-    private boolean fastFail = false;
-    private boolean verbose = false;
+    protected boolean fastFail = false;
+    protected boolean verbose = false;
 
     public BasicStatusHolder() {
         statusEntry = new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, MSG_IDLE, null);
@@ -86,119 +87,95 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return lastError;
     }
 
-    @Override
     public void setLastError(StatusEntry error) {
         this.lastError = error;
     }
 
     @Override
-    public final void setDebug(String statusMsg, Logger logger) {
-        addStatus(statusMsg, CODE_OK, logger, true);
+    public final void setDebug(String statusMsg, @Nonnull Logger logger) {
+        logEntryAndAddEntry(new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, statusMsg, null), logger);
     }
 
-    public final void setDebug(String statusMsg, int statusCode, Logger logger) {
-        addStatus(statusMsg, statusCode, logger, true);
+    public final void setDebug(String statusMsg, int statusCode, @Nonnull Logger logger) {
+        logEntryAndAddEntry(new StatusEntry(statusCode, StatusEntryLevel.DEBUG, statusMsg, null), logger);
     }
 
     @Override
-    public final void setStatus(String statusMsg, Logger logger) {
+    public final void setStatus(String statusMsg, @Nonnull Logger logger) {
         setStatus(statusMsg, CODE_OK, logger);
     }
 
     @Override
-    public final void setStatus(String statusMsg, int statusCode, Logger logger) {
-        addStatus(statusMsg, statusCode, logger, false);
-    }
-
-    protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger, boolean debug) {
-        StatusEntry result;
-        if (debug) {
-            result = new StatusEntry(statusCode, StatusEntryLevel.DEBUG, statusMsg, null);
-        } else {
-            result = new StatusEntry(statusCode, statusMsg);
-        }
-        if (activateLogging) {
-            logEntry(result, logger);
-        }
-        statusEntry = result;
-        return result;
+    public final void setStatus(String statusMsg, int statusCode, @Nonnull Logger logger) {
+        logEntryAndAddEntry(new StatusEntry(statusCode, statusMsg), logger);
     }
 
     @Override
-    public void setError(String statusMsg, Logger logger) {
-        setError(statusMsg, CODE_INTERNAL_ERROR, null, logger);
-    }
-
-    @Override
-    public void setError(String statusMsg, int statusCode, Logger logger) {
-        setError(statusMsg, statusCode, null, logger);
-    }
-
-    @Override
-    public void setError(String status, Throwable throwable, Logger logger) {
+    public void setError(String status, Throwable throwable, @Nonnull Logger logger) {
         setError(status, CODE_INTERNAL_ERROR, throwable, logger);
     }
 
     @Override
-    public void setError(String status, int statusCode, Throwable throwable) {
-        setError(status, statusCode, throwable, null);
+    public void setError(String statusMsg, @Nonnull Logger logger) {
+        setError(statusMsg, CODE_INTERNAL_ERROR, null, logger);
     }
 
     @Override
-    public void setError(String statusMsg, int statusCode, Throwable throwable, Logger logger) {
-        addError(statusMsg, statusCode, throwable, logger, false);
+    public void setError(String statusMsg, int statusCode, @Nonnull Logger logger) {
+        setError(statusMsg, statusCode, null, logger);
     }
 
     @Override
-    public void setWarning(String statusMsg, Logger logger) {
-        addError(statusMsg, CODE_INTERNAL_ERROR, null, logger, true);
+    public void setError(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger) {
+        addError(new StatusEntry(statusCode, StatusEntryLevel.ERROR, statusMsg, throwable), logger);
+    }
+
+
+    @Override
+    public void setWarning(String statusMsg, Throwable throwable, @Nonnull Logger logger) {
+        addError(new StatusEntry(CODE_INTERNAL_ERROR, StatusEntryLevel.WARNING, statusMsg, throwable), logger);
     }
 
     @Override
-    public void setWarning(String statusMsg, Throwable throwable, Logger logger) {
-        addError(statusMsg, CODE_INTERNAL_ERROR, throwable, logger, true);
+    public void setWarning(String statusMsg, @Nonnull Logger logger) {
+        addError(new StatusEntry(CODE_INTERNAL_ERROR, StatusEntryLevel.WARNING, statusMsg, null), logger);
     }
 
-    protected StatusEntry addError(String statusMsg, int statusCode, Throwable throwable, Logger logger, boolean warn) {
-        StatusEntry result;
-        if (warn) {
-            result = new StatusEntry(statusCode, StatusEntryLevel.WARNING, statusMsg, throwable);
-        } else {
-            result = new StatusEntry(statusCode, StatusEntryLevel.ERROR, statusMsg, throwable);
-            lastError = result;
-        }
+    protected StatusEntry addError(@Nonnull StatusEntry errorEntry, @Nonnull Logger logger) {
         if (isActivateLogging()) {
-            logEntry(result, logger);
+            logEntry(errorEntry, logger);
         }
-        statusEntry = result;
-        if (!warn && isFastFail()) {
+        addStatusEntry(errorEntry);
+        if (!errorEntry.isWarning() && isFastFail()) {
+            Throwable throwable = errorEntry.getException();
             if (throwable != null) {
                 if (throwable instanceof RuntimeException) {
                     throw (RuntimeException) throwable;
                 } else if (throwable instanceof Error) {
                     throw (Error) throwable;
                 } else {
-                    throw new RuntimeException("Fast fail exception: " + statusEntry.getMessage(), throwable);
+                    throw new RuntimeException("Fast fail exception: " + errorEntry.getMessage(), throwable);
                 }
             } else {
-                throw new RuntimeException("Fast fail exception: " + statusEntry.getMessage());
+                throw new RuntimeException("Fast fail exception: " + errorEntry.getMessage());
             }
         }
-        return result;
+        return errorEntry;
     }
 
-    protected void logEntry(StatusEntry entry, Logger logger) {
-        Logger activeLogger;
-
+    protected void logEntry(@Nonnull StatusEntry entry, @Nonnull Logger logger) {
         /**
          * If an external logger is given, it shall be the active one; unless verbose output is requested, then we need
          * to use that status holder logger for the debug level
          */
-        if ((logger != null) && !isVerbose()) {
-            activeLogger = logger;
+        if (!isVerbose()) {
+            doLogEntry(entry, logger);
         } else {
-            activeLogger = log;
+            doLogEntry(entry, log);
         }
+    }
+
+    protected void doLogEntry(@Nonnull StatusEntry entry, @Nonnull Logger logger) {
         String statusMessage = entry.getMessage();
         Throwable throwable = entry.getException();
         if (!isVerbose() && throwable != null) {
@@ -206,22 +183,22 @@ public class BasicStatusHolder implements MutableStatusHolder {
             statusMessage += ": " + (StringUtils.isNotBlank(throwable.getMessage()) ? throwable.getMessage() :
                     throwable.getClass().getSimpleName());
         }
-        if (entry.isWarning() && activeLogger.isWarnEnabled()) {
+        if (entry.isWarning() && logger.isWarnEnabled()) {
             if (isVerbose()) {
-                activeLogger.warn(statusMessage, throwable);
+                logger.warn(statusMessage, throwable);
             } else {
-                activeLogger.warn(statusMessage);
+                logger.warn(statusMessage);
             }
-        } else if (entry.isError() && activeLogger.isErrorEnabled()) {
+        } else if (entry.isError() && logger.isErrorEnabled()) {
             if (isVerbose()) {
-                activeLogger.error(statusMessage, throwable);
+                logger.error(statusMessage, throwable);
             } else {
-                activeLogger.error(statusMessage);
+                logger.error(statusMessage);
             }
-        } else if (entry.isDebug() && activeLogger.isDebugEnabled()) {
-            activeLogger.debug(statusMessage);
-        } else if (entry.isInfo() && activeLogger.isInfoEnabled()) {
-            activeLogger.info(statusMessage);
+        } else if (entry.isDebug() && logger.isDebugEnabled()) {
+            logger.debug(statusMessage);
+        } else if (entry.isInfo() && logger.isInfoEnabled()) {
+            logger.info(statusMessage);
         }
     }
 
@@ -233,6 +210,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return statusEntry.getMessage();
     }
 
+    @Override
     public File getOutputFile() {
         return outputFile;
     }
@@ -280,6 +258,18 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return statusEntry.getStatusCode();
     }
 
+    protected void logEntryAndAddEntry(@Nonnull StatusEntry entry, @Nonnull Logger logger) {
+        addStatusEntry(entry);
+        logEntry(entry, logger);
+    }
+
+    protected void addStatusEntry(StatusEntry entry) {
+        statusEntry = entry;
+        if (entry.isError() && StatusEntryLevel.ERROR == entry.getLevel()) {
+            lastError = entry;
+        }
+    }
+
     /**
      * @return True if the status holder prints the messages to the logger.
      */
@@ -303,6 +293,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
         lastError = null;
         statusEntry = new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, MSG_IDLE, null);
         activateLogging = true;
+        outputFile = null;
     }
 
     @Override

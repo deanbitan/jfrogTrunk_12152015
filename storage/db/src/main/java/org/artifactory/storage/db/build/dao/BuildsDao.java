@@ -27,10 +27,9 @@ import org.artifactory.storage.db.build.entity.BuildEntity;
 import org.artifactory.storage.db.build.entity.BuildPromotionStatus;
 import org.artifactory.storage.db.build.entity.BuildProperty;
 import org.artifactory.storage.db.util.BaseDao;
-import org.artifactory.storage.db.util.BlobWrapper;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
-import org.artifactory.storage.db.util.JsonBlobWrapper;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -101,7 +100,7 @@ public class BuildsDao extends BaseDao {
     }
 
     public int addPromotionStatus(long buildId, BuildPromotionStatus promotionStatus,
-            JsonBlobWrapper jsonBlob, String currentUser, long currentTime)
+            BlobWrapper jsonBlob, String currentUser, long currentTime)
             throws SQLException {
         int res = jdbcHelper.executeUpdate("UPDATE builds SET" +
                 " modified = ?, modified_by = ?" +
@@ -251,7 +250,7 @@ public class BuildsDao extends BaseDao {
 
     public List<Long> findBuildIds(String buildName) throws SQLException {
         ResultSet rs = null;
-        List<Long> buildIds = new ArrayList<Long>();
+        List<Long> buildIds = new ArrayList<>();
         try {
             rs = jdbcHelper.executeSelect("SELECT build_id FROM builds WHERE" +
                     " build_name = ? ORDER BY build_date DESC",
@@ -267,7 +266,7 @@ public class BuildsDao extends BaseDao {
 
     public List<Long> findBuildIds(String buildName, String buildNumber) throws SQLException {
         ResultSet rs = null;
-        List<Long> buildIds = new ArrayList<Long>();
+        List<Long> buildIds = new ArrayList<>();
         try {
             rs = jdbcHelper.executeSelect("SELECT build_id FROM builds WHERE" +
                     " build_name = ? AND build_number = ? ORDER BY build_date DESC",
@@ -283,7 +282,7 @@ public class BuildsDao extends BaseDao {
 
     public List<String> getAllBuildNames() throws SQLException {
         ResultSet rs = null;
-        List<String> buildNames = new ArrayList<String>();
+        List<String> buildNames = new ArrayList<>();
         try {
             rs = jdbcHelper.executeSelect(
                     "SELECT build_name, max(build_date) d FROM builds GROUP BY build_name ORDER BY d");
@@ -307,7 +306,6 @@ public class BuildsDao extends BaseDao {
             }
         } finally {
             DbUtils.close(rs);
-            rs = null;
         }
         for (BuildEntity buildEntity : results) {
             buildEntity.setProperties(findBuildProperties(buildEntity.getBuildId()));
@@ -318,7 +316,7 @@ public class BuildsDao extends BaseDao {
 
     private Set<BuildProperty> findBuildProperties(long buildId) throws SQLException {
         ResultSet rs = null;
-        Set<BuildProperty> buildProperties = new HashSet<BuildProperty>();
+        Set<BuildProperty> buildProperties = new HashSet<>();
         try {
             rs = jdbcHelper.executeSelect("SELECT * FROM build_props WHERE" +
                     " build_id = ?",
@@ -334,7 +332,7 @@ public class BuildsDao extends BaseDao {
 
     private SortedSet<BuildPromotionStatus> findBuildPromotions(long buildId) throws SQLException {
         ResultSet rs = null;
-        SortedSet<BuildPromotionStatus> buildPromotions = new TreeSet<BuildPromotionStatus>();
+        SortedSet<BuildPromotionStatus> buildPromotions = new TreeSet<>();
         try {
             rs = jdbcHelper.executeSelect("SELECT * FROM build_promotions WHERE" +
                     " build_id = ?",

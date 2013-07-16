@@ -233,7 +233,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
 
     private Map<String, SavedSearchResults> getResults() {
         if (results == null) {
-            results = new HashMap<String, SavedSearchResults>();
+            results = new HashMap<>();
         }
         return results;
     }

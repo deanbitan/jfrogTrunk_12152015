@@ -58,7 +58,7 @@ import org.artifactory.storage.spring.ArtifactoryStorageContext;
 import org.artifactory.storage.spring.StorageContextHelper;
 import org.artifactory.update.md.MetadataVersion;
 import org.artifactory.util.CollectionUtils;
-import org.artifactory.util.PathMatcher;
+import org.artifactory.util.GlobalExcludes;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,7 +185,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
                     if (settings.isIncludeMetadata() && name.endsWith(METADATA_FOLDER)) {
                         fileNames.add(name.substring(0, name.length() - METADATA_FOLDER.length()));
                     } else if (isStorableFolder(name) && isStorableFile(name)
-                            && !PathMatcher.isInGlobalExcludes(childFile)) {
+                            && !GlobalExcludes.isInGlobalExcludes(childFile)) {
                         fileNames.add(name);
                     }
                 }
@@ -386,7 +386,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
 
     private boolean importFolder(File sourceFolder, RepoPath target) {
         boolean folderExistAfterImport = false;
-        if (!PathMatcher.isInGlobalExcludes(sourceFolder)) {
+        if (!GlobalExcludes.isInGlobalExcludes(sourceFolder)) {
             // Create the folder and import its the metadata
             MutableVfsFolder mutableFolder = null;
             try {

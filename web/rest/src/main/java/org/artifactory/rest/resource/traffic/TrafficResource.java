@@ -18,6 +18,7 @@
 
 package org.artifactory.rest.resource.traffic;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.rest.constant.TrafficRestConstants;
 import org.artifactory.api.security.AuthorizationService;
@@ -81,14 +82,11 @@ public class TrafficResource {
 
     private void writeEntriesToStream(List<TrafficEntry> trafficEntryList) throws IOException {
         if (!trafficEntryList.isEmpty()) {
-            OutputStreamWriter writer = new OutputStreamWriter(httpResponse.getOutputStream());
-            try {
+            try (OutputStreamWriter writer = new OutputStreamWriter(httpResponse.getOutputStream(), Charsets.UTF_8)) {
                 for (TrafficEntry trafficEntry : trafficEntryList) {
                     String lineToWrite = (trafficEntry.toString() + "\n");
                     IOUtils.write(lineToWrite, writer);
                 }
-            } finally {
-                writer.close();
             }
         }
     }

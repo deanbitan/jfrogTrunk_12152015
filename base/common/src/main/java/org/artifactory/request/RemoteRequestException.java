@@ -44,7 +44,7 @@ public class RemoteRequestException extends IOException {
      * @param remoteReturnCode Remote returned HTTP status code
      * @param responseBody     Optional response body
      */
-    public RemoteRequestException(String message, int remoteReturnCode, String responseBody) {
+    public RemoteRequestException(String message, int remoteReturnCode, @Nullable String responseBody) {
         super(message);
         this.remoteReturnCode = remoteReturnCode;
         this.responseBody = responseBody;
@@ -59,11 +59,4 @@ public class RemoteRequestException extends IOException {
         return remoteReturnCode;
     }
 
-    /**
-     * @return The optional failed request response body.
-     */
-    @Nullable
-    public String getResponseBody() {
-        return responseBody;
-    }
 }

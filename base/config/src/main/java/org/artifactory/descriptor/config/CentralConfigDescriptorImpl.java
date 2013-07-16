@@ -131,7 +131,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElementWrapper(name = "propertySets")
     @XmlElement(name = "propertySet", required = false)
-    private List<PropertySet> propertySets = new ArrayList<PropertySet>();
+    private List<PropertySet> propertySets = new ArrayList<>();
 
     @XmlElement
     private String urlBase;
@@ -777,10 +777,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void addLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
         addReplication(replicationDescriptor, localReplications);
-        ProxyDescriptor defaultProxyDescriptor = defaultProxyDefined();
-        if (defaultProxyDescriptor != null) {
-            replicationDescriptor.setProxy(defaultProxyDescriptor);
-        }
     }
 
     @Override

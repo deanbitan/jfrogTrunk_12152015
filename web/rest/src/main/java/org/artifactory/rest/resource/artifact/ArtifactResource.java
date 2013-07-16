@@ -146,12 +146,7 @@ public class ArtifactResource {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_PROPERTIES,
             MT_FILE_LIST, MT_ITEM_LAST_MODIFIED, MT_ITEM_PERMISSIONS})
     public Object getStorageInfo() throws IOException {
-        RepoPath repoPath = repoPathFromRequestPath();
-        if (authorizationService.canRead(repoPath)) {
-            return prepareResponseAccordingToType();
-        } else {
-            return prepareUnAuthorizedResponse(repoPath);
-        }
+        return prepareResponseAccordingToType();
     }
 
     @PUT
@@ -284,6 +279,9 @@ public class ArtifactResource {
      */
     private Response prepareLastModifiedResponse() throws IOException {
         try {
+            if (isRequestToNoneLocalRepo()) {
+                return nonLocalRepoResponse();
+            }
             ItemInfo lastModifiedItem = restAddon().getLastModified(path);
             String uri = getLastModifiedRequestUri(lastModifiedItem);
             String lastModifiedAsISo =
@@ -354,6 +352,9 @@ public class ArtifactResource {
     }
 
     private Response preparePropertiesXmlResponse() throws IOException {
+        if (isRequestToNoneLocalRepo()) {
+            return nonLocalRepoResponse();
+        }
         Properties properties = repositoryService.getProperties(repoPathFromRequestPath());
         if (properties != null && !properties.isEmpty()) {
             return okResponse(properties, MediaType.APPLICATION_XML);
@@ -363,6 +364,9 @@ public class ArtifactResource {
 
     private Response preparePermissionsResponse() throws IOException {
         if (isMediaTypeAcceptableByUser(MT_ITEM_PERMISSIONS)) {
+            if (isRequestToNoneLocalRepo()) {
+                return nonLocalRepoResponse();
+            }
             return getPermissionsResponse(path);
         } else {
             return notAcceptableResponse(MT_ITEM_PERMISSIONS);
@@ -382,6 +386,9 @@ public class ArtifactResource {
 
     private Response prepareStorageInfoResponse() throws IOException {
         RepoPath repoPath = repoPathFromRequestPath();
+        if (!authorizationService.canRead(repoPath)) {
+            return prepareUnAuthorizedResponse(repoPath);
+        }
         String repoKey = repoPath.getRepoKey();
         RestBaseStorageInfo storageInfoRest;
         org.artifactory.fs.ItemInfo itemInfo = null;
@@ -477,7 +484,7 @@ public class ArtifactResource {
         setBaseStorageInfo(folderInfo, itemInfo, repoKey);
         RepoPath folderRepoPath = InternalRepoPathFactory.create(repoKey, itemInfo.getRepoPath().getPath());
 
-        folderInfo.children = new ArrayList<RestFolderInfo.DirItem>();
+        folderInfo.children = new ArrayList<>();
 
         //if local or cache repo
         if (isLocalRepo(repoKey)) {

@@ -86,7 +86,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
         columns.add(new ModuleDependencyPropertyColumn(Model.of("Type"), "dependency.type", "dependency.type"));
         columns.add(new ModuleDependencyPropertyColumn(Model.of("Repo Path"), null, "repoPathOrMissingMessage"));
 
-        add(new GroupableTable<ModuleDependencyActionableItem>(
+        add(new GroupableTable<>(
                 "dependencies", columns, new ModuleDependenciesDataProvider(), 10));
     }
 
@@ -131,7 +131,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
                     }
                 }
             };
-            return new Model<ModuleDependencyActionableItem>(item);
+            return new Model<>(item);
         }
     }
 }

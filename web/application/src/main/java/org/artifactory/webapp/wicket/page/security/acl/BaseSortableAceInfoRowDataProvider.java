@@ -53,6 +53,6 @@ public abstract class BaseSortableAceInfoRowDataProvider extends SortableDataPro
 
     @Override
     public IModel<AceInfoRow> model(AceInfoRow object) {
-        return new Model<AceInfoRow>(object);
+        return new Model<>(object);
     }
 }

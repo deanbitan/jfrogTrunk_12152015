@@ -29,7 +29,6 @@ import org.artifactory.fs.MutableStatsInfo;
 import org.artifactory.fs.MutableWatchersInfo;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.WatchersInfo;
-import org.artifactory.logging.LoggingService;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.version.CompoundVersionDetails;
@@ -121,7 +120,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         if (definition == null && createIfEmpty) {
             log.debug("Creating new Metadata definition on demand for '{}'.", metadataName);
             GenericXmlProvider xmlProvider = new GenericXmlProvider(metadataName);
-            definition = new MetadataDefinition<String, String>(xmlProvider,
+            definition = new MetadataDefinition<>(xmlProvider,
                     new GenericPersistenceHandler(xmlProvider, true), false);
         }
         return definition;
@@ -129,7 +128,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
 
     @Override
     public Set<MetadataDefinition<?, ?>> getAllMetadataDefinitions(boolean includeInternal) {
-        Set<MetadataDefinition<?, ?>> result = new HashSet<MetadataDefinition<?, ?>>();
+        Set<MetadataDefinition<?, ?>> result = new HashSet<>();
         Collection<MetadataDefinition> mdDefColl = mdDefsByName.values();
         for (MetadataDefinition definition : mdDefColl) {
             if (includeInternal || !definition.isInternal()) {
@@ -155,7 +154,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
             XmlMetadataProvider<T, MT> xmlProvider,
             MetadataPersistenceHandler<T, MT> persistenceHandler,
             boolean internal, Class... extraClassKeys) {
-        MetadataDefinition definition = new MetadataDefinition<T, MT>(xmlProvider, persistenceHandler, internal);
+        MetadataDefinition definition = new MetadataDefinition<>(xmlProvider, persistenceHandler, internal);
         if (clazz != String.class) {
             mdDefsByClass.put(clazz, definition);
         }

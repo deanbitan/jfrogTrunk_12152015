@@ -35,7 +35,7 @@ import java.util.Map;
 public class SessionResourceManagerImpl implements SessionResourceManager {
     private static final Logger log = LoggerFactory.getLogger(SessionResourceManagerImpl.class);
 
-    private final Map<Class, SessionResource> resources = new HashMap<Class, SessionResource>();
+    private final Map<Class, SessionResource> resources = new HashMap<>();
 
     @Override
     @SuppressWarnings({"unchecked"})

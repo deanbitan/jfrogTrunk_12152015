@@ -21,7 +21,6 @@ package org.artifactory.storage.binstore.service;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
@@ -58,7 +57,7 @@ public interface InternalBinaryStore extends BinaryStore {
      *
      * @return The results of the GC process
      */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    //@Transactional(propagation = Propagation.NOT_SUPPORTED)
     GarbageCollectorInfo garbageCollect();
 
     /**
@@ -107,15 +106,6 @@ public interface InternalBinaryStore extends BinaryStore {
             MultiStatusHolder statusHolder);
 
     Collection<BinaryInfo> findAllBinaries();
-
-    /**
-     * Deletes binary row and all dependent rows from the database
-     *
-     * @param sha1ToDelete Checksum to delete
-     * @return True if deleted. False if not found or error
-     */
-    @Transactional(propagation = Propagation.REQUIRED)
-    boolean deleteEntry(String sha1ToDelete);
 
     /**
      * Deletes unreferenced archive paths. Shared archive paths might not be used after a binary is deleted.

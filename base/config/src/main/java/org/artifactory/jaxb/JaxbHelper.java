@@ -18,6 +18,7 @@
 
 package org.artifactory.jaxb;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 
 /**
@@ -54,18 +56,20 @@ public class JaxbHelper<T> {
                     "Please make sure the artifactory.war contains it.");
         }
         CentralConfigDescriptorImpl descriptor =
-                new JaxbHelper<CentralConfigDescriptorImpl>().read(new ByteArrayInputStream(configXmlString.getBytes()),
-                        CentralConfigDescriptorImpl.class,
-                        schemaUrl);
+                new JaxbHelper<CentralConfigDescriptorImpl>().read(new ByteArrayInputStream(
+                        configXmlString.getBytes(Charsets.UTF_8)),
+                        CentralConfigDescriptorImpl.class, schemaUrl);
         return descriptor;
     }
 
     public static void writeConfig(CentralConfigDescriptor descriptor, File configFile) {
         try {
-            PrintStream ps = new PrintStream(configFile);
+            PrintStream ps = new PrintStream(configFile, Charsets.UTF_8.name());
             new JaxbHelper<CentralConfigDescriptor>().write(ps, descriptor);
         } catch (FileNotFoundException e) {
             throw new RuntimeException("File " + configFile.getAbsolutePath() + " cannot be written to!", e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 

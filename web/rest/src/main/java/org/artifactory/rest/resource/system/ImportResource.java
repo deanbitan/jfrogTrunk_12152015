@@ -90,7 +90,7 @@ public class ImportResource {
     @Consumes({SystemRestConstants.MT_IMPORT_SETTINGS, MediaType.APPLICATION_JSON})
     public Response activateImport(ImportSettingsConfigurationImpl settings) {
         log.debug("Activating import {}", settings);
-        StreamStatusHolder holder = new StreamStatusHolder(httpResponse);
+        ImportExportStreamStatusHolder holder = new ImportExportStreamStatusHolder(httpResponse);
         try {
             ImportSettings importSettings = new ImportSettingsImpl(new File(settings.importPath), holder);
             importSettings.setIncludeMetadata(settings.includeMetadata);
@@ -123,7 +123,7 @@ public class ImportResource {
             @QueryParam(RepositoriesRestConstants.INCLUDE_METADATA) String includeMetadata,
             //Verbose - default 0
             @QueryParam(RepositoriesRestConstants.VERBOSE) String verbose) throws IOException {
-        StreamStatusHolder statusHolder = new StreamStatusHolder(httpResponse);
+        ImportExportStreamStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         String repoNameToImport = targetRepo;
         if (StringUtils.isBlank(repoNameToImport)) {
             repoNameToImport = "All repositories";

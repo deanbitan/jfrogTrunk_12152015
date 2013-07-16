@@ -19,7 +19,6 @@
 package org.artifactory.addon.plugin.download;
 
 import org.artifactory.addon.plugin.PluginAction;
-import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.request.Request;
 
 /**

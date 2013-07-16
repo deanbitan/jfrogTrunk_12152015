@@ -68,11 +68,6 @@ public class FileServiceSpecialCharsTest extends DbBaseTest {
         createFolder("");
     }
 
-    public void backslash() {
-        createFile("cvv\\\\sfdf");
-        createFolder("afddsf/sdfsdf/\\\\/sdf");
-    }
-
     public void invalidAllSpaces() {
         createFile("   ");
         createFolder("              ");

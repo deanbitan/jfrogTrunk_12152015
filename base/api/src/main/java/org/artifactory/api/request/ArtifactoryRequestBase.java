@@ -129,7 +129,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Check that the resource has a modification time and that it is older than the request's one.
         //Since HTTP dates do not carry millisecond-level data compare with the value rounded-down to the nearest sec.
         log.debug("Check isNewerThan. resourceLastModified={}, roundedResourceLastModified={}, modificationTime={}",
-                new Object[]{resourceLastModified, roundMillis(resourceLastModified), modificationTime});
+                resourceLastModified, roundMillis(resourceLastModified), modificationTime);
         return resourceLastModified >= 0 && roundMillis(resourceLastModified) <= modificationTime;
     }
 

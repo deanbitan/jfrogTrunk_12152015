@@ -71,7 +71,7 @@ public class ArtifactSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
     protected void addSearchComponents(Form form) {
         searchControls = new ArtifactSearchControls();
 
-        TextField searchControl = new TextField<String>("query", new PropertyModel<String>(searchControls, "query"));
+        TextField searchControl = new TextField<>("query", new PropertyModel<String>(searchControls, "query"));
         searchControl.setOutputMarkupId(true);
         form.add(searchControl);
 

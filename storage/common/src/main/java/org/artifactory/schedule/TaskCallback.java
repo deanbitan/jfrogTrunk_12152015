@@ -37,7 +37,7 @@ import java.util.List;
 public abstract class TaskCallback<C> {
     private static final Logger log = LoggerFactory.getLogger(TaskCallback.class);
 
-    private static final InheritableThreadLocal<String> currentTaskToken = new InheritableThreadLocal<String>();
+    private static final InheritableThreadLocal<String> currentTaskToken = new InheritableThreadLocal<>();
 
     public static String currentTaskToken() {
         return currentTaskToken.get();

@@ -78,7 +78,7 @@ public class PermissionsTabPanel extends Panel {
     }
 
     private void addTable() {
-        List<IColumn> columns = new ArrayList<IColumn>();
+        List<IColumn> columns = new ArrayList<>();
 
         columns.add(new PropertyColumn(Model.of("Principal"), "principal", "principal") {
             @Override

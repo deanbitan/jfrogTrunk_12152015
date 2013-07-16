@@ -19,8 +19,7 @@
 package org.artifactory.api.config;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.common.MutableStatusHolder;
+import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.MetadataReader;
 import org.artifactory.version.ArtifactoryVersion;
@@ -53,20 +52,20 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
     private final SharedInfo info;
 
     public ImportSettingsImpl(File baseDir) {
-        super(baseDir);
+        super(baseDir, new ImportExportStatusHolder());
         info = new SharedInfo();
     }
 
-    public ImportSettingsImpl(File baseDir, MultiStatusHolder statusHolder) {
+    public ImportSettingsImpl(File baseDir, ImportExportStatusHolder statusHolder) {
         super(baseDir, statusHolder);
         this.info = new SharedInfo();
     }
 
     public ImportSettingsImpl(File baseDir, ImportSettings settings) {
-        this(baseDir, settings, settings.getStatusHolder());
+        this(baseDir, settings, (ImportExportStatusHolder) settings.getStatusHolder());
     }
 
-    public ImportSettingsImpl(File baseDir, ImportSettings settings, MutableStatusHolder statusHolder) {
+    public ImportSettingsImpl(File baseDir, ImportSettings settings, ImportExportStatusHolder statusHolder) {
         super(baseDir, settings, statusHolder);
         info = ((ImportSettingsImpl) settings).info;
     }

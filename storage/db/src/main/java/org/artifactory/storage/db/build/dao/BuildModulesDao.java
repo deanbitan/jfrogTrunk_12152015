@@ -90,7 +90,7 @@ public class BuildModulesDao extends BaseDao {
         List<Long> moduleIds = null;
         try {
             rs = jdbcHelper.executeSelect("SELECT module_id FROM build_modules WHERE build_id = ?", buildId);
-            moduleIds = new ArrayList<Long>();
+            moduleIds = new ArrayList<>();
             while (rs.next()) {
                 moduleIds.add(rs.getLong(1));
             }
@@ -105,7 +105,7 @@ public class BuildModulesDao extends BaseDao {
         List<BuildModule> modules = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM build_modules WHERE build_id = ?", buildId);
-            modules = new ArrayList<BuildModule>();
+            modules = new ArrayList<>();
             while (resultSet.next()) {
                 modules.add(resultSetToBuildModule(resultSet));
             }
@@ -119,7 +119,7 @@ public class BuildModulesDao extends BaseDao {
     }
 
     private Set<ModuleProperty> findModuleProperties(long moduleId) throws SQLException {
-        Set<ModuleProperty> props = new HashSet<ModuleProperty>(3);
+        Set<ModuleProperty> props = new HashSet<>(3);
         ResultSet rs = null;
         try {
             rs = jdbcHelper.executeSelect("SELECT * FROM module_props WHERE module_id = ?", moduleId);

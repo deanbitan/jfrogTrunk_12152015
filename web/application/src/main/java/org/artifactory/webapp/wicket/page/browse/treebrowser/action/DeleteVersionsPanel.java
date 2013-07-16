@@ -90,7 +90,7 @@ public class DeleteVersionsPanel extends Panel {
         columns.add(new PropertyColumn<VersionUnitModel>(Model.of("Version"), "version", "version"));
         columns.add(new PropertyColumn<VersionUnitModel>(Model.of("Directories Count"), "count"));
 
-        SortableTable table = new SortableTable<VersionUnitModel>("deployableUnits", columns, dataProvider, 20);
+        SortableTable table = new SortableTable<>("deployableUnits", columns, dataProvider, 20);
         form.add(table);
 
         form.add(new ModalCloseLink("cancel"));
@@ -220,7 +220,7 @@ public class DeleteVersionsPanel extends Panel {
 
         @Override
         public IModel<VersionUnitModel> model(VersionUnitModel object) {
-            return new Model<VersionUnitModel>(object);
+            return new Model<>(object);
         }
 
         public Set<VersionUnit> getSelectedVersionUnits() {

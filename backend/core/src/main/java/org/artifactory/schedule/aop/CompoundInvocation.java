@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class CompoundInvocation implements MethodInvocation {
 
-    private List<MethodInvocation> invocations = new ArrayList<MethodInvocation>();
+    private List<MethodInvocation> invocations = new ArrayList<>();
     private MethodInvocation currentInvocation;
     private AsyncAdvice advice;
 

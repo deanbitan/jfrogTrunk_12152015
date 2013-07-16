@@ -20,6 +20,7 @@ package org.artifactory.common;
 
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 
 /**
@@ -45,33 +46,31 @@ public interface MutableStatusHolder extends StatusHolder {
 
     void setVerbose(boolean verbose);
 
-    void setLastError(StatusEntry error);
+    void setDebug(String statusMsg, @Nonnull Logger logger);
 
-    void setDebug(String statusMsg, Logger logger);
+    void setStatus(String statusMsg, @Nonnull Logger logger);
 
-    void setStatus(String statusMsg, Logger logger);
+    void setStatus(String statusMsg, int statusCode, @Nonnull Logger logger);
 
-    void setStatus(String statusMsg, int statusCode, Logger logger);
+    void setError(String statusMsg, @Nonnull Logger logger);
 
-    void setError(String statusMsg, Logger logger);
+    void setError(String statusMsg, int statusCode, @Nonnull Logger logger);
 
-    void setError(String statusMsg, int statusCode, Logger logger);
+    void setError(String status, Throwable throwable, @Nonnull Logger logger);
 
-    void setError(String status, Throwable throwable, Logger logger);
+    void setError(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger);
 
-    void setError(String status, int statusCode, Throwable throwable);
+    void setWarning(String statusMsg, @Nonnull Logger logger);
 
-    void setError(String statusMsg, int statusCode, Throwable throwable, Logger logger);
-
-    void setWarning(String statusMsg, Logger logger);
-
-    void setWarning(String statusMsg, Throwable throwable, Logger logger);
+    void setWarning(String statusMsg, Throwable throwable, @Nonnull Logger logger);
 
     void setActivateLogging(boolean activateLogging);
 
     void reset();
 
-    void setOutputFile(File callback);
-
     boolean isVerbose();
+
+    File getOutputFile();
+
+    void setOutputFile(File absoluteFile);
 }

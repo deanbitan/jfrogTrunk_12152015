@@ -43,7 +43,7 @@ public abstract class Interceptors<T extends Interceptor> implements Iterable<T>
         BeanNameAware, ApplicationContextAware {
     private final static Logger log = LoggerFactory.getLogger(Interceptors.class);
 
-    private final List<T> interceptors = new LinkedList<T>();
+    private final List<T> interceptors = new LinkedList<>();
     private Class<T> interceptorInterface;
 
     protected ArtifactoryApplicationContext context;

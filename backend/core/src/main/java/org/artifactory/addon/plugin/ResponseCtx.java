@@ -20,8 +20,6 @@ package org.artifactory.addon.plugin;
 
 import org.artifactory.addon.plugin.download.ResourceStreamCtx;
 
-import java.net.URI;
-
 public class ResponseCtx extends ResourceStreamCtx {
 
     public final static int UNSET_STATUS = -1;

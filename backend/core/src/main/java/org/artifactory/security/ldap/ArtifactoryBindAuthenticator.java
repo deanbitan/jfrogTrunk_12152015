@@ -148,7 +148,7 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
                     }
                 } catch (UsernameNotFoundException e) {
                     log.debug("Searching for user {} failed for {}: {}",
-                            new Object[]{userSearch, username, e.getMessage()});
+                            userSearch, username, e.getMessage());
                 } catch (IncorrectResultSizeDataAccessException irsae) {
                     log.error("User: {} found {} times in LDAP server", username, irsae.getActualSize());
                 }

@@ -20,9 +20,13 @@ package org.artifactory.rest.resource.maven;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.MavenRestConstants;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.StringList;
+import org.artifactory.rest.util.RestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -31,6 +35,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -44,17 +49,46 @@ import javax.ws.rs.core.Response;
 @Component
 @Scope(BeanDefinition.SCOPE_SINGLETON)
 @Path(MavenRestConstants.PATH_ROOT)
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
+@RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class MavenResource {
 
     @Autowired
     private AddonsManager addonsManager;
 
+    @Autowired
+    private RepositoryService repositoryService;
+
     @POST
     @Produces({MediaType.TEXT_PLAIN})
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response runIndexer(@QueryParam(MavenRestConstants.PARAM_REPOS_TO_INDEX) StringList reposToIndex,
             @QueryParam(MavenRestConstants.PARAM_FORCE) int force) {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return restAddon.runMavenIndexer(reposToIndex, force);
+    }
+
+    @POST
+    @Path("calculateMetadata/{path: .+}")
+    public Response calculateMetadata(@PathParam("path") String path) {
+        RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
+        if (!repositoryService.exists(repoPath)) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Could not find path '" + path + "'").build();
+        }
+
+        String repoKey = repoPath.getRepoKey();
+        LocalRepoDescriptor localRepo = repositoryService.localRepoDescriptorByKey(repoKey);
+        if (localRepo == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity(
+                    "Unable to find local repository '" + repoKey + "'.")
+                    .build();
+        }
+
+        if (!localRepo.isMavenRepoLayout()) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(
+                    "Repository '" + repoKey + "' is not a maven repository.").build();
+        }
+
+        repositoryService.calculateMavenMetadataAsync(repoPath);
+        return Response.ok().build();
     }
 }

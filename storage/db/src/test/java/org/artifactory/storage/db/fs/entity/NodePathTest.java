@@ -33,7 +33,7 @@ import static org.testng.Assert.assertEquals;
 public class NodePathTest {
 
     public void simpleConstructor() {
-        NodePath nodePath = new NodePath("repo", "path/to", "name");
+        NodePath nodePath = new NodePath("repo", "path/to", "name", true);
         assertEquals(nodePath.getRepo(), "repo");
         assertEquals(nodePath.getPath(), "path/to");
         assertEquals(nodePath.getName(), "name");
@@ -41,11 +41,11 @@ public class NodePathTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void constructorNoRepo() {
-        new NodePath("", "path/to", "name");
+        new NodePath("", "path/to", "name", true);
     }
 
     public void constructorNoPath() {
-        NodePath path = new NodePath("repo", null, "name");
+        NodePath path = new NodePath("repo", null, "name", true);
         assertEquals(path.getRepo(), "repo");
         assertEquals(path.getPath(), "");
         assertEquals(path.getName(), "name");
@@ -53,7 +53,7 @@ public class NodePathTest {
     }
 
     public void constructorRootPath() {
-        NodePath path = new NodePath("repo", null, "");
+        NodePath path = new NodePath("repo", null, "", true);
         assertEquals(path.getRepo(), "repo");
         assertEquals(path.getPath(), "");
         assertEquals(path.getName(), "");
@@ -62,18 +62,18 @@ public class NodePathTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void constructorPathWithNoName() {
-        new NodePath("repo", "path", "");
+        new NodePath("repo", "path", "", true);
     }
 
     public void toRepoPath() {
-        NodePath nodePath = new NodePath("repo", "path/to", "name");
+        NodePath nodePath = new NodePath("repo", "path/to", "name", true);
         RepoPath repoPath = nodePath.toRepoPath();
         assertEquals(repoPath.getRepoKey(), "repo");
         assertEquals(repoPath.getPath(), "path/to/name");
     }
 
     public void toRepoPathDepth1() {
-        NodePath nodePath = new NodePath("repo", "", "name");
+        NodePath nodePath = new NodePath("repo", "", "name", true);
         RepoPath repoPath = nodePath.toRepoPath();
         assertEquals(repoPath.getRepoKey(), "repo");
         assertEquals(repoPath.getPath(), "name");
@@ -102,14 +102,14 @@ public class NodePathTest {
     }
 
     public void pathNameOfRoot() {
-        assertEquals(new NodePath("repo", "", "").getPathName(), "");
+        assertEquals(new NodePath("repo", "", "", true).getPathName(), "");
     }
 
     public void pathNameRootChild() {
-        assertEquals(new NodePath("repo", "", "name").getPathName(), "name");
+        assertEquals(new NodePath("repo", "", "name", true).getPathName(), "name");
     }
 
     public void pathName() {
-        assertEquals(new NodePath("repo", "path", "name").getPathName(), "path/name");
+        assertEquals(new NodePath("repo", "path", "name", true).getPathName(), "path/name");
     }
 }

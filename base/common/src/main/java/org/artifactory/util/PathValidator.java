@@ -66,9 +66,7 @@ public abstract class PathValidator {
             switch (c) {
                 case '/':
                 case EOF:
-                    if (state == STATE_SLASH) {
-                        throw new InvalidPathException(path, "Path cannot contain double slash '//'");
-                    } else if (state == STATE_SPACE) {
+                    if (state == STATE_SPACE) {
                         throw new InvalidPathException(path, "Path cannot have a slash after a space");
                     } else if (state == STATE_DOT) {
                         throw new InvalidPathException(path, "Path element cannot end with a dot");

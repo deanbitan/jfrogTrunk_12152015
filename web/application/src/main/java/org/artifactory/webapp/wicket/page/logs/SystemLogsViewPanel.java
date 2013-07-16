@@ -308,7 +308,7 @@ public class SystemLogsViewPanel extends Panel {
             sb.append("File last modified: ").append(logLastModified).append(". ");
             sb.append("View last updated: ").append(viewLastUpdate).append(".");
             lastUpdateLabel.setDefaultModelObject(sb.toString());
-            downloadLink.setDefaultModel(new Model<File>(systemLogFile));
+            downloadLink.setDefaultModel(new Model<>(systemLogFile));
         }
     }
 }

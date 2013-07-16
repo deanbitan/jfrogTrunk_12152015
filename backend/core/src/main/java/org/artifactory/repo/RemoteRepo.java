@@ -57,10 +57,6 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      */
     ResourceStreamHandle conditionalRetrieveResource(String relPath, boolean forceRemoteDownload) throws IOException;
 
-    long getAssumedOfflinePeriodSecs();
-
-    long getMissedRetrievalCachePeriodSecs();
-
     void clearCaches();
 
     /**

@@ -32,7 +32,7 @@ public abstract class TabbedPanel extends Panel {
 
     protected TabbedPanel(String id) {
         super(id);
-        List<ITab> tabs = new ArrayList<ITab>();
+        List<ITab> tabs = new ArrayList<>();
         addTabs(tabs);
         final StyledTabbedPanel tabPanel = newTabbedPanel(tabs);
         tabPanel.add(new RenderJavaScript("Browser.fixTabPanel();"));

@@ -50,8 +50,6 @@ public interface BintrayService {
     String PATH_PACKAGES = "packages";
     String PATH_USERS = "users";
 
-    String VERSION_SHOW_FILES = "version/show/files";
-
     final static BintrayItemInfo ITEM_NOT_FOUND = new BintrayItemInfo();
     final static BintrayItemInfo ITEM_RETRIEVAL_ERROR = new BintrayItemInfo();
     final static BintrayPackageInfo PACKAGE_NOT_FOUND = new BintrayPackageInfo();
@@ -161,6 +159,16 @@ public interface BintrayService {
      */
     BintrayUser getBintrayUser(String username, String apiKey, @Nullable Map<String, String> headersMap)
             throws IOException, BintrayException;
+
+    /**
+     * Get a Bintray user information
+     *
+     * @param username The username to search
+     * @param apiKey   The apiKey which belongs to the given username
+     * @throws IOException      In case of connection errors with Bintray
+     * @throws BintrayException In case we received any response other than 200 OK
+     */
+    BintrayUser getBintrayUser(String username, String apiKey) throws IOException, BintrayException;
 
     /**
      * Validates that the user properly configured his Bintray credentials

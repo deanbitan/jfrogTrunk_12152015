@@ -27,7 +27,7 @@ import java.util.List;
  * @author Shay Yaakov
  */
 public class DownloadRestSearchResult {
-    public List<SearchEntry> results = new ArrayList<SearchEntry>();
+    public List<SearchEntry> results = new ArrayList<>();
 
     public static class SearchEntry {
         public String downloadUri;

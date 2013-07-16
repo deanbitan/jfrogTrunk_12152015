@@ -68,7 +68,19 @@ public class RepoPathTest {
         assertFalse(new RepoPathImpl("1", "2").isRoot());
         assertTrue(new RepoPathImpl("1", "").isRoot());
         assertTrue(new RepoPathImpl("1", "     ").isRoot());
+        assertTrue(new RepoPathImpl("1", "     ").isRoot());
         assertTrue(new RepoPathImpl("1", null).isRoot());
+        nullRepoKey();
+    }
+
+    private void nullRepoKey() {
+        try {
+            // Should throw exception repoKey can't be null
+            new RepoPathImpl((String) null, "");
+            fail();
+        } catch (IllegalArgumentException e) {
+            //We expected failure during RepoPath creation  (repo key can't be null);
+        }
     }
 
     public void archiveResourcePath() {
@@ -87,11 +99,11 @@ public class RepoPathTest {
 
     public void toPathWithRelativePath() {
         RepoPathImpl repoPath = new RepoPathImpl("key", "path/to/");
-        assertEquals(repoPath.toPath(), "key/path/to");
+        assertEquals(repoPath.toPath(), "key/path/to/");
     }
 
     public void toPathRootRepoPath() {
         RepoPathImpl repoPath = new RepoPathImpl("key", "");
-        assertEquals(repoPath.toPath(), "key");
+        assertEquals(repoPath.toPath(), "key/");
     }
 }

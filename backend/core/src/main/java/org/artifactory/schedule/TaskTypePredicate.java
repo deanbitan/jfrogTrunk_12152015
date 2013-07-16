@@ -42,7 +42,7 @@ public class TaskTypePredicate implements Predicate<Task> {
 
     @SuppressWarnings({"unchecked"})
     public TaskTypePredicate(TaskTypePredicate from, Class<? extends TaskCallback>... types) {
-        HashSet<Class<? extends TaskCallback>> classes = new HashSet<Class<? extends TaskCallback>>();
+        HashSet<Class<? extends TaskCallback>> classes = new HashSet<>();
         Collections.addAll(classes, from.types);
         Collections.addAll(classes, types);
         this.types = classes.toArray(new Class[classes.size()]);

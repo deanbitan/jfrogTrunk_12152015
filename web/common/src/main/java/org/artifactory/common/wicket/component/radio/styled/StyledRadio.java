@@ -60,7 +60,7 @@ public class StyledRadio<T> extends LabeledWebMarkupContainer implements Titled 
         super.add(ResourcePackage.forJavaScript(StyledRadio.class));
         super.add(new CssClass("styled-checkbox"));
 
-        radio = new Radio<T>("radio", new DelegatedModel<T>(this));
+        radio = new Radio<>("radio", new DelegatedModel<T>(this));
         radio.setOutputMarkupId(true);
         add(radio);
 

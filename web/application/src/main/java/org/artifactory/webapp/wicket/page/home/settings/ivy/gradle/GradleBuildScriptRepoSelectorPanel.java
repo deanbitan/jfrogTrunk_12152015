@@ -117,7 +117,7 @@ public class GradleBuildScriptRepoSelectorPanel<T extends RepoDescriptor> extend
 
     private void addRepoFields(List<T> repoDescriptors, RepoType repoType) {
         add(new Label("repositoryLabel", getRepositoryLabel()));
-        repoDropDownChoice = new DropDownChoice<T>("repository",
+        repoDropDownChoice = new DropDownChoice<>("repository",
                 new PropertyModel<T>(this, "repository"), repoDescriptors);
 
         repoDropDownChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
@@ -150,7 +150,7 @@ public class GradleBuildScriptRepoSelectorPanel<T extends RepoDescriptor> extend
     private void addLayoutFields(RepoType repoType) {
         add(new Label("layoutLabel", getLayoutLabel()));
 
-        layoutDropDownChoice = new DropDownChoice<RepoLayout>("layout",
+        layoutDropDownChoice = new DropDownChoice<>("layout",
                 new PropertyModel<RepoLayout>(this, "layout"), repoLayouts,
                 new ChoiceRenderer<RepoLayout>("name"));
 

@@ -69,28 +69,28 @@ public class GavcSearchPanel extends BaseSearchPanel<GavcSearchResult> {
         add(new CssClass("gavc-panel"));
         searchControls = new GavcSearchControls();
 
-        TextField groupIdField = new TextField<String>("groupIdField",
+        TextField groupIdField = new TextField<>("groupIdField",
                 new PropertyModel<String>(searchControls, "groupId"));
         groupIdField.setOutputMarkupId(true);
         setPersistent(groupIdField);
         form.add(groupIdField);
         form.add(new HelpBubble("groupIdHelp", "The Group ID of the artifact. * and ? are accepted."));
 
-        TextField artifactIdField = new TextField<String>("artifactIdField",
+        TextField artifactIdField = new TextField<>("artifactIdField",
                 new PropertyModel<String>(searchControls, "artifactId"));
         artifactIdField.setOutputMarkupId(true);
         setPersistent(artifactIdField);
         form.add(artifactIdField);
         form.add(new HelpBubble("artifactIdHelp", "The Artifact ID of the artifact. * and ? are accepted."));
 
-        TextField versionField = new TextField<String>("versionField",
+        TextField versionField = new TextField<>("versionField",
                 new PropertyModel<String>(searchControls, "version"));
         setPersistent(versionField);
         versionField.setOutputMarkupId(true);
         form.add(versionField);
         form.add(new HelpBubble("versionHelp", "The version of the artifact. * and ? are accepted."));
 
-        TextField classifierField = new TextField<String>("classifierField",
+        TextField classifierField = new TextField<>("classifierField",
                 new PropertyModel<String>(searchControls, "classifier"));
         classifierField.setOutputMarkupId(true);
         setPersistent(classifierField);

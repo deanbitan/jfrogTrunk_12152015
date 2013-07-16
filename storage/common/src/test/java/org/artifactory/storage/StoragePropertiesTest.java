@@ -24,8 +24,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
+import static org.testng.Assert.*;
 
 /**
  * Unit tests for the {@link org.artifactory.storage.StorageProperties} class.
@@ -68,4 +67,19 @@ public class StoragePropertiesTest {
         assertEquals(sp.getMaxIdleConnections(), StorageProperties.DEFAULT_MAX_IDLE_CONNECTIONS);
         assertEquals(sp.getBinaryProviderCacheMaxSize(), 1073741824L); // 1g
     }
+
+    public void isDerby() throws IOException {
+        StorageProperties sp = new StorageProperties(
+                ResourceUtils.getResourceAsFile("/storage/minimalstorage.properties"));
+        assertTrue(sp.isDerby());
+        assertEquals(sp.getDbType(), DbType.DERBY);
+    }
+
+    public void isPostgres() throws IOException {
+        StorageProperties sp = new StorageProperties(
+                ResourceUtils.getResourceAsFile("/storage/storagepostgres.properties"));
+        assertTrue(sp.isPostgres());
+        assertEquals(sp.getDbType(), DbType.POSTGRESQL);
+    }
+
 }

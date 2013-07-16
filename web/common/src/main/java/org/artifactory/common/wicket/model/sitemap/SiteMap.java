@@ -29,7 +29,7 @@ import java.util.Map;
  * @author Yoav Aharoni
  */
 public class SiteMap {
-    private Map<Class<? extends Page>, MenuNode> pagesCache = new HashMap<Class<? extends Page>, MenuNode>();
+    private Map<Class<? extends Page>, MenuNode> pagesCache = new HashMap<>();
     private MenuNode root;
 
     public Collection<MenuNode> getPages() {

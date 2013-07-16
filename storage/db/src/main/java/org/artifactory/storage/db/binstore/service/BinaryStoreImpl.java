@@ -40,6 +40,7 @@ import org.artifactory.storage.db.binstore.dao.BinariesDao;
 import org.artifactory.storage.db.binstore.entity.BinaryData;
 import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.storage.db.util.blob.BlobWrapperFactory;
 import org.artifactory.storage.fs.service.ArchiveEntriesService;
 import org.artifactory.util.Pair;
 import org.slf4j.Logger;
@@ -59,6 +60,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import static org.artifactory.storage.StorageProperties.BinaryStorageType;
 
@@ -86,6 +88,9 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Autowired
     private StorageProperties storageProperties;
 
+    @Autowired
+    private BlobWrapperFactory blobsFactory;
+
     private ReadTrackingBinaryProvider firstBinaryProvider;
 
     private FileBinaryProvider fileBinaryProvider;
@@ -108,10 +113,8 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                     fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getDataDir(),
                             storageProperties);
                     binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
-                    binaryProviders.add(new BlobBinaryProviderImpl(jdbcHelper, dbService.getDatabaseType()));
-                } else {
-                    binaryProviders.add(new BlobBinaryProviderImpl(jdbcHelper, dbService.getDatabaseType()));
                 }
+                binaryProviders.add(new BlobBinaryProviderImpl(jdbcHelper, dbService.getDatabaseType(), blobsFactory));
                 break;
             default:
                 throw new IllegalStateException("Binary provider name " + binaryProviderName + " not supported!");
@@ -372,8 +375,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public GarbageCollectorInfo garbageCollect() {
-        InternalBinaryStore txMe = ContextHelper.get().beanForType(InternalBinaryStore.class);
-        GarbageCollectorInfo result = new GarbageCollectorInfo();
+        final GarbageCollectorInfo result = new GarbageCollectorInfo();
         Collection<BinaryData> binsToDelete;
         try {
             Pair<Long, Long> countAndSize = binariesDao.getCountAndTotalSize();
@@ -385,48 +387,13 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         result.stopScanTimestamp = System.currentTimeMillis();
         result.candidatesForDeletion = binsToDelete.size();
-        Set<String> binDataFailedToDelete = Sets.newHashSet();
         for (BinaryData bd : binsToDelete) {
-            String sha1 = bd.getSha1();
-            if (isUsedByReader(sha1)) {
-                // Do not delete used file
-                binDataFailedToDelete.add(sha1);
-            } else {
-                // delete immediately
-                if (txMe.deleteEntry(sha1)) {
-                    result.checksumsCleaned++;
-                } else {
-                    binDataFailedToDelete.add(sha1);
-                }
-            }
+            log.trace("Candidate for deletion: {}", bd);
+            dbService.invokeInTransaction(new BinaryCleaner(bd, result));
         }
 
-        Set<String> notDeleted;
-        if (!binDataFailedToDelete.isEmpty()) {
-            notDeleted = isInStore(binDataFailedToDelete);
-        } else {
-            notDeleted = Sets.newHashSet();
-        }
-        for (BinaryData bd : binsToDelete) {
-            String sha1 = bd.getSha1();
-            if (!notDeleted.contains(sha1)) {
-                if (isUsedByReader(sha1)) {
-                    log.info("Ready to be deleted file '" + sha1 + "', is still being read! Not deleting.");
-                    notDeleted.add(sha1);
-                    result.candidatesForDeletion++;
-                } else {
-                    if (getFirstBinaryProvider().delete(sha1)) {
-                        result.binariesCleaned++;
-                        result.totalSizeCleaned += bd.getLength();
-                    } else {
-                        log.error("Could not delete binary '" + sha1 + "'");
-                        notDeleted.add(sha1);
-                        result.candidatesForDeletion++;
-                    }
-                }
-            }
-        }
         if (result.checksumsCleaned > 0) {
+            InternalBinaryStore txMe = ContextHelper.get().beanForType(InternalBinaryStore.class);
             result.archivePathsCleaned = txMe.deleteUnusedArchivePaths();
             result.archiveNamesCleaned = txMe.deleteUnusedArchiveNames();
         }
@@ -457,12 +424,14 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
     }
 
-    @Override
-    public boolean deleteEntry(String sha1ToDelete) {
-        if (!ChecksumType.sha1.isValid(sha1ToDelete)) {
-            log.warn("Got invalid sha1 " + sha1ToDelete + " to delete!");
-            return false;
-        }
+
+    /**
+     * Deletes binary row and all dependent rows from the database
+     *
+     * @param sha1ToDelete Checksum to delete
+     * @return True if deleted. False if not found or error
+     */
+    private boolean deleteEntry(String sha1ToDelete) {
         boolean hadArchiveEntries;
         try {
             hadArchiveEntries = archiveEntriesService.deleteArchiveEntries(sha1ToDelete);
@@ -486,6 +455,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Override
     public int deleteUnusedArchivePaths() {
         try {
+            log.debug("Deleting unused archive paths");
             return archiveEntriesService.deleteUnusedPathIds();
         } catch (StorageException e) {
             log.error("Failed to delete unique paths: {}", e.getMessage());
@@ -497,6 +467,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Override
     public int deleteUnusedArchiveNames() {
         try {
+            log.debug("Deleting unused archive names");
             return archiveEntriesService.deleteUnusedNameIds();
         } catch (StorageException e) {
             log.error("Failed to delete unique archive names: {}", e.getMessage());
@@ -588,4 +559,37 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         return getReadTrackingBinaryProvider().isUsedByReader(sha1);
     }
 
+    /**
+     * Deletes a single binary from the database and filesystem.
+     */
+    private class BinaryCleaner implements Callable<Void> {
+        private final GarbageCollectorInfo result;
+        private final BinaryData bd;
+
+        public BinaryCleaner(BinaryData bd, GarbageCollectorInfo result) {
+            this.result = result;
+            this.bd = bd;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            String sha1 = bd.getSha1();
+            if (!isUsedByReader(sha1)) {
+                if (deleteEntry(sha1)) {
+                    log.trace("Deleted {} record from binaries");
+                    result.checksumsCleaned++;
+                    if (getFirstBinaryProvider().delete(sha1)) {
+                        log.trace("Deleted {} binary");
+                        result.binariesCleaned++;
+                        result.totalSizeCleaned += bd.getLength();
+                    } else {
+                        log.error("Could not delete binary '{}'", sha1);
+                    }
+                }
+            } else {
+                log.info("Binary " + sha1 + " is being read! Not deleting.");
+            }
+            return null;
+        }
+    }
 }

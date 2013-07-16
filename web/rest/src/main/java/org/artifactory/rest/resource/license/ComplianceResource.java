@@ -20,7 +20,6 @@ package org.artifactory.rest.resource.license;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.BlackDuckAddon;
-import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.api.rest.constant.ComplianceConstants;
@@ -39,9 +38,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Map;
-
-import static org.artifactory.api.rest.constant.SearchRestConstants.NOT_FOUND;
 
 /**
  * @author mamo
@@ -65,7 +61,7 @@ public class ComplianceResource {
         BlackDuckAddon blackDuckAddon = addonsManager.addonByType(BlackDuckAddon.class);
         RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
 
-        if (!repositoryService.existsSafe(repoPath)) {
+        if (!repositoryService.exists(repoPath)) {
             return Response.status(Response.Status.BAD_REQUEST).
                     entity("Could not find artifact for " + path).
                     build();

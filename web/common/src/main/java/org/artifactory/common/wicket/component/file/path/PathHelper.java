@@ -129,7 +129,7 @@ public class PathHelper implements Serializable {
         }
         Folder[] folders = folder.getFolders();
         File[] files = folder.getFiles();
-        List<File> filesList = new ArrayList<File>(folders.length + files.length);
+        List<File> filesList = new ArrayList<>(folders.length + files.length);
 
         if (mask.includeFolders()) {
             for (Folder file : folders) {

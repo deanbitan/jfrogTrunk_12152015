@@ -35,6 +35,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import static org.testng.Assert.assertTrue;
+
 /**
  * Unit test for the TrafficStreamParser
  *
@@ -100,9 +102,9 @@ public class TrafficStreamParserTest {
 
         Assert.assertFalse(entries.isEmpty(), "Log parsing should return results.");
         for (TrafficEntry entry : entries) {
-            Date currentEntryDate = entry.getDate();
-            Assert.assertTrue(currentEntryDate.after(startDate), "Current entry date should be within range.");
-            Assert.assertTrue(currentEntryDate.before(endDate), "Current entry date should be within range.");
+            long currentEntryDate = entry.getTime();
+            assertTrue(currentEntryDate > startDate.getTime(), "Current entry date should be within range.");
+            assertTrue(currentEntryDate < endDate.getTime(), "Current entry date should be within range.");
         }
     }
 
@@ -114,6 +116,6 @@ public class TrafficStreamParserTest {
     public void testOutOfRange() throws IOException {
         List<TrafficEntry> trafficEntryList =
                 TrafficStreamParser.parse(new FileReader(trafficLogFile.getFile()), new Date(), new Date());
-        Assert.assertTrue(trafficEntryList.isEmpty(), "Log parsing shouldn't return results.");
+        assertTrue(trafficEntryList.isEmpty(), "Log parsing shouldn't return results.");
     }
 }

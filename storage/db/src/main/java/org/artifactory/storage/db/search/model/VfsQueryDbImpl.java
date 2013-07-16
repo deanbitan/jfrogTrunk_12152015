@@ -272,7 +272,8 @@ public class VfsQueryDbImpl implements VfsQuery {
                 boolean file = rs.getBoolean(pos++);
                 NodePath nodePath = new NodePath(rs.getString(pos++),
                         BaseDao.emptyIfNullOrDot(rs.getString(pos++)),
-                        BaseDao.emptyIfNullOrDot(rs.getString(pos++)));
+                        BaseDao.emptyIfNullOrDot(rs.getString(pos++)),
+                        file);
                 VfsQueryRow row = map.get(nodePath);
                 if (row == null) {
                     if (hasArchiveEntries()) {

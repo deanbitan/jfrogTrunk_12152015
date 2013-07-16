@@ -46,7 +46,7 @@ public class PropertySet implements Descriptor {
 
     @XmlElementWrapper(name = "properties")
     @XmlElement(name = "property", required = false)
-    private List<Property> properties = new ArrayList<Property>();
+    private List<Property> properties = new ArrayList<>();
 
     public String getName() {
         return name;

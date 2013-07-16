@@ -38,11 +38,12 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -140,10 +141,11 @@ public class ArtifactListPage extends WebPage {
     }
 
     private static class ItemsListView extends WebComponent {
+        private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern("dd-MMM-yyyy HH:mm")
+                .withLocale(Locale.ENGLISH);
         private final List<? extends BaseBrowsableItem> items;
         private final int columnSize;
         private final boolean printParent;
-        public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MMM-yyyy HH:mm", Locale.ENGLISH);
 
         public ItemsListView(List<? extends BaseBrowsableItem> items, int columnSize, boolean printParent) {
             super("list");
@@ -169,7 +171,7 @@ public class ArtifactListPage extends WebPage {
                 response.write("<a href=\"");
                 response.write(name);
                 if (item.isFolder()) {
-                    response.write("/\"");
+                    response.write("/");
                 }
                 response.write("\">");
                 response.write(name);
@@ -182,7 +184,7 @@ public class ArtifactListPage extends WebPage {
                 }
                 response.write(StringUtils.repeat(" ", columnSize - name.length()));
                 if (item.getLastModified() > 0) {
-                    response.write(DATE_FORMAT.format(item.getLastModified()));
+                    response.write(DATE_FORMAT.print(item.getLastModified()));
                 } else {
                     response.write("  -");
                 }

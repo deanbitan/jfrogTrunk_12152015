@@ -30,5 +30,5 @@ import java.util.List;
  * @author Eli Givoni
  */
 public class InfoRestSearchResult {
-    public List<RestBaseStorageInfo> results = new ArrayList<RestBaseStorageInfo>();
+    public List<RestBaseStorageInfo> results = new ArrayList<>();
 }

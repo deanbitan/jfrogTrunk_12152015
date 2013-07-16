@@ -250,6 +250,7 @@ public class BintraySearchPanel extends Panel {
             @Override
             protected NavigationToolbarWithDropDown getDropDownNavToolbar() {
                 return new NavigationToolbarWithDropDown(this, 0) {
+                    @Override
                     protected String getNavigatorText() {
                         int count = dataProvider.getRows().size();
                         long limit = rangeLimitTotal;
@@ -360,7 +361,7 @@ public class BintraySearchPanel extends Panel {
         return queryBuilder.toString();
     }
 
-    private class SearchDataProvider<T extends ActionableExternalItemSearchResult<BintrayItemInfo>>
+    private static class SearchDataProvider<T extends ActionableExternalItemSearchResult<BintrayItemInfo>>
             extends SortableDataProvider<T> {
         private List<T> rows = new ArrayList<>();
 

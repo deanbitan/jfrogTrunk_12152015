@@ -18,9 +18,9 @@
 
 package org.artifactory.repo;
 
+import org.apache.commons.io.FilenameUtils;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -29,6 +29,7 @@ import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.util.GlobalExcludes;
 import org.artifactory.util.PathMatcher;
 import org.artifactory.util.PathUtils;
 import org.springframework.util.StringUtils;
@@ -48,7 +49,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         this.descriptor = descriptor;
         this.includes = PathUtils.includesExcludesPatternToStringList(descriptor.getIncludesPattern());
         this.excludes = PathUtils.includesExcludesPatternToStringList(descriptor.getExcludesPattern());
-        excludes.addAll(PathMatcher.getGlobalExcludes());
+        excludes.addAll(GlobalExcludes.getGlobalExcludes());
     }
 
     @Override
@@ -115,7 +116,8 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         return false;
     }
 
-    public boolean accepts(String path) {
+    public boolean accepts(RepoPath repoPath) {
+        String path = repoPath.getPath();
         if (NamingUtils.isSystem(path)) {
             // includes/excludes should not affect system paths
             return true;
@@ -123,12 +125,12 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
 
         String toCheck = path;
         //For artifactory metadata the pattern apply to the object it represents
-        if (path.endsWith(RepositoryService.METADATA_FOLDER)) {
-            toCheck = path.substring(0, path.length() - RepositoryService.METADATA_FOLDER.length() - 1);
-        } else if (NamingUtils.isMetadata(path)) {
+        if (NamingUtils.isProperties(path)) {
             toCheck = NamingUtils.getMetadataParentPath(path);
+        } else if (NamingUtils.isChecksum(path)) {
+            toCheck = FilenameUtils.removeExtension(path);
         }
-        return !StringUtils.hasLength(toCheck) || PathMatcher.matches(toCheck, includes, excludes);
+        return !StringUtils.hasLength(toCheck) || PathMatcher.matches(toCheck, includes, excludes, repoPath.isFolder());
     }
 
     @Override

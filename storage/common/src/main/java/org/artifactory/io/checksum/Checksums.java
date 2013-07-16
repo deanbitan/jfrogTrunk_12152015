@@ -101,7 +101,7 @@ public abstract class Checksums {
         } finally {
             IOUtils.closeQuietly(checksumsInputStream);
         }
-        return new Pair<Long, Checksum[]>(checksumsInputStream.getTotalBytesRead(), checksums);
+        return new Pair<>(checksumsInputStream.getTotalBytesRead(), checksums);
     }
 
     /**

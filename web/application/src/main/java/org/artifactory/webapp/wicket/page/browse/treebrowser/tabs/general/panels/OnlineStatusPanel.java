@@ -51,7 +51,7 @@ public class OnlineStatusPanel extends Panel {
     private AuthorizationService authorizationService;
 
 
-    private RemoteRepoDescriptor remoteReposetry;
+    private RemoteRepoDescriptor remoteRepository;
     private AbstractAjaxRestartableTimerBehavior behavior;
     private LabeledValue onlineStatusLabel;
     private boolean isOffline;
@@ -59,7 +59,7 @@ public class OnlineStatusPanel extends Panel {
     OnlineStatusPanel(String id, RemoteRepoDescriptor remoteRepo) {
         super(id);
         setOutputMarkupId(true);
-        this.remoteReposetry = remoteRepo;
+        this.remoteRepository = remoteRepo;
         isOffline = remoteRepo.isOffline() || centralConfigService.getDescriptor().isOfflineMode();
         onlineStatusLabel = new LabeledValue("status", "Online Status: ", "");
         onlineStatusLabel.setValue(getStatusText(remoteRepo, isOffline));
@@ -68,7 +68,7 @@ public class OnlineStatusPanel extends Panel {
 
             @Override
             protected void onTimer(AjaxRequestTarget target) {
-                onlineStatusLabel.setValue(getStatusText(remoteReposetry, isOffline));
+                onlineStatusLabel.setValue(getStatusText(remoteRepository, isOffline));
                 this.setUpdateInterval(Duration.seconds(getSecondsForNextRefresh()));
                 target.add(OnlineStatusPanel.this);
             }
@@ -86,13 +86,13 @@ public class OnlineStatusPanel extends Panel {
         super.renderHead(response);
         response.renderOnDomReadyJavaScript("var refreshLabel");
         response.renderOnDomReadyJavaScript("clearTimeout(refreshLabel)");
-        if (behavior != null && remoteReposetry != null && onlineStatusLabel != null) {
-            onlineStatusLabel.setValue(getStatusText(remoteReposetry, isOffline));
+        if (behavior != null && remoteRepository != null && onlineStatusLabel != null) {
+            onlineStatusLabel.setValue(getStatusText(remoteRepository, isOffline));
 
-            if (repositoryService.isRemoteAssumedOffline(remoteReposetry.getKey())) {
+            if (repositoryService.isRemoteAssumedOffline(remoteRepository.getKey())) {
 
                 response.renderOnLoadJavaScript("refreshLabel=GetCount(" + repositoryService.getRemoteNextOnlineCheck(
-                        remoteReposetry.getKey()) + ", 'statusLabel')");
+                        remoteRepository.getKey()) + ", 'statusLabel')");
                 if (behavior.isStopped()) {
                     behavior.setUpdateInterval(Duration.seconds(getSecondsForNextRefresh()));
                     behavior.start();
@@ -116,8 +116,8 @@ public class OnlineStatusPanel extends Panel {
 
             @Override
             public void onClick(AjaxRequestTarget target) {
-                repositoryService.resetAssumedOffline(remoteReposetry.getKey());
-                onlineStatusLabel.setValue(getStatusText(remoteReposetry, isOffline));
+                repositoryService.resetAssumedOffline(remoteRepository.getKey());
+                onlineStatusLabel.setValue(getStatusText(remoteRepository, isOffline));
                 /* //stops java script refreshing of counter
                 behavior.stop();
                 target.appendJavaScript("clearTimeout(refreshLabel)");*/
@@ -129,14 +129,14 @@ public class OnlineStatusPanel extends Panel {
             public boolean isVisible() {
 
                 return (authorizationService.isAdmin() &&
-                        repositoryService.isRemoteAssumedOffline(remoteReposetry.getKey()));
+                        repositoryService.isRemoteAssumedOffline(remoteRepository.getKey()));
             }
         };
         add(resetButton);
     }
 
     private long getSecondsForNextRefresh() {
-        long nextCheckTime = repositoryService.getRemoteNextOnlineCheck(remoteReposetry.getKey());
+        long nextCheckTime = repositoryService.getRemoteNextOnlineCheck(remoteRepository.getKey());
         long nextCheckSeconds = Math.max(0,
                 TimeUnit.MILLISECONDS.toSeconds(nextCheckTime - System.currentTimeMillis()));
         return nextCheckSeconds + 1;

@@ -53,7 +53,7 @@ public class WatchersImpl implements MutableWatchersInfo {
      * Default constructor for xstream
      */
     public WatchersImpl() {
-        watchers = new LinkedHashSet<WatcherImpl>();
+        watchers = new LinkedHashSet<>();
     }
 
     /**

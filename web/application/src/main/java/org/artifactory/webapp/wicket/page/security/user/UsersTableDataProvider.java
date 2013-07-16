@@ -78,7 +78,7 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
 
     @Override
     public IModel<UserModel> model(UserModel userModel) {
-        return new Model<UserModel>(userModel);
+        return new Model<>(userModel);
     }
 
     public void recalcUsersList() {
@@ -98,7 +98,7 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
         Set<UserModel> selectedUsers = getSelectedUsers();
 
         List<UserInfo> allUsers = userGroupService.getAllUsers(true);
-        List<UserModel> filtered = new ArrayList<UserModel>();
+        List<UserModel> filtered = new ArrayList<>();
         for (UserInfo userInfo : allUsers) {
             //Send the address for logging purposes
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
@@ -118,7 +118,7 @@ class UsersTableDataProvider extends SortableDataProvider<UserModel> {
     }
 
     private Set<UserModel> getSelectedUsers() {
-        Set<UserModel> selectedUsers = new HashSet<UserModel>();
+        Set<UserModel> selectedUsers = new HashSet<>();
         if (users != null) {
             for (UserModel userModel : users) {
                 if (userModel.isSelected()) {

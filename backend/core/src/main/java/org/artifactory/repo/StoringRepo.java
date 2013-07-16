@@ -40,7 +40,7 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, VfsItemF
 
     void undeploy(RepoPath repoPath, boolean calcMavenMetadata);
 
-    boolean shouldProtectPathDeletion(String relPath, boolean overwrite);
+    boolean shouldProtectPathDeletion(String relPath, boolean overwrite, String requestSha1);
 
     @Override
     ChecksumPolicy getChecksumPolicy();

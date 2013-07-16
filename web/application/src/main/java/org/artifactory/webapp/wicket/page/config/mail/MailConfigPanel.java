@@ -76,7 +76,7 @@ public class MailConfigPanel extends TitledPanel {
     public MailConfigPanel(String id) {
         super(id);
         MailServerDescriptor descriptor = getMailServerDescriptor();
-        form = new Form<MailServerDescriptor>("form", new CompoundPropertyModel<MailServerDescriptor>(descriptor));
+        form = new Form<>("form", new CompoundPropertyModel<>(descriptor));
 
         form.add(new StyledCheckbox("enabled"));
         form.add(new SchemaHelpBubble("enabled.help"));
@@ -122,7 +122,7 @@ public class MailConfigPanel extends TitledPanel {
         TitledBorder borderTest = new TitledBorder("testBorder");
         form.add(borderTest);
 
-        testRecipientTextField = new TextField<String>("testRecipient", new Model<String>());
+        testRecipientTextField = new TextField<>("testRecipient", new Model<String>());
         testRecipientTextField.add(EmailAddressValidator.getInstance());
         borderTest.add(testRecipientTextField);
         borderTest.add(createSendTestButton(form));

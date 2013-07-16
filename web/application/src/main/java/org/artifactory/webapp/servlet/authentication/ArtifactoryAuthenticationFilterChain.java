@@ -39,7 +39,7 @@ import java.util.List;
  */
 public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenticationFilter {
     private boolean serveAll = false;
-    private final List<ArtifactoryAuthenticationFilter> chain = new ArrayList<ArtifactoryAuthenticationFilter>();
+    private final List<ArtifactoryAuthenticationFilter> chain = new ArrayList<>();
 
     public boolean isServeAll() {
         return serveAll;

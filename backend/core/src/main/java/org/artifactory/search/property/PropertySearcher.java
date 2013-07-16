@@ -56,8 +56,7 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         totalResultCount += executeClosedPropSearch(controls, closedPropertyKeys, globalResults);
 
         //Return global results list
-        return new ItemSearchResults<PropertySearchResult>(new ArrayList<PropertySearchResult>(globalResults),
-                totalResultCount);
+        return new ItemSearchResults<>(new ArrayList<>(globalResults), totalResultCount);
     }
 
     /**
@@ -68,18 +67,18 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
     private long executeOpenPropSearch(PropertySearchControls controls,
             Set<String> openPropertyKeys,
             Set<PropertySearchResult> globalResults) {
-        long resultCount = 0;
+        if (openPropertyKeys.isEmpty()) {
+            return 0;
+        }
+        VfsQuery repoQuery = createQuery(controls).expectedResult(VfsQueryResultType.ANY_ITEM);
         for (String key : openPropertyKeys) {
             Set<String> values = controls.get(key);
             for (String value : values) {
-                VfsQuery repoQuery = createQuery(controls)
-                        .expectedResult(VfsQueryResultType.ANY_ITEM)
-                        .prop(key).val(value);
-                VfsQueryResult queryResult = repoQuery.execute(getLimit(controls));
-                resultCount += processResults(controls, queryResult, globalResults);
+                repoQuery.prop(key).val(value);
             }
         }
-        return resultCount;
+        VfsQueryResult queryResult = repoQuery.execute(getLimit(controls));
+        return processResults(controls, queryResult, globalResults);
     }
 
     /**
@@ -120,10 +119,8 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
      * AND requirement
      *
      * @param queryResult Result object
-     * @throws RepositoryException
      */
-    private long processResults(PropertySearchControls controls,
-            VfsQueryResult queryResult,
+    private long processResults(PropertySearchControls controls, VfsQueryResult queryResult,
             Set<PropertySearchResult> globalResults) {
         /**
          * If the global results is empty (either first query made, or there were no results from queries executed up
@@ -160,7 +157,7 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
             globalResults.addAll(currentSearchResults);
         } else {
             //Create a copy of the global results so we can iterate and remove at the same time
-            ArrayList<PropertySearchResult> globalCopy = new ArrayList<PropertySearchResult>(globalResults);
+            ArrayList<PropertySearchResult> globalCopy = new ArrayList<>(globalResults);
             for (PropertySearchResult globalResult : globalCopy) {
                 //If the received results do not exist in the global results, discard them
                 if (!currentSearchResults.contains(globalResult)) {

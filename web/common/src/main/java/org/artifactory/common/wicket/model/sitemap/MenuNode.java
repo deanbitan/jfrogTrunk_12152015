@@ -40,7 +40,7 @@ public class MenuNode implements TreeNode, Serializable {
     private final Class<? extends Page> pageClass;
     private final String name;
     private MenuNode parent;
-    private List<MenuNode> children = new ArrayList<MenuNode>();
+    private List<MenuNode> children = new ArrayList<>();
     private String cookieName;
 
     public MenuNode(String name) {

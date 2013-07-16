@@ -18,6 +18,7 @@
 
 package org.artifactory.security;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.codec.binary.Base64;
@@ -138,7 +139,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     private InternalArtifactoryContext context;
 
-    private TreeSet<SecurityListener> securityListeners = new TreeSet<SecurityListener>();
+    private TreeSet<SecurityListener> securityListeners = new TreeSet<>();
 
     @Autowired
     private void setApplicationContext(ApplicationContext context) throws BeansException {
@@ -317,7 +318,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private List<PermissionTargetInfo> getPermissionTargetsByPermission(ArtifactoryPermission permission) {
-        List<PermissionTargetInfo> result = new ArrayList<PermissionTargetInfo>();
+        List<PermissionTargetInfo> result = new ArrayList<>();
         Collection<AclInfo> allAcls = aclStoreService.getAllAcls();
         for (AclInfo acl : allAcls) {
             if (hasPermissionOnAcl(acl, permission)) {
@@ -393,7 +394,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public List<AclInfo> getAllAcls() {
-        return new ArrayList<AclInfo>(aclStoreService.getAllAcls());
+        return new ArrayList<>(aclStoreService.getAllAcls());
     }
 
     @Override
@@ -592,8 +593,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
             //Build key by UUID + current time millis + client ip -> encoded in B64
             UUID uuid = UUID.randomUUID();
             String passwordKey = uuid.toString() + ":" + System.currentTimeMillis() + ":" + remoteAddress;
-            byte[] encodedKey = Base64.encodeBase64URLSafe(passwordKey.getBytes());
-            String encodedKeyString = new String(encodedKey);
+            byte[] encodedKey = Base64.encodeBase64URLSafe(passwordKey.getBytes(Charsets.UTF_8));
+            String encodedKeyString = new String(encodedKey, Charsets.UTF_8);
 
             MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
             mutableUser.setGenPasswordKey(encodedKeyString);
@@ -630,8 +631,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
             return null;
         }
 
-        byte[] decodedKey = Base64.decodeBase64(passwordKey.getBytes());
-        String decodedKeyString = new String(decodedKey);
+        byte[] decodedKey = Base64.decodeBase64(passwordKey.getBytes(Charsets.UTF_8));
+        String decodedKeyString = new String(decodedKey, Charsets.UTF_8);
         String[] splitKey = decodedKeyString.split(":");
 
         //Key must be in 3 parts
@@ -644,7 +645,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
         Date date = new Date(Long.parseLong(time));
 
-        return new SerializablePair<Date, String>(date, ip);
+        return new SerializablePair<>(date, ip);
     }
 
     @Override
@@ -662,7 +663,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         String lastLoginClientIp = userInfo.getLastLoginClientIp();
         long lastLoginTimeMillis = userInfo.getLastLoginTimeMillis();
         if (!StringUtils.isEmpty(lastLoginClientIp) && (lastLoginTimeMillis != 0)) {
-            pair = new SerializablePair<String, Long>(lastLoginClientIp, lastLoginTimeMillis);
+            pair = new SerializablePair<>(lastLoginClientIp, lastLoginTimeMillis);
         }
         return pair;
     }
@@ -707,7 +708,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         String lastAccessClientIp = userInfo.getLastAccessClientIp();
         long lastAccessTimeMillis = userInfo.getLastAccessTimeMillis();
         if (!StringUtils.isEmpty(lastAccessClientIp) && (lastAccessTimeMillis != 0)) {
-            pair = new SerializablePair<String, Long>(lastAccessClientIp, lastAccessTimeMillis);
+            pair = new SerializablePair<>(lastAccessClientIp, lastAccessTimeMillis);
         }
         return pair;
     }
@@ -766,46 +767,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public boolean canImplicitlyReadParentPath(RepoPath repoPath) {
-        return hasPermission(addSlashToRepoPath(repoPath), ArtifactoryPermission.READ);
-    }
-
-    public static RepoPath addSlashToRepoPath(final RepoPath repoPath) {
-        return new RepoPath() {
-            @Override
-            public String getPath() {
-                return repoPath.getPath() + "/";
-            }
-
-            @Override
-            public String getRepoKey() {
-                return repoPath.getRepoKey();
-            }
-
-            @Override
-            public String getId() {
-                return repoPath.getId();
-            }
-
-            @Override
-            public String getName() {
-                return repoPath.getName();
-            }
-
-            @Override
-            public String toPath() {
-                return repoPath.getPath() + "/";
-            }
-
-            @Override
-            public RepoPath getParent() {
-                return repoPath.getParent();
-            }
-
-            @Override
-            public boolean isRoot() {
-                return repoPath.isRoot();
-            }
-        };
+        return hasPermission(repoPath, ArtifactoryPermission.READ);
     }
 
     @Override
@@ -1105,10 +1067,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
             }
             String repoKey = repoPath.getRepoKey();
             String path = repoPath.getPath();
+            boolean folder = repoPath.isFolder();
             PermissionTargetInfo aclPermissionTarget = acl.getPermissionTarget();
             if (isPermissionTargetIncludesRepoKey(repoKey, aclPermissionTarget)) {
                 boolean checkPartialPath = (permission.getMask() & (ArtifactoryPermission.READ.getMask() | ArtifactoryPermission.DEPLOY.getMask())) != 0;
-                boolean match = matches(aclPermissionTarget, path, checkPartialPath);
+                boolean behaveAsFolder = folder && checkPartialPath;
+                boolean match = matches(aclPermissionTarget, path, behaveAsFolder);
                 if (match) {
                     if (isGranted(acl, permission, sids)) {
                         return true;
@@ -1240,7 +1204,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
      * @return An array of sids of the current user and all it's groups.
      */
     private static Set<ArtifactorySid> getUserEffectiveSids(SimpleUser user) {
-        Set<ArtifactorySid> sids = new HashSet<ArtifactorySid>(2);
+        Set<ArtifactorySid> sids = new HashSet<>(2);
         Set<UserGroupInfo> groups = user.getDescriptor().getGroups();
         // add the current user
         sids.add(new ArtifactorySid(user.getUsername(), false));
@@ -1372,9 +1336,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return (SimpleUser) authentication.getPrincipal();
     }
 
-    private static boolean matches(PermissionTargetInfo aclPermissionTarget, String path, boolean matchStart) {
-        return PathMatcher.matches(path, aclPermissionTarget.getIncludes(), aclPermissionTarget.getExcludes(),
-                matchStart);
+    private static boolean matches(PermissionTargetInfo aclPermissionTarget, String path, boolean folder) {
+        return PathMatcher.matches(path, aclPermissionTarget.getIncludes(), aclPermissionTarget.getExcludes(), folder);
     }
 
     private static XStream getXstream() {

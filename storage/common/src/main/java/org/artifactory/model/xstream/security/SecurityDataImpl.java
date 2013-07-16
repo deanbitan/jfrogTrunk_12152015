@@ -42,19 +42,19 @@ public class SecurityDataImpl implements SecurityInfo {
 
     public SecurityDataImpl(List<UserInfo> users, List<GroupInfo> groups, List<AclInfo> acls) {
         if (users != null) {
-            this.users = new ArrayList<UserImpl>(users.size());
+            this.users = new ArrayList<>(users.size());
             for (UserInfo user : users) {
                 this.users.add(new UserImpl(user));
             }
         }
         if (groups != null) {
-            this.groups = new ArrayList<GroupImpl>(groups.size());
+            this.groups = new ArrayList<>(groups.size());
             for (GroupInfo group : groups) {
                 this.groups.add(new GroupImpl(group));
             }
         }
         if (acls != null) {
-            this.acls = new ArrayList<AclImpl>(acls.size());
+            this.acls = new ArrayList<>(acls.size());
             for (AclInfo acl : acls) {
                 this.acls.add(new AclImpl(acl));
             }

@@ -39,7 +39,6 @@ import org.artifactory.util.RepoLayoutUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -178,7 +177,7 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
         String timestamp = getSnapshotTimestamp(parentPath, nextBuildNumber);
         if (timestamp == null) {
             // probably the first deployed file for this build, use now for the timestamp
-            timestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date());
+            timestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(System.currentTimeMillis());
         }
         return buildUniqueSnapshotFileName(nextBuildNumber, timestamp, moduleInfo);
     }
@@ -186,7 +185,7 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
     private String adjustUsingClientTimestamp(MavenSnapshotVersionAdapterContext context) {
         // artifact was uploaded with a timestamp, we use it for the unique snapshot timestamp and to locate build number
         long timestamp = context.getTimestamp();
-        String uniqueTimestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(new Date(timestamp));
+        String uniqueTimestamp = MavenModelUtils.dateToUniqueSnapshotTimestamp(timestamp);
         RepoPath repoPath = context.getRepoPath();
         String existingArtifact = findSnapshotFileByTimestamp(repoPath.getParent(), uniqueTimestamp);
         int buildNumber;
@@ -273,7 +272,7 @@ public class UniqueSnapshotVersionAdapter extends SnapshotVersionAdapterBase {
     private String findSnapshotFile(RepoPath snapshotDirectoryPath, int buildNumber, String timestamp,
             String fileExtension) {
         log.debug("Searching for unique snapshot file in {} with build number {} and timestamp {}",
-                new Object[]{snapshotDirectoryPath, buildNumber, timestamp});
+                snapshotDirectoryPath, buildNumber, timestamp);
         RepositoryService repoService = ContextHelper.get().getRepositoryService();
         if (repoService.exists(snapshotDirectoryPath)) {
             List<String> children = repoService.getChildrenNames(snapshotDirectoryPath);

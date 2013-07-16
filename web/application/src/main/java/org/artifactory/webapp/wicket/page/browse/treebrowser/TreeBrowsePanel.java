@@ -198,7 +198,7 @@ public abstract class TreeBrowsePanel extends TitledPanel implements ActionableI
      */
     private class CompactFoldersCheckbox extends StyledCheckbox {
         private CompactFoldersCheckbox(String id) {
-            super(id, new Model<Boolean>(false));
+            super(id, new Model<>(false));
 
             PERSISTER.load(this);
             add(new AjaxFormComponentUpdatingBehavior("onclick") {

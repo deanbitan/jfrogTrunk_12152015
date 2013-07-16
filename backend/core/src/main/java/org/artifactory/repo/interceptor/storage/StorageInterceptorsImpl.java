@@ -28,6 +28,8 @@ import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.StorageInterceptor;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.db.DbService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Reloadable(beanClass = StorageInterceptors.class, initAfter = DbService.class)
 public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> implements StorageInterceptors {
+    private static final Logger log = LoggerFactory.getLogger(StorageInterceptorsImpl.class);
 
     @Override
     public void beforeCreate(VfsItem fsItem, MutableStatusHolder statusHolder) {
@@ -44,7 +47,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforeCreate(fsItem, statusHolder);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Before create rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Before create rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 
@@ -55,7 +58,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.afterCreate(fsItem, statusHolder);
             }
         } catch (CancelException e) {
-            statusHolder.setError("After create rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("After create rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 
@@ -66,7 +69,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforeDelete(fsItem, statusHolder);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Delete rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Delete rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 
@@ -84,7 +87,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforePropertyCreate(fsItem, statusHolder, name, values);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Property create rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Property create rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 
@@ -102,7 +105,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforePropertyDelete(fsItem, statusHolder, name);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Property delete rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Property delete rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 
@@ -121,7 +124,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforeMove(sourceItem, targetRepoPath, statusHolder, properties);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Move rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Move rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 
@@ -141,7 +144,7 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
                 storageInterceptor.beforeCopy(sourceItem, targetRepoPath, statusHolder, properties);
             }
         } catch (CancelException e) {
-            statusHolder.setError("Copy rejected: " + e.getMessage(), e.getErrorCode(), e);
+            statusHolder.setError("Copy rejected: " + e.getMessage(), e.getErrorCode(), e, log);
         }
     }
 

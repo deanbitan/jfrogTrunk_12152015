@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.db.util;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.storage.db.spring.ArtifactoryDataSource;
@@ -146,7 +147,7 @@ public abstract class DbUtils {
     }
 
     public static void executeSqlStream(Connection con, InputStream in) throws IOException, SQLException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, Charsets.UTF_8));
         Statement stmt = con.createStatement();
         try {
             StringBuilder sb = new StringBuilder();

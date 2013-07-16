@@ -104,7 +104,7 @@ public class AllBuildsPanel extends TitledPanel {
         columns.add(new BuildNameColumn());
         columns.add(new BuildDateColumn());
         BuildsDataProvider dataProvider = new BuildsDataProvider(latestBuildsByName);
-        add(new SortableTable<LatestBuildByNameActionableItem>("builds", columns, dataProvider, 200));
+        add(new SortableTable<>("builds", columns, dataProvider, 200));
     }
 
     /**
@@ -139,7 +139,7 @@ public class AllBuildsPanel extends TitledPanel {
 
         @Override
         public IModel<LatestBuildByNameActionableItem> model(LatestBuildByNameActionableItem object) {
-            return new Model<LatestBuildByNameActionableItem>(object);
+            return new Model<>(object);
         }
 
         /**
@@ -188,8 +188,7 @@ public class AllBuildsPanel extends TitledPanel {
 
     private class BuildDateColumn extends FormattedDateColumn<LatestBuildByNameActionableItem> {
         public BuildDateColumn() {
-            super(Model.of("Last Built"), "startedDate", "started", centralConfigService,
-                    Build.STARTED_FORMAT);
+            super(Model.of("Last Built"), "startedDate", "started", centralConfigService, Build.STARTED_FORMAT);
         }
 
         @Override

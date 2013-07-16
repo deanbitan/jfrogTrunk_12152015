@@ -94,7 +94,7 @@ public class GroupPermissionsPanel extends BaseModalPanel {
         columns.add(new BooleanColumn<PermissionsRow>("Annotate", "annotate", "annotate"));
         columns.add(new BooleanColumn<PermissionsRow>("Read", "read", "read"));
         PermissionsTabTableDataProvider dataProvider = new PermissionsTabTableDataProvider(groupInfo);
-        return new SortableTable<PermissionsRow>("userPermissionsTable", columns, dataProvider, 10);
+        return new SortableTable<>("userPermissionsTable", columns, dataProvider, 10);
     }
 
     class PermissionsTabTableDataProvider extends SortableDataProvider<PermissionsRow> {
@@ -121,11 +121,11 @@ public class GroupPermissionsPanel extends BaseModalPanel {
 
         @Override
         public IModel<PermissionsRow> model(PermissionsRow object) {
-            return new Model<PermissionsRow>(object);
+            return new Model<>(object);
         }
 
         private void loadData() {
-            groupPermissions = new ArrayList<PermissionsRow>();
+            groupPermissions = new ArrayList<>();
             List<AclInfo> acls = aclService.getAllAcls();
             for (AclInfo acl : acls) {
                 PermissionsRow permissionRow = createPermissionRow(acl);

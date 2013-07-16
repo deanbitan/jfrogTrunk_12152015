@@ -42,7 +42,7 @@ public class TrafficCollectorImpl implements TrafficCollector {
 
     public TrafficCollectorImpl(TrafficCollectorResolution resolution, int... fieldsToElapse) {
         this.resolution = resolution;
-        this.listeners = new ConcurrentLinkedQueue<TrafficCollectorListener>();
+        this.listeners = new ConcurrentLinkedQueue<>();
         this.fieldsToElapse = fieldsToElapse;
         //Initialize next collection to now + interval
         collectorNextCollection = Calendar.getInstance();

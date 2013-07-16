@@ -21,6 +21,7 @@ package org.artifactory.common.wicket.util;
 import com.google.common.base.Function;
 import com.google.common.collect.MapMaker;
 import com.google.common.io.Closeables;
+import org.apache.commons.compress.utils.CharsetNames;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Application;
 import org.apache.wicket.Component;
@@ -51,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -123,7 +125,7 @@ public abstract class WicketUtils {
     }
 
     public static Map<String, String> getHeadersMap() {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         HttpServletRequest request = getHttpServletRequest();
         if (request != null) {
             Enumeration headerNames = request.getHeaderNames();
@@ -149,7 +151,7 @@ public abstract class WicketUtils {
     }
 
     public static String readResource(Class scope, String file) {
-        return resourceCache.get(new Pair<Class, String>(scope, file));
+        return resourceCache.get(new Pair<>(scope, file));
     }
 
     private static String readResourceNoCache(Class scope, String file) {
@@ -179,13 +181,17 @@ public abstract class WicketUtils {
      * @return Text displaying component
      */
     public static Component getSyntaxHighlighter(String componentId, String toDisplay, Syntax syntaxType) {
-        if (toDisplay != null &&
-                ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >= toDisplay.getBytes().length) {
-            return new SyntaxHighlighter(componentId, toDisplay, syntaxType);
-        } else {
-            TextContentPanel contentPanel = new TextContentPanel(componentId);
-            contentPanel.add(new CssClass("lines"));
-            return contentPanel.setContent(toDisplay);
+        try {
+            if (toDisplay != null && ConstantValues.uiSyntaxColoringMaxTextSizeBytes.getLong() >=
+                    toDisplay.getBytes(CharsetNames.UTF_8).length) {
+                return new SyntaxHighlighter(componentId, toDisplay, syntaxType);
+            } else {
+                TextContentPanel contentPanel = new TextContentPanel(componentId);
+                contentPanel.add(new CssClass("lines"));
+                return contentPanel.setContent(toDisplay);
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 

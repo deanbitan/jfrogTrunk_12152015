@@ -132,7 +132,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
             statusHolder.setStatus("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
             return;
         }
-        Set<String> filesInFolder = new HashSet<String>(files.length);
+        Set<String> filesInFolder = new HashSet<>(files.length);
         for (File file : files) {
             filesInFolder.add(file.getName());
         }

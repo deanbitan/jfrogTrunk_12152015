@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.service;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -26,7 +27,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
@@ -45,7 +45,6 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RealRepo;
@@ -148,7 +147,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
 
             BrowsableItem browsableItem = BrowsableItem.getItem(child);
 
-            if (canRead(repo, childRepoPath, child.isFolder())) {
+            if (canRead(repo, childRepoPath)) {
                 if (child.isFolder()) {
                     repoPathChildren.add(browsableItem);
                 } else if (isPropertiesMatch(child, criteria.getRequestProperties())) {   // match props for files
@@ -165,14 +164,14 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return repoPathChildren;
     }
 
-    private boolean canRead(RealRepo repo, RepoPath childRepoPath, boolean folder) {
+    private boolean canRead(RealRepo repo, RepoPath childRepoPath) {
         boolean canRead;
-        if (folder) {
+        if (childRepoPath.isFolder()) {
             canRead = authService.canImplicitlyReadParentPath(childRepoPath)
-                    && repo.accepts(childRepoPath.getPath() + "/");
+                    && repo.accepts(childRepoPath);
         } else {
             canRead = authService.canRead(childRepoPath)
-                    && repo.accepts(childRepoPath.getPath());
+                    && repo.accepts(childRepoPath);
         }
         return canRead;
     }
@@ -244,9 +243,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         for (RemoteItem remoteItem : remoteItems) {
             // remove the remote repository base url
             String path = StringUtils.removeStart(remoteItem.getUrl(), repo.getUrl());
-            RepoPath remoteRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), path);
+            RepoPath remoteRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), path,
+                    remoteItem.isDirectory());
             RepoPath cacheRepoPath = InternalRepoPathFactory.cacheRepoPath(remoteRepoPath);
-            if (canRead(repo, cacheRepoPath, remoteItem.isDirectory())) {
+            if (canRead(repo, cacheRepoPath)) {
                 RemoteBrowsableItem browsableItem = new RemoteBrowsableItem(remoteItem, remoteRepoPath);
                 if (remoteItem.getEffectiveUrl() != null) {
                     browsableItem.setEffectiveUrl(remoteItem.getEffectiveUrl());
@@ -277,9 +277,8 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         // only add the candidate that this virtual repository accepts via its include/exclude rules
         Map<String, BaseBrowsableItem> childrenToReturn = Maps.newHashMap();
         for (BaseBrowsableItem child : candidateChildren) {
-
             String childRelativePath = child.getRelativePath();
-            if (virtualRepoAccepts(virtualRepo, childRelativePath, child.isFolder())) {
+            if (virtualRepoAccepts(virtualRepo, child.getRepoPath())) {
                 VirtualBrowsableItem virtualItem;
                 if (childrenToReturn.containsKey(childRelativePath)) {
                     virtualItem = (VirtualBrowsableItem) childrenToReturn.get(childRelativePath);
@@ -314,8 +313,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 // to each local repo's rules, now all that is left is to check that the virtual repo that
                 // the local repo belongs to accepts as well.
                 for (BaseBrowsableItem localRepoBrowsableChild : localRepoBrowsableChildren) {
-                    if (virtualRepoAccepts(repo, localRepoBrowsableChild.getRelativePath(),
-                            localRepoBrowsableChild.isFolder())) {
+                    if (virtualRepoAccepts(repo, localRepoBrowsableChild.getRepoPath())) {
                         pathToVirtualRepos.put(localRepoBrowsableChild.getRelativePath(), repo);
                         candidateChildren.add(localRepoBrowsableChild);
                     }
@@ -339,8 +337,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 List<BaseBrowsableItem> remoteRepoBrowsableChildren =
                         getRemoteRepoBrowsableChildren(remoteCriteria);
                 for (BaseBrowsableItem remoteRepoBrowsableChild : remoteRepoBrowsableChildren) {
-                    if (virtualRepoAccepts(repo, remoteRepoBrowsableChild.getRelativePath(),
-                            remoteRepoBrowsableChild.isFolder())) {
+                    if (virtualRepoAccepts(repo, remoteRepoBrowsableChild.getRepoPath())) {
                         pathToVirtualRepos.put(remoteRepoBrowsableChild.getRelativePath(), repo);
                         candidateChildren.add(remoteRepoBrowsableChild);
                     }
@@ -356,7 +353,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         List<VirtualRepo> repos = Lists.newArrayList();
         List<VirtualRepo> allVirtualRepos = virtualRepo.getResolvedVirtualRepos();
         for (VirtualRepo repo : allVirtualRepos) {
-            if (repo.accepts(pathToCheck.getPath())) {
+            if (repo.accepts(pathToCheck)) {
                 repos.add(repo);
             }
         }
@@ -372,23 +369,22 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         });
     }
 
-    private boolean virtualRepoAccepts(VirtualRepo virtualRepo, String relativePath, boolean isFolder) {
-        if (isFolder) {
-            relativePath += "/";
+    private boolean virtualRepoAccepts(VirtualRepo virtualRepo, RepoPath repoPath) {
+        String path = repoPath.getPath();
+        if (repoPath.isFolder()) {
+            path += "/";
         }
+
         //If the path is not accepted, return immediately
-        if (!virtualRepo.accepts(relativePath)) {
-            log.debug("Virtual repo '{}' did not accept path '{}'", virtualRepo, relativePath);
+        if (!virtualRepo.accepts(repoPath)) {
+            log.debug("Virtual repo '{}' did not accept path '{}'", virtualRepo, repoPath);
             return false;
         }
 
-        if (relativePath.contains(MavenNaming.NEXUS_INDEX_DIR) || MavenNaming.isIndex(relativePath)) {
+        if (path.contains(MavenNaming.NEXUS_INDEX_DIR) || MavenNaming.isIndex(path)) {
             return false;
         }
-
-        //The path is accepted, make sure this is not a checksum, if it is, strip the ext and test the source artifact
-        return !NamingUtils.isChecksum(relativePath) ||
-                virtualRepo.accepts(FilenameUtils.removeExtension(relativePath));
+        return true;
     }
 
     @Override
@@ -431,7 +427,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
         //Get a deep children view of the virtual repository (including contained virtual repos)
         Set<String> children = virtualRepo.getChildrenNamesDeeply(folderPath);
-        List<VirtualRepoItem> result = new ArrayList<VirtualRepoItem>(children.size());
+        List<VirtualRepoItem> result = new ArrayList<>(children.size());
         for (String childName : children) {
             //Do not add or check hidden items
             RepoPath childPath = InternalRepoPathFactory.create(folderPath, childName);
@@ -479,11 +475,11 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             String checksumValue = repo.getChecksumPolicy().getChecksum(checksumType, checksums);
             if (org.apache.commons.lang.StringUtils.isNotBlank(checksumValue)) {
                 BrowsableItem checksumItem = BrowsableItem.getChecksumItem(browsableItem, checksumType,
-                        checksumValue.getBytes().length);
+                        checksumValue.getBytes(Charsets.UTF_8).length);
 
                 RepoPath checksumItemRepoPath = checksumItem.getRepoPath();
                 if (authService.canImplicitlyReadParentPath(checksumItemRepoPath) &&
-                        repo.accepts(checksumItemRepoPath.getPath())) {
+                        repo.accepts(checksumItemRepoPath)) {
                     browsableChecksumItems.add(checksumItem);
                 }
             }

@@ -19,7 +19,7 @@
 package org.artifactory.storage.db.fs.service;
 
 import com.google.common.collect.Sets;
-import org.artifactory.model.common.RepoPathImpl;
+import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.fs.dao.TasksDao;
@@ -56,7 +56,7 @@ public class TasksServiceImpl implements TasksService {
         try {
             Set<TaskRecord> tasks = tasksDao.load(type);
             for (TaskRecord task : tasks) {
-                repoPaths.add(new RepoPathImpl(task.getTaskContext()));
+                repoPaths.add(InternalRepoPathFactory.createRepoPath(task.getTaskContext()));
             }
         } catch (SQLException e) {
             throw new StorageException("Failed to load tasks of type '" + type + "' : " + e.getMessage(), e);

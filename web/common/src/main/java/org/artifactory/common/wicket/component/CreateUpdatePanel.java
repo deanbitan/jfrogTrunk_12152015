@@ -36,7 +36,7 @@ public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
     public CreateUpdatePanel(CreateUpdateAction action, E entity) {
         this.entity = entity;
         this.action = action;
-        form = new Form<E>("form", new CompoundPropertyModel<E>(entity));
+        form = new Form<>("form", new CompoundPropertyModel<>(entity));
         setOutputMarkupId(true);
     }
 

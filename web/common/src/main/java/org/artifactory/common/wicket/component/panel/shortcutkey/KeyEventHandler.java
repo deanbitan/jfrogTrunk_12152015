@@ -38,12 +38,12 @@ import java.util.Map;
  * @author Yoav Aharoni
  */
 public class KeyEventHandler extends Panel {
-    private Map<Integer, KeyListener> listenerMap = new HashMap<Integer, KeyListener>();
+    private Map<Integer, KeyListener> listenerMap = new HashMap<>();
 
     public KeyEventHandler(String id) {
         super(id, new Model());
 
-        HiddenField keyCodeField = new HiddenField<Integer>("keyCodeField", (IModel<Integer>) getDefaultModel(),
+        HiddenField keyCodeField = new HiddenField<>("keyCodeField", (IModel<Integer>) getDefaultModel(),
                 Integer.class);
         keyCodeField.setOutputMarkupId(true);
         keyCodeField.add(new AjaxFormComponentUpdatingBehavior("onkeyup") {

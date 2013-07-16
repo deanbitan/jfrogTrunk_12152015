@@ -156,7 +156,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         addSearchComponents(form);
 
         //selected repo for search
-        CompoundPropertyModel advancedModel = new CompoundPropertyModel<SearchControlsBase>(getSearchControls());
+        CompoundPropertyModel advancedModel = new CompoundPropertyModel<>(getSearchControls());
         final AdvancedSearchPanel advancedPanel = new AdvancedSearchPanel("advancedPanel", advancedModel);
         form.add(advancedPanel);
 
@@ -297,7 +297,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
             searchResultList = searchResultList.subList(0, maxResults);
         }
 
-        List<ActionableSearchResult<T>> actionableSearchResults = new ArrayList<ActionableSearchResult<T>>();
+        List<ActionableSearchResult<T>> actionableSearchResults = new ArrayList<>();
         for (T result : searchResultList) {
             ActionableSearchResult<T> searchResult = getActionableResult(result);
             ModalWindow contentDialog = ModalHandler.getInstanceFor(parent);

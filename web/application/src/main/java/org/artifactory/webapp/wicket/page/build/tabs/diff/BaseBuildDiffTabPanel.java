@@ -76,7 +76,7 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
         } else {
             buildsRunList = Lists.newArrayList();
         }
-        final DropDownChoice<BuildRun> buildToCompareAgainst = new DropDownChoice<BuildRun>("buildToCompareAgainst",
+        final DropDownChoice<BuildRun> buildToCompareAgainst = new DropDownChoice<>("buildToCompareAgainst",
                 new Model<BuildRun>(), buildsRunList, new ChoiceRenderer<BuildRun>("number"));
         buildToCompareAgainst.setNullValid(true);
         buildToCompareAgainst.add(new AjaxFormComponentUpdatingBehavior("onchange") {

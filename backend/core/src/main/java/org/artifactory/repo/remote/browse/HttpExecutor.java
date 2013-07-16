@@ -19,10 +19,8 @@
 package org.artifactory.repo.remote.browse;
 
 import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Basic single method interface for controlling HttpMethod execution. Needed by HttpRepo to add all used headers for

@@ -20,8 +20,6 @@ package org.artifactory.traffic.entry;
 
 import org.artifactory.traffic.TrafficAction;
 
-import java.util.Date;
-
 /**
  * Main interface for the traffic entry objects
  *
@@ -32,9 +30,9 @@ public interface TrafficEntry extends Comparable<TrafficEntry> {
     /**
      * Returns the entry's event date
      *
-     * @return Date - Entry event date
+     * @return Entry event time in millis
      */
-    Date getDate();
+    long getTime();
 
     /**
      * Returns the entry's action type

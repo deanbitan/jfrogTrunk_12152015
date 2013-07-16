@@ -36,7 +36,7 @@ import static org.testng.Assert.fail;
  * @author freds
  */
 @Test
-public class BinaryStoreImplCachedDbProviderTest extends BinaryStoreImplBaseTest {
+public class BinaryStoreImplFullDbProviderTest extends BinaryStoreImplBaseTest {
 
     @Override
     protected StorageProperties.BinaryStorageType getBinaryStoreType() {

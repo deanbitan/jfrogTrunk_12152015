@@ -183,7 +183,7 @@ public class WebdavStatus {
     /**
      * This Hashtable contains the mapping of HTTP and WebDAV status codes to descriptive text.
      */
-    private static Map<Integer, String> mapStatusCodes = new HashMap<Integer, String>();
+    private static Map<Integer, String> mapStatusCodes = new HashMap<>();
 
     static {
         // HTTP 1.1 status codes

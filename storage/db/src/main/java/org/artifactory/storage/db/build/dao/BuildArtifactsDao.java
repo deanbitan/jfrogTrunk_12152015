@@ -77,7 +77,7 @@ public class BuildArtifactsDao extends BaseDao {
         List<BuildArtifact> artifacts = null;
         try {
             rs = jdbcHelper.executeSelect("SELECT * FROM build_artifacts WHERE module_id IN (#)", moduleIds);
-            artifacts = new ArrayList<BuildArtifact>();
+            artifacts = new ArrayList<>();
             while (rs.next()) {
                 artifacts.add(resultSetToBuildArtifact(rs));
             }
@@ -92,7 +92,7 @@ public class BuildArtifactsDao extends BaseDao {
         List<BuildArtifact> artifacts = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM build_artifacts WHERE module_id = ?", moduleId);
-            artifacts = new ArrayList<BuildArtifact>();
+            artifacts = new ArrayList<>();
             while (resultSet.next()) {
                 artifacts.add(resultSetToBuildArtifact(resultSet));
             }
@@ -109,7 +109,7 @@ public class BuildArtifactsDao extends BaseDao {
         try {
             resultSet = jdbcHelper.executeSelect(
                     "SELECT * FROM build_artifacts WHERE " + type.name() + " = ?", checksum);
-            artifacts = new ArrayList<BuildArtifact>();
+            artifacts = new ArrayList<>();
             while (resultSet.next()) {
                 artifacts.add(resultSetToBuildArtifact(resultSet));
             }

@@ -49,7 +49,7 @@ public abstract class MetadataConverterUtils {
 
     public static List<Element> extractExtensionFields(Element rootElement) {
         String modifiedBy = rootElement.getChildText(MODIFIED_BY);
-        List<Element> toMove = new ArrayList<Element>(EXTENSION_FIELDS.length);
+        List<Element> toMove = new ArrayList<>(EXTENSION_FIELDS.length);
         for (String tagName : EXTENSION_FIELDS) {
             Element element = rootElement.getChild(tagName);
             if (element != null) {

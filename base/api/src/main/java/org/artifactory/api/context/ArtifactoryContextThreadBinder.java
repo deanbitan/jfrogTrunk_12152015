@@ -26,7 +26,7 @@ import org.artifactory.log.logback.LogbackContextSelector;
 public abstract class ArtifactoryContextThreadBinder {
 
     private static final InheritableThreadLocal<ArtifactoryContext> current =
-            new InheritableThreadLocal<ArtifactoryContext>();
+            new InheritableThreadLocal<>();
 
     static ArtifactoryContext getArtifactoryContext() {
         return current.get();

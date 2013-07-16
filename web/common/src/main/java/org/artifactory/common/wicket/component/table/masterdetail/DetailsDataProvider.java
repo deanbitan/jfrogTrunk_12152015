@@ -39,6 +39,6 @@ class DetailsDataProvider<M extends Serializable, D extends Serializable> extend
 
     @Override
     public IModel model(Serializable object) {
-        return new Model(new MasterDetailEntry<M, D>(master, (D) object));
+        return new Model(new MasterDetailEntry<>(master, (D) object));
     }
 }

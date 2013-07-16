@@ -170,7 +170,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         }
 
         cache.put(VersionInfoServiceImpl.CACHE_KEY, result);
-        return new AsyncResult<ArtifactoryVersioning>(result);
+        return new AsyncResult<>(result);
     }
 
     private void setHeader(GetMethod getMethod, Map<String, String> headersMap, String headerKey) {

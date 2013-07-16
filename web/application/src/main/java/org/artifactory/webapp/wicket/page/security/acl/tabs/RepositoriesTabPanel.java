@@ -80,7 +80,7 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
 
     private void addRepositoriesSelections() {
-        List<LocalRepoDescriptor> repos = new ArrayList<LocalRepoDescriptor>();
+        List<LocalRepoDescriptor> repos = new ArrayList<>();
         repos.addAll(parent.getLocalRepositoryDescriptors());
         repos.addAll(parent.getCachedRepositoryDescriptors());
         PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData = parent.getRepoKeysData();
@@ -153,8 +153,8 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
         add(new HelpBubble("includesHelp", helpMessage));
 
-        Model<CommonPathPattern> include = new Model<CommonPathPattern>();
-        DropDownChoice<CommonPathPattern> includesSuggest = new DropDownChoice<CommonPathPattern>(
+        Model<CommonPathPattern> include = new Model<>();
+        DropDownChoice<CommonPathPattern> includesSuggest = new DropDownChoice<>(
                 "includesSuggest", include, includesExcludesSuggestions);
         if (!includesExcludesSuggestions.isEmpty()) {
             includesSuggest.setDefaultModelObject(includesExcludesSuggestions.get(0));
@@ -177,8 +177,8 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         add(new HelpBubble("excludesHelp", helpMessage));
 
         //Excludes suggestions
-        Model<CommonPathPattern> exclude = new Model<CommonPathPattern>();
-        DropDownChoice<CommonPathPattern> excludesSuggest = new DropDownChoice<CommonPathPattern>(
+        Model<CommonPathPattern> exclude = new Model<>();
+        DropDownChoice<CommonPathPattern> excludesSuggest = new DropDownChoice<>(
                 "excludesSuggest", exclude, includesExcludesSuggestions);
         if (!includesExcludesSuggestions.isEmpty()) {
             excludesSuggest.setDefaultModelObject(includesExcludesSuggestions.get(0));

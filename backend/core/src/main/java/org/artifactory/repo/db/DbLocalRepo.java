@@ -124,7 +124,7 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
 
     @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
-        BasicStatusHolder status = assertValidPath(repoPath.getPath(), true);
+        BasicStatusHolder status = assertValidPath(repoPath, true);
         if (status.isError()) {
             return status;
         }
@@ -144,8 +144,8 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
     }
 
     @Override
-    public boolean shouldProtectPathDeletion(String relPath, boolean overwrite) {
-        return mixin.shouldProtectPathDeletion(relPath, overwrite);
+    public boolean shouldProtectPathDeletion(String relPath, boolean overwrite, @Nullable String requestSha1) {
+        return mixin.shouldProtectPathDeletion(relPath, overwrite, requestSha1);
     }
 
     @Override

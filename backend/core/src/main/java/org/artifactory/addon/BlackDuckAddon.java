@@ -22,8 +22,6 @@ import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
 
-import java.util.Map;
-
 /**
  * @author mamo
  */
@@ -31,11 +29,12 @@ public interface BlackDuckAddon extends Addon {
 
     /**
      * returns external component info as found in the metadata
-     **/
+     */
     FileComplianceInfo getExternalInfoFromMetadata(RepoPath repoPath);
 
     /**
      * Perform Black Duck application validation on given {@code build}
+     *
      * @param build The build to perform the license calculation on.
      */
     void performBlackDuckOnBuildArtifacts(Build build);

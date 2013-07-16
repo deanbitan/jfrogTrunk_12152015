@@ -99,7 +99,7 @@ public class PathTranslationHelper {
             if (translatorFilter.filterRequired(path)) {
                 String filteredContent = translatorFilter.getFilteredContent(path);
                 path = translatorFilter.stripPath(path);
-                filterList.add(new Pair<String, TranslatorFilter>(filteredContent, translatorFilter));
+                filterList.add(new Pair<>(filteredContent, translatorFilter));
             }
         }
 

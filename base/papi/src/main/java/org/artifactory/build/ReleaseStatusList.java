@@ -110,7 +110,7 @@ public class ReleaseStatusList implements List<ReleaseStatus> {
         return promotionStatusList.containsAll(
                 Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
                     @Override
-                    public Object apply(@Nullable Object input) {
+                    public Object apply(Object input) {
                         return ((ReleaseStatus) input).getPromotionStatus();
                     }
                 })));
@@ -121,7 +121,7 @@ public class ReleaseStatusList implements List<ReleaseStatus> {
         return promotionStatusList.addAll(Lists.newArrayList(Iterables.transform(c,
                 new Function<Object, PromotionStatus>() {
                     @Override
-                    public PromotionStatus apply(@Nullable Object input) {
+                    public PromotionStatus apply(Object input) {
                         return ((ReleaseStatus) input).getPromotionStatus();
                     }
                 })));
@@ -132,7 +132,7 @@ public class ReleaseStatusList implements List<ReleaseStatus> {
         return promotionStatusList.addAll(index, Lists.newArrayList(Iterables.transform(c,
                 new Function<Object, PromotionStatus>() {
                     @Override
-                    public PromotionStatus apply(@Nullable Object input) {
+                    public PromotionStatus apply(Object input) {
                         return ((ReleaseStatus) input).getPromotionStatus();
                     }
                 })));
@@ -142,7 +142,7 @@ public class ReleaseStatusList implements List<ReleaseStatus> {
     public boolean removeAll(Collection<?> c) {
         return promotionStatusList.removeAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((ReleaseStatus) input).getPromotionStatus();
             }
         })));
@@ -152,7 +152,7 @@ public class ReleaseStatusList implements List<ReleaseStatus> {
     public boolean retainAll(Collection<?> c) {
         return promotionStatusList.retainAll(Lists.newArrayList(Iterables.transform(c, new Function<Object, Object>() {
             @Override
-            public Object apply(@Nullable Object input) {
+            public Object apply(Object input) {
                 return ((ReleaseStatus) input).getPromotionStatus();
             }
         })));

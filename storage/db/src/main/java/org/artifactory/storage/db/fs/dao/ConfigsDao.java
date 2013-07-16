@@ -21,9 +21,9 @@ package org.artifactory.storage.db.fs.dao;
 import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.storage.db.util.BaseDao;
-import org.artifactory.storage.db.util.BlobWrapper;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.storage.db.util.blob.BlobWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 

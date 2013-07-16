@@ -268,7 +268,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
     }
 
     private void addTabs(TitledBorder border) {
-        List<ITab> tabs = new ArrayList<ITab>(2);
+        List<ITab> tabs = new ArrayList<>(2);
 
         tabs.add(new AbstractTab(Model.of("Repositories")) {
             @Override
@@ -399,7 +399,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
 
         PermissionTargetAceInfoRowDataProvider dataProvider = isGroup ? groupsDataProvider : usersDataProvider;
 
-        SortableTable table = new SortableTable<AceInfoRow>("recipients", columns, dataProvider, 15);
+        SortableTable table = new SortableTable<>("recipients", columns, dataProvider, 15);
         //Recipients header
         Label recipientsHeader = new Label("recipientsHeader");
         recipientsHeader.setDefaultModel(
@@ -507,7 +507,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
         }
 
         public List<String> getSelectedKeysList() {
-            List<String> repoKeys = new ArrayList<String>();
+            List<String> repoKeys = new ArrayList<>();
             if (anyRepository) {
                 repoKeys.add(PermissionTargetInfo.ANY_REPO);
             } else {
@@ -536,7 +536,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
         }
 
         public List<LocalRepoDescriptor> getRepoDescriptors() {
-            return new ArrayList<LocalRepoDescriptor>(repoKeyMap.values());
+            return new ArrayList<>(repoKeyMap.values());
         }
 
         public void setRepoDescriptors(List<? extends LocalRepoDescriptor> repoDescriptors) {
@@ -585,7 +585,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
         }
 
         private List<LocalRepoDescriptor> getRepoDescriptors(List<String> repoKeys) {
-            List<LocalRepoDescriptor> descriptorList = new ArrayList<LocalRepoDescriptor>();
+            List<LocalRepoDescriptor> descriptorList = new ArrayList<>();
             for (String repoKey : repoKeys) {
                 LocalRepoDescriptor repoDescriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoKey);
                 if (repoDescriptor != null) {

@@ -45,6 +45,8 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.PathUtils;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,11 +58,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
@@ -71,10 +69,10 @@ import java.util.regex.Pattern;
  */
 public abstract class MavenModelUtils {
     private static final Logger log = LoggerFactory.getLogger(MavenModelUtils.class);
+    private static final DateTimeFormatter UNIQUE_SNAPSHOT_FORMATTER =
+            DateTimeFormat.forPattern("yyyyMMdd.HHmmss").withZoneUTC();
 
     public static final String UTF8 = "utf-8";
-    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
-    private static final String UTC_TIMESTAMP_PATTERN = "yyyyMMdd.HHmmss";
 
     //Uses lazy evaluation of the version (+?)
     //see: http://www.regular-expressions.info/reference.html
@@ -93,25 +91,11 @@ public abstract class MavenModelUtils {
     }
 
     /**
-     * @param date Date to convert
-     * @return Maven unique snapshot version timestamp for the input date
+     * @param time Time to format
+     * @return Maven unique snapshot version timestamp for the input date. For example: 20130603.113821
      */
-    public static String dateToUniqueSnapshotTimestamp(Date date) {
-        return getUtcDateFormatter().format(date);
-    }
-
-    public static Date uniqueSnapshotToUtc(String timestamp) {
-        try {
-            return getUtcDateFormatter().parse(timestamp);
-        } catch (ParseException e) {
-            throw new RuntimeException("Failed to transfer timestamp to date.", e);
-        }
-    }
-
-    private static DateFormat getUtcDateFormatter() {
-        DateFormat utcDateFormatter = new SimpleDateFormat(UTC_TIMESTAMP_PATTERN);
-        utcDateFormatter.setTimeZone(UTC_TIME_ZONE);
-        return utcDateFormatter;
+    public static String dateToUniqueSnapshotTimestamp(long time) {
+        return UNIQUE_SNAPSHOT_FORMATTER.print(time);
     }
 
     /**

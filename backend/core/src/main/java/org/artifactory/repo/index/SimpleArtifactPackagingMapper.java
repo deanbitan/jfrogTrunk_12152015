@@ -36,7 +36,7 @@ public class SimpleArtifactPackagingMapper implements ArtifactPackagingMapper {
     private final static Map<String, String> defaults;
 
     static {
-        defaults = new HashMap<String, String>();
+        defaults = new HashMap<>();
         defaults.put("ejb-client", "jar");
         defaults.put("ejb", "jar");
         defaults.put("rar", "jar");

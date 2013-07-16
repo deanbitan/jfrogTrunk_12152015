@@ -61,7 +61,7 @@ public class ChecksumSearchControls extends SearchControlsBase {
 
     public void addChecksum(ChecksumType checksumType, String checksumValue) {
         if (checksums == null) {
-            checksums = new EnumMap<ChecksumType, String>(ChecksumType.class);
+            checksums = new EnumMap<>(ChecksumType.class);
         }
         checksums.put(checksumType, checksumValue);
     }

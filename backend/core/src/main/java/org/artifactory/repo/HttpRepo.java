@@ -195,7 +195,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             if (cachedResource.isFound()) {
                 if (cachedResource.isExpired()) {
                     //Send HEAD
-                    RepoResource resource = retrieveInfo(relPath, null);
+                    RepoResource resource = retrieveInfo(relPath, false/*The relPath refers to files (.gz)*/, null);
                     if (resource.isFound()) {
                         if (cachedResource.getLastModified() > resource.getLastModified()) {
                             return new NullResourceStreamHandle();
@@ -339,9 +339,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     @Override
-    protected RepoResource retrieveInfo(String path, @Nullable RequestContext context) {
+    protected RepoResource retrieveInfo(String path, boolean folder, @Nullable RequestContext context) {
         assert !isOffline() : "Should never be called in offline mode";
-        RepoPath repoPath = InternalRepoPathFactory.create(this.getKey(), path);
+        RepoPath repoPath = InternalRepoPathFactory.create(this.getKey(), path, folder);
 
         String fullUrl = assembleRetrieveInfoUrl(path, context);
         HeadMethod method = new HeadMethod(HttpUtils.encodeQuery(fullUrl));

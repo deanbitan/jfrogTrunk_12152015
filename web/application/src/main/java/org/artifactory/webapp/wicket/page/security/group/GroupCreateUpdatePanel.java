@@ -60,7 +60,7 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
         form.add(border);
 
         // Group name
-        RequiredTextField<String> groupNameTf = new RequiredTextField<String>("groupName");
+        RequiredTextField<String> groupNameTf = new RequiredTextField<>("groupName");
         setDefaultFocusField(groupNameTf);
         groupNameTf.add(StringValidator.maximumLength(100));
         groupNameTf.setEnabled(isCreate());// don't allow groupname update

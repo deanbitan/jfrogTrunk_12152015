@@ -144,7 +144,7 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
 
     @Override
     public List<UserInfo> getAllUsers(boolean includeAdmins) {
-        List<UserInfo> results = new ArrayList<UserInfo>();
+        List<UserInfo> results = new ArrayList<>();
         try {
             Collection<User> allUsers = userGroupsDao.getAllUsers(includeAdmins);
             for (User user : allUsers) {
@@ -166,7 +166,7 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
     }
 
     private List<GroupInfo> findAllGroups(UserGroupsDao.GroupFilter groupFilter) {
-        List<GroupInfo> results = new ArrayList<GroupInfo>();
+        List<GroupInfo> results = new ArrayList<>();
         try {
             Collection<Group> allGroups = userGroupsDao.findGroups(groupFilter);
             for (Group group : allGroups) {
@@ -200,7 +200,7 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
 
     @Override
     public Set<String> getNewUserDefaultGroupsNames() {
-        Set<String> results = new HashSet<String>();
+        Set<String> results = new HashSet<>();
         try {
             Collection<Group> allGroups = userGroupsDao.findGroups(UserGroupsDao.GroupFilter.DEFAULTS);
             for (Group group : allGroups) {
@@ -271,7 +271,7 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
 
     @Override
     public List<UserInfo> findUsersInGroup(String groupName) {
-        List<UserInfo> results = new ArrayList<UserInfo>();
+        List<UserInfo> results = new ArrayList<>();
         try {
             Group group = userGroupsDao.findGroupByName(groupName);
             if (group == null) {
@@ -317,7 +317,7 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
 
     private UserInfo userToUserInfo(User user) throws SQLException {
         UserInfoBuilder builder = new UserInfoBuilder(user.getUsername());
-        Set<UserGroupInfo> groups = new HashSet<UserGroupInfo>(user.getGroups().size());
+        Set<UserGroupInfo> groups = new HashSet<>(user.getGroups().size());
         for (UserGroup userGroup : user.getGroups()) {
             Group groupById = userGroupsDao.findGroupById(userGroup.getGroupId());
             if (groupById != null) {

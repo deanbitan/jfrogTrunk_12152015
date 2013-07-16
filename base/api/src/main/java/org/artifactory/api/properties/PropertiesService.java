@@ -25,6 +25,8 @@ public interface PropertiesService {
 
     String MAVEN_PLUGIN_PROPERTY_NAME = "artifactory.maven.mavenPlugin";
 
+    String CONTENT_TYPE_PROPERTY_NAME = "content-type";
+
     /**
      * @param repoPath The item (repository/folder/file) repository path
      * @return The properties attached to this repo path. Empty properties if non exist.

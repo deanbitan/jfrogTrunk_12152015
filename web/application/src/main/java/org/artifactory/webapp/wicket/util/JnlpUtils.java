@@ -44,9 +44,9 @@ public abstract class JnlpUtils {
     }
 
     public static List<VirtualRepoDescriptor> filterNonWebstartRepos(
-            Iterable<VirtualRepoDescriptor> virtualRepoContainigMe) {
-        List<VirtualRepoDescriptor> webstartRepos = new ArrayList<VirtualRepoDescriptor>();
-        for (VirtualRepoDescriptor descriptor : virtualRepoContainigMe) {
+            Iterable<VirtualRepoDescriptor> virtualRepoContainingMe) {
+        List<VirtualRepoDescriptor> webstartRepos = new ArrayList<>();
+        for (VirtualRepoDescriptor descriptor : virtualRepoContainingMe) {
             if (StringUtils.isNotBlank(descriptor.getKeyPair())) {
                 webstartRepos.add(descriptor);
             }
@@ -170,13 +170,13 @@ public abstract class JnlpUtils {
                     .append("} else {\n")
                     .append("  javafx(\n")
                     .append("    {\n")
-                    .append(format("      archive: %s,\n", jsParam(jarHref)))
-                    .append(format("      jnlp_href: %s,\n", jsParam(jnlpHref)))
+                    .append(format("      archive: %s,%n", jsParam(jarHref)))
+                    .append(format("      jnlp_href: %s,%n", jsParam(jnlpHref)))
                     .append("      draggable: true,\n")
-                    .append(format("      width: %s,\n", getWidth()))
-                    .append(format("      height: %s,\n", getHeight()))
-                    .append(format("      code: %s,\n", jsParam(getMainClass())))
-                    .append(format("      name: %s\n", jsParam(getAppletName())))
+                    .append(format("      width: %s,%n", getWidth()))
+                    .append(format("      height: %s,%n", getHeight()))
+                    .append(format("      code: %s,%n", jsParam(getMainClass())))
+                    .append(format("      name: %s%n", jsParam(getAppletName())))
                     .append("    }\n")
                     .append("  );\n")
                     .append("}\n")

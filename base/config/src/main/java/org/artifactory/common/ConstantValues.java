@@ -124,6 +124,7 @@ public enum ConstantValues {
     bintraySystemUser("bintray.system.user"),
     bintraySystemUserApiKey("bintray.system.api.key"),
     useUserNameAutoCompleteOnLogin("useUserNameAutoCompleteOnLogin", "on"),
+    uiHideEncryptedPassword("ui.hideEncryptedPassword", FALSE),
     statsFlushIntervalSecs("stats.flushIntervalSecs", 30),
     integrationCleanupIntervalSecs("integrationCleanup.intervalSecs", 300),
     integrationCleanupQuietPeriodSecs("integrationCleanup.quietPeriodSecs", 60),

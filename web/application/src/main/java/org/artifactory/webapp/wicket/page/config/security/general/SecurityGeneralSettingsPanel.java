@@ -56,8 +56,8 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
         MutableCentralConfigDescriptor centralConfig = centralConfigService.getMutableDescriptor();
         SecurityDescriptor securityDescriptor = centralConfig.getSecurity();
         CompoundPropertyModel<SecurityDescriptor> securityModel =
-                new CompoundPropertyModel<SecurityDescriptor>(securityDescriptor);
-        Form<SecurityDescriptor> form = new Form<SecurityDescriptor>("form", securityModel);
+                new CompoundPropertyModel<>(securityDescriptor);
+        Form<SecurityDescriptor> form = new Form<>("form", securityModel);
         add(form);
 
         addAnonymousAccessField(form);
@@ -86,7 +86,7 @@ class SecurityGeneralConfigPanel extends TitledActionPanel {
 
     private void addEncryptionPolicyDropDown(Form form) {
         EncryptionPolicy[] encryptionPolicies = EncryptionPolicy.values();
-        DropDownChoice<EncryptionPolicy> encryptionPoliciesDC = new DropDownChoice<EncryptionPolicy>(
+        DropDownChoice<EncryptionPolicy> encryptionPoliciesDC = new DropDownChoice<>(
                 "passwordSettings.encryptionPolicy",
                 Arrays.asList(encryptionPolicies));
         encryptionPoliciesDC.setChoiceRenderer(new EncryptionPolicyChoiceRenderer());

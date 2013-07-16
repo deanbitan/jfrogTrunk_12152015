@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class VirtualRepoItem implements ItemInfoAware {
     private final ItemInfo itemInfo;
-    private List<String> repoKeys = new ArrayList<String>();
+    private List<String> repoKeys = new ArrayList<>();
 
     public VirtualRepoItem(ItemInfo itemInfo) {
         this.itemInfo = itemInfo;

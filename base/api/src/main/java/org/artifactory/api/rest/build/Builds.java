@@ -32,7 +32,7 @@ public class Builds implements Serializable {
 
     @XmlElement(name = "uri")
     public String slf;
-    public List<Build> builds = new ArrayList<Build>();
+    public List<Build> builds = new ArrayList<>();
 
 
     public static class Build {

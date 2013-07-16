@@ -59,7 +59,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         VfsItem targetFsItem = targetRrp.getRepo().getMutableFsItem(targetRrp.getRepoPath());
         if (targetFsItem != null && targetFsItem.isFolder() && targetLocalRepoKey == null) {
             String adjustedPath = targetRrp.getRepoPath().getPath() + "/" + sourceItem.getName();
-            targetRrp = new RepoRepoPath<LocalRepo>(targetRrp.getRepo(),
+            targetRrp = new RepoRepoPath<>(targetRrp.getRepo(),
                     InternalRepoPathFactory.create(targetRrp.getRepoPath().getRepoKey(), adjustedPath));
 
         }
@@ -122,7 +122,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         RepoPath originalRepoPath = targetRrp.getRepoPath();
         for (VfsItem child : children) {
             // update the cached object with the child's repo path.
-            targetRrp = new RepoRepoPath<LocalRepo>(targetRrp.getRepo(),
+            targetRrp = new RepoRepoPath<>(targetRrp.getRepo(),
                     InternalRepoPathFactory.create(originalRepoPath, child.getName()));
             // recursive call with the child
             moveCopyRecursive(child, targetRrp);
@@ -171,7 +171,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         // copy relevant metadata from source to target
         log.debug("Copying folder metadata to {}", targetRepoPath);
         targetFolder.setProperties(sourceFolder.getProperties());
-        replicationAddon.offerLocalReplicationPropertiesDeploymentEvent(targetRepoPath);
+        replicationAddon.offerLocalReplicationPropertiesChangeEvent(targetRepoPath);
 
         return targetFolder;
     }

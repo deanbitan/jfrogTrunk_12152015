@@ -146,7 +146,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             this.handleRefsTracker = this.oldRemoteRepo.handleRefsTracker;
         } else {
             this.oldRemoteRepo = null;
-            this.inTransit = new ConcurrentHashMap<String, DownloadEntry>();
+            this.inTransit = new ConcurrentHashMap<>();
             this.handleRefsTracker = new HandleRefsTracker();
         }
     }
@@ -248,16 +248,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Override
     public long getRetrievalCachePeriodSecs() {
         return getDescriptor().getRetrievalCachePeriodSecs();
-    }
-
-    @Override
-    public long getAssumedOfflinePeriodSecs() {
-        return getDescriptor().getAssumedOfflinePeriodSecs();
-    }
-
-    @Override
-    public long getMissedRetrievalCachePeriodSecs() {
-        return getDescriptor().getMissedRetrievalCachePeriodSecs();
     }
 
     @Override
@@ -370,7 +360,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     private RepoResource getRemoteResource(RequestContext context, RepoPath repoPath, boolean foundExpiredInCache) {
         String path = repoPath.getPath();
-
+        boolean folder = repoPath.isFolder();
         if (!getDescriptor().isSynchronizeProperties() && context.getProperties().hasMandatoryProperty()) {
             RepoRequests.logToContext("Repository doesn't sync properties and the request contains " +
                     "mandatory properties - returning unfound resource");
@@ -384,7 +374,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             RepoRequests.logToContext("Remote resource path was altered by the user plugins to - %s", path);
         }
         try {
-            remoteResource = retrieveInfo(path, context);
+            remoteResource = retrieveInfo(path, folder, context);
             if (!remoteResource.isFound() && !foundExpiredInCache) {
                 //Update the non-found cache for a miss
                 RepoRequests.logToContext("Unable to find resource remotely - adding to the missed retrieval cache.");
@@ -430,12 +420,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     protected abstract void putOffline();
 
-    protected abstract RepoResource retrieveInfo(String path, @Nullable RequestContext context);
+    protected abstract RepoResource retrieveInfo(String path, boolean folder, @Nullable RequestContext context);
 
     @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
         String path = repoPath.getPath();
-        StatusHolder status = assertValidPath(path, true);
+        StatusHolder status = assertValidPath(repoPath, true);
         if (status.isError()) {
             return status;
         }
@@ -508,11 +498,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
             // Check for security deploy rights
             RepoRequests.logToContext("Asserting valid deployment path");
-            getRepositoryService().assertValidDeployPath(localCacheRepo, path, remoteResource.getInfo().getSize());
-
-            //Create the parent folder
-            String parentPath = PathUtils.getParent(path);
-            RepoPath parentRepoPath = InternalRepoPathFactory.create(localCacheRepo.getKey(), parentPath);
+            getRepositoryService().assertValidDeployPath(localCacheRepo, remoteRepoPath,
+                    remoteResource.getInfo().getSize(), null);
 
             //Check that the resource is not being downloaded in parallel
             DownloadEntry completedConcurrentDownload = getCompletedConcurrentDownload(path);
@@ -758,7 +745,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     private Set<ChecksumInfo> getRemoteChecksums(String path) {
-        Set<ChecksumInfo> checksums = new HashSet<ChecksumInfo>();
+        Set<ChecksumInfo> checksums = new HashSet<>();
         for (ChecksumType checksumType : ChecksumType.values()) {
             String checksum = null;
             try {
@@ -952,12 +939,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @throws IOException If remote checksum is not found or there was a problem retrieving it
      */
     private String getRemoteChecksum(String path) throws IOException {
-        ResourceStreamHandle handle = downloadResource(path);
-        try {
+        try (ResourceStreamHandle handle = downloadResource(path)) {
             InputStream is = handle.getInputStream();
             return Checksum.checksumStringFromStream(is);
-        } finally {
-            handle.close();
         }
     }
 
@@ -1015,9 +999,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         try {
             String artifactRelativePath = repoPath.getPath();
             String propertiesRelativePath = artifactRelativePath + ":" + Properties.ROOT;
-            RepoPath propertiesRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), propertiesRelativePath);
+            RepoPath propertiesRepoPath = InternalRepoPathFactory.create(repoPath.getRepoKey(), propertiesRelativePath,
+                    repoPath.isFolder());
             String remotePropertiesRelativePath = getAltRemotePath(propertiesRepoPath);
-
             if (!propertiesRepoPath.getPath().equals(remotePropertiesRelativePath)) {
                 RepoRequests.logToContext("Remote resource path was altered by the user plugins to - %s",
                         remotePropertiesRelativePath);
@@ -1029,7 +1013,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             Properties properties = (Properties) InfoFactoryHolder.get().createProperties();
 
             //Send HEAD
-            RepoResource remoteResource = retrieveInfo(remotePropertiesRelativePath, null);
+            RepoResource remoteResource = retrieveInfo(remotePropertiesRelativePath, propertiesRepoPath.isFolder(),
+                    null);
             if (remoteResource.isFound()) {
                 RepoRequests.logToContext("Found remote properties");
                 if (cachedPropertiesResource.isFound() &&
@@ -1080,7 +1065,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         private final CountDownLatch latch;
         private final AtomicInteger handlesToPrepare = new AtomicInteger();
         private final ConcurrentLinkedQueue<ResourceStreamHandle> handles =
-                new ConcurrentLinkedQueue<ResourceStreamHandle>();
+                new ConcurrentLinkedQueue<>();
 
         DownloadEntry(String path) {
             super(System.currentTimeMillis() + (ConstantValues.repoConcurrentDownloadSyncTimeoutSecs.getLong() * 1000));
@@ -1098,11 +1083,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
         @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
         private ConcurrentLinkedQueue<WeakReference<ResourceStreamHandle>> handles =
-                new ConcurrentLinkedQueue<WeakReference<ResourceStreamHandle>>();
-        private final ReferenceQueue<ResourceStreamHandle> handlesRefQueue = new ReferenceQueue<ResourceStreamHandle>();
+                new ConcurrentLinkedQueue<>();
+        private final ReferenceQueue<ResourceStreamHandle> handlesRefQueue = new ReferenceQueue<>();
 
         public void add(ResourceStreamHandle handle) {
-            WeakReference<ResourceStreamHandle> ref = new WeakReference<ResourceStreamHandle>(handle, handlesRefQueue);
+            WeakReference<ResourceStreamHandle> ref = new WeakReference<>(handle, handlesRefQueue);
             handles.add(ref);
             //Clean up weakly referenced handles that were not picked-up by waiters before
             WeakReference<ResourceStreamHandle> defunctRef;

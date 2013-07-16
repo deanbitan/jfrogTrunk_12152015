@@ -165,7 +165,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         if (searchBase == null) {
             searchBase = "";
         }
-        ArrayList<FilterBasedLdapUserSearch> result = new ArrayList<FilterBasedLdapUserSearch>();
+        ArrayList<FilterBasedLdapUserSearch> result = new ArrayList<>();
         FilterBasedLdapUserSearch userSearch = new FilterBasedLdapUserSearch(searchBase,
                 searchPattern.getSearchFilter(), (BaseLdapPathContextSource) ctx);
         userSearch.setSearchSubtree(searchPattern.isSearchSubTree());
@@ -225,6 +225,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public boolean isFilteredResourceFile(RepoPath repoPath) {
+        return false;
+    }
+
+    @Override
+    public boolean isFilteredResourceFile(RepoPath repoPath, Properties props) {
         return false;
     }
 
@@ -359,11 +364,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void offerLocalReplicationPropertiesDeploymentEvent(RepoPath repoPath) {
-    }
-
-    @Override
-    public void offerLocalReplicationPropertiesDeleteEvent(RepoPath repoPath) {
+    public void offerLocalReplicationPropertiesChangeEvent(RepoPath repoPath) {
     }
 
     @Override

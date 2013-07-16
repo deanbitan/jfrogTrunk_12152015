@@ -143,7 +143,7 @@ public class VirtualRepoBasicPanel extends Panel {
 
         @Override
         public IModel<RealRepoDescriptor> model(RealRepoDescriptor object) {
-            return new Model<RealRepoDescriptor>(object);
+            return new Model<>(object);
         }
 
         @Override

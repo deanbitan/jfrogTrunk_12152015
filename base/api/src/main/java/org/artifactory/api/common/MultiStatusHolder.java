@@ -21,11 +21,9 @@ package org.artifactory.api.common;
 import com.google.common.collect.Lists;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -34,25 +32,12 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MultiStatusHolder extends BasicStatusHolder {
     // save up to 500 messages. if exhausted, we manually drop the oldest element
-    private final BlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<>(500);
+    private final LinkedBlockingQueue<StatusEntry> statusEntries = new LinkedBlockingQueue<>(500);
     // save up to 2000 errors messages. if exhausted, we manually drop the oldest element
-    private final BlockingQueue<StatusEntry> errorEntries = new LinkedBlockingQueue<>(2000);
+    private final LinkedBlockingQueue<StatusEntry> errorEntries = new LinkedBlockingQueue<>(2000);
 
-    @Override
-    protected StatusEntry addStatus(String statusMsg, int statusCode, Logger logger, boolean debug) {
-        StatusEntry entry = super.addStatus(statusMsg, statusCode, logger, debug);
-        addStatusEntry(entry);
-        return entry;
-    }
-
-    @Override
-    protected StatusEntry addError(String statusMsg, int statusCode, Throwable throwable, Logger logger, boolean warn) {
-        StatusEntry entry = super.addError(statusMsg, statusCode, throwable, logger, warn);
-        addStatusEntry(entry);
-        return entry;
-    }
-
-    private void addStatusEntry(StatusEntry entry) {
+    protected void addStatusEntry(StatusEntry entry) {
+        super.addStatusEntry(entry);
         // we don't really want to block if we reached the limit. remove the last element until offer is accepted
         while (!statusEntries.offer(entry)) {
             statusEntries.poll();
@@ -68,6 +53,7 @@ public class MultiStatusHolder extends BasicStatusHolder {
     public void reset() {
         super.reset();
         statusEntries.clear();
+        errorEntries.clear();
     }
 
     public boolean hasErrors() {

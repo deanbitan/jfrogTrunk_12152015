@@ -18,6 +18,7 @@
 
 package org.artifactory.traffic.read;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,9 +29,10 @@ import org.artifactory.traffic.entry.TrafficEntry;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -85,11 +87,11 @@ public class TrafficReader {
 
         Collection<File> trafficLogs = readFiles(startDate, endDate);
 
-        List<TrafficEntry> entries = new ArrayList<TrafficEntry>();
+        List<TrafficEntry> entries = new ArrayList<>();
         Reader reader = null;
         for (File trafficLog : trafficLogs) {
             try {
-                reader = new FileReader(trafficLog);
+                reader = new InputStreamReader(new FileInputStream(trafficLog), Charsets.UTF_8);
                 entries.addAll(TrafficStreamParser.parse(reader, startDate, endDate));
             } catch (FileNotFoundException e) {
                 throw new IllegalStateException(e);
@@ -121,13 +123,13 @@ public class TrafficReader {
         }
 
         Collection<File> trafficLogs = readFiles(startDate, endDate);
-        OutputStreamWriter writer = new OutputStreamWriter(outputStream);
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, Charsets.UTF_8);
         long totalCharsWritten = 0;
 
         for (File trafficLog : trafficLogs) {
-            FileReader fileReader = null;
+            Reader fileReader = null;
             try {
-                fileReader = new FileReader(trafficLog);
+                fileReader = new InputStreamReader(new FileInputStream(trafficLog), Charsets.UTF_8);
                 int charsCopied = IOUtils.copy(fileReader, writer);
                 totalCharsWritten += charsCopied;
                 writer.flush();
@@ -162,7 +164,7 @@ public class TrafficReader {
         Collection<File> collection = FileUtils.listFiles(logDir, trafficLogFileFilter, DirectoryFileFilter.DIRECTORY);
         List<File> trafficLogFiles = Lists.newArrayList(collection);
         Collections.sort(trafficLogFiles);
-        List<File> selectedFiles = new ArrayList<File>();
+        List<File> selectedFiles = new ArrayList<>();
         for (File logFile : trafficLogFiles) {
             Date[] logFileDates = getLogFileDates(logFile);
 

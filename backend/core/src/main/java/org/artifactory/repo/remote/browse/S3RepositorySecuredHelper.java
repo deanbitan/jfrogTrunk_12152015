@@ -19,6 +19,7 @@
 package org.artifactory.repo.remote.browse;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.compress.utils.CharsetNames;
 import org.artifactory.repo.HttpRepo;
 
 import javax.crypto.Mac;
@@ -32,17 +33,16 @@ import java.net.URLEncoder;
 public class S3RepositorySecuredHelper {
 
     public static final String S3_ENDPOINT = "s3.amazonaws.com";
-    private static final String UTF_8 = "UTF-8";
     private static final String HMAC_SHA1 = "HmacSHA1";
 
     /**
      * Builds a secured rest url request for Amazon S3
      *
-     * @param url           The path to the item, for example https://s3.amazonaws.com/bucket/folder/file.ext
-     * @param prefix        The prefix to the item, for example folder/file.ext
-     * @param httpRepo      The repository assuming to contain the access key/secret key in username/password, respectively
-     * @param expiration    The time of expiration for the generated request in millis
-     * @return              A secured rest url request
+     * @param url        The path to the item, for example https://s3.amazonaws.com/bucket/folder/file.ext
+     * @param prefix     The prefix to the item, for example folder/file.ext
+     * @param httpRepo   The repository assuming to contain the access key/secret key in username/password, respectively
+     * @param expiration The time of expiration for the generated request in millis
+     * @return A secured rest url request
      * @throws Exception
      */
     public static String buildSecuredS3RequestUrl(String url, String prefix, HttpRepo httpRepo,
@@ -62,9 +62,9 @@ public class S3RepositorySecuredHelper {
             String prefixPath = buildPrefixPath(hostname, bucketName, prefix);
             String signature = encodeUrl(signWithHmacSha1(awsSecretKey,
                     "GET\n" +
-                    "\n\n" + //content-type,content-md5
-                    String.valueOf(expires) + "\n" +
-                    "/" + bucketPath + prefixPath));
+                            "\n\n" + //content-type,content-md5
+                            String.valueOf(expires) + "\n" +
+                            "/" + bucketPath + prefixPath));
 
             String uriPath = prefixPath +
                     "?AWSAccessKeyId=" + awsAccessKey +
@@ -129,11 +129,11 @@ public class S3RepositorySecuredHelper {
 
     private static String signWithHmacSha1(String awsSecretKey, String canonicalString) throws Exception {
         try {
-            SecretKeySpec signingKey = new SecretKeySpec(awsSecretKey.getBytes(UTF_8), HMAC_SHA1);
+            SecretKeySpec signingKey = new SecretKeySpec(awsSecretKey.getBytes(CharsetNames.UTF_8), HMAC_SHA1);
             Mac mac = Mac.getInstance(HMAC_SHA1);
             mac.init(signingKey);
-            byte[] b64 = Base64.encodeBase64(mac.doFinal(canonicalString.getBytes(UTF_8)));
-            return new String(b64);
+            byte[] b64 = Base64.encodeBase64(mac.doFinal(canonicalString.getBytes(CharsetNames.UTF_8)));
+            return new String(b64, CharsetNames.UTF_8);
         } catch (Exception e) {
             throw new RuntimeException("Could not sign with " + HMAC_SHA1, e);
         }
@@ -141,7 +141,7 @@ public class S3RepositorySecuredHelper {
 
     private static String encodeUrl(String string) {
         try {
-            return URLEncoder.encode(string, UTF_8).replace("+", "%20").replace("%40", "@");
+            return URLEncoder.encode(string, CharsetNames.UTF_8).replace("+", "%20").replace("%40", "@");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Could not encode string " + string, e);
         }

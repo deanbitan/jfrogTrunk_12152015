@@ -20,6 +20,7 @@ package org.artifactory.repo;
 
 import org.artifactory.common.Info;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -30,6 +31,7 @@ public interface RepoPath extends Info {
     char ARCHIVE_SEP = '!';
     String REMOTE_CACHE_SUFFIX = "-cache";
 
+    @Nonnull
     String getRepoKey();
 
     String getPath();
@@ -59,4 +61,8 @@ public interface RepoPath extends Info {
     RepoPath getParent();
 
     boolean isRoot();
+
+    boolean isFile();
+
+    boolean isFolder();
 }

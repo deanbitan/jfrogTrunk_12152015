@@ -23,7 +23,6 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
-import org.jfrog.build.api.BlackDuckProperties;
 import org.jfrog.build.api.Build;
 
 /**

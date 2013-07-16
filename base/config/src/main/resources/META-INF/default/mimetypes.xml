@@ -23,9 +23,9 @@
     Each mime type may have the following attributes:
         type - The mime entry unique name (mandatory)
         extensions - Comma separated list of file extensions mapped to this mime type (mandatory)
-        viewable - True if this mime type can be viewed as text file
-        index - True if this mime type should be indexed for searching (valid only for xml and archive files)
+        index - True if this mime type should be indexed for searching (valid only for supported archive files)
         archive - True if this mime type is a browsable archive
+        viewable - True if this mime type can be viewed as text file
         syntax - The UI highlighter syntax to for this mime type (only relevant if this is a viewable type)
         css - The css class of a display icon for this mime type
 -->

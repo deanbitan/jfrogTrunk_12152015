@@ -26,7 +26,6 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
@@ -161,9 +160,7 @@ public class FolderActionableItem extends CachedItemActionableItem
             children = Lists.newArrayListWithExpectedSize(items.size());
             for (ItemInfo pathItem : items) {
                 //Check if we should return the child
-                String relativePath = pathItem.getRelPath();
-                RepoPath childRepoPath = InternalRepoPathFactory.create(pathItem.getRepoKey(), relativePath);
-                if (!repoService.isRepoPathVisible(childRepoPath)) {
+                if (!repoService.isRepoPathVisible(pathItem.getRepoPath())) {
                     continue;
                 }
 
@@ -174,7 +171,7 @@ public class FolderActionableItem extends CachedItemActionableItem
                 }
                 //No need to check for null as children is set before the iteration
                 //noinspection ConstantConditions
-                children.add(getChildItem(pathItem, relativePath, compactAllowed));
+                children.add(getChildItem(pathItem, pathItem.getRelPath(), compactAllowed));
             }
         }
         return children;

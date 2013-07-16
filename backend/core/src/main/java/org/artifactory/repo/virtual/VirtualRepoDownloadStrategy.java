@@ -208,7 +208,7 @@ public class VirtualRepoDownloadStrategy {
      */
     private List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
         RepoRequests.logToContext("Preparing list of aggregated repositories to search in");
-        VirtualResolverRequestFilter filter = new VirtualResolverRequestFilter(virtualRepo, repoPath.getPath(),
+        VirtualResolverRequestFilter filter = new VirtualResolverRequestFilter(virtualRepo, repoPath,
                 repositoryService, layoutsCoreAddon);
         VirtualRepoResolver resolver = new VirtualRepoResolver(virtualRepo.getDescriptor(), filter);
 
@@ -298,9 +298,7 @@ public class VirtualRepoDownloadStrategy {
                         "retrying with the original");
                 res = repo.getInfo(context);
             }
-            //TORE: [by YS] check if this is necessary with the reduced locking
-            // release all read locks acquired by the repo during the getInfo
-            //LockingHelper.getSessionLockManager().unlockAllReadLocks(repo.getKey());
+
             if (res.isFound()) {
                 RepoRequests.logToContext("Resource was found in %s", repo.getKey());
                 updateResponseRepoPath(repo, res);

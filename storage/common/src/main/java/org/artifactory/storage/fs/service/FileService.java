@@ -22,7 +22,6 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.storage.fs.VfsException;
@@ -54,8 +53,6 @@ public interface FileService {
 
     List<ItemInfo> loadChildren(RepoPath repoPath) throws VfsException;
 
-    void debugNodeStructure(RepoPath repoPath) throws VfsException;
-
     VfsItem loadVfsItem(StoringRepo storingRepo, RepoPath repoPath) throws VfsItemNotFoundException, VfsException;
 
     long createFolder(FolderInfo folder) throws VfsException;
@@ -73,6 +70,8 @@ public interface FileService {
      * @return True if the repo path exists and has children. False otherwise.
      */
     boolean hasChildren(RepoPath repoPath);
+
+    void debugNodeStructure(RepoPath repoPath) throws VfsException;
 
     void printNodesTable();
 
@@ -97,5 +96,5 @@ public interface FileService {
      */
     List<FileInfo> searchFilesWithBadChecksum(ChecksumType type);
 
-    long getFilesTotalCount(RepoPathImpl repoPath);
+    long getFilesTotalCount(RepoPath repoPath);
 }

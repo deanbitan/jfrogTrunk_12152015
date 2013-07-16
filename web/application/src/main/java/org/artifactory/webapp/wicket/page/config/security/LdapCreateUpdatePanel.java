@@ -97,7 +97,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         form.add(border);
 
         // Ldap key
-        RequiredTextField<String> ldapKeyField = new RequiredTextField<String>("key");
+        RequiredTextField<String> ldapKeyField = new RequiredTextField<>("key");
         setDefaultFocusField(ldapKeyField);
         ldapKeyField.setEnabled(isCreate());// don't allow key update
         if (isCreate()) {
@@ -109,7 +109,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
 
         border.add(new StyledCheckbox("enabled"));
 
-        TextField<String> ldapUrlField = new RequiredTextField<String>("ldapUrl");
+        TextField<String> ldapUrlField = new RequiredTextField<>("ldapUrl");
         ldapUrlField.add(new UriValidator("ldap", "ldaps"));
         border.add(ldapUrlField);
         border.add(new SchemaHelpBubble("ldapUrl.help"));
@@ -144,16 +144,16 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
             searchPattern = new SearchPattern();
         }
 
-        borderDn.add(new TextField<String>("searchFilter", new PropertyModel<String>(searchPattern, "searchFilter")));
+        borderDn.add(new TextField<>("searchFilter", new PropertyModel<String>(searchPattern, "searchFilter")));
         borderDn.add(new SchemaHelpBubble("searchFilter.help", new SchemaHelpModel(searchPattern, "searchFilter")));
 
-        borderDn.add(new TextField<String>("searchBase", new PropertyModel<String>(searchPattern, "searchBase")));
+        borderDn.add(new TextField<>("searchBase", new PropertyModel<String>(searchPattern, "searchBase")));
         borderDn.add(new SchemaHelpBubble("searchBase.help", new SchemaHelpModel(searchPattern, "searchBase")));
 
         borderDn.add(new StyledCheckbox("searchSubTree", new PropertyModel<Boolean>(searchPattern, "searchSubTree")));
         borderDn.add(new SchemaHelpBubble("searchSubTree.help", new SchemaHelpModel(searchPattern, "searchSubTree")));
 
-        borderDn.add(new TextField<String>("managerDn", new PropertyModel<String>(searchPattern, "managerDn")));
+        borderDn.add(new TextField<>("managerDn", new PropertyModel<String>(searchPattern, "managerDn")));
         borderDn.add(new SchemaHelpBubble("managerDn.help", new SchemaHelpModel(searchPattern, "managerDn")));
 
         PasswordTextField managerPasswordField = new PasswordTextField(
@@ -168,7 +168,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
     private void addTestConnectionFields() {
         TitledBorder borderTest = new TitledBorder("borderTest");
         form.add(borderTest);
-        borderTest.add(new TextField<String>("testUsername", new PropertyModel<String>(this, "testUsername")));
+        borderTest.add(new TextField<>("testUsername", new PropertyModel<String>(this, "testUsername")));
         borderTest.add(new HelpBubble("testUsername.help", "Username to test the LDAP connection"));
 
         PasswordTextField testPasswordField = new PasswordTextField(

@@ -81,13 +81,13 @@ public class IndexerConfigPanel extends TitledActionPanel {
             centralConfig.setIndexer(new IndexerDescriptor());
         }
 
-        setDefaultModel(new CompoundPropertyModel<IndexerDescriptor>(centralConfig.getIndexer()));
+        setDefaultModel(new CompoundPropertyModel<>(centralConfig.getIndexer()));
 
         add(new StyledCheckbox("enabled"));
         add(new SchemaHelpBubble("enabled.help"));
 
 
-        final TextField<String> cronExpField = new TextField<String>("cronExp");
+        final TextField<String> cronExpField = new TextField<>("cronExp");
         cronExpField.add(CronExpValidator.getInstance());
         add(cronExpField);
         add(new SchemaHelpBubble("cronExp.help"));
@@ -116,7 +116,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
         };
         add(runLink);
 
-        List<RepoDescriptor> repoSet = new ArrayList<RepoDescriptor>();
+        List<RepoDescriptor> repoSet = new ArrayList<>();
         repoSet.addAll(repositoryService.getLocalAndRemoteRepoDescriptors());
         repoSet.addAll(getFilteredVirtualRepoDescriptors());
 
@@ -125,7 +125,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
                     @Override
                     protected Collection<RepoDescriptor> createNewSelectionCollection(int length) {
                         //Return a set instead of a list
-                        return new TreeSet<RepoDescriptor>();
+                        return new TreeSet<>();
                     }
                 };
         add(selection);
@@ -164,7 +164,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
      */
     public List<VirtualRepoDescriptor> getFilteredVirtualRepoDescriptors() {
         List<VirtualRepoDescriptor> virtualRepoDescriptors = repositoryService.getVirtualRepoDescriptors();
-        List<VirtualRepoDescriptor> descriptorsToAdd = new ArrayList<VirtualRepoDescriptor>();
+        List<VirtualRepoDescriptor> descriptorsToAdd = new ArrayList<>();
         for (VirtualRepoDescriptor descriptorToCheck : virtualRepoDescriptors) {
             if (!descriptorToCheck.getKey().equals(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY)) {
                 descriptorsToAdd.add(descriptorToCheck);

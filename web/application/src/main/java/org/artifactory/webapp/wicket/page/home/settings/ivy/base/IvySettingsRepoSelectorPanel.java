@@ -129,7 +129,7 @@ public class IvySettingsRepoSelectorPanel<T extends RepoDescriptor> extends Pane
 
     private void addRepoFields(List<T> virtualRepoDescriptors, RepoType repoType) {
         add(new Label("repositoryLabel", getRepositoryLabel(repoType)));
-        repoDropDownChoice = new DropDownChoice<T>("repository",
+        repoDropDownChoice = new DropDownChoice<>("repository",
                 new PropertyModel<T>(this, "repository"), virtualRepoDescriptors);
 
         repoDropDownChoice.add(new AjaxFormComponentUpdatingBehavior("onchange") {
@@ -162,7 +162,7 @@ public class IvySettingsRepoSelectorPanel<T extends RepoDescriptor> extends Pane
     private void addLayoutFields(RepoType repoType) {
         add(new Label("layoutLabel", getLayoutLabel(repoType)));
 
-        layoutDropDownChoice = new DropDownChoice<RepoLayout>("layout",
+        layoutDropDownChoice = new DropDownChoice<>("layout",
                 new PropertyModel<RepoLayout>(this, "layout"), repoLayouts,
                 new ChoiceRenderer<RepoLayout>("name"));
 
@@ -213,7 +213,7 @@ public class IvySettingsRepoSelectorPanel<T extends RepoDescriptor> extends Pane
     private void addResolverFields(RepoType repoType) {
         add(new Label("resolverNameLabel", getResolverLabel(repoType)));
         TextField<String> resolverTextField =
-                new TextField<String>("resolverName", new PropertyModel<String>(this, "resolverName"));
+                new TextField<>("resolverName", new PropertyModel<String>(this, "resolverName"));
         resolverTextField.setOutputMarkupId(true);
         add(resolverTextField);
         add(new HelpBubble("resolverName.help", new ResourceModel("resolverName.help")));

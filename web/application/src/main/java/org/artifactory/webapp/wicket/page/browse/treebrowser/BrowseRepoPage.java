@@ -20,6 +20,8 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -39,6 +41,9 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(BrowseRepoPage.class);
     private static final String WEBAPP_URL_BROWSE_REPO = "/browserepo.html";
 
+    @SpringBean
+    private RepositoryService repositoryService;
+
     private String lastTabName;
     public static final String PATH_ID_PARAM = "pathId";
 
@@ -51,6 +56,9 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
         if (StringUtils.isNotBlank(pathId)) {
             try {
                 repoPath = InternalRepoPathFactory.fromId(pathId);
+                if (!repositoryService.exists(repoPath)) {
+                    repoPath = null;
+                }
             } catch (Exception e) {
                 error("Unable to find path " + pathId);
             }

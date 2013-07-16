@@ -41,7 +41,7 @@ public class ArtifactoryPropInfo extends BasePropInfoGroup {
     public InfoObject[] getInfo() {
         //Make a copy of the artifactory properties
         Properties propertiesCopy = ArtifactoryHome.get().getArtifactoryProperties().getPropertiesCopy();
-        ArrayList<InfoObject> infoList = new ArrayList<InfoObject>();
+        ArrayList<InfoObject> infoList = new ArrayList<>();
         ConstantValues[] constants = ConstantValues.values();
 
         //Returns all the properties form ConstantsValue

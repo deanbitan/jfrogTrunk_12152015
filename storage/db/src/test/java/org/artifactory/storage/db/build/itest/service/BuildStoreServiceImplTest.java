@@ -38,7 +38,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -68,8 +67,8 @@ public class BuildStoreServiceImplTest extends DbBaseTest {
     }
 
     public void testAddBuild() {
-        Date now = new Date();
-        buildStoreService.addBuild(getBuildObject("test", "23", BuildStoreServiceImpl.formatDateToString(now)));
+        buildStoreService.addBuild(getBuildObject("test", "23",
+                BuildStoreServiceImpl.formatDateToString(System.currentTimeMillis())));
     }
 
     public void testSearchByChecksum() {
@@ -79,7 +78,7 @@ public class BuildStoreServiceImplTest extends DbBaseTest {
     @Test(dependsOnMethods = "testSearchByChecksum")
     public void testFindBuild() {
         BuildRun buildRun = buildStoreService.getBuildRun("bb", "2",
-                BuildStoreServiceImpl.formatDateToString(new Date(1349003000000L)));
+                BuildStoreServiceImpl.formatDateToString(1349003000000L));
         assertNotNull(buildRun);
         assertEquals(buildRun.getReleaseStatus(), "rollback");
     }
@@ -98,7 +97,7 @@ public class BuildStoreServiceImplTest extends DbBaseTest {
 
     @Test(dependsOnMethods = "testGetAllBuildNames")
     public void testDeleteOneBuildA() {
-        buildStoreService.deleteBuild("ba", "2", BuildStoreServiceImpl.formatDateToString(new Date(1349002000000L)));
+        buildStoreService.deleteBuild("ba", "2", BuildStoreServiceImpl.formatDateToString(1349002000000L));
         assertEquals(buildStoreService.findBuildsByName("ba").size(), 2);
     }
 

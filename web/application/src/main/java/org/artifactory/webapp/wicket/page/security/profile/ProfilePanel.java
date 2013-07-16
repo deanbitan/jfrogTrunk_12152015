@@ -36,6 +36,7 @@ import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -75,13 +76,17 @@ public class ProfilePanel extends TitledPanel {
         this.form = form;
         setOutputMarkupId(true);
 
-        setDefaultModel(new CompoundPropertyModel<ProfileModel>(profile));
+        setDefaultModel(new CompoundPropertyModel<>(profile));
         add(new CssClass("display:block"));
 
+        WebMarkupContainer encryptedPasswordContainer = new WebMarkupContainer("encryptedPasswordContainer");
+        add(encryptedPasswordContainer);
         encryptedPasswordLabel = new Label("encryptedPassword", HIDDEN_PASSWORD);
         encryptedPasswordLabel.setVisible(securityService.isPasswordEncryptionEnabled());
-        add(encryptedPasswordLabel);
-        add(new HelpBubble("encryptedPassword.help", new ResourceModel("encryptedPassword.help")));
+        encryptedPasswordContainer.add(encryptedPasswordLabel);
+        encryptedPasswordContainer.add(
+                new HelpBubble("encryptedPassword.help", new ResourceModel("encryptedPassword.help")));
+        encryptedPasswordContainer.setVisible(!ConstantValues.uiHideEncryptedPassword.getBoolean());
 
         // Profile update fields are only displayed for users with permissions to do so
         final WebMarkupContainer updateFieldsContainer = new WebMarkupContainer("updateFieldsContainer");
@@ -91,11 +96,10 @@ public class ProfilePanel extends TitledPanel {
         addPasswordFields(updateFieldsContainer);
 
         // Email
-        TextField<String> emailTf = new TextField<String>("email");
+        TextField<String> emailTf = new TextField<>("email");
         emailTf.setEnabled(false);
         emailTf.add(EmailAddressValidator.getInstance());
         updateFieldsContainer.add(emailTf);
-
     }
 
     private void addPasswordFields(WebMarkupContainer updateFieldsContainer) {
@@ -105,9 +109,9 @@ public class ProfilePanel extends TitledPanel {
         final TextField<String> retypedPassword;
 
         if (authService.isDisableInternalPassword()) {
-            newPassword = new TextField<String>("newPassword");
+            newPassword = new TextField<>("newPassword");
             strength = new WebMarkupContainer("strengthPanel");
-            retypedPassword = new TextField<String>("retypedPassword");
+            retypedPassword = new TextField<>("retypedPassword");
             passwordFieldsContainer.setVisible(false);
         } else {
             // New password

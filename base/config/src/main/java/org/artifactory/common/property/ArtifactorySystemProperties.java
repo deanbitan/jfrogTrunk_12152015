@@ -44,13 +44,13 @@ public class ArtifactorySystemProperties {
     /**
      * Caching parseLong values from the properties above
      */
-    private Map<String, Long> artifactoryLongProperties = new HashMap<String, Long>();
-    private Map<String, Boolean> artifactoryBooleanProperties = new HashMap<String, Boolean>();
+    private Map<String, Long> artifactoryLongProperties = new HashMap<>();
+    private Map<String, Boolean> artifactoryBooleanProperties = new HashMap<>();
 
     /**
      * A map of substitute repo keys (oldKey:newKey) for supporting old repository keys (that are invalid xml ids).
      */
-    private Map<String, String> substituteRepoKeys = new HashMap<String, String>();
+    private Map<String, String> substituteRepoKeys = new HashMap<>();
 
     private final static ImmutableMap<String, PropertyMapper> DEPRECATED =
             ImmutableMap.<String, PropertyMapper>builder()
@@ -203,7 +203,7 @@ public class ArtifactorySystemProperties {
     }
 
     private void fillRepoKeySubstitute() {
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         String prefix = ConstantValues.substituteRepoKeys.getPropertyName();
         for (Object o : artifactoryProperties.keySet()) {
             String key = (String) o;

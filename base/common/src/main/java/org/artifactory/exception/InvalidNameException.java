@@ -27,10 +27,6 @@ import java.nio.file.InvalidPathException;
  */
 public class InvalidNameException extends InvalidPathException {
 
-    public InvalidNameException(String name, String message) {
-        super(name, message);
-    }
-
     public InvalidNameException(String name, String message, int index) {
         super(name, message, index);
     }

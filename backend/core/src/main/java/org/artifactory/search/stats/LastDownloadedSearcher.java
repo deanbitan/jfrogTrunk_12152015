@@ -82,6 +82,6 @@ public class LastDownloadedSearcher extends SearcherBase<StatsSearchControls, St
                     new StatsSearchResult(item, repoService.getStatsInfo(item.getRepoPath()));
             results.add(result);
         }
-        return new ItemSearchResults<StatsSearchResult>(results, queryResult.getCount());
+        return new ItemSearchResults<>(results, queryResult.getCount());
     }
 }

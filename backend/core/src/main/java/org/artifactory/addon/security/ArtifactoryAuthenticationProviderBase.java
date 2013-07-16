@@ -59,7 +59,7 @@ public abstract class ArtifactoryAuthenticationProviderBase implements RealmAwar
             authentication = doInternalAuthenticate(authentication);
         } catch (AuthenticationException e) {
             log.debug("Failed to authenticate user {} via {}: {}",
-                    new Object[]{userName, getProviderName(), e.getMessage()});
+                    userName, getProviderName(), e.getMessage());
             throw e;
         } catch (Exception e) {
             String message = "Unexpected exception in " + getProviderName() + " authentication:";

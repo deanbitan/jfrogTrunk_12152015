@@ -112,7 +112,7 @@ public class BuildsForNamePanel extends TitledPanel {
 
         BuildsDataProvider dataProvider = new BuildsDataProvider(buildsByName);
 
-        add(new SortableTable<BuildActionableItem>("builds", columns, dataProvider, 200));
+        add(new SortableTable<>("builds", columns, dataProvider, 200));
     }
 
     /**
@@ -144,7 +144,7 @@ public class BuildsForNamePanel extends TitledPanel {
 
         @Override
         public IModel<BuildActionableItem> model(BuildActionableItem object) {
-            return new Model<BuildActionableItem>(object);
+            return new Model<>(object);
         }
 
         /**

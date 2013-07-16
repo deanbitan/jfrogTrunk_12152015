@@ -29,7 +29,7 @@ import java.util.Set;
  * @author Yoav Aharoni
  */
 public class NoLocaleResourceStreamLocator extends ResourceStreamLocator {
-    private Set<Class<?>> noLocaleClasses = new HashSet<Class<?>>();
+    private Set<Class<?>> noLocaleClasses = new HashSet<>();
 
     public void addNoLocaleClass(Class<?> clazz) {
         noLocaleClasses.add(clazz);

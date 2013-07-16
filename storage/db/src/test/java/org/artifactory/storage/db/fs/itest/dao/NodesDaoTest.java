@@ -46,7 +46,7 @@ public class NodesDaoTest extends DbBaseTest {
     @Autowired
     private NodesDao nodesDao;
 
-    private NodePath fileNodePath = new NodePath("repo1", "ant/ant/1.5", "ant-1.5.jar");
+    private NodePath fileNodePath = new NodePath("repo1", "ant/ant/1.5", "ant-1.5.jar", true);
 
     @BeforeClass
     public void setup() {
@@ -62,7 +62,7 @@ public class NodesDaoTest extends DbBaseTest {
 
     @Test(dependsOnMethods = "createDirectoryNode")
     public void loadDirectoryNodeByPath() throws SQLException {
-        Node node = nodesDao.get(new NodePath("repo", "path/to/dir", "name"));
+        Node node = nodesDao.get(new NodePath("repo", "path/to/dir", "name", false));
         assertNotNull(node);
         assertEquals(node.getNodeId(), 800);
         assertFalse(node.isFile());
@@ -77,15 +77,15 @@ public class NodesDaoTest extends DbBaseTest {
     @Test(dependsOnMethods = "loadDirectoryNodeByPath")
     public void loadDirectoryNodeById() throws SQLException {
         Node node = nodesDao.get(800);
-        EqualsBuilder.reflectionEquals(node, nodesDao.get(new NodePath("repo", "path/to/dir", "name")));
+        EqualsBuilder.reflectionEquals(node, nodesDao.get(new NodePath("repo", "path/to/dir", "name", false)));
     }
 
     public void itemExists() throws SQLException {
-        assertTrue(nodesDao.exists(new NodePath("repo1", "", "org")));
+        assertTrue(nodesDao.exists(new NodePath("repo1", "", "org", false)));
     }
 
     public void itemNotExists() throws SQLException {
-        assertFalse(nodesDao.exists(new NodePath("repo1", "", "nosuchfile")));
+        assertFalse(nodesDao.exists(new NodePath("repo1", "", "nosuchfile", false)));
     }
 
     public void deleteDirectoryNode() throws SQLException {
@@ -107,7 +107,7 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void getChildrenOfRoot() throws SQLException {
-        NodePath path = new NodePath("repo1", "", "");
+        NodePath path = new NodePath("repo1", "", "", false);
         List<? extends Node> children = nodesDao.getChildren(path);
         assertEquals(children.size(), 3);
 
@@ -116,7 +116,7 @@ public class NodesDaoTest extends DbBaseTest {
 
     public void getChildrenOfNodeDirectlyUnderRoot() throws SQLException {
         // nodes directly under root has name but no path - hence special test case
-        NodePath path = new NodePath("repo1", "", "org");
+        NodePath path = new NodePath("repo1", "", "org", false);
         List<? extends Node> children = nodesDao.getChildren(path);
         assertEquals(children.size(), 1);
 
@@ -124,7 +124,7 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void getChildrenOfNodeDirectlyUnderRootWithCousinStartingWithSamePrefix() throws SQLException {
-        NodePath path = new NodePath("repo1", "", "ant");
+        NodePath path = new NodePath("repo1", "", "ant", false);
         List<? extends Node> children = nodesDao.getChildren(path);
         assertEquals(children.size(), 1);
 
@@ -132,7 +132,7 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void getChildrenOfLeafFolderNode() throws SQLException {
-        NodePath leaf = new NodePath("repo1", "org/yossis/tools", "test.bin");
+        NodePath leaf = new NodePath("repo1", "org/yossis/tools", "test.bin", true);
         assertTrue(nodesDao.exists(leaf));
         assertEquals(nodesDao.getChildren(leaf).size(), 0);
         assertFalse(nodesDao.hasChildren(leaf));
@@ -149,15 +149,15 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void countFilesUnderFolder() throws SQLException {
-        assertEquals(nodesDao.getFilesCount(new NodePath("repo1", "", "ant")), 1);
+        assertEquals(nodesDao.getFilesCount(new NodePath("repo1", "", "ant", false)), 1);
     }
 
     public void countFilesUnderFolderWithDirectChildren() throws SQLException {
-        assertEquals(nodesDao.getFilesCount(new NodePath("repo1", "ant/ant", "1.5")), 1);
+        assertEquals(nodesDao.getFilesCount(new NodePath("repo1", "ant/ant", "1.5", false)), 1);
     }
 
     public void countFilesUnderNonExistentFolder() throws SQLException {
-        assertEquals(nodesDao.getFilesCount(new NodePath("repo1", "xxx", "boo")), 0);
+        assertEquals(nodesDao.getFilesCount(new NodePath("repo1", "xxx", "boo", false)), 0);
     }
 
     public void countFilesUnderFile() throws SQLException {
@@ -170,21 +170,21 @@ public class NodesDaoTest extends DbBaseTest {
         final int totalExpectedSize = 846441;
         final int toolsExpectedSize = 130302;
 
-        assertEquals(nodesDao.getFilesTotalSize(new NodePath("repo1", "", "ant")), antExpectedSize,
+        assertEquals(nodesDao.getFilesTotalSize(new NodePath("repo1", "", "ant", false)), antExpectedSize,
                 "single file size should be " + antExpectedSize);
 
         assertEquals(nodesDao.getFilesTotalSize("repo1"), totalExpectedSize,
                 "total size of repo1 should be " + totalExpectedSize);
 
         long filesTotalSize = 0;
-        for (Node node : nodesDao.getChildren(new NodePath("repo1", "", ""))) {
+        for (Node node : nodesDao.getChildren(new NodePath("repo1", "", "", false))) {
             filesTotalSize += nodesDao.getFilesTotalSize(node.getNodePath());
         }
 
         assertEquals(filesTotalSize, totalExpectedSize,
                 "sum of children size in repo1 should be " + filesTotalSize);
 
-        assertEquals(nodesDao.getFilesTotalSize(new NodePath("repo1", "org/yossis", "tools")), toolsExpectedSize,
+        assertEquals(nodesDao.getFilesTotalSize(new NodePath("repo1", "org/yossis", "tools", false)), toolsExpectedSize,
                 "total size of files under org/yossis should be " + toolsExpectedSize);
     }
 
@@ -193,15 +193,15 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void countRepositoryFilesAndFoldersUnderFolder() throws SQLException {
-        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "", "ant")), 4);
+        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "", "ant", false)), 4);
     }
 
     public void countFilesAndFoldersUnderFolderWithDirectChildren() throws SQLException {
-        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "ant/ant", "1.5")), 1);
+        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "ant/ant", "1.5", false)), 1);
     }
 
     public void countFilesAndFoldersUnderNonExistentFolder() throws SQLException {
-        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "xxx", "boo")), 0);
+        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "xxx", "boo", false)), 0);
     }
 
     public void countFilesAndFoldersUnderFile() throws SQLException {
@@ -238,25 +238,25 @@ public class NodesDaoTest extends DbBaseTest {
 
 
     public void nodeIdRoot() throws SQLException {
-        assertEquals(nodesDao.getNodeId(new NodePath("repo1", "", "")), 1);
+        assertEquals(nodesDao.getNodeId(new NodePath("repo1", "", "", false)), 1);
     }
 
     public void nodeIdNoSuchNode() throws SQLException {
-        assertEquals(nodesDao.getNodeId(new NodePath("repo2", "no", "folder")), DbService.NO_DB_ID);
+        assertEquals(nodesDao.getNodeId(new NodePath("repo2", "no", "folder", false)), DbService.NO_DB_ID);
     }
 
     public void nodeSha1OfFile() throws SQLException {
-        assertEquals(nodesDao.getNodeSha1(new NodePath("repo1", "org/yossis/tools", "test.bin")),
+        assertEquals(nodesDao.getNodeSha1(new NodePath("repo1", "org/yossis/tools", "test.bin", true)),
                 "acab88fc2a043c2479a6de676a2f8179e9ea2167");
     }
 
     public void nodeSha1NotExist() throws SQLException {
-        assertNull(nodesDao.getNodeSha1(new NodePath("repo2", "no", "folder")));
+        assertNull(nodesDao.getNodeSha1(new NodePath("repo2", "no", "folder", false)));
     }
 
     public void nodeSha1OfFolder() throws SQLException {
-        assertTrue(nodesDao.exists(new NodePath("repo1", "org/yossis", "tools")));
-        assertNull(nodesDao.getNodeSha1(new NodePath("repo1", "org/yossis", "tools")));
+        assertTrue(nodesDao.exists(new NodePath("repo1", "org/yossis", "tools", false)));
+        assertNull(nodesDao.getNodeSha1(new NodePath("repo1", "org/yossis", "tools", false)));
     }
 
     public void searchFilesByProperty() throws SQLException {

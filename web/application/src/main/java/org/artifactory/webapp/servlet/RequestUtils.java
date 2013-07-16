@@ -57,8 +57,8 @@ import static org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REPOSIT
 public abstract class RequestUtils {
     private static final Logger log = LoggerFactory.getLogger(RequestUtils.class);
 
-    private static final Set<String> NON_UI_PATH_PREFIXES = new HashSet<String>();
-    private static final Set<String> UI_PATH_PREFIXES = new HashSet<String>();
+    private static final Set<String> NON_UI_PATH_PREFIXES = new HashSet<>();
+    private static final Set<String> UI_PATH_PREFIXES = new HashSet<>();
     public static final String LAST_USER_KEY = "artifactory:lastUserId";
     private static final String DEFAULT_ENCODING = "utf-8";
 

@@ -73,7 +73,7 @@ public class SortableTable<T> extends DataTable<T> {
 
     @Override
     protected Item<T> newRowItem(String id, int index, IModel<T> model) {
-        OddEvenItem<T> rowItem = new OddEvenItem<T>(id, index, model);
+        OddEvenItem<T> rowItem = new OddEvenItem<>(id, index, model);
         rowItem.add(new JavascriptEvent("onmouseover", "DomUtils.addHoverStyle(this);"));
         rowItem.add(new JavascriptEvent("onmouseout", "DomUtils.removeHoverStyle(this);"));
         return rowItem;

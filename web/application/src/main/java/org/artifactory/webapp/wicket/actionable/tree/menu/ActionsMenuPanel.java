@@ -50,7 +50,7 @@ public class ActionsMenuPanel extends Panel {
         //Render the enabled actions for each node
         final ActionableItem actionableItem = node.getUserObject();
         Set<ItemAction> actions = actionableItem.getContextMenuActions();
-        List<ItemAction> menuActions = new ArrayList<ItemAction>(actions.size());
+        List<ItemAction> menuActions = new ArrayList<>(actions.size());
         //Filter non-menu actions
         for (ItemAction action : actions) {
             if (action.isEnabled()) {

@@ -130,7 +130,7 @@ public class Node {
     }
 
     public NodePath getNodePath() {
-        return new NodePath(repo, path, name);
+        return new NodePath(repo, path, name, file);
     }
 
     @Override

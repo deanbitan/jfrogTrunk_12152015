@@ -63,8 +63,8 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     @Autowired
     private CentralConfigService centralConfigService;
 
-    private ConcurrentMap<String, TaskBase> activeTasksByToken = new ConcurrentHashMap<String, TaskBase>();
-    private ConcurrentMap<String, TaskBase> inactiveTasksByToken = new ConcurrentHashMap<String, TaskBase>();
+    private ConcurrentMap<String, TaskBase> activeTasksByToken = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, TaskBase> inactiveTasksByToken = new ConcurrentHashMap<>();
 
     private AtomicBoolean openForScheduling = new AtomicBoolean();
 
@@ -386,7 +386,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     private EnumMap<StopStrategy, Predicate<Task>> getPredicatePerStrategy(
             Class<? extends TaskCallback> typeToRun,
             final Object... keyValues) {
-        EnumMap<StopStrategy, Predicate<Task>> result = new EnumMap<StopStrategy, Predicate<Task>>(
+        EnumMap<StopStrategy, Predicate<Task>> result = new EnumMap<>(
                 StopStrategy.class);
         JobCommand toRunJobCommand = typeToRun.getAnnotation(JobCommand.class);
         final String[] keys = toRunJobCommand.keyAttributes();

@@ -118,7 +118,7 @@ public class VirtualRepoResolver implements Serializable {
      */
     public List<RealRepoDescriptor> getOrderedRepos() {
         List<RealRepoDescriptor> orderedRepos =
-                new ArrayList<RealRepoDescriptor>(localRepos.size() + remoteRepos.size());
+                new ArrayList<>(localRepos.size() + remoteRepos.size());
         orderedRepos.addAll(localRepos);
         orderedRepos.addAll(remoteRepos);
         return orderedRepos;

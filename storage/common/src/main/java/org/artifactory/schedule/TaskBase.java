@@ -444,7 +444,7 @@ public abstract class TaskBase implements Task {
                                     "'.");
                 }
                 newState = state;
-                log.trace("Exiting wait for next step from {} to {} on {}", new Object[]{oldState, newState, this});
+                log.trace("Exiting wait for next step from {} to {} on {}", oldState, newState, this);
             }
         } catch (InterruptedException e) {
             catchInterrupt(oldState);
@@ -471,7 +471,7 @@ public abstract class TaskBase implements Task {
         try {
             int holdCount = stateSync.getHoldCount();
             log.trace("Thread {} trying lock (activeLocks={}) on {}",
-                    new Object[]{Thread.currentThread(), holdCount, this});
+                    Thread.currentThread(), holdCount, this);
             if (holdCount > 0) {
                 //Clean all and throw
                 while (holdCount > 0) {
@@ -594,7 +594,7 @@ public abstract class TaskBase implements Task {
 
         @SuppressWarnings({"OverlyComplexMethod"})
         private static Set<TaskState> getPossibleTransitionStates(TaskState oldState) {
-            HashSet<TaskState> states = new HashSet<TaskState>();
+            HashSet<TaskState> states = new HashSet<>();
             switch (oldState) {
                 case VIRGIN:
                     states.add(TaskState.SCHEDULED);

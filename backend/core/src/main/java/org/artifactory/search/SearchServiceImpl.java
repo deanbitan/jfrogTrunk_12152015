@@ -68,6 +68,7 @@ import org.artifactory.search.property.PropertySearcher;
 import org.artifactory.search.stats.LastDownloadedSearcher;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.util.GlobalExcludes;
 import org.artifactory.util.PathMatcher;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.version.CompoundVersionDetails;
@@ -117,7 +118,7 @@ public class SearchServiceImpl implements InternalSearchService {
     @Override
     public ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<ArtifactSearchResult>(Lists.<ArtifactSearchResult>newArrayList());
+            return new ItemSearchResults<>(Lists.<ArtifactSearchResult>newArrayList());
         }
         ArtifactSearcher searcher = new ArtifactSearcher();
         ItemSearchResults<ArtifactSearchResult> results = searcher.search(controls);
@@ -147,13 +148,13 @@ public class SearchServiceImpl implements InternalSearchService {
         for (ItemInfo item : itemInfos) {
             resultList.add(new ArtifactSearchResult(item));
         }
-        return new ItemSearchResults<ArtifactSearchResult>(resultList, resultList.size());
+        return new ItemSearchResults<>(resultList, resultList.size());
     }
 
     @Override
     public ItemSearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<ArchiveSearchResult>(Lists.<ArchiveSearchResult>newArrayList());
+            return new ItemSearchResults<>(Lists.<ArchiveSearchResult>newArrayList());
         }
         ArchiveSearcher searcher = new ArchiveSearcher();
         ItemSearchResults<ArchiveSearchResult> results = searcher.search(controls);
@@ -163,7 +164,7 @@ public class SearchServiceImpl implements InternalSearchService {
     @Override
     public ItemSearchResults<StatsSearchResult> searchArtifactsNotDownloadedSince(StatsSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<StatsSearchResult>(Lists.<StatsSearchResult>newArrayList());
+            return new ItemSearchResults<>(Lists.<StatsSearchResult>newArrayList());
         }
         return new LastDownloadedSearcher().search(controls);
     }
@@ -171,7 +172,7 @@ public class SearchServiceImpl implements InternalSearchService {
     @Override
     public ItemSearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<GavcSearchResult>(Lists.<GavcSearchResult>newArrayList());
+            return new ItemSearchResults<>(Lists.<GavcSearchResult>newArrayList());
         }
 
         GavcSearcher searcher = new GavcSearcher();
@@ -183,7 +184,7 @@ public class SearchServiceImpl implements InternalSearchService {
     @Override
     public ItemSearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
-            return new ItemSearchResults<PropertySearchResult>(Lists.<PropertySearchResult>newArrayList());
+            return new ItemSearchResults<>(Lists.<PropertySearchResult>newArrayList());
         }
 
         PropertySearcher searcher = new PropertySearcher();
@@ -442,7 +443,7 @@ public class SearchServiceImpl implements InternalSearchService {
      * @return True if the path matches any of the patterns
      */
     private boolean patternMatches(String includePattern, String path) {
-        return PathMatcher.matches(path, Lists.newArrayList(includePattern), PathMatcher.getGlobalExcludes());
+        return PathMatcher.matches(path, Lists.newArrayList(includePattern), GlobalExcludes.getGlobalExcludes(), true);
     }
 
     /**
