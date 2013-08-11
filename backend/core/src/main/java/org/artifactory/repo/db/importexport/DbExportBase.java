@@ -78,7 +78,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
     }
 
     protected void exportFile(FileInfo sourceFile) {
-        status.setDebug("Exporting file '" + sourceFile.getRepoKey() + "'...", log);
+        status.debug("Exporting file '" + sourceFile.getRepoKey() + "'...", log);
         File targetFile = new File(settings.getBaseDir(), sourceFile.getRelPath());
         try {
             // Insure that the source file still exists.
@@ -120,10 +120,10 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             }
             //If a file export fails, we collect the error but not fail the whole export
         } catch (FileNotFoundException e) {
-            status.setError("Failed to export " + targetFile.getAbsolutePath() + " since it is non-accessible.",
+            status.error("Failed to export " + targetFile.getAbsolutePath() + " since it is non-accessible.",
                     e, log);
         } catch (Exception e) {
-            status.setError("Failed to export " + targetFile.getAbsolutePath() + " to file '" +
+            status.error("Failed to export " + targetFile.getAbsolutePath() + " to file '" +
                     targetFile.getPath() + "'.", e, log);
         }
     }
@@ -154,7 +154,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             IOUtils.copy(is, os);
         } catch (VfsItemNotFoundException e) {
             // since we work with an unlocked items there's a small chance the binary doesn't exist anymore
-            status.setWarning("Binary not found for item '" + sourceFile.getRepoPath() + "'"
+            status.warn("Binary not found for item '" + sourceFile.getRepoPath() + "'"
                     + " with sha1 '" + sourceFile.getSha1() + "'", log);
             return false;
         } finally {
@@ -191,7 +191,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             }
 
         } catch (Exception e) {
-            status.setError("Failed to export metadata for '" + sourceItem.getRepoPath() + "'.", e, log);
+            status.error("Failed to export metadata for '" + sourceItem.getRepoPath() + "'.", e, log);
         }
     }
 
@@ -283,7 +283,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             FileUtils.writeStringToFile(metadataFile, xmlData, Charsets.UTF_8.name());
             metadataFile.setLastModified(lastModified);
         } catch (Exception e) {
-            status.setError("Failed to export metadata of '" +
+            status.error("Failed to export metadata of '" +
                     metadataFile.getPath() + "' + to '" + metadataFile.getAbsolutePath(), e, log);
             FileUtils.deleteQuietly(metadataFile);
         }

@@ -19,12 +19,12 @@
 package org.artifactory.webapp.wicket.page.security.user;
 
 import com.google.common.collect.Sets;
-import com.ocpsoft.pretty.time.PrettyTime;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.profile.ProfileModel;
+import org.ocpsoft.prettytime.PrettyTime;
 
 import java.util.Date;
 import java.util.HashSet;

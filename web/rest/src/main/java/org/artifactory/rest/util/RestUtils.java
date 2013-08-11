@@ -51,7 +51,7 @@ public abstract class RestUtils {
     }
 
     public static String getRestApiUrl(HttpServletRequest request) {
-        return getServletContextUrl(request) + "/" + RestConstants.PATH_API;
+        return HttpUtils.getRestApiUrl(request);
     }
 
     public static String toIsoDateString(long time) {

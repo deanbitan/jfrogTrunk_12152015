@@ -46,23 +46,23 @@ public interface MutableStatusHolder extends StatusHolder {
 
     void setVerbose(boolean verbose);
 
-    void setDebug(String statusMsg, @Nonnull Logger logger);
+    void debug(String statusMsg, @Nonnull Logger logger);
 
-    void setStatus(String statusMsg, @Nonnull Logger logger);
+    void status(String statusMsg, @Nonnull Logger logger);
 
-    void setStatus(String statusMsg, int statusCode, @Nonnull Logger logger);
+    void status(String statusMsg, int statusCode, @Nonnull Logger logger);
 
-    void setError(String statusMsg, @Nonnull Logger logger);
+    void warn(String statusMsg, @Nonnull Logger logger);
 
-    void setError(String statusMsg, int statusCode, @Nonnull Logger logger);
+    void warn(String statusMsg, Throwable throwable, @Nonnull Logger logger);
 
-    void setError(String status, Throwable throwable, @Nonnull Logger logger);
+    void error(String statusMsg, @Nonnull Logger logger);
 
-    void setError(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger);
+    void error(String statusMsg, int statusCode, @Nonnull Logger logger);
 
-    void setWarning(String statusMsg, @Nonnull Logger logger);
+    void error(String status, Throwable throwable, @Nonnull Logger logger);
 
-    void setWarning(String statusMsg, Throwable throwable, @Nonnull Logger logger);
+    void error(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger);
 
     void setActivateLogging(boolean activateLogging);
 

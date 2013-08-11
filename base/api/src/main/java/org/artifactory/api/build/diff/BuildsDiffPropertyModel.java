@@ -69,7 +69,7 @@ public class BuildsDiffPropertyModel implements Serializable {
         this.status = status;
     }
 
-    public String compoundKeyValue() {
+    public String getCompoundKeyValue() {
         if (StringUtils.isBlank(value)) {
             return null;
         }
@@ -77,7 +77,7 @@ public class BuildsDiffPropertyModel implements Serializable {
         return key + ":" + value;
     }
 
-    public String compoundDiffKeyValue() {
+    public String getCompoundDiffKeyValue() {
         if (StringUtils.isBlank(diffValue)) {
             return null;
         }

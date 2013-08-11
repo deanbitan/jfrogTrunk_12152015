@@ -224,13 +224,13 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         MutableStatusHolder status = settings.getStatusHolder();
         File dirToImport = settings.getBaseDir();
         if ((dirToImport != null) && (dirToImport.isDirectory()) && (dirToImport.listFiles().length > 0)) {
-            status.setStatus("Importing config...", log);
+            status.status("Importing config...", log);
             File newConfigFile = new File(settings.getBaseDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
             if (newConfigFile.exists()) {
-                status.setStatus("Reloading configuration from " + newConfigFile, log);
+                status.status("Reloading configuration from " + newConfigFile, log);
                 String xmlConfig = Files.readFileToString(newConfigFile);
                 setConfigXml(xmlConfig);
-                status.setStatus("Configuration reloaded from " + newConfigFile, log);
+                status.status("Configuration reloaded from " + newConfigFile, log);
             }
         } else if (settings.isFailIfEmpty()) {
             String error = "The given base directory is either empty, or non-existent";
@@ -241,7 +241,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        status.setStatus("Exporting config...", log);
+        status.status("Exporting config...", log);
         File destFile = new File(settings.getBaseDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
         JaxbHelper.writeConfig(descriptor, destFile);
     }

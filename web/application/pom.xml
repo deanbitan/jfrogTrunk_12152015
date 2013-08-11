@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.0.2</version>
+        <version>3.0.3</version>
     </parent>
 
     <build>
@@ -116,8 +116,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.ocpsoft</groupId>
-            <artifactId>ocpsoft-pretty-time</artifactId>
+            <groupId>org.ocpsoft.prettytime</groupId>
+            <artifactId>prettytime</artifactId>
         </dependency>
 
         <dependency>

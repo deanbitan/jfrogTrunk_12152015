@@ -24,9 +24,12 @@
                     <input wicket:id="enableNuGetSupport" type="checkbox"/>
                     <span wicket:id="enableNuGetSupport.help"></span>
                 </div>
+                <div class="field">
+                    <button type="button" wicket:id="reindexPackages"></button>
+                </div>
             </div>
             <div class="field-row">
-                <div class="field required">
+                <div class="field">
                     <label>NuGet Feed Context Path</label>
                     <span wicket:id="feedContextPath.help"></span>
 
@@ -43,6 +46,17 @@
                     <div class="value">
                         <input wicket:id="downloadContextPath" type="text" class="text"/>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div wicket:id="gemsSupportSection">
+            <div class="field-row">
+                <div class="field">
+                    <input wicket:id="enableGemsSupport" type="checkbox"/>
+                    <span wicket:id="enableGemsSupport.help"></span>
+                </div>
+                <div class="field">
+                    <button type="button" wicket:id="recalculateIndex"></button>
                 </div>
             </div>
         </div>

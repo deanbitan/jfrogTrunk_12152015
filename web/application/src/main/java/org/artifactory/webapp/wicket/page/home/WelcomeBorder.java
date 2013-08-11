@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.home;
 
-import com.ocpsoft.pretty.time.PrettyTime;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.Model;
@@ -40,6 +39,7 @@ import org.artifactory.webapp.wicket.page.base.LoginLink;
 import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.home.news.ArtifactoryUpdatesPanel;
+import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

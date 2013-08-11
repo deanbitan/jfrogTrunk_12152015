@@ -36,11 +36,6 @@ public interface TasksService {
     String TASK_TYPE_INDEX = "INDEX";
 
     /**
-     * Unique name of the maven metadata calculation task type
-     */
-    String TASK_TYPE_MAVEN_METADATA = "MAVEN_METADATA_CALC";
-
-    /**
      * @return All the repo paths currently pending for indexing.
      */
     @Nonnull
@@ -67,30 +62,4 @@ public interface TasksService {
      */
     boolean removeIndexTask(RepoPath repoPath);
 
-    /**
-     * @return All the repo paths currently pending for maven metadata calculation.
-     */
-    @Nonnull
-    Set<RepoPath> getMavenMetadataCalculationTasks();
-
-    /**
-     * @param repoPath The repo path to check
-     * @return True if there is a pending index request for this checksum
-     */
-    //boolean hasMavenMetadataCalculationTask(RepoPath repoPath);
-
-    /**
-     * Adds an maven metadata calculation task for the given repo path.
-     *
-     * @param repoPath The repo path to index
-     */
-    void addMavenMetadataCalculationTask(RepoPath repoPath);
-
-    /**
-     * Removes a maven metadata calculation task.
-     *
-     * @param repoPath The repo path to remove
-     * @return True if removed from the database.
-     */
-    boolean removeMavenMetadataCalculationTask(RepoPath repoPath);
 }

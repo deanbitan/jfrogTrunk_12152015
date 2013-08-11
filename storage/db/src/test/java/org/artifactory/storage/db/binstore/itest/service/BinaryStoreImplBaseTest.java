@@ -86,12 +86,23 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
         TestUtils.setField(artifactoryHome, "homeDir", workDir);
         TestUtils.setField(artifactoryHome, "dataDir", artifactoryHome.getOrCreateSubDir("data"));
 
-        File filestoreDir = new File(artifactoryHome.getDataDir(), getBinaryStoreDirName());
+        File filestoreDir = getFilestoreFolder(artifactoryHome);
         if (filestoreDir.exists()) {
             FileUtils.deleteDirectory(filestoreDir);
             assertFalse(filestoreDir.exists(), "Could not clean filestore " + filestoreDir.getAbsolutePath());
         }
         return artifactoryHomeTest;
+    }
+
+    private File getFilestoreFolder(ArtifactoryHome artifactoryHome) {
+        String binaryStoreDirName = getBinaryStoreDirName();
+        File filestoreDir;
+        if (new File(binaryStoreDirName).isAbsolute()) {
+            filestoreDir = new File(binaryStoreDirName);
+        } else {
+            filestoreDir = new File(artifactoryHome.getDataDir(), binaryStoreDirName);
+        }
+        return filestoreDir;
     }
 
     @BeforeClass
@@ -134,7 +145,7 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
     @Test
     public void testEmpty() throws IOException {
         // Check initialized with folders correctly
-        File filestoreDir = new File(ArtifactoryHome.get().getDataDir(), getBinaryStoreDirName());
+        File filestoreDir = getFilestoreFolder(ArtifactoryHome.get());
         assertEquals(binaryStore.getBinariesDir().getAbsolutePath(), filestoreDir.getAbsolutePath());
         File[] files = filestoreDir.listFiles();
         assertNotNull(files);

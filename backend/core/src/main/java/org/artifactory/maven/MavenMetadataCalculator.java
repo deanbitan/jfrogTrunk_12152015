@@ -28,7 +28,6 @@ import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
-import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
@@ -65,17 +64,29 @@ import java.util.TreeSet;
 public class MavenMetadataCalculator extends AbstractMetadataCalculator {
     private static final Logger log = LoggerFactory.getLogger(MavenMetadataCalculator.class);
 
-    /**
-     * Calculate maven metadata using folder as the base.
-     *
-     * @param folder Base folder to start calculating from.
-     * @param status Status holder.
-     * @return true if some pom are maven plugin type, false if no maven plugin pom exists under the folder
-     */
-    public ItemNode calculate(RepoPath folder, MultiStatusHolder status) {
-        log.debug("Calculating maven metadata recursively on '{}'", folder);
+    private final RepoPath baseFolder;
+    private final boolean recursive;
 
-        ItemTree itemTree = new ItemTree(folder, new ItemNodeFilter() {
+    /**
+     * Creates new instance of maven metadata calculator.
+     *
+     * @param baseFolder Folder to calculate metadata for
+     * @param recursive  True if the calculator should recursively calculate maven metadata for all sub folders
+     */
+    public MavenMetadataCalculator(RepoPath baseFolder, boolean recursive) {
+        this.baseFolder = baseFolder;
+        this.recursive = recursive;
+    }
+
+    /**
+     * Starts calculation of the maven metadata from the base repo path
+     *
+     * @return Status of the metadata calculation
+     */
+    public MultiStatusHolder calculate() {
+        log.debug("Calculating maven metadata recursively on '{}'", baseFolder);
+
+        ItemTree itemTree = new ItemTree(baseFolder, new ItemNodeFilter() {
             @Override
             public boolean accepts(ItemInfo item) {
                 if (item.isFolder()) {
@@ -85,17 +96,18 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
                 return MavenNaming.isPom(path) || MavenNaming.isUniqueSnapshot(path);
             }
         });
-        ItemNode rootNode = itemTree.buildTree();
+        ItemNode rootNode = itemTree.getRootNode();
         if (rootNode != null) {
-            calculateAndSet(rootNode, status);
-            log.debug("Finished maven metadata calculation on '{}'", folder);
+            calculateAndSet(rootNode);
+            log.debug("Finished {} maven metadata calculation on '{}'",
+                    (recursive ? "recursive" : "non recursive"), baseFolder);
         } else {
-            log.debug("Root path for metadata calculation not found: {}", folder);
+            log.debug("Root path for metadata calculation not found: {}", baseFolder);
         }
-        return rootNode;
+        return status;
     }
 
-    private void calculateAndSet(ItemNode treeNode, MultiStatusHolder status) {
+    private void calculateAndSet(ItemNode treeNode) {
         ItemInfo itemInfo = treeNode.getItemInfo();
         if (!itemInfo.isFolder()) {
             // Nothing to do here for non folder tree node
@@ -109,13 +121,13 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         if (MavenNaming.isSnapshot(nodePath)) {
             // if this folder contains snapshots create snapshots maven.metadata
             log.trace("Detected snapshots container: {}", nodePath);
-            containsMetadataInfo = createSnapshotsMetadata(repoPath, treeNode, status);
+            containsMetadataInfo = createSnapshotsMetadata(repoPath, treeNode);
         } else {
             // if this folder contains "version folders" create versions maven metadata
             List<ItemNode> subFoldersContainingPoms = getSubFoldersContainingPoms(treeNode);
             if (!subFoldersContainingPoms.isEmpty()) {
                 log.trace("Detected versions container: {}", repoPath.getId());
-                createVersionsMetadata(repoPath, subFoldersContainingPoms, status);
+                createVersionsMetadata(repoPath, subFoldersContainingPoms);
                 containsMetadataInfo = true;
             } else {
                 containsMetadataInfo = false;
@@ -124,21 +136,21 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
 
         if (!containsMetadataInfo) {
             // note: this will also remove plugins metadata. not sure it should
-            removeMetadataIfExist(repoPath, status);
+            removeMetadataIfExist(repoPath);
         }
 
-        // Recursive call to calculate and set
-        if (itemInfo.isFolder()) {
+        // Recursive call to calculate and set if recursive calc is on
+        if (recursive && itemInfo.isFolder()) {
             List<ItemNode> children = treeNode.getChildren();
             if (children != null) {
                 for (ItemNode child : children) {
-                    calculateAndSet(child, status);
+                    calculateAndSet(child);
                 }
             }
         }
     }
 
-    private boolean createSnapshotsMetadata(RepoPath repoPath, ItemNode treeNode, BasicStatusHolder status) {
+    private boolean createSnapshotsMetadata(RepoPath repoPath, ItemNode treeNode) {
         if (!folderContainsPoms(treeNode)) {
             return false;
         }
@@ -183,7 +195,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
                 }
             }
         }
-        saveMetadata(repoPath, metadata, status);
+        saveMetadata(repoPath, metadata);
         return true;
     }
 
@@ -237,7 +249,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         return snapshotVersionsToReturn;
     }
 
-    private void createVersionsMetadata(RepoPath repoPath, List<ItemNode> versionNodes, MultiStatusHolder status) {
+    private void createVersionsMetadata(RepoPath repoPath, List<ItemNode> versionNodes) {
         // get artifact info from the first pom
 
         RepoPath samplePomRepoPath = getFirstPom(versionNodes);
@@ -275,7 +287,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
             }
         }
 
-        saveMetadata(repoPath, metadata, status);
+        saveMetadata(repoPath, metadata);
     }
 
     private RepoPath getFirstPom(List<ItemNode> versionNodes) {
@@ -356,14 +368,15 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         return false;
     }
 
-    private void removeMetadataIfExist(RepoPath repoPath, BasicStatusHolder status) {
+    private void removeMetadataIfExist(RepoPath repoPath) {
         try {
             RepoPathImpl mavenMetadataPath = new RepoPathImpl(repoPath, MavenNaming.MAVEN_METADATA_NAME);
             if (getRepositoryService().exists(mavenMetadataPath)) {
+                log.debug("Deleting {}", mavenMetadataPath);
                 getRepositoryService().undeploy(mavenMetadataPath, false, false);
             }
         } catch (Exception e) {
-            status.setError("Error while removing maven metadata from " + repoPath + ".", e, log);
+            status.error("Error while removing maven metadata from " + repoPath + ".", e, log);
         }
     }
 

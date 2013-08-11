@@ -39,13 +39,13 @@ public abstract class ItemInfoImpl implements InternalItemInfo {
         this.repoPath = repoPath;
         this.name = repoPath.getName();
         this.created = System.currentTimeMillis();
-        this.lastModified = System.currentTimeMillis();
+        this.lastModified = this.created;
     }
 
     protected ItemInfoImpl(org.artifactory.fs.ItemInfo info) {
         this(info.getRepoPath());
         this.created = info.getCreated();
-        this.lastModified = info.getLastModified();
+        setLastModified(info.getLastModified());
     }
 
     protected ItemInfoImpl(ItemInfo info, RepoPath repoPath) {
@@ -93,8 +93,12 @@ public abstract class ItemInfoImpl implements InternalItemInfo {
     }
 
     @Override
-    public void setLastModified(long lastModified) {
-        this.lastModified = lastModified;
+    public final void setLastModified(long lastModified) {
+        if (lastModified > 0L) {
+            this.lastModified = lastModified;
+        } else {
+            this.lastModified = this.created;
+        }
     }
 
     @Override

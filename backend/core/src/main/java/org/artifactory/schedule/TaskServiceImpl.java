@@ -250,18 +250,18 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
             Object... keyValues) {
         JobCommand jobCommand = typeToRun.getAnnotation(JobCommand.class);
         if (jobCommand == null) {
-            statusHolder.setError(
+            statusHolder.error(
                     "Task type " + typeToRun.getName() + " does not have the " +
                             JobCommand.class.getName() + " annotation!", log);
             return;
         }
         if (jobCommand.manualUser() == TaskUser.INVALID) {
-            statusHolder.setError("Task type " + typeToRun.getName() + " is not defined to run manually!", log);
+            statusHolder.error("Task type " + typeToRun.getName() + " is not defined to run manually!", log);
             return;
         }
         String currentToken = TaskCallback.currentTaskToken();
         if (currentToken != null) {
-            statusHolder.setError(
+            statusHolder.error(
                     "Cannot check for manual run with status from inside a running task: " + currentToken, log);
             return;
         }
@@ -274,14 +274,14 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         if (impossibleFilter != null) {
             for (TaskBase activeTask : getActiveTasks(impossibleFilter)) {
                 if (activeTask.processActive()) {
-                    statusHolder.setError(
+                    statusHolder.error(
                             "Task " + typeToRun.getName() + " cannot stop a mandatory related job " +
                                     activeTask.getType().getName() + " while it's running!",
                             log);
                 }
                 if (activeTask.getType().equals(
                         typeToRun) && activeTask.isManuallyActivated() && !activeTask.wasCompleted()) {
-                    statusHolder.setError(
+                    statusHolder.error(
                             "Another manual task " + typeToRun.getName() + " is still active!",
                             log);
                 }
@@ -293,7 +293,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         if (stopFilter != null) {
             for (TaskBase activeTask : getActiveTasks(stopFilter)) {
                 if (activeTask.processActive()) {
-                    statusHolder.setWarning(
+                    statusHolder.warn(
                             "Task " + activeTask.getType().getName() + " will be stop by running " + typeToRun.getName() + " !",
                             log);
                 }
@@ -305,7 +305,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         if (pauseFilter != null) {
             for (TaskBase activeTask : getActiveTasks(pauseFilter)) {
                 if (activeTask.processActive()) {
-                    statusHolder.setWarning(
+                    statusHolder.warn(
                             "Task " + activeTask.getType().getName() + " will be paused by running " + typeToRun.getName() + " !",
                             log);
                 }
@@ -313,7 +313,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
 
         if (!statusHolder.isError()) {
-            statusHolder.setStatus("Task " + typeToRun.getName() + " can run.", log);
+            statusHolder.debug("Task " + typeToRun.getName() + " can run.", log);
         }
     }
 

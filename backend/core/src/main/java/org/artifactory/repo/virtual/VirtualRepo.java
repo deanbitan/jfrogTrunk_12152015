@@ -51,6 +51,7 @@ import org.artifactory.sapi.fs.VfsItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -133,6 +134,11 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     @Override
     public boolean isSuppressPomConsistencyChecks() {
         return true;
+    }
+
+    @Override
+    public boolean isWriteLocked(RepoPath repoPath) {
+        return dbStorageMixin.isWriteLocked(repoPath);
     }
 
     public void initStorage() {
@@ -280,6 +286,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
         return remoteRepositoriesMap.get(key);
     }
 
+    @Nullable
     public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath) {
         Set<LocalRepo> localAndCachedRepos = getResolvedLocalAndCachedRepos();
         //Add paths from all children virtual repositories
@@ -460,7 +467,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     /**
      * Returns the repo resource cached in the virtual repository cache.
      */
-    RepoResource getInfoFromVirtualCache(InternalRequestContext context) {
+    public RepoResource getInfoFromVirtualCache(InternalRequestContext context) {
         return dbStorageMixin.getInfo(context);
     }
 

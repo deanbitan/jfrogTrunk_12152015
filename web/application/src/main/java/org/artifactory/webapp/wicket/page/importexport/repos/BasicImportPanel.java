@@ -161,7 +161,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                         info("Successfully imported '" + importFromPath + "' into '" + targetRepoKey + "'.");
                     }
                 } catch (Exception e) {
-                    status.setError(e.getMessage(), log);
+                    status.error(e.getMessage(), log);
                     errorImportFeedback(status);
                 } finally {
                     if (!importSettings.isIndexMarkedArchives()) {

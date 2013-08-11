@@ -18,7 +18,6 @@
 
 package org.artifactory.addon.rest;
 
-import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.api.common.MultiStatusHolder;
@@ -230,50 +229,7 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public Response handleNuGetTestRequest(@Nonnull String repoKey) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleNuGetMetadataDescriptorRequest(@Nonnull String repoKey) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleNuGetQueryRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nullable String actionParam) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleNuGetPackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleGetUpdatesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nullable String actionParam) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleNuGetDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
-            @Nonnull String packageId, @Nonnull String packageVersion) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
     public Response runMavenIndexer(List<String> reposToIndex, int force) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleNuGetPublishRequest(@Nonnull String repoKey, @Nonnull FormDataMultiPart content) {
         throw new MissingRestAddonException();
     }
 
@@ -317,12 +273,6 @@ public class RestAddonDefaultImpl implements RestAddon {
     @Override
     public void writeStreamingFileList(HttpServletResponse response, String requestUrl, String path, int deep,
             int depth, int listFolders, int mdTimestamps, int includeRootPath) {
-        throw new MissingRestAddonException();
-    }
-
-    @Override
-    public Response handleNuGetDeleteRequest(@Nonnull String repoKey, @Nonnull String packageId,
-            @Nonnull String packageVersion) {
         throw new MissingRestAddonException();
     }
 }

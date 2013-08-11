@@ -121,9 +121,9 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
         BasicStatusHolder sh = new BasicStatusHolder();
         if (StringUtils.isNotBlank(statusMessage)) {
             if (isSuccessful()) {
-                sh.setStatus(statusMessage, getStatus(), log);
+                sh.status(statusMessage, getStatus(), log);
             } else {
-                sh.setError(statusMessage, getStatus(), getException(), log);
+                sh.error(statusMessage, getStatus(), getException(), log);
             }
         }
         return sh;

@@ -102,7 +102,7 @@ public class ImportResource {
                 return Response.serverError().entity(holder.getLastError().getMessage()).build();
             }
         } catch (Exception e) {
-            holder.setError("Received uncaught exception", e, log);
+            holder.error("Received uncaught exception", e, log);
             if (!httpResponse.isCommitted()) {
                 return Response.serverError().entity(e.getMessage()).build();
             }
@@ -128,19 +128,19 @@ public class ImportResource {
         if (StringUtils.isBlank(repoNameToImport)) {
             repoNameToImport = "All repositories";
         }
-        statusHolder.setStatus("Starting Repositories Import of " + repoNameToImport + " from " + path, log);
+        statusHolder.status("Starting Repositories Import of " + repoNameToImport + " from " + path, log);
         if (!authorizationService.isAdmin()) {
-            statusHolder.setError(
+            statusHolder.error(
                     "User " + authorizationService.currentUsername() + " is not permitted to import repositories",
                     HttpStatus.SC_FORBIDDEN, log);
             return;
         }
         if (StringUtils.isEmpty(path)) {
-            statusHolder.setError("Source directory path may not be empty.", HttpStatus.SC_BAD_REQUEST, log);
+            statusHolder.error("Source directory path may not be empty.", HttpStatus.SC_BAD_REQUEST, log);
         }
         File baseDir = new File(path);
         if (!baseDir.exists()) {
-            statusHolder.setError("Directory " + path + " does not exist.", HttpStatus.SC_BAD_REQUEST, log);
+            statusHolder.error("Directory " + path + " does not exist.", HttpStatus.SC_BAD_REQUEST, log);
         }
         ImportSettingsImpl importSettings = new ImportSettingsImpl(baseDir, statusHolder);
         if (StringUtils.isNotBlank(includeMetadata)) {
@@ -157,7 +157,7 @@ public class ImportResource {
                 repositoryService.importRepo(targetRepo, importSettings);
             }
         } catch (Exception e) {
-            statusHolder.setError("Unable to import repository", e, log);
+            statusHolder.error("Unable to import repository", e, log);
         } finally {
             if (!importSettings.isIndexMarkedArchives()) {
                 archiveIndexer.asyncIndexMarkedArchives();

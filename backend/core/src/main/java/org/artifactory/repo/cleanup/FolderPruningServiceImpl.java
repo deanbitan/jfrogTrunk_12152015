@@ -101,10 +101,14 @@ public class FolderPruningServiceImpl implements InternalFolderPruningService {
 
         try {
             CandidatePruningFolder queuedFolderRepoPath;
-            while ((queuedFolderRepoPath = foldersToPrune.poll()) != null) {
+            while ((queuedFolderRepoPath = foldersToPrune.peek()) != null) {
                 if ((System.currentTimeMillis() - queuedFolderRepoPath.insertTime) <=
                         TimeUnit.SECONDS.toMillis(ConstantValues.folderPruningQuietPeriodSecs.getLong())) {
                     // In the quiet period let's wait for next run
+                    break;
+                }
+                queuedFolderRepoPath = foldersToPrune.poll();
+                if (queuedFolderRepoPath == null) {
                     break;
                 }
                 doPruneSingleRepoPath(queuedFolderRepoPath.folderPath);

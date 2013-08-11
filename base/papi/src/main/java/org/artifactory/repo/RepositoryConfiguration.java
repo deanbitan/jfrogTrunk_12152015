@@ -40,4 +40,6 @@ public interface RepositoryConfiguration {
     String getRepoLayoutRef();
 
     boolean isEnableNuGetSupport();
+
+    boolean isEnableGemsSupport();
 }

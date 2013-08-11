@@ -18,8 +18,10 @@
 
 package org.artifactory.storage.db.binstore.service;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.storage.StorageProperties;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,18 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
 
     public FileBinaryProviderBase(File binariesDir) {
         super(binariesDir);
+    }
+
+    protected static File getDataFolder(File rootDataDir, StorageProperties storageProperties, String defaultName) {
+        String name = storageProperties.getBinaryProviderDir();
+        if (StringUtils.isBlank(name)) {
+            return new File(rootDataDir, defaultName);
+        }
+        File currentFile = new File(name);
+        if (currentFile.isAbsolute()) {
+            return currentFile;
+        }
+        return new File(rootDataDir, name);
     }
 
     @Override
@@ -67,17 +81,17 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
     @Override
     public void prune(MultiStatusHolder statusHolder) {
         File binariesFolder = getBinariesDir();
-        statusHolder.setStatus("Starting cleaning folder " + binariesFolder.getAbsolutePath(), log);
+        statusHolder.status("Starting cleaning folder " + binariesFolder.getAbsolutePath(), log);
         long start = System.currentTimeMillis();
         MovedCounter movedCounter = new MovedCounter();
 
         File[] firstLevel = binariesFolder.listFiles();
         // In case the binaries folder does not contain files, it returns null
         if (firstLevel == null) {
-            statusHolder.setWarning("No files found in folder: " + binariesFolder.getAbsolutePath(), log);
+            statusHolder.warn("No files found in folder: " + binariesFolder.getAbsolutePath(), log);
         } else {
             // Then prune empty dirs
-            statusHolder.setStatus("Starting removing empty folders in " + binariesFolder.getAbsolutePath(), log);
+            statusHolder.status("Starting removing empty folders in " + binariesFolder.getAbsolutePath(), log);
             for (File first : firstLevel) {
                 if (first.getName().equals(tempBinariesDir.getName())) {
                     // Never prune temp folder
@@ -89,7 +103,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
             }
         }
         long tt = (System.currentTimeMillis() - start);
-        statusHolder.setStatus("Removed " + movedCounter.foldersRemoved
+        statusHolder.status("Removed " + movedCounter.foldersRemoved
                 + " empty folders and " + movedCounter.filesMoved
                 + " files in total size of " + StorageUnit.toReadableString(movedCounter.totalSize)
                 + " (" + tt + "ms).", log);
@@ -99,7 +113,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
         File[] files = first.listFiles();
         if (files == null || files.length == 0) {
             if (!first.delete()) {
-                statusHolder.setWarning(
+                statusHolder.warn(
                         "Could not remove empty directory " + first.getAbsolutePath(), log);
             } else {
                 movedCounter.foldersRemoved++;

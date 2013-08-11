@@ -135,7 +135,7 @@ public class MaintenancePage extends AuthenticatedPage {
                 try {
                     storageService.compress(statusHolder);
                 } catch (Exception e) {
-                    statusHolder.setError(e.getMessage(), log);
+                    statusHolder.error(e.getMessage(), log);
                 } finally {
                     if (statusHolder.isError()) {
                         error("Failed to compress database: " + statusHolder.getLastError().getMessage());

@@ -65,6 +65,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Service;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -242,6 +243,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 RepoRequests.logToContext("Responding with found resource");
                 respondFoundResource(requestContext, response, resource);
             }
+        } catch (FileNotFoundException e) {
+            RepoRequests.logToContext("File deleted while sending request response: %s", e.getMessage());
+            respondResourceNotFound(requestContext, response, resource);
         } catch (IOException e) {
             RepoRequests.logToContext("Error occurred while sending request response: %s", e.getMessage());
             handleGenericIoException(response, resource, e);

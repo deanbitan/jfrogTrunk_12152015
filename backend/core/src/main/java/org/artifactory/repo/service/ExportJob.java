@@ -71,7 +71,7 @@ public class ExportJob extends QuartzCommand {
             }
         } catch (Exception e) {
             if (status != null) {
-                status.setError("Error occurred during export: " + e.getMessage(), e, log);
+                status.error("Error occurred during export: " + e.getMessage(), e, log);
             } else {
                 log.error("Error occurred during export", e);
             }

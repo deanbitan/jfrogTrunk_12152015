@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -30,6 +31,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
@@ -43,6 +45,7 @@ import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.util.HttpClientConfigurator;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
@@ -115,7 +118,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
         tabs.add(new AbstractTab(Model.of("Packages")) {
             @Override
             public Panel getPanel(String panelId) {
-                return new HttpRepoPackagesPanel<>(panelId, entity);
+                return new HttpRepoPackagesPanel<>(panelId, entity, isCreate());
             }
         });
         return tabs;
@@ -205,8 +208,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                 }
                 // always test with url trailing slash
                 String url = PathUtils.addTrailingSlash(repo.getUrl());
-                NuGetWebAddon nuGetWebAddon = addons.addonByType(NuGetWebAddon.class);
-                HttpMethodBase testMethod = nuGetWebAddon.getRemoteRepoTestMethod(url, repo);
+                HttpMethodBase testMethod = getRemoteRepoTestMethod(url);
+
                 HttpClient client = new HttpClientConfigurator()
                         .hostFromUrl(url)
                                 //.defaultMaxConnectionsPerHost(5)
@@ -245,5 +248,24 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                 AjaxUtils.refreshFeedback(target);
             }
         };
+    }
+
+    protected HttpMethodBase getRemoteRepoTestMethod(String url) {
+        HttpMethodBase testMethod = null;
+        HttpRepoDescriptor repo = getRepoDescriptor();
+
+        if (testMethod == null) {
+            if (repo.isEnableGemsSupport()) {
+                GemsWebAddon gemsAddon = addons.addonByType(GemsWebAddon.class);
+                testMethod = gemsAddon.getRemoteRepoTestMethod(url, repo);
+            }
+        }
+        if (testMethod == null) {
+            testMethod = addons.addonByType(NuGetWebAddon.class).getRemoteRepoTestMethod(url, repo);
+        }
+        if (testMethod == null) {
+            testMethod = new HeadMethod(HttpUtils.encodeQuery(url));
+        }
+        return testMethod;
     }
 }

@@ -19,6 +19,7 @@
 package org.artifactory.storage.db.fs.dao;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.storage.db.fs.entity.NodeProperty;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
@@ -40,6 +41,7 @@ import java.util.List;
 @Repository
 public class PropertiesDao extends BaseDao {
     private static final Logger log = LoggerFactory.getLogger(PropertiesDao.class);
+    private static final int PROP_VALUE_MAX_SIZE = 2048;
 
     @Autowired
     public PropertiesDao(JdbcHelper jdbcHelper) {
@@ -80,9 +82,15 @@ public class PropertiesDao extends BaseDao {
     }
 
     public int create(NodeProperty property) throws SQLException {
+        String propValue = nullIfEmpty(property.getPropValue());
+        if (propValue != null && propValue.length() > PROP_VALUE_MAX_SIZE) {
+            log.info("Trimming property value to 2048 characters '{}'", property.getPropKey());
+            log.debug("Trimming property value to 2048 characters {}: {}", property.getPropKey(),
+                    property.getPropValue());
+            propValue = StringUtils.substring(propValue, 0, PROP_VALUE_MAX_SIZE);
+        }
         return jdbcHelper.executeUpdate("INSERT INTO node_props VALUES(?, ?, ?, ?)",
-                property.getPropId(), property.getNodeId(), property.getPropKey(),
-                nullIfEmpty(property.getPropValue()));
+                property.getPropId(), property.getNodeId(), property.getPropKey(), propValue);
     }
 
     private NodeProperty propertyFromResultSet(ResultSet resultSet) throws SQLException {

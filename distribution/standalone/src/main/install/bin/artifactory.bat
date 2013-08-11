@@ -11,7 +11,7 @@ rem defaults
 set ARTIFACTORY_HOME=%~dp0..
 set CATALINA_HOME=%ARTIFACTORY_HOME%\tomcat
 set JAVA_OPTIONS=-server -Xms512m -Xmx2g -Xss256k -XX:PermSize=128m -XX:MaxPermSize=128m -XX:+UseG1GC
-set CATALINA_OPTS=%JAVA_OPTIONS% -Dartifactory.home=%ARTIFACTORY_HOME% -Dfile.encoding=UTF8
+set CATALINA_OPTS=%JAVA_OPTIONS% -Dartifactory.home="%ARTIFACTORY_HOME%" -Dfile.encoding=UTF8
 
 if not "%JAVA_HOME%" == "" goto javaOk
 if not "%JRE_HOME%" == "" goto javaOk
@@ -29,6 +29,6 @@ FOR /F "usebackq skip=2 tokens=3*" %%A IN (`REG QUERY "HKLM\Software\JavaSoft\Ja
 
 :javaOk
 rem start
-%CATALINA_HOME%\bin\catalina.bat run
+"%CATALINA_HOME%\bin\catalina.bat" run
 
 @endlocal

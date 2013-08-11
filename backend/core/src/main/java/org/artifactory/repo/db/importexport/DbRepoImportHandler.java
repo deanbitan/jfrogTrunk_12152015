@@ -25,6 +25,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.YumAddon;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.maven.MavenMetadataService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
@@ -45,6 +46,7 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.ImportInterceptors;
+import org.artifactory.repo.interceptor.StorageAggregationInterceptors;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.MetadataReader;
 import org.artifactory.sapi.fs.MutableVfsFile;
@@ -105,19 +107,14 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
 
     public void executeImport() {
         File fileSystemBaseDir = settings.getBaseDir();
-        status.setStatus(String.format("%s import started %s", repo.getKey(), fileSystemBaseDir), log);
+        status.status(String.format("%s import started %s", repo.getKey(), fileSystemBaseDir), log);
         if (fileSystemBaseDir == null || !fileSystemBaseDir.isDirectory()) {
-            status.setError("Error Import: Cannot import null, non existent folder or non directory file '"
+            status.error("Error Import: Cannot import null, non existent folder or non directory file '"
                     + fileSystemBaseDir + "'.", log);
             return;
         }
 
         RepoPath rootRepoPath = InternalRepoPathFactory.repoRootPath(repo.getKey());
-        if (!repo.isCache()) {
-            // mark the root node for metadata recalculation in case the import will stop in the middle
-            ContextHelper.get().getRepositoryService().markBaseForMavenMetadataRecalculation(rootRepoPath);
-        }
-
         progressAccumulator = new ImportExportAccumulator(repo.getKey(), IMPORT);
         startTransaction();
         try {
@@ -128,7 +125,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
         progressAccumulator.finished();
 
         if (!repo.isCache()) {
-            ContextHelper.get().getRepositoryService().calculateMavenMetadataAsync(rootRepoPath);
+            ContextHelper.get().beanForType(MavenMetadataService.class).calculateMavenMetadataAsync(rootRepoPath, true);
 
             LocalRepoDescriptor descriptor = repo.getDescriptor();
             if (descriptor.isCalculateYumMetadata()) {
@@ -137,18 +134,23 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             }
         }
 
-        status.setStatus(String.format("%s import finished: Items imported: %s (%s files %s folders). " +
+        status.status(String.format("%s import finished: Items imported: %s (%s files %s folders). " +
                 "Duration: %s IPS: %s Target: '%s'",
                 repo.getKey(), progressAccumulator.getItemsCount(), progressAccumulator.getFilesCount(),
                 progressAccumulator.getFoldersCount(),
                 progressAccumulator.getDurationString(), progressAccumulator.getItemsPerSecond(), fileSystemBaseDir),
                 log);
+
+        if (progressAccumulator.getItemsCount() > 1) {
+            StorageContextHelper.get().beanForType(StorageAggregationInterceptors.class).
+                    afterAllImport(rootRepoPath, progressAccumulator.getItemsCount(), status);
+        }
     }
 
     private void importRecursive(final File fileToImport, final RepoPath target) {
         TaskService taskService = InternalContextHelper.get().getTaskService();
         if (taskService.pauseOrBreak()) {
-            status.setError("Import of " + repo.getKey() + " was stopped", log);
+            status.error("Import of " + repo.getKey() + " was stopped", log);
             return;
         }
 
@@ -166,7 +168,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             if (fileInfoMetadata.exists() && isStorableFile(fileToImport.getName())) {
                 importFile(fileToImport, target);
             } else {
-                status.setWarning("File/metadata not found: " + fileToImport.getAbsolutePath(), log);
+                status.warn("File/metadata not found: " + fileToImport.getAbsolutePath(), log);
             }
         } else if (fileToImport.isFile() && isStorableFile(fileToImport.getName())) {
             importFile(fileToImport, target);
@@ -200,7 +202,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
     private void importFile(final File fileToImport, final RepoPath target) {
         log.debug("Importing '{}'.", target);
         if (!settings.isIncludeMetadata() && !fileToImport.exists()) {
-            status.setError("Cannot import non existent file (metadata is excluded): " +
+            status.error("Cannot import non existent file (metadata is excluded): " +
                     fileToImport.getAbsolutePath(), log);
             return;
         }
@@ -212,7 +214,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             }
             context.getRepositoryService().assertValidDeployPath(target, length);
         } catch (RepoRejectException e) {
-            status.setError("Artifact rejected: " + e.getMessage(), log);
+            status.error("Artifact rejected: " + e.getMessage(), log);
             return;
         }
         MutableVfsFile mutableFile = null;
@@ -225,7 +227,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             AccessLogger.deployed(target);
             progressAccumulator.accumulateFile();
         } catch (Exception e) {
-            status.setError("Could not import file '" + fileToImport.getAbsolutePath() + "' into " + target + ".",
+            status.error("Could not import file '" + fileToImport.getAbsolutePath() + "' into " + target + ".",
                     e, log);
             // mark the mutable item in error and let the session manager handle it
             if (mutableFile != null) {
@@ -282,7 +284,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
         //Stream the file directly into the storage
         boolean usedFileInfoImportedChecksums = false;
         if (fileInfoImported && ChecksumType.sha1.isValid(expectedSha1)) {
-            status.setDebug("Using metadata import for " + sourceFile, log);
+            status.debug("Using metadata import for " + sourceFile, log);
             if (sourceFile.exists() && settings.isExcludeContent()) {
                 // If exclude content and file exists use it for the external filestore if it exists
                 StorageProperties storageProperties = StorageContextHelper.get().beanForType(StorageProperties.class);
@@ -297,7 +299,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             // Found file info in metadata : Try deploy by checksum
             usedFileInfoImportedChecksums = mutableFile.useData(expectedSha1, expectedMd5, expectedLength);
             if (usedFileInfoImportedChecksums) {
-                status.setDebug("Found existing binary in the filestore for " + expectedSha1, log);
+                status.debug("Found existing binary in the filestore for " + expectedSha1, log);
             }
         }
 
@@ -312,11 +314,11 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
         }
 
         if (PathUtils.hasText(expectedSha1) && !mutableFile.getSha1().equals(expectedSha1)) {
-            status.setWarning("Received file " + targetRepoPath + " with Checksum error on SHA1 " +
+            status.warn("Received file " + targetRepoPath + " with Checksum error on SHA1 " +
                     "actual=" + mutableFile.getSha1() + " expected=" + expectedSha1, log);
         }
         if (PathUtils.hasText(expectedMd5) && !mutableFile.getMd5().equals(expectedMd5)) {
-            status.setWarning("Received file " + targetRepoPath + " with Checksum error on MD5 " +
+            status.warn("Received file " + targetRepoPath + " with Checksum error on MD5 " +
                     "actual=" + mutableFile.getMd5() + " expected=" + expectedMd5, log);
         }
     }
@@ -336,7 +338,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             List<MetadataEntryInfo> metadataEntries) {
         if (CollectionUtils.isNullOrEmpty(metadataEntries)) {
             if (!target.isRoot()) {
-                status.setDebug("No Metadata entries found for " + source.getAbsolutePath(), log);
+                status.debug("No Metadata entries found for " + source.getAbsolutePath(), log);
             }
             return null;
         }
@@ -350,7 +352,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             }
         } catch (Exception e) {
             String msg = "Failed to import metadata of " + source.getAbsolutePath() + " into '" + target + "'.";
-            status.setError(msg, e, log);
+            status.error(msg, e, log);
         }
 
         return null;
@@ -409,7 +411,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             } catch (Exception e) {
                 // Just log an error and continue - will not import children
                 String msg = "Failed to import folder " + sourceFolder.getAbsolutePath() + " into '" + target + "'.";
-                status.setError(msg, e, log);
+                status.error(msg, e, log);
                 if (mutableFolder != null) {
                     mutableFolder.markError();
                 }

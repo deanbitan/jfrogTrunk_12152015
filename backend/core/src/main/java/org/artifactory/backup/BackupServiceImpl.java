@@ -166,9 +166,7 @@ public class BackupServiceImpl implements InternalBackupService {
                     TaskBase task = TaskUtils.createCronTask(BackupJob.class, cronExp);
                     task.addAttribute(BackupJob.BACKUP_KEY, key);
                     InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
-                    if (log.isInfoEnabled()) {
-                        log.info("Backup " + key + " activated with cron expression '" + cronExp + "'.");
-                    }
+                    log.debug("Backup '{}' activated with cron expression '{}'.", key, cronExp);
                 } catch (Exception e) {
                     log.warn("Activation of backup " + key + ":" + descriptor + " failed:" + e.getMessage(), e);
                 }
@@ -216,14 +214,14 @@ public class BackupServiceImpl implements InternalBackupService {
         taskService.checkCanStartManualTask(BackupJob.class, statusHolder, backupKey);
         if (!statusHolder.isError()) {
             try {
-                statusHolder.setStatus("Activating manual system backup '" + backupKey + "'", log);
+                statusHolder.status("Activating manual system backup '" + backupKey + "'", log);
                 TaskBase task = TaskUtils.createManualTask(BackupJob.class, 0L);
                 task.addAttribute(BackupJob.MANUAL_BACKUP, backupDescriptor);
                 task.addAttribute(BackupJob.BACKUP_KEY, backupKey);
                 String taskToken = taskService.startTask(task, true);
-                statusHolder.setStatus("Started " + taskToken + " successfully", log);
+                statusHolder.status("Started " + taskToken + " successfully", log);
             } catch (Exception e) {
-                statusHolder.setError("Error scheduling manual system backup '" + backupKey + "'", e, log);
+                statusHolder.error("Error scheduling manual system backup '" + backupKey + "'", e, log);
             }
         }
     }
@@ -232,7 +230,7 @@ public class BackupServiceImpl implements InternalBackupService {
     public MultiStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup) {
         ImportExportStatusHolder status = new ImportExportStatusHolder();
         if (!backup.isEnabled()) {
-            status.setError("Backup: '" + backup.getKey() + "' is disabled. Backup was not performed.", log);
+            status.error("Backup: '" + backup.getKey() + "' is disabled. Backup was not performed.", log);
             return status;
         }
         List<RealRepoDescriptor> excludeRepositories = backup.getExcludedRepositories();
@@ -242,7 +240,7 @@ public class BackupServiceImpl implements InternalBackupService {
         boolean incremental = backup.isIncremental();
         boolean excludeBuilds = backup.isExcludeBuilds();
         if (incremental && createArchive) {
-            status.setWarning("An incremental backup cannot be archived!\n" +
+            status.warn("An incremental backup cannot be archived!\n" +
                     "Please change the configuration of backup " + backup.getKey() + ".", log);
             createArchive = false;
         }

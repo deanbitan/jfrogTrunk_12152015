@@ -29,6 +29,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.GemsAddon;
 import org.artifactory.addon.NuGetAddon;
 import org.artifactory.addon.WebstartAddon;
 import org.artifactory.addon.replication.ReplicationAddon;
@@ -40,10 +41,12 @@ import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.jackson.JacksonReader;
+import org.artifactory.api.maven.MavenMetadataService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.ArchiveFileContent;
+import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
@@ -57,7 +60,6 @@ import org.artifactory.api.search.deployable.VersionUnitSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.storage.StorageQuotaInfo;
 import org.artifactory.api.storage.StorageService;
 import org.artifactory.checksum.ChecksumInfo;
@@ -80,8 +82,6 @@ import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.info.InfoWriter;
 import org.artifactory.io.StringResourceStreamHandle;
-import org.artifactory.maven.MavenMetadataCalculator;
-import org.artifactory.maven.MavenPluginsMetadataCalculator;
 import org.artifactory.mbean.MBeanRegistrationService;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
@@ -132,7 +132,6 @@ import org.artifactory.storage.fs.service.ItemMetaInfo;
 import org.artifactory.storage.fs.service.NodeMetaInfoService;
 import org.artifactory.storage.fs.service.PropertiesService;
 import org.artifactory.storage.fs.service.StatsService;
-import org.artifactory.storage.fs.service.TasksService;
 import org.artifactory.storage.fs.stats.StatsFlushJob;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
@@ -144,8 +143,6 @@ import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
@@ -162,9 +159,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -191,7 +186,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     private TaskService taskService;
 
     @Autowired
-    private TasksService tasksService;
+    private MavenMetadataService mavenMetadataService;
 
     @Autowired
     private InternalSearchService searchService;
@@ -216,20 +211,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     private ArtifactCountRetriever artifactCountRetriever;
 
-    @Autowired
-    private SecurityService securityService;
-
     private VirtualRepo globalVirtualRepo;
 
     private Map<String, VirtualRepo> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
     // a cache of all the repository keys
     private Set<String> allRepoKeysCache;
-
-    // a semaphore to guard against parallel maven plugins metadata calculations
-    private final Semaphore pluginsMDSemaphore = new Semaphore(1);
-    // queue of repository keys that requires maven metadata plugins calculation
-    private final Queue<String> pluginsMDQueue = new ConcurrentLinkedQueue<>();
 
     @Override
     public void init() {
@@ -241,8 +228,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         } catch (Exception e) {
             log.warn("Failed dumping system info", e);
         }
-
-        getTransactionalMe().recalculateMavenMetadataOnMarkedFolders();
 
         // register statistics flushing job
         TaskBase statsFlushTask = TaskUtils.createRepeatingTask(StatsFlushJob.class,
@@ -257,6 +242,50 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         deleteOrphanRepos(oldDescriptor);
         rebuildRepositories(oldDescriptor);
         checkAndCleanChangedVirtualPomCleanupPolicy(oldDescriptor);
+    }
+
+    @Override
+    @Async(authenticateAsSystem = true)
+    public void onContextReady() {
+        //
+        registerRepositoriesMBeans();
+
+        //
+        GemsAddon gemsAddon = addonsManager.addonByType(GemsAddon.class);
+        if (!gemsAddon.isDefault()) {
+            for (LocalRepo localRepo : globalVirtualRepo.getLocalRepositories()) {
+                if (!localRepo.isBlackedOut()) {
+                    if (localRepo.getDescriptor().isEnableGemsSupport()) {
+                        gemsAddon.afterRepoInit(localRepo.getKey());
+                    }
+                }
+            }
+            for (VirtualRepo virtualRepo : getVirtualRepositories()) {
+                if (virtualRepo.getDescriptor().isEnableGemsSupport()) {
+                    gemsAddon.afterRepoInit(virtualRepo.getKey());
+                }
+            }
+        }
+
+        //
+        NuGetAddon nuGetAddon = addonsManager.addonByType(NuGetAddon.class);
+        if (!nuGetAddon.isDefault()) {
+            for (LocalRepo localRepo : globalVirtualRepo.getLocalRepositories()) {
+                if (!localRepo.isBlackedOut()) {
+                    if (localRepo.getDescriptor().isEnableNuGetSupport()) { //feature
+                        nuGetAddon.afterRepoInit(localRepo.getKey());
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onContextCreated() {
+    }
+
+    @Override
+    public void onContextUnready() {
     }
 
     private void checkAndCleanChangedVirtualPomCleanupPolicy(CentralConfigDescriptor oldDescriptor) {
@@ -301,13 +330,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         BasicStatusHolder status = new BasicStatusHolder();
         StoringRepo storingRepo = storingRepositoryByKey(repoKey);
         if (storingRepo == null) {
-            status.setWarning("Repo not found for deletion: " + repoKey, log);
+            status.warn("Repo not found for deletion: " + repoKey, log);
             return status;
         }
 
         MutableVfsFolder rootFolder = storingRepo.getMutableFolder(storingRepo.getRepoPath(""));
         if (rootFolder == null) {
-            status.setWarning("Root folder not found for deletion: " + repoKey, log);
+            status.warn("Root folder not found for deletion: " + repoKey, log);
             return status;
         }
 
@@ -451,8 +480,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         initAllRepoKeysCache();
-
-        registerRepositoriesMBeans();
     }
 
     @Override
@@ -606,6 +633,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return filteredChildren;
     }
 
+    //todo [mamo] make more efficient - no real need for ItemInfo
     @Override
     public List<String> getChildrenNames(RepoPath repoPath) {
         List<ItemInfo> childrenInfo = getChildren(repoPath);
@@ -752,7 +780,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             if (localRepo == null) {
                 String msg = "The repo key " + repoKey + " is not a local or cached repository!";
                 IllegalArgumentException ex = new IllegalArgumentException(msg);
-                status.setError(msg, ex, log);
+                status.error(msg, ex, log);
                 return;
             }
             localRepo.importFrom(settings);
@@ -762,7 +790,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        status.setStatus("Exporting repositories...", log);
+        status.status("Exporting repositories...", log);
         if (TaskCallback.currentTaskToken() == null) {
             exportAsync(BaseSettings.FULL_SYSTEM, settings);
         } else {
@@ -770,7 +798,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             for (String repoKey : repoKeys) {
                 boolean stop = taskService.pauseOrBreak();
                 if (stop) {
-                    status.setError("Export was stopped", log);
+                    status.error("Export was stopped", log);
                     return;
                 }
                 exportRepo(repoKey, settings);
@@ -795,12 +823,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             //Check if we need to break/pause
             boolean stop = taskService.pauseOrBreak();
             if (stop) {
-                status.setError("Export was stopped on " + repoKey, log);
+                status.error("Export was stopped on " + repoKey, log);
                 return;
             }
             LocalRepo sourceRepo = localOrCachedRepositoryByKey(repoKey);
             if (sourceRepo == null) {
-                status.setError("Export cannot be done on non existing repository " + repoKey, log);
+                status.error("Export cannot be done on non existing repository " + repoKey, log);
                 return;
             }
             File targetDir = getRepoExportDir(settings.getBaseDir(), repoKey);
@@ -961,8 +989,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                             failFast(failFast).build());
         }
 
-        // done moving, launch async call to execute metadata recalculation on all marked folders
-        getTransactionalMe().recalculateMavenMetadataOnMarkedFolders();
         return status;
     }
 
@@ -997,9 +1023,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                     .executeMavenMetadataCalculation(false).searchResult(searchResults).properties(properties).
                             failFast(failFast).build());
         }
-
-        //Done copying, launch async call to execute metadata recalculation on all marked folders
-        getTransactionalMe().recalculateMavenMetadataOnMarkedFolders();
         return status;
     }
 
@@ -1067,7 +1090,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         StoringRepo storingRepo = storingRepositoryByKey(repoKey);
         BasicStatusHolder statusHolder = new BasicStatusHolder();
         if (storingRepo == null) {
-            statusHolder.setError("Could find storing repository by key '" + repoKey + "'", log);
+            statusHolder.error("Could find storing repository by key '" + repoKey + "'", log);
             return statusHolder;
         }
         assertDelete(storingRepo, repoPath.getPath(), false, statusHolder, null);
@@ -1112,8 +1135,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
         for (RepoPath path : pathsForMavenMetadataCalculation) {
             // Check to make sure of existence, might have been removed through the iterations of the version units
-            if (transactionalMe.exists(path)) {
-                getTransactionalMe().calculateMavenMetadataAsync(path);
+            if (exists(path)) {
+                mavenMetadataService.calculateMavenMetadataAsync(path, true);
             }
         }
 
@@ -1220,6 +1243,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
+    public boolean isWriteLocked(RepoPath repoPath) {
+        StoringRepo storingRepo = storingRepositoryByKey(repoPath.getRepoKey());
+        if (storingRepo != null) {
+            return storingRepo.isWriteLocked(repoPath);
+        }
+        return false;
+    }
+
+    @Override
     public List<LocalRepoDescriptor> getLocalRepoDescriptors() {
         return new ArrayList<>(centralConfigService.getDescriptor().getLocalRepositoriesMap().values());
     }
@@ -1288,107 +1320,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return repo;
     }
 
-    @Override
-    public void markBaseForMavenMetadataRecalculation(RepoPath basePath) {
-        tasksService.addMavenMetadataCalculationTask(basePath);
-    }
-
-    @Override
-    public void removeMarkForMavenMetadataRecalculation(RepoPath repoPath) {
-        tasksService.removeMavenMetadataCalculationTask(repoPath);
-    }
-
-    // get all folders marked for maven metadata calculation and execute the metadata calculation
-
-    @Override
-    public void recalculateMavenMetadataOnMarkedFolders() {
-        Set<RepoPath> pendingCalculations = tasksService.getMavenMetadataCalculationTasks();
-        for (RepoPath repoPath : pendingCalculations) {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            securityService.authenticateAsSystem();
-            try {
-                calculateMavenMetadataAsync(repoPath);
-            } finally {
-                // restore the previous authentication
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        }
-    }
-
-    @Override
-    public void calculateMavenMetadataAsync(RepoPath baseFolderPath) {
-        calculateMavenMetadata(baseFolderPath);
-    }
-
-    @Override
-    public void calculateMavenMetadata(RepoPath baseFolderPath) {
-        log.trace("Calculate maven metadata on {}", baseFolderPath);
-        LocalRepo localRepo;
-        try {
-            if (baseFolderPath == null) {
-                log.debug("Cannot calculate Maven metadata for a null path ");
-                return;
-            }
-            localRepo = localRepositoryByKey(baseFolderPath.getRepoKey());
-            if (localRepo == null) {
-                log.debug("Couldn't find local non-cache repository for path '{}'.", baseFolderPath);
-                return;
-            }
-
-            if (!localRepo.itemExists(baseFolderPath.getPath())) {
-                log.debug("Couldn't find path '{}'.", baseFolderPath);
-                return;
-            }
-
-            MavenMetadataCalculator metadataCalculator = new MavenMetadataCalculator();
-            metadataCalculator.calculate(baseFolderPath, new MultiStatusHolder());
-        } finally {
-            getTransactionalMe().removeMarkForMavenMetadataRecalculation(baseFolderPath);
-        }
-
-        // Calculate maven plugins metadata asynchronously
-        getTransactionalMe().calculateMavenPluginsMetadataAsync(localRepo.getKey());
-    }
-
-    @Override
-    public void calculateMavenPluginsMetadataAsync(String repoKey) {
-
-        if (pluginsMDQueue.contains(repoKey)) {
-            log.debug("Plugins maven metadata calculation for repo '{}' already waiting in queue", repoKey);
-            return;
-        }
-
-        // add the repository key to the queue (there's a small chance that the same key will be added twice but it
-        // doesn't worth locking again)
-        log.debug("Adding '{}' to the plugins maven metadata calculation queue", repoKey);
-        pluginsMDQueue.add(repoKey);
-
-        // try to acquire the single lock to do the metadata calculation. If we don't get it, another thread is already
-        // performing the job and it will also do the one just added to the queue
-        if (!pluginsMDSemaphore.tryAcquire()) {
-            log.debug("Plugins maven metadata calculation already running in another thread");
-            return;
-        }
-
-        // ok i'm in, lets perform all the job in the queue
-        try {
-            String repoToCalculate;
-            while ((repoToCalculate = pluginsMDQueue.poll()) != null) {
-                log.debug("Calculating plugins maven metadata for {}.", repoToCalculate);
-                try {
-                    LocalRepo localRepo =
-                            localRepositoryByKeyFailIfNull(InternalRepoPathFactory.repoRootPath(repoToCalculate));
-                    MavenPluginsMetadataCalculator calculator = new MavenPluginsMetadataCalculator();
-                    calculator.calculate(localRepo);
-                } catch (Exception e) {
-                    log.error("Failed to calculate plugin maven metadata on repo '" + repoToCalculate + "':", e);
-                }
-            }
-        } finally {
-            pluginsMDSemaphore.release();
-        }
-    }
-
     /**
      * This method will delete and import all the local and cached repositories listed in the (newly loaded) config
      * file. This action is resource intensive and is done in multiple transactions to avoid out of memory exceptions.
@@ -1399,9 +1330,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (TaskCallback.currentTaskToken() == null) {
             importAsync(BaseSettings.FULL_SYSTEM, settings, false, null);
         } else {
-            status.setStatus("Importing repositories...", log);
+            status.status("Importing repositories...", log);
             internalImportFrom(settings);
-            status.setStatus("Finished importing repositories...", log);
+            status.status("Finished importing repositories...", log);
         }
     }
 
@@ -1454,7 +1385,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 if (!authService.canAnnotate(repoPath)) {
                     String msg = "User " + authService.currentUsername() + " is not permitted to annotate '" +
                             path + "' on '" + repoPath + "'.";
-                    status.setError(msg, HttpStatus.SC_FORBIDDEN, log);
+                    status.error(msg, HttpStatus.SC_FORBIDDEN, log);
                     AccessLogger.annotateDenied(repoPath);
                 }
             } else {
@@ -1463,7 +1394,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 if (!canDeploy) {
                     String msg = "User " + authService.currentUsername() + " is not permitted to deploy '" +
                             path + "' into '" + repoPath + "'.";
-                    status.setError(msg, HttpStatus.SC_FORBIDDEN, log);
+                    status.error(msg, HttpStatus.SC_FORBIDDEN, log);
                     AccessLogger.deployDenied(repoPath);
                 }
             }
@@ -1496,7 +1427,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
         if (info.isLimitReached()) {
             // Note: don't display the disk usage in the status holder - this message is written back to the user
-            statusHolder.setError(
+            statusHolder.error(
                     "Datastore disk usage is too high. Contact your Artifactory administrator to add additional " +
                             "storage space or change the disk quota limits.", HttpStatus.SC_REQUEST_TOO_LONG, log);
 
@@ -1807,7 +1738,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             if (!completed) {
                 if (!status.isError()) {
                     // Add error of no completion
-                    status.setError("The task " + task + " did not complete correctly.", log);
+                    status.error("The task " + task + " did not complete correctly.", log);
                 }
             }
         }
@@ -1824,7 +1755,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (!completed) {
             if (!status.isError()) {
                 // Add Error of no completion
-                status.setError("The task " + task + " did not complete correctly", log);
+                status.error("The task " + task + " did not complete correctly", log);
             }
         }
     }
@@ -1902,7 +1833,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                     children.remove(newLocalRepoKey);
                 }
             } catch (Exception e) {
-                status.setError("Could not import repository " + newLocalRepoKey + " from " + rootImportFolder, e, log);
+                status.error("Could not import repository " + newLocalRepoKey + " from " + rootImportFolder, e, log);
                 if (settings.isFailFast()) {
                     return;
                 }
@@ -1910,13 +1841,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         if ((children.size() == baseDirList.length) && settings.isFailIfEmpty()) {
-            status.setError("The selected directory did not contain any repositories.", log);
+            status.error("The selected directory did not contain any repositories.", log);
         } else {
             for (String unusedDir : children) {
                 boolean isMetadata = unusedDir.contains("metadata");
                 boolean isIndex = unusedDir.contains("index");
                 if (!isMetadata && !isIndex) {
-                    status.setWarning("The directory " + unusedDir + " does not match any repository key.", log);
+                    status.warn("The directory " + unusedDir + " does not match any repository key.", log);
                 }
             }
         }
@@ -1925,7 +1856,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             try {
                 taskService.waitForTaskCompletion(token);
             } catch (Exception e) {
-                status.setError("error waiting for repository import completion", e, log);
+                status.error("error waiting for repository import completion", e, log);
                 if (settings.isFailFast()) {
                     return;
                 }
@@ -1969,9 +1900,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             if (!authService.canDelete(repoPath)) {
                 AccessLogger.deleteDenied(repoPath);
                 if (centralConfigService.getDescriptor().getSecurity().isHideUnauthorizedResources()) {
-                    status.setError("Could not locate artifact '" + repoPath + "'.", HttpStatus.SC_NOT_FOUND, log);
+                    status.error("Could not locate artifact '" + repoPath + "'.", HttpStatus.SC_NOT_FOUND, log);
                 } else {
-                    status.setError("Not enough permissions to overwrite artifact '" + repoPath + "' (user '" +
+                    status.error("Not enough permissions to overwrite artifact '" + repoPath + "' (user '" +
                             authService.currentUsername() + "' needs DELETE permission).", HttpStatus.SC_FORBIDDEN,
                             log);
                 }
@@ -1980,7 +1911,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
         //For deletion (as opposed to overwrite), check that path actually exists
         if (!assertOverwrite && !repo.itemExists(repoPath.getPath())) {
-            status.setError("Could not locate artifact '" + repoPath + "' (Nothing to delete).",
+            status.error("Could not locate artifact '" + repoPath + "' (Nothing to delete).",
                     HttpStatus.SC_NOT_FOUND, log);
         }
     }

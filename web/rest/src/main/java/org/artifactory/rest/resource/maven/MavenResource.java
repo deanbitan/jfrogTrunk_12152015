@@ -20,6 +20,7 @@ package org.artifactory.rest.resource.maven;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.maven.MavenMetadataService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.MavenRestConstants;
 import org.artifactory.api.security.AuthorizationService;
@@ -58,6 +59,9 @@ public class MavenResource {
     @Autowired
     private RepositoryService repositoryService;
 
+    @Autowired
+    private MavenMetadataService mavenMetadataService;
+
     @POST
     @Produces({MediaType.TEXT_PLAIN})
     @RolesAllowed({AuthorizationService.ROLE_ADMIN})
@@ -88,7 +92,7 @@ public class MavenResource {
                     "Repository '" + repoKey + "' is not a maven repository.").build();
         }
 
-        repositoryService.calculateMavenMetadataAsync(repoPath);
+        mavenMetadataService.calculateMavenMetadataAsync(repoPath, true);
         return Response.ok().build();
     }
 }

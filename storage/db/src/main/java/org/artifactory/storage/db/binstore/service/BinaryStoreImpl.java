@@ -30,6 +30,7 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
+import org.artifactory.storage.StorageRetryException;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
@@ -154,7 +155,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             bp = bp.next();
         }
         if (externalFilestore == null) {
-            statusHolder.setError("Could not find any external filestore" +
+            statusHolder.error("Could not find any external filestore" +
                     " pointing to " + externalDir.getAbsolutePath(), log);
             return;
         }
@@ -180,41 +181,41 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
         // Now run fetch all on wrapper
         try {
-            statusHolder.setStatus("Disconnecting " + externalDir.getAbsolutePath()
+            statusHolder.status("Disconnecting " + externalDir.getAbsolutePath()
                     + " using mode " + disconnectMode.propName, log);
             Collection<BinaryData> all = binariesDao.findAll();
             long sizeMoved = 0L;
             int total = all.size();
             int checked = 0;
             int done = 0;
-            statusHolder.setStatus("Found " + total + " files to disconnect!", log);
+            statusHolder.status("Found " + total + " files to disconnect!", log);
             for (BinaryData data : all) {
                 try {
                     String sha1 = data.getSha1();
                     if (wrapper.connect(sha1)) {
-                        statusHolder.setDebug("Activated " + disconnectMode.propName + " on " + sha1, log);
+                        statusHolder.debug("Activated " + disconnectMode.propName + " on " + sha1, log);
                         done++;
                         sizeMoved += data.getLength();
                     } else {
-                        statusHolder.setDebug("File " + sha1 + " checked", log);
+                        statusHolder.debug("File " + sha1 + " checked", log);
                     }
                     checked++;
                 } catch (Exception e) {
-                    statusHolder.setError("Problem connecting checksum " + data, e, log);
+                    statusHolder.error("Problem connecting checksum " + data, e, log);
                 }
                 if (checked % 200 == 0) {
-                    statusHolder.setStatus("Checked " + checked + "/" + total +
+                    statusHolder.status("Checked " + checked + "/" + total +
                             " files and disconnected " + done +
                             " total size " + disconnectMode.propName +
                             " is " + StorageUnit.toReadableString(sizeMoved), log);
                 }
             }
-            statusHolder.setStatus("Checked " + checked + " files out of " + total +
+            statusHolder.status("Checked " + checked + " files out of " + total +
                     " files and disconnected " + done +
                     " total size " + disconnectMode.propName +
                     " is " + StorageUnit.toReadableString(sizeMoved), log);
         } catch (SQLException e) {
-            statusHolder.setError("Could fetch all binary data from binary store", e, log);
+            statusHolder.error("Could fetch all binary data from binary store", e, log);
         }
     }
 
@@ -510,7 +511,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                             || message.contains("Duplicate entry") // MySQL message
                             || message.contains("unique constraint") // Oracle message
                             ) {
-                        log.info("Duplicate insertion of same checksum " + sha1);
+                        throw new StorageRetryException(convertToBinaryInfo(dataRecord), e);
                     } else {
                         throw e;
                     }

@@ -21,12 +21,12 @@ package org.artifactory.repo.interceptor;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.NuGetAddon;
-import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.nuget.NuGetProperties;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.repo.RepoPath;
@@ -90,8 +90,11 @@ public class NuGetCalculationInterceptorTest {
     @Test
     public void testAfterCreate() {
         RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
-        VfsFile vfsItemMock = createAndGetFsItemMock(RepoPathFactory.create("bob", "bob.nupkg"));
-        nuGetAddon.extractNuPkgInfo(eq(vfsItemMock), isA(MutableStatusHolder.class));
+        RepoPath repoPath = RepoPathFactory.create("bob", "bob.nupkg");
+        VfsFile vfsItemMock = createAndGetFsItemMock(repoPath);
+        FileInfo fileInfoMock = createAndGetFileInfoMock(repoPath);
+        expect(vfsItemMock.getInfo()).andReturn(fileInfoMock).anyTimes();
+        nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), isA(MutableStatusHolder.class));
         expectLastCall();
         replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
         nuGetCalculationInterceptor.afterCreate(vfsItemMock, new MultiStatusHolder());
@@ -102,13 +105,15 @@ public class NuGetCalculationInterceptorTest {
     public void testAfterMoveOrCopyNoIdProperty() {
         RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
         RepoPath itemRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
+        FileInfo fileInfoMock = createAndGetFileInfoMock(itemRepoPath);
         VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(itemRepoPath, null, false);
+        expect(vfsItemMock.getInfo()).andReturn(fileInfoMock).anyTimes();
+        setVfsFileMockProperties(vfsItemMock, null);
 
-        replay(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
+        replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
         nuGetCalculationInterceptor.afterCopy(null, vfsItemMock, null, null);
         nuGetCalculationInterceptor.afterMove(null, vfsItemMock, null, null);
-        verify(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
+        verify(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
     }
 
     @Test
@@ -116,113 +121,41 @@ public class NuGetCalculationInterceptorTest {
         RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
         RepoPath itemRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
         VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
-        expect(vfsItemMock.getRepoKey()).andReturn(itemRepoPath.getRepoKey());
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(itemRepoPath, "bobsId", false);
+        setVfsFileMockProperties(vfsItemMock, "bobsId");
 
-        nuGetAddon.requestAsyncLatestNuPkgVersionUpdate(itemRepoPath.getRepoKey(), "bobsId");
-        expectLastCall();
-
-        replay(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
+        replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
         nuGetCalculationInterceptor.afterCopy(null, vfsItemMock, null, null);
-        verify(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-    }
-
-    @Test
-    public void testAfterMoveNotLatestVersion() {
-        RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
-        RepoPath targetRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
-        VfsFile targetVfsFile = createAndGetFsItemMock(targetRepoPath);
-        expect(targetVfsFile.getRepoKey()).andReturn(targetRepoPath.getRepoKey());
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(targetRepoPath, "bobsId", false);
-
-        nuGetAddon.requestAsyncLatestNuPkgVersionUpdate(targetRepoPath.getRepoKey(), "bobsId");
-        expectLastCall();
-
-        replay(targetVfsFile, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-        nuGetCalculationInterceptor.afterMove(targetVfsFile, targetVfsFile, null, null);
-        verify(targetVfsFile, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-    }
-
-    @Test
-    public void testAfterMoveLatestVersion() {
-        RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
-        RepoPath targetRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
-        VfsFile targetVfsFile = createAndGetFsItemMock(targetRepoPath);
-        expect(targetVfsFile.getRepoKey()).andReturn(targetRepoPath.getRepoKey()).times(2);
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(targetRepoPath, "bobsId", true);
-
-        nuGetAddon.requestAsyncLatestNuPkgVersionUpdate(targetRepoPath.getRepoKey(), "bobsId");
-        expectLastCall().times(2);
-
-        replay(targetVfsFile, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-        nuGetCalculationInterceptor.afterMove(targetVfsFile, targetVfsFile, null, null);
-        verify(targetVfsFile, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
+        verify(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
     }
 
     @Test
     public void testAfterMoveNoNuGetProperties() {
         RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
         RepoPath targetRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
+        FileInfo fileInfoMock = createAndGetFileInfoMock(targetRepoPath);
         VfsFile targetVfsFile = createAndGetFsItemMock(targetRepoPath);
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(targetRepoPath, null, false);
+        expect(targetVfsFile.getInfo()).andReturn(fileInfoMock).anyTimes();
+        setVfsFileMockProperties(targetVfsFile, null);
 
         MultiStatusHolder statusHolder = new MultiStatusHolder();
-        nuGetAddon.extractNuPkgInfo(targetVfsFile, statusHolder);
+        nuGetAddon.extractNuPkgInfo(fileInfoMock, statusHolder);
         expectLastCall();
 
-        replay(targetVfsFile, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
+        replay(targetVfsFile, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
         nuGetCalculationInterceptor.afterMove(targetVfsFile, targetVfsFile, statusHolder, null);
-        verify(targetVfsFile, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-    }
-
-    @Test
-    public void testBeforeDeleteNotLatest() {
-        RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
-        RepoPath itemRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
-        VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(itemRepoPath, null, false);
-
-        replay(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-        nuGetCalculationInterceptor.beforeDelete(vfsItemMock, null);
-        verify(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-    }
-
-    @Test
-    public void testBeforeDeleteNoPackageId() {
-        RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
-        RepoPath itemRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
-        VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(itemRepoPath, null, true);
-
-        replay(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-        nuGetCalculationInterceptor.beforeDelete(vfsItemMock, null);
-        verify(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager);
-    }
-
-    @Test
-    public void testBeforeDelete() {
-        RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
-        RepoPath itemRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
-        VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
-        expect(vfsItemMock.getRepoKey()).andReturn(itemRepoPath.getRepoKey());
-        PropertiesAddon propertiesAddon = createAndSetMockProperties(itemRepoPath, "bobsId", true);
-
-        nuGetAddon.requestAsyncLatestNuPkgVersionUpdate(itemRepoPath.getRepoKey(), "bobsId");
-        expectLastCall();
-
-        replay(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
-        nuGetCalculationInterceptor.beforeDelete(vfsItemMock, null);
-        verify(vfsItemMock, repoServiceMock, propertiesAddon, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
+        verify(targetVfsFile, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
     }
 
     @Test
     public void testAfterImport() throws Exception {
         RepositoryService repoServiceMock = createAndSetMockRepo(true, "bob");
         RepoPath itemRepoPath = RepoPathFactory.create("bob", "bob.nupkg");
+        FileInfo fileInfoMock = createAndGetFileInfoMock(itemRepoPath);
         VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
+        expect(vfsItemMock.getInfo()).andReturn(fileInfoMock).anyTimes();
         MultiStatusHolder statusHolder = new MultiStatusHolder();
 
-        nuGetAddon.extractNuPkgInfo(vfsItemMock, statusHolder);
+        nuGetAddon.extractNuPkgInfo(fileInfoMock, statusHolder);
         expectLastCall();
 
         replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
@@ -237,6 +170,12 @@ public class NuGetCalculationInterceptorTest {
         return vfsItemMock;
     }
 
+    private FileInfo createAndGetFileInfoMock(RepoPath repoPath) {
+        FileInfo fileInfoMock = createMock(FileInfo.class);
+        expect(fileInfoMock.getRepoPath()).andReturn(repoPath).anyTimes();
+        return fileInfoMock;
+    }
+
     private RepositoryService createAndSetMockRepo(boolean nuGetSupported, String repoKey) {
         RepositoryService repoServiceMock = createMock(RepositoryService.class);
         LocalRepoDescriptor localRepoDescriptor = new LocalRepoDescriptor();
@@ -246,18 +185,12 @@ public class NuGetCalculationInterceptorTest {
         return repoServiceMock;
     }
 
-    private PropertiesAddon createAndSetMockProperties(RepoPath repoPath, String nugetId, boolean isLatestVersion) {
-        PropertiesAddon propertiesAddon = createMock(PropertiesAddon.class);
+    private void setVfsFileMockProperties(VfsFile vfsFile, String nugetId) {
         Properties toReturn = new PropertiesImpl();
         if (!StringUtils.isBlank(nugetId)) {
             toReturn.put(NuGetProperties.Id.nodePropertyName(), nugetId);
         }
-        if (isLatestVersion) {
-            toReturn.put(NuGetProperties.IsLatestVersion.nodePropertyName(), Boolean.toString(isLatestVersion));
-        }
-        expect(propertiesAddon.getProperties(repoPath)).andReturn(toReturn).anyTimes();
-        expect(nuGetCalculationInterceptor.addonsManager.addonByType(PropertiesAddon.class))
-                .andReturn(propertiesAddon).anyTimes();
-        return propertiesAddon;
+
+        expect(vfsFile.getProperties()).andReturn(toReturn).anyTimes();
     }
 }

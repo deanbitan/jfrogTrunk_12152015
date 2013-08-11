@@ -156,9 +156,13 @@ public class NodesDao extends BaseDao {
             if (resultSet.next()) {
                 count = resultSet.getInt(1);
                 if (count > 1) {
-                    StorageException bigWarning = new StorageException(
-                            "Unexpected node count for absolute path: '" + path + "' - " + count);
-                    log.warn(bigWarning.getMessage(), bigWarning);
+                    if (log.isDebugEnabled()) {
+                        StorageException bigWarning = new StorageException(
+                                "Unexpected node count for absolute path: '" + path + "' - " + count);
+                        log.warn(bigWarning.getMessage(), bigWarning);
+                    } else {
+                        log.warn("Unexpected node count for absolute path: '{}' - {}", path, count);
+                    }
                 }
             }
             return count > 0;

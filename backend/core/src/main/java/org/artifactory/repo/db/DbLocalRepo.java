@@ -123,6 +123,11 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
     }
 
     @Override
+    public boolean isWriteLocked(RepoPath repoPath) {
+        return mixin.isWriteLocked(getRepoPath(repoPath.getPath()));
+    }
+
+    @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
         BasicStatusHolder status = assertValidPath(repoPath, true);
         if (status.isError()) {
@@ -131,7 +136,7 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
         AuthorizationService authService = getAuthorizationService();
         boolean canRead = authService.canRead(repoPath);
         if (!canRead) {
-            status.setError("Download request for repo:path '" + repoPath + "' is forbidden for user '" +
+            status.error("Download request for repo:path '" + repoPath + "' is forbidden for user '" +
                     authService.currentUsername() + "'.", HttpStatus.SC_FORBIDDEN, log);
             AccessLogger.downloadDenied(repoPath);
         }

@@ -103,7 +103,7 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
         PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         searchGroup.addChild(propertiesWebAddon.getPropertySearchMenuNode("Property Search"));
         searchGroup.addChild(new ArtifactsPageNode("Checksum Search", ChecksumSearchPage.class));
-        searchGroup.addChild(new ArtifactsPageNode("Remote Search", BintraySearchPage.class));
+        searchGroup.addChild(new BintraySearchPageNode());
         DeployArtifactPageNode deployPage = new DeployArtifactPageNode(DeployArtifactPage.class, "Deploy");
         root.addChild(deployPage);
         MenuNode deployGroup = new OpenedMenuNode("Deploy");
@@ -171,6 +171,18 @@ public class ArtifactorySiteMapBuilder extends SiteMapBuilder {
             }
             return getAuthorizationService().canDeployToLocalRepository();
         }
+    }
+
+    private static class BintraySearchPageNode extends ArtifactsPageNode {
+        private BintraySearchPageNode() {
+            super("Remote Search", BintraySearchPage.class);
+        }
+
+        @Override
+        public String getCssClass() {
+            return "bintray-search";
+        }
+
     }
 
     private static class AdminPageNode extends SecuredPageNode {

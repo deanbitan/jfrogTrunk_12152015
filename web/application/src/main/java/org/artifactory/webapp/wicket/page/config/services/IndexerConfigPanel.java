@@ -109,7 +109,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
                     }
                 } catch (Exception e) {
                     log.error("Could not run indexer.", e);
-                    statusHolder.setError(e.getMessage(), log);
+                    statusHolder.error(e.getMessage(), log);
                     error("Indexer did not run: " + e.getMessage());
                 }
             }

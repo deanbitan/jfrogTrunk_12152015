@@ -281,7 +281,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                     }
                 } catch (Exception e) {
                     String errorMessage = "Could not run system backup '" + entity.getKey() + "': " + e.getMessage();
-                    statusHolder.setError(errorMessage, e, log);
+                    statusHolder.error(errorMessage, e, log);
                     error(errorMessage);
                 }
                 AjaxUtils.refreshFeedback(target);

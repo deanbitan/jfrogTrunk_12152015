@@ -431,7 +431,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        status.setStatus("### Beginning full system import ###", log);
+        status.status("### Beginning full system import ###", log);
         // First sync status and settings
         status.setFastFail(settings.isFailFast());
         status.setVerbose(settings.isVerbose());
@@ -472,7 +472,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 // import repositories content
                 getRepositoryService().importFrom(settings);
             }
-            status.setStatus("### Full system import finished ###", log);
+            status.status("### Full system import finished ###", log);
         } finally {
             resumeTasks(stoppedTasks);
         }
@@ -481,7 +481,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        status.setStatus("Beginning full system export...", log);
+        status.status("Beginning full system export...", log);
         String timestamp;
         boolean incremental = settings.isIncremental();
         if (!incremental) {
@@ -504,19 +504,19 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             try {
                 FileUtils.deleteDirectory(tmpExportDir);
             } catch (IOException e) {
-                status.setError("Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e,
+                status.error("Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e,
                         log);
                 return;
             }
         }
-        status.setStatus("Creating temp export directory: " + tmpExportDir.getAbsolutePath(), log);
+        status.status("Creating temp export directory: " + tmpExportDir.getAbsolutePath(), log);
         try {
             FileUtils.forceMkdir(tmpExportDir);
         } catch (IOException e) {
-            status.setError("Failed to create backup dir: " + tmpExportDir.getAbsolutePath(), e, log);
+            status.error("Failed to create backup dir: " + tmpExportDir.getAbsolutePath(), e, log);
             return;
         }
-        status.setStatus("Using backup directory: '" + tmpExportDir.getAbsolutePath() + "'.", log);
+        status.status("Using backup directory: '" + tmpExportDir.getAbsolutePath() + "'.", log);
 
         ExportSettingsImpl exportSettings = new ExportSettingsImpl(tmpExportDir, settings);
 
@@ -590,9 +590,9 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
             settings.cleanCallbacks();
 
-            status.setStatus("Full system export completed successfully.", log);
+            status.status("Full system export completed successfully.", log);
         } catch (RuntimeException e) {
-            status.setError("Full system export failed: " + e.getMessage(), e, log);
+            status.error("Full system export failed: " + e.getMessage(), e, log);
         } finally {
             resumeTasks(stoppedTasks);
         }
@@ -618,7 +618,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     }
 
     private void createArchive(MutableStatusHolder status, String timestamp, File baseDir, File tmpExportDir) {
-        status.setStatus("Creating archive...", log);
+        status.status("Creating archive...", log);
 
         File tempArchiveFile = new File(baseDir, timestamp + ".tmp.zip");
         try {
@@ -640,14 +640,14 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         if (archive.exists()) {
             boolean deleted = archive.delete();
             if (!deleted) {
-                status.setWarning("Failed to delete existing final export archive.", log);
+                status.warn("Failed to delete existing final export archive.", log);
             }
         }
         //Rename the archive file
         try {
             FileUtils.moveFile(tempArchiveFile, archive);
         } catch (IOException e) {
-            status.setWarning(String.format("Failed to move '%s' to '%s'.", tempArchiveFile.getAbsolutePath(),
+            status.warn(String.format("Failed to move '%s' to '%s'.", tempArchiveFile.getAbsolutePath(),
                     archive.getAbsolutePath()), e, log);
         } finally {
             status.setOutputFile(archive.getAbsoluteFile());
@@ -661,10 +661,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             try {
                 FileUtils.copyFileToDirectory(artifactoryPropFile, settings.getBaseDir());
             } catch (IOException e) {
-                status.setError("Failed to copy artifactory.properties file", e, log);
+                status.error("Failed to copy artifactory.properties file", e, log);
             }
         } else {
-            status.setStatus("No KeyVal defined no export done", log);
+            status.status("No KeyVal defined no export done", log);
         }
     }
 
@@ -673,7 +673,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             File targetBackupDir = new File(settings.getBaseDir(), "etc");
             FileUtils.copyDirectory(artifactoryHome.getEtcDir(), targetBackupDir);
         } catch (IOException e) {
-            settings.getStatusHolder().setError(
+            settings.getStatusHolder().error(
                     "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);
         }
     }
@@ -700,7 +700,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             try {
                 FileUtils.copyDirectory(customUiDir, artifactoryHome.getLogoDir());
             } catch (IOException e) {
-                settings.getStatusHolder().setError(
+                settings.getStatusHolder().error(
                         "Failed to import ui directory: " + importEtcDir.getAbsolutePath(), e, log);
             }
         }
@@ -712,7 +712,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 FileUtils.copyFileToDirectory(mimeTypesFile, artifactoryHome.getEtcDir());
                 artifactoryHome.initAndLoadMimeTypes();
             } catch (IOException e) {
-                settings.getStatusHolder().setError(
+                settings.getStatusHolder().error(
                         "Failed to import mime types: " + importEtcDir.getAbsolutePath(), e, log);
             }
 
@@ -723,26 +723,26 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         MutableStatusHolder status = settings.getStatusHolder();
         SecurityService security = getSecurityService();
         if (security != null) {
-            status.setStatus("Exporting security...", log);
+            status.status("Exporting security...", log);
             security.exportTo(settings);
         } else {
-            status.setStatus("No security defined no export done", log);
+            status.status("No security defined no export done", log);
         }
     }
 
     private void exportBuildInfo(ExportSettingsImpl exportSettings) {
         MutableStatusHolder status = exportSettings.getStatusHolder();
         if (exportSettings.isExcludeBuilds()) {
-            status.setStatus("Skipping build info ...", log);
+            status.status("Skipping build info ...", log);
             return;
         }
 
         BuildService build = beanForType(BuildService.class);
         if (build != null) {
-            status.setStatus("Exporting build info...", log);
+            status.status("Exporting build info...", log);
             build.exportTo(exportSettings);
         } else {
-            status.setStatus("No build info defined. No export done", log);
+            status.status("No build info defined. No export done", log);
         }
     }
 

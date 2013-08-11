@@ -104,12 +104,20 @@ public abstract class SecurityBaseDaoTest extends DbBaseTest {
     protected void assertUser3(User u, int nbGroupsDelta) {
         assertEquals(u.getUserId(), 3L);
         assertEquals(u.getUsername(), "u3");
-        assertEquals(u.getPassword(), "cpass");
-        assertEquals(u.getEmail(), "g@mail.com");
+        assertEquals(u.getPassword(), "");
         assertTrue(u.isAdmin());
         assertFalse(u.isEnabled());
         assertTrue(u.isUpdatableProfile());
         assertEquals(u.getGroups().size(), 0 + nbGroupsDelta);
+        assertNull(u.getSalt());
+        assertNull(u.getEmail());
+        assertNull(u.getGenPasswordKey());
+        assertNull(u.getRealm());
+        assertNull(u.getPrivateKey());
+        assertNull(u.getPublicKey());
+        assertNull(u.getLastLoginClientIp());
+        assertNull(u.getLastAccessClientIp());
+        assertNull(u.getBintrayAuth());
     }
 
     private void assertUser15(User u, int nbGroupsDelta) {

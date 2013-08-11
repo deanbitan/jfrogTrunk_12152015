@@ -109,6 +109,9 @@ public interface Security {
      */
     boolean isAnonymous();
 
+    /**
+     * @return True if a user (anonymous and system are also users) is logged in.
+     */
     boolean isAuthenticated();
 
     /**
@@ -120,4 +123,41 @@ public interface Security {
      * @return The encrypted password of the current user properly escaped for inclusion in xml settings
      */
     String getEscapedEncryptedPassword();
+
+    /**
+     * @return The current logged in user, the anonymous user or null if no authentication details present.
+     */
+    User currentUser();
+
+    /**
+     * Accessible only if current user is an admin.
+     * @return The user with the given username if exists or null.
+     * @throws SecurityException if the current user is not an admin user
+     */
+    User findUser(String username);
+
+    /**
+     * Update the user with the same username as the user.getUsername() passed.<br/>
+     * NOTE: Only updatable fields will be updated.<br/>
+     * The user object cannot be null, and user.getUsername() should represent an existing non-anonymous or system user.
+     * Here are the fields that will be updated and the conditions:<br/><ul>
+     * <li>user.getEmail() will be updated if not null</li>
+     * <li>user.isAdmin() will be updated</li>
+     * <li>user.isEnabled() will be updated</li>
+     * <li>user.isUpdatableProfile() will be updated</li>
+     * <li>user.getPrivateKey() will be updated if not null</li>
+     * <li>user.getPublicKey() will be updated if not null</li>
+     * <li>user.isTransientUser() will be updated</li>
+     * <li>user.getGroups() will be updated if not null and all group name exists</li>
+     * <li>user.getBintrayAuth() will be updated if not null</li>
+     * </ul>
+     *
+     *
+     * @param user the user with all the fields to update
+     * @return the new updated user data
+     * @throws SecurityException if the current user is not an admin user, if the user passed is the anonymous user,
+     * if one of the group passed does not exists
+     * @throws org.artifactory.storage.StorageException if the user could not updated
+     */
+    void updateUser(User user);
 }

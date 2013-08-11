@@ -88,15 +88,17 @@ public class UserGroupsDao extends BaseDao {
                 " ?, ?, ?," +
                 " ?, ?, ?," +
                 " ?, ?," +
-                " ?, ?, ?)",
+                " ?, ?," +
+                " ?)",
                 user.getUserId(),
-                user.getUsername(), nullIfEmpty(user.getPassword()), user.getSalt(),
-                user.getEmail(), user.getGenPasswordKey(),
+                user.getUsername(), nullIfEmpty(user.getPassword()), nullIfEmpty(user.getSalt()),
+                nullIfEmpty(user.getEmail()), nullIfEmpty(user.getGenPasswordKey()),
                 booleanAsByte(user.isAdmin()), booleanAsByte(user.isEnabled()),
                 booleanAsByte(user.isUpdatableProfile()),
-                user.getRealm(), user.getPrivateKey(), user.getPublicKey(),
-                user.getLastLoginTimeMillis(), user.getLastLoginClientIp(),
-                user.getLastAccessTimeMillis(), user.getLastAccessClientIp(), user.getBintrayAuth());
+                nullIfEmpty(user.getRealm()), nullIfEmpty(user.getPrivateKey()), nullIfEmpty(user.getPublicKey()),
+                user.getLastLoginTimeMillis(), nullIfEmpty(user.getLastLoginClientIp()),
+                user.getLastAccessTimeMillis(), nullIfEmpty(user.getLastAccessClientIp()),
+                nullIfEmpty(user.getBintrayAuth()));
 
         for (UserGroup userGroup : user.getGroups()) {
             res += jdbcHelper.executeUpdate("INSERT INTO users_groups VALUES (?, ?, ?)",
@@ -107,18 +109,22 @@ public class UserGroupsDao extends BaseDao {
 
     public int updateUser(User user) throws SQLException {
         int res = jdbcHelper.executeUpdate("UPDATE users SET " +
-                " password = ?, salt = ?, email = ?, gen_password_key = ?," +
+                " password = ?, salt = ?," +
+                " email = ?, gen_password_key = ?," +
                 " admin = ?, enabled = ?, updatable_profile = ?," +
                 " realm = ?, private_key = ?, public_key = ?," +
                 " last_login_time = ?, last_login_ip = ?," +
-                " last_access_time = ?, last_access_ip = ?, bintray_auth = ?" +
+                " last_access_time = ?, last_access_ip = ?," +
+                " bintray_auth = ?" +
                 " WHERE user_id = ? AND username = ?",
-                nullIfEmpty(user.getPassword()), user.getSalt(), user.getEmail(), user.getGenPasswordKey(),
+                nullIfEmpty(user.getPassword()), nullIfEmpty(user.getSalt()),
+                nullIfEmpty(user.getEmail()), nullIfEmpty(user.getGenPasswordKey()),
                 booleanAsByte(user.isAdmin()), booleanAsByte(user.isEnabled()),
                 booleanAsByte(user.isUpdatableProfile()),
-                user.getRealm(), user.getPrivateKey(), user.getPublicKey(),
-                user.getLastLoginTimeMillis(), user.getLastLoginClientIp(),
-                user.getLastAccessTimeMillis(), user.getLastAccessClientIp(), user.getBintrayAuth(),
+                nullIfEmpty(user.getRealm()), nullIfEmpty(user.getPrivateKey()), nullIfEmpty(user.getPublicKey()),
+                user.getLastLoginTimeMillis(), nullIfEmpty(user.getLastLoginClientIp()),
+                user.getLastAccessTimeMillis(), nullIfEmpty(user.getLastAccessClientIp()),
+                nullIfEmpty(user.getBintrayAuth()),
                 user.getUserId(), user.getUsername());
         if (res == 1) {
             jdbcHelper.executeUpdate("DELETE FROM users_groups WHERE user_id = ?", user.getUserId());
@@ -402,10 +408,11 @@ public class UserGroupsDao extends BaseDao {
 
     private User userFromResultSet(ResultSet rs) throws SQLException {
         return new User(rs.getLong(1), rs.getString(2), emptyIfNull(rs.getString(3)),
-                rs.getString(4), rs.getString(5), rs.getString(6),
+                nullIfEmpty(rs.getString(4)), nullIfEmpty(rs.getString(5)), nullIfEmpty(rs.getString(6)),
                 rs.getBoolean(7), rs.getBoolean(8), rs.getBoolean(9),
-                rs.getString(10), rs.getString(11), rs.getString(12),
-                rs.getLong(13), rs.getString(14), rs.getLong(15), rs.getString(16), rs.getString(17));
+                nullIfEmpty(rs.getString(10)), nullIfEmpty(rs.getString(11)), nullIfEmpty(rs.getString(12)),
+                rs.getLong(13), nullIfEmpty(rs.getString(14)), rs.getLong(15), nullIfEmpty(rs.getString(16)),
+                nullIfEmpty(rs.getString(17)));
     }
 
     private Group groupFromResultSet(ResultSet rs) throws SQLException {

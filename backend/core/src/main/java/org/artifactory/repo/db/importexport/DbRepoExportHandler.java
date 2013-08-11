@@ -74,7 +74,7 @@ public class DbRepoExportHandler extends DbExportBase {
         // TODO: get node count
         long nodeCount = repo.getRepositoryService().getNodesCount(RepoPathUtils.repoRootPath(repo.getKey()));
         String targetExportFolder = fileSystemBaseDir.getAbsolutePath();
-        status.setStatus(String.format("%s export started with %d nodes to: '%s'",
+        status.status(String.format("%s export started with %d nodes to: '%s'",
                 repo.getKey(), nodeCount, targetExportFolder), log);
         try {
             FileUtils.forceMkdir(fileSystemBaseDir);
@@ -85,7 +85,7 @@ public class DbRepoExportHandler extends DbExportBase {
         accumulator = new ImportExportAccumulator(repo.getKey(), EXPORT);
         exportRecursive(rootFolder);
         accumulator.finished();
-        status.setStatus(String.format("%s export finished: Items exported: %s (%s files and %s folders). " +
+        status.status(String.format("%s export finished: Items exported: %s (%s files and %s folders). " +
                 "Duration: %s IPS: %s Target: '%s'",
                 repo.getKey(), accumulator.getItemsCount(), accumulator.getFilesCount(),
                 accumulator.getFoldersCount(), accumulator.getDurationString(), accumulator.getItemsPerSecond(),
@@ -97,7 +97,7 @@ public class DbRepoExportHandler extends DbExportBase {
         //Check if we need to break/pause
         boolean stop = taskService.pauseOrBreak();
         if (stop) {
-            status.setError("Export of " + repo.getKey() + " was stopped.", log);
+            status.error("Export of " + repo.getKey() + " was stopped.", log);
             return;
         }
 
@@ -120,13 +120,13 @@ public class DbRepoExportHandler extends DbExportBase {
             } else {
                 msg = "Failed to export '" + sourceItem.getRepoPath() + "' to a null dir";
             }
-            status.setError(msg, e, log);
+            status.error(msg, e, log);
         }
     }
 
     private void exportFolder(FolderInfo sourceFolder) throws IOException {
         File targetDir = new File(settings.getBaseDir(), sourceFolder.getRelPath());
-        status.setDebug("Exporting directory '" + sourceFolder.getRepoPath() + "'...", log);
+        status.debug("Exporting directory '" + sourceFolder.getRepoPath() + "'...", log);
         // Insure that the source folder still exists.
         boolean sourceFolderExists = getFileService().exists(sourceFolder.getRepoPath());
         if (!sourceFolderExists) {
@@ -242,7 +242,7 @@ public class DbRepoExportHandler extends DbExportBase {
                         } catch (RepositoryRuntimeException e) {
                             String message = String.format("Unable to determine whether %s is annotated by metadata " +
                                     "of type %s. Metadata was not cleaned.", itemInfo.getRepoPath(), metadataName);
-                            status.setError(message, e, log);
+                            status.error(message, e, log);
                         }
                         if (!hasMetadata) {
                             boolean deleted = FileUtils.deleteQuietly(metadataFile);
@@ -288,7 +288,7 @@ public class DbRepoExportHandler extends DbExportBase {
                     // File may be deleted in the meantime, so this is just a warning
                     String message = String.format("Unable to determine whether %s is annotated by metadata of type " +
                             "%s. Metadata entry not present!", currentFolderInfo.getRepoPath(), metadataName);
-                    status.setWarning(message, e, log);
+                    status.warn(message, e, log);
                 }
                 //If the metadata container does not contain this metadata anymore
                 if (!hasMetadata) {

@@ -68,4 +68,8 @@ public class BuildsDiffDependencyActionableItem extends RepoAwareActionableItemB
     public boolean isInternalDependency() {
         return ((BuildsDiffDependencyModel) model).isInternalDependency();
     }
+
+    public BuildsDiffBaseFileModel getModel() {
+        return model;
+    }
 }

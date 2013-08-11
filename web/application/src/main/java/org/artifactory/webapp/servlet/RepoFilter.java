@@ -379,7 +379,7 @@ public class RepoFilter extends DelayedFilterBase {
         String requestPath = artifactoryRequest.getPath();
         if (NamingUtils.isProperties(requestPath)) {
             RepoPath repoPath = artifactoryRequest.getRepoPath();
-            log.warn("Deprecated metadata download detected: {}", request.getRequestURL());
+            log.debug("Deprecated metadata download detected: {}", request.getRequestURL());
             String location = HttpUtils.getServletContextUrl(request) +
                     "/api/storage/" + repoPath.getRepoKey() + "/" +
                     NamingUtils.stripMetadataFromPath(repoPath.getPath()) + "?" +

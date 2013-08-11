@@ -23,6 +23,8 @@ import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.traffic.RequestLogger;
 import org.artifactory.webapp.wicket.page.browse.listing.ArtifactListPage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.SimpleRepoBrowserPage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 
 import javax.servlet.FilterChain;
@@ -41,6 +43,7 @@ import java.io.IOException;
  * @author Noam Tenne
  */
 public class RequestFilter extends DelayedFilterBase {
+    private static final Logger log = LoggerFactory.getLogger(RequestFilter.class);
 
     @Override
     public void initLater(FilterConfig filterConfig) throws ServletException {
@@ -149,32 +152,53 @@ public class RequestFilter extends DelayedFilterBase {
 
         @Override
         public void setStatus(int sc) {
-            status = sc;
-            super.setStatus(sc);
+            if (notCommitted(sc)) {
+                status = sc;
+                super.setStatus(sc);
+            }
         }
 
         @Override
         public void setStatus(int sc, String sm) {
-            status = sc;
-            super.setStatus(sc, sm);
+            if (notCommitted(sc, sm)) {
+                status = sc;
+                super.setStatus(sc, sm);
+            }
         }
 
         @Override
         public void sendError(int sc) throws IOException {
-            status = sc;
-            super.sendError(sc);
+            if (notCommitted(sc)) {
+                status = sc;
+                super.sendError(sc);
+            }
         }
 
         @Override
         public void sendError(int sc, String msg) throws IOException {
-            status = sc;
-            super.sendError(sc, msg);
+            if (notCommitted(sc, msg)) {
+                status = sc;
+                super.sendError(sc, msg);
+            }
         }
 
         @Override
         public void sendRedirect(String location) throws IOException {
             super.sendRedirect(location);
             status = SC_FOUND;
+        }
+
+        private boolean notCommitted(int status) {
+            return notCommitted(status, null);
+        }
+
+        private boolean notCommitted(int status, String reason) {
+            if (isCommitted()) {
+                log.debug("Cannot change status " + status + (reason != null ? " (" + reason + ")" : "") + ": " +
+                        "response already committed.");
+                return false;
+            }
+            return true;
         }
 
         private void captureString(String name, String value) {

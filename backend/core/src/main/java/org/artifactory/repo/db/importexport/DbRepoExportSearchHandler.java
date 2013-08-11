@@ -50,7 +50,7 @@ public class DbRepoExportSearchHandler extends DbExportBase {
     }
 
     public MutableStatusHolder export() {
-        status.setStatus("Started exporting search result '" + searchResults.getName() + "'.", log);
+        status.status("Started exporting search result '" + searchResults.getName() + "'.", log);
 
         createExportDirectory();
         if (status.isError()) {
@@ -65,13 +65,13 @@ public class DbRepoExportSearchHandler extends DbExportBase {
             createExportZip(status, settings);
         }
 
-        status.setStatus("Finished exporting search result '" + searchResults.getName() + "'.", log);
+        status.status("Finished exporting search result '" + searchResults.getName() + "'.", log);
         return status;
     }
 
     private void createExportZip(MutableStatusHolder statusHolder, ExportSettings settings) {
         try {
-            statusHolder.setStatus("Archiving exported search result '" + searchResults.getName() + "'.", log);
+            statusHolder.status("Archiving exported search result '" + searchResults.getName() + "'.", log);
             String tempDir = System.getProperty("java.io.tmpdir");
             File tempArchive = new File(tempDir, settings.getBaseDir().getName() + ".zip");
             // Create the archive
@@ -83,7 +83,7 @@ public class DbRepoExportSearchHandler extends DbExportBase {
             //Delete the temporary zip
             FileUtils.deleteQuietly(tempArchive);
         } catch (IOException e) {
-            statusHolder.setError("Unable to create zip archive", -1, e, log);
+            statusHolder.error("Unable to create zip archive", -1, e, log);
         }
     }
 
@@ -102,15 +102,15 @@ public class DbRepoExportSearchHandler extends DbExportBase {
         try {
             FileUtils.deleteDirectory(exportDir);
         } catch (IOException e) {
-            status.setError("Failed to delete old temp export directory: " + exportDir.getAbsolutePath(), e,
+            status.error("Failed to delete old temp export directory: " + exportDir.getAbsolutePath(), e,
                     log);
         }
-        status.setStatus("Creating temp export directory: " + exportDir.getAbsolutePath(), log);
+        status.status("Creating temp export directory: " + exportDir.getAbsolutePath(), log);
         try {
             FileUtils.forceMkdir(exportDir);
         } catch (IOException e) {
-            status.setError("Failed to create temp export dir: " + exportDir.getAbsolutePath(), e, log);
+            status.error("Failed to create temp export dir: " + exportDir.getAbsolutePath(), e, log);
         }
-        status.setStatus("Using temp export directory: '" + exportDir.getAbsolutePath() + "'.", log);
+        status.status("Using temp export directory: '" + exportDir.getAbsolutePath() + "'.", log);
     }
 }

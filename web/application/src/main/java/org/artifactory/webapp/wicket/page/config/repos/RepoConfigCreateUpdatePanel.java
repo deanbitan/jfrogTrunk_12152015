@@ -26,7 +26,6 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.OnKeyUpUpdatingBehavior;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -60,9 +59,6 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
 
     @SpringBean
     protected CentralConfigService centralConfigService;
-
-    @SpringBean
-    protected RepositoryService repositoryService;
 
     protected final CachingDescriptorHelper cachingDescriptorHelper;
 

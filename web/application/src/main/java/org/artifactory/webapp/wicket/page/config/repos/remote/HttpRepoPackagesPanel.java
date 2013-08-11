@@ -24,6 +24,7 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.p2.P2WebAddon;
+import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 
@@ -37,13 +38,17 @@ public class HttpRepoPackagesPanel<T extends RemoteRepoDescriptor> extends Panel
     @SpringBean
     private AddonsManager addonsManager;
 
-    public HttpRepoPackagesPanel(String id, T descriptor) {
+    public HttpRepoPackagesPanel(String id, T descriptor, boolean isCreate) {
         super(id);
 
         Form<T> form = new Form<>("form", new CompoundPropertyModel<>(descriptor));
         add(form);
 
-        addonsManager.addonByType(NuGetWebAddon.class).createAndAddRepoConfigNuGetSection(form, descriptor);
+        addonsManager.addonByType(NuGetWebAddon.class).createAndAddRepoConfigNuGetSection(form, descriptor, isCreate);
         addonsManager.addonByType(P2WebAddon.class).createAndAddRemoteRepoConfigP2Section(form, descriptor);
+
+        form.add(addonsManager.addonByType(GemsWebAddon.class).
+                buildPackagesConfigSection("gemsSupportSection", descriptor, form));
+
     }
 }

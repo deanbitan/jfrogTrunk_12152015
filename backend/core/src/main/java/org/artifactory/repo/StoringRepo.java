@@ -45,4 +45,5 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, VfsItemF
     @Override
     ChecksumPolicy getChecksumPolicy();
 
+    boolean isWriteLocked(RepoPath repoPath);
 }

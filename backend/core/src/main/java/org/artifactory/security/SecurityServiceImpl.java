@@ -1127,7 +1127,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        status.setStatus("Importing security...", log);
+        status.status("Importing security...", log);
         importSecurityXml(settings, status);
     }
 
@@ -1146,7 +1146,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         try {
             securityInfo = new SecurityInfoReader().read(securityXmlFile);
         } catch (Exception e) {
-            status.setWarning("Could not read security file", log);
+            status.warn("Could not read security file", log);
             return;
         }
         SecurityService me = InternalContextHelper.get().beanForType(SecurityService.class);

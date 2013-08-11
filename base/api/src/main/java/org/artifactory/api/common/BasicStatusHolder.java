@@ -92,7 +92,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
     }
 
     @Override
-    public final void setDebug(String statusMsg, @Nonnull Logger logger) {
+    public final void debug(String statusMsg, @Nonnull Logger logger) {
         logEntryAndAddEntry(new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, statusMsg, null), logger);
     }
 
@@ -101,43 +101,43 @@ public class BasicStatusHolder implements MutableStatusHolder {
     }
 
     @Override
-    public final void setStatus(String statusMsg, @Nonnull Logger logger) {
-        setStatus(statusMsg, CODE_OK, logger);
+    public final void status(String statusMsg, @Nonnull Logger logger) {
+        status(statusMsg, CODE_OK, logger);
     }
 
     @Override
-    public final void setStatus(String statusMsg, int statusCode, @Nonnull Logger logger) {
+    public final void status(String statusMsg, int statusCode, @Nonnull Logger logger) {
         logEntryAndAddEntry(new StatusEntry(statusCode, statusMsg), logger);
     }
 
     @Override
-    public void setError(String status, Throwable throwable, @Nonnull Logger logger) {
-        setError(status, CODE_INTERNAL_ERROR, throwable, logger);
+    public void error(String status, Throwable throwable, @Nonnull Logger logger) {
+        error(status, CODE_INTERNAL_ERROR, throwable, logger);
     }
 
     @Override
-    public void setError(String statusMsg, @Nonnull Logger logger) {
-        setError(statusMsg, CODE_INTERNAL_ERROR, null, logger);
+    public void error(String statusMsg, @Nonnull Logger logger) {
+        error(statusMsg, CODE_INTERNAL_ERROR, null, logger);
     }
 
     @Override
-    public void setError(String statusMsg, int statusCode, @Nonnull Logger logger) {
-        setError(statusMsg, statusCode, null, logger);
+    public void error(String statusMsg, int statusCode, @Nonnull Logger logger) {
+        error(statusMsg, statusCode, null, logger);
     }
 
     @Override
-    public void setError(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger) {
+    public void error(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger) {
         addError(new StatusEntry(statusCode, StatusEntryLevel.ERROR, statusMsg, throwable), logger);
     }
 
 
     @Override
-    public void setWarning(String statusMsg, Throwable throwable, @Nonnull Logger logger) {
+    public void warn(String statusMsg, Throwable throwable, @Nonnull Logger logger) {
         addError(new StatusEntry(CODE_INTERNAL_ERROR, StatusEntryLevel.WARNING, statusMsg, throwable), logger);
     }
 
     @Override
-    public void setWarning(String statusMsg, @Nonnull Logger logger) {
+    public void warn(String statusMsg, @Nonnull Logger logger) {
         addError(new StatusEntry(CODE_INTERNAL_ERROR, StatusEntryLevel.WARNING, statusMsg, null), logger);
     }
 

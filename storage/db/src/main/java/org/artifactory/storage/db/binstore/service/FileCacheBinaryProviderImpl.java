@@ -22,7 +22,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
@@ -59,19 +58,11 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
     private final ConcurrentMap<String, LruEntry> lruCache;
 
     public FileCacheBinaryProviderImpl(File rootDataDir, StorageProperties storageProperties) {
-        super(new File(rootDataDir, getCacheFolderName(storageProperties)));
+        super(getDataFolder(rootDataDir, storageProperties, "cache"));
         lruCache = Maps.newConcurrentMap();
         totalSize = new AtomicLong(0);
         maxTotalSize = storageProperties.getBinaryProviderCacheMaxSize();
         cacheCleanerSemaphore = new Semaphore(1);
-    }
-
-    private static String getCacheFolderName(StorageProperties storageProperties) {
-        String name = storageProperties.getBinaryProviderDir();
-        if (StringUtils.isBlank(name)) {
-            return "cache";
-        }
-        return name;
     }
 
     @Override
@@ -117,10 +108,13 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
             File cachedFile = getFile(bi.getSha1());
             if (cachedFile.exists()) {
                 if (cachedFile.length() != bi.getLength()) {
-                    log.error("Found a cached file with checksum '" + bi.getSha1() + "' " +
-                            "but length is " + cachedFile.length() + " not " + bi.getLength());
-                    log.error("Deleting cached file " + cachedFile.getAbsolutePath());
-                    FileUtils.forceDelete(cachedFile);
+                    // previous check might be true if the file doesn't exist anymore so check again
+                    if (cachedFile.exists()) {
+                        log.error("Found a cached file with checksum '" + bi.getSha1() + "' " +
+                                "but length is " + cachedFile.length() + " not " + bi.getLength());
+                        log.error("Deleting cached file " + cachedFile.getAbsolutePath());
+                        FileUtils.forceDelete(cachedFile);
+                    }
                 } else {
                     // All good already there, finally will delete the temp file
                     entryAccessed(cachedFile);
@@ -153,22 +147,22 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
     @Override
     protected void pruneFiles(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {
         // For the cache just delete all non used files
-        statusHolder.setStatus("Starting deleting non used files in " + first.getAbsolutePath() + "!", log);
+        statusHolder.status("Starting deleting non used files in " + first.getAbsolutePath() + "!", log);
         File[] files = first.listFiles();
         if (files == null) {
-            statusHolder.setStatus("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
+            statusHolder.status("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
             return;
         }
         for (File file : files) {
             String sha1 = file.getName();
             if (getContext().isUsedByReader(sha1)) {
-                statusHolder.setStatus("Skipping deletion for in-use artifact record: " + sha1, log);
+                statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
             } else {
                 lruCache.remove(sha1);
                 long size = file.length();
                 Files.removeFile(file);
                 if (file.exists()) {
-                    statusHolder.setError("Could not delete file " + file.getAbsolutePath(), log);
+                    statusHolder.error("Could not delete file " + file.getAbsolutePath(), log);
                 } else {
                     movedCounter.filesMoved++;
                     movedCounter.totalSize += size;

@@ -29,6 +29,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.sapi.fs.MutableVfsFile;
+import org.artifactory.storage.StorageRetryException;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.repo.StoringRepo;
@@ -105,8 +106,16 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
         try {
             // call the binary service to add the current binary
             binary = getBinaryStore().addBinary(in);
+        } catch (StorageRetryException e) {
+            if (log.isDebugEnabled()) {
+                log.info("Retrying add binary after receiving retry exception", e);
+            } else {
+                log.info("Retrying add binary after receiving exception: " + e.getMessage());
+            }
+            BinaryInfo retry = e.getBinaryInfo();
+            binary = getBinaryStore().addBinaryRecord(retry.getSha1(), retry.getMd5(), retry.getLength());
         } catch (IOException e) {
-            throw new VfsException("Failed to read input stream for '" + getRepoPath() + "'", e);
+            throw new VfsException("Failed to add input stream for '" + getRepoPath() + "'", e);
         }
 
         // set the actual checksums on the file extra info

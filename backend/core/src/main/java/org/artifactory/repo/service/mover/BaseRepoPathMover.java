@@ -24,6 +24,7 @@ import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.maven.MavenMetadataService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusEntry;
@@ -61,6 +62,7 @@ public abstract class BaseRepoPathMover {
     private static final Logger log = LoggerFactory.getLogger(BaseRepoPathMover.class);
 
     private InternalRepositoryService repositoryService;
+    private MavenMetadataService mavenMetadataService;
 
     protected AuthorizationService authorizationService;
     protected StorageInterceptors storageInterceptors;
@@ -82,6 +84,7 @@ public abstract class BaseRepoPathMover {
         authorizationService = artifactoryContext.getAuthorizationService();
         repositoryService = artifactoryContext.beanForType(InternalRepositoryService.class);
         storageInterceptors = artifactoryContext.beanForType(StorageInterceptors.class);
+        mavenMetadataService = artifactoryContext.beanForType(MavenMetadataService.class);
 
         copy = moverConfig.isCopy();
         dryRun = moverConfig.isDryRun();
@@ -133,27 +136,27 @@ public abstract class BaseRepoPathMover {
 
         // snapshot/release policy is enforced only on files since it only has a meaning on files
         if (source.isFile() && !targetRepo.handlesReleaseSnapshot(targetPath)) {
-            status.setWarning("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
+            status.warn("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
                     + "' due to its snapshot/release handling policy.", log);
             return false;
         }
 
         if (!targetRepo.accepts(targetRepoPath)) {
-            status.setWarning("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
+            status.warn("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
                     + "' due to its include/exclude patterns.", log);
             return false;
         }
 
         // permission checks
         if (!copy && !authorizationService.canDelete(sourceRepoPath)) {
-            status.setWarning("User doesn't have permissions to move '" + sourceRepoPath + "'. " +
+            status.warn("User doesn't have permissions to move '" + sourceRepoPath + "'. " +
                     "Needs delete permissions.", log);
             return false;
         }
 
         if (contains(targetRrp)) {
             if (!authorizationService.canDelete(targetRepoPath)) {
-                status.setWarning("User doesn't have permissions to override '" + targetRepoPath + "'. " +
+                status.warn("User doesn't have permissions to override '" + targetRepoPath + "'. " +
                         "Needs delete permissions.", log);
                 return false;
             }
@@ -162,12 +165,12 @@ public abstract class BaseRepoPathMover {
             if (source.isFolder()) {
                 VfsItem targetFsItem = targetRepo.getMutableFsItem(targetRepoPath);
                 if (targetFsItem != null && targetFsItem.isFile()) {
-                    status.setWarning("Can't move folder under file '" + targetRepoPath + "'. ", log);
+                    status.warn("Can't move folder under file '" + targetRepoPath + "'. ", log);
                     return false;
                 }
             }
         } else if (!authorizationService.canDeploy(targetRepoPath)) {
-            status.setWarning("User doesn't have permissions to create '" + targetRepoPath + "'. " +
+            status.warn("User doesn't have permissions to create '" + targetRepoPath + "'. " +
                     "Needs write permissions.", log);
             return false;
         }
@@ -180,7 +183,7 @@ public abstract class BaseRepoPathMover {
                 resourceStream = ((VfsFile) source).getStream();
                 new PomTargetPathValidator(targetPath, moduleInfo).validate(resourceStream, false);
             } catch (Exception e) {
-                status.setWarning("Failed to validate target path of pom: " + targetPath, e, log);
+                status.warn("Failed to validate target path of pom: " + targetPath, e, log);
                 return false;
             } finally {
                 IOUtils.closeQuietly(resourceStream);
@@ -321,9 +324,8 @@ public abstract class BaseRepoPathMover {
             // start calculation from the parent folder of the target path (unless it's the root)
             RepoPath folderForMetadataCalculation =
                     fsItem.getRepoPath().isRoot() ? fsItem.getRepoPath() : fsItem.getRepoPath().getParent();
-            repositoryService.markBaseForMavenMetadataRecalculation(folderForMetadataCalculation);
             if (executeMavenMetadataCalculation) {
-                repositoryService.calculateMavenMetadataAsync(folderForMetadataCalculation);
+                mavenMetadataService.calculateMavenMetadataAsync(folderForMetadataCalculation, true);
             }
         }
 
@@ -332,9 +334,8 @@ public abstract class BaseRepoPathMover {
             RepoPath sourceForMetadataCalculation = sourceFolderRepoPath.getParent();
             Repo sourceRepo = repositoryService.repositoryByKey(sourceFolderRepoPath.getRepoKey());
             if (!copy && sourceRepo != null && !sourceRepo.isCache() && sourceForMetadataCalculation != null) {
-                repositoryService.markBaseForMavenMetadataRecalculation(sourceForMetadataCalculation);
                 if (executeMavenMetadataCalculation) {
-                    repositoryService.calculateMavenMetadataAsync(sourceForMetadataCalculation);
+                    mavenMetadataService.calculateMavenMetadataAsync(sourceForMetadataCalculation, true);
                 }
             }
         }

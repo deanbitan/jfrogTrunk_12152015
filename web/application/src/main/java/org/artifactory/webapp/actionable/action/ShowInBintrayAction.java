@@ -29,7 +29,7 @@ import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
  * @author Gidi Shabat
  */
 public class ShowInBintrayAction extends RepoAwareItemAction {
-    public static final String ACTION_NAME = "Show In Bintray";
+    public static final String ACTION_NAME = "Show in Bintray";
     private BintrayItemInfo searchResult;
 
     public ShowInBintrayAction(BintrayItemInfo searchResult) {

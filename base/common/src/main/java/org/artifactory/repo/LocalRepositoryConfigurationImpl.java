@@ -50,6 +50,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
     private boolean archiveBrowsingEnabled = false;
     private boolean calculateYumMetadata = false;
     private int yumRootDepth = 0;
+    private boolean enableGemsSupport = false;
 
     public LocalRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -84,6 +85,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         setArchiveBrowsingEnabled(localRepoDescriptor.isArchiveBrowsingEnabled());
         setCalculateYumMetadata(localRepoDescriptor.isCalculateYumMetadata());
         setYumRootDepth(localRepoDescriptor.getYumRootDepth());
+        setEnableGemsSupport(localRepoDescriptor.isEnableGemsSupport());
     }
 
     @Override

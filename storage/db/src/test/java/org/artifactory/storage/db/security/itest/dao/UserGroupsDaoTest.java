@@ -107,6 +107,34 @@ public class UserGroupsDaoTest extends SecurityBaseDaoTest {
     }
 
     @Test(dependsOnMethods = "testCreateUser")
+    public void testCreateUserWithNulls() throws SQLException {
+        long now = System.currentTimeMillis();
+        final User u5 = new User(5L, "u5",
+                null, "", "", "",
+                false, true, false,
+                "", "", "",
+                now - 10000L, "",
+                now, "",
+                "");
+        u5.setGroups(new HashSet<UserGroup>(1));
+        int res = userGroupsDao.createUser(u5);
+        assertEquals(res, 1);
+        User user = userGroupsDao.findUserById(5L);
+        assertNotNull(user);
+        assertFalse(user.isIdentical(u5));
+        assertEquals(user.getPassword(), "");
+        assertNull(user.getSalt());
+        assertNull(user.getEmail());
+        assertNull(user.getGenPasswordKey());
+        assertNull(user.getRealm());
+        assertNull(user.getPrivateKey());
+        assertNull(user.getPublicKey());
+        assertNull(user.getLastLoginClientIp());
+        assertNull(user.getLastAccessClientIp());
+        assertNull(user.getBintrayAuth());
+    }
+
+    @Test(dependsOnMethods = "testCreateUserWithNulls")
     public void testUpdateUser() throws SQLException {
         User user = userGroupsDao.findUserById(4L);
         assertNotNull(user);
@@ -236,7 +264,8 @@ public class UserGroupsDaoTest extends SecurityBaseDaoTest {
 
     @Test(dependsOnMethods = {"testDeleteUserAndGroupLinked", "testDeleteUser"})
     public void testAddUsersToGroup() throws SQLException {
-        // User 6 and 8 are left over from groups link failure => delete silently
+        // User 5, 6 and 8 are left over from groups link failure => delete silently
+        userGroupsDao.deleteUser("u5");
         userGroupsDao.deleteUser("u6");
         userGroupsDao.deleteUser("u8");
         checkUserCollection(userGroupsDao.getAllUsers(true), ImmutableSet.of(1, 2, 3, 15, 16));

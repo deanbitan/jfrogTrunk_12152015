@@ -30,17 +30,20 @@ import javax.xml.bind.annotation.XmlType;
         namespace = Descriptor.NS)
 public class NuGetConfiguration implements Descriptor {
 
-    @XmlElement(defaultValue = "api/v2", required = false)
-    private String feedContextPath = "api/v2";
+    @XmlElement(defaultValue = "", required = false)
+    private String feedContextPath = "";
 
-    @XmlElement(defaultValue = "api/v2/package", required = false)
-    private String downloadContextPath = "api/v2/package";
+    @XmlElement(defaultValue = "", required = false)
+    private String downloadContextPath = "";
 
     public String getFeedContextPath() {
         return feedContextPath;
     }
 
     public void setFeedContextPath(String feedContextPath) {
+        if (feedContextPath == null) {
+            feedContextPath = "";
+        }
         this.feedContextPath = feedContextPath;
     }
 

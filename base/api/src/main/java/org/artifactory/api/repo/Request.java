@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
 public @interface Request {
 
     /**
-     * Indicates if the occuring of events should be notified at the end of the request, or be aggregated for certain
+     * Indicates if the occurring of events should be notified at the end of the request, or be aggregated for certain
      * time window
      *
      * @return True if events should be aggregated. False if not

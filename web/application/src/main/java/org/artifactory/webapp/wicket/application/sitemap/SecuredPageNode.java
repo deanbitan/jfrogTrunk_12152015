@@ -23,7 +23,6 @@ import org.apache.wicket.injection.Injector;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.AddonsWebManager;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.model.sitemap.MenuNode;
 
@@ -33,9 +32,6 @@ import org.artifactory.common.wicket.model.sitemap.MenuNode;
 public abstract class SecuredPageNode extends MenuNode {
     @SpringBean
     private AuthorizationService authorizationService;
-
-    @SpringBean
-    private RepositoryService repositoryService;
 
     @SpringBean
     private AddonsManager addons;
@@ -51,10 +47,6 @@ public abstract class SecuredPageNode extends MenuNode {
 
     public AuthorizationService getAuthorizationService() {
         return authorizationService;
-    }
-
-    public RepositoryService getRepositoryService() {
-        return repositoryService;
     }
 
     public AddonsManager getAddons() {

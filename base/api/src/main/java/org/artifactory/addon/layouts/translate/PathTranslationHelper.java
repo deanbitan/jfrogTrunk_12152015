@@ -63,7 +63,7 @@ public class PathTranslationHelper {
 
         if ((moduleInfo == null) || !moduleInfo.isValid()) {
             if (multiStatusHolder != null) {
-                multiStatusHolder.setWarning("Unable to translate path '" + path +
+                multiStatusHolder.warn("Unable to translate path '" + path +
                         "': does not represent a valid module path within the source.", log);
             }
 
@@ -86,7 +86,7 @@ public class PathTranslationHelper {
         }
 
         if (!resultModuleInfo.isValid() && (multiStatusHolder != null)) {
-            multiStatusHolder.setWarning("Translated path '" + path +
+            multiStatusHolder.warn("Translated path '" + path +
                     "', but the result does not represent a valid module path within the target.", log);
         }
 

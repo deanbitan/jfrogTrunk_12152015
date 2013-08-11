@@ -183,19 +183,19 @@ public interface RepositoryService extends ImportableExportable {
     @Lock
     boolean removeProperties(RepoPath repoPath);
 
-    @Request
+    @Request(aggregateEventsByTimeWindow = true)
     @Lock
     BasicStatusHolder undeploy(RepoPath repoPath);
 
-    @Request
+    @Request(aggregateEventsByTimeWindow = true)
     @Lock
     BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata);
 
-    @Request
+    @Request(aggregateEventsByTimeWindow = true)
     @Lock
     BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata, boolean pruneEmptyFolders);
 
-    @Request
+    @Request(aggregateEventsByTimeWindow = true)
     StatusHolder undeployVersionUnits(Set<VersionUnit> versionUnits);
 
     /**
@@ -395,44 +395,6 @@ public interface RepositoryService extends ImportableExportable {
     boolean isRepoPathVisible(RepoPath repoPath);
 
     /**
-     * Note: you should call the markBaseForMavenMetadataRecalculation() before calling this method to recover in case
-     * this task is interrupted in the middle.
-     *
-     * @param baseFolderPath A path to a folder to start calculating metadata from. Must be a local non-cache repository
-     *                       path.
-     */
-    @Async(delayUntilAfterCommit = true, transactional = false)
-    public void calculateMavenMetadataAsync(RepoPath baseFolderPath);
-
-    /**
-     * Calculate the maven plugins metadata asynchronously after the current transaction is committed. The reason is the
-     * metadata calculator uses xpath queries for its job and since the move is not committed yet, the xpath query
-     * result might not be accurate (for example when moving plugins from one repo to another the query on the source
-     * repository will return the moved plugins while the target repo will not return them). <p/> Note: you should call
-     * the markBaseForMavenMetadataRecalculation() before calling this method to recover in case this task is
-     * interrupted in the middle.
-     *
-     * @param localRepoKey Key of the local non-cache repository to calculate maven plugins metadata on.
-     */
-    @Async(delayUntilAfterCommit = true)
-    public void calculateMavenPluginsMetadataAsync(String localRepoKey);
-
-    /**
-     * Calculates the maven metadata recursively on all the folders under the input folder.
-     * This will also trigger asynchronous maven metadata calculation for maven plugins.
-     *
-     * @param baseFolderPath Base repo path to start calculating from
-     */
-    public void calculateMavenMetadata(RepoPath baseFolderPath);
-
-    /**
-     * Marks a folder for maven metadata recalculation.
-     *
-     * @param basePath Base folder path for the recalculation. Must be a local non-cache repository path.
-     */
-    void markBaseForMavenMetadataRecalculation(RepoPath basePath);
-
-    /**
      * @return List of virtual repositories that include the repository in their list.
      */
     List<VirtualRepoDescriptor> getVirtualReposContainingRepo(RepoDescriptor repoDescriptor);
@@ -555,4 +517,5 @@ public interface RepositoryService extends ImportableExportable {
     @Nullable
     StatsInfo getStatsInfo(RepoPath repoPath);
 
+    boolean isWriteLocked(RepoPath repoPath);
 }

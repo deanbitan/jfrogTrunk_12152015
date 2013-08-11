@@ -123,6 +123,11 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isEnableGemsSupport() {
+        return remoteRepo.isEnableGemsSupport();
+    }
+
+    @Override
     public boolean isArchiveBrowsingEnabled() {
         return remoteRepo.isArchiveBrowsingEnabled();
     }

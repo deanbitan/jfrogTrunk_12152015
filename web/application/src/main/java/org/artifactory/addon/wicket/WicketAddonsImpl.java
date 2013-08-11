@@ -217,7 +217,7 @@ import static org.artifactory.addon.AddonType.*;
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
-        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon {
+        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -962,7 +962,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public List<P2Repository> verifyRemoteRepositories(MutableCentralConfigDescriptor currentDescriptor,
             VirtualRepoDescriptor virtualRepo, List<P2Repository> currentList,
             Map<String, List<String>> subCompositeUrls, MutableStatusHolder statusHolder) {
-        statusHolder.setError("Error: the P2 addon is required for this operation.",
+        statusHolder.error("Error: the P2 addon is required for this operation.",
                 HttpStatus.SC_BAD_REQUEST, log);
         return null;
     }
@@ -983,12 +983,24 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void createAndAddRepoConfigNuGetSection(Form form, RepoDescriptor repoDescriptor) {
-        WebMarkupContainer nuGetBorder = new WebMarkupContainer("nuGetBorder");
+    public void createAndAddRepoConfigNuGetSection(Form form, RepoDescriptor repoDescriptor, boolean isCreate) {
+        form.add(getVirtualRepoConfigurationSection("nuGetBorder", repoDescriptor, form, isCreate));
+    }
+
+    @Override
+    public WebMarkupContainer getVirtualRepoConfigurationSection(String id, RepoDescriptor repoDescriptor, Form form,
+            boolean isCreate) {
+        WebMarkupContainer nuGetBorder = new WebMarkupContainer(id);
         nuGetBorder.add(new TitledBorderBehavior("fieldset-border", "NuGet"));
         nuGetBorder.add(new DisabledAddonBehavior(AddonType.NUGET));
         nuGetBorder.add(new StyledCheckbox("enableNuGetSupport").setTitle("Enable NuGet Support").setEnabled(false));
         nuGetBorder.add(new SchemaHelpBubble("enableNuGetSupport.help"));
+        nuGetBorder.add(new TitledAjaxSubmitLink("reindexPackages", "ReIndex Packages", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+            }
+        }.setEnabled(false));
+
         if (repoDescriptor instanceof RemoteRepoDescriptor) {
             NuGetConfiguration dummyConf = new NuGetConfiguration();
             nuGetBorder.add(new TextField<>("feedContextPath",
@@ -1001,7 +1013,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
                     new SchemaHelpModel(dummyConf, "downloadContextPath")));
         }
         nuGetBorder.add(getNuGetUrlLabel(repoDescriptor));
-        form.add(nuGetBorder);
+        return nuGetBorder;
     }
 
     @Override
@@ -1012,6 +1024,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public HttpMethodBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo) {
         return new HeadMethod(HttpUtils.encodeQuery(repoUrl));
+    }
+
+    @Override
+    public ITab buildPackagesConfigTab(String id, RepoDescriptor repoDescriptor, Form form) {
+        return new DisabledAddonTab(Model.<String>of(id), AddonType.GEMS);
     }
 
     @Override
@@ -1049,6 +1066,32 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public boolean isEnableIntegration() {
         return false;
+    }
+
+    @Override
+    public WebMarkupContainer buildPackagesConfigSection(String id, RepoDescriptor descriptor, Form form) {
+        WebMarkupContainer gemsSection = new WebMarkupContainer(id);
+        gemsSection.add(new TitledBorderBehavior("fieldset-border", "RubyGems"));
+        gemsSection.add(new DisabledAddonBehavior(AddonType.GEMS));
+        gemsSection.add(new StyledCheckbox("enableGemsSupport").setTitle("Enable RubyGems Support").setEnabled(false));
+        gemsSection.add(new SchemaHelpBubble("enableGemsSupport.help"));
+        gemsSection.add(new TitledAjaxSubmitLink("recalculateIndex", "Recalculate Index", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+            }
+        }.setEnabled(false));
+
+        return gemsSection;
+    }
+
+    @Override
+    public WebMarkupContainer buildInfoSection(String id, RepoPath repoPath) {
+        return (WebMarkupContainer) new WebMarkupContainer(id).add(new DisabledAddonBehavior(GEMS));
+    }
+
+    @Override
+    public WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath) {
+        return (WebMarkupContainer) new WebMarkupContainer(id).add(new DisabledAddonBehavior(GEMS));
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

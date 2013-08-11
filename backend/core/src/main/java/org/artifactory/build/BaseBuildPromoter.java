@@ -146,7 +146,7 @@ public class BaseBuildPromoter {
             if (failOnMissingArtifact) {
                 throw new ItemNotFoundRuntimeException(errorMessage + ": aborting promotion.");
             }
-            multiStatusHolder.setError(errorMessage, log);
+            multiStatusHolder.error(errorMessage, log);
             return;
         }
         for (FileInfo artifactInfo : artifactInfos) {
@@ -215,7 +215,7 @@ public class BaseBuildPromoter {
             boolean dryRun, MultiStatusHolder multiStatusHolder) {
         for (RepoPath itemToTag : itemsToTag) {
             if (!authorizationService.canAnnotate(itemToTag)) {
-                multiStatusHolder.setWarning("User doesn't have permissions to annotate '" + itemToTag + "'", log);
+                multiStatusHolder.warn("User doesn't have permissions to annotate '" + itemToTag + "'", log);
                 if (failFast) {
                     return;
                 } else {

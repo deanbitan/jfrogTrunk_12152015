@@ -93,31 +93,4 @@ public class TasksServiceImpl implements TasksService {
         }
     }
 
-    @Nonnull
-    @Override
-    public Set<RepoPath> getMavenMetadataCalculationTasks() {
-        return getRepoPathTasks(TASK_TYPE_MAVEN_METADATA);
-    }
-
-    @Override
-    public void addMavenMetadataCalculationTask(RepoPath repoPath) {
-        try {
-            if (!tasksDao.exist(TASK_TYPE_MAVEN_METADATA, repoPath.getId())) {
-                tasksDao.create(TASK_TYPE_MAVEN_METADATA, repoPath.getId());
-            }
-        } catch (SQLException e) {
-            throw new StorageException("Failed to add maven metadata calculation task for " + repoPath + ": " +
-                    e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public boolean removeMavenMetadataCalculationTask(RepoPath repoPath) {
-        try {
-            return tasksDao.delete(TASK_TYPE_MAVEN_METADATA, repoPath.getId());
-        } catch (SQLException e) {
-            throw new StorageException("Failed to delete maven metadata calculation task for " + repoPath + ": " +
-                    e.getMessage(), e);
-        }
-    }
 }

@@ -43,22 +43,25 @@ public class GroupImpl implements MutableGroupInfo {
     private String realmAttributes;
 
     public GroupImpl() {
+        this.realm = SecurityConstants.DEFAULT_REALM;
     }
 
     public GroupImpl(String groupName) {
         this.groupName = groupName;
+        this.realm = SecurityConstants.DEFAULT_REALM;
     }
 
     public GroupImpl(String groupName, String description, boolean newUserDefault) {
         this.groupName = groupName;
         this.description = description;
         this.newUserDefault = newUserDefault;
+        this.realm = SecurityConstants.DEFAULT_REALM;
     }
 
     public GroupImpl(String groupName, String description, String realm) {
         this.groupName = groupName;
         this.description = description;
-        this.realm = realm;
+        this.realm = realm != null ? realm : SecurityConstants.DEFAULT_REALM;
     }
 
     public GroupImpl(String groupName, String description,
@@ -67,7 +70,7 @@ public class GroupImpl implements MutableGroupInfo {
         this.groupName = groupName;
         this.description = description;
         this.newUserDefault = newUserDefault;
-        this.realm = realm;
+        this.realm = realm != null ? realm : SecurityConstants.DEFAULT_REALM;
         this.realmAttributes = realmAttributes;
     }
 
@@ -129,7 +132,7 @@ public class GroupImpl implements MutableGroupInfo {
 
     @Override
     public void setRealm(String realm) {
-        this.realm = realm;
+        this.realm = realm != null ? realm : SecurityConstants.DEFAULT_REALM;
     }
 
     @Override

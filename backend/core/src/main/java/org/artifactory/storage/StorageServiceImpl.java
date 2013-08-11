@@ -83,7 +83,7 @@ public class StorageServiceImpl implements InternalStorageService {
     @Override
     public void compress(MultiStatusHolder statusHolder) {
         if (!derbyUsed) {
-            statusHolder.setError("Compress command is not supported on current database type.", log);
+            statusHolder.error("Compress command is not supported on current database type.", log);
             return;
         }
 
@@ -141,7 +141,7 @@ public class StorageServiceImpl implements InternalStorageService {
             try {
                 execOneGcAndWait(true);
             } catch (Exception e) {
-                statusHolder.setError("Error activating Artifactory Storage Garbage Collector: " + e.getMessage(), e,
+                statusHolder.error("Error activating Artifactory Storage Garbage Collector: " + e.getMessage(), e,
                         log);
             }
         }

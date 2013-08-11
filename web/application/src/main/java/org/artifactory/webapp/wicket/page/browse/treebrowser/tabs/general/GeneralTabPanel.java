@@ -24,6 +24,9 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.GemsWebAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoBuilder;
@@ -58,7 +61,13 @@ public class GeneralTabPanel extends Panel {
         add(new GeneralInfoPanel("generalInfoPanel").init(repoItem));
 
         if (shouldDisplayDistributionManagement()) {
-            add(new DistributionManagementPanel("distributionManagement", repoItem));
+            //TODO [mamo]: make it generic, let addon contribute ui sections
+            GemsWebAddon gemsWebAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(GemsWebAddon.class);
+            if (!gemsWebAddon.isDefault() && repoItem.getRepo().isEnableGemsSupport()) {
+                add(gemsWebAddon.buildDistributionManagementPanel("distributionManagement", repoItem.getRepoPath()));
+            } else {
+                add(new DistributionManagementPanel("distributionManagement", repoItem));
+            }
         } else {
             add(new WebMarkupContainer("distributionManagement"));
         }

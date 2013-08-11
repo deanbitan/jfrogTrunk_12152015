@@ -38,6 +38,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.lang.annotation.Annotation;
@@ -55,12 +58,8 @@ import java.util.concurrent.Future;
 public class AsyncAdvice implements MethodInterceptor {
     private static final Logger log = LoggerFactory.getLogger(AsyncAdvice.class);
 
-    private static ConcurrentHashMap<MethodInvocation, MethodInvocation> pendingInvocations =
-            new ConcurrentHashMap<>();
-
-    public AsyncAdvice() {
-        log.debug("Creating async advice interceptor");
-    }
+    // holds all the pending and running invocations. used only during tests
+    private ConcurrentHashMap<MethodInvocation, MethodInvocation> pendingInvocations = new ConcurrentHashMap<>();
 
     @Override
     public Future<?> invoke(final MethodInvocation invocation) throws Throwable {
@@ -183,6 +182,8 @@ public class AsyncAdvice implements MethodInterceptor {
             invocation.proceed();
             return null;    // multiple invocations -> no single return type
         }
+
+        Authentication originalAuthentication = null;
         try {
             MethodAnnotation<Async> methodAnnotation =
                     getMethodAnnotation(((TraceableMethodInvocation) invocation).wrapped, Async.class);
@@ -190,6 +191,11 @@ public class AsyncAdvice implements MethodInterceptor {
                 throw new IllegalArgumentException(
                         "An async invocation (" + invocation.getMethod() +
                                 ") should be used with an @Async annotated invocation.");
+            }
+            if (methodAnnotation.annotation.authenticateAsSystem()) {
+                SecurityContext securityContext = SecurityContextHolder.getContext();
+                originalAuthentication = securityContext.getAuthentication();
+                InternalContextHelper.get().getSecurityService().authenticateAsSystem();
             }
             if (methodAnnotation.annotation.transactional()) {
                 //Wrap in a transaction
@@ -200,6 +206,11 @@ public class AsyncAdvice implements MethodInterceptor {
                 return invocation.proceed();
             }
         } finally {
+            if (originalAuthentication != null) {
+                SecurityContext securityContext = SecurityContextHolder.getContext();
+                securityContext.setAuthentication(originalAuthentication);
+            }
+
             // remove the invocations here (called from the Compound also)
             removeInvocation(invocation);
         }
@@ -214,6 +225,13 @@ public class AsyncAdvice implements MethodInterceptor {
 
     public ImmutableSet<MethodInvocation> getCurrentInvocations() {
         return ImmutableSet.copyOf(pendingInvocations.keySet());
+    }
+
+    public void clearPendingInvocations() {
+        if (ConstantValues.test.getBoolean()) {
+            log.trace("Clearing all asyn invocations: {}", pendingInvocations);
+            pendingInvocations.clear();
+        }
     }
 
     /**

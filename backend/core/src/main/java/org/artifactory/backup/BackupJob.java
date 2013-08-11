@@ -88,14 +88,14 @@ public class BackupJob extends QuartzCommand {
         InternalBackupService backupService = getBackupService();
         BackupDescriptor backup = backupService.getBackup(backupKey);
         if (backup == null) {
-            jobStatus.setError("Backup: '" + backupKey + "' not found or disabled. Backup was not performed.", log);
+            jobStatus.error("Backup: '" + backupKey + "' not found or disabled. Backup was not performed.", log);
         } else {
             runBackup(context, backupService, jobStatus, backup);
         }
         //If backup failed, warn and do not clean up
         boolean backupKeyNotBlank = StringUtils.isNotBlank(backupKey);
         if (jobStatus.hasErrors()) {
-            jobStatus.setWarning("Backup completed with some errors (see the log messages above for details). " +
+            jobStatus.warn("Backup completed with some errors (see the log messages above for details). " +
                     "Old backups will not be auto-removed.", log);
 
             if (backupKeyNotBlank) {
@@ -104,7 +104,7 @@ public class BackupJob extends QuartzCommand {
                     try {
                         backupService.sendBackupErrorNotification(backupDescriptor.getKey(), jobStatus);
                     } catch (Exception e) {
-                        jobStatus.setError("An error occurred while sending backup error notification", e, log);
+                        jobStatus.error("An error occurred while sending backup error notification", e, log);
                     }
                 }
             }
@@ -121,7 +121,7 @@ public class BackupJob extends QuartzCommand {
             MultiStatusHolder backupStatus = backupService.backupSystem(context, backup);
             jobStatus.merge(backupStatus);
         } catch (Exception e) {
-            jobStatus.setError("An error occurred while performing a backup", e, log);
+            jobStatus.error("An error occurred while performing a backup", e, log);
         }
     }
 }

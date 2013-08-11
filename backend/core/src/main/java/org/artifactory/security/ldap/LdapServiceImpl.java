@@ -65,11 +65,11 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, password);
             authenticator.authenticate(authentication);
-            status.setStatus("Successfully connected and authenticated the test user.", log);
+            status.status("Successfully connected and authenticated the test user.", log);
             LdapTemplate ldapTemplate = createLdapTemplate(ldapSetting);
             LdapUser ldapUser = getUserFromLdapSearch(ldapTemplate, username, ldapSetting);
             if (ldapUser == null) {
-                status.setWarning(
+                status.warn(
                         "LDAP user search failed, LDAP queries concerning users and groups may not be available.",
                         log);
             }

@@ -29,7 +29,7 @@ import org.codehaus.plexus.util.StringUtils;
  * @author freds
  */
 public enum NuGetProperties {
-    Id, Version, IsLatestVersion, Digest,
+    Id, Version, Digest,
     Title, Authors, Owners, Summary, Description,
     Copyright, RequireLicenseAcceptance, ReleaseNotes,
     ProjectUrl, LicenseUrl, IconUrl, Tags,

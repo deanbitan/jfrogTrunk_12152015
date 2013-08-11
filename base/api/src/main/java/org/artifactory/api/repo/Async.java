@@ -47,7 +47,7 @@ public @interface Async {
     boolean delayUntilAfterCommit() default false;
 
     /**
-     * Share the thread with other aysnc callbacks registered on the current thread - only applicable if
+     * Share the thread with other async callbacks registered on the current thread - only applicable if
      * 'delayUntilAfterCommit' is true.
      */
     boolean shared() default true;
@@ -56,4 +56,9 @@ public @interface Async {
      * Don't execute if calling thread is not in a transaction.
      */
     boolean failIfNotScheduledFromTransaction() default false;
+
+    /**
+     * Invoke the async method with {@link org.artifactory.api.security.SecurityService#authenticateAsSystem()}
+     */
+    boolean authenticateAsSystem() default false;
 }

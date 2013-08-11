@@ -41,10 +41,10 @@ import java.io.InputStream;
 public class MimeTypesReader {
     private static final Logger log = LoggerFactory.getLogger(MimeTypesReader.class);
 
-    public MimeTypes read(File securityFile) {
+    public MimeTypes read(File mimeTypesFile) {
         FileInputStream fis = null;
         try {
-            fis = new FileInputStream(securityFile);
+            fis = new FileInputStream(mimeTypesFile);
             return read(fis);
         } catch (FileNotFoundException e) {
             throw new RuntimeException("File not found: " + e.getMessage());

@@ -35,6 +35,7 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -329,12 +330,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                         "returning expired cached resource");
                 remoteResource = returnCachedResource(repoPath, cachedResource);
             }
-            // there's a newer remote resource that should be downloaded this is not supported for zip resources
             if (remoteResource.isFound() && context.getRequest().isZipResourceRequest()) {
-                RepoRequests.logToContext("Resource exists remotely but is contained within a ZIP variant - " +
-                        "returning returning as unfound (remote download of archived content isn't supported)");
-                return new UnfoundRepoResource(repoPath,
-                        "Zip resources download is only supported on cached artifacts");
+                // there's a newer remote resource that should be downloaded for zip resources
+                return getRemoteZipRepoResource(repoPath, context);
             }
             return remoteResource;
         } else if (foundExpiredInCache) {
@@ -348,6 +346,32 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     "local cache - returning unfound resource");
             return new UnfoundRepoResource(repoPath,
                     String.format("%s: is %s, '%s' is not found at '%s'.", this, offlineMessage, repoPath, path));
+        }
+    }
+
+    private RepoResource getRemoteZipRepoResource(RepoPath repoPath, InternalRequestContext context) {
+        try {
+            RepoRequests.logToContext(
+                    "Main ZIP resource {} exist remotely but is expired or is not present in the caches - " +
+                            "doing eager download.", repoPath);
+            EagerResourcesDownloader eagerResourcesDownloader = InternalContextHelper.get().beanForType(
+                    EagerResourcesDownloader.class);
+            eagerResourcesDownloader.downloadNow(repoPath, new InternalArtifactoryRequest(repoPath));
+            RepoResource cachedResource = localCacheRepo.getInfo(context);
+            if (cachedResource != null && cachedResource.isFound()) {
+                RepoRequests.logToContext("Found resource after eager download in local cache - returning cached resource");
+                return returnCachedResource(repoPath, cachedResource);
+            }
+            return new UnfoundRepoResource(repoPath, "Could not download main zip resource");
+        } catch (Exception e) {
+            RepoRequests.logToContext(
+                    "Main ZIP resource exists remotely but could not be downloaded due to: {}", e.getMessage());
+            log.warn("Main ZIP resource {} exists remotely but could not be downloaded due to: {}",
+                    repoPath, e.getMessage());
+            if (log.isDebugEnabled()) {
+                log.warn(e.getMessage(), e);
+            }
+            return new UnfoundRepoResource(repoPath, "Zip resources download failed due to: "+e.getMessage());
         }
     }
 

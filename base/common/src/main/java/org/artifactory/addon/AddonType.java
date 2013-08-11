@@ -42,7 +42,8 @@ public enum AddonType {
     SSO("sso", "Crowd & SSO Integration", 1400),
     WATCH("watch", "Watches", 1500),
     WEBSTART("webstart", "WebStart & Jar Signing", 1600),
-    BLACKDUCK("blackduck", "Black Duck Integration", 250);
+    BLACKDUCK("blackduck", "Black Duck Integration", 250),
+    GEMS("gems", "RubyGems", 1100);
 
     private String addonName;
     private String addonDisplayName;

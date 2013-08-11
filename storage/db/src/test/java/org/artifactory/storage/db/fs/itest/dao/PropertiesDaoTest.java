@@ -18,6 +18,8 @@
 
 package org.artifactory.storage.db.fs.itest.dao;
 
+import org.apache.commons.lang.RandomStringUtils;
+import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.fs.dao.PropertiesDao;
 import org.artifactory.storage.db.fs.entity.NodeProperty;
 import org.artifactory.storage.db.itest.DbBaseTest;
@@ -27,6 +29,7 @@ import org.testng.annotations.BeforeClass;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.fest.assertions.Assertions.assertThat;
 import static org.testng.Assert.*;
 
 /**
@@ -127,6 +130,19 @@ public class PropertiesDaoTest extends DbBaseTest {
 
     public void deletePropertiesNonExistentNode() throws SQLException {
         assertEquals(propsDao.deleteNodeProperties(6778678), 0);
+    }
+
+    public void trimLongPropertyValue() throws SQLException {
+        if (storageProperties.getDbType() == DbType.MSSQL) {
+            return; // RTFACT-5768
+        }
+        String longValue = RandomStringUtils.randomAscii(2088);
+        propsDao.create(new NodeProperty(876, 15, "trimeme", longValue));
+        List<NodeProperty> nodeProperties = propsDao.getNodeProperties(15);
+        assertThat(nodeProperties.size()).isEqualTo(1);
+        String trimmedValue = nodeProperties.get(0).getPropValue();
+        assertThat(trimmedValue).hasSize(2048);
+        assertThat(longValue).startsWith(trimmedValue);
     }
 
     private NodeProperty getById(long propId, List<NodeProperty> properties) {

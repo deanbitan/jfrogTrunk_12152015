@@ -281,7 +281,7 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildName = buildRun.getName();
         String buildNumber = buildRun.getNumber();
         Build build = getBuild(buildRun);
-        status.setDebug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
+        status.debug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
         for (Module module : build.getModules()) {
             for (Artifact artifact : module.getArtifacts()) {
                 Set<FileInfo> matchingArtifacts = getBuildFileBeanInfo(buildName, buildNumber, artifact, true);
@@ -292,7 +292,7 @@ public class BuildServiceImpl implements InternalBuildService {
                 }
             }
         }
-        status.setDebug("Finished removing the artifacts of build '" + buildName + "' #" + buildNumber, log);
+        status.debug("Finished removing the artifacts of build '" + buildName + "' #" + buildNumber, log);
     }
 
     @Override
@@ -420,7 +420,7 @@ public class BuildServiceImpl implements InternalBuildService {
     @Override
     public void exportTo(ExportSettings settings) {
         MutableStatusHolder multiStatusHolder = settings.getStatusHolder();
-        multiStatusHolder.setDebug("Starting build info export", log);
+        multiStatusHolder.debug("Starting build info export", log);
 
         File buildsFolder = new File(settings.getBaseDir(), BUILDS_EXPORT_DIR);
         prepareBuildsFolder(settings, multiStatusHolder, buildsFolder);
@@ -444,12 +444,12 @@ public class BuildServiceImpl implements InternalBuildService {
                         if (settings.isFailFast()) {
                             throw new Exception(errorMessage, e);
                         }
-                        multiStatusHolder.setError(errorMessage, e, log);
+                        multiStatusHolder.error(errorMessage, e, log);
                     }
                 }
             }
         } catch (Exception e) {
-            multiStatusHolder.setError("Error occurred during build info export.", e, log);
+            multiStatusHolder.error("Error occurred during build info export.", e, log);
         }
 
         if (settings.isIncremental() && !multiStatusHolder.isError()) {
@@ -470,11 +470,11 @@ public class BuildServiceImpl implements InternalBuildService {
                     }
                 }
             } catch (IOException e) {
-                multiStatusHolder.setError("Failed to clean previous builds backup folder.", e, log);
+                multiStatusHolder.error("Failed to clean previous builds backup folder.", e, log);
             }
         }
 
-        multiStatusHolder.setDebug("Finished build info export", log);
+        multiStatusHolder.debug("Finished build info export", log);
     }
 
     /**
@@ -495,7 +495,7 @@ public class BuildServiceImpl implements InternalBuildService {
                     FileUtils.moveDirectory(buildsFolder, tempBuildBackupDir);
                     FileUtils.forceMkdir(buildsFolder);
                 } catch (IOException e) {
-                    multiStatusHolder.setError(
+                    multiStatusHolder.error(
                             "Failed to create incremental builds temp backup dir: " + tempBuildBackupDir, e, log);
                 }
             }
@@ -503,7 +503,7 @@ public class BuildServiceImpl implements InternalBuildService {
             try {
                 FileUtils.forceMkdir(buildsFolder);
             } catch (IOException e) {
-                multiStatusHolder.setError("Failed to create builds backup dir: " + buildsFolder, e, log);
+                multiStatusHolder.error("Failed to create builds backup dir: " + buildsFolder, e, log);
             }
         }
     }
@@ -511,7 +511,7 @@ public class BuildServiceImpl implements InternalBuildService {
     @Override
     public void importFrom(ImportSettings settings) {
         final MutableStatusHolder multiStatusHolder = settings.getStatusHolder();
-        multiStatusHolder.setStatus("Starting build info import", log);
+        multiStatusHolder.status("Starting build info import", log);
 
         dbService.invokeInTransaction(new Callable<Object>() {
             @Override
@@ -520,7 +520,7 @@ public class BuildServiceImpl implements InternalBuildService {
                     // delete all existing builds
                     buildStoreService.deleteAllBuilds();
                 } catch (Exception e) {
-                    multiStatusHolder.setError("Failed to delete builds root node", e, log);
+                    multiStatusHolder.error("Failed to delete builds root node", e, log);
                 }
                 return null;
             }
@@ -529,7 +529,7 @@ public class BuildServiceImpl implements InternalBuildService {
         File buildsFolder = new File(settings.getBaseDir(), BUILDS_EXPORT_DIR);
         String buildsFolderPath = buildsFolder.getPath();
         if (!buildsFolder.exists()) {
-            multiStatusHolder.setStatus("'" + buildsFolderPath + "' folder is either non-existent or not a " +
+            multiStatusHolder.status("'" + buildsFolderPath + "' folder is either non-existent or not a " +
                     "directory. Build info import was not performed", log);
             return;
         }
@@ -546,13 +546,13 @@ public class BuildServiceImpl implements InternalBuildService {
                 FileUtils.listFiles(buildsFolder, buildExportFileFilter, DirectoryFileFilter.DIRECTORY);
 
         if (buildExportFiles.isEmpty()) {
-            multiStatusHolder.setStatus("'" + buildsFolderPath + "' folder does not contain build export files. " +
+            multiStatusHolder.status("'" + buildsFolderPath + "' folder does not contain build export files. " +
                     "Build info import was not performed", log);
             return;
         }
 
         importBuildFiles(settings, buildExportFiles);
-        multiStatusHolder.setStatus("Finished build info import", log);
+        multiStatusHolder.status("Finished build info import", log);
     }
 
     @Override
@@ -562,16 +562,16 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildNumber = build.getBuildNumber();
         String buildStarted = build.getBuildStarted();
         try {
-            multiStatusHolder.setDebug(
+            multiStatusHolder.debug(
                     String.format("Beginning import of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
             buildStoreService.addBuild(build.getJson());
         } catch (Exception e) {
             String msg = "Could not import build " + buildName + ":" + buildNumber + ":" + buildStarted;
             // Print stack trace in debug
             log.debug(msg, e);
-            multiStatusHolder.setError(msg, e, log);
+            multiStatusHolder.error(msg, e, log);
         }
-        multiStatusHolder.setDebug(
+        multiStatusHolder.debug(
                 String.format("Finished import of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
     }
 
@@ -805,7 +805,7 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildName = buildRun.getName();
         String buildNumber = buildRun.getNumber();
         String buildStarted = buildRun.getStarted();
-        multiStatusHolder.setDebug(
+        multiStatusHolder.debug(
                 String.format("Beginning export of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
 
         ImportableExportableBuild exportedBuild = buildStoreService.getExportableBuild(buildRun);
@@ -813,7 +813,7 @@ public class BuildServiceImpl implements InternalBuildService {
         File buildFile = new File(buildsFolder, "build" + Long.toString(exportedBuildCount) + ".xml");
         exportBuildToFile(exportedBuild, buildFile);
 
-        multiStatusHolder.setDebug(
+        multiStatusHolder.debug(
                 String.format("Finished export of build: %s:%s:%s", buildName, buildNumber, buildStarted), log);
     }
 
@@ -828,7 +828,7 @@ public class BuildServiceImpl implements InternalBuildService {
                 // import each build in a separate transaction
                 getTransactionalMe().importBuild(settings, importableBuild);
             } catch (Exception e) {
-                settings.getStatusHolder().setError("Error occurred during build info import", e, log);
+                settings.getStatusHolder().error("Error occurred during build info import", e, log);
                 if (settings.isFailFast()) {
                     break;
                 }

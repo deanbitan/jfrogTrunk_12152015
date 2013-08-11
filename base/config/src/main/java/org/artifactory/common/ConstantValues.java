@@ -106,9 +106,6 @@ public enum ConstantValues {
     globalExcludes("repo.includeExclude.globalExcludes"),
     archiveLicenseFileNames("archive.licenseFile.names", "license,LICENSE,license.txt,LICENSE.txt,LICENSE.TXT"),
     uiSearchMaxRowsPerPage("ui.search.maxRowsPerPage", 20),
-    nugetUpdateRequestAggregationTimeWindowSecs("nuget.updateRequest.aggregationTimeWindowSecs", 20),
-    nugetUpdateRequestAggregationCycleSecs("nuget.updateRequest.aggregationCycleSecs", 20),
-    nugetSearchMaxResult("nuget.search.maxResults", 100),
     replicationChecksumDeployMinSizeKb("replication.checksumDeploy.minSizeKb", 10),
     replicationConsumerQueueSize("replication.consumer.queueSize", 1),
     replicationLocalIterationSleepThresholdMillis("replication.local.iteration.sleepThresholdMillis", 1000),
@@ -131,7 +128,11 @@ public enum ConstantValues {
     folderPruningIntervalSecs("folderPruning.intervalSecs", 300),
     folderPruningQuietPeriodSecs("folderPruning.quietPeriodSecs", 60),
     defaultSaltValue("security.authentication.password.salt", "CAFEBABEEBABEFAC"),
-    dbIdGeneratorFetchAmount("db.idGenerator.fetch.amount", 1000);  // storage.properties
+    dbIdGeneratorFetchAmount("db.idGenerator.fetch.amount", 1000),  // storage.properties
+    gemsLocalIndexTaskIntervalSecs("gems.localIndexTaskIntervalSecs", 30),
+    gemsVirtualIndexTaskIntervalSecs("gems.virtualIndexTaskIntervalSecs", 300),
+    gemsIndexTaskQueueLimit("gems.gemsIndexTaskQueueLimit", 20000),
+    gemsAfterRepoInitHack("gems.gemsAfterRepoInitHack", true);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

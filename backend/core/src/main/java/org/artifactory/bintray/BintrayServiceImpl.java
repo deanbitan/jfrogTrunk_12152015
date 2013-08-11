@@ -159,11 +159,11 @@ public class BintrayServiceImpl implements BintrayService {
             @Nullable Map<String, String> headersMap) throws IOException {
         MultiStatusHolder status = new MultiStatusHolder();
         String buildNameAndNumber = build.getName() + ":" + build.getNumber();
-        status.setStatus("Starting pushing build '" + buildNameAndNumber + "' to Bintray.", log);
+        status.status("Starting pushing build '" + buildNameAndNumber + "' to Bintray.", log);
         Set<FileInfo> artifactsToPush = collectArtifactsToPush(build, status);
         if (artifactsToPush != null) {
             HttpClient client = createHTTPClient();
-            status.setStatus("Found " + artifactsToPush.size() + " artifacts to push.", log);
+            status.status("Found " + artifactsToPush.size() + " artifacts to push.", log);
             for (FileInfo fileInfo : artifactsToPush) {
                 bintrayParams.setPath(fileInfo.getRelPath());
                 if (bintrayParams.isUseExistingProps()) {
@@ -184,7 +184,7 @@ public class BintrayServiceImpl implements BintrayService {
 
         String message = String.format("Finished pushing build '%s' to Bintray with %s errors and %s warnings.",
                 buildNameAndNumber, status.getErrors().size(), status.getWarnings().size());
-        status.setStatus(message, log);
+        status.status(message, log);
 
         if (bintrayParams.isNotify()) {
             sendBuildPushNotification(status, buildNameAndNumber);
@@ -325,7 +325,7 @@ public class BintrayServiceImpl implements BintrayService {
                         if (artifactInfos != null && !artifactInfos.isEmpty()) {
                             fileInfoSet.add(artifactInfos.iterator().next());
                         } else {
-                            status.setError("Couldn't find matching file for artifact '" + artifact + "'", log);
+                            status.error("Couldn't find matching file for artifact '" + artifact + "'", log);
                             return null;
                         }
                     }
@@ -341,7 +341,7 @@ public class BintrayServiceImpl implements BintrayService {
         if (!bintrayParams.isValid()) {
             String message = String.format("Skipping push for '%s' since one of the Bintray properties is missing.",
                     fileInfo.getRelPath());
-            status.setWarning(message, log);
+            status.warn(message, log);
             return;
         }
 
@@ -349,11 +349,11 @@ public class BintrayServiceImpl implements BintrayService {
             String message = String.format(
                     "You do not have annotate permissions on the published files in Artifactory. " +
                             "Bintray package and version properties will not be recorded.");
-            status.setWarning(message, log);
+            status.warn(message, log);
         }
 
         String path = bintrayParams.getPath();
-        status.setStatus("Pushing artifact " + path + " to Bintray.", log);
+        status.status("Pushing artifact " + path + " to Bintray.", log);
         String requestUrl = getBaseBintrayApiUrl() + PATH_CONTENT + "/" + bintrayParams.getRepo() + "/"
                 + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion() + "/" + path;
 
@@ -368,12 +368,12 @@ public class BintrayServiceImpl implements BintrayService {
             if (statusCode != HttpStatus.SC_CREATED) {
                 message = String.format("Push failed for '%s' with status: %s %s", path, statusCode,
                         putMethod.getStatusText());
-                status.setError(message, statusCode, log);
+                status.error(message, statusCode, log);
             } else {
                 message = String.format(
                         "Successfully pushed '%s' to repo: '%s', package: '%s', version: '%s' in Bintray.",
                         path, bintrayParams.getRepo(), bintrayParams.getPackageId(), bintrayParams.getVersion());
-                status.setStatus(message, log);
+                status.status(message, log);
                 if (!bintrayParams.isUseExistingProps()) {
                     savePropertiesOnRepoPath(fileInfo.getRepoPath(), bintrayParams);
                 }

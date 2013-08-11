@@ -43,13 +43,13 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
     @Override
     public List<MetadataEntryInfo> getMetadataEntries(File file, MutableStatusHolder status) {
         if (!file.isDirectory()) {
-            status.setError("Expecting a directory but got file: " + file.getAbsolutePath(), log);
+            status.error("Expecting a directory but got file: " + file.getAbsolutePath(), log);
             return Collections.emptyList();
         }
 
         String[] metadataFileNames = file.list(new SuffixFileFilter(".xml"));
         if (metadataFileNames == null) {
-            status.setError("Cannot read list of metadata files from " + file.getAbsolutePath(), log);
+            status.error("Cannot read list of metadata files from " + file.getAbsolutePath(), log);
             return Collections.emptyList();
         }
 
@@ -61,7 +61,7 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
             if (!verify(status, metadataFileName, metadataFile, extension)) {
                 continue;
             }
-            status.setDebug("Importing metadata from '" + metadataFile.getPath() + "'.", log);
+            status.debug("Importing metadata from '" + metadataFile.getPath() + "'.", log);
 
             try {
                 // metadata name is the name of the file without the extension
@@ -70,7 +70,7 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
                 MetadataEntryInfo metadataEntry = createMetadataEntry(metadataName, xmlContent);
                 result.add(metadataEntry);
             } catch (Exception e) {
-                status.setError("Failed to import xml metadata from '" +
+                status.error("Failed to import xml metadata from '" +
                         metadataFile.getAbsolutePath() + "'.", e, log);
             }
         }
@@ -80,13 +80,13 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
     private boolean verify(MutableStatusHolder status, String metadataFileName, File metadataFile, String extension) {
         if (metadataFile.exists() && metadataFile.isDirectory()) {
             //Sanity check
-            status.setWarning("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
+            status.warn("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
                     "'. Expected a file but encountered a folder.", log);
             return false;
         }
         if (extension.length() + 1 >= metadataFileName.length()) {
             // No name for file, just extension
-            status.setWarning("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
+            status.warn("Skipping xml metadata import from '" + metadataFile.getAbsolutePath() +
                     "'. The file does not have a name.", log);
             return false;
         }

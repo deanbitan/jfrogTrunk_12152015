@@ -100,11 +100,11 @@ public class DeleteBuildAction extends ItemAction {
         MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
         try {
             buildService.deleteBuild(buildRun, false, multiStatusHolder);
-            multiStatusHolder.setStatus(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),
+            multiStatusHolder.status(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),
                     log);
         } catch (Exception exception) {
             String error = String.format("Exception occurred while deleting build '%s' #%s", buildName, buildNumber);
-            multiStatusHolder.setError(error, exception, log);
+            multiStatusHolder.error(error, exception, log);
         }
 
         if (multiStatusHolder.hasErrors()) {

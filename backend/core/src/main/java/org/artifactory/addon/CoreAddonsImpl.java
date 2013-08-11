@@ -25,7 +25,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.license.LicensesAddon;
-import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.ReplicationAddon;
@@ -73,7 +72,6 @@ import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
-import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserGroupInfo;
@@ -90,11 +88,8 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +103,8 @@ import java.util.Set;
  */
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
-        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon {
+        FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
+        GemsAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -335,14 +331,14 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public void scheduleImmediateLocalReplicationTask(LocalReplicationDescriptor replicationDescriptor,
             MultiStatusHolder statusHolder) {
-        statusHolder.setError("Error: the replication addon is required for this operation.", HttpStatus.SC_BAD_REQUEST,
+        statusHolder.error("Error: the replication addon is required for this operation.", HttpStatus.SC_BAD_REQUEST,
                 log);
     }
 
     @Override
     public void scheduleImmediateRemoteReplicationTask(RemoteReplicationDescriptor replicationDescriptor,
             MultiStatusHolder statusHolder) {
-        statusHolder.setError("Error: the replication addon is required for this operation.", HttpStatus.SC_BAD_REQUEST,
+        statusHolder.error("Error: the replication addon is required for this operation.", HttpStatus.SC_BAD_REQUEST,
                 log);
     }
 
@@ -374,7 +370,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     private MultiStatusHolder getReplicationRequiredStatusHolder() {
         MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
-        multiStatusHolder.setError("Error: the replication addon is required for this operation.",
+        multiStatusHolder.error("Error: the replication addon is required for this operation.",
                 HttpStatus.SC_BAD_REQUEST, log);
         return multiStatusHolder;
     }
@@ -392,59 +388,19 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void extractNuPkgInfo(VfsFile item, MutableStatusHolder statusHolder) {
+    public void extractNuPkgInfo(FileInfo fileInfo, MutableStatusHolder statusHolder) {
     }
 
     @Override
-    public void requestAsyncLatestNuPkgVersionUpdate(String repoKey, String packageId) {
+    public void extractNuPkgInfoSynchronously(FileInfo file, MutableStatusHolder statusHolder) {
     }
 
     @Override
-    public String getMetadataEntity() {
-        return null;
+    public void addNuPkgToRepoCache(RepoPath repoPath, Properties properties) {
     }
 
     @Override
-    public void handleSearchRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nullable String subActionParam, @Nonnull OutputStream output) {
-    }
-
-    @Override
-    @Nullable
-    public ResponseCtx handleDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
-            @Nonnull String packageId, @Nonnull String packageVersion) {
-        ResponseCtx responseCtx = new ResponseCtx();
-        responseCtx.setStatus(HttpStatus.SC_BAD_REQUEST);
-        responseCtx.setMessage("The NuGet addon is required for this operation.");
-        return responseCtx;
-    }
-
-    @Override
-    public void handlePackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nonnull OutputStream output) {
-    }
-
-    @Override
-    public void handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nonnull OutputStream output) throws IOException {
-    }
-
-    @Override
-    public void handleGetUpdatesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nullable String actionParam, @Nonnull OutputStream output) {
-    }
-
-    @Override
-    @Nonnull
-    public RepoPath assembleDeploymentRepoPathFromNuPkgSpec(@Nonnull String repoKey, @Nonnull byte[] packageBytes) {
-        throw new IllegalArgumentException("Unable to assemble deployment repo path.");
-    }
-
-    @Override
-    @Nullable
-    public RepoPath findPackageInLocalOrCacheRepo(@Nonnull String repoKey, @Nonnull String packageId,
-            @Nonnull String packageVersion) {
-        return null;
+    public void removeNuPkgFromRepoCache(String repoKey, String packageId, String packageVersion) {
     }
 
     @Nonnull
@@ -490,4 +446,17 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     public void performBlackDuckOnBuildArtifacts(Build build) {
         // NOP
     }
+
+    @Override
+    public void reindexAsync(String repoKey) {
+    }
+
+    @Override
+    public void afterRepoInit(String repoKey) {
+    }
+
+    @Override
+    public void requestAsyncReindexNuPkgs(String repoKey) {
+    }
+
 }

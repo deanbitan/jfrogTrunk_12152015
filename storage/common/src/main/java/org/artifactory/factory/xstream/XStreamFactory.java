@@ -20,8 +20,10 @@ package org.artifactory.factory.xstream;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamDriver;
+import com.thoughtworks.xstream.io.naming.NameCoder;
 import com.thoughtworks.xstream.io.xml.QNameMap;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
+import com.thoughtworks.xstream.io.xml.XmlFriendlyNameCoder;
 import com.thoughtworks.xstream.mapper.MapperWrapper;
 import javanet.staxutils.StaxUtilsXMLOutputFactory;
 import org.artifactory.model.common.RepoPathImpl;
@@ -57,6 +59,14 @@ public abstract class XStreamFactory {
     }
 
     /**
+     * Creates XStream not escaping single underscores
+     */
+    public static XStream createWithUnderscoreFriendly(Class... annotatedClassesToProcess) {
+        return createXStream1(true, new PrettyStaxDriver(null, new XmlFriendlyNameCoder("_-", "_")),
+                annotatedClassesToProcess);
+    }
+
+    /**
      * Creates an XStream instance
      *
      * @param qNameMap                  Optional map
@@ -66,7 +76,12 @@ public abstract class XStreamFactory {
      */
     private static XStream createXStream(@Nullable QNameMap qNameMap, boolean ignoreMissingMembers,
             Class... annotatedClassesToProcess) {
-        XStream xstream = new ResilientXStream(ignoreMissingMembers, new PrettyStaxDriver(qNameMap));
+        return createXStream1(ignoreMissingMembers, new PrettyStaxDriver(qNameMap), annotatedClassesToProcess);
+    }
+
+    private static XStream createXStream1(boolean ignoreMissingMembers, StaxDriver staxDriver,
+            Class... annotatedClassesToProcess) {
+        XStream xstream = new ResilientXStream(ignoreMissingMembers, staxDriver);
         xstream.registerConverter(new RepoPathConverter());
         xstream.registerConverter(new PropertiesConverter());
         xstream.registerConverter(new ChecksumsInfoConverter());
@@ -111,6 +126,10 @@ public abstract class XStreamFactory {
 
         private PrettyStaxDriver(QNameMap qNameMap) {
             super((qNameMap == null) ? new QNameMap() : qNameMap);
+        }
+
+        private PrettyStaxDriver(QNameMap qNameMap, NameCoder nameCoder) {
+            super((qNameMap == null) ? new QNameMap() : qNameMap, nameCoder);
         }
 
         @Override

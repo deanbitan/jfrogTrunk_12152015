@@ -21,22 +21,21 @@ package org.artifactory.repo.interceptor;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.NuGetAddon;
-import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
-import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.ImportInterceptor;
 
 import javax.inject.Inject;
 
 import static org.artifactory.addon.nuget.NuGetProperties.Id;
-import static org.artifactory.addon.nuget.NuGetProperties.IsLatestVersion;
+import static org.artifactory.addon.nuget.NuGetProperties.Version;
 
 /**
  * Triggers NuGet package related storage events
@@ -52,12 +51,8 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
     RepositoryService repositoryService;
 
     @Override
-    public void beforeDelete(VfsItem fsItem, MutableStatusHolder statusHolder) {
-        /**
-         * Although the latest recalculation is called on before delete, the final method is annotated with delay until
-         * after commit
-         */
-        updateRepositoryLatestNuPkgVersionIfNeeded(fsItem);
+    public void afterDelete(VfsItem fsItem, MutableStatusHolder statusHolder) {
+        removeNuPkgFromRepositoryIfNeeded(fsItem);
     }
 
     @Override
@@ -87,7 +82,8 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
      */
     private void extractNuPkgInfoIfNeeded(VfsItem createdItem, MutableStatusHolder statusHolder) {
         if (shouldTakeAction(createdItem)) {
-            addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo(((VfsFile) createdItem), statusHolder);
+            addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo(((FileInfo) createdItem.getInfo()),
+                    statusHolder);
         }
     }
 
@@ -96,40 +92,34 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
      */
     private void handleOnAfterMoveOrCopy(VfsItem sourceItem, VfsItem targetItem, MutableStatusHolder statusHolder) {
         if ((sourceItem != null) && shouldTakeAction(sourceItem)) {
-            updateRepositoryLatestNuPkgVersionIfNeeded(sourceItem);
+            removeNuPkgFromRepositoryIfNeeded(sourceItem);
         }
 
         if (shouldTakeAction(targetItem)) {
-            Properties nuPkgProperties = addonsManager.addonByType(PropertiesAddon.class).getProperties(
-                    targetItem.getRepoPath());
+            Properties nuPkgProperties = targetItem.getProperties();
             String nuPkgId = Id.extract(nuPkgProperties);
             if (StringUtils.isBlank(nuPkgId)) {
                 /**
                  * Package might have come from a repo with no NuGet support, so extract the info and the request
                  * calculation
                  */
-                addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo((VfsFile) targetItem, statusHolder);
+                addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo((FileInfo) targetItem.getInfo(),
+                        statusHolder);
             } else {
-                addonsManager.addonByType(NuGetAddon.class).requestAsyncLatestNuPkgVersionUpdate(
-                        targetItem.getRepoKey(), nuPkgId);
+                addonsManager.addonByType(NuGetAddon.class).addNuPkgToRepoCache(targetItem.getRepoPath(),
+                        nuPkgProperties);
             }
         }
     }
 
-    /**
-     * If it's a nupkg annotated as latest version, recalculate the latest version state for this ID on the repository
-     */
-    private void updateRepositoryLatestNuPkgVersionIfNeeded(VfsItem affectedItem) {
+    private void removeNuPkgFromRepositoryIfNeeded(VfsItem affectedItem) {
         if (shouldTakeAction(affectedItem)) {
-            Properties nuPkgProperties = addonsManager.addonByType(PropertiesAddon.class).getProperties(
-                    affectedItem.getRepoPath());
-            String isLatestVersion = IsLatestVersion.extract(nuPkgProperties);
-            if (Boolean.TRUE.toString().equals(isLatestVersion)) {
-                String nuPkgId = Id.extract(nuPkgProperties);
-                if (StringUtils.isNotBlank(nuPkgId)) {
-                    addonsManager.addonByType(NuGetAddon.class).requestAsyncLatestNuPkgVersionUpdate(
-                            affectedItem.getRepoKey(), nuPkgId);
-                }
+            Properties nuPkgProperties = affectedItem.getProperties();
+            String nuPkgId = Id.extract(nuPkgProperties);
+            String nuPkgVersion = Version.extract(nuPkgProperties);
+            if (StringUtils.isNotBlank(nuPkgId) && StringUtils.isNotBlank(nuPkgVersion)) {
+                addonsManager.addonByType(NuGetAddon.class).removeNuPkgFromRepoCache(affectedItem.getRepoKey(),
+                        nuPkgId, nuPkgVersion);
             }
         }
     }

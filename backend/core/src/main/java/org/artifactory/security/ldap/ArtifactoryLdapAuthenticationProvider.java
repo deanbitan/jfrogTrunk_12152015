@@ -176,6 +176,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             MutableUserInfo userInfo = InfoFactoryHolder.get()
                     .copyUser(userGroupService
                             .findOrCreateExternalAuthUser(userName, !usedLdapSetting.isAutoCreateUser()));
+            userInfo.setRealm(LdapService.REALM);
             String emailAttribute = usedLdapSetting.getEmailAttribute();
             if (StringUtils.isNotBlank(emailAttribute)) {
                 String email = user.getStringAttribute(emailAttribute);

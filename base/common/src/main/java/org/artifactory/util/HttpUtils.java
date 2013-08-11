@@ -26,6 +26,7 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.request.ArtifactoryRequest;
 import org.slf4j.Logger;
@@ -137,6 +138,10 @@ public abstract class HttpUtils {
             }
         }
         return getServerUrl(httpRequest) + httpRequest.getContextPath();
+    }
+
+    public static String getRestApiUrl(HttpServletRequest request) {
+        return getServletContextUrl(request) + "/" + RestConstants.PATH_API;
     }
 
     public static String getServerUrl(HttpServletRequest httpRequest) {

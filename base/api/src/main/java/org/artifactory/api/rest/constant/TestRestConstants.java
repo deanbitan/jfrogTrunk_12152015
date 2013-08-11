@@ -27,5 +27,6 @@ public interface TestRestConstants {
     String PATH_ARCHIVE_INDEXER_DONE = "archiveIndexerDone";
     String PATH_MAVEN_METADATA_DONE = "mavenMetadataDone";
     String PATH_MAVEN_INDEXER_DONE = "mavenIndexerDone";
+    String PATH_NUGET_INDEX_DONE = "nuGetIndexDone";
     String PATH_All_ASYNC_DONE = "asyncDone";
 }

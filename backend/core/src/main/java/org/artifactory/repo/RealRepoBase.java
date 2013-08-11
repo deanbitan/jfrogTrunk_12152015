@@ -93,15 +93,15 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         statusHolder.setActivateLogging(log.isDebugEnabled());
         if (isBlackedOut()) {
             BlackedOutException exception = new BlackedOutException(this.getDescriptor(), getRepoPath(path));
-            statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
+            statusHolder.error(exception.getMessage(), exception.getErrorCode(), exception, log);
         } else if (!handlesReleaseSnapshot(path)) {
             SnapshotPolicyException exception = new SnapshotPolicyException(this.getDescriptor(), getRepoPath(path));
-            statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
+            statusHolder.error(exception.getMessage(), exception.getErrorCode(), exception, log);
         } else if (!accepts(repoPath)) {
             IncludeExcludeException exception = new IncludeExcludeException(
                     downloadRequest ? HttpStatus.SC_NOT_FOUND : HttpStatus.SC_CONFLICT, this.getDescriptor(),
                     getRepoPath(path));
-            statusHolder.setError(exception.getMessage(), exception.getErrorCode(), exception, log);
+            statusHolder.error(exception.getMessage(), exception.getErrorCode(), exception, log);
         }
         return statusHolder;
     }

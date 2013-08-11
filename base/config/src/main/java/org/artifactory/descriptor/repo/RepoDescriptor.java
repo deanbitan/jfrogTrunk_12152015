@@ -59,4 +59,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     boolean isMavenRepoLayout();
 
     boolean isEnableNuGetSupport();
+
+    boolean isEnableGemsSupport();
 }

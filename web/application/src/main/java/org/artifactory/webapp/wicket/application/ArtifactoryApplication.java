@@ -379,17 +379,14 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         Class<? extends Page> loginRequest = samlAddon.getSamlLoginRequestPageClass();
         if (loginRequest != null) {
             hardMountPage(hardMountPages, "/saml/loginRequest", loginRequest);
-            safeMountPage("/saml/loginRequest/", loginRequest);
         }
         Class<? extends Page> loginResponse = samlAddon.getSamlLoginResponsePageClass();
         if (loginResponse != null) {
             hardMountPage(hardMountPages, "/saml/loginResponse", loginResponse);
-            safeMountPage("/saml/loginRequest/", loginRequest);
         }
         Class<? extends Page> logoutRequest = samlAddon.getSamlLogoutRequestPageClass();
         if (logoutRequest != null) {
             hardMountPage(hardMountPages, "/saml/logoutRequest", logoutRequest);
-            safeMountPage("/saml/loginResponse/", loginResponse);
         }
 
         // We need both of these since accessing modules without the trailing "/" mount fails

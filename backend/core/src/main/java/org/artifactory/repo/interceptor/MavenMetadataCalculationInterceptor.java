@@ -18,7 +18,7 @@
 
 package org.artifactory.repo.interceptor;
 
-import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.maven.MavenMetadataService;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
@@ -30,6 +30,7 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.storage.fs.VfsItemFactory;
 import org.artifactory.util.RepoPathUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Interceptor which handles maven metadata calculation upon creation and removal
@@ -38,29 +39,36 @@ import org.artifactory.util.RepoPathUtils;
  */
 public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapter {
 
+    @Autowired
+    private MavenMetadataService mmService;
+    @Autowired
+    private InternalRepositoryService repoService;
+
     /**
      * If the newly created item is a pom file, this method will calculate the maven metadata of it's parent folder
      *
      * @param fsItem       Newly created item
      * @param statusHolder StatusHolder
      */
-    //@Async(delayUntilAfterCommit = true, transactional = true, shared = true, failIfNotScheduledFromTransaction = true)
     @Override
     public void afterCreate(VfsItem fsItem, MutableStatusHolder statusHolder) {
         if (shouldRecalculateOnCreate(fsItem)) {
             // calculate maven metadata on the grandparent folder (the artifact id node)
-            if (MavenNaming.isUniqueSnapshot(fsItem.getPath())) {
+            if (MavenNaming.isUniqueSnapshot(fsItem.getPath()) ||
+                    (isPomFile(fsItem) && MavenNaming.isSnapshot(fsItem.getPath()))) {
                 // unique snapshots require instant metadata calculation since it is used to calculate future snapshots
+                // this is also done for any kind of file to support classifier snapshot version introduced in Maven 3
+                // we also instantly calculate if non-unique pom is deployed for simplicity
                 RepoPath parentFolder = fsItem.getRepoPath().getParent();
-                ContextHelper.get().getRepositoryService().calculateMavenMetadata(parentFolder);
+                mmService.calculateMavenMetadata(parentFolder, true);
             }
 
             if (isPomFile(fsItem)) {
-                // for pom files we need to trigger metadata calculation on the grandparent -
+                // for pom files we need to trigger metadata calculation on the grandparent non-recursively -
                 // potential new version and snapshot.
-                // this can be done asynchronously since it's usually not requires instant update
+                // this can be done asynchronously since it doesn't require instant update
                 RepoPath grandparentFolder = RepoPathUtils.getAncestor(fsItem.getRepoPath(), 2);
-                ContextHelper.get().getRepositoryService().calculateMavenMetadataAsync(grandparentFolder);
+                mmService.calculateMavenMetadataAsync(grandparentFolder, false);
             }
         }
     }
@@ -69,8 +77,7 @@ public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapt
         if (!fsItem.isFile()) {
             return false;
         }
-        LocalRepo localRepo = ContextHelper.get().beanForType(InternalRepositoryService.class)
-                .localOrCachedRepositoryByKey(fsItem.getRepoKey());
+        LocalRepo localRepo = repoService.localOrCachedRepositoryByKey(fsItem.getRepoKey());
         if (localRepo == null || !isLocalNonCachedRepository(localRepo)) {
             return false;
         }

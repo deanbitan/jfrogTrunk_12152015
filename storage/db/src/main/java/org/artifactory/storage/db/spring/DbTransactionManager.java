@@ -18,9 +18,9 @@
 
 package org.artifactory.storage.db.spring;
 
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.storage.fs.session.StorageSession;
 import org.artifactory.storage.fs.session.StorageSessionFactory;
-import org.artifactory.storage.spring.StorageContextHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +50,7 @@ public class DbTransactionManager extends DataSourceTransactionManager {
         super.prepareSynchronization(status, definition);
         if (status.isNewSynchronization()) {
             log.trace("Registering new session synchronization");
-            StorageSessionFactory sessionFactory = StorageContextHelper.get().beanForType(StorageSessionFactory.class);
+            StorageSessionFactory sessionFactory = ContextHelper.get().beanForType(StorageSessionFactory.class);
             StorageSession session = sessionFactory.create();
             TransactionSynchronizationManager.registerSynchronization(new SessionSynchronization(session));
         }

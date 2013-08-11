@@ -3,7 +3,7 @@ UPDATE unique_ids SET current_id = 10000 WHERE index_type = 'general';
 INSERT INTO users VALUES
 (1, 'u1','apass',NULL,'e@mail.com',NULL,0,1,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (2, 'u2','bpass',NULL,'f@mail.com',NULL,1,1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-(3, 'u3','cpass',NULL,'g@mail.com',NULL,1,0,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
+(3, 'u3',NULL,'','','',1,0,1,'','','',NULL,'',NULL,'',''),
 (15, 'anonymous',NULL,NULL,NULL, NULL,0,1,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 (16, 'admin', 'password',NULL,NULL, NULL,1,1,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 

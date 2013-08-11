@@ -45,11 +45,11 @@ public class MultiStatusHolderTest {
     }
 
     public void mergeTwoStatusHolders() {
-        toMerge.setWarning("warninig", log);
-        toMerge.setStatus("ok", log);
+        toMerge.warn("warninig", log);
+        toMerge.status("ok", log);
 
-        target.setStatus("target1", log);
-        target.setStatus("target2", log);
+        target.status("target1", log);
+        target.status("target2", log);
 
         assertFalse(target.hasWarnings());
         assertEquals(target.getAllEntries().size(), 2);
@@ -64,8 +64,8 @@ public class MultiStatusHolderTest {
 
     public void mergeWithEmptyStatusHolder() {
         target.setActivateLogging(false);
-        target.setError("target1", log);
-        target.setStatus("target2", log);
+        target.error("target1", log);
+        target.status("target2", log);
 
         target.merge(toMerge);
 
@@ -75,8 +75,8 @@ public class MultiStatusHolderTest {
     }
 
     public void mergeWithErrorOverride() {
-        toMerge.setError("toMergeError", log);
-        target.setError("targetError", log);
+        toMerge.error("toMergeError", log);
+        target.error("targetError", log);
 
         target.merge(toMerge);
 
@@ -87,10 +87,10 @@ public class MultiStatusHolderTest {
 
     public void mergeWithSingleStatusHolder() {
         BasicStatusHolder single = new BasicStatusHolder();
-        single.setError("error", log);
+        single.error("error", log);
 
-        target.setStatus("target1", log);
-        target.setStatus("target2", log);
+        target.status("target1", log);
+        target.status("target2", log);
 
         assertFalse(target.hasWarnings());
         assertEquals(target.getAllEntries().size(), 2);
@@ -103,7 +103,7 @@ public class MultiStatusHolderTest {
         assertEquals(target.getAllEntries().size(), 3);
 
         single = new BasicStatusHolder();
-        single.setWarning("warning", log);
+        single.warn("warning", log);
 
         // merge again
         target.merge(single);

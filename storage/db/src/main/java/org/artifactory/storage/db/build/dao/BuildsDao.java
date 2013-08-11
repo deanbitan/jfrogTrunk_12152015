@@ -30,6 +30,8 @@ import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.storage.db.util.blob.BlobWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -53,6 +55,7 @@ import java.util.TreeSet;
  */
 @Repository
 public class BuildsDao extends BaseDao {
+    private static final Logger log = LoggerFactory.getLogger(BuildsDao.class);
 
     @Autowired
     public BuildsDao(JdbcHelper jdbcHelper) {
@@ -73,9 +76,14 @@ public class BuildsDao extends BaseDao {
         int nbProps = b.getProperties().size();
         if (nbProps != 0) {
             for (BuildProperty bp : b.getProperties()) {
+                String propValue = bp.getPropValue();
+                if (propValue.length() > 2048) {
+                    log.info("Trimming property value to 2048 characters {}", bp.getPropKey());
+                    log.debug("Trimming property value to 2048 characters {}: {}", bp.getPropKey(), bp.getPropValue());
+                    propValue = StringUtils.substring(propValue, 0, 2048);
+                }
                 res += jdbcHelper.executeUpdate("INSERT INTO build_props VALUES (?,?,?,?)",
-                        bp.getPropId(), bp.getBuildId(), bp.getPropKey(),
-                        StringUtils.substring(bp.getPropValue(), 0, 2048));
+                        bp.getPropId(), bp.getBuildId(), bp.getPropKey(), propValue);
             }
         }
         int nbPromotions = b.getPromotions().size();

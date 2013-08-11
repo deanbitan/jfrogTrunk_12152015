@@ -111,7 +111,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
                 TaskBase task = TaskUtils.createManualTask(ArtifactCleanupJob.class, 0L);
                 return taskService.startTask(task, true);
             } catch (Exception e) {
-                statusHolder.setError("Error scheduling manual artifact cleanup", e, log);
+                statusHolder.error("Error scheduling manual artifact cleanup", e, log);
             }
         }
         return null;

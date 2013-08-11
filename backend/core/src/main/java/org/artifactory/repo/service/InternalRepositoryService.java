@@ -18,7 +18,6 @@
 
 package org.artifactory.repo.service;
 
-import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -37,6 +36,7 @@ import org.artifactory.request.InternalRequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.Lock;
+import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.ReloadableBean;
 import org.artifactory.storage.fs.service.ItemMetaInfo;
 
@@ -51,7 +51,7 @@ import java.util.List;
  * <p/>
  * User: freds Date: Jul 31, 2008 Time: 5:50:18 PM
  */
-public interface InternalRepositoryService extends RepositoryService, ReloadableBean {
+public interface InternalRepositoryService extends RepositoryService, ReloadableBean, ContextReadinessListener {
 
     boolean isAnonAccessEnabled();
 
@@ -109,11 +109,12 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * acquire, pure DB and ACL tests are done.
      *
      * @param requestSha1
-     * @param repo The storing repository (cache or local) to deploy to
-     * @param path The path for deployment
+     * @param repo        The storing repository (cache or local) to deploy to
+     * @param path        The path for deployment
      * @return A status holder with info on error
      */
-    void assertValidDeployPath(LocalRepo repo, RepoPath repoPath, long contentLength, String requestSha1) throws RepoRejectException;
+    void assertValidDeployPath(LocalRepo repo, RepoPath repoPath, long contentLength, String requestSha1)
+            throws RepoRejectException;
 
     @Lock
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,
@@ -145,23 +146,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      */
     @Nonnull
     LocalRepo getLocalRepository(RepoPath repoPath);
-
-    /**
-     * Executes the maven metadata calculator on all the folders marked with the maven metadata recalculation flag. This
-     * method is internal to the repository service and should execute during startup to make sure there are no folders
-     * that the maven metadata wasn't recalculated on them (the recalculation might execute in metadata and interrupted
-     * in the middle)
-     */
-    @Async(delayUntilAfterCommit = true)
-    void recalculateMavenMetadataOnMarkedFolders();
-
-    /**
-     * Removes a mark for maven metadata recalculation if such exists.
-     *
-     * @param basePath Repo path to remove the mark from. Must be a local non-cache repository path.
-     */
-    @Lock
-    void removeMarkForMavenMetadataRecalculation(RepoPath basePath);
 
     @Override
     @Lock

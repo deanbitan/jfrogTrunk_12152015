@@ -59,7 +59,7 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
         MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
 
         if (StringUtils.isBlank(targetRepo)) {
-            multiStatusHolder.setStatus("Skipping build item relocation: no target repository selected.", log);
+            multiStatusHolder.status("Skipping build item relocation: no target repository selected.", log);
         } else {
             assertRepoExists(targetRepo);
             Set<RepoPath> itemsToMove = collectItems(build, promotion.isArtifacts(), promotion.isDependencies(),
@@ -101,13 +101,13 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
         String status = promotion.getStatus();
 
         if (statusHolder.hasErrors() || statusHolder.hasWarnings()) {
-            statusHolder.setStatus("Skipping promotion status update: item promotion was completed with errors " +
+            statusHolder.status("Skipping promotion status update: item promotion was completed with errors " +
                     "and warnings.", log);
             return;
         }
 
         if (StringUtils.isBlank(status)) {
-            statusHolder.setStatus("Skipping promotion status update: no status received.", log);
+            statusHolder.status("Skipping promotion status update: no status received.", log);
             return;
         }
 
@@ -121,7 +121,7 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
             try {
                 ISODateTimeFormat.dateTime().parseMillis(timestamp);
             } catch (Exception e) {
-                statusHolder.setError("Skipping promotion status update: invalid\\unparsable timestamp " + timestamp +
+                statusHolder.error("Skipping promotion status update: invalid\\unparsable timestamp " + timestamp +
                         ".", log);
                 return;
             }
@@ -147,13 +147,13 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
                 status.merge(copy(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
-                status.setError("Error occurred while copying: " + e.getMessage(), e, log);
+                status.error("Error occurred while copying: " + e.getMessage(), e, log);
             }
         } else {
             try {
                 status.merge(move(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
             } catch (Exception e) {
-                status.setError("Error occurred while moving: " + e.getMessage(), e, log);
+                status.error("Error occurred while moving: " + e.getMessage(), e, log);
             }
         }
     }

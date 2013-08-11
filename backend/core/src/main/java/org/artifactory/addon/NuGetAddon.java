@@ -18,22 +18,17 @@
 
 package org.artifactory.addon;
 
-import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.api.repo.Async;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.fs.FileInfo;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.Lock;
-import org.artifactory.sapi.fs.VfsFile;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.OutputStream;
 
 /**
  * Core NuGet functionality interface
@@ -45,115 +40,47 @@ public interface NuGetAddon extends Addon {
     String API_KEY_HEADER = "X-NuGet-ApiKey";
     String API_KEY_SEPARATOR = ":";
     String REPO_KEY_PARAM = "repoKey";
+    String PATH_PARAM = "path";
     String PACKAGE_ID_PARAM = "packageId";
     String PACKAGE_VERSION_PARAM = "packageVersion";
 
     /**
-     * Extracts the spec from the nupkg and save it as a binary property (along with ID, version and digest) for easier
-     * availability when searching
+     * Asynchronously extracts the spec from the nupkg and saves it as a binary property (along with ID, version and digest)
+     * for easier availability when searching
      *
-     * @param item         NuGet package
+     * @param fileInfo     NuGet package
      * @param statusHolder Status holder for logging
      */
-    @Async(transactional = true, delayUntilAfterCommit = true)
-    void extractNuPkgInfo(VfsFile item, MutableStatusHolder statusHolder);
+    @Async(transactional = true, delayUntilAfterCommit = true, authenticateAsSystem = true)
+    void extractNuPkgInfo(FileInfo fileInfo, MutableStatusHolder statusHolder);
 
     /**
-     * Requests an async nupkg latest update for the given repository and packaged ID
+     * Synchronously extracts the spec from the nupkg and saves it as a binary property (along with ID, version and digest)
+     * for easier availability when searching. Used mainly in batch extractions of multiple packages.
      *
-     * @param repoKey   Repository key to act within
-     * @param packageId ID of package group to update the latest version state for
-     */
-    void requestAsyncLatestNuPkgVersionUpdate(String repoKey, String packageId);
-
-    /**
-     * Returns the static metadata entity descriptor requested by the NuGet tools
-     *
-     * @return Metadata entity descriptor string
-     */
-    String getMetadataEntity();
-
-    /**
-     * Handles REST NuGet search requests
-     *
-     * @param request        Servlet request
-     * @param repoKey        Key of repository to search in
-     * @param subActionParam An action parameter in addition to the main one
-     * @param output         Output stream to write the response to
-     */
-    void handleSearchRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nullable String subActionParam, OutputStream output) throws IOException;
-
-    /**
-     * Handles REST NuGet download requests
-     *
-     * @param response       Servlet response
-     * @param repoKey        Key of storing repository
-     * @param packageId      ID of package to locate
-     * @param packageVersion Version of package to locate
-     * @return Null if the result was written directly to the original response, a response object otherwise
-     */
-    @Nullable
-    @Lock
-    ResponseCtx handleDownloadRequest(@Nonnull HttpServletResponse response, @Nonnull String repoKey,
-            @Nonnull String packageId, @Nonnull String packageVersion);
-
-    /**
-     * Handles REST NuGet Packages requests
-     *
-     * @param request Servlet request
-     * @param repoKey Key of repository to search in
-     * @param output  Output stream to write the response to
+     * @param fileInfo     NuGet package
+     * @param statusHolder Status holder for logging
      */
     @Lock
-    void handlePackagesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nonnull OutputStream output) throws IOException;
+    void extractNuPkgInfoSynchronously(FileInfo file, MutableStatusHolder statusHolder);
 
     /**
-     * Handles REST NuGet Package search by ID requests
+     * Adds a NuGet package to the NuGet packages memory cache (for local repositories only!).
+     * <p><b>NOTE!</b> This method assumes the repository itself is already in the cache, see {@link #afterRepoInit(String)}
      *
-     * @param request Servlet request
-     * @param repoKey Key of repository to search in
-     * @param output  Output stream to write the response to
+     * @param repoPath   The repo path of the NuGet package
+     * @param properties The properties on the repo path, those with "nuget." prefix will get extracted
      */
-    void handleFindPackagesByIdRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nonnull OutputStream output) throws IOException;
-
+    void addNuPkgToRepoCache(RepoPath repoPath, Properties properties);
 
     /**
-     * Handles REST NuGet Package update search requests
+     * Removes a NuGet package from the local NuGet packages memory cache
      *
-     * @param request     Servlet request
-     * @param repoKey     Key of repository to search in
-     * @param actionParam An action parameter in addition to the main one
-     * @param output      Output stream to write the response to
+     * @param repoKey        The repository key
+     * @param packageId      The NuGet package id
+     * @param packageVersion The NuGet package version
      */
-    @Lock
-    void handleGetUpdatesRequest(@Nonnull HttpServletRequest request, @Nonnull String repoKey,
-            @Nullable String actionParam, @Nonnull OutputStream output) throws IOException;
-
-    /**
-     * Prepares a nupkg deployment repository path
-     *
-     * @param repoKey      Repository key
-     * @param packageBytes Bytes of NuPkg
-     * @return Deployment target repo path
-     */
-    @Nonnull
-    RepoPath assembleDeploymentRepoPathFromNuPkgSpec(@Nonnull String repoKey, @Nonnull byte[] packageBytes)
-            throws IOException;
-
-    /**
-     * Finds the repo path of a NuPkg based on it's ID and version
-     *
-     * @param repoKey        Key of repository to search in
-     * @param packageId      ID of NuPkg to search for
-     * @param packageVersion Version of NuPkg to search for
-     * @return Repo path of NuPkg if found, null if not
-     */
-    @Nullable
-    RepoPath findPackageInLocalOrCacheRepo(@Nonnull String repoKey, @Nonnull String packageId,
-            @Nonnull String packageVersion);
+    void removeNuPkgFromRepoCache(String repoKey, String packageId, String packageVersion);
 
     /**
      * Instantiate the remote repository instance
@@ -167,4 +94,20 @@ public interface NuGetAddon extends Addon {
     @Nonnull
     RemoteRepo createRemoteRepo(InternalRepositoryService repoService, RemoteRepoDescriptor repoDescriptor,
             boolean offlineMode, RemoteRepo oldRemoteRepo);
+
+    /**
+     * Asynchronously adds a local NuGet repository into the NuGet packages memory cache if it's not there already
+     *
+     * @param repoKey The repository key to insert into the NuGet packages memory cache
+     */
+    @Async(authenticateAsSystem = true)
+    void afterRepoInit(String repoKey);
+
+    /**
+     * Activate the NuGet packages indexing (re-extract packages nuspec and set as properties)
+     * for the given local/cache/virtual repository. Each reindexing will be queued and processed asynchronously.
+     *
+     * @param repoKey The local/cache/virtual repository to activate NuGet packages reindex on
+     */
+    void requestAsyncReindexNuPkgs(String repoKey);
 }

@@ -26,7 +26,6 @@ import org.apache.wicket.model.Model;
 import org.artifactory.addon.p2.P2Repository;
 import org.artifactory.addon.p2.P2RepositoryModel;
 import org.artifactory.addon.p2.P2WebAddon;
-import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -76,7 +75,13 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
         tabs.add(addons.addonByType(P2WebAddon.class).getVirtualRepoConfigurationTab(
                 "P2", getRepoDescriptor(), getCachingDescriptorHelper()));
 
-        tabs.add(addons.addonByType(NuGetWebAddon.class).getVirtualRepoConfigurationTab("NuGet", getRepoDescriptor()));
+        tabs.add(new AbstractTab(Model.of("Packages")) {
+            @Override
+            public Panel getPanel(String panelId) {
+                return new VirtualRepoPackagesPanel(panelId, entity, isCreate());
+            }
+        });
+
         return tabs;
     }
 

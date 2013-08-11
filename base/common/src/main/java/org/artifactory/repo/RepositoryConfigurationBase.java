@@ -43,6 +43,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private String excludesPattern = "";
     private String repoLayoutRef;
     private boolean enableNuGetSupport = false;
+    private boolean enableGemsSupport = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -144,6 +145,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setEnableNuGetSupport(boolean enableNuGetSupport) {
         this.enableNuGetSupport = enableNuGetSupport;
+    }
+
+    @Override
+    public boolean isEnableGemsSupport() {
+        return enableGemsSupport;
+    }
+
+    public void setEnableGemsSupport(boolean enableGemsSupport) {
+        this.enableGemsSupport = enableGemsSupport;
     }
 
     /**

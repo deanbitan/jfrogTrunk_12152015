@@ -28,9 +28,4 @@ import org.artifactory.storage.fs.service.StatsService;
  */
 public interface InternalStatsService extends StatsService {
 
-    /**
-     * Flushes the statistics
-     */
-    @Lock
-    void doFlushStats();
 }

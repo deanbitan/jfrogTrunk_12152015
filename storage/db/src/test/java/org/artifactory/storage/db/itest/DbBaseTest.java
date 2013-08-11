@@ -76,7 +76,7 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
 
     @Autowired
     @Qualifier("storageProperties")
-    private StorageProperties storageProperties;
+    protected StorageProperties storageProperties;
 
     private ArtifactoryHomeBoundTest artifactoryHomeBoundTest;
 

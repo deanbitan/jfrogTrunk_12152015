@@ -126,7 +126,7 @@ public class StatsServiceImplTest extends DbBaseTest {
         assertNull(statsFromDb);
 
         // and after flushing the events from memory, getStats should also return null
-        ReflectionTestUtils.invokeMethod(statsService, "doFlushStats");
+        ReflectionTestUtils.invokeMethod(statsService, "flushStats");
         assertNull(statsService.getStats(filePath), "No stats for no-existent file expected after flush");
         assertFalse(statsService.hasStats(filePath));
     }

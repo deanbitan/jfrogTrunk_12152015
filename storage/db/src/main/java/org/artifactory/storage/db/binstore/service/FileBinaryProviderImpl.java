@@ -20,7 +20,6 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
@@ -50,15 +49,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderImpl.class);
 
     public FileBinaryProviderImpl(File rootDataDir, StorageProperties storageProperties) {
-        super(new File(rootDataDir, getFilestoreFolderName(storageProperties)));
-    }
-
-    private static String getFilestoreFolderName(StorageProperties storageProperties) {
-        String name = storageProperties.getBinaryProviderDir();
-        if (StringUtils.isBlank(name)) {
-            return "filestore";
-        }
-        return name;
+        super(getDataFolder(rootDataDir, storageProperties, "filestore"));
     }
 
     @Override
@@ -125,11 +116,11 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
 
     @Override
     protected void pruneFiles(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {
-        statusHolder.setStatus("Starting checking if files in " + first.getAbsolutePath() + " are in DB!", log);
+        statusHolder.status("Starting checking if files in " + first.getAbsolutePath() + " are in DB!", log);
         //Set<DataIdentifier> identifiersSet = getIdentifiersSet();
         File[] files = first.listFiles();
         if (files == null) {
-            statusHolder.setStatus("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
+            statusHolder.status("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
             return;
         }
         Set<String> filesInFolder = new HashSet<>(files.length);
@@ -141,12 +132,12 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
             String sha1 = file.getName();
             if (!existingSha1.contains(sha1)) {
                 if (getContext().isUsedByReader(sha1)) {
-                    statusHolder.setStatus("Skipping deletion for in-use artifact record: " + sha1, log);
+                    statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
                 } else {
                     long size = file.length();
                     Files.removeFile(file);
                     if (file.exists()) {
-                        statusHolder.setError("Could not delete file " + file.getAbsolutePath(), log);
+                        statusHolder.error("Could not delete file " + file.getAbsolutePath(), log);
                     } else {
                         movedCounter.filesMoved++;
                         movedCounter.totalSize += size;

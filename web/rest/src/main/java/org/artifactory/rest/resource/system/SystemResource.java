@@ -20,7 +20,6 @@ package org.artifactory.rest.resource.system;
 
 
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
@@ -59,9 +58,6 @@ public class SystemResource {
 
     @Autowired
     CentralConfigService centralConfigService;
-
-    @Autowired
-    RepositoryService repoService;
 
     @Autowired
     SecurityService securityService;

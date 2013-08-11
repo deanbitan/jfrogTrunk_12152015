@@ -59,4 +59,8 @@ public class BuildsDiffPropertyActionableItem extends ActionableItemBase impleme
     public BuildsDiffStatus getStatus() {
         return model.getStatus();
     }
+
+    public BuildsDiffPropertyModel getModel() {
+        return model;
+    }
 }

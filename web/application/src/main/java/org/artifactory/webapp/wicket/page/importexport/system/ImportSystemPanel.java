@@ -173,7 +173,7 @@ public class ImportSystemPanel extends TitledPanel {
 
                     } else if (isZip(importFromPath)) {
                         //Extract the archive
-                        status.setStatus("Extracting archive...", log);
+                        status.status("Extracting archive...", log);
                         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
                         importFromFolder =
                                 new File(artifactoryHome.getTempUploadDir(),
@@ -193,7 +193,7 @@ public class ImportSystemPanel extends TitledPanel {
                                 "': Unrecognized file type.");
                         return;
                     }
-                    status.setStatus("Importing from directory...", log);
+                    status.status("Importing from directory...", log);
                     ArtifactoryContext context = ContextHelper.get();
                     ImportSettingsImpl importSettings = new ImportSettingsImpl(importFromFolder, status);
                     importSettings.setFailFast(false);

@@ -180,7 +180,7 @@ public class DeployServiceImpl implements DeployService {
         if (!bundle.exists()) {
             String message =
                     "Specified location '" + bundle + "' does not exist. Deployment aborted.";
-            status.setError(message, log);
+            status.error(message, log);
             return;
         }
         File extractFolder;
@@ -190,7 +190,7 @@ public class DeployServiceImpl implements DeployService {
             if (!status.isVerbose()) {
                 status.setVerbose(true);
             }
-            status.setError(e.getLocalizedMessage(), e, log);
+            status.error(e.getLocalizedMessage(), e, log);
             return;
         }
         if (extractFolder == null) {
@@ -203,7 +203,7 @@ public class DeployServiceImpl implements DeployService {
                 public boolean accept(File file) {
                     if (NamingUtils.isSystem(file.getAbsolutePath()) || GlobalExcludes.isInGlobalExcludes(file) ||
                             file.getName().contains(MavenNaming.MAVEN_METADATA_NAME)) {
-                        status.setDebug("Excluding '" + file.getAbsolutePath() + "' from bundle deployment.", log);
+                        status.debug("Excluding '" + file.getAbsolutePath() + "' from bundle deployment.", log);
                         return false;
                     }
 
@@ -229,7 +229,7 @@ public class DeployServiceImpl implements DeployService {
                     } catch (Exception e) {
                         String msg = "The pom: " + file.getName() +
                                 " could not be validated, and thus was not deployed.";
-                        status.setWarning(msg, e, log);
+                        status.warn(msg, e, log);
                         if (failFast) {
                             return;
                         }
@@ -241,13 +241,13 @@ public class DeployServiceImpl implements DeployService {
                     getTransactionalMe().deploy(targetRepo, new ArtifactInfo(relPath), file, null, false, true,
                             properties);
                 } catch (IllegalArgumentException iae) {
-                    status.setWarning(iae.getMessage(), iae, log);
+                    status.warn(iae.getMessage(), iae, log);
                     if (failFast) {
                         return;
                     }
                 } catch (Exception e) {
                     // Fail fast
-                    status.setError("Error during deployment: " + e.getMessage(), e, log);
+                    status.error("Error during deployment: " + e.getMessage(), e, log);
                     if (failFast) {
                         return;
                     }
@@ -258,12 +258,12 @@ public class DeployServiceImpl implements DeployService {
             String timeTaken = DurationFormatUtils.formatPeriod(start, System.currentTimeMillis(), "s");
             int archiveContentSize = archiveContent.size();
 
-            status.setStatus("Successfully deployed " + archiveContentSize + " artifacts from archive: " + bundleName
+            status.status("Successfully deployed " + archiveContentSize + " artifacts from archive: " + bundleName
                     + " (" + timeTaken + " seconds).", log);
             //Trigger indexing for marked files
             archiveIndexer.asyncIndexMarkedArchives();
         } catch (Exception e) {
-            status.setError(e.getMessage(), e, log);
+            status.error(e.getMessage(), e, log);
         } finally {
             FileUtils.deleteQuietly(extractFolder);
         }
@@ -287,7 +287,7 @@ public class DeployServiceImpl implements DeployService {
             try {
                 FileUtils.deleteDirectory(extractFolder);
             } catch (IOException e) {
-                status.setError("Could not delete existing extracted archive folder: " +
+                status.error("Could not delete existing extracted archive folder: " +
                         extractFolder.getAbsolutePath() + ".", e, log);
                 return null;
             }

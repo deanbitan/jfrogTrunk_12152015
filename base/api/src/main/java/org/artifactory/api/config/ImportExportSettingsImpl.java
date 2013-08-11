@@ -141,9 +141,9 @@ public class ImportExportSettingsImpl implements BaseSettings {
     @Override
     public void alertFailIfEmpty(String message, Logger log) {
         if (isFailIfEmpty()) {
-            statusHolder.setError(message, log);
+            statusHolder.error(message, log);
         } else {
-            statusHolder.setWarning(message, log);
+            statusHolder.warn(message, log);
         }
     }
 }

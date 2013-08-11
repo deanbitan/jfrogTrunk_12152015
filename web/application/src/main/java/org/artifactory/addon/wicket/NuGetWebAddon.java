@@ -20,6 +20,7 @@ package org.artifactory.addon.wicket;
 
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
@@ -40,8 +41,9 @@ public interface NuGetWebAddon extends Addon {
      *
      * @param form           Repo configuration form
      * @param repoDescriptor Configured repo descriptor
+     * @param isCreate
      */
-    void createAndAddRepoConfigNuGetSection(Form form, RepoDescriptor repoDescriptor);
+    void createAndAddRepoConfigNuGetSection(Form form, RepoDescriptor repoDescriptor, boolean isCreate);
 
     /**
      * Returns the virtual repository's NuGet configuration tab
@@ -77,4 +79,7 @@ public interface NuGetWebAddon extends Addon {
      * @param repoDescriptor
      */
     Label getNuGetUrlLabel(RepoDescriptor repoDescriptor);
+
+    WebMarkupContainer getVirtualRepoConfigurationSection(String id, RepoDescriptor descriptor, Form form,
+            boolean isCreate);
 }

@@ -42,31 +42,31 @@ public class AbstractLdapService {
             boolean isSearchAndBindActive) {
         log.debug("LDAP connection test failed with exception", e);
         if (e instanceof CommunicationException) {
-            status.setError("Failed connecting to the server (probably wrong url or port)", e, log);
+            status.error("Failed connecting to the server (probably wrong url or port)", e, log);
         } else if (e instanceof NameNotFoundException) {
-            status.setError("Server failed to parse the request: " +
+            status.error("Server failed to parse the request: " +
                     ((NameNotFoundException) e).getMostSpecificCause().getMessage(), e, log);
         } else if (e instanceof InvalidNameException) {
-            status.setError("Server failed to parse the request: " +
+            status.error("Server failed to parse the request: " +
                     ((InvalidNameException) e).getMostSpecificCause().getMessage(), e, log);
         } else if (e instanceof AuthenticationException) {
             if (isSearchAndBindActive) {
-                status.setWarning("LDAP authentication failed for " + username +
+                status.warn("LDAP authentication failed for " + username +
                         ". Note: you have configured direct user binding " +
                         "and manager-based search, which are usually mutually exclusive. For AD leave the User DN " +
                         "Pattern field empty.", e, log);
             } else {
-                status.setError("Authentication failed. Probably a wrong manager dn or manager password", e,
+                status.error("Authentication failed. Probably a wrong manager dn or manager password", e,
                         log);
             }
         } else if (e instanceof BadCredentialsException) {
-            status.setError("Failed to authenticate user " + username, e, log);
+            status.error("Failed to authenticate user " + username, e, log);
         } else if (e instanceof BadLdapGrammarException) {
-            status.setError("Failed to parse R\\DN", e, log);
+            status.error("Failed to parse R\\DN", e, log);
         } else {
             String message = "Error connecting to the LDAP server: ";
             log.error(message, e);
-            status.setError(message, log);
+            status.error(message, log);
         }
     }
 

@@ -35,8 +35,7 @@ import org.slf4j.LoggerFactory;
  * @author Yossi Shaul
  * @see org.artifactory.storage.fs.service.StatsService#flushStats()
  */
-@JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM
-)
+@JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM)
 public class StatsFlushJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(StatsFlushJob.class);
 

@@ -20,6 +20,7 @@ package org.artifactory.storage.db.fs.service;
 
 import com.google.common.collect.Maps;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.factory.xstream.XStreamInfoFactory;
 import org.artifactory.fs.MutableStatsInfo;
 import org.artifactory.fs.StatsInfo;
@@ -27,6 +28,7 @@ import org.artifactory.model.xstream.fs.StatsImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.fs.dao.StatsDao;
 import org.artifactory.storage.db.fs.entity.Stat;
 import org.artifactory.storage.fs.VfsException;
@@ -35,6 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.AbstractPlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -50,12 +56,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class StatsServiceImpl implements InternalStatsService {
     private static final Logger log = LoggerFactory.getLogger(StatsServiceImpl.class);
+    public static final int DEFAULT_NB_STATS_SAVED_PER_TX = 30;
 
     @Autowired
     private StatsDao statsDao;
 
     @Autowired
     private FileService fileService;
+
+    @Autowired
+    private DbService dbService;
 
     /**
      * Stores the statistics events in memory and periodically flush to the storage
@@ -150,30 +160,90 @@ public class StatsServiceImpl implements InternalStatsService {
 
     @Override
     public void flushStats() {
-        if (!statsEvents.isEmpty()) {
-            InternalStatsService txStatsService = ContextHelper.get().beanForType(InternalStatsService.class);
-            txStatsService.doFlushStats();
+        if (statsEvents.isEmpty()) {
+            return;
         }
-    }
-
-    @Override
-    public synchronized void doFlushStats() {
-        log.trace("Flushing statistics to storage");
+        int sizeOnEntry = statsEvents.size();
+        log.debug("Flushing {} statistics to storage", sizeOnEntry);
         Iterator<Map.Entry<RepoPath, StatsEvent>> iterator = statsEvents.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<RepoPath, StatsEvent> statsEventEntry = iterator.next();
-            iterator.remove();
-            log.debug("Flushing statistics : {}", statsEventEntry.getValue());
-            createOrUpdateStats(statsEventEntry.getValue());
+        int processed = 0;
+        TransactionStatus txStatus = null;
+        int savedPerTx = DEFAULT_NB_STATS_SAVED_PER_TX;
+        if (dbService.getDatabaseType() == DbType.POSTGRESQL) {
+            // PostgreSQL does not support saving more data after a constraint failure (FK, PK, ...)
+            savedPerTx = 1;
         }
-        log.trace("Flushing statistics done");
+        try {
+            while (iterator.hasNext()) {
+                Map.Entry<RepoPath, StatsEvent> statsEventEntry = iterator.next();
+                log.trace("Flushing statistics : {}", statsEventEntry.getValue());
+                if (txStatus == null) {
+                    txStatus = startTransaction();
+                }
+                processed++;
+                StatsSaveResult saveResult = createOrUpdateStats(statsEventEntry.getValue());
+                switch (saveResult) {
+                    case Locked:
+                        // Nothing and no removed
+                        break;
+                    case Ignored:
+                        // Just removed
+                        iterator.remove();
+                        break;
+                    case Updated:
+                        iterator.remove();
+                        if (processed % savedPerTx == 0) {
+                            log.debug("Flushed {} statistics done, started with {}", processed, sizeOnEntry);
+                            try {
+                                commitOrRollback(txStatus);
+                            } finally {
+                                txStatus = null;
+                            }
+                        }
+                        break;
+                    case Failed:
+                        iterator.remove();
+                        log.debug("Flushed {} statistics done, started with {}", processed, sizeOnEntry);
+                        try {
+                            commitOrRollback(txStatus);
+                        } finally {
+                            txStatus = null;
+                        }
+                        break;
+                }
+            }
+        } finally {
+            commitOrRollback(txStatus);
+        }
+        log.debug("From {} initial. Flushed {} statistics done", sizeOnEntry, processed);
     }
 
-    private void createOrUpdateStats(StatsEvent event) {
+    private void commitOrRollback(TransactionStatus txStatus) {
+        if (txStatus == null) {
+            return;
+        }
+        if (!txStatus.isRollbackOnly()) {
+            commitTransaction(txStatus);
+        } else {
+            rollbackTransaction(txStatus);
+        }
+    }
+
+    enum StatsSaveResult {Updated, Ignored, Locked, Failed}
+
+    /**
+     * @param event
+     * @return true if element should be consumed, false otherwise
+     */
+    private StatsSaveResult createOrUpdateStats(StatsEvent event) {
         long nodeId = fileService.getNodeId(event.repoPath);
         if (nodeId == DbService.NO_DB_ID) {
             log.debug("Attempting to update stats of non-existing node at: {}", event.repoPath);
-            return;
+            return StatsSaveResult.Ignored;
+        }
+        if (isWriteLocked(event)) {
+            log.debug("Attempting to update stats of write locked node at: {}", event.repoPath);
+            return StatsSaveResult.Locked;
         }
         try {
             Stat stats = statsDao.getStats(nodeId);
@@ -185,10 +255,22 @@ public class StatsServiceImpl implements InternalStatsService {
                 stats = new Stat(nodeId, event.eventCount.get(), event.downloadedTime, event.downloadedBy);
                 statsDao.createStats(stats);
             }
+            return StatsSaveResult.Updated;
         } catch (SQLException e) {
-            log.error("Failed to update stats for " + event.repoPath + ": " + e.getMessage());
-            log.debug("Failed to update stats for " + event.repoPath, e.getMessage());
+            log.warn("Failed to update stats for " + event.repoPath + ": " + e.getMessage() +
+                    "\nNode may have been deleted?");
+            log.debug("Failed to update stats for " + event.repoPath, e);
+            return StatsSaveResult.Failed;
         }
+    }
+
+    private boolean isWriteLocked(StatsEvent event) {
+        // Repository service not available in storage test until core module
+        RepositoryService repositoryService = ContextHelper.get().beanForType(RepositoryService.class);
+        if (repositoryService != null) {
+            return repositoryService.isWriteLocked(event.repoPath);
+        }
+        return false;
     }
 
     private StatsEvent getStatsFromEvents(RepoPath repoPath) {
@@ -206,6 +288,26 @@ public class StatsServiceImpl implements InternalStatsService {
     private Stat statInfoToStat(long nodeId, StatsInfo statsInfo) {
         return new Stat(nodeId, statsInfo.getDownloadCount(), statsInfo.getLastDownloaded(),
                 statsInfo.getLastDownloadedBy());
+    }
+
+    private TransactionStatus startTransaction() {
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setName("StatsTransaction");
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        AbstractPlatformTransactionManager txManager = getTransactionManager();
+        return txManager.getTransaction(def);
+    }
+
+    private void commitTransaction(TransactionStatus status) {
+        getTransactionManager().commit(status);
+    }
+
+    private void rollbackTransaction(TransactionStatus status) {
+        getTransactionManager().rollback(status);
+    }
+
+    private AbstractPlatformTransactionManager getTransactionManager() {
+        return (AbstractPlatformTransactionManager) ContextHelper.get().getBean("artifactoryTransactionManager");
     }
 
     private class StatsEvent {

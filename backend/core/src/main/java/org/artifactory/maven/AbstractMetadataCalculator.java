@@ -19,7 +19,7 @@
 package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
-import org.artifactory.api.common.BasicStatusHolder;
+import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
@@ -35,7 +35,13 @@ import org.slf4j.LoggerFactory;
 public class AbstractMetadataCalculator {
     private static final Logger log = LoggerFactory.getLogger(AbstractMetadataCalculator.class);
 
+    protected final MultiStatusHolder status;
+
     private InternalRepositoryService repositoryService;
+
+    public AbstractMetadataCalculator() {
+        status = new MultiStatusHolder();
+    }
 
     protected InternalRepositoryService getRepositoryService() {
         if (repositoryService == null) {
@@ -44,7 +50,7 @@ public class AbstractMetadataCalculator {
         return repositoryService;
     }
 
-    protected void saveMetadata(RepoPath repoPath, Metadata metadata, BasicStatusHolder status) {
+    protected void saveMetadata(RepoPath repoPath, Metadata metadata) {
         String metadataStr;
         try {
             metadataStr = MavenModelUtils.mavenMetadataToString(metadata);
@@ -52,7 +58,7 @@ public class AbstractMetadataCalculator {
             RepoPathImpl mavenMetadataRepoPath = new RepoPathImpl(repoPath, MavenNaming.MAVEN_METADATA_NAME);
             getRepositoryService().saveFileInternal(mavenMetadataRepoPath, new StringInputStream(metadataStr));
         } catch (Exception e) {
-            status.setError("Error while writing metadata for " + repoPath + ".", e, log);
+            status.error("Error while writing metadata for " + repoPath + ".", e, log);
         }
     }
 }

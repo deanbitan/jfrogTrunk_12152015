@@ -32,6 +32,7 @@ import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.maven.MavenMetadataService;
 import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
@@ -92,6 +93,7 @@ import org.artifactory.storage.fs.VfsFolderProvider;
 import org.artifactory.storage.fs.VfsItemProvider;
 import org.artifactory.storage.fs.VfsItemProviderFactory;
 import org.artifactory.storage.fs.lock.FsItemsVault;
+import org.artifactory.storage.fs.lock.LockEntryId;
 import org.artifactory.storage.fs.lock.LockingHelper;
 import org.artifactory.storage.fs.repo.StoringRepo;
 import org.artifactory.storage.fs.service.FileService;
@@ -104,6 +106,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import javax.annotation.Nullable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -128,6 +131,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     private DbStoringRepoMixin oldStoringRepo;
     private FsItemsVault fsItemsVault;
     private InternalRepositoryService repositoryService;
+    private MavenMetadataService mavenMetadataService;
     private VfsItemProviderFactory vfsItemProviderFactory;
 
     public DbStoringRepoMixin(T descriptor, DbStoringRepoMixin oldStoringRepo) {
@@ -146,6 +150,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         statsService = context.beanForType(StatsService.class);
         repositoryService = context.beanForType(InternalRepositoryService.class);
         vfsItemProviderFactory = context.beanForType(VfsItemProviderFactory.class);
+        mavenMetadataService = context.beanForType(MavenMetadataService.class);
 
         if (oldStoringRepo != null) {
             fsItemsVault = oldStoringRepo.fsItemsVault;
@@ -514,6 +519,9 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     private RepoResource getFilteredOrFileResource(RepoPath repoPath, RequestContext context,
             Properties properties, boolean exactMatch) {
         VfsFile vfsFile = getImmutableFile(repoPath);
+        if (vfsFile == null) {
+            return new UnfoundRepoResource(repoPath, "File " + repoPath + " was deleting during download!");
+        }
         Request request = context.getRequest();
         if (request != null && descriptor.isReal()) {
             FilteredResourcesAddon filteredResourcesAddon = addonsManager.addonByType(FilteredResourcesAddon.class);
@@ -645,6 +653,13 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         return descriptor.getKey();
     }
 
+    @Override
+    public boolean isWriteLocked(RepoPath repoPath) {
+        // TODO: [by FSI] Invalid argument if not me repo key
+        LockEntryId lock = fsItemsVault.getLock(repoPath);
+        return lock.getLock().isLocked();
+    }
+
     public void undeploy(RepoPath repoPath, boolean calcMavenMetadata) {
         MutableVfsItem item = getMutableItem(repoPath);
         if (item == null || item.isMarkedForDeletion()) {
@@ -662,7 +677,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
                     // calculate maven metadata on the artifactId node
                     folderForMetadataCalculation = folderForMetadataCalculation.getParent();
                 }
-                repositoryService.calculateMavenMetadataAsync(folderForMetadataCalculation);
+                mavenMetadataService.calculateMavenMetadataAsync(folderForMetadataCalculation, true);
             }
         }
     }
@@ -670,14 +685,17 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res)
             throws IOException {
 
-        RepoRequests.logToContext("Creating a resource handle from '%s'", res.getResponseRepoPath().getRepoKey());
-        VfsFile file = getImmutableFile(new RepoPathImpl(getKey(), res.getRepoPath().getPath()));
+        // TODO [by fsi]: Does not make sense. Should be res.getResponseRepoPath().getPath()
+        // but when using translated request object the response repo path is the original repo path?!?!
+        RepoPath repoPath = new RepoPathImpl(getKey(), res.getRepoPath().getPath());
+        RepoRequests.logToContext("Creating a resource handle from '%s'", repoPath);
+        VfsFile file = getImmutableFile(repoPath);
 
         // If resource does not exist throw an IOException
         if (file == null) {
             RepoRequests.logToContext("Unable to find the resource - throwing exception");
-            throw new IOException(
-                    "Could not get resource stream. Path '" + res.getRepoPath() + "' not found in " + this);
+            throw new FileNotFoundException(
+                    "Could not get resource stream. Path '" + repoPath.getPath() + "' not found in " + this);
         }
 
         RepoRequests.logToContext("Identified requested resource as a file");

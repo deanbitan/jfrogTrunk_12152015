@@ -129,4 +129,5 @@ public class DbTestConfigFactory implements BeanFactoryAware {
         System.clearProperty("artifactory.db.generated.config");
         return generatedConfig;
     }
+
 }

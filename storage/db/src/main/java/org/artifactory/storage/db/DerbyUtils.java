@@ -51,7 +51,7 @@ public abstract class DerbyUtils {
         try {
             compressDataStore();
         } catch (Exception e) {
-            holder.setError("Could not compress storage", e, log);
+            holder.error("Could not compress storage", e, log);
         }
     }
 

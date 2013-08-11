@@ -73,7 +73,7 @@ public class RepoPathMover {
         }
 
         if (fromRepoPath.equals(targetLocalRepoPath)) {
-            status.setStatus(String.format("Skipping move\\copy %s: Destination and source are the same",
+            status.status(String.format("Skipping move\\copy %s: Destination and source are the same",
                     fromRepoPath), log);
             return;
         }

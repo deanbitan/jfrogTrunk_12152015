@@ -4224,6 +4224,32 @@ div.general-settings-panel input.text-file {
     background-image: url("images/icons/ICN-search.gif");
 }
 
+.gem {
+    background-image: url("images/icons/ICN-gem.gif");
+}
+
+.jcenterBintrayIcon {
+    background: url("images/jcenter.gif") no-repeat;
+    background-size: 48px 48px;
+    width: 48px;
+    height: 48px;
+    margin: 0px 5px 0 0;
+    display: inline-block;
+    position: relative;
+    float: left;
+}
+
+.bintray-search {
+    display: inline-block;
+    background: url("images/jcenterSmall.gif") no-repeat;
+    background-size: 20px 20px;
+    background-position: 123px 5px;
+}
+
+.menu-items > li.bintray-search.menu-item-selected {
+    background-position: 130px 5px;
+}
+
 /*-- LoginPage -----------------------------------------*/
 
 div.login-panel {
@@ -5571,6 +5597,10 @@ table.data-table td.add-value-row {
 
 .addon-blackduck {
     background: url(images/addons/16blackduck.png) no-repeat left top;
+}
+
+.addon-gems {
+    background: url(images/addons/16gems.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/

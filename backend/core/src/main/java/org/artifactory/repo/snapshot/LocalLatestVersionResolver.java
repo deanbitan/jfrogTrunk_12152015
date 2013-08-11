@@ -134,7 +134,6 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
     private InternalRequestContext getRequestContextFromMap(TreeMultimap<Calendar, ItemInfo> versionsItems,
             StoringRepo repo, InternalRequestContext requestContext, ModuleInfo originalModuleInfo,
             boolean searchForReleaseVersion) {
-        String originalPath = requestContext.getResourcePath();
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         for (Map.Entry<Calendar, ItemInfo> entry : versionsItems.entries()) {
             ItemInfo item = entry.getValue();

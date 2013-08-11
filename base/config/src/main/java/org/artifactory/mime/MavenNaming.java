@@ -84,7 +84,7 @@ public abstract class MavenNaming {
 
     /**
      * @param path A path to file or directory
-     * @return True if the path is for a snapshot file or folder
+     * @return True if the path is for a snapshot file or folder (either unique or non-unique snapshots)
      */
     public static boolean isSnapshot(String path) {
         boolean result = isNonUniqueSnapshot(path);

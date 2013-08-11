@@ -18,12 +18,12 @@
 
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats;
 
-import com.ocpsoft.pretty.time.PrettyTime;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.webapp.actionable.model.FileActionableItem;
+import org.ocpsoft.prettytime.PrettyTime;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;

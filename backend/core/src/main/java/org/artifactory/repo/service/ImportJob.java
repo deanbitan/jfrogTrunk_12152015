@@ -96,14 +96,14 @@ public class ImportJob extends QuartzCommand {
                     repositoryService.importAll(settings);
                 } else {
                     if (deleteRepo && repositoryService.repositoryByKey(repoKey) != null) {
-                        status.setStatus("Fully removing repository '" + repoKey + "'.", log);
+                        status.status("Fully removing repository '" + repoKey + "'.", log);
                         RepoPath deleteRepoPath = InternalRepoPathFactory.repoRootPath(repoKey);
                         try {
                             repositoryService.undeploy(deleteRepoPath);
                         } catch (Exception e) {
                             log.error(e.getMessage(), e);
                         }
-                        status.setStatus("Repository '" + repoKey + "' fully deleted.", log);
+                        status.status("Repository '" + repoKey + "' fully deleted.", log);
                     }
                     repositoryService.importRepo(repoKey, settings);
                 }
@@ -114,12 +114,14 @@ public class ImportJob extends QuartzCommand {
             }
         } catch (RuntimeException e) {
             if (status != null) {
-                status.setError("Error occurred during import: " + e.getMessage(), e, log);
+                status.error("Error occurred during import: " + e.getMessage(), e, log);
             } else {
                 log.error("Error occurred during import", e);
             }
         } finally {
-            if (gateToRelease != null) gateToRelease.release();
+            if (gateToRelease != null) {
+                gateToRelease.release();
+            }
         }
     }
 

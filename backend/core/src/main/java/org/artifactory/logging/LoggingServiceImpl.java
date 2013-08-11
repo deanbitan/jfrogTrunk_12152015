@@ -50,7 +50,7 @@ public class LoggingServiceImpl implements LoggingService {
             try {
                 FileUtils.copyFileToDirectory(logFileToImport, ArtifactoryHome.get().getEtcDir());
             } catch (IOException e) {
-                settings.getStatusHolder().setError("Failed to import logback file", e, log);
+                settings.getStatusHolder().error("Failed to import logback file", e, log);
             }
         }
     }

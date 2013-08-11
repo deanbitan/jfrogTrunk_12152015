@@ -62,4 +62,8 @@ public class BuildsDiffArtifactActionableItem extends RepoAwareActionableItemBas
     public BuildsDiffStatus getStatus() {
         return model.getStatus();
     }
+
+    public BuildsDiffBaseFileModel getModel() {
+        return model;
+    }
 }

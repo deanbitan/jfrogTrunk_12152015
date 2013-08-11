@@ -49,7 +49,7 @@ public class MetadataReader125 implements MetadataReader {
     @Override
     public List<MetadataEntryInfo> getMetadataEntries(File file, MutableStatusHolder status) {
         if (!file.isFile()) {
-            status.setError("Expecting a file but got a directory: " + file.getAbsolutePath(), log);
+            status.error("Expecting a file but got a directory: " + file.getAbsolutePath(), log);
             return Collections.emptyList();
         }
         List<MetadataEntryInfo> result = new ArrayList<>();
@@ -72,12 +72,12 @@ public class MetadataReader125 implements MetadataReader {
                 String fileMetadataName = folderConverter.getNewMetadataName();
                 result.add(PassThroughMetadataReaderImpl.createME(fileMetadataName, xmlContent));
             } else {
-                status.setError("Failed to import xml metadata from '" +
+                status.error("Failed to import xml metadata from '" +
                         file.getAbsolutePath() + "' since it does not contain any known XML tag <file> <folder>.",
                         log);
             }
         } catch (IOException e) {
-            status.setError("Failed to import xml metadata from '" +
+            status.error("Failed to import xml metadata from '" +
                     file.getAbsolutePath() + "'.", e, log);
         }
         return result;

@@ -18,7 +18,6 @@
 
 package org.artifactory.webapp.wicket.page.security.user;
 
-import com.ocpsoft.pretty.time.PrettyTime;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -62,6 +61,7 @@ import org.artifactory.security.UserGroupInfo;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
+import org.ocpsoft.prettytime.PrettyTime;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;

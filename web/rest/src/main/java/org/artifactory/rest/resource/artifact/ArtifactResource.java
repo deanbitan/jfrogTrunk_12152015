@@ -27,7 +27,6 @@ import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryBrowsingService;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
@@ -51,8 +50,12 @@ import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
@@ -131,7 +134,7 @@ public class ArtifactResource {
     private AddonsManager addonsManager;
 
     @Autowired
-    private RepositoryService repositoryService;
+    private InternalRepositoryService repositoryService;
 
     @Autowired
     private RepositoryBrowsingService repoBrowsingService;
@@ -278,6 +281,7 @@ public class ArtifactResource {
      * @return Latest modified item
      */
     private Response prepareLastModifiedResponse() throws IOException {
+        fixPathIfNeeded();
         try {
             if (isRequestToNoneLocalRepo()) {
                 return nonLocalRepoResponse();
@@ -316,9 +320,6 @@ public class ArtifactResource {
 
     private Response preparePropertiesResponse() throws IOException {
         if (isMediaTypeAcceptableByUser(MT_ITEM_PROPERTIES)) {
-            if (isRequestToNoneLocalRepo()) {
-                return nonLocalRepoResponse();
-            }
             return getPropertiesResponse();
         } else {
             return notAcceptableResponse(MT_ITEM_PROPERTIES);
@@ -327,7 +328,7 @@ public class ArtifactResource {
 
     private Response getPropertiesResponse() throws IOException {
         ItemProperties itemProperties = new ItemProperties();
-        Properties propertiesAnnotatingItem = repositoryService.getProperties(repoPathFromRequestPath());
+        Properties propertiesAnnotatingItem = resolveProperties();
         if (propertiesAnnotatingItem != null) {
             StringList requestProperties = new StringList(queryParams().getFirst(PROPERTIES_PARAM));
             if (!requestProperties.isEmpty()) {
@@ -352,14 +353,47 @@ public class ArtifactResource {
     }
 
     private Response preparePropertiesXmlResponse() throws IOException {
-        if (isRequestToNoneLocalRepo()) {
-            return nonLocalRepoResponse();
-        }
-        Properties properties = repositoryService.getProperties(repoPathFromRequestPath());
+        Properties properties = resolveProperties();
         if (properties != null && !properties.isEmpty()) {
             return okResponse(properties, MediaType.APPLICATION_XML);
         }
         return sendAndCreateNotFoundResponse("No properties could be found.");
+    }
+
+    private Properties resolveProperties() throws IOException {
+        fixPathIfNeeded();
+        RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
+        Repo repo = repositoryService.repositoryByKey(repoPath.getRepoKey());
+        Properties properties = null;
+        if (repo == null) {
+            return properties;
+        }
+        if (repo.isLocal() || repo.isCache()) {
+            properties = repositoryService.getProperties(repoPathFromRequestPath());
+        } else {
+            VirtualRepo virtualRepo = repositoryService.virtualRepositoryByKey(repoPath.getRepoKey());
+            if (virtualRepo != null) {
+                VirtualRepoItem virtualRepoItem = virtualRepo.getVirtualRepoItem(repoPath);
+                if (virtualRepoItem != null) {
+                    for (String repoKey : virtualRepoItem.getRepoKeys()) {
+                        properties = repositoryService.getProperties(new RepoPathImpl(repoKey, repoPath.getPath()));
+                        if (properties != null && !properties.isEmpty()) {
+                            return properties;
+                        }
+                    }
+                }
+            }
+        }
+        return properties;
+    }
+
+    private void fixPathIfNeeded() {
+        // In case that the path reference to remote repository, then change the path to remote local
+        RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
+        LocalRepoDescriptor descriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoPath.getRepoKey());
+        if (descriptor != null && descriptor.isCache()) {
+            path = StringUtils.replaceOnce(path, repoPath.getRepoKey(), descriptor.getKey());
+        }
     }
 
     private Response preparePermissionsResponse() throws IOException {
@@ -533,6 +567,10 @@ public class ArtifactResource {
         return !isLocalRepo(repoPathFromRequestPath().getRepoKey());
     }
 
+    private Response nonLocalOrVirtualRepoResponse() throws IOException {
+        return sendAndCreateBadRequestResponse("This method can only be invoked on local repositories.");
+    }
+
     private Response nonLocalRepoResponse() throws IOException {
         return sendAndCreateBadRequestResponse("This method can only be invoked on local repositories.");
     }
@@ -556,4 +594,7 @@ public class ArtifactResource {
         return addonsManager.addonByType(RestAddon.class);
     }
 
+    public boolean isRequestToLocalOrVirtualRepo() {
+        return true;
+    }
 }

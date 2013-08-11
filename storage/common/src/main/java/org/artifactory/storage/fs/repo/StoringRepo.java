@@ -54,4 +54,6 @@ public interface StoringRepo {
     boolean hasChildren(VfsFolder vfsFolder);
 
     VfsFolder getImmutableFolder(RepoPath repoPath);
+
+    boolean isWriteLocked(RepoPath repoPath);
 }
