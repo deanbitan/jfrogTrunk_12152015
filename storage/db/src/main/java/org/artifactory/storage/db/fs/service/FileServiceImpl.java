@@ -281,7 +281,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public long getFilesTotalCount(RepoPath repoPath) {
+    public long getFilesTotalSize(RepoPath repoPath) {
         try {
             if (repoPath.isRoot()) {
                 return nodesDao.getFilesTotalSize(repoPath.getRepoKey());

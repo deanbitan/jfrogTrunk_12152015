@@ -36,6 +36,7 @@ import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsGeneratorPanel;
@@ -170,7 +171,7 @@ public class MavenSettingsPanel<T extends RepoDescriptor> extends BaseSettingsGe
                 }
                 message = "Please review the " + logs + " for further information.";
             }
-            error("An error has occurred during maven setting generation: " + message);
+            error(new UnescapedFeedbackMessage("An error has occurred during maven setting generation: " + message));
             return "Maven settings could no be generated.";
         }
     }

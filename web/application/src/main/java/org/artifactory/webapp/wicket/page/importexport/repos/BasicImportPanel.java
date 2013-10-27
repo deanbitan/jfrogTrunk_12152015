@@ -37,6 +37,7 @@ import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavio
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -154,9 +155,11 @@ public abstract class BasicImportPanel extends TitledPanel {
                     String logs = "Please review the <a href=\"" + systemLogsPage +
                             "\">log</a> for further information.";
                     if (!errors.isEmpty()) {
-                        error(errors.size() + " error(s) reported during the import. " + logs);
+                        error(new UnescapedFeedbackMessage(
+                                errors.size() + " error(s) reported during the import. " + logs));
                     } else if (!warnings.isEmpty()) {
-                        warn(warnings.size() + " warning(s) reported during the import. " + logs);
+                        warn(new UnescapedFeedbackMessage(
+                                warnings.size() + " warning(s) reported during the import. " + logs));
                     } else {
                         info("Successfully imported '" + importFromPath + "' into '" + targetRepoKey + "'.");
                     }

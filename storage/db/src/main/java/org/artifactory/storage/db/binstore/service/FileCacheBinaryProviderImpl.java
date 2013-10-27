@@ -58,7 +58,8 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
     private final ConcurrentMap<String, LruEntry> lruCache;
 
     public FileCacheBinaryProviderImpl(File rootDataDir, StorageProperties storageProperties) {
-        super(getDataFolder(rootDataDir, storageProperties, "cache"));
+        super(getDataFolder(rootDataDir, storageProperties,
+                StorageProperties.Key.binaryProviderCacheDir, "cache"));
         lruCache = Maps.newConcurrentMap();
         totalSize = new AtomicLong(0);
         maxTotalSize = storageProperties.getBinaryProviderCacheMaxSize();

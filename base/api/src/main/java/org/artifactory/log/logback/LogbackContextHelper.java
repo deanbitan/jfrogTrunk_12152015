@@ -28,6 +28,8 @@ import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.logging.version.LoggingVersion;
 import org.artifactory.version.CompoundVersionDetails;
 
+import java.io.IOException;
+
 /**
  * @author Yoav Landman
  */
@@ -65,7 +67,7 @@ public abstract class LogbackContextHelper {
                         LoggingVersion.values();
                         LoggingVersion originalVersion =
                                 source.getVersion().getSubConfigElementVersion(LoggingVersion.class);
-                        originalVersion.convert(artifactoryHome);
+                        originalVersion.convert(artifactoryHome.getEtcDir());
                         properties.setProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "true");
                     }
                 }
@@ -80,7 +82,7 @@ public abstract class LogbackContextHelper {
             lc.putProperty(ArtifactoryHome.SYS_PROP, artifactoryHome.getHomeDir().getAbsolutePath());
             configurator.doConfigure(artifactoryHome.getLogbackConfig());
             StatusPrinter.printIfErrorsOccured(lc);
-        } catch (JoranException je) {
+        } catch (JoranException | IOException je) {
             StatusPrinter.print(lc);
         }
         return lc;

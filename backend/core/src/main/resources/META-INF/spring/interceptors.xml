@@ -30,7 +30,6 @@
     <bean class="org.artifactory.repo.interceptor.MavenMetadataCalculationInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.ArchiveIndexingInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.AddPropertyAfterMoveOrCopyInterceptor"/>
-    <bean class="org.artifactory.repo.interceptor.YumCalculationInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.NuGetCalculationInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.ReplicationEventInterceptor"/>
 

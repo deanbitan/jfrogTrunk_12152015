@@ -33,6 +33,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.util.PathUtils;
 import org.codehaus.jackson.JsonGenerator;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -78,9 +79,9 @@ public class SuccessfulDeploymentResponseHelper {
         FolderInfo createdFolder = repoService.getFolderInfo(repoPath);
         folderInfo.created = ISODateTimeFormat.dateTime().print(createdFolder.getCreated());
         folderInfo.createdBy = createdFolder.getCreatedBy();
-        folderInfo.path = "/" + repoPath.getPath();
+        folderInfo.path = PathUtils.addTrailingSlash("/" + repoPath.getPath());
         folderInfo.repo = repoPath.getRepoKey();
-        folderInfo.slf = url;
+        folderInfo.slf = PathUtils.addTrailingSlash(url);
         return folderInfo;
     }
 

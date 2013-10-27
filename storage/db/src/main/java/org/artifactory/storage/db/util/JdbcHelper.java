@@ -158,7 +158,7 @@ public class JdbcHelper {
         try (ResultSet resultSet = executeSelect(query, params)) {
             long result = DbService.NO_DB_ID;
             if (resultSet.next()) {
-                result = resultSet.getInt(1);
+                result = resultSet.getLong(1);
             }
             return result;
         }

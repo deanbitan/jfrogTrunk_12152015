@@ -34,7 +34,7 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     private boolean copy = false;
     private boolean dryRun = false;
     private boolean executeMavenMetadataCalculation = false;
-    private boolean searchResult = false;
+    private boolean pruneEmptyFolders = false;
     private Properties properties;
     private boolean suppressLayouts = false;
     private boolean failFast = false;
@@ -100,11 +100,11 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     /**
      * Indicate if search results are being moved (will perform empty dir cleanup)
      *
-     * @param searchResult True if search results are being moved, false if not
+     * @param pruneEmptyFolders True if should prune empty folders after move (usually when moving search results or during a build promotion)
      * @return MoverConfigBuilder
      */
-    public MoverConfigBuilder searchResult(boolean searchResult) {
-        this.searchResult = searchResult;
+    public MoverConfigBuilder pruneEmptyFolders(boolean pruneEmptyFolders) {
+        this.pruneEmptyFolders = pruneEmptyFolders;
         return this;
     }
 
@@ -138,6 +138,6 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     @Override
     public MoverConfig build() {
         return new MoverConfig(fromRepoPath, targetLocalRepoPath, targetLocalRepoKey, copy, dryRun,
-                executeMavenMetadataCalculation, searchResult, properties, suppressLayouts, failFast);
+                executeMavenMetadataCalculation, pruneEmptyFolders, properties, suppressLayouts, failFast);
     }
 }

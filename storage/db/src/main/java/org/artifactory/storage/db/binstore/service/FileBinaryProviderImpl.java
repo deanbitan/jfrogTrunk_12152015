@@ -49,7 +49,8 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderImpl.class);
 
     public FileBinaryProviderImpl(File rootDataDir, StorageProperties storageProperties) {
-        super(getDataFolder(rootDataDir, storageProperties, "filestore"));
+        super(getDataFolder(rootDataDir, storageProperties,
+                StorageProperties.Key.binaryProviderFilesystemDir, "filestore"));
     }
 
     @Override

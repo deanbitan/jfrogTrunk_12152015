@@ -18,12 +18,10 @@
 
 package org.artifactory.descriptor.security.sso;
 
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.Properties;
 
 /**
  * Crowd connection settings descriptor
@@ -31,7 +29,7 @@ import java.util.Properties;
  * @author Noam Y. Tenne
  */
 @XmlType(name = "CrowdSettingsType", propOrder = {"enableIntegration", "serverUrl", "applicationName", "password",
-        "sessionValidationInterval", "useDefaultProxy", "noAutoUserCreation", "customCookieTokenKey"},
+        "sessionValidationInterval", "useDefaultProxy", "noAutoUserCreation", "customCookieTokenKey", "directAuthentication"},
         namespace = Descriptor.NS)
 public class CrowdSettings implements Descriptor {
 
@@ -53,6 +51,9 @@ public class CrowdSettings implements Descriptor {
     private boolean noAutoUserCreation = true;
 
     private String customCookieTokenKey;
+
+    @XmlElement(defaultValue = "false")
+    private boolean directAuthentication = false;
 
     public boolean isEnableIntegration() {
         return enableIntegration;
@@ -110,35 +111,26 @@ public class CrowdSettings implements Descriptor {
         this.noAutoUserCreation = noAutoUserCreation;
     }
 
+    public boolean isDirectAuthentication() {
+        return directAuthentication;
+    }
+
+    public void setDirectAuthentication(boolean directAuthentication) {
+        this.directAuthentication = directAuthentication;
+    }
+
+    /**
+     * @deprecated We are using a REST command against Crowd to get that information
+     */
     public String getCustomCookieTokenKey() {
         return customCookieTokenKey;
     }
 
+    /**
+     * @deprecated We are using a REST command against Crowd to get that information
+     */
     public void setCustomCookieTokenKey(String customCookieTokenKey) {
         this.customCookieTokenKey = customCookieTokenKey;
-    }
-
-    public Properties getConfigurationProperties() {
-        Properties properties = new Properties();
-        if (isEnableIntegration()) {
-            properties.setProperty("crowd.server.url", getServerUrl());
-            if (StringUtils.isNotBlank(applicationName)) {
-                properties.setProperty("application.name", applicationName);
-            }
-            if (StringUtils.isNotBlank(password)) {
-                properties.setProperty("application.password", password);
-            }
-            if (sessionValidationInterval > 0) {
-                properties.setProperty("session.validationinterval", Long.toString(sessionValidationInterval));
-            }
-            properties.setProperty("session.isauthenticated", "artifactory.crowd.session.isAuthenticated");
-            properties.setProperty("session.tokenkey", "artifactory.crowd.session.tokenKey");
-            properties.setProperty("session.lastvalidation", "artifactory.crowd.session.lastValidation");
-            if (StringUtils.isNotBlank(customCookieTokenKey)) {
-                properties.setProperty("cookie.tokenkey", customCookieTokenKey);
-            }
-        }
-        return properties;
     }
 
     @Override
@@ -177,6 +169,9 @@ public class CrowdSettings implements Descriptor {
                 that.customCookieTokenKey != null) {
             return false;
         }
+        if (directAuthentication != that.directAuthentication) {
+            return false;
+        }
 
         return true;
     }
@@ -191,6 +186,7 @@ public class CrowdSettings implements Descriptor {
         result = 31 * result + (useDefaultProxy ? 1 : 0);
         result = 31 * result + (noAutoUserCreation ? 1 : 0);
         result = 31 * result + (customCookieTokenKey != null ? customCookieTokenKey.hashCode() : 0);
+        result = 31 * result + (directAuthentication ? 1 : 0);
         return result;
     }
 }

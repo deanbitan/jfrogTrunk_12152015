@@ -70,6 +70,7 @@ import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.cache.expirable.CacheExpiry;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.local.LocalNonCacheOverridable;
+import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.RepoRequests;
@@ -718,25 +719,29 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     }
 
     private void updateDownloadStats(VfsFile file) {
-        if (descriptor.isReal() || !ConstantValues.downloadStatsEnabled.getBoolean()) {  // no stats for virtual repos
+        if (descriptor.isReal() && ConstantValues.downloadStatsEnabled.getBoolean()) {  // stats only for real repos, if enabled
             statsService.fileDownloaded(file.getRepoPath(), authorizationService.currentUsername(),
                     System.currentTimeMillis());
         }
     }
 
-    public boolean shouldProtectPathDeletion(String path, boolean overwrite, @Nullable String requestSha1) {
+    public boolean shouldProtectPathDeletion(PathDeletionContext pathDeletionContext) {
+        String path = pathDeletionContext.getPath();
         if (NamingUtils.isChecksum(path)) {
             //Never protect checksums
             return false;
         }
 
-        if (overwrite) {
+        if (pathDeletionContext.isAssertOverwrite()) {
             if (MavenNaming.isMavenMetadata(path)) {
                 return false;
             }
 
             org.artifactory.repo.StoringRepo owningRepo = getOwningRepo();
             if (owningRepo.isCache()) {
+                if (pathDeletionContext.isForceExpiryCheck()) {
+                    return false;
+                }
                 if ((ContextHelper.get().beanForType(CacheExpiry.class).isExpirable(
                         ((LocalCacheRepo) owningRepo), path))) {
                     return false;
@@ -748,7 +753,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
                 }
             }
 
-            return shouldProtectPathDeletion(path, requestSha1);
+            return shouldProtectPathDeletion(path, pathDeletionContext.getRequestSha1());
         }
 
         return true;

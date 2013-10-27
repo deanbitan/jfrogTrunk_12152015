@@ -73,8 +73,8 @@ public abstract class BinaryStoreExternalProviderBaseTest extends BinaryStoreImp
     }
 
     @Override
-    protected StorageProperties.BinaryStorageType getBinaryStoreType() {
-        return StorageProperties.BinaryStorageType.filesystem;
+    protected StorageProperties.BinaryProviderType getBinaryStoreType() {
+        return StorageProperties.BinaryProviderType.filesystem;
     }
 
     @Override

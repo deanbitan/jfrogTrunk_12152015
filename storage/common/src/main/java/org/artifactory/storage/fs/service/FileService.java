@@ -96,5 +96,5 @@ public interface FileService {
      */
     List<FileInfo> searchFilesWithBadChecksum(ChecksumType type);
 
-    long getFilesTotalCount(RepoPath repoPath);
+    long getFilesTotalSize(RepoPath repoPath);
 }

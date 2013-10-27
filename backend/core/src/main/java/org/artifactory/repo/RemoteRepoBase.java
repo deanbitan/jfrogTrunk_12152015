@@ -54,6 +54,7 @@ import org.artifactory.io.checksum.policy.ChecksumPolicyBase;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.db.DbCacheRepo;
+import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
@@ -336,7 +337,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
             return remoteResource;
         } else if (foundExpiredInCache) {
-            RepoRequests.logToContext("Repository is offline but the resource in exists in the local cache - " +
+            RepoRequests.logToContext("Repository is offline but the resource exists in the local cache - " +
                     "returning cached resource");
             //Return the cached resource if remote fetch failed
             return returnCachedResource(repoPath, cachedResource);
@@ -359,7 +360,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             eagerResourcesDownloader.downloadNow(repoPath, new InternalArtifactoryRequest(repoPath));
             RepoResource cachedResource = localCacheRepo.getInfo(context);
             if (cachedResource != null && cachedResource.isFound()) {
-                RepoRequests.logToContext("Found resource after eager download in local cache - returning cached resource");
+                RepoRequests.logToContext(
+                        "Found resource after eager download in local cache - returning cached resource");
                 return returnCachedResource(repoPath, cachedResource);
             }
             return new UnfoundRepoResource(repoPath, "Could not download main zip resource");
@@ -371,7 +373,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             if (log.isDebugEnabled()) {
                 log.warn(e.getMessage(), e);
             }
-            return new UnfoundRepoResource(repoPath, "Zip resources download failed due to: "+e.getMessage());
+            return new UnfoundRepoResource(repoPath, "Zip resources download failed due to: " + e.getMessage());
         }
     }
 
@@ -404,6 +406,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 RepoRequests.logToContext("Unable to find resource remotely - adding to the missed retrieval cache.");
                 missedRetrievalsCache.put(path, remoteResource);
             }
+        } catch (FileExpectedException e) {
+            RepoRequests.logToContext("Expected file but got directory, requesting a redirect");
+            throw e;
         } catch (Exception e) {
             RepoRequests.logToContext("Failed to retrieve information: %s", e.getMessage());
             String reason = this + ": Error in getting information for '" + path + "' (" + e.getMessage() + ").";
@@ -412,16 +417,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             } else {
                 log.warn(reason);
             }
+            putOffline();
             remoteResource = new UnfoundRepoResource(repoPath, reason);
-            if (!foundExpiredInCache) {
-                RepoRequests.logToContext("Found no expired resource in the cache - " +
-                        "adding to the failed retrieval cache");
-                putOffline();
-                if (isHardFail()) {
-                    throw new RuntimeException(this + ": Error in getting information for '" + path + "'.", e);
-                }
+            if (!foundExpiredInCache && isHardFail()) {
+                throw new RuntimeException(this + ": Error in getting information for '" + path + "'.", e);
             }
-
         }
 
         return remoteResource;
@@ -509,21 +509,26 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
         boolean offline = isOffline();
         boolean foundExpiredResourceAndNewerRemote = foundExpiredAndRemoteIsNewer(remoteResource, cachedResource);
+        boolean forceExpiryCheck = requestContext.isForceExpiryCheck();
         boolean cachedNotFoundAndNotExpired = notFoundAndNotExpired(cachedResource);
 
         RepoRequests.logToContext("Remote repository is offline = %s", offline);
         RepoRequests.logToContext("Found expired cached resource but remote is newer = %s",
                 foundExpiredResourceAndNewerRemote);
+        RepoRequests.logToContext("Force expiration on the cached resource = %s", forceExpiryCheck);
         RepoRequests.logToContext("Resource isn't cached and isn't expired = %s", cachedNotFoundAndNotExpired);
 
         //Retrieve remotely only if locally cached artifact not found or is found but expired and is older than remote one
-        if (!offline && (foundExpiredResourceAndNewerRemote || cachedNotFoundAndNotExpired)) {
+        if (!offline && (forceExpiryCheck || foundExpiredResourceAndNewerRemote || cachedNotFoundAndNotExpired)) {
             RepoRequests.logToContext("Downloading and saving");
 
             // Check for security deploy rights
             RepoRequests.logToContext("Asserting valid deployment path");
-            getRepositoryService().assertValidDeployPath(localCacheRepo, remoteRepoPath,
-                    remoteResource.getInfo().getSize(), null);
+            ValidDeployPathContext validDeployPathContext = new ValidDeployPathContext.Builder(localCacheRepo,
+                    remoteRepoPath)
+                    .contentLength(remoteResource.getInfo().getSize())
+                    .forceExpiryCheck(requestContext.isForceExpiryCheck()).build();
+            getRepositoryService().assertValidDeployPath(validDeployPathContext);
 
             //Check that the resource is not being downloaded in parallel
             DownloadEntry completedConcurrentDownload = getCompletedConcurrentDownload(path);

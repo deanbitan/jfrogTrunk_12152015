@@ -39,6 +39,7 @@ import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
+import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
@@ -50,6 +51,7 @@ import org.artifactory.io.RemoteResourceStreamHandle;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.remote.browse.HtmlRepositoryBrowser;
 import org.artifactory.repo.remote.browse.HttpExecutor;
 import org.artifactory.repo.remote.browse.RemoteItem;
@@ -404,10 +406,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                     "resource", method.getStatusText());
             return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
-        //If redirected to a directory - return 404
+        //If redirected to a directory - redirect client
         if (method.getPath().endsWith("/")) {
             RepoRequests.logToContext("Remote info request was redirected to a directory - returning unfound resource");
-            return new UnfoundRepoResource(repoPath, "Expected file response but received a directory response.");
+            throw new FileExpectedException(new RepoPathImpl(repoPath.getRepoKey(), repoPath.getPath(), true));
         }
         if (method.getStatusCode() != HttpStatus.SC_OK) {
             RepoRequests.logToContext("Received status {} (message: %s) on remote info request - returning unfound " +

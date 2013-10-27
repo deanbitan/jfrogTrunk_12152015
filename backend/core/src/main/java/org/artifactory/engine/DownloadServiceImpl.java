@@ -25,6 +25,8 @@ import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.plugin.download.AfterDownloadErrorAction;
 import org.artifactory.addon.plugin.download.AltResponseAction;
 import org.artifactory.addon.plugin.download.BeforeDownloadAction;
+import org.artifactory.addon.plugin.download.BeforeDownloadRequestAction;
+import org.artifactory.addon.plugin.download.DownloadCtx;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
@@ -131,6 +133,12 @@ public class DownloadServiceImpl implements InternalDownloadService {
         RepoRequests.logToContext("Request source = %s, Last modified = %s, If modified since = %s, Thread name = %s",
                 request.getClientAddress(), centralConfig.format(request.getLastModified()),
                 request.getIfModifiedSince(), Thread.currentThread().getName());
+
+        PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+        DownloadCtx downloadCtx = new DownloadCtx();
+        pluginAddon.execPluginActions(BeforeDownloadRequestAction.class, downloadCtx, request, request.getRepoPath());
+        RepoRequests.logToContext("Executing any BeforeDownloadRequest user plugins that may exist");
+
         //Check that this is not a recursive call
         if (request.isRecursive()) {
             RepoRequests.logToContext("Exiting download process - recursive call detected");
@@ -157,7 +165,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
             RepoResource resource;
             Repo repository = repositoryService.repositoryByKey(repoKey);
 
-            DownloadRequestContext requestContext = new DownloadRequestContext(request);
+            DownloadRequestContext requestContext = new DownloadRequestContext(request, downloadCtx.isExpired());
 
             if (repository == null) {
                 RepoRequests.logToContext("Exiting download process - failed to find the repository");

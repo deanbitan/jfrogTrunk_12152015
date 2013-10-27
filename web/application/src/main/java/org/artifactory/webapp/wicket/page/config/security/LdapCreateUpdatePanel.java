@@ -43,6 +43,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
@@ -233,8 +234,9 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                 List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
                 if (status.isError()) {
                     String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                    error(status.getStatusMsg() + " Please see the <a href=\"" + systemLogsPage +
-                            "\">logs</a> page for more details");
+                    error(new UnescapedFeedbackMessage(
+                            status.getStatusMsg() + " Please see the <a href=\"" + systemLogsPage +
+                                    "\">logs</a> page for more details"));
                 }
                 for (StatusEntry info : infos) {
                     info(info.getMessage());

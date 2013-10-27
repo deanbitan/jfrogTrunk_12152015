@@ -73,6 +73,7 @@ public abstract class ArchiveUtils {
         try {
             @SuppressWarnings({"unchecked"})
             Collection<File> childrenFiles = org.apache.commons.io.FileUtils.listFiles(sourceDirectory, null, recurse);
+            childrenFiles.remove(destinationArchive);
 
             ArchiveEntry archiveEntry;
             FileInputStream fileInputStream;

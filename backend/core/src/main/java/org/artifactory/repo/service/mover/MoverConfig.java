@@ -38,7 +38,7 @@ public class MoverConfig {
     private final boolean copy;
     private final boolean dryRun;
     private final boolean executeMavenMetadataCalculation;
-    private final boolean searchResult;
+    private final boolean pruneEmptyFolders;
     private final Properties properties;
     private final boolean suppressLayouts;
     private final boolean failFast;
@@ -52,12 +52,12 @@ public class MoverConfig {
      * @param dryRun             Is the current run a dry one (no items actually moved)
      * @param executeMavenMetadataCalculation
      *                           Should immediately execute metadata calculation, or schedule
-     * @param searchResult       Is moving search results
+     * @param pruneEmptyFolders  If should prune empty folders after move
      * @param suppressLayouts    True if path translation across different layouts should be suppressed.
      * @param failFast           Flag to indicate whether the operation should fail upon encountering an error.
      */
     public MoverConfig(RepoPath fromRepoPath, RepoPath targetLocalRepoPath, String targetLocalRepoKey, boolean copy,
-            boolean dryRun, boolean executeMavenMetadataCalculation, boolean searchResult, Properties properties,
+            boolean dryRun, boolean executeMavenMetadataCalculation, boolean pruneEmptyFolders, Properties properties,
             boolean suppressLayouts, boolean failFast) {
         this.fromRepoPath = fromRepoPath;
         this.targetLocalRepoPath = targetLocalRepoPath;
@@ -65,7 +65,7 @@ public class MoverConfig {
         this.copy = copy;
         this.dryRun = dryRun;
         this.executeMavenMetadataCalculation = executeMavenMetadataCalculation;
-        this.searchResult = searchResult;
+        this.pruneEmptyFolders = pruneEmptyFolders;
         this.properties = properties;
         this.suppressLayouts = suppressLayouts;
         this.failFast = failFast;
@@ -130,8 +130,8 @@ public class MoverConfig {
      *
      * @return True if search results are being moved, false if not
      */
-    public boolean isSearchResult() {
-        return searchResult;
+    public boolean isPruneEmptyFolders() {
+        return pruneEmptyFolders;
     }
 
     /**

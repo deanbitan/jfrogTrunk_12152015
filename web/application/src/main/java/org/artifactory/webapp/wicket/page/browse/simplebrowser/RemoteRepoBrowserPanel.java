@@ -31,11 +31,13 @@ import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RemoteBrowsableItem;
 import org.artifactory.api.repo.RepositoryBrowsingService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.webapp.servlet.RequestUtils;
+import org.artifactory.webapp.wicket.page.browse.BrowseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,9 +64,15 @@ public class RemoteRepoBrowserPanel extends RemoteBrowsableRepoPanel {
         add(new BreadCrumbsPanel("breadCrumbs", repoPath.getId()));
         List<BaseBrowsableItem> remoteChildren;
         try {
-            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).
-                    requestProperties(requestProps).build();
+            BrowsableItemCriteria.Builder builder = new BrowsableItemCriteria.Builder(repoPath).requestProperties(
+                    requestProps);
+            boolean includeChecksums = !ConstantValues.uiHideChecksums.getBoolean();
+            builder.includeChecksums(includeChecksums);
+            BrowsableItemCriteria criteria = builder.build();
             remoteChildren = repoBrowseService.getRemoteRepoBrowsableChildren(criteria);
+            if (!includeChecksums) {
+                remoteChildren = BrowseUtils.filterChecksums(remoteChildren);
+            }
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);
             throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());

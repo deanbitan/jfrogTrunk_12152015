@@ -83,11 +83,6 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
-    public void importFrom(ImportSettings settings) {
-
-    }
-
-    @Override
     public boolean isLicenseInstalled() {
         return false;
     }

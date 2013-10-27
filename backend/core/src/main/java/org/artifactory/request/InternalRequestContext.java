@@ -30,4 +30,14 @@ public interface InternalRequestContext extends RequestContext {
      * @return True if the client "User-Agent" header value does not match the pattern of older Maven versions
      */
     public boolean clientSupportsM3SnapshotVersions();
+
+    /**
+     * Force resource expiry check (regardless of the resource cache age), usually triggered by a user plugin
+     * to add expired resources others than those who implements CacheExpirable.
+     *
+     * @return True if should force expiry check
+     * @see org.artifactory.repo.cache.expirable.CacheExpirable
+     * @see org.artifactory.addon.plugin.download.BeforeDownloadRequestAction
+     */
+    public boolean isForceExpiryCheck();
 }

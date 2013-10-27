@@ -39,6 +39,7 @@ public class PluginInfo implements Serializable {
     private Set<String> permittedUsers = Sets.newHashSet();
     private Set<String> permittedGroups = Sets.newHashSet();
     private Map params = Maps.newHashMap();
+    private String httpMethod = "POST";
 
     /**
      * @param name                Name of plugin (applicable to executions and jobs)
@@ -52,6 +53,9 @@ public class PluginInfo implements Serializable {
             }
             if (pluginClosureParams.containsKey("description")) {
                 description = pluginClosureParams.get("description").toString();
+            }
+            if (pluginClosureParams.containsKey("httpMethod")) {
+                httpMethod = pluginClosureParams.get("httpMethod").toString();
             }
             if (pluginClosureParams.containsKey("users")) {
                 Object users = pluginClosureParams.get("users");
@@ -74,6 +78,10 @@ public class PluginInfo implements Serializable {
                 params.putAll((Map) paramsFromClosureConfig);
             }
         }
+    }
+
+    public String getHttpMethod() {
+        return httpMethod;
     }
 
     public String getName() {
@@ -114,6 +122,9 @@ public class PluginInfo implements Serializable {
         if (description != null ? !description.equals(that.description) : that.description != null) {
             return false;
         }
+        if (httpMethod != null ? !httpMethod.equals(that.httpMethod) : that.httpMethod != null) {
+            return false;
+        }
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
@@ -138,6 +149,7 @@ public class PluginInfo implements Serializable {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (version != null ? version.hashCode() : 0);
         result = 31 * result + (description != null ? description.hashCode() : 0);
+        result = 31 * result + (httpMethod != null ? httpMethod.hashCode() : 0);
         result = 31 * result + (permittedUsers != null ? permittedUsers.hashCode() : 0);
         result = 31 * result + (permittedGroups != null ? permittedGroups.hashCode() : 0);
         result = 31 * result + (params != null ? params.hashCode() : 0);

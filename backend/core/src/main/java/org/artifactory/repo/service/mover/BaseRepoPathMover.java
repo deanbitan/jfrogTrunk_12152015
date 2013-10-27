@@ -32,6 +32,7 @@ import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.maven.PomTargetPathValidator;
 import org.artifactory.md.Properties;
+import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.Repo;
@@ -48,6 +49,7 @@ import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.storage.fs.lock.LockingHelper;
 import org.artifactory.storage.fs.session.StorageSessionHolder;
+import org.artifactory.util.RepoPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +76,7 @@ public abstract class BaseRepoPathMover {
     protected final Properties properties;
     protected final String targetLocalRepoKey;
 
-    private final boolean searchResult;
+    private final boolean pruneEmptyFolders;
     protected final MoveMultiStatusHolder status;
     protected ArtifactoryContext artifactoryContext;
 
@@ -90,7 +92,7 @@ public abstract class BaseRepoPathMover {
         dryRun = moverConfig.isDryRun();
         executeMavenMetadataCalculation = moverConfig.isExecuteMavenMetadataCalculation();
         failFast = moverConfig.isFailFast();
-        searchResult = moverConfig.isSearchResult();
+        pruneEmptyFolders = moverConfig.isPruneEmptyFolders();
         properties = initProperties(moverConfig);
         targetLocalRepoKey = moverConfig.getTargetLocalRepoKey();
 
@@ -107,13 +109,13 @@ public abstract class BaseRepoPathMover {
     }
 
     /**
-     * <ul> <li>If not in a dry run.</li> <li>If not handling search results (search result folders are cleaned at a
+     * <ul> <li>If not in a dry run.</li> <li>If not pruning empty folders (if true it will happen at a
      * later stage).</li> <li>If not copying (no source removal when copying).</li> <li>If not on the root item (a
      * repo).</li> <li>If not containing any children and items have been moved (children have actually been
      * moved).</li> </ul>
      */
     protected boolean shouldRemoveSourceFolder(VfsFolder sourceFolder) {
-        return !dryRun && !searchResult && !copy && !sourceFolder.getRepoPath().isRoot() &&
+        return !dryRun && !pruneEmptyFolders && !copy && !sourceFolder.getRepoPath().isRoot() &&
                 !sourceFolder.hasChildren() && status.getMovedCount() != 0;
     }
 
@@ -275,8 +277,8 @@ public abstract class BaseRepoPathMover {
             return;
         }
 
-        if (!searchResult || copy) {
-            // cleanup only in search results after move
+        if (!pruneEmptyFolders || copy) {
+            // cleanup only in search results or promotion after move
             return;
         }
 
@@ -326,6 +328,20 @@ public abstract class BaseRepoPathMover {
                     fsItem.getRepoPath().isRoot() ? fsItem.getRepoPath() : fsItem.getRepoPath().getParent();
             if (executeMavenMetadataCalculation) {
                 mavenMetadataService.calculateMavenMetadataAsync(folderForMetadataCalculation, true);
+                if (MavenNaming.isPom(fsItem.getRepoPath().getPath())) {
+                    // for pom files we need to trigger metadata calculation on the grandparent non-recursively -
+                    // potential new version and snapshot.
+                    RepoPath grandparentFolder = RepoPathUtils.getAncestor(fsItem.getRepoPath(), 2);
+                    mavenMetadataService.calculateMavenMetadataAsync(grandparentFolder, false);
+                }
+            } else {
+                status.addToMavenMetadataCandidates(folderForMetadataCalculation);
+                if (MavenNaming.isPom(fsItem.getRepoPath().getPath())) {
+                    // for pom files we need to trigger metadata calculation on the grandparent non-recursively -
+                    // potential new version and snapshot.
+                    RepoPath grandparentFolder = RepoPathUtils.getAncestor(fsItem.getRepoPath(), 2);
+                    status.addToMavenMetadataCandidates(grandparentFolder);
+                }
             }
         }
 
@@ -336,6 +352,8 @@ public abstract class BaseRepoPathMover {
             if (!copy && sourceRepo != null && !sourceRepo.isCache() && sourceForMetadataCalculation != null) {
                 if (executeMavenMetadataCalculation) {
                     mavenMetadataService.calculateMavenMetadataAsync(sourceForMetadataCalculation, true);
+                } else {
+                    status.addToMavenMetadataCandidates(sourceForMetadataCalculation);
                 }
             }
         }

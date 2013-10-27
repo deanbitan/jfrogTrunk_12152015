@@ -49,6 +49,6 @@ public class ManagedRepository implements ManagedRepositoryMBean {
 
     @Override
     public long getArtifactsTotalSize() {
-        return fileService.getFilesTotalCount(new RepoPathImpl(descriptor.getKey(), ""));
+        return fileService.getFilesTotalSize(new RepoPathImpl(descriptor.getKey(), ""));
     }
 }

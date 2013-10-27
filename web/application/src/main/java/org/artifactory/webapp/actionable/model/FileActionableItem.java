@@ -48,7 +48,6 @@ import org.artifactory.webapp.actionable.action.ZapAction;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.ivy.XmlViewTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.jnlp.JnlpViewTabPanel;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.maven.PomViewTabPanel;
-import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats.StatsTabPanel;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,13 +124,6 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         if (showTabs) {
             return;
         }
-        //Has stats
-        tabs.add(new AbstractTab(Model.of("Stats")) {
-            @Override
-            public Panel getPanel(String panelId) {
-                return new StatsTabPanel(panelId, FileActionableItem.this);
-            }
-        });
 
         if (isPomFile()) {
             // add pom view panel

@@ -43,6 +43,7 @@ import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
 
@@ -90,7 +91,7 @@ public class WelcomeBorder extends TitledBorder {
         add(countLabel);
         try {
             long count = repoService.getArtifactCount();
-            countLabel.setDefaultModelObject(count);
+            countLabel.setDefaultModelObject(new DecimalFormat("#,###").format(count));
         } catch (RepositoryRuntimeException e) {
             countLabel.setVisible(false);
             log.warn("Failed to retrieve artifacts count: " + e.getMessage());

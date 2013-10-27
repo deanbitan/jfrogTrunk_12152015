@@ -511,6 +511,7 @@ public class BintrayServiceImpl implements BintrayService {
             @Nullable Map<String, String> headersMap)
             throws IOException, BintrayException {
         String requestUrl = getBaseBintrayApiUrl() + "search/file/?subject=bintray&repo=jcenter&name=" + query;
+        log.debug("requestUrl=\"" + requestUrl + "\"");
         GetMethod getMethod = createGetMethod(requestUrl, headersMap);
         HttpClient client = createHTTPClient(new UsernamePasswordCredentials("", ""));
         int status = client.executeMethod(getMethod);

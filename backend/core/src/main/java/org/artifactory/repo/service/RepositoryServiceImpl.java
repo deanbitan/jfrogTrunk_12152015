@@ -92,6 +92,8 @@ import org.artifactory.repo.count.ArtifactCountRetriever;
 import org.artifactory.repo.db.DbLocalRepo;
 import org.artifactory.repo.db.importexport.DbRepoExportSearchHandler;
 import org.artifactory.repo.interceptor.StorageInterceptors;
+import org.artifactory.repo.local.PathDeletionContext;
+import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.mbean.ManagedRepository;
 import org.artifactory.repo.service.mover.MoverConfig;
 import org.artifactory.repo.service.mover.MoverConfigBuilder;
@@ -975,7 +977,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetLocalRepoKey,
-            Properties properties, boolean dryRun, boolean failFast, boolean searchResults) {
+            Properties properties, boolean dryRun, boolean failFast) {
         Set<RepoPath> pathsToMoveIncludingParents = aggregatePathsToMove(pathsToMove, targetLocalRepoKey, false);
 
         log.debug("The following paths will be moved: {}", pathsToMoveIncludingParents);
@@ -985,10 +987,10 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         for (RepoPath pathToMove : pathsToMoveIncludingParents) {
             log.debug("Moving path: {} to {}", pathToMove, targetLocalRepoKey);
             mover.moveOrCopy(status, new MoverConfigBuilder(pathToMove, targetLocalRepoKey).copy(false).dryRun(dryRun)
-                    .executeMavenMetadataCalculation(false).searchResult(searchResults).properties(properties).
+                    .executeMavenMetadataCalculation(false).pruneEmptyFolders(true).properties(properties).
                             failFast(failFast).build());
         }
-
+        mavenMetadataService.calculateMavenMetadataAsyncNonRecursive(status.getCandidatesForMavenMetadataCalculation());
         return status;
     }
 
@@ -1010,7 +1012,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
-            Properties properties, boolean dryRun, boolean failFast, boolean searchResults) {
+            Properties properties, boolean dryRun, boolean failFast) {
         Set<RepoPath> pathsToCopyIncludingParents = aggregatePathsToMove(pathsToCopy, targetLocalRepoKey, true);
 
         log.debug("The following paths will be copied: {}", pathsToCopyIncludingParents);
@@ -1018,11 +1020,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         MoveMultiStatusHolder status = new MoveMultiStatusHolder();
         RepoPathMover mover = getRepoPathMover();
         for (RepoPath pathToCopy : pathsToCopyIncludingParents) {
-            log.debug("Moving path: {} to {}", pathToCopy, targetLocalRepoKey);
+            log.debug("Copying path: {} to {}", pathToCopy, targetLocalRepoKey);
             mover.moveOrCopy(status, new MoverConfigBuilder(pathToCopy, targetLocalRepoKey).copy(true).dryRun(dryRun)
-                    .executeMavenMetadataCalculation(false).searchResult(searchResults).properties(properties).
+                    .executeMavenMetadataCalculation(false).pruneEmptyFolders(false).properties(properties).
                             failFast(failFast).build());
         }
+        mavenMetadataService.calculateMavenMetadataAsyncNonRecursive(status.getCandidatesForMavenMetadataCalculation());
+
         return status;
     }
 
@@ -1093,7 +1097,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             statusHolder.error("Could find storing repository by key '" + repoKey + "'", log);
             return statusHolder;
         }
-        assertDelete(storingRepo, repoPath.getPath(), false, statusHolder, null);
+        PathDeletionContext pathDeletionContext = new PathDeletionContext.Builder(storingRepo, repoPath.getPath(),
+                statusHolder).assertOverwrite(false).build();
+        assertDelete(pathDeletionContext);
         if (!statusHolder.isError()) {
             storingRepo.undeploy(repoPath, calcMavenMetadata);
         }
@@ -1337,16 +1343,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public void assertValidDeployPath(RepoPath repoPath, long contentLength) throws RepoRejectException {
-        String repoKey = repoPath.getRepoKey();
-        LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
-        if (localRepo == null) {
-            throw new RepoRejectException("The repository '" + repoKey + "' is not configured.");
-        }
-        assertValidDeployPath(localRepo, repoPath, contentLength, null);
-    }
-
-    @Override
     public boolean isRemoteAssumedOffline(@Nonnull String remoteRepoKey) {
         RemoteRepo remoteRepo = remoteRepositoryByKey(remoteRepoKey);
         if (remoteRepo == null) {
@@ -1373,11 +1369,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public void assertValidDeployPath(LocalRepo repo, RepoPath repoPath, long contentLength,
-            @Nullable String requestSha1) throws RepoRejectException {
-
-        BasicStatusHolder status = repo.assertValidPath(repoPath, false);
+    public void assertValidDeployPath(ValidDeployPathContext validDeployPathContext) throws RepoRejectException {
+        LocalRepo repo = validDeployPathContext.getRepo();
+        RepoPath repoPath = validDeployPathContext.getRepoPath();
         String path = repoPath.getPath();
+        if (!repo.getKey().equals(repoPath.getRepoKey())) {
+            // the repo path should point to the given repo (e.g, in case the repo path points to the remote repo)
+            repoPath = InternalRepoPathFactory.create(repo.getKey(), path, repoPath.isFolder());
+        }
+        BasicStatusHolder status = repo.assertValidPath(repoPath, false);
         if (!status.isError()) {
             // if it is metadata, assert annotate privileges. Maven metadata is treated as regular file
             // (needs deploy permissions).
@@ -1399,12 +1399,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 }
             }
             if (!status.isError()) {
-                assertDelete(repo, path, true, status, requestSha1);
+                PathDeletionContext pathDeletionContext = new PathDeletionContext.Builder(repo, path, status)
+                        .assertOverwrite(true).requestSha1(validDeployPathContext.getRequestSha1())
+                        .forceExpiryCheck(validDeployPathContext.isForceExpiryCheck()).build();
+                assertDelete(pathDeletionContext);
             }
 
             if (!status.isError()) {
                 // Assert that we don't exceed the user configured maximum storage size
-                assertStorageQuota(status, contentLength);
+                assertStorageQuota(status, validDeployPathContext.getContentLength());
             }
         }
         if (status.isError()) {
@@ -1892,11 +1895,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return InternalContextHelper.get().beanForType(InternalRepositoryService.class);
     }
 
-    private void assertDelete(StoringRepo repo, String path, boolean assertOverwrite, BasicStatusHolder status,
-            @Nullable String requestSha1) {
+    private void assertDelete(PathDeletionContext pathDeletionContext) {
+        StoringRepo repo = pathDeletionContext.getRepo();
+        String path = pathDeletionContext.getPath();
+        BasicStatusHolder status = pathDeletionContext.getStatus();
         RepoPath repoPath = InternalRepoPathFactory.create(repo.getKey(), path);
         //Check that has delete rights to replace an exiting item
-        if (repo.shouldProtectPathDeletion(path, assertOverwrite, requestSha1)) {
+        if (repo.shouldProtectPathDeletion(pathDeletionContext)) {
             if (!authService.canDelete(repoPath)) {
                 AccessLogger.deleteDenied(repoPath);
                 if (centralConfigService.getDescriptor().getSecurity().isHideUnauthorizedResources()) {
@@ -1910,7 +1915,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
 
         //For deletion (as opposed to overwrite), check that path actually exists
-        if (!assertOverwrite && !repo.itemExists(repoPath.getPath())) {
+        if (!pathDeletionContext.isAssertOverwrite() && !repo.itemExists(repoPath.getPath())) {
             status.error("Could not locate artifact '" + repoPath + "' (Nothing to delete).",
                     HttpStatus.SC_NOT_FOUND, log);
         }

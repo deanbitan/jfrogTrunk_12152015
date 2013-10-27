@@ -39,8 +39,8 @@ import static org.testng.Assert.fail;
 public class BinaryStoreImplFullDbProviderTest extends BinaryStoreImplBaseTest {
 
     @Override
-    protected StorageProperties.BinaryStorageType getBinaryStoreType() {
-        return StorageProperties.BinaryStorageType.fullDb;
+    protected StorageProperties.BinaryProviderType getBinaryStoreType() {
+        return StorageProperties.BinaryProviderType.fullDb;
     }
 
     @Override

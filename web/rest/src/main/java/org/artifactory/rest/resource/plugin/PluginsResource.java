@@ -35,18 +35,24 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Nullable;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+import static javax.ws.rs.core.MediaType.WILDCARD;
 import static org.artifactory.api.rest.constant.PluginRestConstants.*;
 
 /**
@@ -77,18 +83,21 @@ public class PluginsResource {
     }
 
     @POST
-    @Consumes(MediaType.WILDCARD)
+    @Consumes(WILDCARD)
     @Path(PATH_EXECUTE + "/{executionName: .+}")
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response execute(
+    @Produces(TEXT_PLAIN)
+    public Response execute(@Context Request request,
             InputStream body,
             @PathParam("executionName") String executionName,
             @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
             @QueryParam(PARAM_ASYNC) int async) throws Exception {
-        Map<String, List<String>> params = paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
+        Map<String, List<String>> params =
+                paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
         try (ResourceStreamHandle handle = new SimpleResourceStreamHandle(body)) {
             ResponseCtx responseCtx =
-                    addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName, params, handle, async == 1);
+                    addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName, request.getMethod(),
+                            params,
+                            handle, async == 1);
             if (async == 1) {
                 //Just return accepted (202)
                 return Response.status(HttpStatus.SC_ACCEPTED).build();
@@ -96,6 +105,45 @@ public class PluginsResource {
                 return responseFromResponseCtx(responseCtx);
             }
         }
+    }
+
+    @PUT
+    @Consumes(WILDCARD)
+    @Path(PATH_EXECUTE + "/{executionName: .+}")
+    @Produces(TEXT_PLAIN)
+    public Response executePut(@Context Request request,
+            InputStream body,
+            @PathParam("executionName") String executionName,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+        return execute(request, body, executionName, paramsList, async);
+    }
+
+    @GET
+    @Path(PATH_EXECUTE + "/{executionName: .+}")
+    @Produces(TEXT_PLAIN)
+    public Response execute(@Context Request request, @PathParam("executionName") String executionName,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+        Map<String, List<String>> params =
+                paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
+        ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName,
+                request.getMethod(), params, null, async == 1);
+        if (async == 1) {
+            //Just return accepted (202)
+            return Response.status(HttpStatus.SC_ACCEPTED).build();
+        } else {
+            return responseFromResponseCtx(responseCtx);
+        }
+    }
+
+    @DELETE
+    @Path(PATH_EXECUTE + "/{executionName: .+}")
+    @Produces(TEXT_PLAIN)
+    public Response executeDelete(@Context Request request, @PathParam("executionName") String executionName,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+        return execute(request, executionName, paramsList, async);
     }
 
     @GET
@@ -112,7 +160,7 @@ public class PluginsResource {
 
     @POST
     @Path(PATH_PROMOTE + "/{promotionName: .+}/{buildName: .+}/{buildNumber: .+}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(TEXT_PLAIN)
     public Response promote(
             @PathParam("promotionName") String promotionName,
             @PathParam("buildName") String buildName,

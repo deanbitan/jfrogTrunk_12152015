@@ -79,7 +79,19 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
 
     protected void exportFile(FileInfo sourceFile) {
         status.debug("Exporting file '" + sourceFile.getRepoKey() + "'...", log);
-        File targetFile = new File(settings.getBaseDir(), sourceFile.getRelPath());
+
+        File targetBase;
+        if (settings.isCreateArchive()) {
+            try {
+                targetBase = settings.getArchiveTempDir().toFile();
+            } catch (IOException e) {
+                status.error("Failed to create temporary export dir", e, log);
+                return;
+            }
+        } else {
+            targetBase = settings.getBaseDir();
+        }
+        File targetFile = new File(targetBase, sourceFile.getRelPath());
         try {
             // Insure that the source file still exists.
             boolean sourceFileExists = getFileService().exists(sourceFile.getRepoPath());

@@ -20,8 +20,13 @@ package org.artifactory.logging;
 
 import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.property.ArtifactorySystemProperties;
+import org.artifactory.logging.version.LoggingVersion;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
+import org.artifactory.update.utils.BackupUtils;
+import org.artifactory.version.ArtifactoryVersion;
+import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -48,10 +53,38 @@ public class LoggingServiceImpl implements LoggingService {
         File logFileToImport = new File(settings.getBaseDir(), "etc/logback.xml");
         if (logFileToImport.exists()) {
             try {
-                FileUtils.copyFileToDirectory(logFileToImport, ArtifactoryHome.get().getEtcDir());
+                // Backup the target logback file
+                File targetEtcDir = ArtifactoryHome.get().getEtcDir();
+                File existingLogbackFile = new File(targetEtcDir, "logback.xml");
+                if (existingLogbackFile.exists()) {
+                    FileUtils.copyFile(existingLogbackFile, new File(targetEtcDir, "logback.original.xml"));
+                }
+                // Copy file into a temporary working directory
+                File workFile = new File(FileUtils.getTempDirectory(), logFileToImport.getName());
+                FileUtils.copyFile(logFileToImport, workFile);
+                convertAndSave(workFile, settings);
+                // Copy the converted file to the target dir
+                FileUtils.copyFileToDirectory(workFile, targetEtcDir);
+                FileUtils.deleteQuietly(workFile);
             } catch (IOException e) {
-                settings.getStatusHolder().error("Failed to import logback file", e, log);
+                settings.getStatusHolder().error("Failed to import and convert logback file", e, log);
             }
+        }
+    }
+
+    private void convertAndSave(File toConvert, ImportSettings settings) throws IOException {
+        ArtifactoryHome artifactoryHome = ArtifactoryHome.get();
+        CompoundVersionDetails source = artifactoryHome.getOriginalVersionDetails();
+
+        ArtifactorySystemProperties properties = artifactoryHome.getArtifactoryProperties();
+
+        //Might be first run, protect
+        if (source != null) {
+            LoggingVersion.values();
+            ArtifactoryVersion importedVersion = BackupUtils.findVersion(settings.getBaseDir());
+            LoggingVersion originalVersion = importedVersion.getSubConfigElementVersion(LoggingVersion.class);
+            originalVersion.convert(toConvert.getParentFile());
+            properties.setProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "true");
         }
     }
 }

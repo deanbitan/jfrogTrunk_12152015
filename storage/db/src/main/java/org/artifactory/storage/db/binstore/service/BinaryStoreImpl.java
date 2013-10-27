@@ -63,7 +63,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import static org.artifactory.storage.StorageProperties.BinaryStorageType;
+import static org.artifactory.storage.StorageProperties.BinaryProviderType;
 
 /**
  * The main binary store of Artifactory that delegates to the BinaryProvider chain.
@@ -103,11 +103,21 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         firstBinaryProvider = new ReadTrackingBinaryProvider();
         binaryProviders.add(firstBinaryProvider);
         // Init of bin providers depending on constant values
-        BinaryStorageType binaryProviderName = storageProperties.getBinariesStorageType();
+        BinaryProviderType binaryProviderName = storageProperties.getBinariesStorageType();
         switch (binaryProviderName) {
             case filesystem:
                 fileBinaryProvider = new FileBinaryProviderImpl(ArtifactoryHome.get().getDataDir(), storageProperties);
                 binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
+                break;
+            case cachedFS:
+                if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {
+                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getDataDir(),
+                            storageProperties);
+                    binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
+                } else {
+                    throw new IllegalStateException("Binary provider typed cachedFS cannot have a zero cached size!");
+                }
+                binaryProviders.add(new FileBinaryProviderImpl(ArtifactoryHome.get().getDataDir(), storageProperties));
                 break;
             case fullDb:
                 if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {

@@ -37,6 +37,7 @@ import org.artifactory.mime.MavenNaming;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.*;
 import org.artifactory.repo.db.DbStoringRepoMixin;
+import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.interceptor.VirtualRepoInterceptor;
 import org.artifactory.request.InternalRequestContext;
@@ -494,7 +495,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     @Override
-    public boolean shouldProtectPathDeletion(String path, boolean assertOverwrite, String requestSha1) {
+    public boolean shouldProtectPathDeletion(PathDeletionContext pathDeletionContext) {
         // permissions only apply for real repositories. other methods (i.e., webdav delete) shouldn't allow virtual
         // repo deletion from the outside.
         return false;

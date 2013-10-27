@@ -22,7 +22,9 @@ import org.artifactory.common.MutableStatusHolder;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -35,6 +37,8 @@ public interface BaseSettings extends Serializable {
     String FULL_SYSTEM = "FULL";
 
     File getBaseDir();
+
+    Path getArchiveTempDir() throws IOException;
 
     boolean isIncludeMetadata();
 

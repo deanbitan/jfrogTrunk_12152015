@@ -119,7 +119,12 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
     protected void updateStorageProperties() {
         // customize the storage properties before the binary store initialization
         updateStorageProperty(StorageProperties.Key.binaryProviderType, getBinaryStoreType().name());
-        updateStorageProperty(StorageProperties.Key.binaryProviderFilesystemDir, getBinaryStoreDirName());
+        String binaryStoreDirName = getBinaryStoreDirName();
+        if (binaryStoreDirName.startsWith("cache")) {
+            updateStorageProperty(StorageProperties.Key.binaryProviderCacheDir, binaryStoreDirName);
+        } else {
+            updateStorageProperty(StorageProperties.Key.binaryProviderFilesystemDir, binaryStoreDirName);
+        }
     }
 
     protected void updateStorageProperty(StorageProperties.Key key, String value) {
@@ -127,7 +132,7 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
         ReflectionTestUtils.invokeMethod(propsField, "setProperty", key.key(), value);
     }
 
-    protected abstract StorageProperties.BinaryStorageType getBinaryStoreType();
+    protected abstract StorageProperties.BinaryProviderType getBinaryStoreType();
 
     protected abstract String getBinaryStoreDirName();
 
@@ -347,11 +352,16 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
 
     protected abstract void testPruneAfterLoad();
 
-    protected void testPrune(int folders, int files, int bytes) {
+    protected MultiStatusHolder testPrune(int folders, int files, int bytes) {
         MultiStatusHolder statusHolder = new MultiStatusHolder();
         binaryStore.prune(statusHolder);
         String statusMsg = statusHolder.getStatusMsg();
         assertFalse(statusHolder.isError(), "Error during empty pruning: " + statusMsg);
+        assertMessageContains(statusMsg, folders, files, bytes);
+        return statusHolder;
+    }
+
+    protected void assertMessageContains(String statusMsg, int folders, int files, int bytes) {
         assertTrue(statusMsg.contains("" + folders + " empty folders"), "Wrong status message " + statusMsg);
         assertTrue(statusMsg.contains("" + files + " files"), "Wrong status message " + statusMsg);
         assertTrue(statusMsg.contains("size of " + StorageUnit.toReadableString(bytes)),

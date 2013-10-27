@@ -282,7 +282,13 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 VirtualBrowsableItem virtualItem;
                 if (childrenToReturn.containsKey(childRelativePath)) {
                     virtualItem = (VirtualBrowsableItem) childrenToReturn.get(childRelativePath);
+                    if (!child.isRemote() && virtualItem.isRemote()) {
+                        virtualItem.setCreated(child.getCreated());
+                        virtualItem.setLastModified(child.getLastModified());
+                        virtualItem.setSize(child.getSize());
+                    }
                 } else {
+                    // New
                     Collection<VirtualRepo> virtualRepos = pathToVirtualRepos.get(childRelativePath);
                     virtualItem = new VirtualBrowsableItem(child.getName(), child.isFolder(), child.getCreated(),
                             child.getLastModified(), child.getSize(), InternalRepoPathFactory.create(virtualRepoKey,

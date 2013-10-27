@@ -36,6 +36,7 @@ import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffActionableItem;
 import org.artifactory.webapp.wicket.page.build.actionable.BuildsDiffDependencyActionableItem;
+import org.codehaus.plexus.util.StringUtils;
 import org.jfrog.build.api.Build;
 
 import javax.annotation.Nonnull;
@@ -77,7 +78,17 @@ public abstract class BaseBuildDiffTabPanel extends Panel {
             buildsRunList = Lists.newArrayList();
         }
         final DropDownChoice<BuildRun> buildToCompareAgainst = new DropDownChoice<>("buildToCompareAgainst",
-                new Model<BuildRun>(), buildsRunList, new ChoiceRenderer<BuildRun>("number"));
+                new Model<BuildRun>(), buildsRunList, new ChoiceRenderer<BuildRun>("number") {
+            @Override
+            public Object getDisplayValue(BuildRun build) {
+                StringBuffer buffer = new StringBuffer();
+                buffer.append(build.getNumber());
+                if (StringUtils.isNotBlank(build.getReleaseStatus())) {
+                    buffer.append(" ").append(build.getReleaseStatus());
+                }
+                return buffer.toString();
+            }
+        });
         buildToCompareAgainst.setNullValid(true);
         buildToCompareAgainst.add(new AjaxFormComponentUpdatingBehavior("onchange") {
             @Override

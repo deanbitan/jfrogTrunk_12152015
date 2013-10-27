@@ -19,10 +19,12 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats;
 
 import org.apache.wicket.markup.html.panel.Panel;
+import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.StatsInfo;
-import org.artifactory.webapp.actionable.model.FileActionableItem;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.springframework.util.StringUtils;
 
@@ -36,7 +38,10 @@ import java.util.Date;
  */
 public class StatsTabPanel extends Panel {
 
-    public StatsTabPanel(String id, FileActionableItem item) {
+    @SpringBean
+    private RepositoryService repositoryService;
+
+    public StatsTabPanel(String id, ItemInfo item) {
         super(id);
         LabeledValue downloadedLabel = new LabeledValue("downloaded", "Downloaded: ");
         add(downloadedLabel);
@@ -44,8 +49,15 @@ public class StatsTabPanel extends Panel {
         add(lastDownloaded);
         LabeledValue lastDownloadedBy = new LabeledValue("lastDownloadedBy", "Last Downloaded by: ");
         add(lastDownloadedBy);
-        //StatsInfo statsInfo = item.getXmlMetadata(StatsInfo.class);
-        StatsInfo statsInfo = item.getStatsInfo();
+
+        if (item.isFolder()) {
+            downloadedLabel.setVisible(false);
+            lastDownloaded.setVisible(false);
+            lastDownloadedBy.setVisible(false);
+            return;
+        }
+
+        StatsInfo statsInfo = repositoryService.getStatsInfo(item.getRepoPath());
         if (statsInfo == null) {
             statsInfo = InfoFactoryHolder.get().createStats();
         }

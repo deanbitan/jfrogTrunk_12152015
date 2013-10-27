@@ -40,8 +40,8 @@ import static org.testng.Assert.fail;
 public class BinaryStoreImplFullPathFileProviderTest extends BinaryStoreImplBaseTest {
 
     @Override
-    protected StorageProperties.BinaryStorageType getBinaryStoreType() {
-        return StorageProperties.BinaryStorageType.filesystem;
+    protected StorageProperties.BinaryProviderType getBinaryStoreType() {
+        return StorageProperties.BinaryProviderType.filesystem;
     }
 
     @Override

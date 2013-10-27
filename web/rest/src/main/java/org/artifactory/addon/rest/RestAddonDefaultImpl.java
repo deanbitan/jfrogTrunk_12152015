@@ -174,7 +174,8 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public ResponseCtx runPluginExecution(String executionName, Map params, ResourceStreamHandle body, boolean async) {
+    public ResponseCtx runPluginExecution(String executionName, String method, Map params, ResourceStreamHandle body,
+            boolean async) {
         throw new MissingRestAddonException();
     }
 

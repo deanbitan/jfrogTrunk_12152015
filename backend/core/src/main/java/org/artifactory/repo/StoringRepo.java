@@ -22,6 +22,7 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
+import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.storage.fs.VfsItemFactory;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ public interface StoringRepo<T extends RepoDescriptor> extends Repo<T>, VfsItemF
 
     void undeploy(RepoPath repoPath, boolean calcMavenMetadata);
 
-    boolean shouldProtectPathDeletion(String relPath, boolean overwrite, String requestSha1);
+    boolean shouldProtectPathDeletion(PathDeletionContext pathDeletionContext);
 
     @Override
     ChecksumPolicy getChecksumPolicy();

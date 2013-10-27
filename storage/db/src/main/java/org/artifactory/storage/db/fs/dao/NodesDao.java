@@ -275,12 +275,12 @@ public class NodesDao extends BaseDao {
     }
 
     public long getFilesTotalSize(String repoKey) throws SQLException {
-        return jdbcHelper.executeSelectCount("SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ?",
+        return jdbcHelper.executeSelectLong("SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ?",
                 repoKey);
     }
 
     public long getFilesTotalSize(NodePath nodePath) throws SQLException {
-        return jdbcHelper.executeSelectCount(
+        return jdbcHelper.executeSelectLong(
                 "SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and node_path like ?",
                 nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
     }
@@ -291,19 +291,9 @@ public class NodesDao extends BaseDao {
     }
 
     public int getNodesCount(NodePath nodePath) throws SQLException {
-        ResultSet resultSet = null;
-        int result = 0;
-        try {
-            resultSet = jdbcHelper.executeSelect(
-                    "SELECT COUNT(*) FROM nodes WHERE (node_type=1 or node_type=0) and repo = ? and depth > ? and node_path like ?",
-                    nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
-            if (resultSet.next()) {
-                result = resultSet.getInt(1);
-            }
-        } finally {
-            DbUtils.close(resultSet);
-        }
-        return result;
+        return jdbcHelper.executeSelectCount(
+                "SELECT COUNT(*) FROM nodes WHERE (node_type=1 or node_type=0) and repo = ? and depth > ? and node_path like ?",
+                nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
     }
 
     public List<Node> searchFileByName(String name) throws SQLException {

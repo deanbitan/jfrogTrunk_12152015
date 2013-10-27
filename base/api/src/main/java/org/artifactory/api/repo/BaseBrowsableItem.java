@@ -126,6 +126,18 @@ public abstract class BaseBrowsableItem implements Serializable, Comparable<Base
         return folder;
     }
 
+    public void setCreated(long created) {
+        this.created = created;
+    }
+
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
     @Override
     public String toString() {
         return getRepoPath().toString();

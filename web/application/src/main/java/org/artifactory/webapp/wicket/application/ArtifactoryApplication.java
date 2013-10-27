@@ -40,6 +40,7 @@ import org.apache.wicket.settings.IRequestCycleSettings;
 import org.apache.wicket.settings.IResourceSettings;
 import org.apache.wicket.settings.ISecuritySettings;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.util.resource.locator.caching.CachingResourceStreamLocator;
 import org.apache.wicket.util.time.Duration;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.BootstrapListener;
@@ -438,7 +439,7 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         // ResourcePackage resources are locale insensitive
         NoLocaleResourceStreamLocator locator = new NoLocaleResourceStreamLocator();
         locator.addNoLocaleClass(ResourcePackage.class);
-        resourceSettings.setResourceStreamLocator(locator);
+        resourceSettings.setResourceStreamLocator(new CachingResourceStreamLocator(locator));
 
         // add the addons authorization strategy
         AddonsAuthorizationStrategy addonsAuthorizationStrategy = new AddonsAuthorizationStrategy();

@@ -3,6 +3,8 @@ package org.artifactory.api.maven;
 import org.artifactory.api.repo.Async;
 import org.artifactory.repo.RepoPath;
 
+import java.util.Set;
+
 /**
  * A service for calculating maven metadata.
  *
@@ -19,6 +21,15 @@ public interface MavenMetadataService {
      */
     @Async(delayUntilAfterCommit = true, transactional = false)
     void calculateMavenMetadataAsync(RepoPath baseFolderPath, boolean recursive);
+
+    /**
+     * Calculate maven metadata on the given set of repo paths asynchronously non-recursive on each repo path.
+     *
+     * @param baseFolderPaths A set of folders to start calculating metadata from. Must be a local non-cache
+     * @param recursive       True is should calculate recursively from each of the base folder path
+     */
+    @Async(delayUntilAfterCommit = true, transactional = false)
+    void calculateMavenMetadataAsyncNonRecursive(Set<RepoPath> baseFolderPaths);
 
     /**
      * Calculates the maven metadata recursively on all the folders under the input folder.

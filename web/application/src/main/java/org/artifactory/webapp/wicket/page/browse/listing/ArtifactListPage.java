@@ -34,10 +34,12 @@ import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.servlet.RepoFilter;
+import org.artifactory.webapp.wicket.page.browse.BrowseUtils;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -124,14 +126,20 @@ public class ArtifactListPage extends WebPage {
     private List<? extends BaseBrowsableItem> getItems(RepoPath repoPath, Properties requestProps) {
         List<? extends BaseBrowsableItem> items = Lists.newArrayList();
         try {
-            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).
-                    requestProperties(requestProps).build();
+            BrowsableItemCriteria.Builder builder = new BrowsableItemCriteria.Builder(repoPath).
+                    requestProperties(requestProps);
+            boolean includeChecksums = !ConstantValues.uiHideChecksums.getBoolean();
+            builder.includeChecksums(includeChecksums);
+            BrowsableItemCriteria criteria = builder.build();
             if (repositoryService.remoteRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
                 items = repoBrowsingService.getRemoteRepoBrowsableChildren(criteria);
             } else if (repositoryService.localOrCachedRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
                 items = repoBrowsingService.getLocalRepoBrowsableChildren(criteria);
             } else if (repositoryService.virtualRepoDescriptorByKey(repoPath.getRepoKey()) != null) {
                 items = repoBrowsingService.getVirtualRepoBrowsableChildren(criteria);
+            }
+            if (!includeChecksums) {
+                items = BrowseUtils.filterChecksums(items);
             }
         } catch (Exception e) {
             throw new AbortWithHttpErrorCodeException(HttpServletResponse.SC_NOT_FOUND, e.getMessage());

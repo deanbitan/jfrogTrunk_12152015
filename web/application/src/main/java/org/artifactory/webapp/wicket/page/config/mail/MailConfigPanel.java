@@ -38,6 +38,7 @@ import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavio
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -219,7 +220,7 @@ public class MailConfigPanel extends TitledPanel {
             }
 
             private void displayError(AjaxRequestTarget target, String error) {
-                error(error);
+                error(new UnescapedFeedbackMessage(error));
                 AjaxUtils.refreshFeedback(target);
             }
         };

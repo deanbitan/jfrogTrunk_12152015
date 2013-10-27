@@ -31,6 +31,7 @@ import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.panel.upload.FileUploadForm;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
@@ -149,11 +150,13 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
             }
 
             if (!errors.isEmpty()) {
-                error("There were " + errors.size() + " errors during deployment. Please review the " + logs +
-                        " for more details.");
+                error(new UnescapedFeedbackMessage(
+                        "There were " + errors.size() + " errors during deployment. Please review the " + logs +
+                                " for more details."));
             } else if (!warnings.isEmpty()) {
-                warn("There were " + warnings.size() + " warnings during deployment. Please review the " + logs +
-                        " for more details.");
+                warn(new UnescapedFeedbackMessage(
+                        "There were " + warnings.size() + " warnings during deployment. Please review the " + logs +
+                                " for more details."));
             } else {
                 info(statusHolder.getStatusMsg());
             }

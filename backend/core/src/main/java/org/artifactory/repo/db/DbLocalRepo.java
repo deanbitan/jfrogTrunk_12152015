@@ -40,6 +40,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.db.importexport.DbRepoExportHandler;
 import org.artifactory.repo.db.importexport.DbRepoImportHandler;
+import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.repo.snapshot.SnapshotVersionAdapterBase;
@@ -149,8 +150,8 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
     }
 
     @Override
-    public boolean shouldProtectPathDeletion(String relPath, boolean overwrite, @Nullable String requestSha1) {
-        return mixin.shouldProtectPathDeletion(relPath, overwrite, requestSha1);
+    public boolean shouldProtectPathDeletion(PathDeletionContext pathDeletionContext) {
+        return mixin.shouldProtectPathDeletion(pathDeletionContext);
     }
 
     @Override

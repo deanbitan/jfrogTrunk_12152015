@@ -40,7 +40,6 @@
         <property name="transactionInterceptor" ref="txInterceptor"/>
     </bean>
 
-    <!-- TODO: Why there are 2 Tx Interceptor -->
     <bean id="txInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
         <property name="transactionManager" ref="artifactoryTransactionManager"/>
         <property name="transactionAttributeSource">
@@ -53,7 +52,6 @@
     <bean class="org.artifactory.storage.fs.lock.aop.LockingAdvisor"/>
     <bean class="org.artifactory.request.aop.RequestAdvisor"/>
 
-    <!-- TODO: Why there are 2 Tx Interceptor -->
     <bean id="alwaysOnTxInterceptor"
           class="org.springframework.transaction.interceptor.TransactionInterceptor" lazy-init="true">
         <property name="transactionManager" ref="artifactoryTransactionManager"/>

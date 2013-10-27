@@ -252,7 +252,8 @@ public interface RestAddon extends Addon {
 
     Response deletePathProperties(String path, String recursive, StringList properties);
 
-    ResponseCtx runPluginExecution(String executionName, Map params, ResourceStreamHandle body, boolean async);
+    ResponseCtx runPluginExecution(String executionName, String method, Map params, @Nullable ResourceStreamHandle body,
+            boolean async);
 
     Response getStagingStrategy(String strategyName, String buildName, Map params);
 

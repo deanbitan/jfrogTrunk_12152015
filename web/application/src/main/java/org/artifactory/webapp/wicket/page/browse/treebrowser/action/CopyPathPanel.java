@@ -27,6 +27,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -78,8 +79,9 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
                         } else {
                             logs = "log";
                         }
-                        getPage().warn(warnings.size() + " warnings have been produced during the copy. Please " +
-                                "review the " + logs + " for further information.");
+                        getPage().warn(new UnescapedFeedbackMessage(
+                                warnings.size() + " warnings have been produced during the copy. Please " +
+                                        "review the " + logs + " for further information."));
                     }
                     if (status.isError()) {
                         String message = status.getStatusMsg();

@@ -27,6 +27,7 @@ import org.apache.wicket.model.ResourceModel;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.fs.ItemInfo;
 
@@ -103,7 +104,7 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
                 String versionFilesPathUrl = bintrayService.getVersionFilesUrl(bintrayModel);
                 successMessagesBuilder.append("<a href=\"").append(versionFilesPathUrl).append("\" target=\"_blank\">")
                         .append(versionFilesPathUrl).append("</a>.");
-                getPage().info(successMessagesBuilder.toString());
+                getPage().info(new UnescapedFeedbackMessage(successMessagesBuilder.toString()));
             }
         } catch (IOException e) {
             if (getFeedbackMessages().isEmpty()) {

@@ -54,6 +54,7 @@ import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -504,7 +505,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     } else {
                         successMessagesBuilder.append(artifactPath).append(" into ").append(repoKey).append(".");
                     }
-                    info(successMessagesBuilder.toString());
+                    info(new UnescapedFeedbackMessage(successMessagesBuilder.toString()));
                     AjaxUtils.refreshFeedback(target);
                     finish(target);
                 } catch (Exception e) {

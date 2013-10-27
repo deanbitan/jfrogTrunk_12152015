@@ -145,6 +145,11 @@
             <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFullDbProviderTest"/>
         </classes>
     </test>
+    <test name="BinaryStoreImplCachedFSProviderTest">
+        <classes>
+            <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplCachedFSProviderTest"/>
+        </classes>
+    </test>
     <test name="BinaryStoreExternalProviderPassThroughTest">
         <classes>
             <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreExternalProviderPassThroughTest"/>

@@ -41,6 +41,7 @@ import org.artifactory.common.wicket.component.file.browser.button.FileBrowserBu
 import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextField;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.util.ZipUtils;
@@ -206,9 +207,10 @@ public class ImportSystemPanel extends TitledPanel {
 
                     if (!warnings.isEmpty()) {
                         String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                        Session.get().warn(warnings.size() + " Warnings have been produces during the export. Please " +
-                                "review the <a href=\"" + systemLogsPage +
-                                "\">log</a> for further information.");
+                        Session.get().warn(new UnescapedFeedbackMessage(
+                                warnings.size() + " Warnings have been produces during the export. Please " +
+                                        "review the <a href=\"" + systemLogsPage +
+                                        "\">log</a> for further information."));
                     }
                     if (status.isError()) {
                         int errorCount = status.getErrors().size();

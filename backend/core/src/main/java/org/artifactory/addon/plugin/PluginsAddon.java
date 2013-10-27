@@ -34,7 +34,8 @@ import java.util.Map;
 public interface PluginsAddon extends Addon, ImportableExportable {
     <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args);
 
-    ResponseCtx execute(String executionName, Map params, ResourceStreamHandle body, boolean async);
+    ResponseCtx execute(String executionName, String method, Map params, @Nullable ResourceStreamHandle body,
+            boolean async);
 
     BuildStagingStrategy getStagingStrategy(String strategyName, String buildName, Map params);
 

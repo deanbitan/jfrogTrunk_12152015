@@ -18,6 +18,11 @@
 
 package org.artifactory.api.common;
 
+import com.google.common.collect.Sets;
+import org.artifactory.repo.RepoPath;
+
+import java.util.Set;
+
 /**
  * A custom multi status holder for the different artifact move actions, which retains a counter that represents the
  * number of artifacts that have been moved in the move operation that was invoked and associated with this holder
@@ -32,10 +37,24 @@ public class MoveMultiStatusHolder extends MultiStatusHolder {
     private int movedCounter = 0;
 
     /**
+     * Folders repo paths to calculate maven metadata on when the entire move/copy finishes
+     */
+    private Set<RepoPath> candidatesForMavenMetadataCalculation = Sets.newHashSet();
+
+    /**
      * Raises the moved item counter by 1
      */
     public void itemMoved() {
         movedCounter++;
+    }
+
+    /**
+     * Add folder path to calculate maven metadata when the move/copy process finishes
+     *
+     * @param repoPath The folder repo path, will be calculated non-recursively later on
+     */
+    public void addToMavenMetadataCandidates(RepoPath repoPath) {
+        candidatesForMavenMetadataCalculation.add(repoPath);
     }
 
     /**
@@ -45,6 +64,10 @@ public class MoveMultiStatusHolder extends MultiStatusHolder {
      */
     public int getMovedCount() {
         return movedCounter;
+    }
+
+    public Set<RepoPath> getCandidatesForMavenMetadataCalculation() {
+        return candidatesForMavenMetadataCalculation;
     }
 
     @Override

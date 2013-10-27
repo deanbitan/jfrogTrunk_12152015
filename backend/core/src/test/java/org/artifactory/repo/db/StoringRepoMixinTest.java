@@ -29,9 +29,9 @@ import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.cache.expirable.CacheExpiry;
 import org.artifactory.repo.local.LocalNonCacheOverridable;
+import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
-import org.easymock.EasyMock;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -48,7 +48,10 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
 
     LocalCacheRepo storingRepo = createMock(LocalCacheRepo.class);
     ArtifactoryContext context = createMock(ArtifactoryContext.class);
-    LocalRepoDescriptor localRepoDescriptor = new LocalRepoDescriptor(); { localRepoDescriptor.setKey("somekey");}
+    LocalRepoDescriptor localRepoDescriptor = new LocalRepoDescriptor(); {
+        localRepoDescriptor.setKey("somekey");
+    }
+
     DbStoringRepoMixin storingRepoMixin = new DbStoringRepoMixin(localRepoDescriptor, null);
 
     @BeforeClass
@@ -59,16 +62,22 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testChecksumProtection() throws Exception {
         for (ChecksumType checksumType : ChecksumType.values()) {
-            assertFalse(storingRepoMixin.shouldProtectPathDeletion(checksumType.ext(), true, null),
+            PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo,
+                    checksumType.ext()).assertOverwrite(true).build();
+            assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                     "Checksum should never be protected.");
-            assertFalse(storingRepoMixin.shouldProtectPathDeletion(checksumType.ext(), false, null),
+            deletionContext = new PathDeletionContext.Builder(storingRepo, checksumType.ext())
+                    .assertOverwrite(false).build();
+            assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                     "Checksum should never be protected.");
         }
     }
 
     @Test
     public void testCacheAndExpirableProtection() throws Exception {
-        assertTrue(storingRepoMixin.shouldProtectPathDeletion("somepath", false, null),
+        PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo, "somepath")
+                .assertOverwrite(false).build();
+        assertTrue(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Non-checksum item should never be protected when not overriding.");
         expect(storingRepo.isCache()).andReturn(true);
         CacheExpiry expiry = createMock(CacheExpiry.class);
@@ -78,7 +87,9 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
         fieldSet(storingRepoMixin, "repositoryService", repositoryService);
         expect(repositoryService.storingRepositoryByKey("somekey")).andReturn(storingRepo);
         replay(expiry, context, storingRepo, repositoryService);
-        assertFalse(storingRepoMixin.shouldProtectPathDeletion("somepath", true, null),
+        deletionContext = new PathDeletionContext.Builder(storingRepo, "somepath")
+                .assertOverwrite(true).build();
+        assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Expired path shouldn't be protected.");
         verify(expiry, context, storingRepo);
         reset(context, storingRepo);
@@ -95,7 +106,9 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
         expect(repositoryService.storingRepositoryByKey("somekey")).andReturn(storingRepo);
 
         replay(overridable, context, storingRepo, repositoryService);
-        assertFalse(storingRepoMixin.shouldProtectPathDeletion("somepath", true, null),
+        PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo, "somepath")
+                .assertOverwrite(true).build();
+        assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Overridable path shouldn't be protected.");
         verify(overridable, context, storingRepo);
         reset(context, storingRepo);
@@ -115,7 +128,9 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
         expect(repositoryService.storingRepositoryByKey("somekey")).andReturn(storingRepo);
 
         replay(overridable, context, storingRepo, repositoryService);
-        assertFalse(storingRepoMixin.shouldProtectPathDeletion("maven-metadata.xml", true, null),
+        PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo, "maven-metadata.xml")
+                .assertOverwrite(true).build();
+        assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Metadata path shouldn't be protected.");
         //assertFalse(storingRepoMixin.shouldProtectPathDeletion("some:metadata.xml", true, null),
         //        "Metadata path shouldn't be protected.");
@@ -125,7 +140,6 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
 
     @Test
     public void testLocalNotCacheAndNotFileProtection() throws Exception {
-        //expect(storingRepo.getKey()).andReturn("somekey");
         expect(storingRepo.isCache()).andReturn(false);
         LocalNonCacheOverridable overridable = createMock(LocalNonCacheOverridable.class);
         expect(overridable.isOverridable(eq(storingRepo), eq("somefile"))).andReturn(false);
@@ -136,7 +150,9 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
         expect(repositoryService.storingRepositoryByKey(eq("somekey"))).andReturn(storingRepo);
         fieldSet(storingRepoMixin, "repositoryService", repositoryService);
         replay(overridable, repositoryService, context, storingRepo);
-        assertFalse(storingRepoMixin.shouldProtectPathDeletion("somefile", true, null),
+        PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo, "somefile")
+                .assertOverwrite(true).build();
+        assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Items which aren't files shouldn't be protected.");
         verify(overridable, repositoryService, context, storingRepo);
         reset(context, storingRepo);

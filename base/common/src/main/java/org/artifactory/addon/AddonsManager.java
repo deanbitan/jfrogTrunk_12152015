@@ -88,6 +88,4 @@ public interface AddonsManager {
     String[] getLicenseDetails();
 
     String getProductName();
-
-    void importFrom(ImportSettings settings);
 }

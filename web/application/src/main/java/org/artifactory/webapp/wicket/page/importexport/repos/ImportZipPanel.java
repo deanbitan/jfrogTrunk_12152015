@@ -27,6 +27,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.component.help.HelpBubble;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -171,7 +172,7 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
             String errorMessage = "Error during import of " + uploadedFile;
             String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
             String logs = ". Please review the <a href=\"" + systemLogsPage + "\">log</a> for further information.";
-            error(errorMessage + logs);
+            error(new UnescapedFeedbackMessage(errorMessage + logs));
             log.error(errorMessage, e);
             onException();
         } finally {

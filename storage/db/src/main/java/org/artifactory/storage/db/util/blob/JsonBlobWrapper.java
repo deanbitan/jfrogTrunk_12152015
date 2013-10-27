@@ -18,10 +18,11 @@
 
 package org.artifactory.storage.db.util.blob;
 
-import com.gc.iotools.stream.is.InputStreamFromOutputStream;
 import org.artifactory.api.jackson.JacksonFactory;
 import org.codehaus.jackson.JsonGenerator;
+import org.iostreams.streams.in.OutputToInputStream;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -32,12 +33,11 @@ import java.io.OutputStream;
 public class JsonBlobWrapper extends BlobWrapper {
     JsonBlobWrapper(final Object jsonObject) {
         // TODO: Make sure the Global Artifactory executor is used
-        super(new InputStreamFromOutputStream() {
+        super(new OutputToInputStream() {
             @Override
-            protected Object produce(OutputStream outputStream) throws Exception {
+            protected void write(OutputStream outputStream) throws IOException {
                 JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
                 jsonGenerator.writeObject(jsonObject);
-                return null;
             }
         });
     }

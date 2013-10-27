@@ -29,6 +29,7 @@ import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RepositoryBrowsingService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
@@ -58,8 +59,11 @@ public class LocalRepoBrowserPanel extends BaseRepoBrowserPanel {
 
         List<BaseBrowsableItem> dirItems;
         try {
-            BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(repoPath).requestProperties(
-                    requestProps).build();
+            BrowsableItemCriteria.Builder builder = new BrowsableItemCriteria.Builder(repoPath).requestProperties(
+                    requestProps);
+            boolean includeChecksums = !ConstantValues.uiHideChecksums.getBoolean();
+            builder.includeChecksums(includeChecksums);
+            BrowsableItemCriteria criteria = builder.build();
             dirItems = repoBrowseService.getLocalRepoBrowsableChildren(criteria);
         } catch (Exception e) {
             log.debug("Exception occurred while trying to get browsable children for repo path " + repoPath, e);

@@ -25,8 +25,10 @@ import org.apache.wicket.feedback.IFeedback;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
+import org.apache.wicket.util.string.Strings;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -123,15 +125,19 @@ public class FeedbackDistributer extends Panel implements IFeedback {
                     .append("');\n");
 
             // add messages
-            for (FeedbackMessage message : getCurrentMessages()) {
-                message.markRendered();
+            for (FeedbackMessage feedbackMessage : getCurrentMessages()) {
+                feedbackMessage.markRendered();
+                Serializable message = feedbackMessage.getMessage();
+
+                String messageString = (message instanceof UnescapedFeedbackMessage) ?
+                        message.toString() : Strings.escapeMarkup(message.toString(), false, false).toString();
                 initScript
                         .append("fd.addMessage('")
-                        .append(getMarkupIdFor(message.getReporter()))
+                        .append(getMarkupIdFor(feedbackMessage.getReporter()))
                         .append("', '")
-                        .append(message.getLevelAsString())
+                        .append(feedbackMessage.getLevelAsString())
                         .append("', ")
-                        .append(asJsStringParam(message.getMessage()))
+                        .append(asJsStringParam(messageString))
                         .append(");\n");
             }
 

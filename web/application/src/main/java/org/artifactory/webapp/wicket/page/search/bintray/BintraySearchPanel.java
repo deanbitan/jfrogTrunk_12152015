@@ -324,7 +324,6 @@ public class BintraySearchPanel extends Panel {
             if (query.length() < MINIMAL_QUERY_LENGTH) {
                 throw new IllegalArgumentException("The search key must contain at least 3 letters");
             }
-            query = addCaret(query);
             Map<String, String> headersMap = WicketUtils.getHeadersMap();
             BintrayItemSearchResults<BintrayItemInfo> itemSearchResults = bintrayService.searchByName(query,
                     headersMap);
@@ -348,17 +347,6 @@ public class BintraySearchPanel extends Panel {
     public void refresh(AjaxRequestTarget target) {
         target.add(this);
         dataProvider.getRows().clear();
-    }
-
-    private String addCaret(String query) {
-
-        StringBuilder queryBuilder = new StringBuilder();
-        queryBuilder.append(query);
-
-        if (!query.endsWith("*") && !query.endsWith("?")) {
-            queryBuilder.append("*");
-        }
-        return queryBuilder.toString();
     }
 
     private static class SearchDataProvider<T extends ActionableExternalItemSearchResult<BintrayItemInfo>>

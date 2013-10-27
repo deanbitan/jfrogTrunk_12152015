@@ -54,4 +54,9 @@ public class NullRequestContext extends BaseRequestContext {
     public void setServletContextUrl(String servletContextUrl) {
         ((InternalArtifactoryRequest)getRequest()).setServletContextUrl(servletContextUrl);
     }
+
+    @Override
+    public boolean isForceExpiryCheck() {
+        return false;
+    }
 }

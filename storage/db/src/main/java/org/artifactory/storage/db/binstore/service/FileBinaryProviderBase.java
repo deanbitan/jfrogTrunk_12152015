@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.storage.StorageProperties;
+import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +42,9 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
         super(binariesDir);
     }
 
-    protected static File getDataFolder(File rootDataDir, StorageProperties storageProperties, String defaultName) {
-        String name = storageProperties.getBinaryProviderDir();
+    protected static File getDataFolder(File rootDataDir, StorageProperties storageProperties,
+            StorageProperties.Key keyProperty, String defaultName) {
+        String name = storageProperties.getProperty(keyProperty);
         if (StringUtils.isBlank(name)) {
             return new File(rootDataDir, defaultName);
         }
@@ -107,6 +109,10 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
                 + " empty folders and " + movedCounter.filesMoved
                 + " files in total size of " + StorageUnit.toReadableString(movedCounter.totalSize)
                 + " (" + tt + "ms).", log);
+        BinaryProviderBase next = next();
+        if (next instanceof FileBinaryProviderBase) {
+            ((FileBinaryProvider)next()).prune(statusHolder);
+        }
     }
 
     protected void pruneIfNeeded(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {

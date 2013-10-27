@@ -132,7 +132,10 @@ public enum ConstantValues {
     gemsLocalIndexTaskIntervalSecs("gems.localIndexTaskIntervalSecs", 30),
     gemsVirtualIndexTaskIntervalSecs("gems.virtualIndexTaskIntervalSecs", 300),
     gemsIndexTaskQueueLimit("gems.gemsIndexTaskQueueLimit", 20000),
-    gemsAfterRepoInitHack("gems.gemsAfterRepoInitHack", true);
+    gemsAfterRepoInitHack("gems.gemsAfterRepoInitHack", true),
+    securityCrowdGroupStartIndex("security.authentication.crowd.group.startIndex", 0),
+    securityCrowdMaxGroupResults("security.authentication.crowd.group.maxResults", 9999),
+    uiHideChecksums("ui.hideChecksums", FALSE);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

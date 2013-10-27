@@ -55,6 +55,7 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
+import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapter;
 import org.artifactory.repo.snapshot.MavenSnapshotVersionAdapterContext;
@@ -181,7 +182,8 @@ public class UploadServiceImpl implements InternalUploadService {
             RepoPath repoPath = InternalRepoPathFactory.create(targetRepository.getKey(), request.getPath(),
                     directoryRequest);
             String requestSha1 = HttpUtils.getSha1Checksum(request);
-            repoService.assertValidDeployPath(targetRepository, repoPath, contentLength, requestSha1);
+            repoService.assertValidDeployPath(new ValidDeployPathContext.Builder(targetRepository, repoPath)
+                    .contentLength(contentLength).requestSha1(requestSha1).build());
         } catch (RepoRejectException e) {
             handleInvalidDeployPathError(response, e);
             return;

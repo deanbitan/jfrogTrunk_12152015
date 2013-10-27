@@ -59,6 +59,9 @@ import org.artifactory.webapp.actionable.model.FolderActionableItem;
 import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
+import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats.StatsTabPanel;
+
+import java.text.DecimalFormat;
 
 /**
  * Displays general item information. Placed inside the general info panel.
@@ -207,6 +210,8 @@ public class GeneralInfoPanel extends Panel {
 
         addFilteredResourceCheckbox(infoBorder, itemInfo);
 
+        infoBorder.add(new StatsTabPanel("statistics", itemInfo));
+
         addBintrayInfoPanel(infoBorder, itemInfo);
 
         return this;
@@ -259,7 +264,7 @@ public class GeneralInfoPanel extends Panel {
         @Override
         public Component getLazyLoadComponent(String markupId) {
             long count = repositoryService.getArtifactCount(repoPath);
-            return new Label(markupId, Long.toString(count));
+            return new Label(markupId, new DecimalFormat("#,###").format(count));
         }
     }
 

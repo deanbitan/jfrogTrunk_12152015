@@ -21,6 +21,7 @@ import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.modal.links.ModalShowLink;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -268,7 +269,7 @@ public class BintrayDynamicInfoPanel extends Panel {
                 if (!bintrayService.isUserHasBintrayAuth()) {
                     String profilePagePath = WicketUtils.absoluteMountPathForPage(ProfilePage.class);
                     String message = "You do not have Bintray credentials configured, please configure them from your <a href=\"" + profilePagePath + "\">profile page</a>.";
-                    getPage().error(message);
+                    getPage().error(new UnescapedFeedbackMessage(message));
                 } else {
                     super.onClick(target);
                 }

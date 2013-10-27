@@ -93,7 +93,7 @@ public class DbCacheRepo extends DbLocalRepo<LocalCacheRepoDescriptor> implement
                 }
             }
 
-            if (forceDownloadIfNewer || isExpired(repoResource)) {
+            if (forceDownloadIfNewer || context.isForceExpiryCheck() || isExpired(repoResource)) {
                 RepoRequests.logToContext("Returning resource as expired");
                 repoResource = new ExpiredRepoResource(repoResource);
             } else {
@@ -172,7 +172,6 @@ public class DbCacheRepo extends DbLocalRepo<LocalCacheRepoDescriptor> implement
     protected boolean isExpired(RepoResource repoResource) {
         String path = repoResource.getRepoPath().getPath();
         CacheExpiry cacheExpiry = ContextHelper.get().beanForType(CacheExpiry.class);
-
         if (cacheExpiry.isExpirable(this, path)) {
             long retrievalCachePeriodMillis = getRetrievalCachePeriodMillis(path);
             long cacheAge = repoResource.getCacheAge();

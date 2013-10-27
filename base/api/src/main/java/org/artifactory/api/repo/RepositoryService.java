@@ -28,7 +28,6 @@ import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
@@ -238,14 +237,14 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param pathsToMove   Paths to move, each pointing to file or folder.
      * @param targetRepoKey Key of the target local non-cached repository to move the path to.
-     * @param properties
+     * @param properties    Properties to attach on the target paths
      * @param dryRun        If true the method will just report the expected result but will not move any file  @return
      * @param failFast      True if the operation should abort upon the first occurring warning or error
-     * @param searchResults
+     * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock
     MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetRepoKey, Properties properties,
-            boolean dryRun, boolean failFast, boolean searchResults);
+            boolean dryRun, boolean failFast);
 
     /**
      * Copies repository path (pointing to a folder) to another local repository. The copy will only move paths the user
@@ -290,12 +289,11 @@ public interface RepositoryService extends ImportableExportable {
      * @param properties
      * @param dryRun             If true the method will just report the expected result but will not copy any file
      * @param failFast           True if the operation should abort upon the first occurring warning or error
-     * @param searchResults
      * @return MoveMultiStatusHolder holding the errors and warnings
      */
     @Lock
     MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
-            Properties properties, boolean dryRun, boolean failFast, boolean searchResults);
+            Properties properties, boolean dryRun, boolean failFast);
 
     /**
      * Expire expirable resources (folders, snapshot artifacts, maven metadata, etc.)
@@ -464,8 +462,6 @@ public interface RepositoryService extends ImportableExportable {
      * @return Local item info
      */
     ItemInfo getVirtualItemInfo(RepoPath virtualRepoPath);
-
-    void assertValidDeployPath(RepoPath repoPath, long contentLength) throws RepoRejectException;
 
     /**
      * @param remoteRepoKey The remote repository key

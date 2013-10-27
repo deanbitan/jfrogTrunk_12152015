@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
@@ -41,6 +42,13 @@ public class MavenMetadataServiceImpl implements MavenMetadataService {
     @Override
     public void calculateMavenMetadataAsync(RepoPath baseFolderPath, boolean recursive) {
         calculateMavenMetadata(baseFolderPath, recursive);
+    }
+
+    @Override
+    public void calculateMavenMetadataAsyncNonRecursive(Set<RepoPath> baseFolderPaths) {
+        for (RepoPath baseFolderPath : baseFolderPaths) {
+            calculateMavenMetadata(baseFolderPath, false);
+        }
     }
 
     @Override

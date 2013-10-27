@@ -20,6 +20,8 @@ package org.artifactory.spring;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.WebstartAddon;
 import org.artifactory.addon.license.LicensesAddon;
@@ -170,15 +172,15 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 orderReloadableBeans(toInit, beanClass);
             }
             log.debug("Reloadable list of beans: {}", reloadableBeans);
-            boolean startedFormDifferentVersion = artifactoryHome.startedFromDifferentVersion();
+            boolean startedFromDifferentVersion = artifactoryHome.startedFromDifferentVersion();
             log.info("Artifactory context starting up...");
-            if (startedFormDifferentVersion) {
+            if (startedFromDifferentVersion) {
                 log.info("Conversion from previous version is active.");
             }
             for (ReloadableBean reloadableBean : reloadableBeans) {
                 String beanIfc = getInterfaceName(reloadableBean);
                 log.info("Initializing {}", beanIfc);
-                if (startedFormDifferentVersion) {
+                if (startedFromDifferentVersion) {
                     //Run any necessary conversions to bring the system up to date with the current version
                     try {
                         reloadableBean.convert(
@@ -205,7 +207,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             }
             // if we started from a different version OR from a (snapshot) version that doesn't match the running version
             // we must save the version properties file and reload all the system properties
-            if (startedFormDifferentVersion || !artifactoryHome.getRunningVersionDetails().equals(
+            if (startedFromDifferentVersion || !artifactoryHome.getRunningVersionDetails().equals(
                     artifactoryHome.getOriginalVersionDetails())) {
                 artifactoryHome.writeBundledArtifactoryProperties();
                 artifactoryHome.initAndLoadSystemPropertyFile();
@@ -450,9 +452,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         try {
             stopRelatedTasks(ImportJob.class, stoppedTasks);
             importEtcDirectory(settings);
-            // import addons manager
             AddonsManager addonsManager = beanForType(AddonsManager.class);
-            addonsManager.importFrom(settings);
 
             // import central configuration
             getCentralConfig().importFrom(settings);
@@ -671,7 +671,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     private void exportEtcDirectory(ExportSettings settings) {
         try {
             File targetBackupDir = new File(settings.getBaseDir(), "etc");
-            FileUtils.copyDirectory(artifactoryHome.getEtcDir(), targetBackupDir);
+            FileUtils.copyDirectory(artifactoryHome.getEtcDir(), targetBackupDir,
+                    new NotFileFilter(new NameFileFilter("artifactory.lic")));
         } catch (IOException e) {
             settings.getStatusHolder().error(
                     "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);

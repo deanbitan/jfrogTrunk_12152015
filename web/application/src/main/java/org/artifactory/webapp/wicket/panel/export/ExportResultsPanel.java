@@ -38,6 +38,7 @@ import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextFie
 import org.artifactory.common.wicket.component.file.path.PathMask;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -129,8 +130,9 @@ public class ExportResultsPanel extends FieldSetPanel {
                     List<StatusEntry> warnings = status.getWarnings();
                     if (!warnings.isEmpty()) {
                         String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                        warn(warnings.size() + " warning(s) reported during the export. Please review the " +
-                                "<a href=\"" + systemLogsPage + "\">log</a> for further information.");
+                        warn(new UnescapedFeedbackMessage(
+                                warnings.size() + " warning(s) reported during the export. Please review the " +
+                                        "<a href=\"" + systemLogsPage + "\">log</a> for further information."));
                     }
                     if (status.isError()) {
                         String message = status.getStatusMsg();

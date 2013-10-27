@@ -24,6 +24,6 @@ import java.io.Serializable;
  * @author yoavl
  */
 public interface Descriptor extends Serializable {
-    String NS = "http://artifactory.jfrog.org/xsd/1.5.1";
-    String LOCATION = "http://www.jfrog.org/xsd/artifactory-v1_5_1.xsd";
+    String NS = "http://artifactory.jfrog.org/xsd/1.5.2";
+    String LOCATION = "http://www.jfrog.org/xsd/artifactory-v1_5_2.xsd";
 }

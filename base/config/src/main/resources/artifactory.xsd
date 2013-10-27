@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.1"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.1"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.2"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.2"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -94,7 +94,8 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A set of locally installed repositories.
-                        NOTE! that when using the default global virtual repository (repo) the order of the local repositories resolution is determined by the order they appear in this list.
+                        NOTE! that when using the default global virtual repository (repo) the order of the local
+                        repositories resolution is determined by the order they appear in this list.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -102,7 +103,8 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A set of remote proxied (normally cached) repositories.
-                        NOTE! that when using the default global virtual repository (repo) the order of the cache and remote repositories resolution is determined by the order they appear in this list.
+                        NOTE! that when using the default global virtual repository (repo) the order of the cache and
+                        remote repositories resolution is determined by the order they appear in this list.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -269,8 +271,10 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 The depth, relative to the repository's root folder, where YUM metadata is created.
-                                This is useful when your repository contains multiple YUM repositories under parallel hierarchies.
-                                For example, if your RPMs are stored under 'fedora/linux/$releasever/$basearch', specify a depth of 4.
+                                This is useful when your repository contains multiple YUM repositories under parallel
+                                hierarchies.
+                                For example, if your RPMs are stored under 'fedora/linux/$releasever/$basearch', specify
+                                a depth of 4.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
@@ -295,7 +299,8 @@
                     <xs:element name="blackedOut" type="xs:boolean" default="false" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                Whether the repository is blacked-out. A blacked-out repository or its local cache do not
+                                Whether the repository is blacked-out. A blacked-out repository or its local cache do
+                                not
                                 participate in artifact resolution.
                             </xs:documentation>
                         </xs:annotation>
@@ -593,7 +598,7 @@
                                 The options are:
                                 1) Generate if absent (by default) - A bad remote checksum fails the resource
                                 request. If, however, a remote checksum could not be found Artifactory automatically
-								generates one.
+                                generates one.
                                 2) Fail: A bad or missing remote checksum fails the resource request.
                                 3) Ignore and generate: Artifactory locally generates a checksum for both bad or
                                 missing remote checksum. Remote resource retrieval never fails, but integrity might
@@ -616,7 +621,7 @@
                     <xs:element name="unusedArtifactsCleanupPeriodHours" type="xs:int" default="0" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
-                                The numbers of hours to wait before an artifact is deemed "unused" and eligible for
+                                The number of hours to wait before an artifact is deemed "unused" and eligible for
                                 cleanup from the repository.
                                 A value of 0 means automatic cleanup of cached artifacts is disabled.
                             </xs:documentation>
@@ -729,8 +734,9 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
-                    <xs:element name="pomRepositoryReferencesCleanupPolicy" default="discard_active_reference" minOccurs="0">
-                    <xs:annotation>
+                    <xs:element name="pomRepositoryReferencesCleanupPolicy" default="discard_active_reference"
+                                minOccurs="0">
+                        <xs:annotation>
                             <xs:documentation source="description">
                                 (1) Discard Active References - Removes repository elements that are declared
                                 directly under project or under a profile in the same POM that is activeByDefault.
@@ -1364,6 +1370,15 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
                         <![CDATA[
                                 Specify the SSO custom cookie name. Out-of-the-box Crowd uses the 'crowd.token_key' cookie name for all Crowd-connected applications.
                                 You can override the default value with your own cookie name. This is useful in environments with multiple Crowd servers.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="directAuthentication" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Authenticate using credentials instead of the default session, token-based authentication. This is required for use with JIRA User Server.
                                 ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -2162,7 +2177,11 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
             <xs:element name="cronExp" type="xs:string" default="* * 4 * * ?" minOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The Cron expression by which garbage collection frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
+                        The Cron expression by which garbage collection frequency is determined. For detailed
+                        information see:
+                        <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The
+                            CronTrigger Tutorial
+                        </a>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2178,7 +2197,11 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
             <xs:element name="cronExp" type="xs:string" default="0 12 5 * * ?" minOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The Cron expression by which artifacts cleanup frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial</a>
+                        The Cron expression by which artifacts cleanup frequency is determined. For detailed information
+                        see:
+                        <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The
+                            CronTrigger Tutorial
+                        </a>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2194,7 +2217,8 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
             <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        Enable control over the size of storage space used for binaries to avoid running out of disk space.
+                        Enable control over the size of storage space used for binaries to avoid running out of disk
+                        space.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2214,8 +2238,10 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
             <xs:element name="diskSpaceWarningPercentage" type="xs:int" default="0" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The maximum warning-level of disk usage, by percentage, of the partition containing the binaries folder.
-                        Once this limit is reached a warning is logged and a warning message is displayed in the UI (visible to admin users only).
+                        The maximum warning-level of disk usage, by percentage, of the partition containing the binaries
+                        folder.
+                        Once this limit is reached a warning is logged and a warning message is displayed in the UI
+                        (visible to admin users only).
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

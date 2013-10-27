@@ -47,6 +47,8 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.ImportInterceptors;
 import org.artifactory.repo.interceptor.StorageAggregationInterceptors;
+import org.artifactory.repo.local.ValidDeployPathContext;
+import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.MetadataReader;
 import org.artifactory.sapi.fs.MutableVfsFile;
@@ -212,7 +214,14 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             if (fileToImport.exists()) {
                 length = fileToImport.length();
             }
-            context.getRepositoryService().assertValidDeployPath(target, length);
+            InternalRepositoryService repositoryService = context.beanForType(InternalRepositoryService.class);
+            String repoKey = target.getRepoKey();
+            LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(repoKey);
+            if (localRepo == null) {
+                throw new RepoRejectException("The repository '" + repoKey + "' is not configured.");
+            }
+            repositoryService.assertValidDeployPath(
+                    new ValidDeployPathContext.Builder(localRepo, target).contentLength(length).build());
         } catch (RepoRejectException e) {
             status.error("Artifact rejected: " + e.getMessage(), log);
             return;

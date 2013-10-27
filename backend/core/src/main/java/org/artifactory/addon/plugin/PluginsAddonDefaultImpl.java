@@ -38,7 +38,8 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     }
 
     @Override
-    public ResponseCtx execute(String executionName, Map params, ResourceStreamHandle body, boolean async) {
+    public ResponseCtx execute(String executionName, String method, Map params, ResourceStreamHandle body,
+            boolean async) {
         throw new UnsupportedOperationException("Executing plugin actions requires Artifactory Pro.");
     }
 

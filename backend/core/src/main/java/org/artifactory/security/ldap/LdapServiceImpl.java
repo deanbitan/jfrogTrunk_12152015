@@ -74,6 +74,7 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
                         log);
             }
         } catch (Exception e) {
+            log.debug("Error while testing LDAP authentication: " + e.getMessage(), e);
             SearchPattern pattern = ldapSetting.getSearch();
             if ((pattern != null && StringUtils.isNotBlank(pattern.getSearchFilter())) &&
                     StringUtils.isNotBlank(ldapSetting.getUserDnPattern())) {

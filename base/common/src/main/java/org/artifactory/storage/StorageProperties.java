@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,9 +38,9 @@ import java.util.Properties;
 public class StorageProperties {
     private static final Logger log = LoggerFactory.getLogger(StorageProperties.class);
 
-    protected final static int DEFAULT_MAX_ACTIVE_CONNECTIONS = 100;
-    protected final static int DEFAULT_MAX_IDLE_CONNECTIONS = 10;
-    private final static String DEFAULT_MAX_CACHE_SIZE = "5GB";
+    protected static final int DEFAULT_MAX_ACTIVE_CONNECTIONS = 100;
+    protected static final int DEFAULT_MAX_IDLE_CONNECTIONS = 10;
+    private static final String DEFAULT_MAX_CACHE_SIZE = "5GB";
 
     private final Properties props;
     private final DbType dbType;
@@ -90,13 +89,8 @@ public class StorageProperties {
     }
 
     @Nonnull
-    public BinaryStorageType getBinariesStorageType() {
-        return BinaryStorageType.valueOf(getProperty(Key.binaryProviderType, BinaryStorageType.filesystem.name()));
-    }
-
-    @Nullable
-    public String getBinaryProviderDir() {
-        return getProperty(Key.binaryProviderFilesystemDir);
+    public BinaryProviderType getBinariesStorageType() {
+        return BinaryProviderType.valueOf(getProperty(Key.binaryProviderType, BinaryProviderType.filesystem.name()));
     }
 
     public String getBinaryProviderExternalDir() {
@@ -117,14 +111,14 @@ public class StorageProperties {
      * @param connectionUrl The new connection URL
      */
     public void setConnectionUrl(String connectionUrl) {
-        props.setProperty("url", connectionUrl);
+        props.setProperty(Key.url.key, connectionUrl);
     }
 
-    private String getProperty(Key property) {
+    public String getProperty(Key property) {
         return props.getProperty(property.key);
     }
 
-    private String getProperty(Key property, String defaultValue) {
+    public String getProperty(Key property, String defaultValue) {
         return props.getProperty(property.key, defaultValue);
     }
 
@@ -149,8 +143,9 @@ public class StorageProperties {
     public enum Key {
         username, password, type, url, driver,
         maxActiveConnections("pool.max.active"), maxIdleConnections("pool.max.idle"),
-        binaryProviderType("binary.provider.type"),  // see BinaryStorageType
+        binaryProviderType("binary.provider.type"),  // see BinaryProviderType
         binaryProviderCacheMaxSize("binary.provider.cache.maxSize"),
+        binaryProviderCacheDir("binary.provider.cache.dir"),
         binaryProviderFilesystemDir("binary.provider.filesystem.dir"),
         binaryProviderExternalDir("binary.provider.external.dir"),
         binaryProviderExternalMode("binary.provider.external.mode");
@@ -170,8 +165,9 @@ public class StorageProperties {
         }
     }
 
-    public enum BinaryStorageType {
+    public enum BinaryProviderType {
         filesystem, // binaries are stored in the filesystem
-        fullDb,    // binaries are stored as blobs in the db, filesystem is used for caching unless cache size is 0
+        fullDb,     // binaries are stored as blobs in the db, filesystem is used for caching unless cache size is 0
+        cachedFS,   // binaries are stored in the filesystem, but a front cache (faster access) is added
     }
 }

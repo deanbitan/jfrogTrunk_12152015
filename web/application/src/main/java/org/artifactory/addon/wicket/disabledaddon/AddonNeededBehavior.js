@@ -17,7 +17,7 @@
  */
 
 var DisabledAddon = {
-    create:function (id, position, iconClassName, addon) {
+    create: function (id, position, iconClassName, addon, serverToken) {
         // create only once
         var node = dojo.byId(id);
         if (node.DisabledAddon) {
@@ -37,26 +37,27 @@ var DisabledAddon = {
         node.insertBefore(icon, node.firstChild);
 
         // Set link css class
-        this.setChecked(dojo.byId(id + '_hide'), addon);
+        this.setChecked(dojo.byId(id + '_hide'), addon, serverToken);
     },
 
-    toogle:function (link, id, serverToken, addon) {
+    toogle: function (link, id, serverToken, addon) {
         // toggle show/hide
         if (!link.className.match(/checked/)) {
-            dojo.cookie('addon-' + addon, serverToken, {expires:3650, path:artApp});
+            dojo.cookie('addon-' + addon, serverToken, {expires: 3650, path: artApp});
         } else {
-            dojo.cookie('addon-' + addon, null, {expires:-1, path:artApp});
+            dojo.cookie('addon-' + addon, null, {expires: -1, path: artApp});
         }
-        this.setChecked(link, addon);
+        this.setChecked(link, addon, serverToken);
 
         // sync className
         dojo.byId(id + '_hide').className = link.className;
         return false;
     },
 
-    setChecked:function (link, addon) {
+    setChecked: function (link, addon, serverToken) {
         // set show/hide of link
-        if (dojo.cookie('addon-' + addon) != null) {
+        var cookie = dojo.cookie('addon-' + addon);
+        if (cookie == serverToken) {
             link.className = 'hide-link hide-link-checked';
         } else {
             link.className = 'hide-link';

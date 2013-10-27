@@ -37,6 +37,7 @@ import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.sapi.fs.VfsFolder;
@@ -237,7 +238,8 @@ public class WebdavServiceImpl implements WebdavService {
             // Servlet container doesn't support long values so we take it manually from the header
             String contentLengthHeader = request.getHeader("Content-Length");
             long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
-            repoService.assertValidDeployPath(repo, repoPath, contentLength, null);
+            repoService.assertValidDeployPath(
+                    new ValidDeployPathContext.Builder(repo, repoPath).contentLength(contentLength).build());
         } catch (RepoRejectException rre) {
             response.sendError(rre.getErrorCode(), rre.getMessage(), log);
             return;

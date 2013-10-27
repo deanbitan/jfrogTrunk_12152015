@@ -71,7 +71,6 @@ public class DbRepoExportHandler extends DbExportBase {
 
     public void export() {
         File fileSystemBaseDir = settings.getBaseDir();
-        // TODO: get node count
         long nodeCount = repo.getRepositoryService().getNodesCount(RepoPathUtils.repoRootPath(repo.getKey()));
         String targetExportFolder = fileSystemBaseDir.getAbsolutePath();
         status.status(String.format("%s export started with %d nodes to: '%s'",

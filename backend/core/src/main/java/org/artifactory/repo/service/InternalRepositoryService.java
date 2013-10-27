@@ -31,6 +31,7 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
 import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.StoringRepo;
+import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -105,16 +106,12 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     Repo nonCacheRepositoryByKey(String key);
 
     /**
-     * This will verify the permission to deploy to the path, and will not acquire any FsItem. ATTENTION: No read lock
-     * acquire, pure DB and ACL tests are done.
+     * This will verify the permission to deploy to the path
      *
-     * @param requestSha1
-     * @param repo        The storing repository (cache or local) to deploy to
-     * @param path        The path for deployment
+     * @param validDeployPathContext Context for encapsulating all the methods parameters
      * @return A status holder with info on error
      */
-    void assertValidDeployPath(LocalRepo repo, RepoPath repoPath, long contentLength, String requestSha1)
-            throws RepoRejectException;
+    void assertValidDeployPath(ValidDeployPathContext validDeployPathContext) throws RepoRejectException;
 
     @Lock
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,

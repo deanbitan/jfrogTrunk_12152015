@@ -33,7 +33,6 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public interface CrowdWebAddon extends Addon {
-    String CROWD_ERROR_MESSAGE = "Unable to authenticate with Atlassian crowd.";
 
     /**
      * Returns the Crowd SSO site map builder menu node

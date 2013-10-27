@@ -35,10 +35,6 @@ public class NoLocaleResourceStreamLocator extends ResourceStreamLocator {
         noLocaleClasses.add(clazz);
     }
 
-    public void removeNoLocaleClass(Class<?> clazz) {
-        noLocaleClasses.remove(clazz);
-    }
-
     @Override
     public IResourceStream locate(Class<?> clazz, String path, String style, String variation, Locale locale,
             String extension, boolean strict) {

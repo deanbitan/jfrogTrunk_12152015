@@ -31,8 +31,15 @@ import javax.annotation.Nonnull;
  */
 public class DownloadRequestContext extends BaseRequestContext {
 
+    private boolean forceExpiryCheck;
+
     public DownloadRequestContext(@Nonnull ArtifactoryRequest artifactoryRequest) {
         super(artifactoryRequest);
+    }
+
+    public DownloadRequestContext(@Nonnull ArtifactoryRequest artifactoryRequest, boolean forceExpiryCheck) {
+        super(artifactoryRequest);
+        this.forceExpiryCheck = forceExpiryCheck;
     }
 
     @Override
@@ -49,5 +56,10 @@ public class DownloadRequestContext extends BaseRequestContext {
     @Override
     public Properties getProperties() {
         return request.getProperties();
+    }
+
+    @Override
+    public boolean isForceExpiryCheck() {
+        return forceExpiryCheck;
     }
 }

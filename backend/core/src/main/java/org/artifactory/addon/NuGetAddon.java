@@ -43,6 +43,8 @@ public interface NuGetAddon extends Addon {
     String PATH_PARAM = "path";
     String PACKAGE_ID_PARAM = "packageId";
     String PACKAGE_VERSION_PARAM = "packageVersion";
+    String PARTIAL_ID_PARAM = "partialId";
+    String INCLUDE_PRERELEASE_PARAM = "includePrerelease";
 
     /**
      * Asynchronously extracts the spec from the nupkg and saves it as a binary property (along with ID, version and digest)

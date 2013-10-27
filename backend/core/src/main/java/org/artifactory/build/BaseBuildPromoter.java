@@ -149,9 +149,7 @@ public class BaseBuildPromoter {
             multiStatusHolder.error(errorMessage, log);
             return;
         }
-        for (FileInfo artifactInfo : artifactInfos) {
-            itemsToMove.add(artifactInfo.getRepoPath());
-        }
+        itemsToMove.add(artifactInfos.iterator().next().getRepoPath());
     }
 
     private void handleDependency(Collection<String> scopes, Set<RepoPath> itemsToMove, String buildName,
@@ -160,8 +158,8 @@ public class BaseBuildPromoter {
         if (org.artifactory.util.CollectionUtils.isNullOrEmpty(scopes) || (dependencyScopes != null &&
                 CollectionUtils.containsAny(dependencyScopes, scopes))) {
             Set<FileInfo> dependencyInfos = locateItems(buildName, buildNumber, dependency, false);
-            for (FileInfo dependencyInfo : dependencyInfos) {
-                itemsToMove.add(dependencyInfo.getRepoPath());
+            if (dependencyInfos != null && !dependencyInfos.isEmpty()) {
+                itemsToMove.add(dependencyInfos.iterator().next().getRepoPath());
             }
         }
     }
@@ -178,8 +176,7 @@ public class BaseBuildPromoter {
     protected MoveMultiStatusHolder move(Set<RepoPath> itemsToMove, String targetRepoKey, boolean dryRun,
             boolean failFast) {
         return repositoryService.move(itemsToMove, targetRepoKey,
-                (Properties) InfoFactoryHolder.get().createProperties(),
-                dryRun, failFast, false);
+                (Properties) InfoFactoryHolder.get().createProperties(), dryRun, failFast);
     }
 
     /**
@@ -194,8 +191,7 @@ public class BaseBuildPromoter {
     protected MoveMultiStatusHolder copy(Set<RepoPath> itemsToCopy, String targetRepoKey, boolean dryRun,
             boolean failFast) {
         return repositoryService.copy(itemsToCopy, targetRepoKey,
-                (Properties) InfoFactoryHolder.get().createProperties(),
-                dryRun, failFast, false);
+                (Properties) InfoFactoryHolder.get().createProperties(), dryRun, failFast);
     }
 
     /**

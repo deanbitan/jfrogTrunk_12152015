@@ -27,6 +27,7 @@ public class GroupConfigurationImpl {
     private String description;
     private boolean autoJoin;
     private String realm;
+    private String realmAttributes;
 
     public GroupConfigurationImpl() {
     }
@@ -61,6 +62,14 @@ public class GroupConfigurationImpl {
 
     public void setRealm(String realm) {
         this.realm = realm;
+    }
+
+    public String getRealmAttributes() {
+        return realmAttributes;
+    }
+
+    public void setRealmAttributes(String realmAttributes) {
+        this.realmAttributes = realmAttributes;
     }
 
     @Override

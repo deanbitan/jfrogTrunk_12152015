@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.0.3</version>
+        <version>3.0.4</version>
     </parent>
 
     <dependencies>
@@ -59,8 +59,8 @@
         </dependency>
 
         <dependency>
-            <groupId>net.sf.jsignature.io-tools</groupId>
-            <artifactId>easystream</artifactId>
+            <groupId>org.iostreams</groupId>
+            <artifactId>iostreams</artifactId>
         </dependency>
 
         <dependency>

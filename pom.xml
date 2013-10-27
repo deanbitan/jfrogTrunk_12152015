@@ -20,7 +20,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.3</version>
+    <version>3.0.4</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -49,8 +49,8 @@
         <sourceforgeName>artifactory</sourceforgeName>
         <spring.version>3.2.0.RELEASE</spring.version>
         <spring.security.version>3.1.3.RELEASE</spring.security.version>
-        <build.info.version>2.1.0</build.info.version>
-        <wicket.version>1.5.3</wicket.version>
+        <build.info.version>2.2.1</build.info.version>
+        <wicket.version>1.5.4</wicket.version>
         <jetty.version>7.0.2.v20100331</jetty.version>
         <tomcat.version>7.0.39</tomcat.version>
         <maven.version>3.0.4</maven.version>
@@ -147,85 +147,85 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-common</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-common</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
                 <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-green-skin</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
@@ -1082,71 +1082,17 @@
             </dependency>
 
             <dependency>
-                <groupId>net.sf.jsignature.io-tools</groupId>
-                <artifactId>easystream</artifactId>
-                <version>1.2.13</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.atlassian.crowd</groupId>
-                <artifactId>crowd-integration-client</artifactId>
-                <version>2.1.1</version>
+                <groupId>com.atlassian.crowd.client</groupId>
+                <artifactId>atlassian-crowd-rest-client</artifactId>
+                <version>1.1</version>
                 <exclusions>
-                    <exclusion>
-                        <groupId>jdom</groupId>
-                        <artifactId>jdom</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xmlParserAPIs</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>stax</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>wstx-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>net.sf.ehcache</groupId>
-                        <artifactId>ehcache</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.xfire</groupId>
-                        <artifactId>xfire-annotations</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xfire</groupId>
-                        <artifactId>xfire-jsr181-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.ws.commons</groupId>
-                        <artifactId>XmlSchema</artifactId>
-                    </exclusion>
                     <exclusion>
                         <groupId>jaxen</groupId>
                         <artifactId>jaxen</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.codehaus.xfire</groupId>
-                <artifactId>xfire-aegis</artifactId>
-                <version>1.2.6</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.codehaus.xfire</groupId>
                 <artifactId>xfire-java5</artifactId>
@@ -1162,6 +1108,42 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.codehaus.xfire</groupId>
+                <artifactId>xfire-core</artifactId>
+                <version>1.2.6</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jdom</groupId>
+                        <artifactId>jdom</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xmlParserAPIs</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>stax</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jaxen</groupId>
+                        <artifactId>jaxen</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.ws.commons</groupId>
+                        <artifactId>XmlSchema</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.xfire</groupId>
+                <artifactId>xfire-aegis</artifactId>
+                <version>1.2.6</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.freemarker</groupId>
@@ -1172,25 +1154,25 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-indexer</artifactId>
-                <version>2.0</version>
+                <version>2.0.4</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-extractor</artifactId>
-                <version>2.0</version>
+                <version>2.0.4</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-writer</artifactId>
-                <version>2.0</version>
+                <version>2.0.4</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>gems-indexer</artifactId>
-                <version>2.0.3</version>
+                <version>2.0.4</version>
             </dependency>
 
             <dependency>
@@ -1254,12 +1236,12 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>3.0.3</version>
+                <version>3.0.4</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
@@ -1482,6 +1464,8 @@
                                         <exclude>org.bouncycastle:bcprov-jdk15</exclude>
                                         <!-- jersey already packages those classes -->
                                         <exclude>javax.ws.rs:javax.ws.rs</exclude>
+                                        <!--newer library has a different package Id-->
+                                        <exclude>org.apache.ws.commons:XmlSchema</exclude>
                                     </excludes>
                                 </bannedDependencies>
                                 <requireJavaVersion>
