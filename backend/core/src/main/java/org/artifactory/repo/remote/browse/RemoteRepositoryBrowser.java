@@ -23,7 +23,6 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.storage.StorageUnit;
-import org.artifactory.repo.HttpRepo;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.util.HttpUtils;
 
@@ -72,9 +71,9 @@ public abstract class RemoteRepositoryBrowser {
     }
 
     protected void assertSizeLimit(String urlStr, GetMethod method) throws IOException {
-        if (HttpRepo.getContentLength(method) > StorageUnit.MB.toBytes(1)) {
+        if (HttpUtils.getContentLength(method) > StorageUnit.MB.toBytes(1)) {
             throw new IOException("Failed to retrieve directory listing from " + urlStr
-                    + ". Response Content-Length of " + HttpRepo.getContentLength(method)
+                    + ". Response Content-Length of " + HttpUtils.getContentLength(method)
                     + " exceeds max of " + StorageUnit.MB.toBytes(1) + " bytes.");
         }
     }

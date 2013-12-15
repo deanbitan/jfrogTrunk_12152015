@@ -186,5 +186,4 @@ public class StatsServiceImplTest extends DbBaseTest {
     public void deleteStatsOnNonExistingNode() {
         assertFalse(statsService.deleteStats(64736));
     }
-
 }

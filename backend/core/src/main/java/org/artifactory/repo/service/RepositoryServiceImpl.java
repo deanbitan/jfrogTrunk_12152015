@@ -961,6 +961,14 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
+    public MoveMultiStatusHolder moveWithoutMavenMetadata(RepoPath from, RepoPath to, boolean dryRun, boolean suppressLayouts,
+            boolean failFast) {
+        MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to).copy(false).dryRun(dryRun).
+                executeMavenMetadataCalculation(false).suppressLayouts(suppressLayouts).failFast(failFast);
+        return moveOrCopy(configBuilder.build());
+    }
+
+    @Override
     public MoveMultiStatusHolder move(RepoPath from, RepoPath to, boolean dryRun, boolean suppressLayouts,
             boolean failFast) {
         MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to).copy(false).dryRun(dryRun).
@@ -1443,9 +1451,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,
             RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepoRejectException {
-        LocalCacheRepo localCache = remoteRepo.getLocalCacheRepo();
-        RepoResource cachedResource = localCache.getInfo(requestContext);
-        return remoteRepo.downloadAndSave(requestContext, res, cachedResource);
+        return remoteRepo.downloadAndSave(requestContext, res);
     }
 
     @Override

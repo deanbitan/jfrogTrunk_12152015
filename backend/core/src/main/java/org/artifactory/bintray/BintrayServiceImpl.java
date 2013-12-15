@@ -18,7 +18,7 @@
 
 package org.artifactory.bintray;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethodBase;
@@ -194,7 +194,7 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     private <V> Map<String, V> initCache(int initialCapacity, long expirationSeconds, boolean softValues) {
-        MapMaker mapMaker = new MapMaker().initialCapacity(initialCapacity);
+        CacheBuilder mapMaker = CacheBuilder.newBuilder().initialCapacity(initialCapacity);
         if (expirationSeconds >= 0) {
             mapMaker.expireAfterWrite(expirationSeconds, TimeUnit.SECONDS);
         }
@@ -202,7 +202,8 @@ public class BintrayServiceImpl implements BintrayService {
             mapMaker.softValues();
         }
 
-        return mapMaker.makeMap();
+        //noinspection unchecked
+        return mapMaker.build().asMap();
     }
 
     @Override

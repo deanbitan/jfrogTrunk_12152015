@@ -64,4 +64,6 @@ public interface AclStoreService {
     void deleteAllAcls();
 
     void removeAllGroupAces(String groupName);
+
+    int promoteAclsDbVersion();
 }

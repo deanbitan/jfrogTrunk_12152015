@@ -23,14 +23,15 @@ import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.common.ha.ClusterProperties;
+import org.artifactory.common.ha.HaNodeProperties;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.mime.MimeTypes;
 import org.artifactory.mime.MimeTypesReader;
-import org.artifactory.mime.version.MimeTypesVersion;
 import org.artifactory.version.ArtifactoryVersionReader;
 import org.artifactory.version.CompoundVersionDetails;
-import org.artifactory.version.ConfigVersion;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,30 +43,27 @@ import java.net.URL;
 public class ArtifactoryHome {
     public static final String SYS_PROP = "artifactory.home";
     public static final String SERVLET_CTX_ATTR = "artifactory.home.obj";
+    public static final String STORAGE_PROPS_FILE_NAME = "storage.properties";
     private static final String ENV_VAR = "ARTIFACTORY_HOME";
-
+    public static final String ARTIFACTORY_CONVERTER_OBJ = "artifactory.converter.obj";
     public static final String ARTIFACTORY_CONFIG_FILE = "artifactory.config.xml";
-    public static final String ARTIFACTORY_CONFIG_LATEST_FILE = "artifactory.config.latest.xml";
-    public static final String ARTIFACTORY_CONFIG_IMPORT_FILE = "artifactory.config.import.xml";
+    private static final String ARTIFACTORY_CONFIG_LATEST_FILE = "artifactory.config.latest.xml";
+    private static final String ARTIFACTORY_CONFIG_IMPORT_FILE = "artifactory.config.import.xml";
     public static final String ARTIFACTORY_CONFIG_BOOTSTRAP_FILE = "artifactory.config.bootstrap.xml";
     public static final String ARTIFACTORY_SYSTEM_PROPERTIES_FILE = "artifactory.system.properties";
+    public static final String ARTIFACTORY_CONVERSION_LOCK_FILE = "artifactory.conversion.lock";
     public static final String ARTIFACTORY_PROPERTIES_FILE = "artifactory.properties";
     public static final String LOGBACK_CONFIG_FILE_NAME = "logback.xml";
     public static final String MIME_TYPES_FILE_NAME = "mimetypes.xml";
+    public static final String ARTIFACTORY_HA_NODE_PROPERTIES_FILE = "ha-node.properties";
+    public static final String CLUSTER_PROPS_FILE = "cluster.properties";
 
     private static final InheritableThreadLocal<ArtifactoryHome> current = new InheritableThreadLocal<>();
 
-    /**
-     * The current running version, discovered during runtime.
-     */
-    private CompoundVersionDetails runningVersion;
-    /**
-     * The initial version read from a properties file on startup. Effective only until the conversion starts.
-     */
-    private CompoundVersionDetails originalVersion;
-
     private MimeTypes mimeTypes;
     private ArtifactorySystemProperties artifactorySystemProperties;
+    private HaNodeProperties HaNodeProperties;
+    private ClusterProperties clusterProperties;
 
     private final File homeDir;
     private File etcDir;
@@ -76,6 +74,10 @@ public class ArtifactoryHome {
     private File tempUploadDir;
     private File pluginsDir;
     private File logoDir;
+
+    private File haEtcDir;
+    private File haDataDir;
+    private File habackupDir;
 
     /**
      * protected constructor for testing usage only.
@@ -102,30 +104,24 @@ public class ArtifactoryHome {
         return homeDir;
     }
 
-    /**
-     * @return The current running version
-     */
-    public CompoundVersionDetails getRunningVersionDetails() {
-        return runningVersion;
-    }
-
-    /**
-     * @return Original config version used when artifactory started. May be null if same as running version.
-     */
-    public CompoundVersionDetails getOriginalVersionDetails() {
-        return originalVersion;
-    }
-
-    public boolean startedFromDifferentVersion() {
-        return (originalVersion != null) && (!originalVersion.isCurrent());
-    }
-
     public File getDataDir() {
         return dataDir;
     }
 
     public File getEtcDir() {
         return etcDir;
+    }
+
+    public File getHaAwareEtcDir() {
+        return haEtcDir != null ? haEtcDir : etcDir;
+    }
+
+    public File getHaAwareDataDir() {
+        return haDataDir != null ? haDataDir : dataDir;
+    }
+
+    public File getHaAwareBackupDir() {
+        return habackupDir != null ? habackupDir : backupDir;
     }
 
     public File getLogDir() {
@@ -156,6 +152,27 @@ public class ArtifactoryHome {
         return getOrCreateSubDir(getHomeDir(), subDirName);
     }
 
+    /**
+     * @return {@code true} if {@link #ARTIFACTORY_HA_NODE_PROPERTIES_FILE} and {@link #CLUSTER_PROPS_FILE} exists
+     */
+    public boolean isHaConfigured() {
+        return HaNodeProperties != null && clusterProperties != null;
+    }
+
+    /**
+     * @return the {@link HaNodeProperties} object that represents the
+     *         {@link #ARTIFACTORY_HA_NODE_PROPERTIES_FILE} contents, or null if HA was not configured properly
+     */
+    @Nullable
+    public HaNodeProperties getHaNodeProperties() {
+        return HaNodeProperties;
+    }
+
+    @Nullable
+    public ClusterProperties getClusterProperties() {
+        return clusterProperties;
+    }
+
     private File getOrCreateSubDir(File parent, String subDirName) throws IOException {
         File subDir = new File(parent, subDirName);
         FileUtils.forceMkdir(subDir);
@@ -173,12 +190,9 @@ public class ArtifactoryHome {
             File tempRootDir = getOrCreateSubDir(dataDir, "tmp");
             tempWorkDir = getOrCreateSubDir(tempRootDir, "work");
             tempUploadDir = getOrCreateSubDir(tempRootDir, "artifactory-uploads");
-            pluginsDir = getOrCreateSubDir(etcDir, "plugins");
-            logoDir = getOrCreateSubDir(etcDir, "ui");
 
             //Manage the artifactory.system.properties file under etc dir
             initAndLoadSystemPropertyFile();
-            initAndLoadMimeTypes();
 
             //Check the write access to all directories that need it
             checkWritableDirectory(dataDir);
@@ -187,9 +201,42 @@ public class ArtifactoryHome {
             checkWritableDirectory(tempRootDir);
             checkWritableDirectory(tempWorkDir);
             checkWritableDirectory(tempUploadDir);
+
+            //If ha props exist, load the storage from cluster_home/ha-etc
+            File haPropertiesFile = getArtifactoryHaPropertiesFile();
+            if (haPropertiesFile.exists()) {
+                //load ha properties
+                HaNodeProperties = new HaNodeProperties();
+                HaNodeProperties.load(haPropertiesFile);
+
+                File haArtifactoryHome = HaNodeProperties.getClusterHome();
+                if (!haArtifactoryHome.exists()) {
+                    throw new RuntimeException(
+                            "Artifactory HA home does not exist: " + haArtifactoryHome.getAbsolutePath());
+                }
+
+                //create directory structure
+                haEtcDir = getOrCreateSubDir(haArtifactoryHome, "ha-etc");
+                haDataDir = getOrCreateSubDir(haArtifactoryHome, "ha-data");
+                habackupDir = getOrCreateSubDir(haArtifactoryHome, "ha-backup");
+
+                checkWritableDirectory(haEtcDir);
+                checkWritableDirectory(haDataDir);
+                checkWritableDirectory(habackupDir);
+
+                //load cluster properties
+                File clusterPropertiesFile = getArtifactoryClusterPropertiesFile();
+                clusterProperties = new ClusterProperties();
+                clusterProperties.load(clusterPropertiesFile);
+            }
+
+            pluginsDir = getOrCreateSubDir(getHaAwareEtcDir(), "plugins");
+            logoDir = getOrCreateSubDir(getHaAwareEtcDir(), "ui");
+
             checkWritableDirectory(pluginsDir);
 
             try {
+                //noinspection ConstantConditions
                 for (File rootTmpDirChild : tempRootDir.listFiles()) {
                     if (rootTmpDirChild.isDirectory()) {
                         FileUtils.cleanDirectory(rootTmpDirChild);
@@ -204,7 +251,7 @@ public class ArtifactoryHome {
 
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                    "Could not initialize artifactory main directory due to: " + e.getMessage(), e);
+                    "Could not initialize artifactory home directory due to: " + e.getMessage(), e);
         }
     }
 
@@ -252,12 +299,12 @@ public class ArtifactoryHome {
      * @return Content of artifactory.config.import.xml if exists, null if not
      */
     public String getImportConfigXml() {
-        File importConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_IMPORT_FILE);
+        File importConfigFile = getArtifactoryConfigImportFile();
         if (importConfigFile.exists()) {
             try {
                 String configContent = FileUtils.readFileToString(importConfigFile, "utf-8");
                 if (StringUtils.isNotBlank(configContent)) {
-                    File bootstrapConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
+                    File bootstrapConfigFile = getArtifactoryConfigBootstrapFile();
                     org.artifactory.util.Files.switchFiles(importConfigFile, bootstrapConfigFile);
                     return configContent;
                 }
@@ -270,8 +317,8 @@ public class ArtifactoryHome {
     }
 
     public String getBootstrapConfigXml() {
-        File oldLocalConfig = new File(etcDir, ARTIFACTORY_CONFIG_FILE);
-        File newBootstrapConfig = new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
+        File oldLocalConfig = getArtifactoryConfigFile();
+        File newBootstrapConfig = getArtifactoryConfigBootstrapFile();
         String result;
         if (newBootstrapConfig.exists()) {
             try {
@@ -304,10 +351,10 @@ public class ArtifactoryHome {
     }
 
     public void renameInitialConfigFileIfExists() {
-        File initialConfigFile = new File(etcDir, ARTIFACTORY_CONFIG_FILE);
+        File initialConfigFile = getArtifactoryConfigFile();
         if (initialConfigFile.isFile()) {
             org.artifactory.util.Files.switchFiles(initialConfigFile,
-                    new File(etcDir, ARTIFACTORY_CONFIG_BOOTSTRAP_FILE));
+                    getArtifactoryConfigBootstrapFile());
         }
     }
 
@@ -319,16 +366,20 @@ public class ArtifactoryHome {
         return mimeTypes;
     }
 
-    public File getArtifactoryPropertiesFile() {
+    public File getHomeArtifactoryPropertiesFile() {
         return new File(dataDir, ARTIFACTORY_PROPERTIES_FILE);
+    }
+
+    public File getHaArtifactoryPropertiesFile() {
+        return new File(haDataDir, ARTIFACTORY_PROPERTIES_FILE);
     }
 
     private URL getDefaultArtifactoryPropertiesUrl() {
         return ArtifactoryHome.class.getResource("/META-INF/" + ARTIFACTORY_PROPERTIES_FILE);
     }
 
-    public void writeBundledArtifactoryProperties() {
-        File artifactoryPropertiesFile = getArtifactoryPropertiesFile();
+    public void writeBundledHomeArtifactoryProperties() {
+        File artifactoryPropertiesFile = getHomeArtifactoryPropertiesFile();
         //Copy the artifactory.properties file into the data folder
         try {
             //Copy from default
@@ -339,23 +390,39 @@ public class ArtifactoryHome {
         }
     }
 
-    private CompoundVersionDetails readRunningArtifactoryVersion() {
-        InputStream inputStream = ArtifactoryHome.class.getResourceAsStream("/META-INF/" + ARTIFACTORY_PROPERTIES_FILE);
-        CompoundVersionDetails details = ArtifactoryVersionReader.read(inputStream);
-        //Sanity check
-        if (!details.isCurrent()) {
-            throw new IllegalStateException("Running version is not the current version. " +
-                    "Running: " + details + " Current: " + details.getVersion());
+    public void writeBundledHaArtifactoryProperties() {
+        File artifactoryHaPropertiesFile = getHaArtifactoryPropertiesFile();
+        //Copy the artifactory.properties file into the data folder
+        try {
+            //Copy from default
+            FileUtils.copyURLToFile(getDefaultArtifactoryPropertiesUrl(), artifactoryHaPropertiesFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not copy " + ARTIFACTORY_PROPERTIES_FILE + " to " +
+                    artifactoryHaPropertiesFile.getAbsolutePath(), e);
         }
-        return details;
+    }
+
+    public CompoundVersionDetails readRunningArtifactoryVersion() {
+        try (InputStream inputStream = ArtifactoryHome.class.getResourceAsStream(
+                "/META-INF/" + ARTIFACTORY_PROPERTIES_FILE)) {
+            CompoundVersionDetails details = ArtifactoryVersionReader.read(inputStream);
+            //Sanity check
+            if (!details.isCurrent()) {
+                throw new IllegalStateException("Running version is not the current version. " +
+                        "Running: " + details + " Current: " + details.getVersion());
+            }
+            return details;
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "Unexpected exception occurred: Fail to load artifactory.properties from class resource", e);
+        }
     }
 
     /**
      * Copy the system properties file and set its data as system properties
      */
     public void initAndLoadSystemPropertyFile() {
-        // Expose the properties inside artifactory.properties and artifactory.system.properties
-        // as system properties, available to ArtifactoryConstants
+        // Expose the properties inside artifactory.system.properties
         File systemPropertiesFile = getArtifactorySystemPropertiesFile();
         if (!systemPropertiesFile.exists()) {
             try {
@@ -372,76 +439,74 @@ public class ArtifactoryHome {
                         "' at '" + systemPropertiesFile.getAbsolutePath() + "'.", e);
             }
         }
-
-        runningVersion = readRunningArtifactoryVersion();
-        originalVersion = runningVersion;
-        File artifactoryPropertiesFile = getArtifactoryPropertiesFile();
-        if (artifactoryPropertiesFile.exists()) {
-            CompoundVersionDetails storedStorageVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
-            //Store the original version - may need to activate converters based on it
-            originalVersion = storedStorageVersion;
-            if (!runningVersion.equals(storedStorageVersion)) {
-                // the version written in the jar and the version read from the data directory are different
-                // make sure the version from the data directory is supported by the current deployed artifactory
-                ConfigVersion actualConfigVersion =
-                        ConfigVersion.findCompatibleVersion(storedStorageVersion.getVersion());
-                //No compatible version -> conversion needed, but supported only from v4 onward
-                if (!actualConfigVersion.isCurrent()) {
-                    String msg = "The stored version for (" + storedStorageVersion.getVersion().getValue() + ") " +
-                            "is not up-to-date with the currently deployed Artifactory (" +
-                            runningVersion.getVersion().getValue() + ")";
-                    if (!actualConfigVersion.isAutoUpdateCapable()) {
-                        //Cannot convert
-                        msg += ": no automatic conversion is possible. Exiting now...";
-                        throw new IllegalStateException(msg);
-                    }
-                }
-            }
-        } else {
-            writeBundledArtifactoryProperties();
-        }
         artifactorySystemProperties = new ArtifactorySystemProperties();
-        artifactorySystemProperties.loadArtifactorySystemProperties(systemPropertiesFile, artifactoryPropertiesFile);
+        artifactorySystemProperties.loadArtifactorySystemProperties(systemPropertiesFile,
+                getHomeArtifactoryPropertiesFile());
+    }
+
+    public File getHomeConversionLockFile() {
+        return new File(dataDir, ARTIFACTORY_CONVERSION_LOCK_FILE);
+    }
+
+    public File getHaConversionLockFile() {
+        return new File(haDataDir, ARTIFACTORY_CONVERSION_LOCK_FILE);
     }
 
     public File getArtifactorySystemPropertiesFile() {
-        return new File(etcDir, ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
+        return new File(getHaAwareEtcDir(), ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
+    }
+
+    public File getArtifactoryHaPropertiesFile() {
+        return new File(etcDir, ARTIFACTORY_HA_NODE_PROPERTIES_FILE);
+    }
+
+    public File getArtifactoryClusterPropertiesFile() {
+        return new File(haEtcDir, CLUSTER_PROPS_FILE);
     }
 
     public void initAndLoadMimeTypes() {
-        File mimeTypesFile = new File(etcDir, MIME_TYPES_FILE_NAME);
+        File mimeTypesFile = getMimeTypesFile();
         if (!mimeTypesFile.exists()) {
             // Copy default mime types configuration file
             try {
-                URL configUrl = ArtifactoryHome.class.getResource("/META-INF/default/" + MIME_TYPES_FILE_NAME);
+                URL configUrl = ArtifactoryHome.class.getResource(
+                        "/META-INF/default/" + ArtifactoryHome.MIME_TYPES_FILE_NAME);
                 FileUtils.copyURLToFile(configUrl, mimeTypesFile);
             } catch (Exception e) {
-                // we might not have the logger configuration yet - use System.err
-                System.err.printf("Could not copy default %s into %s\n", MIME_TYPES_FILE_NAME, mimeTypesFile);
-                e.printStackTrace();
+                throw new IllegalStateException("Couldn't start Artifactory. Mime types file is missing: " +
+                        mimeTypesFile.getAbsolutePath());
             }
         }
 
-        if (!mimeTypesFile.exists()) {
-            throw new RuntimeException(
-                    "Couldn't start Artifactory. Mime types file is missing: " + mimeTypesFile.getAbsolutePath());
-        }
         try {
             String mimeTypesXml = Files.toString(mimeTypesFile, Charsets.UTF_8);
-            MimeTypesVersion mimeTypesVersion = MimeTypesVersion.findVersion(mimeTypesXml);
-            if (!mimeTypesVersion.isCurrent()) {
-                mimeTypesXml = mimeTypesVersion.convert(mimeTypesXml);
-                Files.write(mimeTypesXml, mimeTypesFile, Charsets.UTF_8);
-            }
             mimeTypes = new MimeTypesReader().read(mimeTypesXml);
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse mime types file from: " + mimeTypesFile.getAbsolutePath(), e);
         }
     }
 
+    public File getMimeTypesFile() {
+        return new File(getHaAwareEtcDir(), MIME_TYPES_FILE_NAME);
+    }
+
+    public File getHaEtcFile() {
+        return haEtcDir;
+    }
+
     private static void checkWritableDirectory(File dir) {
         if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
-            throw new IllegalArgumentException("Directory '" + dir.getAbsolutePath() + "' is not writable!");
+            String message = "Directory '" + dir.getAbsolutePath() + "' is not writable!";
+            System.out.println(ArtifactoryHome.class.getName() + " - Warning: " + message);
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    private static void checkReadableDirectory(File dir) {
+        if (!dir.exists() || !dir.isDirectory() || !dir.canRead()) {
+            String message = "Directory '" + dir.getAbsolutePath() + "' is not readable!";
+            System.out.println(ArtifactoryHome.class.getName() + " - Warning: " + message);
+            throw new IllegalArgumentException(message);
         }
     }
 
@@ -463,6 +528,34 @@ public class ArtifactoryHome {
 
     public static void unbind() {
         current.remove();
+    }
+
+    public File getHaDataDir() {
+        return haDataDir;
+    }
+
+    public File getStoragePropertiesFile() {
+        return new File(getHaAwareEtcDir(), STORAGE_PROPS_FILE_NAME);
+    }
+
+    public File getArtifactoryConfigFile() {
+        return new File(getHaAwareEtcDir(), ARTIFACTORY_CONFIG_FILE);
+    }
+
+    public File getArtifactoryConfigLatestFile() {
+        return new File(getHaAwareEtcDir(), ARTIFACTORY_CONFIG_LATEST_FILE);
+    }
+
+    public File getArtifactoryConfigImportFile() {
+        return new File(getHaAwareEtcDir(), ARTIFACTORY_CONFIG_IMPORT_FILE);
+    }
+
+    public File getArtifactoryConfigBootstrapFile() {
+        return new File(getHaAwareEtcDir(), ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
+    }
+
+    public File getArtifactoryConfigNewBootstrapFile() {
+        return new File(getHaAwareEtcDir(), "new_" + ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
     }
 
     /**

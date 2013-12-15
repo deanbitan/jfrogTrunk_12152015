@@ -171,9 +171,7 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
         } catch (StorageException se) {
             log.error("Metadata retrieval failed on repo '{}': {}", repo, se.getMessage());
         } finally {
-            if (handle != null) {
-                handle.close();
-            }
+            IOUtils.closeQuietly(handle);
         }
         return null;
     }

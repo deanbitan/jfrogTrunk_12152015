@@ -74,7 +74,7 @@ public class PingResource {
                 return Response.status(HttpStatus.SC_FORBIDDEN).entity("Addons unloaded").build();
             }
             ArtifactoryHome artifactoryHome = ArtifactoryHome.get();
-            if (!artifactoryHome.getDataDir().canWrite() || !artifactoryHome.getLogDir().canWrite()) {
+            if (!artifactoryHome.getHaAwareDataDir().canWrite() || !artifactoryHome.getLogDir().canWrite()) {
                 log.error("Ping failed due to file system access to data or log dir failed");
                 return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity("File system access failed").build();
             }

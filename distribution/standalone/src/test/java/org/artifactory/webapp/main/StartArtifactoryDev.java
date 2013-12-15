@@ -23,6 +23,7 @@ import org.apache.commons.io.filefilter.AbstractFileFilter;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.util.PathUtils;
 import org.artifactory.util.ResourceUtils;
 import org.eclipse.jetty.server.Server;
@@ -98,13 +99,22 @@ public class StartArtifactoryDev {
         IOFileFilter fileFilter = new NewerFileFilter(devEtcDir, homeEtcDir);
         fileFilter = FileFilterUtils.makeSVNAware(fileFilter);
         FileUtils.copyDirectory(devEtcDir, homeEtcDir, fileFilter, true);
-
+        deleteHaProps(homeEtcDir);
         /**
          * If the bootstrap already exists, it means it's not the first startup, so don't keep the original config file
          * or the etc folder will flood with bootstrap files
          */
         if (new File(homeEtcDir, ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE).exists()) {
             new File(homeEtcDir, ArtifactoryHome.ARTIFACTORY_CONFIG_FILE).delete();
+        }
+    }
+
+    static void deleteHaProps(File homeEtcDir) throws IOException {
+        if (!Boolean.parseBoolean(System.getProperty(ConstantValues.devHa.getPropertyName()))) {
+            File haProps = new File(homeEtcDir, "artifactory.ha.properties");
+            if (haProps.exists()) {
+                FileUtils.forceDelete(haProps);
+            }
         }
     }
 

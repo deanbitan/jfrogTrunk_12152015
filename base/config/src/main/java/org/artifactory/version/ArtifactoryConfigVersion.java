@@ -49,6 +49,7 @@ import org.artifactory.version.converter.v147.DefaultRepoLayoutConverter;
 import org.artifactory.version.converter.v147.JfrogRemoteRepoUrlConverter;
 import org.artifactory.version.converter.v147.UnusedArtifactCleanupSwitchConverter;
 import org.artifactory.version.converter.v149.ReplicationElementNameConverter;
+import org.artifactory.version.converter.v152.BlackDuckProxyConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -203,6 +204,10 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v152("http://artifactory.jfrog.org/xsd/1.5.2",
             "http://www.jfrog.org/xsd/artifactory-v1_5_2.xsd",
             ArtifactoryVersion.v304,
+            ArtifactoryVersion.v304, new BlackDuckProxyConverter()),
+    v153("http://artifactory.jfrog.org/xsd/1.5.3",
+            "http://www.jfrog.org/xsd/artifactory-v1_5_3.xsd",
+            ArtifactoryVersion.v310,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;
@@ -218,7 +223,7 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
      */
     ArtifactoryConfigVersion(String xsdUri, String xsdLocation, ArtifactoryVersion from, ArtifactoryVersion until,
             XmlConverter... converters) {
-        this.comparator = new VersionComparator(this, from, until);
+        this.comparator = new VersionComparator(from, until);
         this.xsdUri = xsdUri;
         this.xsdLocation = xsdLocation;
         this.converters = converters;

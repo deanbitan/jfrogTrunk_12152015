@@ -165,7 +165,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
                 // Passing null for repo keys because they are taken from the indexer descriptor
                 MavenIndexerRunSettings settings = new MavenIndexerRunSettings(false, false, null);
                 task.addAttribute(MavenIndexerJob.SETTINGS, settings);
-                InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
+                InternalContextHelper.get().getBean(TaskService.class).startTask(task, false, manual);
                 log.info("Indexer activated with cron expression '{}'.", cronExp);
             } else {
                 log.debug("No indexer cron expression is configured. Indexer will be disabled.");
@@ -202,7 +202,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
                 log.info(logMessageBuilder.toString());
                 TaskBase task = TaskUtils.createManualTask(MavenIndexerJob.class, 0L);
                 task.addAttribute(MavenIndexerJob.SETTINGS, settings);
-                taskService.startTask(task, true);
+                taskService.startTask(task, true, true);
             } catch (Exception e) {
                 log.error("Error scheduling the indexer.", e);
             }

@@ -25,6 +25,7 @@ import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MetadataEntryInfo;
 import org.artifactory.sapi.fs.MetadataReader;
+import org.artifactory.util.Files;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,8 @@ public class PassThroughMetadataReaderImpl implements MetadataReader {
 
         String[] metadataFileNames = file.list(new SuffixFileFilter(".xml"));
         if (metadataFileNames == null) {
-            status.error("Cannot read list of metadata files from " + file.getAbsolutePath(), log);
+            status.error("Cannot read list of metadata files from " + file.getAbsolutePath() + ": "
+                    + Files.readFailReason(file), log);
             return Collections.emptyList();
         }
 

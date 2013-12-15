@@ -22,7 +22,7 @@ import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Document;
+import org.jdom2.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -270,6 +270,11 @@ public class AclServiceImpl implements AclStoreService {
         }
     }
 
+    @Override
+    public int promoteAclsDbVersion() {
+        return aclsCache.promoteAclsDbVersion();
+    }
+
     private Acl aclFromInfo(long aclId, AclInfo aclInfo, long permTargetId) throws SQLException {
         Acl acl = new Acl(aclId, permTargetId, System.currentTimeMillis(),
                 aclInfo.getUpdatedBy());
@@ -356,8 +361,8 @@ public class AclServiceImpl implements AclStoreService {
         /**
          * Call this method each permission update/change/delete in DB.
          */
-        public void promoteAclsDbVersion() {
-            aclsDbVersion.incrementAndGet();
+        public int promoteAclsDbVersion() {
+            return aclsDbVersion.incrementAndGet();
         }
 
         /**

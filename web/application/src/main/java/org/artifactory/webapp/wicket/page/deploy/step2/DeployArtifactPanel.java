@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.deploy.step2;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
@@ -499,11 +500,13 @@ public class DeployArtifactPanel extends TitledActionPanel {
                     StringBuilder successMessagesBuilder = new StringBuilder();
                     successMessagesBuilder.append("Successfully deployed ");
                     String repoPathUrl = TreeUtils.getRepoPathUrl(model.targetRepo, artifactPath);
+                    String escapedArtifactPath = StringEscapeUtils.escapeXml(artifactPath);
                     if (StringUtils.isNotBlank(repoPathUrl)) {
                         successMessagesBuilder.append("<a href=\"").append(repoPathUrl).append("\">").
-                                append(artifactPath).append(" into ").append(repoKey).append("</a>.");
+                                append(escapedArtifactPath).append(" into ").
+                                append(repoKey).append("</a>.");
                     } else {
-                        successMessagesBuilder.append(artifactPath).append(" into ").append(repoKey).append(".");
+                        successMessagesBuilder.append(escapedArtifactPath).append(" into ").append(repoKey).append(".");
                     }
                     info(new UnescapedFeedbackMessage(successMessagesBuilder.toString()));
                     AjaxUtils.refreshFeedback(target);

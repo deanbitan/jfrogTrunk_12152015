@@ -41,7 +41,7 @@ public enum ConfigVersion implements SubConfigElementVersion {
     }
 
     ConfigVersion(ArtifactoryVersion from, ArtifactoryVersion until, boolean autoUpdateCapable) {
-        this.comparator = new VersionComparator(this, from, until);
+        this.comparator = new VersionComparator( from, until);
         this.autoUpdateCapable = autoUpdateCapable;
     }
 

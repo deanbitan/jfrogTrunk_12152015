@@ -19,13 +19,15 @@
 package org.artifactory.descriptor.external;
 
 import org.artifactory.descriptor.Descriptor;
+import org.artifactory.descriptor.repo.ProxyDescriptor;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "BlackDuckSettingsType",
         namespace = Descriptor.NS,
-        propOrder = {"enableIntegration", "serverUri", "username", "password", "connectionTimeoutMillis"})
+        propOrder = {"enableIntegration", "serverUri", "username", "password", "connectionTimeoutMillis", "proxy"})
 public class BlackDuckSettingsDescriptor implements Descriptor {
 
     @XmlElement(defaultValue = "false")
@@ -42,6 +44,10 @@ public class BlackDuckSettingsDescriptor implements Descriptor {
 
     @XmlElement
     private Long connectionTimeoutMillis;
+
+    @XmlIDREF
+    @XmlElement(name = "proxyRef")
+    private ProxyDescriptor proxy;
 
     public boolean isEnableIntegration() {
         return enableIntegration;
@@ -83,6 +89,14 @@ public class BlackDuckSettingsDescriptor implements Descriptor {
         this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
 
+    public ProxyDescriptor getProxy() {
+        return proxy;
+    }
+
+    public void setProxy(ProxyDescriptor proxy) {
+        this.proxy = proxy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -110,6 +124,9 @@ public class BlackDuckSettingsDescriptor implements Descriptor {
         if (username != null ? !username.equals(that.username) : that.username != null) {
             return false;
         }
+        if (proxy != null ? !proxy.equals(that.proxy) : that.proxy != null) {
+            return false;
+        }
 
         return true;
     }
@@ -121,6 +138,7 @@ public class BlackDuckSettingsDescriptor implements Descriptor {
         result = 31 * result + (username != null ? username.hashCode() : 0);
         result = 31 * result + (password != null ? password.hashCode() : 0);
         result = 31 * result + (connectionTimeoutMillis != null ? connectionTimeoutMillis.hashCode() : 0);
+        result = 31 * result + (proxy != null ? proxy.hashCode() : 0);
         return result;
     }
 }

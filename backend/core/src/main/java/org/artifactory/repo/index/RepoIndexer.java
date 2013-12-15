@@ -11,7 +11,6 @@
 
 package org.artifactory.repo.index;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.maven.index.ArtifactContext;
 import org.apache.maven.index.ArtifactScanningListener;
@@ -24,7 +23,6 @@ import org.apache.maven.index.ScanningRequest;
 import org.apache.maven.index.ScanningResult;
 import org.apache.maven.index.context.IndexCreator;
 import org.apache.maven.index.context.IndexingContext;
-import org.apache.maven.index.context.UnsupportedExistingLuceneIndexException;
 import org.apache.maven.index.incremental.DefaultIncrementalHandler;
 import org.apache.maven.index.incremental.IncrementalHandler;
 import org.apache.maven.index.packer.DefaultIndexPacker;
@@ -57,7 +55,6 @@ import org.springframework.security.util.FieldUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -143,9 +140,7 @@ class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
     }
 
     Pair<TempFileStreamHandle, TempFileStreamHandle> createIndex(File indexDir, boolean scan) throws IOException {
-        OutputStream os = null;
         try {
-
             context.updateTimestamp();
             if (scan) {
                 //Update the dir content by scanning the repo
@@ -173,7 +168,6 @@ class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
             TempFileStreamHandle propertiesHandle = new TempFileStreamHandle(propertiesFile);
             return new Pair<>(zipIndexHandle, propertiesHandle);
         } catch (Exception e) {
-            IOUtils.closeQuietly(os);
             throw new RuntimeException("Index creation failed.", e);
         }
     }
@@ -219,7 +213,7 @@ class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
         }
     }
 
-    void createContext(File indexDir) throws IOException, UnsupportedExistingLuceneIndexException {
+    void createContext(File indexDir) throws IOException {
         String repoKey = repo.getKey();
         List<IndexCreator> indexCreators = new ArrayList<>(4);
         indexCreators.add(new VfsMinimalArtifactInfoIndexCreator());
@@ -255,8 +249,7 @@ class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
                 return null;
             }
             //Copy the index file
-            ResourceStreamHandle handle = repo.getResourceStreamHandle(requestContext, indexRes);
-            try {
+            try (ResourceStreamHandle handle = repo.getResourceStreamHandle(requestContext, indexRes)) {
                 ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
                 File indexUnzippedDir = Files.createRandomDir(artifactoryHome.getTempWorkDir(),
                         "artifactory.merged-index." + repo.getKey());
@@ -264,8 +257,6 @@ class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
                 indexDir = FSDirectory.open(indexUnzippedDir);
                 //Get the extracted lucene dir
                 DefaultIndexUpdater.unpackIndexData(handle.getInputStream(), indexDir, context);
-            } finally {
-                handle.close();
             }
             //Remember the extracted index
             extractedRepoIndexes.put(repo, indexDir);

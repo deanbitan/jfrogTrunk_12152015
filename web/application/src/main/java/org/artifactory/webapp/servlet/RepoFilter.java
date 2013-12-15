@@ -28,6 +28,7 @@ import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.exception.CancelException;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
@@ -203,6 +204,9 @@ public class RepoFilter extends DelayedFilterBase {
         try {
             log.debug("Serving an upload request.");
             getUploadEngine().upload(artifactoryRequest, artifactoryResponse);
+        } catch (CancelException e) {
+            log.debug("Upload request has been canceled", e.getMessage());
+            artifactoryResponse.sendInternalError(e, log);
         } catch (Exception e) {
             log.debug("Upload request of {} failed due to {}", artifactoryRequest.getRepoPath(), e);
             artifactoryResponse.sendInternalError(e, log);
@@ -237,6 +241,10 @@ public class RepoFilter extends DelayedFilterBase {
                 artifactoryResponse.sendError(HttpServletResponse.SC_NOT_FOUND,
                         "Expected file response but received a directory response: " + e.getRepoPath(), log);
             }
+        } catch (CancelException e) {
+            RepoRequests.logToContext("Request has been canceled", e.getMessage(), e.getErrorCode());
+            artifactoryResponse.sendError(e.getErrorCode(), "Download request has been canceled: " + e.getMessage(), log);
+            log.debug("Download request has been canceled" + e.getMessage(), e);
         } catch (Exception e) {
             RepoRequests.logToContext("Error handling request: %s - returning a %s response", e.getMessage(),
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

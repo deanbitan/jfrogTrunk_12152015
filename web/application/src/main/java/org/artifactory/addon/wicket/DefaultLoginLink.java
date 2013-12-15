@@ -27,6 +27,9 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.security.AuthenticationHelper;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.security.login.LoginInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.RememberMeServices;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,6 +39,8 @@ import javax.servlet.http.HttpServletResponse;
  * @author Eli Givoni
  */
 public class DefaultLoginLink extends TitledSubmitLink {
+    private static final Logger log = LoggerFactory.getLogger(DefaultLoginLink.class);
+
     @SpringBean
     private SecurityService securityService;
 
@@ -63,8 +68,12 @@ public class DefaultLoginLink extends TitledSubmitLink {
                 setResponsePage(ArtifactoryApplication.get().getHomePage());
             }
             //set a remember me cookie for the first success login
-            rememberMeServices.loginSuccess(httpServletRequest, WicketUtils.getHttpServletResponse(),
-                    AuthenticationHelper.getAuthentication());
+            try {
+                rememberMeServices.loginSuccess(httpServletRequest, WicketUtils.getHttpServletResponse(),
+                        AuthenticationHelper.getAuthentication());
+            } catch (UsernameNotFoundException e) {
+                log.warn("Remember Me service is not supported for transient external users.");
+            }
         } else {
             //Try the component based localizer first. If not found try the application localizer. Else use the default
             error("Username or password are incorrect. Login failed.");

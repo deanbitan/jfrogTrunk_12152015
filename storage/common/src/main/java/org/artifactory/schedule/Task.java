@@ -30,7 +30,10 @@ import org.artifactory.concurrent.StateAware;
 public interface Task extends StateAware {
     String TASK_TOKEN = "TASK_TOKEN";
     String TASK_AUTHENTICATION = "TASK_AUTHENTICATION";
+    String TASK_RUN_ONLY_ON_PRIMARY = "TASK_RUN_ONLY_ON_PRIMARY";
     String REPO_KEY = "repoKey";
+
+    boolean DEFAULT_TASK_RUN_ONLY_ON_PRIMARY = true; //default is run only on master
 
     Class getType();
 

@@ -18,8 +18,9 @@
 
 package org.artifactory.common.wicket.util;
 
-import com.google.common.base.Function;
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.io.Closeables;
 import org.apache.commons.compress.utils.CharsetNames;
 import org.apache.commons.lang.StringUtils;
@@ -47,7 +48,7 @@ import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlight
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.Pair;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -56,33 +57,35 @@ import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author yoavl
  */
 public abstract class WicketUtils {
-    private static Map<Pair<Class, String>, String> resourceCache = createResourceCache();
+    private static LoadingCache<Pair<Class, String>, String> resourceCache = createResourceCache();
 
     private WicketUtils() {
         // utility class
     }
 
-    private static Map<Pair<Class, String>, String> createResourceCache() {
-        MapMaker maker = new MapMaker().softValues().maximumSize(100);
-        String isDev = System.getProperty(ConstantValues.dev.getPropertyName());
-        if (StringUtils.isBlank(isDev)) {
-            isDev = System.getProperty("aol.devMode");
+    private static LoadingCache<Pair<Class, String>, String> createResourceCache() {
+        String dev = System.getProperty(ConstantValues.dev.getPropertyName());
+        if (StringUtils.isBlank(dev)) {
+            dev = System.getProperty("aol.devMode");
         }
-        if (Boolean.parseBoolean(isDev)) {
-            maker.expireAfterWrite(30, TimeUnit.SECONDS);
-        }
-        return maker.makeComputingMap(new Function<Pair<Class, String>, String>() {
-            @Override
-            public String apply(@Nonnull Pair<Class, String> pair) {
-                return readResourceNoCache(pair.getFirst(), pair.getSecond());
-            }
-        });
+        boolean isDev = Boolean.parseBoolean(dev);
+        return CacheBuilder.newBuilder().
+                softValues().
+                maximumSize(100).
+                expireAfterWrite(isDev ? 30 : 0, TimeUnit.SECONDS).
+                build(new CacheLoader<Pair<Class, String>, String>() {
+                    @Override
+                    public String load(Pair<Class, String> pair) throws Exception {
+                        return readResourceNoCache(pair.getFirst(), pair.getSecond());
+                    }
+                });
     }
 
     /**
@@ -141,6 +144,7 @@ public abstract class WicketUtils {
         return (HttpServletRequest) WicketUtils.getWebRequest().getContainerRequest();
     }
 
+    @Nullable
     public static Page getPage() {
         return ResponsePageSupport.getResponsePage();
     }
@@ -151,7 +155,11 @@ public abstract class WicketUtils {
     }
 
     public static String readResource(Class scope, String file) {
-        return resourceCache.get(new Pair<>(scope, file));
+        try {
+            return resourceCache.get(new Pair<>(scope, file));
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Could not read resource " + file);
+        }
     }
 
     private static String readResourceNoCache(Class scope, String file) {

@@ -20,6 +20,7 @@ package org.artifactory.repo.virtual;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -122,16 +123,11 @@ public class VirtualRepoDownloadStrategy {
                     // call update stats (see RTFACT-2958)
                     LocalRepo repo = repositoryService.localOrCachedRepositoryByKey(sourceRepoKey);
                     searchableHandle = repositoryService.getResourceStreamHandle(context, repo, searchableResource);
-                } catch (IOException ioe) {
+                } catch (IOException | RepoRejectException ioe) {
                     RepoRequests.logToContext("Error while updating download stats: %s", ioe.getMessage());
                     log.error("Could not update download stats", ioe);
-                } catch (RepoRejectException rre) {
-                    RepoRequests.logToContext("Error while updating download stats: %s", rre.getMessage());
-                    log.error("Could not update download stats", rre);
                 } finally {
-                    if (searchableHandle != null) {
-                        searchableHandle.close();
-                    }
+                    IOUtils.closeQuietly(searchableHandle);
                 }
                 return cachedResource;
             }

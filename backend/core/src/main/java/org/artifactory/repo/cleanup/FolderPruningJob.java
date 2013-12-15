@@ -33,8 +33,8 @@ import org.quartz.JobExecutionException;
  */
 @JobCommand(singleton = true,
         schedulerUser = TaskUser.SYSTEM,
-        manualUser = TaskUser.SYSTEM
-)
+        manualUser = TaskUser.SYSTEM,
+        runOnlyOnPrimary = false)
 public class FolderPruningJob extends QuartzCommand {
 
     @Override

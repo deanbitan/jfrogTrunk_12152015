@@ -31,6 +31,7 @@ public interface ArtifactRestConstants {
     String MT_ITEM_LAST_MODIFIED = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemLastModified+json";
     String MT_ITEM_CREATED = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemCreated+json";
     String MT_ITEM_PERMISSIONS = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemPermissions+json";
+    String MT_STATS_INFO = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".StatsInfo+json";
 
     String PATH_COPY = "copy";
     String PATH_MOVE = "move";

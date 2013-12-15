@@ -22,15 +22,7 @@ import ch.qos.logback.classic.util.ContextInitializer;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
-import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.sapi.common.ExportSettings;
-import org.artifactory.sapi.common.ImportSettings;
-import org.artifactory.spring.SpringConfigPaths;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.db.DbServiceImpl;
 import org.artifactory.storage.db.util.DbUtils;
@@ -52,7 +44,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
 
@@ -80,9 +71,14 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
 
     private ArtifactoryHomeBoundTest artifactoryHomeBoundTest;
 
+    private DummyArtifactoryContext dummyArtifactoryContext;
+
     static {
         // use the itest logback config
         URL url = DbBaseTest.class.getClassLoader().getResource("logback-dbtest.xml");
+        if (url == null) {
+            throw new RuntimeException("Could not find logback-dbtest.xml");
+        }
         System.setProperty(ContextInitializer.CONFIG_FILE_PROPERTY, url.getPath());
     }
 
@@ -93,6 +89,8 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
         artifactoryHomeBoundTest.bindArtifactoryHome();
 
         super.springTestContextPrepareTestInstance();
+
+        dummyArtifactoryContext = new DummyArtifactoryContext(applicationContext);
 
         try (Connection connection = jdbcHelper.getDataSource().getConnection()) {
             DbTestUtils.refreshOrRecreateSchema(connection, storageProperties.getDbType());
@@ -152,79 +150,12 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
 
     @BeforeMethod
     public void bindDummyContext() {
-        ArtifactoryContextThreadBinder.bind(new DummyArtifactoryContext());
+        ArtifactoryContextThreadBinder.bind(dummyArtifactoryContext);
     }
 
     @AfterMethod
     public void unbindDummyContext() {
         ArtifactoryContextThreadBinder.unbind();
-    }
-
-    public class DummyArtifactoryContext implements ArtifactoryContext {
-        @Override
-        public CentralConfigService getCentralConfig() {
-            return applicationContext.getBean(CentralConfigService.class);
-        }
-
-        @Override
-        public <T> T beanForType(Class<T> type) {
-            return applicationContext.getBean(type);
-        }
-
-        @Override
-        public <T> T beanForType(String name, Class<T> type) {
-            return applicationContext.getBean(name, type);
-        }
-
-        @Override
-        public <T> Map<String, T> beansForType(Class<T> type) {
-            return applicationContext.getBeansOfType(type);
-        }
-
-        @Override
-        public Object getBean(String name) {
-            return applicationContext.getBean(name);
-        }
-
-        @Override
-        public RepositoryService getRepositoryService() {
-            return applicationContext.getBean(RepositoryService.class);
-        }
-
-        @Override
-        public AuthorizationService getAuthorizationService() {
-            return applicationContext.getBean(AuthorizationService.class);
-        }
-
-        @Override
-        public long getUptime() {
-            return 0;
-        }
-
-        @Override
-        public ArtifactoryHome getArtifactoryHome() {
-            return ArtifactoryHome.get();
-        }
-
-        @Override
-        public String getContextId() {
-            return null;
-        }
-
-        @Override
-        public SpringConfigPaths getConfigPaths() {
-            return null;
-        }
-
-        @Override
-        public void exportTo(ExportSettings settings) {
-            throw new UnsupportedOperationException("No export here");
-        }
-
-        @Override
-        public void importFrom(ImportSettings settings) {
-            throw new UnsupportedOperationException("No import here");
-        }
     }
 
 }

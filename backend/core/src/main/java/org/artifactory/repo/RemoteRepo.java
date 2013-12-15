@@ -71,18 +71,16 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     /**
      * Performs the actual remote download of the artifact.
+     * This method might creates new nodes and hence must be called within a transaction.
      *
-     * @param requestContext
+     * @param requestContext The download request context
      * @param remoteResource A remote resource that has been returned by getInfo()
-     * @param cachedResource
      * @return
-     * @throws IOException
-     * @throws RepositoryException
-     * @throws org.artifactory.api.repo.exception.RepoRejectException
-     *
+     * @throws IOException         On remote download failure
+     * @throws RepoRejectException If the current repo is configured not to accept the artifact
      */
-    ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource,
-            RepoResource cachedResource) throws IOException, RepoRejectException;
+    ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource)
+            throws IOException, RepoRejectException;
 
     /**
      * List remote resources from a remote path.
@@ -106,7 +104,7 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     /**
      * @return The next date (in milliseconds) the online monitor will check for online status of an assumed offline
-     *         repository. 0 if the repository is not assumed offline.
+     * repository. 0 if the repository is not assumed offline.
      * @see RemoteRepo#isAssumedOffline()
      */
     long getNextOnlineCheckMillis();

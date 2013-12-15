@@ -45,5 +45,7 @@ public @interface JobCommand {
     StopCommand[] commandsToStop() default {};
 
     String[] keyAttributes() default {};
+
+    boolean runOnlyOnPrimary() default TaskBase.DEFAULT_TASK_RUN_ONLY_ON_PRIMARY;
 }
 

@@ -23,13 +23,20 @@ import org.apache.wicket.request.IRequestHandler;
 import org.apache.wicket.request.component.IRequestablePage;
 import org.apache.wicket.request.cycle.AbstractRequestCycleListener;
 import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.handler.ComponentNotFoundException;
 import org.apache.wicket.request.handler.IComponentRequestHandler;
 import org.apache.wicket.request.handler.IPageRequestHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 /**
  * @author Yoav Aharoni
  */
 public class ResponsePageSupport extends AbstractRequestCycleListener {
+    private static final Logger log = LoggerFactory.getLogger(ResponsePageSupport.class);
+
     private final static ThreadLocal<Page> PAGE_HOLDER = new ThreadLocal<>();
 
     @Override
@@ -45,12 +52,21 @@ public class ResponsePageSupport extends AbstractRequestCycleListener {
     }
 
     private void fetchPageFromHandler(IRequestHandler handler) {
-        if (handler instanceof IComponentRequestHandler) {
-            IRequestablePage page = ((IComponentRequestHandler) handler).getComponent().getPage();
-            PAGE_HOLDER.set((Page) page);
-        } else if (handler instanceof IPageRequestHandler) {
-            IRequestablePage page = ((IPageRequestHandler) handler).getPage().getPage();
-            PAGE_HOLDER.set((Page) page);
+        try {
+            if (handler instanceof IComponentRequestHandler) {
+                    IRequestablePage page = ((IComponentRequestHandler) handler).getComponent().getPage();
+                    PAGE_HOLDER.set((Page) page);
+            } else if (handler instanceof IPageRequestHandler) {
+                IRequestablePage page = ((IPageRequestHandler) handler).getPage().getPage();
+                PAGE_HOLDER.set((Page) page);
+            }
+        } catch (ComponentNotFoundException e) {
+            /*
+             * In the case in which the user session has expired between receiving the original page and requesting this
+             * page a ComponentNotFoundException will be thrown with a non-zero page ID. It can be safely ignored
+             */
+            log.warn("{} . Session might have been expired", e.getMessage());
+            log.debug("Failed to load component, ", e);
         }
     }
 
@@ -59,6 +75,7 @@ public class ResponsePageSupport extends AbstractRequestCycleListener {
         PAGE_HOLDER.remove();
     }
 
+    @Nullable
     public static Page getResponsePage() {
         return PAGE_HOLDER.get();
     }

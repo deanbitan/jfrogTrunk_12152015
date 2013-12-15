@@ -72,7 +72,7 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     private String searchQuery;
 
     public BaseSearchPage() {
-        add(new RememberPageBehavior());
+        add(new RememberPageBehavior(true));
 
         String requestQuery = WicketUtils.getParameter(QUERY_PARAM);
         if (StringUtils.isNotBlank(requestQuery)) {

@@ -20,8 +20,8 @@ package org.artifactory.update.md.v125rc0;
 
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataType;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * Extracts the stats info (download count) from an old file metadata - before v1.3.0-beta-3.

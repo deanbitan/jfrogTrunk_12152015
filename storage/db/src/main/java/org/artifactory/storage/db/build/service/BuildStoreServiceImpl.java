@@ -79,7 +79,6 @@ import java.util.Set;
  */
 @Service
 public class BuildStoreServiceImpl implements BuildStoreService {
-    @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(BuildStoreServiceImpl.class);
 
     private static final String EXPORTABLE_BUILD_VERSION = "v2";

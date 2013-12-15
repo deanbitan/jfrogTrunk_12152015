@@ -34,6 +34,13 @@ public interface CentralConfigService extends DescriptorAware<CentralConfigDescr
 
     void saveEditedDescriptorAndReload(CentralConfigDescriptor descriptor);
 
+    /**
+     * Reload configuration from storage
+     *
+     * @return {@code true} if succeeded reloading
+     */
+    boolean reloadConfiguration();
+
     String getServerName();
 
     /**

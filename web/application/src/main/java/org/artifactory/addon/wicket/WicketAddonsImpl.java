@@ -217,7 +217,7 @@ import static org.artifactory.addon.AddonType.*;
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
-        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon {
+        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -258,6 +258,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         adminConfiguration.addChild(propertiesWebAddon.getPropertySetsPage("Property Sets"));
         adminConfiguration.addChild(new MenuNode("Proxies", ProxyConfigPage.class));
         adminConfiguration.addChild(new MenuNode("Mail", MailConfigPage.class));
+        HaWebAddon haWebAddon = addonsManager.addonByType(HaWebAddon.class);
+        adminConfiguration.addChild(haWebAddon.getHaConfigPage("High Availability"));
         if (!(addonsManager instanceof OssAddonsManager)) {
             adminConfiguration.addChild(new MenuNode("Register Pro", LicensePage.class));
         }
@@ -808,6 +810,15 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public String getSearchResultsPageAbsolutePath(String resultToSelect) {
         return new StringBuilder(RequestUtils.getWicketServletContextUrl()).append("/").
                 append(HttpUtils.WEBAPP_URL_PATH_PREFIX).toString();
+    }
+
+    @Override
+    public MenuNode getHaConfigPage(String nodeName) {
+        if (getAddonsManager() instanceof OssAddonsManager) {
+            return new DisabledAddonMenuNode(nodeName, AddonType.HA);
+        } else {
+            return null;
+        }
     }
 
     @Override

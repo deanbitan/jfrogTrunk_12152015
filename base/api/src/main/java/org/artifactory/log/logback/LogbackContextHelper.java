@@ -24,11 +24,6 @@ import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.util.StatusPrinter;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.common.property.ArtifactorySystemProperties;
-import org.artifactory.logging.version.LoggingVersion;
-import org.artifactory.version.CompoundVersionDetails;
-
-import java.io.IOException;
 
 /**
  * @author Yoav Landman
@@ -47,32 +42,6 @@ public abstract class LogbackContextHelper {
             contextId = StringUtils.trimToEmpty(contextId);
             contextId = "artifactory".equalsIgnoreCase(contextId) ? "" : contextId + " ";
             contextId = StringUtils.isBlank(contextId) ? "" : contextId;
-
-            /**
-             * Perform the logback conversion here because if we do it after configuration is loaded, we must wait 'till
-             * the changes are detected by the watchdog (possibly missing out on important log messages)
-             */
-            boolean startedFromDifferentVersion = artifactoryHome.startedFromDifferentVersion();
-            if (startedFromDifferentVersion) {
-
-                ArtifactorySystemProperties properties = artifactoryHome.getArtifactoryProperties();
-                boolean conversionPerformed =
-                        Boolean.valueOf(properties.getProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "false"));
-
-                if (!conversionPerformed) {
-                    CompoundVersionDetails source = artifactoryHome.getOriginalVersionDetails();
-
-                    //Might be first run, protect
-                    if (source != null) {
-                        LoggingVersion.values();
-                        LoggingVersion originalVersion =
-                                source.getVersion().getSubConfigElementVersion(LoggingVersion.class);
-                        originalVersion.convert(artifactoryHome.getEtcDir());
-                        properties.setProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "true");
-                    }
-                }
-            }
-
             JoranConfigurator configurator = new JoranConfigurator();
             lc.stop();
             configurator.setContext(lc);
@@ -82,7 +51,7 @@ public abstract class LogbackContextHelper {
             lc.putProperty(ArtifactoryHome.SYS_PROP, artifactoryHome.getHomeDir().getAbsolutePath());
             configurator.doConfigure(artifactoryHome.getLogbackConfig());
             StatusPrinter.printIfErrorsOccured(lc);
-        } catch (JoranException | IOException je) {
+        } catch (JoranException je) {
             StatusPrinter.print(lc);
         }
         return lc;

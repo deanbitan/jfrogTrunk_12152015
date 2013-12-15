@@ -21,7 +21,7 @@ package org.artifactory.logging.version.v1;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Document;
+import org.jdom2.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -63,7 +63,7 @@ public class MimeTypesVersionTest {
         assertTrue(latest.contains("<mimetypes version=\"" + MimeTypesVersion.getCurrent().versionString()
                 + "\">"), "Unexpected converted string: " + latest);
 
-        // make sure the result is readable
+        //make sure the result is readable
         MimeTypes mimeTypes = new MimeTypesReader().read(latest);
         assertNotNull(mimeTypes);
     }

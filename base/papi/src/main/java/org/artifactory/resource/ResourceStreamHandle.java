@@ -18,17 +18,21 @@
 
 package org.artifactory.resource;
 
+import java.io.Closeable;
 import java.io.InputStream;
 
 /**
  * A handle object that will be used for sending back a resource as stream.
  * <p/>
- * The stream close() method is typically called back by automatically by the caller so the handle creator only needs to
+ * The stream close() method is typically called back automatically by the caller so the handle creator only needs to
  * provide the close() implementation.
  *
  * @author Yoav Landman
  */
-public interface ResourceStreamHandle extends AutoCloseable {
+public interface ResourceStreamHandle extends Closeable {
+    /**
+     * @return The input stream of this handle
+     */
     InputStream getInputStream();
 
     /**
@@ -36,5 +40,9 @@ public interface ResourceStreamHandle extends AutoCloseable {
      */
     long getSize();
 
+    /**
+     * Closes the underlying input stream
+     */
+    @Override
     void close();
 }

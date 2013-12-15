@@ -23,6 +23,7 @@ import org.apache.wicket.Page;
 import org.apache.wicket.behavior.Behavior;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.util.HttpUtils;
 
 import javax.servlet.http.Cookie;
 import java.net.MalformedURLException;
@@ -33,6 +34,22 @@ import java.net.URL;
  */
 public class RememberPageBehavior extends Behavior {
     static final String COOKIE_NAME = "art-page";
+    private final boolean keepParameters;
+
+    /**
+     * Like {@link RememberPageBehavior#RememberPageBehavior(boolean)} called with "false"
+     */
+    public RememberPageBehavior() {
+        this(false);
+    }
+
+    /**
+     * @param keepParameters if true this behavior will save the whole URL including query parameters. Otherwise only
+     *                       the base URL without the query parameters will be saved.
+     */
+    public RememberPageBehavior(boolean keepParameters) {
+        this.keepParameters = keepParameters;
+    }
 
     @Override
     public void beforeRender(Component component) {
@@ -47,6 +64,9 @@ public class RememberPageBehavior extends Behavior {
     private String getPageUrl(Page page) {
         Class<? extends Page> pageClass = page.getClass();
         String pageUrl = RequestCycle.get().urlFor(pageClass, page.getPageParameters()).toString();
+        if (!keepParameters) {
+            pageUrl = HttpUtils.stripQuery(pageUrl);
+        }
         try {
             return new URL(WicketUtils.toAbsolutePath(pageUrl)).getFile();
         } catch (MalformedURLException e) {

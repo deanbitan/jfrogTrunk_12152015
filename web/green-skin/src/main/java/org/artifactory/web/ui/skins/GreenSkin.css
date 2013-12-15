@@ -4168,6 +4168,14 @@ div.general-settings-panel input.text-file {
     background-image: url("images/buttons/toolbox-buttons/BTN-gotobuildserver-mo.gif");
 }
 
+.SetMasterAction {
+    background-image: url("images/buttons/toolbox-buttons/BTN-gotobuildserver.gif");
+}
+
+.SetMasterAction:hover, .SetMasterAction:focus {
+    background-image: url("images/buttons/toolbox-buttons/BTN-gotobuildserver-mo.gif");
+}
+
 .doc {
     background-image: url("images/icons/ICN-file.gif");
 }
@@ -5173,14 +5181,14 @@ input.autocomplete {
 }
 
 .week-password-strength {
-    background: url("images/week-password-stregth.GIF") repeat-x;
+    background: url("images/week-password-stregth.gif") repeat-x;
     position: absolute;
     z-index: 1;
     width: 100%;
 }
 
 .strong-password-strength {
-    background: url("images/strong-password-stregth.GIF") repeat-x;
+    background: url("images/strong-password-stregth.gif") repeat-x;
     position: absolute;
     z-index: 2;
 
@@ -5601,6 +5609,10 @@ table.data-table td.add-value-row {
 
 .addon-gems {
     background: url(images/addons/16gems.png) no-repeat left top;
+}
+
+.addon-ha {
+    background: url(images/addons/16ha.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/

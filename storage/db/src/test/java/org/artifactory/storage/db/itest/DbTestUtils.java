@@ -43,6 +43,7 @@ public class DbTestUtils {
      * A list of all the tables in the database
      */
     public static String[] tables = new String[]{
+            "db_properties", "artifactory_servers",
             "stats", "watches", "node_props", "node_meta_infos", "nodes",
             "indexed_archives_entries", "archive_names", "archive_paths", "indexed_archives",
             "binary_blobs", "binaries",
@@ -67,7 +68,7 @@ public class DbTestUtils {
         }
     }
 
-    private static void dropAllExistingTables(Connection con) throws SQLException {
+    public static void dropAllExistingTables(Connection con) throws SQLException {
         for (String table : tables) {
             if (tableExists(table, con)) {
                 con.createStatement().execute("DROP TABLE " + table);
@@ -81,7 +82,7 @@ public class DbTestUtils {
         }
     }
 
-    private static boolean isTableMissing(Connection con) throws SQLException, IOException {
+    public static boolean isTableMissing(Connection con) throws SQLException, IOException {
         for (String table : tables) {
             if (!tableExists(table, con)) {
                 return true;

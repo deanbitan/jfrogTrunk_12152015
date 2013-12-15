@@ -19,8 +19,12 @@
 package org.artifactory.storage.db.fs.service;
 
 import com.google.common.collect.Maps;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
+import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.factory.xstream.XStreamInfoFactory;
 import org.artifactory.fs.MutableStatsInfo;
 import org.artifactory.fs.StatsInfo;
@@ -46,6 +50,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -71,6 +76,8 @@ public class StatsServiceImpl implements InternalStatsService {
      * Stores the statistics events in memory and periodically flush to the storage
      */
     private ConcurrentMap<RepoPath, StatsEvent> statsEvents = Maps.newConcurrentMap();
+
+    private SemaphoreWrapper flushingSemaphore;
 
     @Override
     public StatsInfo getStats(RepoPath repoPath) {
@@ -163,6 +170,23 @@ public class StatsServiceImpl implements InternalStatsService {
         if (statsEvents.isEmpty()) {
             return;
         }
+        try {
+            if (!getFlushingSemaphore().tryAcquire(ConstantValues.statsFlushTimeoutSecs.getLong(), TimeUnit.SECONDS)) {
+                return;
+            }
+        } catch (InterruptedException e) {
+            log.error("Interrupted while waiting for stats flush", e);
+            return;
+        }
+
+        try {
+            doFlushStats();
+        } finally {
+            getFlushingSemaphore().release();
+        }
+    }
+
+    private void doFlushStats() {
         int sizeOnEntry = statsEvents.size();
         log.debug("Flushing {} statistics to storage", sizeOnEntry);
         Iterator<Map.Entry<RepoPath, StatsEvent>> iterator = statsEvents.entrySet().iterator();
@@ -215,7 +239,16 @@ public class StatsServiceImpl implements InternalStatsService {
         } finally {
             commitOrRollback(txStatus);
         }
-        log.debug("From {} initial. Flushed {} statistics done", sizeOnEntry, processed);
+        log.debug("Successfully flushed {} statistics from total of {}", processed, sizeOnEntry);
+    }
+
+    private SemaphoreWrapper getFlushingSemaphore() {
+        if (flushingSemaphore == null) {
+            AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+            HaCommonAddon haCommonAddon = addonsManager.addonByType(HaCommonAddon.class);
+            flushingSemaphore = haCommonAddon.getSemaphore(HaCommonAddon.STATS_SEMAPHORE_NAME);
+        }
+        return flushingSemaphore;
     }
 
     private void commitOrRollback(TransactionStatus txStatus) {
@@ -245,6 +278,7 @@ public class StatsServiceImpl implements InternalStatsService {
             log.debug("Attempting to update stats of write locked node at: {}", event.repoPath);
             return StatsSaveResult.Locked;
         }
+
         try {
             Stat stats = statsDao.getStats(nodeId);
             if (stats != null) {

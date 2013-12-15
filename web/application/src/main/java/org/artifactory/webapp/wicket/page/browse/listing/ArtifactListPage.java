@@ -18,6 +18,7 @@
 package org.artifactory.webapp.wicket.page.browse.listing;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.MarkupStream;
@@ -87,7 +88,8 @@ public class ArtifactListPage extends WebPage {
     }
 
     private void addTitle(RepoPath repoPath) {
-        final String title = String.format("Index of %s/%s", repoPath.getRepoKey(), repoPath.getPath());
+        final String title = String.format("Index of %s/%s", repoPath.getRepoKey(),
+                StringEscapeUtils.escapeXml(repoPath.getPath()));
         add(new Label("title", title));
         add(new Label("pageTitle", title));
     }
@@ -182,7 +184,7 @@ public class ArtifactListPage extends WebPage {
                     response.write("/");
                 }
                 response.write("\">");
-                response.write(name);
+                response.write(StringEscapeUtils.escapeXml(name));
                 if (item.isFolder()) {
                     response.write("/");
                 }

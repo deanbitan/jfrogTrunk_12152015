@@ -60,4 +60,10 @@ public interface ArchiveIndexer {
      * @return True if the binary file on this repo path is already indexed. False if doesn't exist of not indexed
      */
     boolean isIndexed(RepoPath repoPath);
+
+    /**
+     * @param sha1 The sha1 of the binary to check
+     * @return True if the binary file for this checksum is already indexed. False if doesn't exist of not indexed
+     */
+    boolean isIndexed(String sha1);
 }

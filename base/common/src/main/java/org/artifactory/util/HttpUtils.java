@@ -19,6 +19,7 @@
 package org.artifactory.util;
 
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
@@ -253,6 +254,21 @@ public abstract class HttpUtils {
         return encodedUri;
     }
 
+    /**
+     * Removes the query parameters from the given url
+     * @param url URL string with query parameters, e.g. "http://hello/world?lang=java&run=1"
+     * @return new string object without the query parameters, e.g. "http://hello/world". If no query elements found the
+     * original string is returned.
+     */
+    public static String stripQuery(String url) {
+        int i = url.indexOf("?");
+        if (i > -1) {
+            return url.substring(0, i);
+        } else {
+            return url;
+        }
+    }
+
     public static String adjustRefererValue(Map<String, String> headersMap, String headerVal) {
         //Append the artifactory user agent to the referer
         if (headerVal == null) {
@@ -275,5 +291,19 @@ public abstract class HttpUtils {
         }
         headerVal += "/" + HttpUtils.getArtifactoryUserAgent();
         return headerVal;
+    }
+
+    /**
+     * Extracts the content length from the response header, or return -1 if the content-length field was not found.
+     * @param method
+     * @return
+     */
+    public static long getContentLength(HttpMethod method) {
+        Header contentLengthHeader = method.getResponseHeader("Content-Length");
+        if (contentLengthHeader == null) {
+            return -1;
+        }
+        String contentLengthString = contentLengthHeader.getValue();
+        return Long.parseLong(contentLengthString);
     }
 }

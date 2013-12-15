@@ -22,7 +22,10 @@ import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.license.VerificationResult;
 import org.artifactory.api.context.ContextHelper;
+
+import static org.artifactory.addon.license.VerificationResult.*;
 
 /**
  * Artifactory license key Wicket validator.
@@ -37,8 +40,9 @@ public class LicenseKeyValidator extends StringValidator {
         licenseKey = licenseKey.trim();
         try {
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-            if (!addonsManager.isLicenseKeyValid(licenseKey)) {
-                postError(validatable, "Invalid license key.");
+            VerificationResult result = addonsManager.isLicenseKeyValid(licenseKey);
+            if (result == error || result == invalidKey || result == converting) {
+                postError(validatable, result.showMassage());
             }
         } catch (Exception e) {
             postError(validatable, e.getMessage());

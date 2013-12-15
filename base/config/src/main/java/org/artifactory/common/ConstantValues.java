@@ -30,6 +30,7 @@ public enum ConstantValues {
     test("runMode.test", FALSE), //Use and set only in specific itests - has serious performance implications
     qa("runMode.qa", FALSE),
     dev("runMode.dev", FALSE),
+    devHa("runMode.devHa", FALSE),
     artifactoryVersion("version"),
     artifactoryRevision("revision"),
     artifactoryTimestamp("timestamp"),
@@ -123,19 +124,25 @@ public enum ConstantValues {
     useUserNameAutoCompleteOnLogin("useUserNameAutoCompleteOnLogin", "on"),
     uiHideEncryptedPassword("ui.hideEncryptedPassword", FALSE),
     statsFlushIntervalSecs("stats.flushIntervalSecs", 30),
+    statsFlushTimeoutSecs("stats.flushTimeoutSecs", 120),
     integrationCleanupIntervalSecs("integrationCleanup.intervalSecs", 300),
     integrationCleanupQuietPeriodSecs("integrationCleanup.quietPeriodSecs", 60),
     folderPruningIntervalSecs("folderPruning.intervalSecs", 300),
     folderPruningQuietPeriodSecs("folderPruning.quietPeriodSecs", 60),
     defaultSaltValue("security.authentication.password.salt", "CAFEBABEEBABEFAC"),
-    dbIdGeneratorFetchAmount("db.idGenerator.fetch.amount", 1000),  // storage.properties
+    dbIdGeneratorFetchAmount("db.idGenerator.fetch.amount", 2000),
+    dbIdGeneratorMaxUpdateRetries("db.idGenerator.max.update.retries", 50),
     gemsLocalIndexTaskIntervalSecs("gems.localIndexTaskIntervalSecs", 30),
     gemsVirtualIndexTaskIntervalSecs("gems.virtualIndexTaskIntervalSecs", 300),
     gemsIndexTaskQueueLimit("gems.gemsIndexTaskQueueLimit", 20000),
     gemsAfterRepoInitHack("gems.gemsAfterRepoInitHack", true),
     securityCrowdGroupStartIndex("security.authentication.crowd.group.startIndex", 0),
     securityCrowdMaxGroupResults("security.authentication.crowd.group.maxResults", 9999),
-    uiHideChecksums("ui.hideChecksums", FALSE);
+    uiHideChecksums("ui.hideChecksums", FALSE),
+    archiveIndexerTaskIntervalSecs("archive.indexer.intervalSecs", 30),
+    /*ha*/
+    haHeartbeatIntervalSecs("ha.heartbeat.intervalSecs", 5),
+    haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

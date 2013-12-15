@@ -24,6 +24,7 @@ import org.apache.commons.io.filefilter.NameFileFilter;
 import org.apache.commons.io.filefilter.NotFileFilter;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.WebstartAddon;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.api.build.BuildService;
@@ -37,6 +38,8 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
+import org.artifactory.common.ha.HaNodeProperties;
+import org.artifactory.converters.ConverterProvider;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.logging.LoggingService;
 import org.artifactory.repo.service.ExportJob;
@@ -47,8 +50,8 @@ import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskService;
+import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.storage.binstore.service.BinaryStore;
-import org.artifactory.update.FatalConversionException;
 import org.artifactory.update.utils.BackupUtils;
 import org.artifactory.util.ZipUtils;
 import org.artifactory.version.ArtifactoryVersion;
@@ -87,18 +90,22 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     private ConcurrentHashMap<Class, Object> beansForType = new ConcurrentHashMap<>();
     private List<ReloadableBean> reloadableBeans;
     private final ArtifactoryHome artifactoryHome;
+    private final ConverterProvider converterManager;
     private final String contextId;
     private final SpringConfigPaths springConfigPaths;
     private volatile boolean ready;
     private long started;
+    private boolean offline;
 
     public ArtifactoryApplicationContext(
-            String contextId, SpringConfigPaths springConfigPaths, ArtifactoryHome artifactoryHome)
+            String contextId, SpringConfigPaths springConfigPaths, ArtifactoryHome artifactoryHome,
+            ConverterProvider converterManager)
             throws BeansException {
         super(springConfigPaths.getAllPaths(), false, null);
         this.contextId = contextId;
         this.artifactoryHome = artifactoryHome;
         this.springConfigPaths = springConfigPaths;
+        this.converterManager = converterManager;
         this.started = System.currentTimeMillis();
         refresh();
         contextCreated();
@@ -122,6 +129,31 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     @Override
     public SpringConfigPaths getConfigPaths() {
         return springConfigPaths;
+    }
+
+    @Override
+    public String getServerId() {
+        //For a cluster node take it from the cluster property, otherwise use the license hash
+        HaNodeProperties HaNodeProperties = getArtifactoryHome().getHaNodeProperties();
+        if (HaNodeProperties != null) {
+            return HaNodeProperties.getServerId();
+        }
+        return HaCommonAddon.ARTIFACTORY_PRO;
+    }
+
+    @Override
+    public boolean isOffline() {
+        return offline;
+    }
+
+    @Override
+    public void setOffline() {
+        this.offline = true;
+    }
+
+    @Override
+    public ConverterProvider getConverterManager() {
+        return converterManager;
     }
 
     @Override
@@ -172,32 +204,13 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 orderReloadableBeans(toInit, beanClass);
             }
             log.debug("Reloadable list of beans: {}", reloadableBeans);
-            boolean startedFromDifferentVersion = artifactoryHome.startedFromDifferentVersion();
             log.info("Artifactory context starting up...");
-            if (startedFromDifferentVersion) {
-                log.info("Conversion from previous version is active.");
-            }
+
+            converterManager.dbAccessReady();
             for (ReloadableBean reloadableBean : reloadableBeans) {
                 String beanIfc = getInterfaceName(reloadableBean);
                 log.info("Initializing {}", beanIfc);
-                if (startedFromDifferentVersion) {
-                    //Run any necessary conversions to bring the system up to date with the current version
-                    try {
-                        reloadableBean.convert(
-                                artifactoryHome.getOriginalVersionDetails(),
-                                artifactoryHome.getRunningVersionDetails());
-                    } catch (FatalConversionException e) {
-                        //When a fatal conversion happens fail the context loading
-                        log.error(
-                                "Conversion failed with fatal status.\n" +
-                                        "You should analyze the error and retry launching Artifactory. Error is: " +
-                                        e.getMessage());
-                        throw e;
-                    } catch (Exception e) {
-                        //When conversion fails - report and continue - don't fail
-                        log.error("Failed to run configuration conversion.", e);
-                    }
-                }
+                converterManager.serviceConvert(reloadableBean);
                 try {
                     reloadableBean.init();
                 } catch (Exception e) {
@@ -205,13 +218,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 }
                 log.debug("Initialized {}", beanIfc);
             }
-            // if we started from a different version OR from a (snapshot) version that doesn't match the running version
-            // we must save the version properties file and reload all the system properties
-            if (startedFromDifferentVersion || !artifactoryHome.getRunningVersionDetails().equals(
-                    artifactoryHome.getOriginalVersionDetails())) {
-                artifactoryHome.writeBundledArtifactoryProperties();
-                artifactoryHome.initAndLoadSystemPropertyFile();
-            }
+            converterManager.conversionEnded();
             setReady(true);
         } finally {
             ArtifactoryContextThreadBinder.unbind();
@@ -277,6 +284,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         try {
             try {
                 if (reloadableBeans != null && !reloadableBeans.isEmpty()) {
+                    // TODO[By Gidi] find better way to update the ArtifactoryStateManager on beforeDestroy event
+                    beanForType(ArtifactoryStateManager.class).beforeDestroy();
                     log.debug("Destroying beans: {}", reloadableBeans);
                     for (int i = reloadableBeans.size() - 1; i >= 0; i--) {
                         ReloadableBean bean = reloadableBeans.get(i);
@@ -559,6 +568,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             if (status.isError() && settings.isFailFast()) {
                 return;
             }
+            exportHaEtcDirectory(exportSettings);
+            if (status.isError() && settings.isFailFast()) {
+                return;
+            }
 
             // build info
             exportBuildInfo(exportSettings);
@@ -656,7 +669,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     private void exportArtifactoryProperties(ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        File artifactoryPropFile = artifactoryHome.getArtifactoryPropertiesFile();
+        File artifactoryPropFile = artifactoryHome.getHomeArtifactoryPropertiesFile();
         if (artifactoryPropFile.exists()) {
             try {
                 FileUtils.copyFileToDirectory(artifactoryPropFile, settings.getBaseDir());
@@ -676,6 +689,19 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         } catch (IOException e) {
             settings.getStatusHolder().error(
                     "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);
+        }
+    }
+
+    private void exportHaEtcDirectory(ExportSettings settings) {
+        if (artifactoryHome.isHaConfigured()) {
+            try {
+                File targetBackupDir = new File(settings.getBaseDir(), "ha-etc");
+                FileUtils.copyDirectory(artifactoryHome.getHaAwareEtcDir(), targetBackupDir,
+                        new NotFileFilter(new NameFileFilter("artifactory.lic")));
+            } catch (IOException e) {
+                settings.getStatusHolder().error(
+                        "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);
+            }
         }
     }
 
@@ -704,19 +730,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 settings.getStatusHolder().error(
                         "Failed to import ui directory: " + importEtcDir.getAbsolutePath(), e, log);
             }
-        }
-
-        // copy and re-initialize the mime types mapping
-        File mimeTypesFile = new File(importEtcDir, ArtifactoryHome.MIME_TYPES_FILE_NAME);
-        if (mimeTypesFile.exists()) {
-            try {
-                FileUtils.copyFileToDirectory(mimeTypesFile, artifactoryHome.getEtcDir());
-                artifactoryHome.initAndLoadMimeTypes();
-            } catch (IOException e) {
-                settings.getStatusHolder().error(
-                        "Failed to import mime types: " + importEtcDir.getAbsolutePath(), e, log);
-            }
-
         }
     }
 

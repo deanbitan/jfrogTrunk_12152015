@@ -106,7 +106,8 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         BinaryProviderType binaryProviderName = storageProperties.getBinariesStorageType();
         switch (binaryProviderName) {
             case filesystem:
-                fileBinaryProvider = new FileBinaryProviderImpl(ArtifactoryHome.get().getDataDir(), storageProperties);
+                fileBinaryProvider = new FileBinaryProviderImpl(ArtifactoryHome.get().getHaAwareDataDir(),
+                        storageProperties);
                 binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
                 break;
             case cachedFS:
@@ -121,7 +122,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 break;
             case fullDb:
                 if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {
-                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getDataDir(),
+                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getHaAwareDataDir(),
                             storageProperties);
                     binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
                 }

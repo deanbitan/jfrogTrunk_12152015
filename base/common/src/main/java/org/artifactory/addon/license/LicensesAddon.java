@@ -57,4 +57,6 @@ public interface LicensesAddon extends Addon {
     void exportLicenses(ExportSettings exportSettings);
 
     List findLicensesInRepos(List<String> repoKeys, LicenseStatus status);
+
+    void reloadLicensesCache();
 }

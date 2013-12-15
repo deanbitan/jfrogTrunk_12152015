@@ -98,7 +98,7 @@ public class StorageServiceImpl implements InternalStorageService {
         StringBuilder sb = new StringBuilder();
         sb.append("\n-----Derby storage sizes-----\n");
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File dataDir = artifactoryHome.getDataDir();
+        File dataDir = artifactoryHome.getHaAwareDataDir();
         // print the size of derby directories (derby is the new name, db and store for old installations)
         File[] dirs = {new File(dataDir, "derby"), new File(dataDir, "db"), binaryStore.getBinariesDir()};
         for (File dir : dirs) {
@@ -154,7 +154,7 @@ public class StorageServiceImpl implements InternalStorageService {
 
     private String execOneGcAndWait(boolean waitForCompletion) {
         TaskBase task = TaskUtils.createManualTask(BinaryStoreGarbageCollectorJob.class, 0L);
-        String token = taskService.startTask(task, true);
+        String token = taskService.startTask(task, true, true);
         if (waitForCompletion) {
             taskService.waitForTaskCompletion(token);
         }

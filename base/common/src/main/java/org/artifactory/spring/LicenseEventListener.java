@@ -18,12 +18,17 @@
 
 package org.artifactory.spring;
 
+import java.io.IOException;
+
 /**
  * Marks recipients of license installation events
- *
- * @author Natan Schochet
  */
 public interface LicenseEventListener {
+
+    /**
+     * Called when a new license is installed (not applicable to reloads on import and startup)
+     */
+    void verifyLicense(String licenseKeyHash) throws IOException;
 
     /**
      * Called when a new license is installed (not applicable to reloads on import and startup)

@@ -20,7 +20,7 @@ package org.artifactory.version;
 
 import org.artifactory.util.XmlUtils;
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Document;
+import org.jdom2.Document;
 
 import java.util.List;
 

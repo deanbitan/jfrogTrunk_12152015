@@ -151,7 +151,8 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
         statusHolder.status("Starting deleting non used files in " + first.getAbsolutePath() + "!", log);
         File[] files = first.listFiles();
         if (files == null) {
-            statusHolder.status("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
+            statusHolder.status("Nothing to do in " + first.getAbsolutePath() + ": "
+                    + Files.readFailReason(first), log);
             return;
         }
         for (File file : files) {

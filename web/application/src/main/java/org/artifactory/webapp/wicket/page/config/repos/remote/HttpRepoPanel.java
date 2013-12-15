@@ -224,7 +224,7 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                         .getClient();
                 try {
                     int status = client.executeMethod(testMethod);
-                    if (status != HttpStatus.SC_OK) {
+                    if (!(status == HttpStatus.SC_OK || status == HttpStatus.SC_NO_CONTENT)) {
                         String reason = testMethod.getStatusText();
                         error("Connection failed: Error " + status + ": " + reason);
                     } else {

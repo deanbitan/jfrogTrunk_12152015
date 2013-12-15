@@ -33,6 +33,11 @@ public abstract class ExpiringDelayed implements Delayed {
 
     private final long expiry;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param expiry In milliseconds
+     */
     public ExpiringDelayed(long expiry) {
         this.expiry = expiry;
         if (log.isTraceEnabled()) {
@@ -42,16 +47,14 @@ public abstract class ExpiringDelayed implements Delayed {
     }
 
     /**
-     * Return the subject/entry/actual value that this delay is wrapping
-     *
-     * @return
+     * @return The subject/entry/actual value that this delay is wrapping
      */
     public abstract String getSubject();
 
     @Override
     public final long getDelay(TimeUnit unit) {
-        long delta = expiry - System.currentTimeMillis();
-        long delay = unit.convert(delta < 0 ? 0 : delta, TimeUnit.MILLISECONDS);
+        long millisToExpiry = expiry - System.currentTimeMillis();
+        long delay = unit.convert(millisToExpiry < 0 ? 0 : millisToExpiry, TimeUnit.MILLISECONDS);
         return delay;
     }
 

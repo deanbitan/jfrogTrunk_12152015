@@ -18,7 +18,7 @@
 
 package org.artifactory.webapp.servlet;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -88,8 +88,8 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
                         .getArtifactoryProperties();
         ConstantValues idleTimeSecs = ConstantValues.securityAuthenticationCacheIdleTimeSecs;
         Long cacheIdleSecs = properties.getLongProperty(idleTimeSecs.getPropertyName(), idleTimeSecs.getDefValue());
-        nonUiAuthCache = new MapMaker().softValues().initialCapacity(100).expireAfterWrite(cacheIdleSecs,
-                TimeUnit.SECONDS).makeMap();
+        nonUiAuthCache = CacheBuilder.newBuilder().softValues().initialCapacity(100).expireAfterWrite(cacheIdleSecs,
+                TimeUnit.SECONDS).<AuthCacheKey, Authentication>build().asMap();
         SecurityService securityService = context.beanForType(SecurityService.class);
         securityService.addListener(this);
     }

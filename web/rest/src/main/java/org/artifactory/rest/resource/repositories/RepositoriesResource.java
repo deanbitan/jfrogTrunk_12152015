@@ -168,8 +168,6 @@ public class RepositoriesResource {
     String repoType) throws Exception {
         return getRepoDetailsList(repoType);
     }
-
-
     @DELETE
     @Produces(MediaType.TEXT_PLAIN)
     @Path("{repoKey: .+}")

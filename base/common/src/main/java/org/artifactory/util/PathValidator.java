@@ -102,8 +102,6 @@ public abstract class PathValidator {
                 case '*':
                 case '?':
                 case '"':
-                case '<':
-                case '>':
                     throw new InvalidPathException(path, "Invalid path. '" + c + "' is not a valid name character");
 
                 default:

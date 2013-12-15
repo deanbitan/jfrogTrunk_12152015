@@ -72,7 +72,6 @@ import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.storage.fs.VfsItemFactory;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
-import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.servlet.DelayedHttpResponse;
@@ -449,7 +448,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void sendInvalidUploadedChecksumResponse(ArtifactoryRequest request, ArtifactoryResponse response,
             VfsFile vfsFile, String errorMessage) throws IOException {
         VfsItemFactory repo = repoService.localOrCachedRepositoryByKey(vfsFile.getRepoKey());
-        ChecksumPolicy checksumPolicy = repo.getChecksumPolicy();
+        ChecksumPolicy checksumPolicy = repo != null ? repo.getChecksumPolicy() : null;
         if (checksumPolicy instanceof LocalRepoChecksumPolicy &&
                 ((LocalRepoChecksumPolicy) checksumPolicy).getPolicyType().equals(SERVER)) {
             log.debug(errorMessage);
@@ -615,8 +614,7 @@ public class UploadServiceImpl implements InternalUploadService {
                 response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
                 return;
             }
-
-            indexJarIfNeeded(request, repoPath);
+            indexArchiveIfNeeded(request, repoPath, resource.getInfo().getSha1());
             sendSuccessfulResponse(request, response, repoPath, false);
         } catch (BadPomException bpe) {
             response.sendError(HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
@@ -714,17 +712,20 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
-    private void indexJarIfNeeded(ArtifactoryRequest request, RepoPath repoPath) {
+    private void indexArchiveIfNeeded(ArtifactoryRequest request, RepoPath repoPath, String sha1) {
         //Async index the uploaded file if needed
         MimeType ct = NamingUtils.getMimeType(repoPath.getPath());
-        boolean indexJar = ct.isArchive() && ct.isIndex();
+        boolean indexArchive = ct.isArchive() && ct.isIndex();
         // internal request can flag not to index (to allow manual control)
-        if (indexJar && request instanceof InternalArtifactoryRequest) {
-            indexJar = !((InternalArtifactoryRequest) request).isSkipJarIndexing();
+        if (indexArchive && request instanceof InternalArtifactoryRequest) {
+            indexArchive = !((InternalArtifactoryRequest) request).isSkipJarIndexing();
         }
-
-        if (indexJar) {
+        if (indexArchive) {
+            // TODO: Find a way to activate this. generates big waste of queue energy in the indexer!
+            // Check if the checksum is already indexed
+            //if (!archiveIndexer.isIndexed(sha1)) {
             archiveIndexer.asyncIndex(repoPath);
+            //}
         }
     }
 
@@ -737,9 +738,9 @@ public class UploadServiceImpl implements InternalUploadService {
 
         Properties properties = request.getProperties();
         if (properties != null) {
-            Set<String> timestamps = properties.get("build.timestamp");
-            if (CollectionUtils.notNullOrEmpty(timestamps)) {
-                context.setTimestamp(timestamps.iterator().next());
+            String timestamp = properties.getFirst("build.timestamp");
+            if (StringUtils.isNotBlank(timestamp)) {
+                context.setTimestamp(timestamp);
             }
         }
         String adjustedPath = adapter.adaptSnapshotPath(context);

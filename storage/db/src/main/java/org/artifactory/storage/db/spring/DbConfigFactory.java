@@ -55,7 +55,6 @@ import java.sql.Connection;
 public class DbConfigFactory implements BeanFactoryAware {
     private static final Logger log = LoggerFactory.getLogger(DbConfigFactory.class);
 
-    public static final String STORAGE_PROPS_FILE_NAME = "storage.properties";
     public static final String BEAN_PREFIX = "bean:";
     public static final String JNDI_PREFIX = "jndi:";
 
@@ -129,8 +128,12 @@ public class DbConfigFactory implements BeanFactoryAware {
         // TODO: [by YS] read the database used to start artifactory from artifactory.properties.
         // should fail if it used to be non derby and the storage.properties is not found
 
-        File storagePropsFile = new File(artifactoryHome.getEtcDir().getAbsoluteFile(), "/" + STORAGE_PROPS_FILE_NAME);
+        File storagePropsFile = artifactoryHome.getStoragePropertiesFile();
         if (!storagePropsFile.exists()) {
+            if (artifactoryHome.isHaConfigured()) {
+                throw new IllegalStateException("Artifactory could not start in HA mode because storage.properties " +
+                        "could not be found.");
+            }
             copyDefaultDerbyConfig(storagePropsFile);
         }
 
@@ -142,7 +145,7 @@ public class DbConfigFactory implements BeanFactoryAware {
             System.setProperty("derby.stream.error.file",
                     new File(artifactoryHome.getLogDir(), "derby.log").getAbsolutePath());
             String url = storageProps.getConnectionUrl();
-            String dataDir = FilenameUtils.separatorsToUnix(artifactoryHome.getDataDir().getAbsolutePath());
+            String dataDir = FilenameUtils.separatorsToUnix(artifactoryHome.getHaAwareDataDir().getAbsolutePath());
             url = url.replace("{db.home}", dataDir + "/derby");
             storageProps.setConnectionUrl(url);
         }

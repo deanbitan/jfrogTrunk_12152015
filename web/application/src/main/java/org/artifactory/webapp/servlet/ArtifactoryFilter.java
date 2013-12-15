@@ -19,8 +19,12 @@
 package org.artifactory.webapp.servlet;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.util.HttpUtils;
@@ -67,7 +71,14 @@ public class ArtifactoryFilter implements Filter {
                 }
 
                 // set the Artifactory instance id header
-                httpResponse.setHeader(ArtifactoryResponse.ARTIFACTORY_ID, HttpUtils.getHostId());
+                String hostId = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
+                        HaCommonAddon.class).getHostId();
+                httpResponse.setHeader(ArtifactoryResponse.ARTIFACTORY_ID, hostId);
+
+                String serverId = ContextHelper.get().getServerId();
+                if (StringUtils.isNotBlank(serverId) && !HaCommonAddon.ARTIFACTORY_PRO.equals(serverId)) {
+                    httpResponse.setHeader(HaCommonAddon.ARTIFACTORY_NODE_ID, serverId);
+                }
             }
             chain.doFilter(request, response);
         } finally {

@@ -339,6 +339,10 @@ public abstract class TaskBase implements Task {
         if (!isSingleExecution()) {
             throw new UnsupportedOperationException("Does not support waitForCompletion on cyclic tasks.");
         }
+        if (!isRunning()) {
+            // The task may have already complete
+            return true;
+        }
         boolean completed = false;
         lockState();
         try {

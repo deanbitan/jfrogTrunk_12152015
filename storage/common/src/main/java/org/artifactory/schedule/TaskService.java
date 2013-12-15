@@ -41,6 +41,17 @@ public interface TaskService extends ReloadableBean {
     String startTask(TaskBase task, boolean waitForRunning);
 
     /**
+     * Starts a task and returns its token
+     *
+     * @param task
+     * @param waitForRunning
+     * @param propagateToMaster propagate to master on HA environment when job is
+     *                          configured to {@link JobCommand#runOnlyOnPrimary()} and current member is not the master
+     * @return the token of this task
+     */
+    String startTask(TaskBase task, boolean waitForRunning, boolean propagateToMaster);
+
+    /**
      * Cancels and stops the task
      *
      * @param token The task token

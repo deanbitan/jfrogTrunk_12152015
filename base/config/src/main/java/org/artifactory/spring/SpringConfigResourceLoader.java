@@ -94,6 +94,12 @@ public abstract class SpringConfigResourceLoader {
             log.info("{}={}", ConstantValues.disabledAddons.getPropertyName(), disabledAddons);
         }
 
+        // disable HA addon when HA is not configured
+        if (!ArtifactoryHome.get().isHaConfigured() && !disabledAddons.contains("ha")) {
+            disabledAddons.add("ha");
+            log.debug("Disabling HA addon because environment is not configured properly");
+        }
+
         try {
             Enumeration<URL> addonsPropsUrls =
                     Thread.currentThread().getContextClassLoader().getResources("META-INF/addon.properties");

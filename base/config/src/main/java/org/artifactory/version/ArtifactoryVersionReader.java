@@ -54,18 +54,27 @@ public class ArtifactoryVersionReader {
         String revisionString = props.getProperty(ConstantValues.artifactoryRevision.getPropertyName());
         String timestampString = props.getProperty(ConstantValues.artifactoryTimestamp.getPropertyName());
 
+        return getCompoundVersionDetails(versionString, revisionString, timestampString);
+    }
+
+    public static CompoundVersionDetails getCompoundVersionDetails(String versionString, String revisionString,
+            String timestampString) {
         ArtifactoryVersion matchedVersion = null;
         // If current version or development version=${project.version.prop} or revision=${buildNumber}
         if (ArtifactoryVersion.getCurrent().getValue().equals(versionString) ||
                 versionString.startsWith("${") ||
                 versionString.endsWith("-SNAPSHOT") ||
                 revisionString.startsWith("${")) {
-            timestampString = System.currentTimeMillis() + "";
             // Just return the current version
             matchedVersion = ArtifactoryVersion.getCurrent();
         }
 
-        long timestamp = timestampString != null ? Long.parseLong(timestampString) : 0;
+        long timestamp;
+        try {
+            timestamp = Long.parseLong(timestampString);
+        } catch (Exception e) {
+            timestamp = 0;
+        }
 
         if (matchedVersion == null) {
             matchedVersion = findByVersionString(versionString, revisionString);

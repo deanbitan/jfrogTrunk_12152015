@@ -246,7 +246,11 @@ public abstract class BaseRepoPathMover {
         copyVfsFile(sourceFile, targetFile);
         LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(sourceFile.getRepoKey());
         MutableVfsFile mutableSourceFile = localRepo.getMutableFile(sourceFile.getRepoPath());
-        mutableSourceFile.delete();
+        if (mutableSourceFile != null) {
+            mutableSourceFile.delete();
+        } else {
+            log.error("About to delete {} but it is null", sourceFile.getRepoPath());
+        }
     }
 
     protected void assertNotDryRun() {

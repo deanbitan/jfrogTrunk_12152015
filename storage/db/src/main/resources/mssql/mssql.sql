@@ -120,7 +120,7 @@ CREATE INDEX indexed_entries_name_idx ON indexed_archives_entries (entry_name_id
 CREATE TABLE tasks (
   task_type    VARCHAR(32)   NOT NULL,
   task_context VARCHAR(1024) NOT NULL
-  -- CONSTRAINT pk_tasks PRIMARY KEY (task_type, task_context)
+-- CONSTRAINT pk_tasks PRIMARY KEY (task_type, task_context)
 );
 CREATE INDEX tasks_type_context_idx ON tasks (task_type, task_context);
 
@@ -304,3 +304,27 @@ CREATE TABLE module_props (
 CREATE INDEX module_props_module_id_idx ON module_props (module_id);
 CREATE INDEX module_props_prop_key_idx ON module_props (prop_key);
 CREATE INDEX module_props_prop_value_idx ON module_props (prop_value);
+
+CREATE TABLE db_properties (
+  installation_date    BIGINT      NOT NULL,
+  artifactory_version  VARCHAR(30) NOT NULL,
+  artifactory_revision INT,
+  artifactory_release  BIGINT,
+  CONSTRAINT db_properties_pk PRIMARY KEY (installation_date)
+);
+
+CREATE TABLE artifactory_servers (
+  server_id                VARCHAR(41) NOT NULL,
+  start_time               BIGINT      NOT NULL,
+  context_url              VARCHAR(255),
+  membership_port          INT,
+  server_state             VARCHAR(12) NOT NULL,
+  server_role              VARCHAR(12) NOT NULL,
+  last_heartbeat           BIGINT      NOT NULL,
+  artifactory_version      VARCHAR(30) NOT NULL,
+  artifactory_revision     INT,
+  artifactory_release      BIGINT,
+  artifactory_running_mode VARCHAR(12) NOT NULL,
+  license_hash             VARCHAR(41) NOT NULL,
+  CONSTRAINT artifactory_servers_pk PRIMARY KEY (server_id)
+);

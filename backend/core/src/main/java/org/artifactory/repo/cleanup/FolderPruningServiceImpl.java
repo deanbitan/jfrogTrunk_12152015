@@ -102,9 +102,17 @@ public class FolderPruningServiceImpl implements InternalFolderPruningService {
         try {
             CandidatePruningFolder queuedFolderRepoPath;
             while ((queuedFolderRepoPath = foldersToPrune.peek()) != null) {
-                if ((System.currentTimeMillis() - queuedFolderRepoPath.insertTime) <=
-                        TimeUnit.SECONDS.toMillis(ConstantValues.folderPruningQuietPeriodSecs.getLong())) {
-                    // In the quiet period let's wait for next run
+                long timeSinceRequest = System.currentTimeMillis() - queuedFolderRepoPath.insertTime;
+                long quietPeriod = TimeUnit.SECONDS.toMillis(ConstantValues.folderPruningQuietPeriodSecs.getLong());
+                long delta = quietPeriod - timeSinceRequest;
+                if (delta > 0) {
+                    // In the quiet period let's wait for better time
+                    if (delta < quietPeriod / 2L) {
+                        // Let's just wait here
+                        Thread.sleep(delta);
+                        continue;
+                    }
+                    // Wait for next execution
                     break;
                 }
                 queuedFolderRepoPath = foldersToPrune.poll();
@@ -113,6 +121,8 @@ public class FolderPruningServiceImpl implements InternalFolderPruningService {
                 }
                 doPruneSingleRepoPath(queuedFolderRepoPath.folderPath);
             }
+        } catch (InterruptedException e) {
+            log.error("Got interrupted waiting for quiet period", e);
         } finally {
             pruneSemaphore.release();
         }

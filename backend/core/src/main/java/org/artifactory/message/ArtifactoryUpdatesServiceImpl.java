@@ -20,7 +20,7 @@ package org.artifactory.message;
 
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.httpclient.HttpClient;
@@ -56,9 +56,9 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
     private CentralConfigService centralConfigService;
 
     private Map<String, Message> cache =
-            new MapMaker().initialCapacity(1).
+            CacheBuilder.newBuilder().initialCapacity(1).
                     expireAfterWrite(ConstantValues.artifactoryUpdatesRefreshIntervalSecs.getLong(),
-                            TimeUnit.SECONDS).makeMap();
+                            TimeUnit.SECONDS).<String, Message>build().asMap();
 
     @Override
     public void fetchMessage() {

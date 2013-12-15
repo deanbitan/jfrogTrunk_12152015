@@ -109,14 +109,14 @@ public class FileServiceSpecialCharsTest extends DbBaseTest {
         createFolder("msv/msv/../msv-20020414");
     }
 
-    @Test(expectedExceptions = InvalidPathException.class)
-    public void illegalCarretLeft() {
+    @Test
+    public void validCarretLeft() {
         createFile("javacvs/javacvs/javacvs-at<lassian-20080407.jar.sha1");
         createFolder("msv/msv/msv-<20020414");
     }
 
-    @Test(expectedExceptions = InvalidPathException.class)
-    public void illegalCarretRight() {
+    @Test
+    public void validCarretRight() {
         createFile("edu/ucar/netcdf/>4.2-min");
         createFolder("edu/ucar/netcdf4>.2-min");
     }

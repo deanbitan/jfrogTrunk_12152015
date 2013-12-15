@@ -71,9 +71,13 @@ public class ArtifactoryRestServlet extends ServletContainer implements DelayedI
     @Override
     protected void initiate(ResourceConfig rc, WebApplication wa) {
         try {
-            ArtifactoryContext artifactoryContext =
-                    (ArtifactoryContext) getServletContext().getAttribute(
-                            ArtifactoryContext.APPLICATION_CONTEXT_KEY);
+            //Register the OfflineRestFilter
+            String filters = (String) rc.getProperties().get(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS);
+            rc.getProperties().put(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS,
+                    filters + ",org.artifactory.rest.filter.OfflineRestFilter");
+            //Register spring as component provider
+            ArtifactoryContext artifactoryContext = (ArtifactoryContext) getServletContext().getAttribute(
+                    ArtifactoryContext.APPLICATION_CONTEXT_KEY);
             SpringComponentProviderFactory springComponentProviderFactory =
                     new SpringComponentProviderFactory(rc, (ConfigurableApplicationContext) artifactoryContext);
             wa.initiate(rc, springComponentProviderFactory);

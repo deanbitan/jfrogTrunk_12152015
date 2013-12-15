@@ -21,6 +21,10 @@ package org.artifactory.schedule;
 import ch.qos.logback.classic.Level;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddonsImpl;
+import org.artifactory.addon.OssAddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
@@ -73,6 +77,7 @@ public class TaskServiceTestBase extends ArtifactoryHomeBoundTest {
         InternalArtifactoryContext context = MockUtils.getThreadBoundedMockContext();
 
         EasyMock.expect(context.getArtifactoryHome()).andReturn(getOrCreateArtifactoryHomeStub()).anyTimes();
+        EasyMock.expect(context.isOffline()).andReturn(false).anyTimes();
         //Create a config mock
         CentralConfigService cc = EasyMock.createMock(CentralConfigService.class);
         EasyMock.expect(context.getCentralConfig()).andReturn(cc).anyTimes();
@@ -93,13 +98,20 @@ public class TaskServiceTestBase extends ArtifactoryHomeBoundTest {
         taskService.onContextReady();
         EasyMock.expect(context.getTaskService()).andReturn(taskService).anyTimes();
 
+        AddonsManager addonsManager = new OssAddonsManager();
+        TestUtils.setField(addonsManager, "context", context);
+        EasyMock.expect(context.beanForType(AddonsManager.class)).andReturn(addonsManager).anyTimes();
+        TestUtils.setField(taskService, "addonsManager", addonsManager);
+        CoreAddonsImpl coreAddons = new CoreAddonsImpl();
+        EasyMock.expect(context.beanForType(HaCommonAddon.class)).andReturn(coreAddons).anyTimes();
+
         //Put the scheduler into the context
         try {
             super.bindArtifactoryHome();
             ArtifactorySchedulerFactoryBean schedulerFactory = new ArtifactorySchedulerFactoryBean();
             schedulerFactory.setTaskExecutor(new CachedThreadPoolTaskExecutor());
             schedulerFactory.afterPropertiesSet();
-            Scheduler scheduler = (Scheduler) schedulerFactory.getObject();
+            Scheduler scheduler = schedulerFactory.getObject();
             EasyMock.expect(context.beanForType(Scheduler.class)).andReturn(scheduler).anyTimes();
             schedulerFactory.setApplicationContext(context);
 

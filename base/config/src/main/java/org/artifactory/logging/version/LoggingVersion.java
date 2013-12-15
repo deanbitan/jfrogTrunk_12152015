@@ -40,8 +40,8 @@ import java.util.List;
  * @author Noam Y. Tenne
  */
 public enum LoggingVersion implements SubConfigElementVersion {
-    v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v301, new LogbackConfigSwapper()),
-    v2(ArtifactoryVersion.v302, ArtifactoryVersion.getCurrent(), null);
+    v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v304, new LogbackConfigSwapper()),
+    v2(ArtifactoryVersion.v310, ArtifactoryVersion.getCurrent(), null);
 
     public static final String LOGGING_CONVERSION_PERFORMED = "loggingConversionPerformed";
 
@@ -59,7 +59,8 @@ public enum LoggingVersion implements SubConfigElementVersion {
      */
     LoggingVersion(ArtifactoryVersion from, ArtifactoryVersion until, XmlConverter xmlConverter) {
         this.xmlConverter = xmlConverter;
-        this.comparator = new VersionComparator(this, from, until);
+        this.comparator = new VersionComparator(from, until);
+        ArtifactoryVersion.addSubConfigElementVersion(this, comparator);
     }
 
     /**
@@ -67,7 +68,7 @@ public enum LoggingVersion implements SubConfigElementVersion {
      *
      * @param srcEtcDir the directory in which resides the logback file to convert
      */
-    public void convert(File srcEtcDir) throws IOException {
+    public void convert(File srcEtcDir, File targetEtcDir) throws IOException {
         // First create the list of converters to apply
         List<XmlConverter> converters = new ArrayList<>();
 
@@ -84,7 +85,7 @@ public enum LoggingVersion implements SubConfigElementVersion {
             try {
                 String result =
                         XmlConverterUtils.convert(converters, FileUtils.readFileToString(logbackConfigFile, "utf-8"));
-                backupAndSaveLogback(result, srcEtcDir);
+                backupAndSaveLogback(result, targetEtcDir);
             } catch (IOException e) {
                 log.error("Error occurred while converting logback config for conversion: {}.", e.getMessage());
                 log.debug("Error occurred while converting logback config for conversion", e);
@@ -115,5 +116,22 @@ public enum LoggingVersion implements SubConfigElementVersion {
         }
 
         FileUtils.writeStringToFile(logbackConfigFile, result, "utf-8");
+    }
+
+    public static void convert(ArtifactoryVersion from, ArtifactoryVersion target, File fromFile, File targetFile)
+            throws IOException {
+        boolean foundConversion = false;
+        // All converters of versions above me needs to be executed in sequence
+        LoggingVersion[] versions = LoggingVersion.values();
+        for (LoggingVersion version : versions) {
+            if (version.comparator.isAfter(from) && !version.comparator.supports(from)) {
+                version.convert(fromFile, targetFile);
+
+            }
+        }
+        // Write to log only if conversion has been executed
+        if (foundConversion) {
+            log.info("Ending database conversion from " + from + " to " + target);
+        }
     }
 }

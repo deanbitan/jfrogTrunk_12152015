@@ -36,6 +36,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
     private static final Logger log = LoggerFactory.getLogger(BrowseRepoPage.class);
@@ -114,7 +116,13 @@ public class BrowseRepoPage extends AuthenticatedPage implements Serializable {
         }
         String repoPathId = InternalRepoPathFactory.create(repoItem.getRepo().getKey(), artifactPath).getId();
 
-        String encodedPathId = HttpUtils.encodeQuery(repoPathId);
+        String encodedPathId = null;
+        try {
+            encodedPathId = URLEncoder.encode(repoPathId, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // NO-OP - we should never encounter an error, but still...
+            throw new RuntimeException("UTF-8 encoding not supported?", e);
+        }
 
         //Using request parameters instead of wicket's page parameters. See RTFACT-2843
         urlBuilder.append(WicketUtils.absoluteMountPathForPage(BrowseRepoPage.class)).append("?").

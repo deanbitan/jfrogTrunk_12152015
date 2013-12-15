@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -163,7 +164,7 @@ public abstract class Files {
 
         File[] files = directory.listFiles();
         if (files == null) {  // null if security restricted
-            log.warn("Failed to list contents of {}", directory);
+            log.warn("Failed to list contents of {}: {}", directory, readFailReason(directory));
             return;
         }
 
@@ -289,6 +290,25 @@ public abstract class Files {
             throw e;
         }
         return file.length();
+    }
+
+    /**
+     * Tries to determine why the file could not be read.
+     * NOTICE: This method doesn't determine whether the file is accessible or not, just provides pretty reason string
+     * @param file to test
+     * @return A string describing why the file cannot be read.
+     */
+    public static String readFailReason(File file) {
+        Path asPath = file.toPath();
+
+        if (!java.nio.file.Files.notExists(asPath)) {
+            return "File not found";
+        } else if (!java.nio.file.Files.isReadable(asPath)) {
+            return "Access denied";
+        } else {
+            return "Unknown error";
+        }
+
     }
 
     public static long nextLong(long n) {

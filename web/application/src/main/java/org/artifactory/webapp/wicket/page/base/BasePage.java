@@ -36,12 +36,14 @@ import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.AddonsWebManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
 import org.artifactory.api.storage.StorageService;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -54,8 +56,11 @@ import org.artifactory.common.wicket.component.panel.feedback.aggregated.Aggrega
 import org.artifactory.common.wicket.component.panel.sidemenu.MenuPanel;
 import org.artifactory.common.wicket.resources.domutils.CommonJsPackage;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.storage.db.servers.model.ArtifactoryServer;
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
 import org.artifactory.web.ui.skins.GreenSkin;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
+import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.slf4j.Logger;
@@ -78,6 +83,9 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
     @SpringBean
     private AddonsWebManager addonsWebManager;
+
+    @SpringBean
+    private CentralConfigService centralConfigService;
 
     private ModalHandler modalHandler;
 
@@ -236,6 +244,22 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         return "Logged In as";
     }
 
+    private String getUrlBaseNotConfiguredFooterMessage() {
+        //base url is configured footer message
+        try {
+            if (ArtifactoryHome.get().isHaConfigured()) {
+                String urlBase = centralConfigService.getDescriptor().getUrlBase();
+                if (StringUtils.isBlank(urlBase)) {
+                    //using internal link into Artifactory would not work in that case, because it is based on url base...
+                    return "Custom URL Base is not properly configured. Please check the configuration in " +
+                            "Admin -> Configuration -> General.";
+                }
+            }
+        } catch (Exception e) {
+            log.error("Could not verify base url", e);
+        }
+        return "";
+    }
 
     private boolean isSignedInOrAnonymous() {
         return (ArtifactoryWebSession.get().isSignedIn() && !authorizationService.isAnonymous()) ||
@@ -256,6 +280,9 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         @SpringBean
         private AddonsManager addons;
 
+        @SpringBean
+        private ArtifactoryServersCommonService serversService;
+
         public FooterLabel(String id) {
             super(id, "");
             setOutputMarkupId(true);
@@ -263,13 +290,26 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
         @Override
         protected void onBeforeRender() {
-            String footer = centralConfig.getDescriptor().getFooter();
+            String footerText = centralConfig.getDescriptor().getFooter();
+            String footer = StringUtils.stripToEmpty(footerText) + getNodeId();
             setDefaultModelObject(footer);
             super.onBeforeRender();
         }
+
+        private String getNodeId() {
+            if (authorizationService.isAnonymous() || !addons.addonByType(HaCommonAddon.class).isHaEnabled()) {
+                return "";
+            }
+            ArtifactoryServer currentMember = serversService.getCurrentMember();
+            if (currentMember != null) {
+                return " Node: " + currentMember.getServerId();
+            } else {
+                return " Node ID Not Found";
+            }
+        }
     }
 
-    private static class LicenseFooterLabel extends Label implements IHeaderContributor {
+    private class LicenseFooterLabel extends Label implements IHeaderContributor {
         @SpringBean
         private AuthorizationService authorizationService;
 
@@ -287,6 +327,10 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             String message = null;
             if (authorizationService.isAdmin() || isTrial()) {
                 message = addonsWebManager.getLicenseFooterMessage();
+                if (StringUtils.isEmpty(message)) {
+                    message = getUrlBaseNotConfiguredFooterMessage();
+
+                }
                 setDefaultModelObject(message);
             }
             setVisible(StringUtils.isNotEmpty(message));

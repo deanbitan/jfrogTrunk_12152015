@@ -109,7 +109,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         if (!statusHolder.isError()) {
             try {
                 TaskBase task = TaskUtils.createManualTask(ArtifactCleanupJob.class, 0L);
-                return taskService.startTask(task, true);
+                return taskService.startTask(task, true, true);
             } catch (Exception e) {
                 statusHolder.error("Error scheduling manual artifact cleanup", e, log);
             }
@@ -164,7 +164,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
         @Override
         public void activate(@Nonnull CleanupConfigDescriptor descriptor, boolean manual) {
             TaskBase cleanupTask = TaskUtils.createCronTask(ArtifactCleanupJob.class, descriptor.getCronExp());
-            InternalContextHelper.get().getTaskService().startTask(cleanupTask, manual);
+            InternalContextHelper.get().getTaskService().startTask(cleanupTask, manual, manual);
         }
 
         @Override

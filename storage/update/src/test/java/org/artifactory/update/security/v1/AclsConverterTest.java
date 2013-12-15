@@ -20,8 +20,8 @@ package org.artifactory.update.security.v1;
 
 import org.artifactory.update.security.v2.SimpleUserConverterTest;
 import org.artifactory.util.XmlUtils;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -50,10 +50,10 @@ public class AclsConverterTest extends SimpleUserConverterTest {
         assertNull(root.getChild("repoPaths"), "repoPaths element should be removed");
 
         Element aclsElement = root.getChild("acls");
-        List acls = aclsElement.getChildren();
+        List<Element> acls = aclsElement.getChildren();
         assertEquals(acls.size(), 2, "Expecting two acls");
 
-        Element acl1 = (Element) acls.get(0);
+        Element acl1 = acls.get(0);
         assertEquals(acl1.getName(), "org.artifactory.security.RepoPathAcl", "ACL element not renamed");
         assertNull(acl1.getChildText("aclObjectIdentity"), "aclObjectIdentity should have been replaced");
         assertEquals(acl1.getChildText("identifier"), "ANY%3aANY", "Acl identifier mismatch");
@@ -67,7 +67,7 @@ public class AclsConverterTest extends SimpleUserConverterTest {
         assertEquals(pathAce.getChildText("principal"), "anonymous", "Expected anonymous user");
         assertEquals(pathAce.getChildText("mask"), "1", "Expected mask of 1");
 
-        Element acl2 = (Element) acls.get(1);
+        Element acl2 = acls.get(1);
         assertEquals(acl2.getName(), "org.artifactory.security.RepoPathAcl", "ACL element not renamed");
         assertNull(acl2.getChildText("aclObjectIdentity"), "aclObjectIdentity should have been replaced");
         assertEquals(acl2.getChildText("identifier"), "libs-releases%3aorg.apache", "Acl identifier mismatch");

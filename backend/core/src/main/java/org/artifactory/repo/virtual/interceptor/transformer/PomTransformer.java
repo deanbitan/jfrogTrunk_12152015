@@ -20,9 +20,9 @@ package org.artifactory.repo.virtual.interceptor.transformer;
 
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.util.XmlUtils;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.Namespace;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ import java.util.List;
  * POM transformer which removes all not needed tags from both the POM itself and the profile tags. Used to strip the
  * repository deceleration from the POM itself.
  * <p/>
- * IMPORTANT FOR FUTURE EDITORS: WHEN ADDING A SEGMENT REMOVAL MAKE SURE TO USE removeChild(org.jdom.Element, java.lang.String, org.jdom.Namespace)
+ * IMPORTANT FOR FUTURE EDITORS: WHEN ADDING A SEGMENT REMOVAL MAKE SURE TO USE removeChild(org.jdom2.Element, java.lang.String, org.jdom2.Namespace)
  * SO ALL POM MODIFICATIONS WILL BE TRACKED
  *
  * @author Eli Givoni

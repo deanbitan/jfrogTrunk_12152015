@@ -18,8 +18,8 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.addon.license.VerificationResult;
 import org.artifactory.api.request.ArtifactoryResponse;
-import org.artifactory.sapi.common.ImportSettings;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -41,7 +41,7 @@ public interface AddonsManager {
 
     boolean isLicenseInstalled();
 
-    boolean isLicenseKeyValid(String licenseKey);
+    VerificationResult isLicenseKeyValid(String licenseKey);
 
     /**
      * Returns the request property of the given addon name
@@ -58,7 +58,7 @@ public interface AddonsManager {
      * @param licenseKey The license key
      * @throws IOException If the license is invalid or failed to save the license file
      */
-    void installLicense(String licenseKey) throws IOException;
+    VerificationResult installLicense(String licenseKey);
 
     /**
      * @return The currently installed license key.
@@ -88,4 +88,11 @@ public interface AddonsManager {
     String[] getLicenseDetails();
 
     String getProductName();
+
+    /**
+     * Verify current member is HA, all other members are HA and no duplicate licenses exist
+     */
+    VerificationResult verifyAllArtifactoryServers();
+
+    ArtifactoryRunningMode getArtifactoryRunningMode();
 }

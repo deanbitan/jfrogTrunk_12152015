@@ -21,11 +21,14 @@ package org.artifactory.rest.common;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.api.rest.constant.HaRestConstants;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.security.HaSystemAuthenticationToken;
 import org.artifactory.security.UserInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
@@ -73,6 +76,13 @@ public class RestAuthenticationFilter implements ContainerRequestFilter {
             //Set the authenticated user and role
             String username = authorizationService.currentUsername();
             boolean admin = authorizationService.isAdmin();
+
+            boolean ha = SecurityContextHolder.getContext().getAuthentication() instanceof HaSystemAuthenticationToken;
+            if (ha) {
+                request.setSecurityContext(new RoleAuthenticator(username, HaRestConstants.ROLE_HA));
+                return request;
+            }
+
             if (admin) {
                 request.setSecurityContext(new RoleAuthenticator(username, AuthorizationService.ROLE_ADMIN));
             } else {

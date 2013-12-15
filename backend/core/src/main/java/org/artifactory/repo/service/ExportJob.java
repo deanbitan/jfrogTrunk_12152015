@@ -37,6 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * This job can run on HA-slave machine, so it should only be started manually
+ *
  * @author freds
  * @date Nov 6, 2008
  */
@@ -46,7 +48,8 @@ import org.slf4j.LoggerFactory;
                 @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)
-        }
+        },
+        runOnlyOnPrimary = false
 )
 public class ExportJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(ExportJob.class);

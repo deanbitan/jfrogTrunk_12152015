@@ -21,6 +21,10 @@ package org.artifactory.search.archive;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.HaAddon;
+import org.artifactory.addon.ha.HaCommonAddon;
+import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
@@ -55,7 +59,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
 import java.util.zip.ZipEntry;
 
 /**
@@ -82,17 +85,22 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
     @Autowired
     private DbService dbService;
 
+    @Autowired
+    private AddonsManager addonsManager;
+
     // a semaphore to guard against parallel indexing
-    private final Semaphore indexingSemaphore = new Semaphore(1);
+    private SemaphoreWrapper indexingSemaphore;
     // queue of repository paths waiting for indexing
     private final Queue<RepoPath> indexingQueue = new ConcurrentLinkedQueue<>();
 
-    private Semaphore indexMarkedArchivesSemaphore = new Semaphore(1);
+    private SemaphoreWrapper indexMarkedArchivesSemaphore;
 
     @Override
     public void onContextCreated() {
         //Index archives marked for indexing (might have left overs from abrupt shutdown after deploy)
-        getAdvisedMe().asyncIndexMarkedArchives();
+        if (!ContextHelper.get().isOffline()) {
+            getAdvisedMe().asyncIndexMarkedArchives();
+        }
     }
 
     @Override
@@ -141,6 +149,7 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
                 ArchiveEntriesService archiveEntriesService = ContextHelper.get().beanForType(
                         ArchiveEntriesService.class);
                 archiveEntriesService.addArchiveEntries(vfsFile.getSha1(), zipEntryInfos);
+                log.debug("Indexed archive: {}", vfsFile);
                 return true;
             } catch (IOException e) {
                 log.error("Failed to index '{}': {}", archiveRepoPath, e.getMessage());
@@ -162,11 +171,14 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
     }
 
     private void triggerQueueIndexing() {
-        if (!indexingSemaphore.tryAcquire()) {
+        if (!getIndexingSemaphore().tryAcquire()) {
             log.trace("Archive indexing already running by another thread");
             return;
         }
         try {
+            if (indexingQueue.size() > 0) {
+                log.debug("Indexing {} queued items", indexingQueue.size());
+            }
             RepoPath repoPath;
             while ((repoPath = indexingQueue.poll()) != null) {
                 try {
@@ -180,25 +192,23 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
                 }
             }
         } finally {
-            indexingSemaphore.release();
+            getIndexingSemaphore().release();
         }
     }
 
     @Override
     public void asyncIndexMarkedArchives() {
-        if (!indexMarkedArchivesSemaphore.tryAcquire()) {
+        if (!getIndexMarkedArchivesSemaphore().tryAcquire()) {
             log.info("Received index all marked archives request but an indexing process is already running.");
             return;
         }
         try {
             log.debug("Scheduling indexing for marked archives.");
             Set<RepoPath> archiveRepoPaths = tasksService.getIndexTasks();
-            if (!archiveRepoPaths.isEmpty()) {
-                indexingQueue.addAll(archiveRepoPaths);
-                triggerQueueIndexing();
-            }
+            indexingQueue.addAll(archiveRepoPaths);
+            triggerQueueIndexing();
         } finally {
-            indexMarkedArchivesSemaphore.release();
+            getIndexMarkedArchivesSemaphore().release();
         }
     }
 
@@ -243,7 +253,12 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
     @Override
     public boolean isIndexed(RepoPath repoPath) {
         String sha1 = fileService.getNodeSha1(repoPath);
-        return sha1 != null && archiveEntriesService.isIndexed(sha1);
+        return isIndexed(sha1);
+    }
+
+    @Override
+    public boolean isIndexed(String sha1) {
+        return archiveEntriesService.isIndexed(sha1);
     }
 
     private void addIndexTaskRecursively(ItemNode treeNode) {
@@ -281,6 +296,22 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
 
     private InternalArchiveIndexer getAdvisedMe() {
         return ContextHelper.get().beanForType(InternalArchiveIndexer.class);
+    }
+
+    private SemaphoreWrapper getIndexingSemaphore() {
+        if (indexingSemaphore == null) {
+            HaAddon haAddon = addonsManager.addonByType(HaAddon.class);
+            indexingSemaphore = haAddon.getSemaphore(HaCommonAddon.INDEXING_SEMAPHORE_NAME);
+        }
+        return indexingSemaphore;
+    }
+
+    private SemaphoreWrapper getIndexMarkedArchivesSemaphore() {
+        if (indexMarkedArchivesSemaphore == null) {
+            HaAddon haAddon = addonsManager.addonByType(HaAddon.class);
+            indexMarkedArchivesSemaphore = haAddon.getSemaphore(HaCommonAddon.INDEX_MARKED_ARCHIVES_SEMAPHORE_NAME);
+        }
+        return indexMarkedArchivesSemaphore;
     }
 
     @Override

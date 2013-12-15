@@ -71,4 +71,5 @@ public interface WatchesService {
 
     @Nonnull
     List<WatcherRepoPathInfo> loadWatches();
+
 }

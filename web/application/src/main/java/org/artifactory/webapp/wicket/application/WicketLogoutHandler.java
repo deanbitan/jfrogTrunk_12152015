@@ -39,7 +39,7 @@ public class WicketLogoutHandler implements LogoutHandler {
     public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
         if (RequestCycle.get() != null) {
             // we are in a wicket request cycle
-            ArtifactoryWebSession.get().signOut();
+            ArtifactoryWebSession.get().signOutArtifactory();
         } else {
             /**
              * Outside of a Wicket request cycle invalidate the existing {@link HttpSession}. Most chances this will

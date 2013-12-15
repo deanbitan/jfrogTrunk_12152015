@@ -47,4 +47,11 @@ public class BasePropInfoGroup implements PropInfoGroup {
     public InfoObject[] getInfo() {
         return new InfoObject[]{};
     }
+
+    /**
+     * @return whether this info group should be displayed.
+     */
+    public boolean isInUse() {
+        return true;
+    }
 }

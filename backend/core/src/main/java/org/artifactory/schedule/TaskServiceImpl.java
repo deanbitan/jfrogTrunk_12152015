@@ -21,7 +21,8 @@ package org.artifactory.schedule;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
-import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.HaAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.InternalCentralConfigService;
@@ -30,6 +31,7 @@ import org.artifactory.mbean.MBeanRegistrationService;
 import org.artifactory.schedule.mbean.ManagedExecutor;
 import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.util.LoggingUtils;
 import org.artifactory.version.CompoundVersionDetails;
@@ -53,7 +55,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author yoavl
  */
 @Service
-@Reloadable(beanClass = TaskService.class, initAfter = {DbService.class, InternalCentralConfigService.class})
+@Reloadable(beanClass = TaskService.class,
+        initAfter = {DbService.class, InternalCentralConfigService.class, ArtifactoryStateManager.class})
 public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     private static final Logger log = LoggerFactory.getLogger(TaskServiceImpl.class);
 
@@ -61,7 +64,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     private CachedThreadPoolTaskExecutor executor;
 
     @Autowired
-    private CentralConfigService centralConfigService;
+    private AddonsManager addonsManager;
 
     private ConcurrentMap<String, TaskBase> activeTasksByToken = new ConcurrentHashMap<>();
     private ConcurrentMap<String, TaskBase> inactiveTasksByToken = new ConcurrentHashMap<>();
@@ -119,8 +122,13 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
 
     @Override
     public String startTask(TaskBase task, boolean waitForRunning) {
+        if (ContextHelper.get().isOffline()) {
+            log.error("Artifactory is in offline state, task are not allowed to run during offline state!");
+            return task.getToken();
+        }
         String token = task.getToken();
-        ConcurrentMap<String, TaskBase> taskMap = openForScheduling.get() ? activeTasksByToken : inactiveTasksByToken;
+        ConcurrentMap<String, TaskBase> taskMap =
+                openForScheduling.get() ? activeTasksByToken : inactiveTasksByToken;
         canBeStarted(task);
         if (task.isSingleton()) {
             //Reject duplicate singleton tasks - by type + check automatically during insert that we are not
@@ -135,6 +143,19 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
             task.schedule(waitForRunning);
         }
         return task.getToken();
+    }
+
+    @Override
+    public String startTask(TaskBase task, boolean waitForRunning, boolean propagateToMaster) {
+        if (propagateToMaster &&
+                task.getAttribute(TaskBase.TASK_RUN_ONLY_ON_PRIMARY).equals(true) &&
+                !addonsManager.addonByType(HaAddon.class).isPrimary()) {
+            log.debug("Propagating task to master {}", task.getToken());
+            addonsManager.addonByType(HaAddon.class).propagateTaskToPrimary(task);
+            return task.getToken();
+        } else {
+            return startTask(task, waitForRunning);
+        }
     }
 
     @Override
@@ -249,6 +270,11 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
     public void checkCanStartManualTask(Class<? extends TaskCallback> typeToRun, MutableStatusHolder statusHolder,
             Object... keyValues) {
         JobCommand jobCommand = typeToRun.getAnnotation(JobCommand.class);
+        if (ContextHelper.get().isOffline()) {
+            statusHolder.error("Artifactory is in offline state, task are not allowed to run during offline state!",
+                    log);
+            return;
+        }
         if (jobCommand == null) {
             statusHolder.error(
                     "Task type " + typeToRun.getName() + " does not have the " +

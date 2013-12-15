@@ -121,7 +121,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
         //Set<DataIdentifier> identifiersSet = getIdentifiersSet();
         File[] files = first.listFiles();
         if (files == null) {
-            statusHolder.status("Nothing to do in " + first.getAbsolutePath() + " folder does not exists!", log);
+            statusHolder.status("Nothing to do in " + first.getAbsolutePath() + " " + Files.readFailReason(first), log);
             return;
         }
         Set<String> filesInFolder = new HashSet<>(files.length);

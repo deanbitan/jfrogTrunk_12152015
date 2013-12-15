@@ -39,8 +39,8 @@ import org.artifactory.util.XmlUtils;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +88,7 @@ public enum MetadataVersion implements MetadataReader, SubConfigElementVersion {
      */
     MetadataVersion(ArtifactoryVersion from, ArtifactoryVersion until, MetadataReader delegate,
             MetadataConverter... converters) {
-        this.comparator = new VersionComparator(this, from, until);
+        this.comparator = new VersionComparator(from, until);
         this.delegate = delegate;
         this.converters = converters;
     }

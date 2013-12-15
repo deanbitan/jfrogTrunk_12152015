@@ -34,6 +34,7 @@ import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.artifact.ItemLastModified;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.ItemProperties;
+import org.artifactory.api.rest.artifact.ItemStatsInfo;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
 import org.artifactory.api.rest.artifact.RestFileInfo;
 import org.artifactory.api.rest.artifact.RestFolderInfo;
@@ -48,6 +49,7 @@ import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.model.common.RepoPathImpl;
@@ -114,6 +116,7 @@ public class ArtifactResource {
     private static final String PROPERTIES_PARAM = "properties";
     private static final String PROPERTIES_XML_PARAM = "propertiesXml";
     private static final String PERMISSIONS_PARAM = "permissions";
+    private static final String STATS_PARAM = "stats";
 
     @Context
     private HttpServletRequest request;
@@ -147,7 +150,7 @@ public class ArtifactResource {
 
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MT_FOLDER_INFO, MT_FILE_INFO, MT_ITEM_PROPERTIES,
-            MT_FILE_LIST, MT_ITEM_LAST_MODIFIED, MT_ITEM_PERMISSIONS})
+            MT_FILE_LIST, MT_ITEM_LAST_MODIFIED, MT_ITEM_PERMISSIONS, MT_STATS_INFO})
     public Object getStorageInfo() throws IOException {
         return prepareResponseAccordingToType();
     }
@@ -179,9 +182,39 @@ public class ArtifactResource {
             return preparePropertiesXmlResponse();
         } else if (isPermissionsRequest()) {
             return preparePermissionsResponse();
+        } else if (isStatsRequest()) {
+            return prepareStatsResponse();
         } else {
             return prepareStorageInfoResponse();
         }
+    }
+
+    private Response prepareStatsResponse() throws IOException {
+        RepoPath repoPath = repoPathFromRequestPath();
+        if (!authorizationService.canRead(repoPath)) {
+            return prepareUnAuthorizedResponse(repoPath);
+        }
+        if (!repositoryService.exists(repoPath)) {
+            RestUtils.sendNotFoundResponse(response);
+            return null;
+        }
+        StatsInfo statsInfo = repositoryService.getStatsInfo(repoPath);
+        String uri = buildDownloadUri();
+        if (statsInfo == null) {
+            return okResponse(new ItemStatsInfo(uri, 0, 0, null),
+                    MT_STATS_INFO);
+        }
+        if (isMediaTypeAcceptableByUser(MT_STATS_INFO)) {
+            ItemStatsInfo entity = new ItemStatsInfo(uri, statsInfo.getDownloadCount(),
+                    statsInfo.getLastDownloaded(), statsInfo.getLastDownloadedBy());
+            return okResponse(entity, MT_STATS_INFO);
+        } else {
+            return notAcceptableResponse(MT_STATS_INFO);
+        }
+    }
+
+    private boolean isStatsRequest() {
+        return queryParamsContainKey(STATS_PARAM);
     }
 
     private Response prepareUnAuthorizedResponse(RepoPath unAuthorizedResource) throws IOException {

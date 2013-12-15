@@ -77,6 +77,7 @@ public class MoveMultiStatusHolder extends MultiStatusHolder {
             //Merge moved items counter
             MoveMultiStatusHolder moveMultiStatusHolder = (MoveMultiStatusHolder) toMerge;
             movedCounter += moveMultiStatusHolder.getMovedCount();
+            candidatesForMavenMetadataCalculation.addAll(((MoveMultiStatusHolder) toMerge).getCandidatesForMavenMetadataCalculation());
         }
     }
 }

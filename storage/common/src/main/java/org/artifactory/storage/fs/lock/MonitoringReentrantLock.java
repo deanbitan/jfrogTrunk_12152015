@@ -29,11 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class MonitoringReentrantLock extends ReentrantLock {
 
     @Override
-    public final Thread getOwner() {
-        return super.getOwner();
-    }
-
-    @Override
     public final Collection<Thread> getQueuedThreads() {
         return super.getQueuedThreads();
     }

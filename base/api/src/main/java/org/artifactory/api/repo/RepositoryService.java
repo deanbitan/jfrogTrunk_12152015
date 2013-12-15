@@ -514,4 +514,5 @@ public interface RepositoryService extends ImportableExportable {
     StatsInfo getStatsInfo(RepoPath repoPath);
 
     boolean isWriteLocked(RepoPath repoPath);
+
 }

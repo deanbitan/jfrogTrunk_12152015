@@ -26,11 +26,9 @@ public class VersionComparator {
     private final ArtifactoryVersion from;
     private final ArtifactoryVersion until;
 
-    public VersionComparator(
-            SubConfigElementVersion subConfigElementVersion, ArtifactoryVersion from, ArtifactoryVersion until) {
+    public VersionComparator(ArtifactoryVersion from, ArtifactoryVersion until) {
         this.from = from;
         this.until = until;
-        ArtifactoryVersion.addSubConfigElementVersion(subConfigElementVersion, this);
     }
 
     public boolean isCurrent() {

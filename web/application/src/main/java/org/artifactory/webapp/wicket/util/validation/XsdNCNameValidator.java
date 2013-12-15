@@ -20,7 +20,7 @@ package org.artifactory.webapp.wicket.util.validation;
 
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
-import org.jdom.Verifier;
+import org.jdom2.Verifier;
 
 /**
  * Checks if a string is a valid xsd <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName"/>NCName</a> string.

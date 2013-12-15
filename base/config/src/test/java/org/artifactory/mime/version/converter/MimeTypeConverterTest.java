@@ -19,8 +19,8 @@
 package org.artifactory.mime.version.converter;
 
 import org.artifactory.convert.XmlConverterTest;
-import org.jdom.Element;
-import org.jdom.Namespace;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
 
 import java.util.List;
 

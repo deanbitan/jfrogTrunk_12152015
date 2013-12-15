@@ -165,7 +165,7 @@ public class BackupServiceImpl implements InternalBackupService {
                 try {
                     TaskBase task = TaskUtils.createCronTask(BackupJob.class, cronExp);
                     task.addAttribute(BackupJob.BACKUP_KEY, key);
-                    InternalContextHelper.get().getBean(TaskService.class).startTask(task, false);
+                    InternalContextHelper.get().getBean(TaskService.class).startTask(task, false, manual);
                     log.debug("Backup '{}' activated with cron expression '{}'.", key, cronExp);
                 } catch (Exception e) {
                     log.warn("Activation of backup " + key + ":" + descriptor + " failed:" + e.getMessage(), e);
@@ -218,7 +218,7 @@ public class BackupServiceImpl implements InternalBackupService {
                 TaskBase task = TaskUtils.createManualTask(BackupJob.class, 0L);
                 task.addAttribute(BackupJob.MANUAL_BACKUP, backupDescriptor);
                 task.addAttribute(BackupJob.BACKUP_KEY, backupKey);
-                String taskToken = taskService.startTask(task, true);
+                String taskToken = taskService.startTask(task, true, true);
                 statusHolder.status("Started " + taskToken + " successfully", log);
             } catch (Exception e) {
                 statusHolder.error("Error scheduling manual system backup '" + backupKey + "'", e, log);
@@ -301,7 +301,7 @@ public class BackupServiceImpl implements InternalBackupService {
         File backupDir;
         if (dir == null) {
             ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-            backupDir = new File(artifactoryHome.getBackupDir(), descriptor.getKey());
+            backupDir = new File(artifactoryHome.getHaAwareBackupDir(), descriptor.getKey());
         } else {
             backupDir = dir;
             try {

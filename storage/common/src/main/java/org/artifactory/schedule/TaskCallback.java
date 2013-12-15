@@ -19,8 +19,11 @@
 package org.artifactory.schedule;
 
 import com.google.common.collect.Lists;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.storage.spring.ArtifactoryStorageContext;
 import org.artifactory.storage.spring.StorageContextHelper;
+import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +37,7 @@ import java.util.List;
  *
  * @author yoavl
  */
-public abstract class TaskCallback<C> {
+public abstract class TaskCallback<C extends JobExecutionContext> {
     private static final Logger log = LoggerFactory.getLogger(TaskCallback.class);
 
     private static final InheritableThreadLocal<String> currentTaskToken = new InheritableThreadLocal<>();
@@ -48,10 +51,15 @@ public abstract class TaskCallback<C> {
 
     protected abstract String triggeringTaskTokenFromWorkContext(C workContext);
 
+    protected abstract Authentication getAuthenticationFromWorkContext(C callbackContext);
+
+    protected abstract boolean isRunOnlyOnMaster(C jobContext);
+
     protected boolean beforeExecute(C callbackContext) {
         ArtifactoryStorageContext context = StorageContextHelper.get();
         if (context == null || !context.isReady()) {
-            log.error("Task {} was running before context={} initialization finished.", this, context);
+            log.info("Task {} was requested to execute before context {} completed initialization and will be skipped",
+                    this, context);
             return false;
         }
         String taskToken = triggeringTaskTokenFromWorkContext(callbackContext);
@@ -73,10 +81,18 @@ public abstract class TaskCallback<C> {
             log.debug("Couldn't start task " + taskToken + ": " + e.getMessage(), e);
             return false;
         }
+
+        //check for HA
+        if (isRunOnlyOnMaster(callbackContext)) {
+            HaCommonAddon haCommonAddon = context.beanForType(AddonsManager.class).addonByType(HaCommonAddon.class);
+            if (!haCommonAddon.isPrimary()) {
+                log.debug("Could not start task {}: the task can only run on master", taskToken);
+                return false;
+            }
+        }
+
         return activeTask.started();
     }
-
-    protected abstract Authentication getAuthenticationFromWorkContext(C callbackContext);
 
     protected abstract void onExecute(C callbackContext) throws JobExecutionException;
 

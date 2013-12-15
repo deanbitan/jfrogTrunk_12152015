@@ -20,9 +20,9 @@ package org.artifactory.version.converter.v1414;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.convert.XmlConverterTest;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.Namespace;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertNotNull;

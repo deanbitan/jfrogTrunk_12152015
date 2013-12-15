@@ -102,13 +102,13 @@ to your /etc/security/limits.conf file."
         fi
         findShutdownPort
         nbSeconds=1
-        while [ $SHUTDOWN_PORT -eq 0 ] && [ $nbSeconds -lt 45 ]; do
+        while [ $SHUTDOWN_PORT -eq 0 ] && [ $nbSeconds -lt 60 ]; do
             sleep 1
             let "nbSeconds = $nbSeconds + 1"
             findShutdownPort
         done
         if [ $SHUTDOWN_PORT -eq 0 ]; then
-            errorArtHome "Artifactory Tomcat server did not start in 45 seconds. Please check the logs"
+            errorArtHome "Artifactory Tomcat server did not start in 60 seconds. Please check the logs"
         fi
         echo "Artifactory Tomcat started in normal mode"
         [ $RETVAL=0 ] && touch $CATALINA_LOCK_FILE

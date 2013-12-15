@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.0.4</version>
+        <version>3.1.0</version>
     </parent>
 
     <build>
@@ -100,7 +100,7 @@
 
         <dependency>
             <groupId>org.jdom</groupId>
-            <artifactId>jdom</artifactId>
+            <artifactId>jdom2</artifactId>
         </dependency>
 
         <!-- for cron expressions validation -->

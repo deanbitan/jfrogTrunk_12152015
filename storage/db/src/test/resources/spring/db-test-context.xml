@@ -13,6 +13,8 @@
     <context:component-scan base-package="org.artifactory.storage.db">
         <!-- exclude the production db configurator -->
         <context:exclude-filter type="assignable" expression="org.artifactory.storage.db.spring.DbConfigFactory"/>
+        <!-- exclude the upgrade configurator -->
+        <context:exclude-filter type="assignable" expression="org.artifactory.storage.db.itest.spring.DbUpgradeTestConfigFactory"/>
     </context:component-scan>
 
     <!-- Activate annotation driven transactions (transaction manager is defined in the BaseBackendConfig)-->

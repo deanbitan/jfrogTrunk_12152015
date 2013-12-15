@@ -27,6 +27,7 @@ import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.FilteredResourcesAddon;
+import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.api.common.BasicStatusHolder;
@@ -156,7 +157,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         if (oldStoringRepo != null) {
             fsItemsVault = oldStoringRepo.fsItemsVault;
         } else {
-            fsItemsVault = new FsItemsVault();
+            fsItemsVault = addonsManager.addonByType(HaAddon.class).getFsItemVault();
         }
         // Throw away after usage
         oldStoringRepo = null;
@@ -686,9 +687,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     public ResourceStreamHandle getResourceStreamHandle(RequestContext requestContext, RepoResource res)
             throws IOException {
 
-        // TODO [by fsi]: Does not make sense. Should be res.getResponseRepoPath().getPath()
-        // but when using translated request object the response repo path is the original repo path?!?!
-        RepoPath repoPath = new RepoPathImpl(getKey(), res.getRepoPath().getPath());
+        RepoPathImpl repoPath = new RepoPathImpl(getKey(), res.getRepoPath().getPath());
         RepoRequests.logToContext("Creating a resource handle from '%s'", repoPath);
         VfsFile file = getImmutableFile(repoPath);
 

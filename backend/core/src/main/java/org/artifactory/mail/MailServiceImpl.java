@@ -100,7 +100,7 @@ public class MailServiceImpl implements MailService {
         Properties properties = new Properties();
 
         properties.put("mail.smtp.host", config.getHost());
-        properties.put("mail.smtp.port", config.getPort());
+        properties.put("mail.smtp.port", Integer.toString(config.getPort()));
 
         properties.put("mail.smtp.quitwait", "false");
 
@@ -115,7 +115,7 @@ public class MailServiceImpl implements MailService {
         //Enable SSL if set
         boolean useSsl = config.isUseSsl();
         if (useSsl) {
-            properties.put("mail.smtp.socketFactory.port", config.getPort());
+            properties.put("mail.smtp.socketFactory.port", Integer.toString(config.getPort()));
             properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
             properties.put("mail.smtp.socketFactory.fallback", "false");
             //Requires special protocol

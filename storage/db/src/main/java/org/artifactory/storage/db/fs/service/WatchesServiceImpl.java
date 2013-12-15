@@ -23,6 +23,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
+import org.artifactory.addon.ha.message.HaMessageTopic;
+import org.artifactory.addon.ha.message.WatchesHaMessage;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.factory.xstream.XStreamInfoFactory;
 import org.artifactory.fs.MutableWatchersInfo;
 import org.artifactory.fs.WatcherInfo;
@@ -36,6 +41,7 @@ import org.artifactory.storage.db.fs.dao.WatchesDao;
 import org.artifactory.storage.db.fs.entity.Watch;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.service.FileService;
+import org.artifactory.storage.fs.service.InternalWatchesService;
 import org.artifactory.storage.fs.service.WatchesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +59,7 @@ import java.util.Map;
  * @author Yossi Shaul
  */
 @Service
-public class WatchesServiceImpl implements WatchesService {
+public class WatchesServiceImpl implements WatchesService, InternalWatchesService {
     private static final Logger log = LoggerFactory.getLogger(WatchesServiceImpl.class);
 
     @Autowired
@@ -106,19 +112,8 @@ public class WatchesServiceImpl implements WatchesService {
     @Nonnull
     @Override
     public int addWatch(long nodeId, WatcherInfo watchInfo) {
-        log.debug("Adding watch to {}", nodeId);
-        long watchId = dbService.nextId();
-        Watch watch = watchInfoToWatch(watchId, nodeId, watchInfo);
-        int updateCount;
-        try {
-            updateCount = watchesDao.create(watch);
-            if (updateCount > 0) {
-                RepoPath repoPath = fileService.loadItem(nodeId).getRepoPath();
-                updateCache(repoPath, watch);
-            }
-        } catch (SQLException e) {
-            throw new VfsException(e);
-        }
+        int updateCount = internalAddWatch(nodeId, watchInfo);
+        notify(new WatchesHaMessage.AddWatch(nodeId, watchInfo));
         return updateCount;
     }
 
@@ -179,10 +174,46 @@ public class WatchesServiceImpl implements WatchesService {
     }
 
     private void deleteAllWatchesForRepoPath(RepoPath repoPath) {
-        getWatchersCache().removeAll(repoPath);
+        internalDeleteAllWatchesForRepoPath(repoPath);
+        notify(new WatchesHaMessage.DeleteAllWatches(repoPath));
     }
 
     private void deleteUserWatchesFromCache(RepoPath repoPath, String username) {
+        internalDeleteUserWatchesFromCache(repoPath, username);
+        notify(new WatchesHaMessage.DeleteUserWatches(repoPath, username));
+    }
+
+    private void deleteAllUserWatchesFromCache(String username) {
+        internalDeleteAllUserWatchesFromCache(username);
+        notify(new WatchesHaMessage.DeleteAllUserWatches(username));
+    }
+
+    //
+    @Override
+    public int internalAddWatch(long nodeId, WatcherInfo watchInfo) {
+        log.debug("Adding watch to {}", nodeId);
+        long watchId = dbService.nextId();
+        Watch watch = watchInfoToWatch(watchId, nodeId, watchInfo);
+        int updateCount;
+        try {
+            updateCount = watchesDao.create(watch);
+            if (updateCount > 0) {
+                RepoPath repoPath = fileService.loadItem(nodeId).getRepoPath();
+                updateCache(repoPath, watch);
+            }
+            return updateCount;
+        } catch (SQLException e) {
+            throw new VfsException(e);
+        }
+    }
+
+    @Override
+    public void internalDeleteAllWatchesForRepoPath(RepoPath repoPath) {
+        getWatchersCache().removeAll(repoPath);
+    }
+
+    @Override
+    public void internalDeleteUserWatchesFromCache(RepoPath repoPath, String username) {
         Collection<Watch> userWatches = getWatchersFromCache(repoPath);
         List<Watch> watchesAfterDelete = Lists.newArrayList();
         for (Watch watch : userWatches) {
@@ -194,7 +225,8 @@ public class WatchesServiceImpl implements WatchesService {
         getWatchersCache().replaceValues(repoPath, watchesAfterDelete);
     }
 
-    private void deleteAllUserWatchesFromCache(String username) {
+    @Override
+    public void internalDeleteAllUserWatchesFromCache(String username) {
         Collection<Map.Entry<RepoPath, Watch>> allWatches = getAllWatchersFromCache();
         for (Iterator<Map.Entry<RepoPath, Watch>> it = allWatches.iterator(); it.hasNext(); ) {
             Map.Entry<RepoPath, Watch> watchEntry = it.next();
@@ -237,5 +269,10 @@ public class WatchesServiceImpl implements WatchesService {
 
     private WatcherInfo watchToWatchInfo(Watch nodeWatch) {
         return new WatcherImpl(nodeWatch.getUsername(), nodeWatch.getSince());
+    }
+
+    private void notify(WatchesHaMessage haMessage) {
+        HaCommonAddon haAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaCommonAddon.class);
+        haAddon.notify(HaMessageTopic.WATCHES_TOPIC, haMessage);
     }
 }

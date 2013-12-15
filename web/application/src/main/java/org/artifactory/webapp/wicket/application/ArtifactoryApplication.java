@@ -29,6 +29,8 @@ import org.apache.wicket.authorization.strategies.CompoundAuthorizationStrategy;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebApplication;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
 import org.apache.wicket.injection.Injector;
+import org.apache.wicket.markup.html.IPackageResourceGuard;
+import org.apache.wicket.markup.html.SecurePackageResourceGuard;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.request.http.WebRequest;
 import org.apache.wicket.request.http.WebResponse;
@@ -435,6 +437,11 @@ public class ArtifactoryApplication extends AuthenticatedWebApplication implemen
         // look for pages at the root of the web-app
         IResourceSettings resourceSettings = getResourceSettings();
         resourceSettings.addResourceFolder("");
+        IPackageResourceGuard packageResourceGuard = resourceSettings.getPackageResourceGuard();
+        if (packageResourceGuard instanceof SecurePackageResourceGuard) {
+            SecurePackageResourceGuard resourceGuard = (SecurePackageResourceGuard) packageResourceGuard;
+            resourceGuard.addPattern("+Icon");
+        }
 
         // ResourcePackage resources are locale insensitive
         NoLocaleResourceStreamLocator locator = new NoLocaleResourceStreamLocator();

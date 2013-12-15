@@ -20,8 +20,8 @@ package org.artifactory.mime.version.converter;
 
 import org.artifactory.mime.version.MimeTypesVersion;
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * This converter changes the version of the miemetypes.xml file. This is a special converter which should execute

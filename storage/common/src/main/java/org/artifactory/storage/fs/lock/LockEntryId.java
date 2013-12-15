@@ -19,6 +19,7 @@
 package org.artifactory.storage.fs.lock;
 
 import org.artifactory.repo.RepoPath;
+import org.artifactory.storage.fs.lock.provider.LockWrapper;
 
 /**
  * An immutable lock holder - holds a RWLock per a certain repo fsItem. RW-locks are managed (shared) per storing repo
@@ -32,10 +33,10 @@ public class LockEntryId {
     /**
      * The unique lock from the lock maps for the repo path of the items
      */
-    private final MonitoringReentrantLock lock;
+    private final LockWrapper lock;
     private final RepoPath repoPath;
 
-    public LockEntryId(MonitoringReentrantLock lock, RepoPath repoPath) {
+    public LockEntryId(LockWrapper lock, RepoPath repoPath) {
         if (lock == null) {
             throw new IllegalArgumentException("Cannot create lock entry with no lock object for " + repoPath);
         }
@@ -47,7 +48,7 @@ public class LockEntryId {
         return repoPath;
     }
 
-    public MonitoringReentrantLock getLock() {
+    public LockWrapper getLock() {
         return lock;
     }
 

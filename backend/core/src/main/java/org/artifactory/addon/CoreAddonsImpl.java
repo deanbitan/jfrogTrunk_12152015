@@ -23,6 +23,11 @@ import com.google.common.collect.Maps;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
+import org.artifactory.addon.ha.HaCommonAddon;
+import org.artifactory.addon.ha.message.HaMessage;
+import org.artifactory.addon.ha.message.HaMessageTopic;
+import org.artifactory.addon.ha.semaphore.JVMSemaphoreWrapper;
+import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.replication.LocalReplicationSettings;
@@ -36,6 +41,7 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.api.rest.replication.ReplicationStatus;
 import org.artifactory.api.rest.replication.ReplicationStatusType;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.ConfigurationException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -73,8 +79,14 @@ import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.fs.VfsItem;
+import org.artifactory.schedule.Task;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserGroupInfo;
+import org.artifactory.storage.fs.lock.FsItemsVault;
+import org.artifactory.storage.fs.lock.FsItemsVaultCacheImpl;
+import org.artifactory.storage.fs.lock.provider.JVMLockProvider;
+import org.artifactory.storage.fs.lock.provider.LockProvider;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
@@ -95,6 +107,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Default implementation of the core-related addon factories.
@@ -104,7 +118,7 @@ import java.util.Set;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon {
+        GemsAddon, HaAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -192,6 +206,10 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public List findLicensesInRepos(List<String> repoKeys, LicenseStatus status) {
         return Lists.newArrayList();
+    }
+
+    @Override
+    public void reloadLicensesCache() {
     }
 
     @Override
@@ -403,6 +421,14 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     public void removeNuPkgFromRepoCache(String repoKey, String packageId, String packageVersion) {
     }
 
+    @Override
+    public void internalAddNuPkgToRepoCache(RepoPath repoPath, Properties properties) {
+    }
+
+    @Override
+    public void internalRemoveNuPkgFromRepoCache(String repoKey, String packageId, String packageVersion) {
+    }
+
     @Nonnull
     @Override
     public RemoteRepo createRemoteRepo(InternalRepositoryService repoService, RemoteRepoDescriptor repoDescriptor,
@@ -459,4 +485,78 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     public void requestAsyncReindexNuPkgs(String repoKey) {
     }
 
+    @Override
+    public boolean isHaEnabled() {
+        return false;
+    }
+
+    @Override
+    public boolean isPrimary() {
+        return true;
+    }
+
+    @Override
+    public boolean isHaConfigured() {
+        try {
+            return ArtifactoryHome.get().isHaConfigured();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public void notify(HaMessageTopic haMessageTopic, HaMessage haMessage) {
+    }
+
+    @Override
+    public String getHostId() {
+        return HttpUtils.getHostId();
+    }
+
+    @Override
+    public void updateArtifactoryServerRole() {
+    }
+
+    @Override
+    public boolean deleteArtifactoryServer(String serverId) {
+        return false;
+    }
+
+    @Override
+    public void propagateTaskToPrimary(Task Task) {
+    }
+
+    @Override
+    public LockProvider getLockProvider() {
+        return new JVMLockProvider();
+    }
+
+    @Override
+    public boolean tryLockRemoteDownload(String path, long leaseTime, TimeUnit timeUnit) {
+        throw new UnsupportedOperationException("No locks for Non-High-Availability node");
+    }
+
+    @Override
+    public void unlockRemoteDownload(String path) {
+    }
+
+    @Override
+    public void init() {
+    }
+
+    @Override
+    public FsItemsVault getFsItemVault() {
+        LockProvider lockProvider = new JVMLockProvider();
+        return new FsItemsVaultCacheImpl(lockProvider);
+    }
+
+    @Override
+    public SemaphoreWrapper getSemaphore(String semaphoreName) {
+        Semaphore semaphore = new Semaphore(HaCommonAddon.DEFAULT_SEMAPHORE_PERMITS);
+        return new JVMSemaphoreWrapper(semaphore);
+    }
+
+    @Override
+    public void shutdown() {
+    }
 }

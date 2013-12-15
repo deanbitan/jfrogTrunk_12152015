@@ -21,8 +21,8 @@ package org.artifactory.webapp.wicket.util;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.util.XmlUtils;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -92,6 +92,10 @@ public abstract class ResourceUtils {
         return is;
     }
 
+    public static boolean resourceExists(String path) {
+        return ResourceUtils.class.getResource(path) != null;
+    }
+
     public static File getResourceAsFile(String path) {
         URL resource = ResourceUtils.class.getResource(path);
         assertResourceNotNull(path, resource);

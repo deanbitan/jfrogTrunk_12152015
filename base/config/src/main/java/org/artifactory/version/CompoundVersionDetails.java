@@ -18,6 +18,8 @@
 
 package org.artifactory.version;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Holds all the version data about Artifactory. version name, and revision from the properties file and
  * ArtifactoryVersion that matches those values.
@@ -67,6 +69,15 @@ public class CompoundVersionDetails {
 
     public boolean isCurrent() {
         return version.isCurrent();
+    }
+
+    public int getRevisionInt() {
+        int rev = 0;
+        if (StringUtils.isNotBlank(revision) && StringUtils.isNumeric(revision) &&
+                !("" + Integer.MAX_VALUE).equals(revision)) {
+            rev = Integer.valueOf(revision);
+        }
+        return rev;
     }
 
     @Override

@@ -35,6 +35,7 @@ import java.util.Set;
 public enum InfoWriter {
     user(UserPropInfo.class, "User Info"),
     host(HostPropInfo.class, "Host Info"),
+    ha(HaPropInfo.class, "High Availability Node Info"),
     artifactory(ArtifactoryPropInfo.class, "Artifactory Info"),
     javaSys(JavaSysPropInfo.class, "Java System Info"),
     classPath(ClassPathPropInfo.class, "Java Class Path Info");
@@ -92,6 +93,9 @@ public enum InfoWriter {
         sb.append(String.format(" =======================%n"));
         for (InfoWriter writer : InfoWriter.values()) {
             BasePropInfoGroup group = writer.infoGroup.newInstance();
+            if (!group.isInUse()) {
+                continue;
+            }
             //Create group title
             sb.append(String.format("%n ")).append(writer.groupName).append(String.format("%n"));
             sb.append(String.format(" ========================%n"));
@@ -104,17 +108,25 @@ public enum InfoWriter {
                 } else if (writer.equals(javaSys) && shouldMaskValue(value)) {
                     value = org.artifactory.util.Strings.maskKeyValue(value);
                 }
-                String multiValueSeparator = SystemUtils.IS_OS_WINDOWS ? ";" : ":";
-                String[] separateValues = value.split(multiValueSeparator);
-                for (int i = 0; i < separateValues.length; i++) {
-                    String separateValue = separateValues[i];
-                    sb.append(String.format(listFormat, (i == 0) ? propertyName : "", separateValue));
+                if (propertyName.matches(".*class\\.?path.*")) {
+                    splitLine(sb, propertyName, value);
+                } else {
+                    sb.append(String.format(listFormat,  propertyName , value));
                 }
             }
         }
 
         //Dump the info to the log
         return sb.toString();
+    }
+
+    private static void splitLine(StringBuilder sb, String propertyName, String value) {
+        String multiValueSeparator = SystemUtils.IS_OS_WINDOWS ? ";" : ":";
+        String[] separateValues = value.split(multiValueSeparator);
+        for (int i = 0; i < separateValues.length; i++) {
+            String separateValue = separateValues[i];
+            sb.append(String.format(listFormat, (i == 0) ? propertyName : "", separateValue));
+        }
     }
 
     public static boolean shouldMaskValue(String propertyKey) {

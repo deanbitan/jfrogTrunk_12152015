@@ -19,6 +19,7 @@
 package org.artifactory.webapp.servlet;
 
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.converters.ConvertersManagerImpl;
 import org.artifactory.log.BootstrapLogger;
 
 import javax.servlet.ServletContext;
@@ -47,6 +48,15 @@ public class ArtifactoryHomeConfigListener implements ServletContextListener {
                 artifactoryHome.getHomeDir().getAbsolutePath() + "].");
         // add the artifactory home to the servlet context
         servletContext.setAttribute(ArtifactoryHome.SERVLET_CTX_ATTR, artifactoryHome);
+        // add the converterManager to the servlet context
+        ConvertersManagerImpl converterManager = new ConvertersManagerImpl(artifactoryHome);
+        servletContext.setAttribute(ArtifactoryHome.ARTIFACTORY_CONVERTER_OBJ, converterManager);
+        converterManager.homeReady();
+        // Init System properties
+        artifactoryHome.initAndLoadSystemPropertyFile();
+        // Init and load Mimetypes
+        artifactoryHome.initAndLoadMimeTypes();
+        // Notify other servers on conversion finished
     }
 
     private static class ServletLogger implements ArtifactoryHome.SimpleLog {

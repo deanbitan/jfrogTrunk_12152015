@@ -24,7 +24,7 @@ import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.update.md.MetadataConverterTest;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.util.XmlUtils;
-import org.jdom.Document;
+import org.jdom2.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;

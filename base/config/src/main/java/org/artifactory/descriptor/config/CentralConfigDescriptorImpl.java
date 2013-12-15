@@ -27,6 +27,7 @@ import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
+import org.artifactory.descriptor.external.BlackDuckSettingsDescriptor;
 import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
@@ -51,6 +52,7 @@ import org.artifactory.descriptor.repo.jaxb.VirtualRepositoriesMapAdapter;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.util.AlreadyExistsException;
 import org.artifactory.util.DoesNotExistException;
+import org.artifactory.util.PathUtils;
 import org.artifactory.util.RepoLayoutUtils;
 
 import javax.annotation.Nullable;
@@ -315,7 +317,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @Override
     public void setUrlBase(String urlBase) {
-        this.urlBase = urlBase;
+        this.urlBase = PathUtils.trimTrailingSlashes(urlBase);
     }
 
     @Override
@@ -460,12 +462,24 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         // remove references from all remote repositories
         for (RemoteRepoDescriptor remoteRepo : remoteRepositoriesMap.values()) {
             if (remoteRepo instanceof HttpRepoDescriptor) {
-                ((HttpRepoDescriptor) remoteRepo).setProxy(null);
+                if (((HttpRepoDescriptor) remoteRepo).getProxy() != null
+                        && ((HttpRepoDescriptor) remoteRepo).getProxy().getKey().equals(proxyKey)) {
+                    ((HttpRepoDescriptor) remoteRepo).setProxy(null);
+                }
             }
         }
 
         for (LocalReplicationDescriptor localReplication : localReplications) {
             localReplication.setProxy(null);
+        }
+
+        ExternalProvidersDescriptor externalProvidersDescriptor = getExternalProvidersDescriptor();
+        if (externalProvidersDescriptor != null) {
+            BlackDuckSettingsDescriptor blackDuckSettingsDescriptor = externalProvidersDescriptor.getBlackDuckSettingsDescriptor();
+            if (blackDuckSettingsDescriptor != null && blackDuckSettingsDescriptor.getProxy() != null
+                    && blackDuckSettingsDescriptor.getProxy().getKey().equals(proxyKey)) {
+                blackDuckSettingsDescriptor.setProxy(null);
+            }
         }
 
         return proxyDescriptor;

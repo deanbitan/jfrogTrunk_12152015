@@ -19,6 +19,7 @@
 package org.artifactory.engine;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.ResponseCtx;
@@ -352,9 +353,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
                     se.getMessage());
             sendError(requestContext, response, HttpStatus.SC_INTERNAL_SERVER_ERROR, se.getMessage(), log);
         } finally {
-            if (handle != null) {
-                handle.close();
-            }
+            IOUtils.closeQuietly(handle);
         }
     }
 

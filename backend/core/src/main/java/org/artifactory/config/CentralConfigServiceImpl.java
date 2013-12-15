@@ -18,16 +18,16 @@
 
 package org.artifactory.config;
 
-import com.google.common.base.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.HaAddon;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
@@ -39,7 +39,6 @@ import org.artifactory.jaxb.JaxbHelper;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.security.AccessLogger;
-import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -54,21 +53,19 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 
-import java.io.BufferedReader;
+import javax.annotation.Nullable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.artifactory.addon.ha.message.HaMessageTopic.CONFIG_CHANGE_TOPIC;
 
 /**
  * This class wraps the JAXB config descriptor.
@@ -76,7 +73,7 @@ import java.util.Map;
 @Repository("centralConfig")
 @Reloadable(beanClass = InternalCentralConfigService.class,
         initAfter = {DbService.class, ConfigurationChangesInterceptors.class})
-public class CentralConfigServiceImpl implements InternalCentralConfigService, ContextReadinessListener {
+public class CentralConfigServiceImpl implements InternalCentralConfigService {
     private static final Logger log = LoggerFactory.getLogger(CentralConfigServiceImpl.class);
 
     private CentralConfigDescriptor descriptor;
@@ -87,13 +84,13 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     private AuthorizationService authService;
 
     @Autowired
-    private SecurityService securityService;
-
-    @Autowired
     private ConfigsService configsService;
 
     @Autowired
     private ConfigurationChangesInterceptors interceptors;
+
+    @Autowired
+    private AddonsManager addonsManager;
 
     public CentralConfigServiceImpl() {
     }
@@ -114,22 +111,32 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
 
         boolean updateDescriptor = true;
 
-        //If no import config file exists, or is empty, continue as normal
+        //If no import config file exists, or is empty, load from storage
         if (StringUtils.isBlank(currentConfigXml)) {
-            //Check in DB
-            String dbConfigName = ArtifactoryHome.ARTIFACTORY_CONFIG_FILE;
-            if (configsService.hasConfig(dbConfigName)) {
-                log.debug("Loading existing configuration from storage.");
-                currentConfigXml = configsService.getConfig(dbConfigName);
+            currentConfigXml = loadConfigFromStorage();
+            if (!StringUtils.isBlank(currentConfigXml)) {
                 updateDescriptor = false;
-            } else {
-                log.info("Loading bootstrap configuration (artifactory home dir is {}).", artifactoryHome.getHomeDir());
-                currentConfigXml = artifactoryHome.getBootstrapConfigXml();
             }
+        }
+        //Otherwise, load bootstrap config
+        if (StringUtils.isBlank(currentConfigXml)) {
+            log.info("Loading bootstrap configuration (artifactory home dir is {}).", artifactoryHome.getHomeDir());
+            currentConfigXml = artifactoryHome.getBootstrapConfigXml();
         }
         artifactoryHome.renameInitialConfigFileIfExists();
         log.trace("Current config xml is:\n{}", currentConfigXml);
         return new SerializablePair<>(new CentralConfigReader().read(currentConfigXml), updateDescriptor);
+    }
+
+    @Nullable
+    private String loadConfigFromStorage() {
+        //Check in DB
+        String dbConfigName = ArtifactoryHome.ARTIFACTORY_CONFIG_FILE;
+        if (configsService.hasConfig(dbConfigName)) {
+            log.debug("Loading existing configuration from storage.");
+            return configsService.getConfig(dbConfigName);
+        }
+        return null;
     }
 
     @Override
@@ -173,6 +180,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         CentralConfigDescriptor newDescriptor = new CentralConfigReader().read(xmlConfig);
         reloadConfiguration(newDescriptor);
         storeLatestConfigToFile(xmlConfig);
+        addonsManager.addonByType(HaAddon.class).notify(CONFIG_CHANGE_TOPIC, null);
     }
 
     @Override
@@ -220,10 +228,24 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
     }
 
     @Override
+    public boolean reloadConfiguration() {
+        String currentConfigXml = loadConfigFromStorage();
+        if (!StringUtils.isBlank(currentConfigXml)) {
+            CentralConfigDescriptor newDescriptor = new CentralConfigReader().read(currentConfigXml);
+            reloadConfiguration(newDescriptor);
+            return true;
+        } else {
+            log.warn("Could not reload configuration.");
+            return false;
+        }
+    }
+
+    @Override
     public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         File dirToImport = settings.getBaseDir();
-        if ((dirToImport != null) && (dirToImport.isDirectory()) && (dirToImport.listFiles().length > 0)) {
+        //noinspection ConstantConditions
+        if (dirToImport != null && dirToImport.isDirectory() && dirToImport.listFiles().length > 0) {
             status.status("Importing config...", log);
             File newConfigFile = new File(settings.getBaseDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_FILE);
             if (newConfigFile.exists()) {
@@ -305,52 +327,10 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
 
     private void storeLatestConfigToFile(String configXml) {
         try {
-            Files.writeContentToRollingFile(configXml,
-                    new File(ArtifactoryHome.get().getEtcDir(), ArtifactoryHome.ARTIFACTORY_CONFIG_LATEST_FILE));
+            Files.writeContentToRollingFile(configXml, ArtifactoryHome.get().getArtifactoryConfigLatestFile());
         } catch (IOException e) {
             log.error("Error occurred while performing a backup of the latest configuration.", e);
         }
-    }
-
-    @Override
-    public void onContextCreated() {
-        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File logoUrlFile = new File(artifactoryHome.getLogoDir(), "logoUrl.txt");
-        if (logoUrlFile.exists()) {
-            BufferedReader fileReader = null;
-            try {
-                fileReader = new BufferedReader(
-                        new InputStreamReader(new FileInputStream(logoUrlFile), Charsets.UTF_8));
-                String url = fileReader.readLine();
-                IOUtils.closeQuietly(fileReader);
-                if (StringUtils.isNotBlank(url)) {
-                    log.info("Setting logo url: {}", url);
-                    MutableCentralConfigDescriptor mutableConfig = getMutableDescriptor();
-                    mutableConfig.setLogo(url);
-                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                    securityService.authenticateAsSystem();
-                    try {
-                        saveEditedDescriptorAndReload(mutableConfig);
-                    } finally {
-                        // restore the previous authentication
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    }
-                }
-                logoUrlFile.delete();
-            } catch (Exception e) {
-                log.error("Failed to read logo url", e);
-            } finally {
-                IOUtils.closeQuietly(fileReader);
-            }
-        }
-    }
-
-    @Override
-    public void onContextUnready() {
-    }
-
-    @Override
-    public void onContextReady() {
     }
 
     @Override
@@ -378,16 +358,15 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService, C
         String artifactoryConfigXml = JaxbHelper.toXml(artifactoryConfig);
 
         // Save new bootstrap config file
-        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File parentFile = artifactoryHome.getEtcDir();
+        File bootstrapConfigFile = ArtifactoryHome.get().getArtifactoryConfigBootstrapFile();
+        File parentFile = bootstrapConfigFile.getParentFile();
         if (parentFile.canWrite()) {
             try {
                 log.info("Automatically converting the config file, original will be saved in " +
                         parentFile.getAbsolutePath());
-                File bootstrapConfigFile = new File(parentFile, ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
                 File newConfigFile;
                 if (bootstrapConfigFile.exists()) {
-                    newConfigFile = new File(parentFile, "new_" + ArtifactoryHome.ARTIFACTORY_CONFIG_BOOTSTRAP_FILE);
+                    newConfigFile = ArtifactoryHome.get().getArtifactoryConfigNewBootstrapFile();
                 } else {
                     newConfigFile = bootstrapConfigFile;
                 }

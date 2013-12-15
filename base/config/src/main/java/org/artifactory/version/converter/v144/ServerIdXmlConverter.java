@@ -19,9 +19,9 @@
 package org.artifactory.version.converter.v144;
 
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.Namespace;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
 
 /**
  * Removed the serverId tag (replaced by external license key).

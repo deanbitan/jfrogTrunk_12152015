@@ -20,9 +20,14 @@ package org.artifactory.webapp.servlet;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.common.ha.HaNodeProperties;
+import org.artifactory.converters.ConverterProvider;
+import org.artifactory.converters.VersionProvider;
 import org.artifactory.log.logback.LogbackContextSelector;
 import org.artifactory.log.logback.LoggerConfigInfo;
 import org.artifactory.spring.SpringConfigPaths;
@@ -171,17 +176,18 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
         ArtifactoryHome artifactoryHome =
                 (ArtifactoryHome) servletContext.getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR);
+        VersionProvider converterManager = (VersionProvider) servletContext.getAttribute(
+                ArtifactoryHome.ARTIFACTORY_CONVERTER_OBJ);
         if (artifactoryHome == null) {
             throw new IllegalStateException("Artifactory home not initialized.");
         }
-
-        CompoundVersionDetails runningVersionDetails = artifactoryHome.getRunningVersionDetails();
+        CompoundVersionDetails runningVersionDetails = converterManager.getRunningVersionDetails();
         String versionNumber = runningVersionDetails.getVersionName();
         String revision = runningVersionDetails.getRevision();
         versionNumber = fixVersion(versionNumber);
         revision = fixVersion(revision);
 
-        log.info(
+        String msg =
                 "\n" +
                         "               _   _  __           _\n" +
                         "    /\\        | | (_)/ _|         | |\n" +
@@ -191,38 +197,54 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
                         "/_/    \\_\\_|   \\__|_|_| \\__,_|\\___|\\__\\___/|_|   \\__, |\n" +
                         String.format(" Version:  %-39s__/ |\n", versionNumber) +
                         String.format(" Revision: %-38s|___/\n", revision) +
-                        " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n"
-        );
+                        " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n";
+
+        //optionally log HA properties
+        if (artifactoryHome.isHaConfigured()) {
+            HaNodeProperties haNodeProperties = artifactoryHome.getHaNodeProperties();
+            if (haNodeProperties != null) {
+                msg += " Artifactory Cluster Home: '" + haNodeProperties.getClusterHome().getAbsolutePath() + "'\n" +
+                        " HA Node ID: '" + haNodeProperties.getServerId() + "'\n";
+            }
+        }
+
+        log.info(msg);
 
         warnIfJava7WithLoopPredicate(log);
-
-        artifactoryLockFile = new ArtifactoryLockFile(new File(artifactoryHome.getDataDir(), LOCK_FILENAME));
-        artifactoryLockFile.tryLock();
 
         ApplicationContext context;
         try {
             ArtifactoryHome.bind(artifactoryHome);
 
+            //todo consider moving to org.artifactory.webapp.servlet.ArtifactoryHomeConfigListener.contextInitialized()
+            if (artifactoryHome.isHaConfigured()) {
+                log.debug("Not using Artifactory lock file on HA environment");
+            } else {
+                artifactoryLockFile = new ArtifactoryLockFile(new File(artifactoryHome.getDataDir(), LOCK_FILENAME));
+                artifactoryLockFile.tryLock();
+            }
+
             Class<?> contextClass = ClassUtils.forName(
                     "org.artifactory.spring.ArtifactoryApplicationContext", ClassUtils.getDefaultClassLoader());
             Constructor<?> constructor = contextClass.
-                    getConstructor(String.class, SpringConfigPaths.class, ArtifactoryHome.class);
+                    getConstructor(String.class, SpringConfigPaths.class, ArtifactoryHome.class,
+                            ConverterProvider.class);
             //Construct the context name based on the context path
             //(will not work with multiple servlet containers on the same vm!)
             String contextUniqueName = HttpUtils.getContextId(servletContext);
             SpringConfigPaths springConfigPaths = SpringConfigResourceLoader.getConfigurationPaths(artifactoryHome);
             context = (ApplicationContext) constructor.newInstance(
-                    contextUniqueName, springConfigPaths, artifactoryHome);
+                    contextUniqueName, springConfigPaths, artifactoryHome, converterManager);
         } finally {
             ArtifactoryHome.unbind();
         }
-
         log.info("\n" +
                 "###########################################################\n" +
                 "### Artifactory successfully started (" +
                 String.format("%-17s", (DurationFormatUtils.formatPeriod(start, System.currentTimeMillis(), "s.S")) +
                         " seconds)") + " ###\n" +
                 "###########################################################\n");
+
         //Register the context for easy retrieval for faster destroy
         servletContext.setAttribute(ArtifactoryContext.APPLICATION_CONTEXT_KEY, context);
     }
@@ -239,10 +261,18 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         AbstractApplicationContext context = (AbstractApplicationContext) event.getServletContext().getAttribute(
                 ArtifactoryContext.APPLICATION_CONTEXT_KEY);
         try {
+            getLogger().debug("Context shutdown started");
             if (context != null) {
+                if (context instanceof ArtifactoryContext) {
+                    AddonsManager addonsManager = ((ArtifactoryContext) context).beanForType(AddonsManager.class);
+                    addonsManager.addonByType(HaCommonAddon.class).shutdown();
+                }
                 context.destroy();
             }
-            artifactoryLockFile.release();
+            if (artifactoryLockFile != null) {
+                artifactoryLockFile.release();
+            }
+            getLogger().debug("Context shutdown Finished");
         } finally {
             event.getServletContext().removeAttribute(ArtifactoryContext.APPLICATION_CONTEXT_KEY);
             event.getServletContext().removeAttribute(ArtifactoryHome.SERVLET_CTX_ATTR);

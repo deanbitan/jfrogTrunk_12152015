@@ -263,8 +263,9 @@ public class NodesDao extends BaseDao {
         int result = 0;
         try {
             resultSet = jdbcHelper.executeSelect(
-                    "SELECT COUNT(*) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and node_path like ?",
-                    nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
+                    "SELECT COUNT(*) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and " +
+                            "(node_path = ? or node_path like ?)",
+                    nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName(), nodePath.getPathName() + "/%");
             if (resultSet.next()) {
                 result = resultSet.getInt(1);
             }
@@ -281,8 +282,9 @@ public class NodesDao extends BaseDao {
 
     public long getFilesTotalSize(NodePath nodePath) throws SQLException {
         return jdbcHelper.executeSelectLong(
-                "SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and node_path like ?",
-                nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
+                "SELECT SUM(bin_length) FROM nodes WHERE node_type=1 and repo = ? and depth > ? and " +
+                        "(node_path = ? or node_path like ?)",
+                nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName(), nodePath.getPathName() + "/%");
     }
 
     public int getNodesCount(String repoKey) throws SQLException {
@@ -292,8 +294,9 @@ public class NodesDao extends BaseDao {
 
     public int getNodesCount(NodePath nodePath) throws SQLException {
         return jdbcHelper.executeSelectCount(
-                "SELECT COUNT(*) FROM nodes WHERE (node_type=1 or node_type=0) and repo = ? and depth > ? and node_path like ?",
-                nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName() + "%");
+                "SELECT COUNT(*) FROM nodes WHERE (node_type=1 or node_type=0) and repo = ? and depth > ? and " +
+                        "(node_path = ? or node_path like ?)",
+                nodePath.getRepo(), nodePath.getDepth(), nodePath.getPathName(), nodePath.getPathName() + "/%");
     }
 
     public List<Node> searchFileByName(String name) throws SQLException {

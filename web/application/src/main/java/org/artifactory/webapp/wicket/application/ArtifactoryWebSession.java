@@ -86,7 +86,7 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
                 new UsernamePasswordAuthenticationToken(username, password);
         HttpServletRequest servletRequest = WicketUtils.getHttpServletRequest();
         HttpServletResponse servletResponse = WicketUtils.getHttpServletResponse();
-        servletRequest.getSession().invalidate();
+        replaceSession();   // protect against session fixation
         WebAuthenticationDetails details = new UiAuthenticationDetails(servletRequest, servletResponse);
         authenticationToken.setDetails(details);
         boolean authenticated;
@@ -130,18 +130,19 @@ public class ArtifactoryWebSession extends AuthenticatedWebSession {
         roles = new Roles(authorityRoles);
     }
 
-    @Override
-    public void signOut() {
-        super.signOut();
+    public void signOutArtifactory() {
+        signOut();
 
         // Remove the authentication attribute early
         RequestUtils.removeAuthentication(WicketUtils.getHttpServletRequest());
 
         // Clear authentication and authorization data saved in this session
-        // (this session will still be used in the logout page)
+        // (this WICKET session will still be used in the logout page)
         roles = null;
         authentication = null;
+        results = null;
         SecurityContextHolder.clearContext();
+        invalidate();
     }
 
     void setAuthentication(Authentication authentication) {

@@ -22,6 +22,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.concurrent.LockingException;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.fs.MutableVfsItem;
+import org.artifactory.storage.fs.lock.provider.LockWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +86,7 @@ public class SessionLockEntry implements FsItemLockEntry {
     }
 
     private void acquire() {
-        MonitoringReentrantLock lock = lockEntryId.getLock();
+        LockWrapper lock = lockEntryId.getLock();
         try {
             boolean success = lock.tryLock(ConstantValues.locksTimeoutSecs.getLong(), TimeUnit.SECONDS);
             if (!success) {

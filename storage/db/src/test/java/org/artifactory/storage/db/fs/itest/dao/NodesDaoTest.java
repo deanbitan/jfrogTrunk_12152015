@@ -193,7 +193,7 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void countRepositoryFilesAndFoldersUnderFolder() throws SQLException {
-        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "", "ant", false)), 4);
+        assertEquals(nodesDao.getNodesCount(new NodePath("repo1", "", "ant", false)), 3);
     }
 
     public void countFilesAndFoldersUnderFolderWithDirectChildren() throws SQLException {
@@ -208,6 +208,17 @@ public class NodesDaoTest extends DbBaseTest {
         assertEquals(nodesDao.getNodesCount(fileNodePath), 0);
     }
 
+    public void countFilesUnderFolderWithPrefix() throws SQLException {
+        assertEquals(nodesDao.getFilesCount(new NodePath("repo2", "", "a", false)), 2, "Files from 'repo2:/aa' were counted");
+    }
+
+    public void countNodesUnderFolderWithPrefix() throws SQLException {
+        assertEquals(nodesDao.getNodesCount(new NodePath("repo2", "", "a", false)), 3, "Nodes from 'repo2:/aa' were counted");
+    }
+
+    public void getTotalSizeUnderFolderWithPrefix() throws SQLException {
+        assertEquals(nodesDao.getFilesTotalSize(new NodePath("repo2", "", "a", false)),  716139 * 2, "Files from 'repo2:/aa' were counted");
+    }
 
     public void updateFolderNode() throws SQLException {
         NodeBuilder b = new NodeBuilder().nodeId(31).file(false).repo("repo").path("path/to/dir").name("toupdate")

@@ -35,8 +35,22 @@ public class BaseDao {
         return (id == 0L) ? null : id;
     }
 
+    // TODO [by FSI] : Looks useless since JDBS doing it no?
     public static long zeroIfNull(Long id) {
         return (id == null) ? 0L : id;
+    }
+
+    // TODO [by FSI] : Looks useless since JDBS doing it no?
+    public static int zeroIfNull(Integer id) {
+        return (id == null) ? 0 : id;
+    }
+
+    public static Long nullIfZeroOrNeg(long id) {
+        return (id <= 0L) ? null : id;
+    }
+
+    public static Integer nullIfZeroOrNeg(int id) {
+        return (id <= 0L) ? null : id;
     }
 
     public static String emptyIfNullOrDot(String path) {
@@ -54,6 +68,13 @@ public class BaseDao {
 
     public static String nullIfEmpty(String path) {
         return (path == null || path.length() == 0) ? null : path;
+    }
+
+    public static String enumToString(Enum versionType) {
+        if (versionType != null) {
+            return versionType.name();
+        }
+        return null;
     }
 
     /**

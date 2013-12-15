@@ -18,7 +18,7 @@
 
 package org.artifactory.version;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.CacheBuilder;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NameValuePair;
@@ -66,8 +66,9 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     private AddonsManager addonsManager;
 
     private Map<String, ArtifactoryVersioning> cache =
-            new MapMaker().initialCapacity(3).expireAfterWrite(ConstantValues.versioningQueryIntervalSecs.getLong(),
-                    TimeUnit.SECONDS).makeMap();
+            CacheBuilder.newBuilder().initialCapacity(3).expireAfterWrite(
+                    ConstantValues.versioningQueryIntervalSecs.getLong(),
+                    TimeUnit.SECONDS).<String, ArtifactoryVersioning>build().asMap();
 
     private static final String PARAM_JAVA_VERSION = "java.version";
     private static final String PARAM_OS_ARCH = "os.arch";

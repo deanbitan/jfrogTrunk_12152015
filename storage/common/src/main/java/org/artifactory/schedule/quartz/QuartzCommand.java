@@ -63,4 +63,9 @@ public abstract class QuartzCommand extends TaskCallback<JobExecutionContext> im
                 (Authentication) jobContext.getMergedJobDataMap().get(Task.TASK_AUTHENTICATION);
         return authentication;
     }
+
+    @Override
+    protected boolean isRunOnlyOnMaster(JobExecutionContext jobContext) {
+        return jobContext.getMergedJobDataMap().getBoolean(Task.TASK_RUN_ONLY_ON_PRIMARY);
+    }
 }

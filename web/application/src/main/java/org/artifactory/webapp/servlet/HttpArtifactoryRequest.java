@@ -18,6 +18,9 @@
 
 package org.artifactory.webapp.servlet;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.request.ArtifactoryRequestBase;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
@@ -83,7 +86,8 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
         Enumeration<String> origins = getOrigins();
         if (origins != null && origins.hasMoreElements()) {
             ArrayList<String> originsList = Collections.list(origins);
-            String currentHostId = HttpUtils.getHostId();
+            String currentHostId = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
+                    HaCommonAddon.class).getHostId();
             int numOfOrigins = originsList.size();
             for (String origin : originsList) {
                 if (numOfOrigins > 1 && currentHostId.equals(origin)) {

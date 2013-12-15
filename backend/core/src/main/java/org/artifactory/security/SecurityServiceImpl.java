@@ -26,6 +26,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
+import org.artifactory.addon.HaAddon;
+import org.artifactory.addon.ha.message.HaMessageTopic;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
@@ -304,6 +306,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         cleanupAclInfo(acl);
         aclStoreService.updateAcl(acl);
         interceptors.onPermissionsUpdate();
+        addons.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null);
     }
 
     @Override
@@ -947,7 +950,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private boolean hasPermission(RepoPath repoPath, ArtifactoryPermission permission) {
-        Authentication authentication = AuthenticationHelper.getAuthentication();
+        Authentication
+                authentication = AuthenticationHelper.getAuthentication();
         if (!isAuthenticated(authentication)) {
             return false;
         }

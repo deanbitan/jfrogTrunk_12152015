@@ -22,9 +22,11 @@ import org.artifactory.common.StatusHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FileLayoutInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.resource.ResourceStreamHandle;
 
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
@@ -254,4 +256,12 @@ public interface Repositories {
      */
     long getArtifactsSize(RepoPath repoPath);
 
+    /**
+     * Returns statistics for the {@code repoPath}, which include downloads count, last download time and last
+     * downloader's name.
+     * @param repoPath to return downloads statistics for
+     * @return {@link StatsInfo} which provides data about downloads, may be null
+     */
+    @Nullable
+    StatsInfo getStats(RepoPath repoPath);
 }

@@ -23,8 +23,8 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.version.converter.XmlConverter;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

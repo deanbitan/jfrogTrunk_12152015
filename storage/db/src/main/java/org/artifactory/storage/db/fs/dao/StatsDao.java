@@ -67,7 +67,7 @@ public class StatsDao extends BaseDao {
     }
 
     public int createStats(Stat stats) throws SQLException {
-        log.debug("Updating stats {}", stats);
+        log.debug("Creating stats {}", stats);
         return jdbcHelper.executeUpdate("INSERT INTO stats VALUES (?, ?, ?, ?)", stats.getNodeId(),
                 stats.getDownloadCount(), stats.getLastDownloaded(), stats.getLastDownloadedBy());
     }

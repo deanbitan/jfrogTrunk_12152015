@@ -52,7 +52,8 @@ public class StartArtifactoryTomcatDev {
         System.setProperty(ConstantValues.pluginScriptsRefreshIntervalSecs.getPropertyName(), "20");
 
         String homeProperty = System.getProperty("artifactory.home");
-        File devArtHome = new File(homeProperty != null ? homeProperty : prefix + "/devenv/.artifactory").getCanonicalFile();
+        File devArtHome = new File(
+                homeProperty != null ? homeProperty : prefix + "/devenv/.artifactory").getCanonicalFile();
         if (!devArtHome.exists() && !devArtHome.mkdirs()) {
             throw new RuntimeException("Failed to create home dir: " + devArtHome.getAbsolutePath());
         }
@@ -60,9 +61,11 @@ public class StartArtifactoryTomcatDev {
 
         File standaloneSrcDir = new File(prefix + "/open/distribution/standalone/src").getCanonicalFile();
         File devEtcDir = new File(standaloneSrcDir, "test/etc");
-        updateDefaultResources(devEtcDir);
-
+        updateMimetypes(devEtcDir);
         copyNewerDevResources(devEtcDir, devArtHome);
+
+        File devHaEtcDir = new File(standaloneSrcDir, "test/ha-etc");
+        copyNewerHaDevResources(devHaEtcDir, devArtHome);
 
         // set the logback.xml
         System.setProperty("logback.configurationFile", new File(devArtHome + "/etc/logback.xml").getAbsolutePath());
@@ -88,15 +91,25 @@ public class StartArtifactoryTomcatDev {
         }
     }
 
+    static void copyNewerHaDevResources(File devHaEtcDir, File devArtHome) throws IOException {
+        updateHaEtc(devHaEtcDir, devArtHome);
+    }
+
+    static void updateHaEtc(File devHaEtcDir, File devArtHome) throws IOException {
+        File homeHaEtcDir = new File(devArtHome, "ha-etc");
+        IOFileFilter fileFilter = new NewerFileFilter(devHaEtcDir, homeHaEtcDir);
+        FileUtils.copyDirectory(devHaEtcDir, homeHaEtcDir, fileFilter, true);
+    }
+
     /**
      * Copy newer files from the standalone dir to the working artifactory home dir
      */
-    private static void copyNewerDevResources(File devEtcDir, File artHome) throws IOException {
-        File homeEtcDir = new File(artHome, "etc");
-        IOFileFilter fileFilter = new NewerFileFilter(devEtcDir, homeEtcDir);
-        fileFilter = FileFilterUtils.makeSVNAware(fileFilter);
-        FileUtils.copyDirectory(devEtcDir, homeEtcDir, fileFilter, true);
+    static void copyNewerDevResources(File devEtcDir, File artHome) throws IOException {
+        File homeEtcDir = updateArtEtc(devEtcDir, new File(artHome, "etc"));
+        createConfigBootstrap(homeEtcDir);
+    }
 
+    static void createConfigBootstrap(File homeEtcDir) {
         /**
          * If the bootstrap already exists, it means it's not the first startup, so don't keep the original config file
          * or the etc folder will flood with bootstrap files
@@ -106,7 +119,14 @@ public class StartArtifactoryTomcatDev {
         }
     }
 
-    private static void updateDefaultResources(File devEtcDir) {
+    static File updateArtEtc(File devEtcDir, File artEtc) throws IOException {
+        IOFileFilter fileFilter = new NewerFileFilter(devEtcDir, artEtc);
+        fileFilter = FileFilterUtils.makeSVNAware(fileFilter);
+        FileUtils.copyDirectory(devEtcDir, artEtc, fileFilter, true);
+        return artEtc;
+    }
+
+    static void updateMimetypes(File devEtcDir) {
         File defaultMimeTypes = ResourceUtils.getResourceAsFile("/META-INF/default/mimetypes.xml");
         File devMimeTypes = new File(devEtcDir, "mimetypes.xml");
         if (!devMimeTypes.exists() || defaultMimeTypes.lastModified() > devMimeTypes.lastModified()) {

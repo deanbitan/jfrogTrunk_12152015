@@ -34,8 +34,8 @@ public interface InternalDownloadService extends DownloadService, ReloadableBean
      * Will cause the provided latch to unlock notifying download waiters on a remote repo. We do this after transaction
      * so that new download thread will not override the yet-to-be-committed vfs file.
      *
-     * @param currentDownload
+     * @param latch The latch to release
      */
-    @Async(delayUntilAfterCommit = true, transactional = true)
-    void releaseDownloadWaiters(CountDownLatch currentDownload);
+    @Async(delayUntilAfterCommit = true)
+    void releaseDownloadWaiters(CountDownLatch latch);
 }

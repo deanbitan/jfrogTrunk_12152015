@@ -26,6 +26,7 @@ import org.apache.maven.index.Scanner;
 import org.apache.maven.index.ScanningRequest;
 import org.apache.maven.index.ScanningResult;
 import org.apache.maven.index.context.IndexingContext;
+import org.artifactory.util.Files;
 import org.codehaus.plexus.logging.AbstractLogEnabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,7 @@ public class ArtifactoryContentScanner extends AbstractLogEnabled implements Sca
         File[] fileArray = dir.listFiles();
 
         if (fileArray == null) {
-            log.debug("Unexpected null file list returned from {}", dir.getAbsolutePath());
+            log.debug("Unexpected null file list returned from {}: {}", dir.getAbsolutePath(), Files.readFailReason(dir));
             return;
         }
 

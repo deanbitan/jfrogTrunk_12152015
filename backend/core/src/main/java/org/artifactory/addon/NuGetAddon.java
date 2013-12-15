@@ -112,4 +112,9 @@ public interface NuGetAddon extends Addon {
      * @param repoKey The local/cache/virtual repository to activate NuGet packages reindex on
      */
     void requestAsyncReindexNuPkgs(String repoKey);
+
+    //todo consider moving into another common interface of both ha-addon and nuget-addon
+    void internalAddNuPkgToRepoCache(RepoPath repoPath, Properties properties);
+
+    void internalRemoveNuPkgFromRepoCache(String repoKey, String packageId, String packageVersion);
 }

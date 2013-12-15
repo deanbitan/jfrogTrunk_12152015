@@ -235,7 +235,8 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //PATH HANDLING
 
         //Strip any trailing '/'
-        int pathEndIndex = requestPath.endsWith("/") ? requestPath.length() - 1 : requestPath.length();
+        boolean endsWithSlash = requestPath.endsWith("/");
+        int pathEndIndex = endsWithSlash ? requestPath.length() - 1 : requestPath.length();
         String path = pathStartIndex < pathEndIndex ? requestPath.substring(pathStartIndex, pathEndIndex) : "";
 
         //Calculate matrix params on the path and return path without matrix params
@@ -245,7 +246,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         path = processZipResourcePathIfExist(path);
 
         path = URLDecoder.decode(path.replace("+", "%2B"), "UTF-8").replace("%2B", "+");
-        return InfoFactoryHolder.get().createRepoPath(repoKey, path);
+        return InfoFactoryHolder.get().createRepoPath(repoKey, path,endsWithSlash);
     }
 
     protected String processMatrixParamsIfExist(String fragment) {

@@ -21,9 +21,12 @@ package org.artifactory.webapp.wicket.page.config.advanced;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.common.ha.HaNodeProperties;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.label.highlighter.SyntaxHighlighter;
@@ -81,10 +84,11 @@ public class SystemInfoPage extends AuthenticatedPage {
         //// add Artifactory version to the properties, will be alphabetically sorted later.
         properties.setProperty(ConstantValues.artifactoryVersion.getPropertyName(),
                 ConstantValues.artifactoryVersion.getString());
-        TreeSet sortedSystemPropKeys = new TreeSet<>(properties.keySet());
-        for (Object key : sortedSystemPropKeys) {
-            addInfo(infoBuilder, String.valueOf(key), String.valueOf(properties.get(key)));
-        }
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        addInfo(infoBuilder, "artifactory.running.mode", addonsManager.getArtifactoryRunningMode().name());
+        addInfo(infoBuilder, "artifactory.running.state", ContextHelper.get().isOffline() ? "Offline" : "Online");
+        addFromProperties(infoBuilder, properties);
+        addHaProperties(infoBuilder);
         infoBuilder.append("\n").append("General JVM Info:").append("\n");
         OperatingSystemMXBean systemBean = ManagementFactory.getOperatingSystemMXBean();
         addInfo(infoBuilder, "Available Processors", Integer.toString(systemBean.getAvailableProcessors()));
@@ -121,6 +125,24 @@ public class SystemInfoPage extends AuthenticatedPage {
         infoBuilder.append("\nJVM Arguments:\n").append(vmArgumentBuilder.toString());
 
         return StringUtils.removeEnd(infoBuilder.toString(), "\n");
+    }
+
+    private void addFromProperties(StringBuilder infoBuilder, Properties properties) {
+        TreeSet sortedSystemPropKeys = new TreeSet<>(properties.keySet());
+        for (Object key : sortedSystemPropKeys) {
+            addInfo(infoBuilder, String.valueOf(key), String.valueOf(properties.get(key)));
+        }
+    }
+
+    private void addHaProperties(StringBuilder infoBuilder) {
+        ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
+        if (artifactoryHome.isHaConfigured()) {
+            infoBuilder.append("\n").append("HA Node Properties:").append("\n");
+            HaNodeProperties haNodeProperties = artifactoryHome.getHaNodeProperties();
+            if (haNodeProperties != null) {
+                addFromProperties(infoBuilder, haNodeProperties.getProperties());
+            }
+        }
     }
 
     /**

@@ -66,8 +66,8 @@ import java.util.concurrent.Semaphore;
                 @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = LocalReplicationJob.class, strategy = StopStrategy.STOP),
-                @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.STOP)
-        })
+                @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.STOP)},
+        runOnlyOnPrimary = false)
 public class ImportJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(ImportJob.class);
 

@@ -19,14 +19,15 @@
 package org.artifactory.mime.version.converter.v4;
 
 import org.artifactory.mime.version.converter.MimeTypeConverterTest;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.Namespace;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
 
 /**
  * Tests {@link GemMimeTypeConverter}.

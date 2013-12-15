@@ -75,7 +75,7 @@ public enum SecurityVersion implements SubConfigElementVersion {
      *                      one
      */
     SecurityVersion(ArtifactoryVersion from, ArtifactoryVersion until, XmlConverter... xmlConverters) {
-        this.comparator = new VersionComparator(this, from, until);
+        this.comparator = new VersionComparator(from, until);
         this.xmlConverters = xmlConverters;
     }
 

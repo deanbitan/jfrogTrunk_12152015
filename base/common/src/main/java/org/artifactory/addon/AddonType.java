@@ -43,7 +43,9 @@ public enum AddonType {
     WATCH("watch", "Watches", 1500),
     WEBSTART("webstart", "WebStart & Jar Signing", 1600),
     BLACKDUCK("blackduck", "Black Duck Integration", 250),
-    GEMS("gems", "RubyGems", 1100);
+    GEMS("gems", "RubyGems", 1100),
+    HA("ha", "High Availability", 2000);
+
 
     private String addonName;
     private String addonDisplayName;

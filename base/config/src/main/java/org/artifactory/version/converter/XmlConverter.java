@@ -18,7 +18,7 @@
 
 package org.artifactory.version.converter;
 
-import org.jdom.Document;
+import org.jdom2.Document;
 
 /**
  * An XmlConverter converts one xml to another one so it will adhere to a new schema.

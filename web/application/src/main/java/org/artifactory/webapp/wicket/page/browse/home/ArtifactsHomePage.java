@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.browse.home;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.Page;
+import org.apache.wicket.request.handler.ComponentNotFoundException;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.util.HttpUtils;
@@ -42,7 +43,11 @@ public class ArtifactsHomePage extends Page {
             setResponsePage(BrowseRepoPage.class);
         } else {
             String serverUrl = HttpUtils.getServerUrl(WicketUtils.getHttpServletRequest());
-            WicketUtils.getWebResponse().sendRedirect(serverUrl + lastPage);
+            try {
+                WicketUtils.getWebResponse().sendRedirect(serverUrl + lastPage);
+            } catch (ComponentNotFoundException e) {
+                setResponsePage(BrowseRepoPage.class);
+            }
         }
     }
 }

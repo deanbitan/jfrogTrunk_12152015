@@ -57,13 +57,13 @@ public class PathValidatorTest {
         PathValidator.validate("       ");
     }
 
-    @Test(expectedExceptions = InvalidPathException.class)
-    public void illegalCarretLeft() {
+    @Test
+    public void validCarretLeft() {
         PathValidator.validate("hibla<sdf");
     }
 
-    @Test(expectedExceptions = InvalidPathException.class)
-    public void illegalCarretRight() {
+    @Test
+    public void validCarretRight() {
         PathValidator.validate("path/to>file.jar");
     }
 

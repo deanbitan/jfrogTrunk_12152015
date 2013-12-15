@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.service;
 
+import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -169,4 +170,19 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      */
     @Nullable
     ItemMetaInfo getItemMetaInfo(RepoPath repoPath);
+
+    /**
+     * Moves repository path (pointing to a folder) to another absolute target. The move will only move paths the user
+     * has permissions to move and paths that are accepted by the target repository.
+     *
+     * @param from            The source path to move.
+     * @param to              The target path to move to.
+     * @param dryRun          If true the method will just report the expected result but will not move any file
+     * @param suppressLayouts If true, path translation across different layouts should be suppressed.
+     * @param failFast        If true, the operation should fail upon encountering an error.
+     * @return MoveMultiStatusHolder holding the errors and warnings
+     */
+    @Lock
+    MoveMultiStatusHolder moveWithoutMavenMetadata(RepoPath from, RepoPath to, boolean dryRun, boolean suppressLayouts,
+            boolean failFast);
 }

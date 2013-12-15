@@ -20,8 +20,8 @@ package org.artifactory.update.md.v230;
 
 import org.artifactory.update.md.MetadataConverter;
 import org.artifactory.update.md.MetadataType;
-import org.jdom.Document;
-import org.jdom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
 
 /**
  * Converts file and folder info metadata created between versions 2.3.0-2.3.4.1.

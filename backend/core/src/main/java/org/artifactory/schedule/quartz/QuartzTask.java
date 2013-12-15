@@ -18,6 +18,7 @@
 
 package org.artifactory.schedule.quartz;
 
+import com.google.common.collect.ImmutableMap;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.schedule.TaskBase;
 import org.quartz.JobDetail;
@@ -79,6 +80,10 @@ public class QuartzTask extends TaskBase {
     @Override
     public void addAttribute(String key, Object value) {
         jobDetail.getJobDataMap().put(key, value);
+    }
+
+    public ImmutableMap getAttributeMap() {
+        return ImmutableMap.copyOf(jobDetail.getJobDataMap());
     }
 
     @Override

@@ -21,17 +21,20 @@ package org.artifactory.storage.db;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.mbean.MBeanRegistrationService;
-import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.db.fs.dao.NodesDao;
 import org.artifactory.storage.db.mbean.ManagedDataSource;
+import org.artifactory.storage.db.properties.model.DbProperties;
+import org.artifactory.storage.db.properties.service.ArtifactoryDbPropertiesService;
 import org.artifactory.storage.db.spring.ArtifactoryDataSource;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.IdGenerator;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.storage.db.version.ArtifactoryDBVersion;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -55,7 +58,7 @@ import java.util.concurrent.Callable;
  */
 @Repository
 @Reloadable(beanClass = DbService.class)
-public class DbServiceImpl implements DbService, ContextReadinessListener {
+public class DbServiceImpl implements DbService {
     private static final Logger log = LoggerFactory.getLogger(DbServiceImpl.class);
 
     private static final double MYSQL_MIN_VERSION = 5.5;
@@ -70,24 +73,49 @@ public class DbServiceImpl implements DbService, ContextReadinessListener {
     @Autowired
     private IdGenerator idGenerator;
 
-    private DbType dbType;
+    @Autowired
+    private ArtifactoryDbPropertiesService dbPropertiesService;
 
     @PostConstruct
     private void initDb() throws Exception {
         printConnectionInfo();
 
-        dbType = storageProperties.getDbType();
-
         // check if db tables exist and initialize if not
-        checkSchema();
+        if (!isSchemaExist()) {
+            try (Connection con = jdbcHelper.getDataSource().getConnection()) {
 
+                // if using mySQL, check version compatibility
+                if (storageProperties.getDbType() == DbType.MYSQL) {
+                    checkMySqlMinVersion();
+                }
+
+                // read ddl from file and execute
+                log.info("***Creating database schema***");
+                DbUtils.executeSqlStream(con, getDbSchemaSql());
+
+                // Update DBProperties
+                long installTime = System.currentTimeMillis();
+                CompoundVersionDetails versionDetails = ArtifactoryHome.get().readRunningArtifactoryVersion();
+                String versionStr = versionDetails.getVersion().getValue();
+                long timestamp = versionDetails.getTimestamp();
+                int revisionInt = versionDetails.getRevisionInt();
+                dbPropertiesService.updateDbProperties(
+                        new DbProperties(installTime, versionStr, revisionInt, timestamp));
+            }
+        }
+
+        // initialize id generator
         initializeIdGenerator();
+    }
 
+    @Override
+    public void init() {
+        registerDataSourceMBean();
     }
 
     @Override
     public DbType getDatabaseType() {
-        return dbType;
+        return storageProperties.getDbType();
     }
 
     @Override
@@ -112,6 +140,7 @@ public class DbServiceImpl implements DbService, ContextReadinessListener {
         }
     }
 
+    //used via reflection by DbBaseTest
     public void initializeIdGenerator() throws SQLException {
         idGenerator.initializeIdGenerator();
     }
@@ -126,39 +155,25 @@ public class DbServiceImpl implements DbService, ContextReadinessListener {
         return resource;
     }
 
-    /**
-     * Checks if the required schema objects exist and creates them if they don't exist yet.
-     *
-     * @throws Exception if an error occurs
-     */
-    private void checkSchema() throws Exception {
+    private boolean isSchemaExist() throws SQLException {
         log.debug("Checking for database schema existence");
-        Connection con = jdbcHelper.getDataSource().getConnection();
-        ResultSet rs = null;
-        try {
+        try (Connection con = jdbcHelper.getDataSource().getConnection()) {
             DatabaseMetaData metaData = con.getMetaData();
-            String tableName = NodesDao.TABLE_NAME;
-            if (metaData.storesLowerCaseIdentifiers()) {
-                tableName = tableName.toLowerCase();
-            } else if (metaData.storesUpperCaseIdentifiers()) {
-                tableName = tableName.toUpperCase();
-            }
-            rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
-            boolean schemaExists = rs.next();
-            if (!schemaExists) {
-
-                // if using mySQL, check version compatibility
-                if (storageProperties.getDbType() == DbType.MYSQL) {
-                    checkMySqlMinVersion();
-                }
-
-                // read ddl from file and execute
-                log.info("***Creating database schema***");
-                DbUtils.executeSqlStream(con, getDbSchemaSql());
-            }
-        } finally {
-            DbUtils.close(con, null, rs);
+            return tableExists(metaData, NodesDao.TABLE_NAME);
         }
+    }
+
+    private static boolean tableExists(DatabaseMetaData metaData, String tableName) throws SQLException {
+        boolean schemaExists;
+        if (metaData.storesLowerCaseIdentifiers()) {
+            tableName = tableName.toLowerCase();
+        } else if (metaData.storesUpperCaseIdentifiers()) {
+            tableName = tableName.toUpperCase();
+        }
+        try (ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"})) {
+            schemaExists = rs.next();
+        }
+        return schemaExists;
     }
 
     private void printConnectionInfo() throws SQLException {
@@ -213,25 +228,11 @@ public class DbServiceImpl implements DbService, ContextReadinessListener {
         return false;
     }
 
-    @Override
-    public void onContextCreated() {
-    }
-
-    @Override
-    public void onContextReady() {
-    }
-
-    @Override
-    public void onContextUnready() {
-    }
 
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
-    }
-
-    @Override
-    public void init() {
-        registerDataSourceMBean();
+        ArtifactoryDBVersion.convert(source.getVersion(), target.getVersion(), jdbcHelper,
+                storageProperties.getDbType());
     }
 
     @Override

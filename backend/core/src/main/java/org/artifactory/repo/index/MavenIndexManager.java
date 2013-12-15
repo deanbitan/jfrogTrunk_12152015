@@ -19,6 +19,7 @@
 package org.artifactory.repo.index;
 
 
+import com.google.common.io.Closeables;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -149,9 +150,7 @@ public class MavenIndexManager {
                      * Close the handle directly after reading stream and before we start to download the properties
                      * in case the target repo does not allow multiple simultaneous connections
                      */
-                    if (remoteIndexHandle != null) {
-                        remoteIndexHandle.close();
-                    }
+                    Closeables.close(remoteIndexHandle, false);
                 }
 
                 fos = null;
@@ -162,9 +161,7 @@ public class MavenIndexManager {
                     TaskUtils.copyLarge(remotePropertiesHandle.getInputStream(), fos);
                 } finally {
                     IOUtils.closeQuietly(fos);
-                    if (remotePropertiesHandle != null) {
-                        remotePropertiesHandle.close();
-                    }
+                    Closeables.close(remotePropertiesHandle, false);
                 }
 
                 //Return the handle to the zip file (will be removed when the handle is closed)
@@ -296,12 +293,8 @@ public class MavenIndexManager {
     }
 
     private void closeHandles() {
-        if (indexHandle != null) {
-            indexHandle.close();
-        }
-        if (propertiesHandle != null) {
-            propertiesHandle.close();
-        }
+        IOUtils.closeQuietly(indexHandle);
+        IOUtils.closeQuietly(propertiesHandle);
     }
 
     private boolean shouldFetchRemoteIndex(RemoteRepo remoteRepo) {

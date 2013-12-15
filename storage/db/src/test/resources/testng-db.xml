@@ -1,5 +1,26 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 <suite name="DB Tests Suite" thread-count="1" verbose="1" parallel="false">
+    <!--ArtifactoryDBVersionTest should be the first test in order to convert old databases to 3.1.x-->
+    <test name="ArtifactoryDBVersionTest">
+        <classes>
+            <class name="org.artifactory.storage.db.upgrades.versions.ArtifactoryDBVersionTest"/>
+        </classes>
+    </test>
+    <test name="ArtifactoryServersDaoTest">
+        <classes>
+            <class name="org.artifactory.storage.db.ha.itest.dao.ArtifactoryServersDaoTest"/>
+        </classes>
+    </test>
+    <test name="DbPropertiesDaoTest">
+        <classes>
+            <class name="org.artifactory.storage.db.base.itest.dao.DbPropertiesDaoTest"/>
+        </classes>
+    </test>
+    <test name="ArtifactoryServersServiceImplTest">
+        <classes>
+            <class name="org.artifactory.storage.db.ha.itest.service.ArtifactoryServersServiceImplTest"/>
+        </classes>
+    </test>
     <test name="FileServiceImplTest">
         <classes>
             <class name="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest"/>

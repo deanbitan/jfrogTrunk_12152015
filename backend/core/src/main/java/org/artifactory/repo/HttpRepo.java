@@ -36,9 +36,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -246,8 +248,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
         final RepoPath repoPath = InternalRepoPathFactory.create(getKey(), pathForUrl);
         final Request requestForPlugins = requestContext.getRequest();
+        RepoRequests.logToContext("Executing any BeforeRemoteDownload user plugins that may exist");
         pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, requestForPlugins, repoPath);
-        RepoRequests.logToContext("Executing any BeforeRemoteDownload user plugins the may exist");
 
         final GetMethod method = new GetMethod(HttpUtils.encodeQuery(fullUrl));
         RepoRequests.logToContext("Executing GET request to %s", fullUrl);
@@ -400,8 +402,17 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return fullUrl;
     }
 
+    /**
+     * Notice: for use with HEAD method, no content is expected in the response.
+     * Process the remote repository's response and construct a repository resource.
+     *
+     * @param repoPath of requested resource
+     * @param method   executed {@link HeadMethod} from which to process the response.
+     * @return
+     */
     protected RepoResource handleGetInfoResponse(RepoPath repoPath, HttpMethodBase method) {
-        if (method.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        int statusCode = method.getStatusCode();
+        if (statusCode == HttpStatus.SC_NOT_FOUND) {
             RepoRequests.logToContext("Received status 404 (message: %s) on remote info request - returning unfound " +
                     "resource", method.getStatusText());
             return new UnfoundRepoResource(repoPath, method.getStatusText());
@@ -411,9 +422,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             RepoRequests.logToContext("Remote info request was redirected to a directory - returning unfound resource");
             throw new FileExpectedException(new RepoPathImpl(repoPath.getRepoKey(), repoPath.getPath(), true));
         }
-        if (method.getStatusCode() != HttpStatus.SC_OK) {
+        // Some servers may return 204 instead of 200
+        if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_NO_CONTENT) {
             RepoRequests.logToContext("Received status {} (message: %s) on remote info request - returning unfound " +
-                    "resource", method.getStatusCode(), method.getStatusText());
+                    "resource", statusCode, method.getStatusText());
             // send back unfound resource with 404 status
             return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
@@ -422,9 +434,17 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         RepoRequests.logToContext("Found remote resource with last modified time - %s",
                 new Date(lastModified).toString());
 
-        long size = getContentLength(method);
-        if (size != -1) {
-            RepoRequests.logToContext("Found remote resource with content length - %s", size);
+        long contentLength = HttpUtils.getContentLength(method);
+        if (contentLength != -1) {
+            RepoRequests.logToContext("Found remote resource with content length - %s", contentLength);
+        }
+
+        // if status is 204 and length is not 0 then the remote server is doing something wrong
+        if (statusCode == HttpStatus.SC_NO_CONTENT && contentLength > 0) {
+            // send back unfound resource with 404 status
+            RepoRequests.logToContext("Received status {} (message: %s) on remote info request - returning unfound " +
+                    "resource", statusCode, method.getStatusText());
+            return new UnfoundRepoResource(repoPath, method.getStatusText());
         }
 
         Set<ChecksumInfo> checksums = getChecksums(method);
@@ -448,7 +468,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         RepoRequests.logToContext("Returning found remote resource info");
-        RepoResource res = new RemoteRepoResource(repoPath, lastModified, size, checksums);
+        RepoResource res = new RemoteRepoResource(repoPath, lastModified, contentLength, checksums);
         return res;
     }
 
@@ -484,10 +504,12 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         for (String originatedHeader : originatedHeaders) {
             method.addRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, originatedHeader);
         }
-        method.addRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, HttpUtils.getHostId());
+        String hostId = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
+                HaCommonAddon.class).getHostId();
+        method.addRequestHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, hostId);
 
         //For backwards compatibility
-        method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, HttpUtils.getHostId());
+        method.setRequestHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, hostId);
 
         //Follow redirects
         if (!(method instanceof EntityEnclosingMethod)) {
@@ -563,15 +585,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         return true;
-    }
-
-    public static long getContentLength(HttpMethod method) {
-        Header contentLengthHeader = method.getResponseHeader("Content-Length");
-        if (contentLengthHeader == null) {
-            return -1;
-        }
-        String contentLengthString = contentLengthHeader.getValue();
-        return Long.parseLong(contentLengthString);
     }
 
     private static Set<ChecksumInfo> getChecksums(HttpMethodBase method) {

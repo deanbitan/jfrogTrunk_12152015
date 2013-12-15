@@ -72,16 +72,18 @@ public class DbRepoExportSearchHandler extends DbExportBase {
     private void createExportZip(MutableStatusHolder statusHolder, ExportSettings settings) {
         try {
             statusHolder.status("Archiving exported search result '" + searchResults.getName() + "'.", log);
-            File tempDir = settings.getArchiveTempDir().toFile();
+            File tempDir = settings.getBaseDir();
             File tempArchive = new File(tempDir.getParentFile(), settings.getBaseDir().getName() + ".zip");
             // Create the archive
             ZipUtils.archive(tempDir, tempArchive, true);
             //Delete the exploded directory
             FileUtils.deleteDirectory(tempDir);
             //Copy the zip back into the final destination
-            FileUtils.copyFile(tempArchive, baseSettings.getBaseDir());
-            //Delete the temporary zip
-            FileUtils.deleteQuietly(tempArchive);
+            if (!tempArchive.getParentFile().equals(baseSettings.getBaseDir())) {
+                FileUtils.copyFile(tempArchive, baseSettings.getBaseDir());
+                //Delete the temporary zip
+                FileUtils.deleteQuietly(tempArchive);
+            }
         } catch (IOException e) {
             statusHolder.error("Unable to create zip archive", -1, e, log);
         }
@@ -100,12 +102,7 @@ public class DbRepoExportSearchHandler extends DbExportBase {
         //Make sure the directory does not already exist
         File exportDir;
         if (settings.isCreateArchive()) {
-            try {
-                exportDir = settings.getArchiveTempDir().toFile();
-            } catch (IOException e) {
-                status.error("Failed to create temporary directory", e, log);
-                return;
-            }
+            exportDir = settings.getBaseDir();
         } else {
             exportDir = settings.getBaseDir();
         }

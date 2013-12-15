@@ -19,9 +19,10 @@
 package org.artifactory.util;
 
 import com.google.common.base.Charsets;
-import org.jdom.Document;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.XMLOutputter;
+import org.jdom2.Document;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.input.sax.XMLReaders;
+import org.jdom2.output.XMLOutputter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -73,7 +74,7 @@ public abstract class XmlUtils {
     public static SAXBuilder createSaxBuilder() {
         SAXBuilder sb = new SAXBuilder();
         // don't validate and don't load dtd
-        sb.setValidation(false);
+        sb.setXMLReaderFactory(XMLReaders.NONVALIDATING);
         sb.setFeature("http://xml.org/sax/features/validation", false);
         sb.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
         sb.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);

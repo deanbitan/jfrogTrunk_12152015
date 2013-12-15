@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +49,10 @@ public class SpringConfigPaths {
         return installedAddonPaths;
     }
 
+    /**
+     * @return An array of all the spring xml configuration paths. This includes the standard configuration paths and
+     * the enabled addons configuration paths.
+     */
     public String[] getAllPaths() {
         List<String> allPaths = new ArrayList<>();
         allPaths.addAll(paths);
@@ -57,7 +62,7 @@ public class SpringConfigPaths {
             }
         }
         String[] pathsToReturn = allPaths.toArray(new String[allPaths.size()]);
-        log.debug("Spring configuration paths: {}", pathsToReturn);
+        log.debug("Spring configuration paths: " + Arrays.toString(pathsToReturn));
         return pathsToReturn;
     }
 }

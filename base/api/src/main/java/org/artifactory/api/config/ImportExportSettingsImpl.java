@@ -23,8 +23,6 @@ import org.artifactory.sapi.common.BaseSettings;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -70,14 +68,6 @@ public class ImportExportSettingsImpl implements BaseSettings {
     @Override
     public File getBaseDir() {
         return baseDir;
-    }
-
-    @Override
-    public Path getArchiveTempDir() throws IOException {
-        if (archiveTempDir == null) {
-            archiveTempDir = Files.createTempDirectory("artifactory-export");
-        }
-        return archiveTempDir;
     }
 
     @Override

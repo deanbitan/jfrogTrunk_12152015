@@ -76,6 +76,10 @@ public class TooltipLabel extends Label {
         this.text = text;
     }
 
+    protected void setTooltip(String tooltip) {
+        this.tooltip = tooltip;
+    }
+
     @Override
     public void onComponentTagBody(MarkupStream markupStream, ComponentTag openTag) {
         replaceComponentTagBody(markupStream, openTag, text);

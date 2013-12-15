@@ -90,7 +90,8 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
         File[] firstLevel = binariesFolder.listFiles();
         // In case the binaries folder does not contain files, it returns null
         if (firstLevel == null) {
-            statusHolder.warn("No files found in folder: " + binariesFolder.getAbsolutePath(), log);
+            statusHolder.warn("No files found in folder: " + binariesFolder.getAbsolutePath() + ": "
+                    + Files.readFailReason(binariesFolder), log);
         } else {
             // Then prune empty dirs
             statusHolder.status("Starting removing empty folders in " + binariesFolder.getAbsolutePath(), log);

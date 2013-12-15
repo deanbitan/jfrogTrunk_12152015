@@ -82,12 +82,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
 
         File targetBase;
         if (settings.isCreateArchive()) {
-            try {
-                targetBase = settings.getArchiveTempDir().toFile();
-            } catch (IOException e) {
-                status.error("Failed to create temporary export dir", e, log);
-                return;
-            }
+            targetBase = settings.getBaseDir();
         } else {
             targetBase = settings.getBaseDir();
         }

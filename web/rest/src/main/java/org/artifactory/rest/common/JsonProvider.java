@@ -123,6 +123,7 @@ import javax.ws.rs.ext.Provider;
         SearchRestConstants.MT_CHECKSUM_SEARCH_RESULT,
         SearchRestConstants.MT_BAD_CHECKSUM_SEARCH_RESULT,
         ArtifactRestConstants.MT_ITEM_PERMISSIONS,
+        ArtifactRestConstants.MT_STATS_INFO,
         SearchRestConstants.MT_DEPENDENCY_BUILDS,
         SecurityRestConstants.MT_GROUP,
         SecurityRestConstants.MT_USER,

@@ -59,7 +59,7 @@ public interface BintrayService {
     /**
      * Pushing synchronously single artifact to Bintray
      *
-     * @param itemInfo      The item info to push, in case of a folder all it's contect will get pushed
+     * @param itemInfo      The item info to push, in case of a folder all it's content will get pushed
      * @param bintrayParams The Bintray model which holds the properties where to push
      * @param headersMap    request header
      * @return Multi status holder containing all the logs during the process

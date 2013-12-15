@@ -24,6 +24,7 @@ import org.apache.wicket.authroles.authorization.strategies.role.annotations.Aut
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
@@ -71,6 +72,8 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
                 String editorValue = centralPanel.getEditorValue();
                 if (StringUtils.isEmpty(editorValue)) {
                     error("Cannot save null or empty central configuration.");
+                } else if (ContextHelper.get().isOffline()) {
+                    error("Cannot save config descriptor during offline state.");
                 } else {
                     try {
                         centralConfigService.setConfigXml(editorValue);

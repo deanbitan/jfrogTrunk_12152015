@@ -18,20 +18,14 @@
 
 package org.artifactory.spring;
 
+import org.artifactory.common.property.ArtifactoryConverter;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.sapi.common.Lock;
-import org.artifactory.version.CompoundVersionDetails;
 
 /**
  * User: freds Date: Jul 21, 2008 Time: 11:43:00 AM
  */
-public interface ReloadableBean {
-    /**
-     * Run any necessary conversions to bring the system from the source version to the target version.
-     * This method is called before {@link org.artifactory.spring.ReloadableBean#init()} and in the order of
-     * dependencies between the services as declared in {@link org.artifactory.spring.Reloadable#initAfter()}.
-     */
-    void convert(CompoundVersionDetails source, CompoundVersionDetails target);
+public interface ReloadableBean extends ArtifactoryConverter {
 
     /**
      * This init will be called after the context is created and can be annotated with transactional propagation

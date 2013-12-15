@@ -19,17 +19,24 @@
 package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.context.ContextHelper;
+import org.artifactory.addon.license.VerificationResult;
+import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.security.ArtifactoryPermission;
+import org.artifactory.storage.db.servers.model.ArtifactoryServer;
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import static org.artifactory.addon.license.VerificationResult.error;
+import static org.artifactory.addon.license.VerificationResult.valid;
 
 /**
  * @author Yossi Shaul
@@ -37,9 +44,20 @@ import java.util.Set;
 @Component
 public class OssAddonsManager implements AddonsManager, AddonsWebManager {
 
+    public static final String OSS_LICENSE_KEY_HASH = "Artifactory OSS";
+
+    @Autowired
+    private ArtifactoryServersCommonService serversService;
+    protected ArtifactoryContext context;
+
+    @Autowired
+    private void setApplicationContext(ApplicationContext context) throws BeansException {
+        this.context = (ArtifactoryContext) context;
+    }
+
     @Override
     public <T extends Addon> T addonByType(Class<T> type) {
-        return ContextHelper.get().beanForType(type);
+        return context.beanForType(type);
     }
 
     @Override
@@ -58,7 +76,7 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
 
     @Override
     public boolean isAdminPageAccessible() {
-        AuthorizationService authService = ContextHelper.get().beanForType(AuthorizationService.class);
+        AuthorizationService authService = context.beanForType(AuthorizationService.class);
         return authService.isAdmin() || authService.hasPermission(ArtifactoryPermission.MANAGE);
     }
 
@@ -88,8 +106,8 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
-    public boolean isLicenseKeyValid(String licenseKey) {
-        return false;
+    public VerificationResult isLicenseKeyValid(String licenseKey) {
+        return error;
     }
 
     @Override
@@ -98,7 +116,7 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
-    public void installLicense(String licenseKey) throws IOException {
+    public VerificationResult installLicense(String licenseKey) {
         throw new UnsupportedOperationException();
     }
 
@@ -109,7 +127,12 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
 
     @Override
     public String getLicenseKeyHash() {
-        return "";
+        return OSS_LICENSE_KEY_HASH;
+    }
+
+    @Override
+    public boolean lockdown() {
+        return false;
     }
 
     @Override
@@ -128,14 +151,26 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
-    public boolean lockdown() {
-        return false;
-    }
-
-    @Override
     public boolean isInstantiationAuthorized(Class componentClass) {
         return true;
     }
+
+    @Override
+    public VerificationResult verifyAllArtifactoryServers() {
+        List<ArtifactoryServer> otherMembers = serversService.getOtherActiveMembers();
+        if (!otherMembers.isEmpty()) {
+            context.setOffline(); //leave it here
+            throw new RuntimeException("Found active HA servers in DB, OSS is not supported in by active HA " +
+                    "environment. Shutting down Artifactory.");
+        }
+        return valid;
+    }
+
+    @Override
+    public ArtifactoryRunningMode getArtifactoryRunningMode() {
+        return ArtifactoryRunningMode.OSS;
+    }
+
 
     @Override
     public void interceptResponse(ArtifactoryResponse response) {

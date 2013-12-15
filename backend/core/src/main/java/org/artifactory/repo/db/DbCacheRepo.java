@@ -128,7 +128,11 @@ public class DbCacheRepo extends DbLocalRepo<LocalCacheRepoDescriptor> implement
     public void unexpire(String path) {
         //Reset the resource age so it is kept being cached
         MutableVfsItem mutableItem = getMutableFsItem(getRepoPath(path));
-        mutableItem.setUpdated(System.currentTimeMillis());
+        if (mutableItem != null) {
+            mutableItem.setUpdated(System.currentTimeMillis());
+        } else {
+            log.error("Attempt to unexpire non existent resource: {}", path);
+        }
     }
 
     @Override

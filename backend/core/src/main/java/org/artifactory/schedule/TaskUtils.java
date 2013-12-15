@@ -94,6 +94,7 @@ public abstract class TaskUtils {
         task.addAttribute(TaskBase.TASK_TOKEN, task.getToken());
         JobCommand jobCommand = task.getType().getAnnotation(JobCommand.class);
         task.addAttribute(TaskBase.TASK_AUTHENTICATION, getAuthentication(jobCommand, task, manual));
+        task.addAttribute(TaskBase.TASK_RUN_ONLY_ON_PRIMARY, jobCommand.runOnlyOnPrimary());
         // Set good state for singleton
         if (jobCommand.singleton()) {
             // Manual activation of a singleton task is not singleton

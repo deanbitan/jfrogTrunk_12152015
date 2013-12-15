@@ -24,7 +24,8 @@ package org.artifactory.spring;
 public interface ContextReadinessListener {
 
     /**
-     * Called once after the context has been created and all beans inited
+     * Called once after the context has been created, all beans initialized and context ready
+     * Actually called AFTER contextReady
      */
     void onContextCreated();
 

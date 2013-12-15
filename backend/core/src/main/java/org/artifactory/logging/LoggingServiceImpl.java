@@ -19,6 +19,7 @@
 package org.artifactory.logging;
 
 import org.apache.commons.io.FileUtils;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.logging.version.LoggingVersion;
@@ -72,9 +73,9 @@ public class LoggingServiceImpl implements LoggingService {
         }
     }
 
-    private void convertAndSave(File toConvert, ImportSettings settings) throws IOException {
+    private void convertAndSave(File from, ImportSettings settings) throws IOException {
         ArtifactoryHome artifactoryHome = ArtifactoryHome.get();
-        CompoundVersionDetails source = artifactoryHome.getOriginalVersionDetails();
+        CompoundVersionDetails source = ContextHelper.get().getConverterManager().getOriginalHomeVersionDetails();
 
         ArtifactorySystemProperties properties = artifactoryHome.getArtifactoryProperties();
 
@@ -83,7 +84,7 @@ public class LoggingServiceImpl implements LoggingService {
             LoggingVersion.values();
             ArtifactoryVersion importedVersion = BackupUtils.findVersion(settings.getBaseDir());
             LoggingVersion originalVersion = importedVersion.getSubConfigElementVersion(LoggingVersion.class);
-            originalVersion.convert(toConvert.getParentFile());
+            originalVersion.convert(from.getParentFile(), from.getParentFile());
             properties.setProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "true");
         }
     }
