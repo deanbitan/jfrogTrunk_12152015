@@ -3,15 +3,11 @@ package org.artifactory.converters;
 
 import org.artifactory.common.property.ArtifactoryConverter;
 
-public interface ConverterProvider extends VersionProvider {
-
-    void homeReady();
-
-    void dbAccessReady();
+public interface ConverterManager {
 
     void serviceConvert(ArtifactoryConverter artifactoryConverter);
 
-    void conversionEnded();
+    void conversionFinished();
 
     boolean isConverting();
 }

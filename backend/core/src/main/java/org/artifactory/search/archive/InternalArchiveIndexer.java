@@ -38,4 +38,5 @@ public interface InternalArchiveIndexer extends ArchiveIndexer {
     @Lock
     boolean index(RepoPath archiveRepoPath);
 
+    void triggerQueueIndexing();
 }

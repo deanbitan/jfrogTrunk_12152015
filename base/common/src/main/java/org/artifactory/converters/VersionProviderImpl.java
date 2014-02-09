@@ -22,8 +22,10 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.storage.db.properties.model.DbProperties;
 import org.artifactory.storage.db.properties.service.ArtifactoryCommonDbPropertiesService;
+import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.ArtifactoryVersionReader;
 import org.artifactory.version.CompoundVersionDetails;
+import org.artifactory.version.ConfigVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +34,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import static java.lang.String.valueOf;
+import static org.artifactory.version.ArtifactoryVersion.v304;
+
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public class VersionProviderImpl implements VersionProvider {
     private static final Logger log = LoggerFactory.getLogger(VersionProviderImpl.class);
@@ -43,17 +48,18 @@ public class VersionProviderImpl implements VersionProvider {
      */
     private CompoundVersionDetails runningVersion;
     /**
-     * The initial version read from the local properties file on startup. Effective only until the conversion starts.
+     * The initial version from the local home properties file on startup. Effective only until the conversion starts.
      */
     private CompoundVersionDetails originalHomeVersion;
 
     /**
-     * The initial version read from the cluster properties file on startup. Effective only until the conversion starts.
+     * The initial version from the cluster home properties file on startup. Effective only until the conversion starts.
      */
     private CompoundVersionDetails originalHaVersion;
 
     /**
-     * The initial version read from the database. Not null after db ready.
+     * The initial version from the database. Not null only after the call to loadDbVersion() method which
+     * occurs first thing after access to the database is allowed.
      */
     private CompoundVersionDetails originalServiceVersion;
 
@@ -68,64 +74,80 @@ public class VersionProviderImpl implements VersionProvider {
     private void init() {
         try {
             runningVersion = artifactoryHome.readRunningArtifactoryVersion();
+            log.debug("Current running version is : {}", runningVersion.getVersion().name());
             originalHomeVersion = runningVersion;
             originalHaVersion = runningVersion;
-            File homeArtifactoryPropertiesFile = artifactoryHome.getHomeArtifactoryPropertiesFile();
-            updateOriginalVersion(homeArtifactoryPropertiesFile, false);
-            File haArtifactoryPropertiesFile = artifactoryHome.getHaArtifactoryPropertiesFile();
-            updateOriginalVersion(haArtifactoryPropertiesFile, true);
+            updateOriginaHomelVersion();
+            verifyVersion(originalHomeVersion.getVersion(), runningVersion.getVersion());
+            log.debug("Last Artifactory home version is: {}", originalHomeVersion.getVersion().name());
+            updateOriginalHalVersion();
+            verifyVersion(originalHaVersion.getVersion(), runningVersion.getVersion());
+            log.debug("Last Artifactory cluster home version is: {}", originalHaVersion.getVersion().name());
         } catch (Exception e) {
             log.error("Fail to load artifactory.properties", e);
         }
-
     }
 
-    private void updateOriginalVersion(File artifactoryPropertiesFile, boolean isHa) throws IOException {
+    /**
+     * Loads the original version from the database.
+     * Calling this method is allowed only after the DBService "PostConstruct", before this stage there is no access
+     * to the database and any try to access it wil fail.
+     */
+    public void loadDbVersion() {
         try {
-            // If the properties file doesn't exists, then create it
-            if (!artifactoryPropertiesFile.exists()) {
-                if (isHa) {
-                    artifactoryHome.writeBundledHaArtifactoryProperties();
+            ArtifactoryCommonDbPropertiesService dbPropertiesService = getArtifactoryCommonDbPropertiesService();
+            boolean dbPropertiesTableExists = dbPropertiesService.isDbPropertiesTableExists();
+            if (dbPropertiesTableExists) {
+                DbProperties dbProperties = dbPropertiesService.getDbProperties();
+                // If the db_properties table exists, but no version found the we can't conclude the original version
+                // in such case the vest choice is to assume that the home version is equals to the database version.
+                if (dbProperties == null) {
+                    log.info("The db_properties table is empty: assuming that the db version is the original local" +
+                            " home version");
+                    originalServiceVersion = originalHomeVersion;
                 } else {
-                    artifactoryHome.writeBundledHomeArtifactoryProperties();
+                    originalServiceVersion = getDbCompoundVersionDetails(dbProperties);
                 }
-            }
-            // Store the original version - may need to activate converters based on it
-            CompoundVersionDetails readVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
-            if (isHa) {
-                originalHaVersion = readVersion;
-                artifactoryHome.writeBundledHaArtifactoryProperties();
             } else {
-                originalHomeVersion = readVersion;
-                artifactoryHome.writeBundledHomeArtifactoryProperties();
+                // In this case it is ok to assume that the version is 3.0.4 since upgrade to 3.1.0 and above is
+                // allowed only from version 3.0.0 and no conversion has been added between version 3.0.0 to 3.0.4.
+                log.info("Failed to find the db_properties table: assuming that the db version is 3.0.4");
+                String version = v304.name();
+                String revision = valueOf(v304.getRevision());
+                long timestampOfVersion304 = 1382872758304l;
+                originalServiceVersion = new CompoundVersionDetails(v304, version, revision, timestampOfVersion304);
             }
-            // Reload ArtifactorySystemProperties
-            Properties properties = new Properties();
-            try (FileInputStream inStream = new FileInputStream(artifactoryPropertiesFile)) {
-                properties.load(inStream);
-            }
-            for (Object o : properties.keySet()) {
-                artifactoryHome.getArtifactoryProperties().setProperty((String) o, properties.getProperty((String) o));
-            }
+            verifyVersion(originalServiceVersion.getVersion(), runningVersion.getVersion());
+            log.debug("Last Artifactory database version is: {}", originalServiceVersion.getVersion().name());
         } catch (Exception e) {
-            // Do nothing
+            log.error("Failed to resolve DbProperties from database", originalServiceVersion.getVersion().name());
+            throw new RuntimeException(e.getMessage(), e);
         }
+    }
 
+    private ArtifactoryCommonDbPropertiesService getArtifactoryCommonDbPropertiesService() {
+        return ContextHelper.get().beanForType(
+                ArtifactoryCommonDbPropertiesService.class);
     }
 
     @Override
-    public CompoundVersionDetails getOriginalHomeVersionDetails() {
+    public CompoundVersionDetails getOriginalHome() {
         return originalHomeVersion;
     }
 
     @Override
-    public CompoundVersionDetails getOriginalHaVersionDetails() {
+    public CompoundVersionDetails getOriginalHa() {
         return originalHaVersion;
     }
 
     @Override
-    public CompoundVersionDetails getRunningVersionDetails() {
+    public CompoundVersionDetails getRunning() {
         return runningVersion;
+    }
+
+    @Override
+    public boolean isOriginalServiceVersionReady() {
+        return originalServiceVersion != null;
     }
 
     /**
@@ -134,33 +156,41 @@ public class VersionProviderImpl implements VersionProvider {
      * @return
      */
     @Override
-    public CompoundVersionDetails getOriginalServiceVersionDetails() {
+    public CompoundVersionDetails getOriginalService() {
+        if (originalServiceVersion == null) {
+            throw new RuntimeException(
+                    "The original version from the database is not ready, use this method after dbService initialization");
+        }
         return originalServiceVersion;
     }
 
-    public boolean startedFromDifferentVersion() {
-        return (getOriginalHomeVersionDetails() != null) && (!getOriginalHomeVersionDetails().isCurrent());
-    }
-
-    public boolean isDbPropertiesVersionCompatible() {
-        // For now just compare the version
-        return originalHomeVersion != null && originalHomeVersion.getVersion().before(runningVersion.getVersion());
-    }
-
-    public void dbReady() {
-        // If the dbProperties doesn't exists then we can assume that source version is consistent
-        originalServiceVersion = runningVersion;
-        ArtifactoryCommonDbPropertiesService dbPropertiesService = ContextHelper.get().beanForType(
-                ArtifactoryCommonDbPropertiesService.class);
-        DbProperties dbProperties = null;
-        try {
-            dbProperties = dbPropertiesService.getDbProperties();
-        } catch (Exception e) {
-            // If the db properties doesn't exists it is ok to assume that the originalServiceVersion= originalHomeVersion
-            originalServiceVersion = originalHomeVersion;
+    private void updateOriginalHalVersion() throws IOException {
+        File artifactoryPropertiesFile = artifactoryHome.getHaArtifactoryPropertiesFile();
+        // If the properties file doesn't exists, then create it
+        if (!artifactoryPropertiesFile.exists()) {
+            artifactoryHome.writeBundledHaArtifactoryProperties();
         }
-        if (dbProperties != null) {
-            originalServiceVersion = getDbCompoundVersionDetails(dbProperties);
+        // Load the original home version
+        originalHaVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
+    }
+
+    private void updateOriginaHomelVersion() throws IOException {
+        File artifactoryPropertiesFile = artifactoryHome.getHomeArtifactoryPropertiesFile();
+        // If the properties file doesn't exists, then create it
+        if (!artifactoryPropertiesFile.exists()) {
+            artifactoryHome.writeBundledHomeArtifactoryProperties();
+        }
+        // Load the original home version
+        originalHomeVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
+    }
+
+    void reloadArtifactorySystemProperties(File artifactoryPropertiesFile) throws IOException {
+        Properties properties = new Properties();
+        try (FileInputStream inStream = new FileInputStream(artifactoryPropertiesFile)) {
+            properties.load(inStream);
+        }
+        for (Object o : properties.keySet()) {
+            artifactoryHome.getArtifactoryProperties().setProperty((String) o, properties.getProperty((String) o));
         }
     }
 
@@ -178,8 +208,22 @@ public class VersionProviderImpl implements VersionProvider {
         return "" + rev;
     }
 
-    public boolean originalIsCurrentVersion(File artifactoryPropertiesFile) {
-        CompoundVersionDetails readVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
-        return readVersion.getVersion().isCurrent();
+    public void verifyVersion(ArtifactoryVersion original, ArtifactoryVersion running) {
+        if (!running.equals(original)) {
+            // the version written in the jar and the version read from the data directory/DB are different
+            // make sure the version from the data directory/DB is supported by the current deployed artifactory
+            ConfigVersion actualConfigVersion = ConfigVersion.findCompatibleVersion(original);
+            //No compatible version -> conversion needed, but supported only from v4 onward
+            if (!actualConfigVersion.isCurrent()) {
+                String msg = "The stored version for (" + original.getValue() + ") " +
+                        "is not up-to-date with the currently deployed Artifactory (" +
+                        running + ")";
+                if (!actualConfigVersion.isAutoUpdateCapable()) {
+                    //Cannot convert
+                    msg += ": no automatic conversion is possible. Exiting now...";
+                    throw new IllegalStateException(msg);
+                }
+            }
+        }
     }
 }

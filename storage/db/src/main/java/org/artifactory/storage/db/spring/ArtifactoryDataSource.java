@@ -18,88 +18,33 @@
 
 package org.artifactory.storage.db.spring;
 
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.artifactory.storage.StorageProperties;
-
-import java.sql.Connection;
+import javax.sql.DataSource;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
 /**
- * A pooling data source wrapper that controls the connection pool(s) and exposed some of its state (used connections,
- * idle etc.)
+ * Common interface for (non JNDI) JDBC data sources used by Artifactory.
  *
  * @author Yossi Shaul
  */
-public class ArtifactoryDataSource extends PoolingDataSource {
-
-    private final String connectionUrl;
-    private final GenericObjectPool genericPool; //for now only used for mbean
-
-    public ArtifactoryDataSource(StorageProperties storageProperties) {
-        GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
-        poolConfig.maxActive = storageProperties.getMaxActiveConnections();
-        poolConfig.maxIdle = storageProperties.getMaxIdleConnections();
-        ObjectPool connectionPool = new GenericObjectPool(null, poolConfig);
-
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
-                connectionUrl = storageProperties.getConnectionUrl(),
-                storageProperties.getUsername(), storageProperties.getPassword());
-
-        PoolableConnectionFactory pcf = new ArtifactoryPoolableConnectionFactory(connectionFactory,
-                connectionPool, null, null, false, false);
-        pcf.setDefaultTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        setPool(connectionPool);
-
-        genericPool = (GenericObjectPool) _pool;
-    }
-
-    public ArtifactoryDataSource(String connectionUrl, GenericObjectPool genericPool) {
-        this.connectionUrl = connectionUrl;
-        this.genericPool = genericPool;
-        setPool(genericPool);
-    }
-
+public interface ArtifactoryDataSource extends DataSource {
     @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        throw new SQLFeatureNotSupportedException();
-    }
+    Logger getParentLogger() throws SQLFeatureNotSupportedException;
 
-    public void close() throws Exception {
-        _pool.close();
-    }
+    void close() throws Exception;
 
     //for now only used for mbean
-    public int getActiveConnectionsCount() {
-        return _pool.getNumActive();
-    }
+    int getActiveConnectionsCount();
 
-    public int getIdleConnectionsCount() {
-        return _pool.getNumIdle();
-    }
+    int getIdleConnectionsCount();
 
-    public int getMaxActive() {
-        return genericPool.getMaxActive();
-    }
+    int getMaxActive();
 
-    public int getMaxIdle() {
-        return genericPool.getMaxIdle();
-    }
+    int getMaxIdle();
 
-    public long getMaxWait() {
-        return genericPool.getMaxWait();
-    }
+    int getMaxWait();
 
-    public int getMinIdle() {
-        return genericPool.getMinIdle();
-    }
+    int getMinIdle();
 
-    public String getUrl() {
-        return connectionUrl;
-    }
+    String getUrl();
 }

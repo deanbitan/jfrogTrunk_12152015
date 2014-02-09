@@ -18,14 +18,22 @@
 
 package org.artifactory.storage;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.storage.RepoStorageSummaryInfo;
+import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.api.storage.StorageQuotaInfo;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.common.ArtifactoryHome;
@@ -33,6 +41,11 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
+import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.mbean.MBeanRegistrationService;
 import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
 import org.artifactory.schedule.Task;
@@ -45,6 +58,8 @@ import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.DbType;
+import org.artifactory.storage.fs.repo.RepoStorageSummary;
+import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.mbean.ManagedStorage;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
@@ -56,7 +71,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static org.artifactory.api.repo.storage.RepoStorageSummaryInfo.RepositoryType;
 
 /**
  * @author yoavl
@@ -73,10 +91,19 @@ public class StorageServiceImpl implements InternalStorageService {
     private DbService dbService;
 
     @Autowired
+    private StorageProperties storageProperties;
+
+    @Autowired
     private InternalBinaryStore binaryStore;
 
     @Autowired
+    private FileService fileService;
+
+    @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private RepositoryService repositoryService;
 
     private boolean derbyUsed;
 
@@ -119,6 +146,12 @@ public class StorageServiceImpl implements InternalStorageService {
     }
 
     @Override
+    public FileStoreStorageSummary getFileStoreStorageSummary() {
+        File binariesFolder = binaryStore.getBinariesDir();
+        return new FileStoreStorageSummary(binariesFolder, storageProperties);
+    }
+
+    @Override
     public StorageQuotaInfo getStorageQuotaInfo(long fileContentLength) {
         CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
         QuotaConfigDescriptor quotaConfig = descriptor.getQuotaConfig();
@@ -132,6 +165,56 @@ public class StorageServiceImpl implements InternalStorageService {
         File binariesFolder = binaryStore.getBinariesDir();
         return new StorageQuotaInfo(binariesFolder, quotaConfig.getDiskSpaceLimitPercentage(),
                 quotaConfig.getDiskSpaceWarningPercentage(), fileContentLength);
+    }
+
+    @Override
+    public StorageSummaryInfo getStorageSummaryInfo() {
+        Set<RepoStorageSummary> summaries = fileService.getRepositoriesStorageSummary();
+        List<RepoDescriptor> repos = Lists.newArrayList();
+        repos.addAll(repositoryService.getLocalAndCachedRepoDescriptors());
+        repos.addAll(repositoryService.getVirtualRepoDescriptors());
+        final ImmutableMap<String, RepoDescriptor> reposMap =
+                Maps.uniqueIndex(repos, new Function<RepoDescriptor, String>() {
+            @Nullable
+            @Override
+            public String apply(@Nullable RepoDescriptor input) {
+                if (input == null) {
+                    return null;
+                }
+                return input.getKey();
+            }
+        });
+        Iterable<RepoStorageSummaryInfo> infos = Iterables.transform(summaries,
+                new Function<RepoStorageSummary, RepoStorageSummaryInfo>() {
+                    @Override
+                    public RepoStorageSummaryInfo apply(RepoStorageSummary r) {
+                        RepositoryType repoType = getRepoType(r.getRepoKey(), reposMap);
+                        return new RepoStorageSummaryInfo(
+                                r.getRepoKey(), repoType, r.getFoldersCount(), r.getFilesCount(), r.getUsedSpace());
+                    }
+
+                    private RepositoryType getRepoType(String repoKey, ImmutableMap<String, RepoDescriptor> repoDescriptors) {
+                        RepoDescriptor repoDescriptor = repoDescriptors.get(repoKey);
+                        if (repoDescriptor == null) {
+                            return RepositoryType.BROKEN;
+                        } else if (repoDescriptor instanceof RemoteRepoDescriptor) {
+                            return RepositoryType.REMOTE;
+                        } else if (repoDescriptor instanceof VirtualRepoDescriptor) {
+                            return RepositoryType.VIRTUAL;
+                        } else if (repoDescriptor instanceof LocalCacheRepoDescriptor) {
+                                return RepositoryType.CACHE;
+                        } else if (repoDescriptor instanceof LocalRepoDescriptor) {
+                            return RepositoryType.LOCAL;
+                        } else {
+                            return RepositoryType.NA;
+                        }
+                    }
+                }
+        );
+
+        BinariesInfo binariesInfo = binaryStore.getBinariesInfo();
+
+        return new StorageSummaryInfo(Sets.newHashSet(infos), binariesInfo);
     }
 
     @Override

@@ -52,6 +52,7 @@ import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.file.path.RepoPathAutoCompleteTextField;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -111,6 +112,8 @@ public class DeployArtifactPanel extends TitledActionPanel {
         private MavenService mavenService;
 
         private DeployModel model;
+        private RepoPathAutoCompleteTextField pathField;
+        private FormComponent targetRepo;
 
         private DeployArtifactForm(File file) {
             super("form");
@@ -125,8 +128,8 @@ public class DeployArtifactPanel extends TitledActionPanel {
             setDefaultModel(new CompoundPropertyModel<>(model));
 
             add(new Label("file.name"));
-            addPathField();
             addTargetRepoDropDown();
+            addPathField();
             addDeployMavenCheckbox();
 
             WebMarkupContainer artifactInfoContainer = newMavenArtifactContainer();
@@ -233,16 +236,18 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addPathField() {
-            FormComponent<String> path = new TextField<String>("targetPath") {
+            pathField = new RepoPathAutoCompleteTextField("targetPath", repoService) {
                 @Override
                 public boolean isEnabled() {
                     return !model.isMavenArtifact;
                 }
             };
-            path.setRequired(true);
-            path.setOutputMarkupId(true);
-            path.add(new DeployTargetPathValidator());
-            add(path);
+            pathField.setRepoKey(((LocalRepoDescriptor) targetRepo.getDefaultModelObject()).getKey());
+            pathField.getDefaultModel();
+            pathField.setRequired(true);
+            pathField.setOutputMarkupId(true);
+            pathField.add(new DeployTargetPathValidator());
+            add(pathField);
 
             add(new HelpBubble("targetPath.help", new ResourceModel("targetPath.help")));
         }
@@ -256,7 +261,13 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addTargetRepoDropDown() {
-            FormComponent targetRepo = new DropDownChoice<>(TARGET_REPO, model.repos);
+            targetRepo = new DropDownChoice<LocalRepoDescriptor>(TARGET_REPO, model.repos);
+            targetRepo.add(new AjaxFormComponentUpdatingBehavior("onchange") {
+                @Override
+                protected void onUpdate(AjaxRequestTarget target) {
+                    pathField.setRepoKey(((LocalRepoDescriptor) get(TARGET_REPO).getDefaultModelObject()).getKey());
+                }
+            });
             setPersistent(targetRepo);
             targetRepo.setRequired(true);
             add(targetRepo);

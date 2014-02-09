@@ -106,6 +106,11 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
+    public boolean isHaLicensed() {
+        return false;
+    }
+
+    @Override
     public VerificationResult isLicenseKeyValid(String licenseKey) {
         return error;
     }

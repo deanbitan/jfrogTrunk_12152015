@@ -38,7 +38,6 @@ import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.InternalArtifactoryRequest;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
@@ -54,7 +53,6 @@ import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.ChecksumPolicyBase;
 import org.artifactory.md.Properties;
-import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.db.DbCacheRepo;
 import org.artifactory.repo.local.ValidDeployPathContext;
@@ -664,7 +662,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
 
             unexpire(cachedResource);
-            afterResourceDownload(remoteResource);
             return cachedResource;
         } finally {
             Closeables.close(handle, false);
@@ -1015,16 +1012,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 InternalContextHelper.get().beanForType(EagerResourcesDownloader.class);
         RepoPath eagerRepoPath = InternalRepoPathFactory.create(getDescriptor().getKey(), eagerPath);
         resourcesDownloader.downloadAsync(eagerRepoPath);
-    }
-
-    private void afterResourceDownload(RepoResource resource) {
-        RepoRequests.logToContext("Executing async archive content indexing if needed");
-        String path = resource.getRepoPath().getPath();
-        MimeType ct = NamingUtils.getMimeType(path);
-        if (ct.isArchive() && ct.isIndex()) {
-            ArchiveIndexer archiveIndexer = InternalContextHelper.get().beanForType(ArchiveIndexer.class);
-            archiveIndexer.asyncIndex(InternalRepoPathFactory.create(localCacheRepo.getKey(), path));
-        }
     }
 
     /**

@@ -18,12 +18,8 @@
 
 package org.artifactory.storage.db.spring;
 
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.storage.StorageProperties;
@@ -44,7 +40,6 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
 
 /**
  * A Spring {@link org.springframework.context.annotation.Configuration} to initialized database beans.
@@ -67,7 +62,7 @@ public class DbConfigFactory implements BeanFactoryAware {
         if (result != null) {
             return result;
         } else {
-            return new ArtifactoryDataSource(storageProperties);
+            return new ArtifactoryTomcatDataSource(storageProperties);
         }
     }
 
@@ -104,29 +99,12 @@ public class DbConfigFactory implements BeanFactoryAware {
             return result;
         }
 
-        GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
-        poolConfig.maxActive = 1;
-        poolConfig.maxIdle = 1;
-        GenericObjectPool connectionPool = new GenericObjectPool(null, poolConfig);
-
-        String connectionUrl = storageProperties.getConnectionUrl();
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
-                connectionUrl,
-                storageProperties.getUsername(), storageProperties.getPassword());
-
-        // default auto commit true!
-        PoolableConnectionFactory pcf = new ArtifactoryPoolableConnectionFactory(connectionFactory,
-                connectionPool, null, null, false, true);
-        pcf.setDefaultTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        return new ArtifactoryDataSource(connectionUrl, connectionPool);
+        return ArtifactoryTomcatDataSource.createUniqueIdDataSource(storageProperties);
     }
 
     @Bean(name = "storageProperties")
     public StorageProperties getDbProperties() throws IOException {
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-
-        // TODO: [by YS] read the database used to start artifactory from artifactory.properties.
-        // should fail if it used to be non derby and the storage.properties is not found
 
         File storagePropsFile = artifactoryHome.getStoragePropertiesFile();
         if (!storagePropsFile.exists()) {

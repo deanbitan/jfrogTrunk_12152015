@@ -63,14 +63,14 @@ public class DeleteAction extends RepoAwareItemAction {
     protected void deleteItem(RepoAwareItemEvent e) {
         RepoPath repoPath = e.getRepoPath();
         StatusHolder status = callUndeploy(repoPath);
-        removeNodePanel(e);
-        notifyListeners(e);
 
         if (status.isError()) {
             String message = status.getStatusMsg();
             Session.get().error("Delete failed with error: " + message);
         } else {
             Session.get().info(getDeleteSuccessMessage(repoPath));
+            removeNodePanel(e);
+            notifyListeners(e);
         }
         AjaxUtils.refreshFeedback(e.getTarget());
     }

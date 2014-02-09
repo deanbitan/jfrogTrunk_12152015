@@ -28,6 +28,8 @@ import java.util.List;
  */
 public interface SecurityConfigurationChangesInterceptor extends Interceptor {
 
+    // TODO: Missing on updates events. Cannot be used for SecurityListener.
+
     /**
      * Called when a new user is added
      *

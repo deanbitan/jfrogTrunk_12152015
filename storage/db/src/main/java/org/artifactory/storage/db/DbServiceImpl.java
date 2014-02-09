@@ -19,6 +19,7 @@
 package org.artifactory.storage.db;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.tomcat.jdbc.pool.jmx.ConnectionPool;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
@@ -31,6 +32,7 @@ import org.artifactory.storage.db.mbean.ManagedDataSource;
 import org.artifactory.storage.db.properties.model.DbProperties;
 import org.artifactory.storage.db.properties.service.ArtifactoryDbPropertiesService;
 import org.artifactory.storage.db.spring.ArtifactoryDataSource;
+import org.artifactory.storage.db.spring.ArtifactoryTomcatDataSource;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.IdGenerator;
 import org.artifactory.storage.db.util.JdbcHelper;
@@ -163,17 +165,8 @@ public class DbServiceImpl implements DbService {
         }
     }
 
-    private static boolean tableExists(DatabaseMetaData metaData, String tableName) throws SQLException {
-        boolean schemaExists;
-        if (metaData.storesLowerCaseIdentifiers()) {
-            tableName = tableName.toLowerCase();
-        } else if (metaData.storesUpperCaseIdentifiers()) {
-            tableName = tableName.toUpperCase();
-        }
-        try (ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"})) {
-            schemaExists = rs.next();
-        }
-        return schemaExists;
+    public static boolean tableExists(DatabaseMetaData metaData, String tableName) throws SQLException {
+        return DbUtils.tableExists(metaData, tableName);
     }
 
     private void printConnectionInfo() throws SQLException {
@@ -193,8 +186,18 @@ public class DbServiceImpl implements DbService {
     private void registerDataSourceMBean() {
         DataSource dataSource = jdbcHelper.getDataSource();
         if (dataSource instanceof ArtifactoryDataSource) {
-            ContextHelper.get().beanForType(MBeanRegistrationService.class).
-                    register(new ManagedDataSource((ArtifactoryDataSource) dataSource), "Storage", "Data Source");
+            ContextHelper.get().beanForType(MBeanRegistrationService.class).register(
+                    new ManagedDataSource((ArtifactoryDataSource) dataSource, jdbcHelper), "Storage", "Data Source");
+        }
+        if (dataSource instanceof ArtifactoryTomcatDataSource) {
+            // register the Tomcat JDBC pool JMX if enabled
+            ArtifactoryTomcatDataSource tomcatDataSource = (ArtifactoryTomcatDataSource) dataSource;
+            if (tomcatDataSource.isJmxEnabled()) {
+                ConnectionPool jmxPool = tomcatDataSource.getPool().getJmxPool();
+                ContextHelper.get().beanForType(MBeanRegistrationService.class)
+                        .register(jmxPool, "Storage", "Connection Pool");
+
+            }
         }
     }
 
@@ -231,8 +234,7 @@ public class DbServiceImpl implements DbService {
 
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
-        ArtifactoryDBVersion.convert(source.getVersion(), target.getVersion(), jdbcHelper,
-                storageProperties.getDbType());
+        ArtifactoryDBVersion.convert(source.getVersion(), jdbcHelper, storageProperties.getDbType());
     }
 
     @Override

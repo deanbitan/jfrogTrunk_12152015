@@ -128,7 +128,10 @@ public abstract class SpringConfigResourceLoader {
                     if (!disabledAddons.contains(addonName)) {
                         // addon is enabled, add it's addon.xml to the spring context
                         log.debug("Adding enabled addon: {}", addonName);
-                        state = AddonState.INACTIVATED; //  if license is installed it will be activated by the manager 
+                        state = AddonState.INACTIVATED; //  if license is installed it will be activated by the manager
+                    } else if ("ha".equals(addonName) && !ArtifactoryHome.get().isHaConfigured()) {
+                        log.debug("Adding not configured HA addon");
+                        state = AddonState.NOT_CONFIGURED;
                     } else {
                         log.debug("Adding disabled addon: {}", addonName);
                         state = AddonState.DISABLED;

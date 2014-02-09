@@ -5,30 +5,38 @@ import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.converters.ConverterProvider;
+import org.artifactory.converters.ConverterManager;
 import org.artifactory.converters.ConvertersManagerImpl;
+import org.artifactory.converters.VersionProvider;
+import org.artifactory.converters.VersionProviderImpl;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.spring.SpringConfigPaths;
 import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.storage.db.properties.service.ArtifactoryCommonDbPropertiesService;
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
 import org.artifactory.version.ArtifactoryVersion;
 
 import java.util.Map;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public class MockArtifactoryContext implements ArtifactoryContext {
 
     private ConvertersManagerImpl convertersManager;
+    private VersionProviderImpl versionProvider;
     private final MockDbPropertiesService mockDbPropertiesService;
     private final MockArtifactoryStateManager mockArtifactoryStateManager;
+    private final MockArtifactoryServersCommonService mockArtifactoryServersCommonService;
 
-    public MockArtifactoryContext(ArtifactoryVersion version, long release, ConvertersManagerImpl convertersManager) {
+    public MockArtifactoryContext(ArtifactoryVersion version, long release, ConvertersManagerImpl convertersManager,
+            VersionProviderImpl versionProvider) {
         this.convertersManager = convertersManager;
+        this.versionProvider = versionProvider;
         mockDbPropertiesService = new MockDbPropertiesService(version, release);
         mockArtifactoryStateManager = new MockArtifactoryStateManager();
+        mockArtifactoryServersCommonService = new MockArtifactoryServersCommonService(version);
     }
 
     @Override
@@ -49,6 +57,10 @@ public class MockArtifactoryContext implements ArtifactoryContext {
         if (type.equals(ArtifactoryStateManager.class)) {
             return (T) mockArtifactoryStateManager;
         }
+        if (type.equals(ArtifactoryServersCommonService.class)) {
+            return (T) mockArtifactoryServersCommonService;
+        }
+
         return null;
     }
 
@@ -107,8 +119,13 @@ public class MockArtifactoryContext implements ArtifactoryContext {
     }
 
     @Override
-    public ConverterProvider getConverterManager() {
+    public ConverterManager getConverterManager() {
         return convertersManager;
+    }
+
+    @Override
+    public VersionProvider getVersionProvider() {
+        return versionProvider;
     }
 
     @Override

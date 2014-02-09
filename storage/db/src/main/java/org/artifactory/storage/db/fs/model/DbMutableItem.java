@@ -22,7 +22,8 @@ import com.google.common.collect.Lists;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.exception.CancelException;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.MutableItemInfo;
 import org.artifactory.fs.WatcherInfo;
@@ -84,7 +85,7 @@ public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<
         super(repo, id, info);
         this.id = id;
         this.mutableInfo = info;
-        originalInfo = new XStreamInfoFactory().copyItemInfo(info);
+        originalInfo = InfoFactoryHolder.get().copyItemInfo(info);
     }
 
     @Override
@@ -234,7 +235,7 @@ public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<
         markForDeletion = false;
         watchesToAdd = null;
         properties = null;
-        originalInfo = new XStreamInfoFactory().copyItemInfo(mutableInfo);
+        originalInfo = InfoFactoryHolder.get().copyItemInfo(mutableInfo);
     }
 
     protected void doDeleteInternal() {
@@ -268,10 +269,13 @@ public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<
         return ContextHelper.get().beanForType(AuthorizationService.class);
     }
 
-    protected void fireBeforeDeleteEvent() {
+    protected void fireBeforeDeleteEvent() throws CancelException {
         StorageInterceptors interceptors = StorageContextHelper.get().beanForType(StorageInterceptors.class);
         BasicStatusHolder statusHolder = new BasicStatusHolder();
         interceptors.beforeDelete(this, statusHolder);
+        if (statusHolder.isError()) {
+            throw statusHolder.getCancelException();
+        }
     }
 
     protected void fireAfterDeleteEvent() {

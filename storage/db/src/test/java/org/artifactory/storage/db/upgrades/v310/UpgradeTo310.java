@@ -24,8 +24,8 @@ import org.artifactory.storage.db.util.DbUtils;
 
 import java.sql.Connection;
 
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 /**
  * Date: 8/5/13 9:58 AM
@@ -42,7 +42,6 @@ public class UpgradeTo310 extends UpgradeBaseTest {
             DbUtils.executeSqlStream(connection, getDbSchemaUpgradeSql("v310", storageProperties.getDbType()));
             assertFalse(DbTestUtils.isTableMissing(connection));
         }
-        verifyDbResourcesReleased();
     }
 
 }

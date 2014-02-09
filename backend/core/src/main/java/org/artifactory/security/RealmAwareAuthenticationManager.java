@@ -84,7 +84,7 @@ public class RealmAwareAuthenticationManager extends ProviderManager implements 
                 // If trying to access this concurrently, a TransactionSystemException may occur.
                 // see RTFACT-3883
                 synchronized (this) {
-                    userGroupService.updateUser(mutableUser);
+                    userGroupService.updateUser(mutableUser, false);
                 }
             }
         }

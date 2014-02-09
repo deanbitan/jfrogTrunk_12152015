@@ -58,7 +58,7 @@ public abstract class TaskCallback<C extends JobExecutionContext> {
     protected boolean beforeExecute(C callbackContext) {
         ArtifactoryStorageContext context = StorageContextHelper.get();
         if (context == null || !context.isReady()) {
-            log.info("Task {} was requested to execute before context {} completed initialization and will be skipped",
+            log.debug("Task {} was requested to execute before context {} completed initialization and will be skipped",
                     this, context);
             return false;
         }
@@ -77,7 +77,7 @@ public abstract class TaskCallback<C extends JobExecutionContext> {
         try {
             taskService.stopRelatedTasks(activeTask.getType(), this.tasksStopped, activeTask.getKeyValues());
         } catch (Exception e) {
-            log.error("Couldn't start task " + taskToken + ": " + e.getMessage());
+            log.warn("Couldn't start task " + taskToken + ": " + e.getMessage());
             log.debug("Couldn't start task " + taskToken + ": " + e.getMessage(), e);
             return false;
         }

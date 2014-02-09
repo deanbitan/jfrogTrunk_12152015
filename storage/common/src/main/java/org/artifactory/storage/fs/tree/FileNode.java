@@ -30,18 +30,28 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public class FileNode extends ItemNode<FileInfo> {
+public class FileNode extends ItemNode {
     public FileNode(FileInfo itemInfo) {
         super(itemInfo);
     }
 
     @Override
-    public List<ItemNode<? extends ItemInfo>> getChildren() {
+    public List<ItemNode> getChildren() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<ItemInfo> getChildrenInfo() {
         return Collections.emptyList();
     }
 
     @Override
     public boolean hasChildren() {
         return false;
+    }
+
+    @Override
+    public FileInfo getItemInfo() {
+        return (FileInfo) super.getItemInfo();
     }
 }

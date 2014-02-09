@@ -19,8 +19,6 @@
 package org.artifactory.repo.service;
 
 import org.artifactory.api.config.ImportSettingsImpl;
-import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.backup.BackupJob;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -38,6 +36,7 @@ import org.artifactory.schedule.StopStrategy;
 import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
+import org.artifactory.search.archive.ArchiveIndexerImpl;
 import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
@@ -47,6 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Semaphore;
+
+import static org.artifactory.schedule.StopStrategy.STOP;
 
 /**
  * @author freds
@@ -66,7 +67,8 @@ import java.util.concurrent.Semaphore;
                 @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = LocalReplicationJob.class, strategy = StopStrategy.STOP),
-                @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.STOP)},
+                @StopCommand(command = RemoteReplicationJob.class, strategy = StopStrategy.STOP),
+                @StopCommand(command = ArchiveIndexerImpl.ArchiveIndexJob.class, strategy = STOP)},
         runOnlyOnPrimary = false)
 public class ImportJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(ImportJob.class);
@@ -107,10 +109,6 @@ public class ImportJob extends QuartzCommand {
                     }
                     repositoryService.importRepo(repoKey, settings);
                 }
-            }
-
-            if (settings.isIndexMarkedArchives()) {
-                ContextHelper.get().beanForType(ArchiveIndexer.class).asyncIndexMarkedArchives();
             }
         } catch (RuntimeException e) {
             if (status != null) {

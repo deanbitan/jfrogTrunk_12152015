@@ -64,7 +64,11 @@ public class DefaultLoginLink extends TitledSubmitLink {
              * If login has been called because the user was not yet logged in, than continue to the original
              * destination otherwise to the Home page
              */
-            if (!continueToOriginalDestination()) {
+            try {
+                if (!continueToOriginalDestination()) {
+                    setResponsePage(ArtifactoryApplication.get().getHomePage());
+                }
+            } catch (RuntimeException ignored) {
                 setResponsePage(ArtifactoryApplication.get().getHomePage());
             }
             //set a remember me cookie for the first success login

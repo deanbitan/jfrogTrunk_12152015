@@ -185,7 +185,7 @@ public class ProfilePanel extends TitledPanel {
             KeyPair keyPair = CryptoHelper.generateKeyPair();
             mutableUser.setPrivateKey(CryptoHelper.toBase64(keyPair.getPrivate()));
             mutableUser.setPublicKey(CryptoHelper.toBase64(keyPair.getPublic()));
-            userGroupService.updateUser(mutableUser);
+            userGroupService.updateUser(mutableUser, false);
         }
     }
 }

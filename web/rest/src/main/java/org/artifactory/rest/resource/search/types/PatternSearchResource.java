@@ -31,6 +31,8 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.rest.common.exception.BadRequestException;
+import org.artifactory.rest.common.exception.RestException;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,27 +81,24 @@ public class PatternSearchResource {
         try {
             return search(pattern);
         } catch (IllegalArgumentException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (MissingRestAddonException mrae) {
             throw mrae;
         } catch (TimeoutException te) {
             String secs = ConstantValues.searchPatternTimeoutSecs.getString();
-            response.sendError(HttpStatus.SC_REQUEST_TIMEOUT,
+            log.error("Artifacts pattern search timeout: artifactory.search.pattern.timeoutSecs={}.", secs);
+            throw new RestException(HttpStatus.SC_REQUEST_TIMEOUT,
                     "Artifacts pattern search returned 0 results because it " +
                             "exceeded the configured timeout (" + secs + " seconds). Please make sure your query is not too " +
                             "broad, causing the search to scan too many nodes, or ask your Artifactory administrator to " +
                             "change the default timeout.");
-            log.error("Artifacts pattern search timeout: artifactory.search.pattern.timeoutSecs={}.",
-                    secs);
         } catch (Exception e) {
             String errorMessage =
                     String.format("Error occurred while searching for artifacts matching the pattern '%s': %s", pattern,
                             e.getMessage());
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
             log.error(errorMessage, e);
+            throw new RestException(errorMessage);
         }
-
-        return null;
     }
 
     private PatternResultFileSet search(String pattern) throws ExecutionException, TimeoutException,

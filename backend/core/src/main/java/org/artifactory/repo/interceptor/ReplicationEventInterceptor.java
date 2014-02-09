@@ -63,7 +63,6 @@ public class ReplicationEventInterceptor extends StorageInterceptorAdapter {
         getReplicationAddon().offerLocalReplicationPropertiesChangeEvent(fsItem.getRepoPath());
     }
 
-
     @Override
     public void afterPropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name) {
         getReplicationAddon().offerLocalReplicationPropertiesChangeEvent(fsItem.getRepoPath());

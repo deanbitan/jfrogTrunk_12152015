@@ -48,7 +48,7 @@ CREATE TABLE node_props (
   prop_id    NUMBER(19, 0) NOT NULL,
   node_id    NUMBER(19, 0) NOT NULL,
   prop_key   VARCHAR2(255),
-  prop_value VARCHAR2(2048),
+  prop_value VARCHAR2(4000),
   CONSTRAINT node_props_pk PRIMARY KEY (prop_id),
   CONSTRAINT node_props_nodes_fk FOREIGN KEY (node_id) REFERENCES nodes (node_id)
 );

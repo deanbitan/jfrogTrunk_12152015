@@ -45,7 +45,8 @@ public class ArtifactoryHome {
     public static final String SERVLET_CTX_ATTR = "artifactory.home.obj";
     public static final String STORAGE_PROPS_FILE_NAME = "storage.properties";
     private static final String ENV_VAR = "ARTIFACTORY_HOME";
-    public static final String ARTIFACTORY_CONVERTER_OBJ = "artifactory.converter.obj";
+    public static final String ARTIFACTORY_CONVERTER_OBJ = "artifactory.converter.manager.obj";
+    public static final String ARTIFACTORY_VERSION_PROVIDER_OBJ = "artifactory.version.provider.obj";
     public static final String ARTIFACTORY_CONFIG_FILE = "artifactory.config.xml";
     private static final String ARTIFACTORY_CONFIG_LATEST_FILE = "artifactory.config.latest.xml";
     private static final String ARTIFACTORY_CONFIG_IMPORT_FILE = "artifactory.config.import.xml";
@@ -161,7 +162,7 @@ public class ArtifactoryHome {
 
     /**
      * @return the {@link HaNodeProperties} object that represents the
-     *         {@link #ARTIFACTORY_HA_NODE_PROPERTIES_FILE} contents, or null if HA was not configured properly
+     * {@link #ARTIFACTORY_HA_NODE_PROPERTIES_FILE} contents, or null if HA was not configured properly
      */
     @Nullable
     public HaNodeProperties getHaNodeProperties() {
@@ -465,7 +466,7 @@ public class ArtifactoryHome {
     }
 
     public void initAndLoadMimeTypes() {
-        File mimeTypesFile = getMimeTypesFile();
+        File mimeTypesFile = getHaAwareMimeTypesFile();
         if (!mimeTypesFile.exists()) {
             // Copy default mime types configuration file
             try {
@@ -487,6 +488,14 @@ public class ArtifactoryHome {
     }
 
     public File getMimeTypesFile() {
+        return new File(getEtcDir(), MIME_TYPES_FILE_NAME);
+    }
+
+    public File getHaMimeTypesFile() {
+        return new File(getHaEtcFile(), MIME_TYPES_FILE_NAME);
+    }
+
+    public File getHaAwareMimeTypesFile() {
         return new File(getHaAwareEtcDir(), MIME_TYPES_FILE_NAME);
     }
 

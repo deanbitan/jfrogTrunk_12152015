@@ -406,7 +406,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void extractNuPkgInfo(FileInfo fileInfo, MutableStatusHolder statusHolder) {
+    public void extractNuPkgInfo(FileInfo fileInfo, MutableStatusHolder statusHolder, boolean addToCache) {
     }
 
     @Override

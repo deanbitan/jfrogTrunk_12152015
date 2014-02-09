@@ -18,7 +18,6 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
@@ -29,6 +28,8 @@ import org.artifactory.api.rest.search.result.InfoRestSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.exception.BadRequestException;
+import org.artifactory.rest.common.exception.RestException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.StorageInfoHelper;
 import org.slf4j.Logger;
@@ -93,15 +94,13 @@ public class ChecksumSearchResource {
         } catch (MissingRestAddonException mrae) {
             throw mrae;
         } catch (IllegalArgumentException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (Exception e) {
             String errorMessage =
                     String.format("Error occurred while searching for artifacts by checksum: %s", e.getMessage());
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMessage);
             log.error(errorMessage, e);
+            throw new RestException(errorMessage);
         }
-
-        return null;
     }
 
     private InfoRestSearchResult search(String md5Checksum, String sha1Checksum, StringList reposToSearch) {

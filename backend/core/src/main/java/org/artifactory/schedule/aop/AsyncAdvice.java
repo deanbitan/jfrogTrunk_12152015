@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ReflectiveMethodInvocation;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -130,43 +131,49 @@ public class AsyncAdvice implements MethodInterceptor {
     private Future<?> submit(final MethodInvocation invocation) {
         InternalArtifactoryContext context = InternalContextHelper.get();
         CachedThreadPoolTaskExecutor executor = context.beanForType(CachedThreadPoolTaskExecutor.class);
-        Future<?> future = executor.submit(new Callable<Object>() {
-            @Override
-            public Object call() {
-                try {
-                    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-                        //Sanity check we should never have a tx sync on an existing pooled thread
-                        throw new IllegalStateException(
-                                "An async invocation (" + invocation.getMethod() + ") " +
-                                        "should not be associated with an existing transaction.");
-                    }
-                    Object result = doInvoke(invocation);
-                    // if the result is not of type Future don't bother returning it (unless you are fond of ClassCastExceptions)
-                    if (result instanceof Future) {
-                        return ((Future) result).get();
-                    } else {
+        Future<?> future = null;
+        try {
+            future = executor.submit(new Callable<Object>() {
+                @Override
+                public Object call() {
+                    try {
+                        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                            //Sanity check we should never have a tx sync on an existing pooled thread
+                            throw new IllegalStateException(
+                                    "An async invocation (" + invocation.getMethod() + ") " +
+                                            "should not be associated with an existing transaction.");
+                        }
+                        Object result = doInvoke(invocation);
+                        // if the result is not of type Future don't bother returning it (unless you are fond of ClassCastExceptions)
+                        if (result instanceof Future) {
+                            return ((Future) result).get();
+                        } else {
+                            return null;
+                        }
+                    } catch (Throwable throwable) {
+                        Throwable loggedThrowable;
+                        if (invocation instanceof TraceableMethodInvocation) {
+                            Throwable original = ((TraceableMethodInvocation) invocation).getThrowable();
+                            original.initCause(throwable);
+                            loggedThrowable = original;
+                        } else {
+                            loggedThrowable = throwable;
+                        }
+                        Method method;
+                        if (invocation instanceof CompoundInvocation) {
+                            method = ((CompoundInvocation) invocation).getLatestMethod();
+                        } else {
+                            method = invocation.getMethod();
+                        }
+                        log.error("Could not execute async method: '" + method + "'.", loggedThrowable);
                         return null;
                     }
-                } catch (Throwable throwable) {
-                    Throwable loggedThrowable;
-                    if (invocation instanceof TraceableMethodInvocation) {
-                        Throwable original = ((TraceableMethodInvocation) invocation).getThrowable();
-                        original.initCause(throwable);
-                        loggedThrowable = original;
-                    } else {
-                        loggedThrowable = throwable;
-                    }
-                    Method method;
-                    if (invocation instanceof CompoundInvocation) {
-                        method = ((CompoundInvocation) invocation).getLatestMethod();
-                    } else {
-                        method = invocation.getMethod();
-                    }
-                    log.error("Could not execute async method: '" + method + "'.", loggedThrowable);
-                    return null;
                 }
-            }
-        });
+            });
+        } catch (TaskRejectedException e) {
+            log.error("Task {} rejected by scheduler: {}", invocation, e.getMessage());
+            log.debug("Task {} rejected by scheduler: {}", invocation, e.getMessage(), e);
+        }
 
         // only return the future result if the method returns a Future object
         if (!(invocation instanceof CompoundInvocation) &&
@@ -205,6 +212,10 @@ public class AsyncAdvice implements MethodInterceptor {
                 log.trace("Invoking {} ", invocation);
                 return invocation.proceed();
             }
+        } catch (TaskRejectedException e) {
+            log.warn("Task was rejected by scheduler: {}", e.getMessage());
+            log.debug("Task was reject by scheduler", e);
+            return null;
         } finally {
             if (originalAuthentication != null) {
                 SecurityContext securityContext = SecurityContextHolder.getContext();

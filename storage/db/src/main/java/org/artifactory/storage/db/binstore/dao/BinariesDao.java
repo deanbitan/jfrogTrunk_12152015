@@ -19,12 +19,12 @@
 package org.artifactory.storage.db.binstore.dao;
 
 import com.google.common.collect.Lists;
+import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.storage.db.binstore.entity.BinaryData;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
-import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,15 +131,15 @@ public class BinariesDao extends BaseDao {
 
     /**
      * @return A pair of long values where the first is the counts of the binaries table elements and the second is the
-     *         total binaries size.
+     * total binaries size.
      */
-    public Pair<Long, Long> getCountAndTotalSize() throws SQLException {
+    public BinariesInfo getCountAndTotalSize() throws SQLException {
         ResultSet resultSet = null;
         try {
             resultSet = jdbcHelper.executeSelect("SELECT count(b.sha1), sum(b.bin_length) FROM binaries b" +
                     " WHERE b.sha1 NOT LIKE '" + TEMP_SHA1_PREFIX + "%'");
             resultSet.next();
-            return new Pair<>(resultSet.getLong(1), resultSet.getLong(2));
+            return new BinariesInfo(resultSet.getLong(1), resultSet.getLong(2));
         } finally {
             DbUtils.close(resultSet);
         }

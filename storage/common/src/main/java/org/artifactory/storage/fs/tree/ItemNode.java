@@ -28,18 +28,18 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public abstract class ItemNode<T extends ItemInfo> {
+public abstract class ItemNode {
 
-    protected final T itemInfo;
+    protected final ItemInfo itemInfo;
 
-    public ItemNode(T itemInfo) {
+    public ItemNode(ItemInfo itemInfo) {
         this.itemInfo = itemInfo;
     }
 
     /**
      * @return The item info represented by this node
      */
-    public T getItemInfo() {
+    public ItemInfo getItemInfo() {
         return itemInfo;
     }
 
@@ -70,7 +70,9 @@ public abstract class ItemNode<T extends ItemInfo> {
         return getClass().getSimpleName() + "[" + getRepoPath() + "]";
     }
 
-    public abstract List<ItemNode<? extends ItemInfo>> getChildren();
+    public abstract List<ItemNode> getChildren();
+
+    public abstract List<ItemInfo> getChildrenInfo();
 
     public abstract boolean hasChildren();
 }

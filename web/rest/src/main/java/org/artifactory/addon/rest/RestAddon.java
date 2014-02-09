@@ -365,4 +365,7 @@ public interface RestAddon extends Addon {
 
     void writeStreamingFileList(HttpServletResponse response, String requestUrl, String path, int deep, int depth,
             int listFolders, int mdTimestamps, int includeRootPath) throws IOException, BlackedOutException;
+
+    Response getLatestVersionByProperties(String repoKey, String path, Map<String, String[]> parameterMap,
+            HttpServletRequest request);
 }

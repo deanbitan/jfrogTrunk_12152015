@@ -167,9 +167,6 @@ public abstract class BasicImportPanel extends TitledPanel {
                     status.error(e.getMessage(), log);
                     errorImportFeedback(status);
                 } finally {
-                    if (!importSettings.isIndexMarkedArchives()) {
-                        archiveIndexer.asyncIndexMarkedArchives();
-                    }
                     cleanupResources();
                 }
                 refreshImportPanel(form, target);

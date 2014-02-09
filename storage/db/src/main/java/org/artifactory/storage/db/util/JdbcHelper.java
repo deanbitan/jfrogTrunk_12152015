@@ -39,6 +39,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A helper class to execute jdbc queries.
@@ -50,6 +51,8 @@ public class JdbcHelper {
     private static final Logger log = LoggerFactory.getLogger(JdbcHelper.class);
 
     private final DataSource dataSource;
+    private final AtomicLong selectQueriesCounter = new AtomicLong();
+    private final AtomicLong updateQueriesCounter = new AtomicLong();
 
     @Autowired
     public JdbcHelper(@Qualifier("dataSource") DataSource dataSource) {
@@ -69,6 +72,7 @@ public class JdbcHelper {
 
     @Nonnull
     public ResultSet executeSelect(String query, Object... params) throws SQLException {
+        selectQueriesCounter.incrementAndGet();
         debugSql(query, params);
 
         PerfTimer timer = null;
@@ -105,6 +109,7 @@ public class JdbcHelper {
     }
 
     public int executeUpdate(String query, Object... params) throws SQLException {
+        updateQueriesCounter.incrementAndGet();
         debugSql(query, params);
 
         PerfTimer timer = null;
@@ -267,5 +272,13 @@ public class JdbcHelper {
 
     public void destroy() {
         DbUtils.closeDataSource(dataSource);
+    }
+
+    public long getSelectQueriesCount() {
+        return selectQueriesCounter.get();
+    }
+
+    public long getUpdateQueriesCount() {
+        return updateQueriesCounter.get();
     }
 }

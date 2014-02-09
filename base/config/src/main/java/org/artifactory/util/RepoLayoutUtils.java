@@ -107,6 +107,7 @@ public abstract class RepoLayoutUtils {
 
     public static final Map<String, BaseTokenFilter> TOKEN_FILTERS;
 
+    private static final Set<Character> REGEX_SPECIAL_TOKENS = Sets.newHashSet('.', '+', '?', '*', '{', '}', '^', '$');
     private static final Pattern OPTIONAL_AREA_PATTERN = Pattern.compile("\\([^\\(]*\\)");
     private static final Pattern REPLACED_OPTIONAL_TOKEN_PATTERN = Pattern.compile("\\([^\\[\\(]*\\)");
     private static final Pattern CUSTOM_TOKEN_PATTERN = Pattern.compile("<[^<]*>");
@@ -167,7 +168,6 @@ public abstract class RepoLayoutUtils {
      * @return Modified item path template
      */
     public static String removeReplacedTokenOptionalBrackets(String itemPathTemplate, boolean removeBracketContent) {
-        itemPathTemplate = clearCustomTokenRegEx(itemPathTemplate);
         Matcher matcher = REPLACED_OPTIONAL_TOKEN_PATTERN.matcher(itemPathTemplate);
 
         int latestGroupEnd = 0;
@@ -206,7 +206,6 @@ public abstract class RepoLayoutUtils {
      * @return Modified item path template
      */
     public static String removeUnReplacedTokenOptionalBrackets(String itemPathTemplate) {
-        itemPathTemplate = clearCustomTokenRegEx(itemPathTemplate);
         Matcher matcher = OPTIONAL_AREA_PATTERN.matcher(itemPathTemplate);
 
         int latestGroupEnd = 0;
@@ -399,8 +398,8 @@ public abstract class RepoLayoutUtils {
             String itemPathPatternElement) {
         char[] splitPathPatternElement = itemPathPatternElement.toCharArray();
         for (char elementToken : splitPathPatternElement) {
-            //Dot and dash are reserved regular expression characters. Escape them
-            if (('-' == elementToken) || ('.' == elementToken)) {
+            // Escaping special regex characters
+            if (REGEX_SPECIAL_TOKENS.contains(elementToken)) {
                 itemPathPatternRegExpBuilder.append("\\");
             }
 

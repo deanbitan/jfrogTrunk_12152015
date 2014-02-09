@@ -81,16 +81,17 @@ public class StorageProperties {
     }
 
     public int getMaxActiveConnections() {
-        return Integer.parseInt(getProperty(Key.maxActiveConnections, DEFAULT_MAX_ACTIVE_CONNECTIONS + ""));
+        return Integer.parseInt(getProperty(Key.maxActiveConnections, DEFAULT_MAX_ACTIVE_CONNECTIONS + "").trim());
     }
 
     public int getMaxIdleConnections() {
-        return Integer.parseInt(getProperty(Key.maxIdleConnections, DEFAULT_MAX_IDLE_CONNECTIONS + ""));
+        return Integer.parseInt(getProperty(Key.maxIdleConnections, DEFAULT_MAX_IDLE_CONNECTIONS + "").trim());
     }
 
     @Nonnull
     public BinaryProviderType getBinariesStorageType() {
-        return BinaryProviderType.valueOf(getProperty(Key.binaryProviderType, BinaryProviderType.filesystem.name()));
+        return BinaryProviderType.valueOf(
+                getProperty(Key.binaryProviderType, BinaryProviderType.filesystem.name()).trim());
     }
 
     public String getBinaryProviderExternalDir() {
@@ -120,6 +121,22 @@ public class StorageProperties {
 
     public String getProperty(Key property, String defaultValue) {
         return props.getProperty(property.key, defaultValue);
+    }
+
+    public String getProperty(String key, String defaultValue) {
+        return props.getProperty(key, defaultValue);
+    }
+
+    public boolean getBooleanProperty(String key, boolean defaultValue) {
+        return Boolean.parseBoolean(props.getProperty(key, defaultValue + "").trim());
+    }
+
+    public int getIntProperty(String key, int defaultValue) {
+        return Integer.parseInt(props.getProperty(key, defaultValue + "").trim());
+    }
+
+    public long getLongProperty(String key, long defaultValue) {
+        return Long.parseLong(props.getProperty(key, defaultValue + "").trim());
     }
 
     private void assertMandatoryProperties() {

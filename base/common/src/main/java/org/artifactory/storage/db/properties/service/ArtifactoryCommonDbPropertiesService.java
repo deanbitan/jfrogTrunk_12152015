@@ -21,10 +21,12 @@ package org.artifactory.storage.db.properties.service;
 import org.artifactory.storage.db.properties.model.DbProperties;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public interface ArtifactoryCommonDbPropertiesService {
     void updateDbProperties(DbProperties dbProperties);
 
     DbProperties getDbProperties();
+
+    boolean isDbPropertiesTableExists();
 }

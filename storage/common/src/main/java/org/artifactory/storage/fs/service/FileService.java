@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.fs.service;
 
+import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
@@ -26,11 +27,13 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.VfsItemNotFoundException;
+import org.artifactory.storage.fs.repo.RepoStorageSummary;
 import org.artifactory.storage.fs.repo.StoringRepo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Yossi Shaul
@@ -89,6 +92,8 @@ public interface FileService {
 
     List<FileInfo> searchFilesByProperty(String repo, String propKey, String propValue);
 
+    public List<FileInfo> searchFilesByProperty(PropertiesFilter propertiesFilter);
+
     /**
      * Search for all files with bad checksums of the given checksum type (SHA-1 or MD5)
      *
@@ -97,4 +102,6 @@ public interface FileService {
     List<FileInfo> searchFilesWithBadChecksum(ChecksumType type);
 
     long getFilesTotalSize(RepoPath repoPath);
+
+    Set<RepoStorageSummary> getRepositoriesStorageSummary();
 }

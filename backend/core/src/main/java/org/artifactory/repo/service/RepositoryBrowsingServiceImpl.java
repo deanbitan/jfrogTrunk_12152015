@@ -54,6 +54,9 @@ import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.storage.fs.service.PropertiesService;
+import org.artifactory.storage.fs.tree.ItemNode;
+import org.artifactory.storage.fs.tree.ItemTree;
+import org.artifactory.storage.fs.tree.TreeBrowsingCriteriaBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,52 +113,53 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             throw new IllegalArgumentException("No local or cache repo found: " + repoPath.getRepoKey());
         }
 
-        if (!repo.itemExists(repoPath.getPath())) {
-            throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
-        }
-
         if (repo.isBlackedOut()) {
             return null;
         }
 
-        ItemInfo itemInfo = repoService.getItemInfo(repoPath);
-        return itemInfo;
+        return repoService.getItemInfo(repoPath);
     }
 
     @Override
     @Nonnull
     public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(BrowsableItemCriteria criteria) {
         RepoPath repoPath = criteria.getRepoPath();
-        ItemInfo itemInfo = getItemInfo(repoPath);
-        if (itemInfo == null) {
+        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
+        if (repo == null) {
+            throw new IllegalArgumentException("No local or cache repo found: " + repoPath.getRepoKey());
+        }
+
+        if (repo.isBlackedOut()) {
             return Lists.newArrayListWithCapacity(0);
         }
-        if (!itemInfo.isFolder()) {
+
+        ItemTree tree = new ItemTree(criteria.getRepoPath(), new TreeBrowsingCriteriaBuilder()
+                .applyRepoIncludeExclude().applySecurity().cacheChildren(false).build());
+        ItemNode rootNode = tree.getRootNode();
+        if (rootNode == null) {
+            throw new ItemNotFoundRuntimeException(repoPath);
+        }
+        if (!rootNode.isFolder()) {
             throw new FolderExpectedException(repoPath);
         }
 
-        List<ItemInfo> children = repoService.getChildren(repoPath);
+        List<ItemNode> children = rootNode.getChildren();
         if (children.isEmpty()) {
-            return Lists.newArrayList();
+            return Lists.newArrayListWithCapacity(0);
         }
 
-        LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         List<BaseBrowsableItem> repoPathChildren = Lists.newArrayList();
-        for (ItemInfo child : children) {
+        for (ItemNode child : children) {
             //Check if we should return the child
-            RepoPath childRepoPath = child.getRepoPath();
-
-            BrowsableItem browsableItem = BrowsableItem.getItem(child);
-
-            if (canRead(repo, childRepoPath)) {
-                if (child.isFolder()) {
-                    repoPathChildren.add(browsableItem);
-                } else if (isPropertiesMatch(child, criteria.getRequestProperties())) {   // match props for files
-                    repoPathChildren.add(browsableItem);
-                    if (criteria.isIncludeChecksums()) {
-                        repoPathChildren.addAll(getBrowsableItemChecksumItems(repo,
-                                ((FileInfo) child).getChecksumsInfo(), browsableItem));
-                    }
+            ItemInfo childItemInfo = child.getItemInfo();
+            BrowsableItem browsableItem = BrowsableItem.getItem(childItemInfo);
+            if (child.isFolder()) {
+                repoPathChildren.add(browsableItem);
+            } else if (isPropertiesMatch(childItemInfo, criteria.getRequestProperties())) {   // match props for files
+                repoPathChildren.add(browsableItem);
+                if (criteria.isIncludeChecksums()) {
+                    repoPathChildren.addAll(getBrowsableItemChecksumItems(repo,
+                            ((FileInfo) childItemInfo).getChecksumsInfo(), browsableItem));
                 }
             }
         }
@@ -165,15 +169,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     }
 
     private boolean canRead(RealRepo repo, RepoPath childRepoPath) {
-        boolean canRead;
-        if (childRepoPath.isFolder()) {
-            canRead = authService.canImplicitlyReadParentPath(childRepoPath)
-                    && repo.accepts(childRepoPath);
-        } else {
-            canRead = authService.canRead(childRepoPath)
-                    && repo.accepts(childRepoPath);
-        }
-        return canRead;
+        return authService.canRead(childRepoPath) && repo.accepts(childRepoPath);
     }
 
     private boolean isPropertiesMatch(ItemInfo itemInfo, Properties requestProps) {
@@ -484,8 +480,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                         checksumValue.getBytes(Charsets.UTF_8).length);
 
                 RepoPath checksumItemRepoPath = checksumItem.getRepoPath();
-                if (authService.canImplicitlyReadParentPath(checksumItemRepoPath) &&
-                        repo.accepts(checksumItemRepoPath)) {
+                if (authService.canRead(checksumItemRepoPath) && repo.accepts(checksumItemRepoPath)) {
                     browsableChecksumItems.add(checksumItem);
                 }
             }

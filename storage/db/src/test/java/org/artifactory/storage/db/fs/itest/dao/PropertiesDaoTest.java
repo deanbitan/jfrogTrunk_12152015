@@ -136,12 +136,12 @@ public class PropertiesDaoTest extends DbBaseTest {
         if (storageProperties.getDbType() == DbType.MSSQL) {
             return; // RTFACT-5768
         }
-        String longValue = RandomStringUtils.randomAscii(2088);
+        String longValue = RandomStringUtils.randomAscii(4020);
         propsDao.create(new NodeProperty(876, 15, "trimeme", longValue));
         List<NodeProperty> nodeProperties = propsDao.getNodeProperties(15);
         assertThat(nodeProperties.size()).isEqualTo(1);
         String trimmedValue = nodeProperties.get(0).getPropValue();
-        assertThat(trimmedValue).hasSize(2048);
+        assertThat(trimmedValue).hasSize(4000);
         assertThat(longValue).startsWith(trimmedValue);
     }
 

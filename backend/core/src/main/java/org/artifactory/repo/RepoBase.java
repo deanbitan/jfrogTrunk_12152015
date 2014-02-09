@@ -19,6 +19,7 @@
 package org.artifactory.repo;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.security.AuthorizationService;
@@ -32,7 +33,6 @@ import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.util.GlobalExcludes;
 import org.artifactory.util.PathMatcher;
 import org.artifactory.util.PathUtils;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -117,6 +117,9 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
     }
 
     public boolean accepts(RepoPath repoPath) {
+        if (repoPath.isRoot()) {
+            return true;    // always accepts the root path
+        }
         String path = repoPath.getPath();
         if (NamingUtils.isSystem(path)) {
             // includes/excludes should not affect system paths
@@ -130,7 +133,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         } else if (NamingUtils.isChecksum(path)) {
             toCheck = FilenameUtils.removeExtension(path);
         }
-        return !StringUtils.hasLength(toCheck) || PathMatcher.matches(toCheck, includes, excludes, repoPath.isFolder());
+        return StringUtils.isBlank(toCheck) || PathMatcher.matches(toCheck, includes, excludes, repoPath.isFolder());
     }
 
     @Override

@@ -16,16 +16,19 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.rest.common;
+package org.artifactory.rest.common.exception;
 
 import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.ErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -67,7 +70,7 @@ public class ArtifactoryRestExceptionMapper implements ExceptionMapper<WebApplic
     }
 
     /**
-     * Handle forbidden response (403) by verifying is anonymous access is globally allowed, if so we need to send
+     * Handle forbidden response (403) by verifying if anonymous access is globally allowed, if so we need to send
      * an unauthorized (401) response with basic authentication challenge.
      * If the global hide unauthorized resources is set, the result will be not found (404).
      *
@@ -79,7 +82,7 @@ public class ArtifactoryRestExceptionMapper implements ExceptionMapper<WebApplic
                 return Response.status(HttpStatus.SC_NOT_FOUND).build();
             }
 
-            return createUnauthorizedResponseWithChallenge(jerseyResponse);
+            return createUnauthorizedResponseWithChallenge();
         }
 
         return jerseyResponse;
@@ -97,12 +100,13 @@ public class ArtifactoryRestExceptionMapper implements ExceptionMapper<WebApplic
         if (headers != null && headers.containsKey("WWW-Authenticate")) {
             return jerseyResponse;
         }
-        return createUnauthorizedResponseWithChallenge(jerseyResponse);
+        return createUnauthorizedResponseWithChallenge();
     }
 
-    private Response createUnauthorizedResponseWithChallenge(Response jerseyResponse) {
+    private Response createUnauthorizedResponseWithChallenge() {
         return Response.status(HttpStatus.SC_UNAUTHORIZED)
-                .entity(jerseyResponse.getEntity())
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(new ErrorResponse(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
                 .header("WWW-Authenticate", "Basic realm=\"" + authenticationEntryPoint.getRealmName() + "\"")
                 .build();
     }

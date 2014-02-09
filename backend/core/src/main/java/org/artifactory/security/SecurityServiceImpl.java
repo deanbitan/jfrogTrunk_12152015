@@ -164,6 +164,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
+        // TODO: [by FS] Removing all login caches when ANY conf changes is brutal!
+        // Need to check if security conf changed then clear security caches
         clearSecurityListeners();
     }
 
@@ -416,11 +418,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     @Override
-    public void updateUser(MutableUserInfo user) {
+    public void updateUser(MutableUserInfo user, boolean activateListeners) {
         user.setUsername(user.getUsername().toLowerCase());
         userGroupStoreService.updateUser(user);
-        for (SecurityListener listener : securityListeners) {
-            listener.onUserUpdate(user.getUsername());
+        if (activateListeners) {
+            for (SecurityListener listener : securityListeners) {
+                listener.onUserUpdate(user.getUsername());
+            }
         }
     }
 
@@ -485,14 +489,22 @@ public class SecurityServiceImpl implements InternalSecurityService {
     public void addUsersToGroup(String groupName, List<String> usernames) {
         userGroupStoreService.addUsersToGroup(groupName, usernames);
         interceptors.onAddUsersToGroup(groupName, usernames);
-        // TODO: Call interceptor on updated users...
+        for (String username : usernames) {
+            for (SecurityListener listener : securityListeners) {
+                listener.onUserUpdate(username);
+            }
+        }
     }
 
     @Override
     public void removeUsersFromGroup(String groupName, List<String> usernames) {
         userGroupStoreService.removeUsersFromGroup(groupName, usernames);
         interceptors.onRemoveUsersFromGroup(groupName, usernames);
-        // TODO: Call interceptor on updated users...
+        for (String username : usernames) {
+            for (SecurityListener listener : securityListeners) {
+                listener.onUserUpdate(username);
+            }
+        }
     }
 
     @Override
@@ -601,7 +613,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
             MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
             mutableUser.setGenPasswordKey(encodedKeyString);
-            updateUser(mutableUser);
+            updateUser(mutableUser, false);
 
             //Add encoded key to page url
             String resetPage = resetPageUrl + "?key=" + encodedKeyString;
@@ -694,7 +706,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
         mutableUser.setLastLoginTimeMillis(loginTimeMillis);
         mutableUser.setLastLoginClientIp(clientIp);
-        updateUser(mutableUser);
+        updateUser(mutableUser, false);
     }
 
     @Override
@@ -732,7 +744,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
             MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(userInfo);
             mutableUser.setLastAccessTimeMillis(accessTimeMillis);
             mutableUser.setLastAccessClientIp(clientIp);
-            updateUser(mutableUser);
+            updateUser(mutableUser, false);
         }
     }
 
@@ -765,11 +777,6 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public boolean canRead(RepoPath repoPath) {
-        return hasPermission(repoPath, ArtifactoryPermission.READ);
-    }
-
-    @Override
-    public boolean canImplicitlyReadParentPath(RepoPath repoPath) {
         return hasPermission(repoPath, ArtifactoryPermission.READ);
     }
 
@@ -950,8 +957,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     private boolean hasPermission(RepoPath repoPath, ArtifactoryPermission permission) {
-        Authentication
-                authentication = AuthenticationHelper.getAuthentication();
+        Authentication authentication = AuthenticationHelper.getAuthentication();
         if (!isAuthenticated(authentication)) {
             return false;
         }
@@ -1173,7 +1179,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
             newAdminUser.setLastLoginClientIp(defaultAdmin.getLastLoginClientIp());
             newAdminUser.setLastAccessTimeMillis(defaultAdmin.getLastAccessTimeMillis());
             newAdminUser.setLastAccessClientIp(defaultAdmin.getLastAccessClientIp());
-            updateUser(newAdminUser);
+            updateUser(newAdminUser, false);
         } else {
             builder.password(generateSaltedPassword(DEFAULT_ADMIN_PASSWORD)).email(null)
                     .admin(true).updatableProfile(true);

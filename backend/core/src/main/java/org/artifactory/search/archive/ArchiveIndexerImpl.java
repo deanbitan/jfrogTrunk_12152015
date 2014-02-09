@@ -20,12 +20,13 @@ package org.artifactory.search.archive;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.backup.BackupJob;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.ZipEntryInfo;
@@ -35,11 +36,23 @@ import org.artifactory.model.xstream.fs.ZipEntryImpl;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.cleanup.ArtifactCleanupJob;
+import org.artifactory.repo.index.MavenIndexerJob;
+import org.artifactory.repo.index.MavenIndexerServiceImpl;
+import org.artifactory.repo.service.ExportJob;
+import org.artifactory.repo.service.ImportJob;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsItem;
-import org.artifactory.spring.ContextReadinessListener;
+import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.StopCommand;
+import org.artifactory.schedule.TaskBase;
+import org.artifactory.schedule.TaskService;
+import org.artifactory.schedule.TaskUser;
+import org.artifactory.schedule.TaskUtils;
+import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.fs.VfsZipFile;
 import org.artifactory.storage.fs.service.ArchiveEntriesService;
@@ -48,18 +61,22 @@ import org.artifactory.storage.fs.service.TasksService;
 import org.artifactory.storage.fs.tree.ItemNode;
 import org.artifactory.storage.fs.tree.ItemNodeFilter;
 import org.artifactory.storage.fs.tree.ItemTree;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
+
+import static org.artifactory.schedule.StopStrategy.IMPOSSIBLE;
 
 /**
  * A utility for marking archives and indexing their content
@@ -67,7 +84,7 @@ import java.util.zip.ZipEntry;
  * @author Noam Tenne
  */
 @Service
-public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadinessListener {
+public class ArchiveIndexerImpl implements InternalArchiveIndexer {
     private static final Logger log = LoggerFactory.getLogger(ArchiveIndexerImpl.class);
 
     @Autowired
@@ -88,19 +105,18 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
     @Autowired
     private AddonsManager addonsManager;
 
+    @Autowired
+    private TaskService taskService;
+
     // a semaphore to guard against parallel indexing
     private SemaphoreWrapper indexingSemaphore;
-    // queue of repository paths waiting for indexing
-    private final Queue<RepoPath> indexingQueue = new ConcurrentLinkedQueue<>();
 
-    private SemaphoreWrapper indexMarkedArchivesSemaphore;
-
-    @Override
-    public void onContextCreated() {
-        //Index archives marked for indexing (might have left overs from abrupt shutdown after deploy)
-        if (!ContextHelper.get().isOffline()) {
-            getAdvisedMe().asyncIndexMarkedArchives();
-        }
+    @PostConstruct
+    protected void start() {
+        TaskBase reindexTask = TaskUtils.createRepeatingTask(ArchiveIndexJob.class,
+                TimeUnit.SECONDS.toMillis(ConstantValues.archiveIndexerTaskIntervalSecs.getLong()),
+                TimeUnit.SECONDS.toMillis(ConstantValues.archiveIndexerTaskIntervalSecs.getLong()));
+        taskService.startTask(reindexTask, false);
     }
 
     @Override
@@ -134,10 +150,7 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
 
             // start indexing ...
             log.info("Indexing archive: {}", vfsFile);
-            VfsZipFile jar = null;
-            try {
-                jar = new VfsZipFile(vfsFile);
-
+            try (VfsZipFile jar = new VfsZipFile(vfsFile)) {
                 List<? extends ZipEntry> entries = jar.entries();
                 Set<ZipEntryInfo> zipEntryInfos = Sets.newHashSet();
                 for (ZipEntry zipEntry : entries) {
@@ -155,8 +168,6 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
                 log.error("Failed to index '{}': {}", archiveRepoPath, e.getMessage());
                 log.debug("Failed to index:", e);
                 return false;
-            } finally {
-                Closeables.closeQuietly(jar);
             }
         } finally {
             // remove the task in any case if it exists
@@ -165,51 +176,42 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
     }
 
     @Override
-    public void asyncIndex(RepoPath repoPath) {
-        indexingQueue.add(repoPath);
-        triggerQueueIndexing();
-    }
+    public void triggerQueueIndexing() {
+        if (shouldStop()) {
+            return;
+        }
 
-    private void triggerQueueIndexing() {
         if (!getIndexingSemaphore().tryAcquire()) {
             log.trace("Archive indexing already running by another thread");
             return;
         }
         try {
-            if (indexingQueue.size() > 0) {
-                log.debug("Indexing {} queued items", indexingQueue.size());
+            Set<RepoPath> indexingQueue = tasksService.getIndexTasks();
+            if (indexingQueue.isEmpty()) {
+                return;
             }
-            RepoPath repoPath;
-            while ((repoPath = indexingQueue.poll()) != null) {
+            log.debug("Indexing {} queued items", indexingQueue.size());
+
+            final InternalArchiveIndexer advisedMe = getAdvisedMe();
+            for (RepoPath repoPath : indexingQueue) {
                 try {
-                    getAdvisedMe().index(repoPath);
-                    if (!InternalContextHelper.get().isReady()) {
+                    if (shouldStop()) {
                         break;  // stop execution if the context is not ready (shutting down, refreshing conf etc.)
                     }
+                    advisedMe.index(repoPath);
                 } catch (Exception e) {
                     log.error("Exception indexing " + repoPath, e);
                     forceArchiveIndexerTaskDeletion(repoPath);
                 }
             }
+            log.debug("Finished indexing {} queued items", indexingQueue.size());
         } finally {
             getIndexingSemaphore().release();
         }
     }
 
-    @Override
-    public void asyncIndexMarkedArchives() {
-        if (!getIndexMarkedArchivesSemaphore().tryAcquire()) {
-            log.info("Received index all marked archives request but an indexing process is already running.");
-            return;
-        }
-        try {
-            log.debug("Scheduling indexing for marked archives.");
-            Set<RepoPath> archiveRepoPaths = tasksService.getIndexTasks();
-            indexingQueue.addAll(archiveRepoPaths);
-            triggerQueueIndexing();
-        } finally {
-            getIndexMarkedArchivesSemaphore().release();
-        }
+    private boolean shouldStop() {
+        return !InternalContextHelper.get().isReady() || taskService.pauseOrBreak();
     }
 
     @Override
@@ -219,6 +221,11 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
         }
 
         tasksService.addIndexTask(repoPath);
+    }
+
+    @Override
+    public void asyncIndexMarkedArchives() {
+        triggerQueueIndexing();
     }
 
     @Override
@@ -247,7 +254,6 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
                 log.warn("Root path for archive indexing not found: {}", repoPath);
             }
         }
-        asyncIndexMarkedArchives();
     }
 
     @Override
@@ -266,6 +272,7 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
             getAdvisedMe().markArchiveForIndexing(treeNode.getRepoPath());
         } else {
             // Recursive call to calculate and set
+            //noinspection unchecked
             List<ItemNode> children = treeNode.getChildren();
             if (children != null) {
                 for (ItemNode child : children) {
@@ -306,21 +313,23 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer, ContextReadin
         return indexingSemaphore;
     }
 
-    private SemaphoreWrapper getIndexMarkedArchivesSemaphore() {
-        if (indexMarkedArchivesSemaphore == null) {
-            HaAddon haAddon = addonsManager.addonByType(HaAddon.class);
-            indexMarkedArchivesSemaphore = haAddon.getSemaphore(HaCommonAddon.INDEX_MARKED_ARCHIVES_SEMAPHORE_NAME);
+    @JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM,
+            commandsToStop = {
+                    //todo consider have group of index jobs/maintenance jobs/import-export jobs
+                    @StopCommand(command = ImportJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = ExportJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = BackupJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = ArtifactCleanupJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = MavenIndexerServiceImpl.FindOrCreateMavenIndexJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = MavenIndexerServiceImpl.SaveMavenIndexFileJob.class, strategy = IMPOSSIBLE),
+                    @StopCommand(command = MavenIndexerJob.class, strategy = IMPOSSIBLE)
+            })
+    public static class ArchiveIndexJob extends QuartzCommand {
+        @Override
+        protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {
+            InternalArchiveIndexer archiveIndexer = ContextHelper.get().beanForType(InternalArchiveIndexer.class);
+            archiveIndexer.triggerQueueIndexing();
         }
-        return indexMarkedArchivesSemaphore;
-    }
-
-    @Override
-    public void onContextReady() {
-        // nothing to do
-    }
-
-    @Override
-    public void onContextUnready() {
-        // nothing to do
     }
 }

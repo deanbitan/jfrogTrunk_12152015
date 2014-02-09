@@ -65,4 +65,10 @@ public class ChecksumSearchControls extends SearchControlsBase {
         }
         checksums.put(checksumType, checksumValue);
     }
+
+    public void clearChecksums() {
+        if (checksums != null) {
+            checksums.clear();
+        }
+    }
 }

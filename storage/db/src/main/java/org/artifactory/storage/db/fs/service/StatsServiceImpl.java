@@ -25,7 +25,7 @@ import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.ConstantValues;
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MutableStatsInfo;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.model.xstream.fs.StatsImpl;
@@ -120,12 +120,11 @@ public class StatsServiceImpl implements InternalStatsService {
 
     @Override
     public synchronized void fileDownloaded(RepoPath repoPath, String downloadedBy, long downloadedTime) {
-        StatsEvent newEvent = new StatsEvent(repoPath, downloadedBy, downloadedTime);
-        StatsEvent oldEvent = statsEvents.put(repoPath, newEvent);
-        if (oldEvent != null) {
-            // if we found old event for the same repo path, add the old count to the new event
-            newEvent.eventCount.addAndGet(oldEvent.eventCount.get());
+        StatsEvent statsEvent = statsEvents.get(repoPath);
+        if (statsEvent == null) {
+            statsEvents.put(repoPath, statsEvent = new StatsEvent(repoPath));
         }
+        statsEvent.update(downloadedBy, downloadedTime);
     }
 
     @Override
@@ -172,6 +171,7 @@ public class StatsServiceImpl implements InternalStatsService {
         }
         try {
             if (!getFlushingSemaphore().tryAcquire(ConstantValues.statsFlushTimeoutSecs.getLong(), TimeUnit.SECONDS)) {
+                log.debug("Received flush stats request, but another process is already running.");
                 return;
             }
         } catch (InterruptedException e) {
@@ -199,23 +199,23 @@ public class StatsServiceImpl implements InternalStatsService {
         }
         try {
             while (iterator.hasNext()) {
-                Map.Entry<RepoPath, StatsEvent> statsEventEntry = iterator.next();
-                log.trace("Flushing statistics : {}", statsEventEntry.getValue());
+                final StatsEvent event = iterator.next().getValue();
+                log.trace("Flushing statistics : {}", event);
                 if (txStatus == null) {
                     txStatus = startTransaction();
                 }
+                if (isWriteLocked(event)) {
+                    log.debug("Attempting to update stats of write locked node at: {}", event.repoPath);
+                    continue;
+                }
+                iterator.remove(); //remove the object prior to sampling its value to avoid atomicity problems
                 processed++;
-                StatsSaveResult saveResult = createOrUpdateStats(statsEventEntry.getValue());
+                StatsSaveResult saveResult = createOrUpdateStats(event);
                 switch (saveResult) {
-                    case Locked:
-                        // Nothing and no removed
-                        break;
                     case Ignored:
-                        // Just removed
-                        iterator.remove();
+                        log.debug("Attempting to update stats of non-existing node at: {}", event.repoPath);
                         break;
                     case Updated:
-                        iterator.remove();
                         if (processed % savedPerTx == 0) {
                             log.debug("Flushed {} statistics done, started with {}", processed, sizeOnEntry);
                             try {
@@ -226,7 +226,6 @@ public class StatsServiceImpl implements InternalStatsService {
                         }
                         break;
                     case Failed:
-                        iterator.remove();
                         log.debug("Flushed {} statistics done, started with {}", processed, sizeOnEntry);
                         try {
                             commitOrRollback(txStatus);
@@ -262,7 +261,7 @@ public class StatsServiceImpl implements InternalStatsService {
         }
     }
 
-    enum StatsSaveResult {Updated, Ignored, Locked, Failed}
+    enum StatsSaveResult {Updated, Ignored, Failed}
 
     /**
      * @param event
@@ -271,12 +270,7 @@ public class StatsServiceImpl implements InternalStatsService {
     private StatsSaveResult createOrUpdateStats(StatsEvent event) {
         long nodeId = fileService.getNodeId(event.repoPath);
         if (nodeId == DbService.NO_DB_ID) {
-            log.debug("Attempting to update stats of non-existing node at: {}", event.repoPath);
             return StatsSaveResult.Ignored;
-        }
-        if (isWriteLocked(event)) {
-            log.debug("Attempting to update stats of write locked node at: {}", event.repoPath);
-            return StatsSaveResult.Locked;
         }
 
         try {
@@ -312,7 +306,7 @@ public class StatsServiceImpl implements InternalStatsService {
     }
 
     private StatsInfo statToStatsInfo(Stat stat) {
-        MutableStatsInfo statsInfo = new XStreamInfoFactory().createStats();
+        MutableStatsInfo statsInfo = InfoFactoryHolder.get().createStats();
         statsInfo.setDownloadCount(stat.getDownloadCount());
         statsInfo.setLastDownloaded(stat.getLastDownloaded());
         statsInfo.setLastDownloadedBy(stat.getLastDownloadedBy());
@@ -344,17 +338,21 @@ public class StatsServiceImpl implements InternalStatsService {
         return (AbstractPlatformTransactionManager) ContextHelper.get().getBean("artifactoryTransactionManager");
     }
 
-    private class StatsEvent {
+    static class StatsEvent {
         private final RepoPath repoPath;
-        private final String downloadedBy;
-        private final long downloadedTime;
         private final AtomicInteger eventCount;
+        private String downloadedBy;
+        private long downloadedTime;
 
-        public StatsEvent(RepoPath repoPath, String downloadedBy, long downloadedTime) {
+        StatsEvent(RepoPath repoPath) {
             this.repoPath = repoPath;
+            this.eventCount = new AtomicInteger();
+        }
+
+        void update(String downloadedBy, long downloadedTime) {
             this.downloadedBy = downloadedBy;
             this.downloadedTime = downloadedTime;
-            this.eventCount = new AtomicInteger(1);
+            eventCount.incrementAndGet();
         }
 
         @Override

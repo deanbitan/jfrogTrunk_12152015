@@ -368,6 +368,45 @@ public class UserImpl implements MutableUserInfo {
         return bintrayAuth;
     }
 
+    /**
+     * Compare the groups and login flags of the users to know if a force re-login is needed.
+     *
+     * @return true if users have same flags and groups, false otherwise.
+     */
+    @Override
+    public boolean hasSameAuthorizationContext(UserInfo o) {
+        if (o == null) {
+            return false;
+        }
+        return isAdmin() == o.isAdmin()
+                && isEnabled() == o.isEnabled()
+                && hasInvalidPassword() == o.hasInvalidPassword()
+                && isAccountNonLocked() == o.isAccountNonLocked()
+                && isCredentialsNonExpired() == o.isCredentialsNonExpired()
+                && equalGroupsSet(getGroups(), o.getGroups());
+    }
+
+    private static boolean equalGroupsSet(Set<UserGroupInfo> s1, Set<UserGroupInfo> s2) {
+        if (s1 == s2) {
+            return true;
+        }
+        if (s1 == null || s2 == null) {
+            return false;
+        }
+        if (s1.equals(s2)) {
+            return true;
+        }
+        if (s1.size() != s2.size()) {
+            return false;
+        }
+        for (UserGroupInfo g1 : s1) {
+            if (!s2.contains(g1)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -26,7 +26,9 @@ package org.artifactory.addon;
 public enum AddonState {
     ACTIVATED("Activated"),
     DISABLED("Disabled"),
-    INACTIVATED("Inactivated");
+    INACTIVATED("Inactivated"),
+    NOT_CONFIGURED("Not Configured"),
+    NOT_LICENSED("Not Licensed");
 
     private String name;
 

@@ -95,4 +95,9 @@ public class BinaryInfoImpl implements BinaryInfo {
     public int hashCode() {
         return sha1.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return "{" + sha1 + ',' + md5 + ',' + length + '}';
+    }
 }

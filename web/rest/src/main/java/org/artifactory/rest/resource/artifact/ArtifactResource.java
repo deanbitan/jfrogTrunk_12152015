@@ -23,6 +23,7 @@ import com.sun.jersey.api.core.ExtendedUriInfo;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -58,6 +59,8 @@ import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
+import org.artifactory.rest.common.exception.BadRequestException;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
@@ -195,14 +198,12 @@ public class ArtifactResource {
             return prepareUnAuthorizedResponse(repoPath);
         }
         if (!repositoryService.exists(repoPath)) {
-            RestUtils.sendNotFoundResponse(response);
-            return null;
+            throw new NotFoundException("Unable to find item path");
         }
         StatsInfo statsInfo = repositoryService.getStatsInfo(repoPath);
         String uri = buildDownloadUri();
         if (statsInfo == null) {
-            return okResponse(new ItemStatsInfo(uri, 0, 0, null),
-                    MT_STATS_INFO);
+            return okResponse(new ItemStatsInfo(uri, 0, 0, null), MT_STATS_INFO);
         }
         if (isMediaTypeAcceptableByUser(MT_STATS_INFO)) {
             ItemStatsInfo entity = new ItemStatsInfo(uri, statsInfo.getDownloadCount(),
@@ -220,9 +221,9 @@ public class ArtifactResource {
     private Response prepareUnAuthorizedResponse(RepoPath unAuthorizedResource) throws IOException {
         boolean hideUnauthorizedResources = centralConfig.getDescriptor().getSecurity().isHideUnauthorizedResources();
         if (hideUnauthorizedResources) {
-            return sendAndCreateNotFoundResponse("Resource not found");
+            throw new NotFoundException("Resource not found");
         } else {
-            return sendAndCreateForbiddenResponse("Request for '" + unAuthorizedResource + "' is forbidden for user '" +
+            throw new AuthorizationRestException("Request for '" + unAuthorizedResource + "' is forbidden for user '" +
                     authorizationService.currentUsername() + "'.");
         }
     }
@@ -254,7 +255,7 @@ public class ArtifactResource {
 
     private Response prepareFileListResponse() throws IOException {
         if (authorizationService.isAnonymous()) {
-            return sendAndCreateForbiddenResponse("This resource is available to authenticated users only.");
+            throw new AuthorizationRestException("This resource is available to authenticated users only.");
         }
 
         log.debug("Received file list request for: {}. ", path);
@@ -282,30 +283,34 @@ public class ArtifactResource {
 
     private Response writeStreamingFileList() throws IOException {
         try {
-            restAddon().writeStreamingFileList(response, request.getRequestURL().toString(), path,
+            restAddon().writeStreamingFileList(response, getRequestStorageUri(), path,
                     getQueryParameterAsInt(DEEP_PARAM), getQueryParameterAsInt(DEPTH_PARAM),
                     getQueryParameterAsInt(LIST_FOLDERS_PARAM), getQueryParameterAsInt(MD_TIMESTAMPS_PARAM),
                     getQueryParameterAsInt(INCLUDE_ROOT_PATH_PARAM));
             return Response.ok().build();
         } catch (IllegalArgumentException iae) {
-            return sendAndCreateBadRequestResponse(iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException dnee) {
             log.debug("Does not exist", dnee);
-            return sendAndCreateNotFoundResponse(dnee.getMessage());
+            throw new NotFoundException(dnee.getMessage());
         } catch (FolderExpectedException fee) {
             log.debug("Folder expected", fee);
-            return sendAndCreateBadRequestResponse(fee.getMessage());
+            throw new BadRequestException(fee.getMessage());
         } catch (BlackedOutException boe) {
             log.debug("Repository is blacked out", boe);
-            return sendAndCreateNotFoundResponse(boe.getMessage());
+            throw new NotFoundException(boe.getMessage());
         } catch (MissingRestAddonException mrae) {
             throw mrae;
         } catch (Exception e) {
             log.error("Could not retrieve list", e);
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR)
                     .entity("An error occurred while retrieving file list: " + e.getMessage()).build();
         }
+    }
+
+    private String getRequestStorageUri() {
+        RepoPath repoPath = repoPathFromRequestPath();
+        return RestUtils.buildStorageInfoUri(request, repoPath.getRepoKey(), repoPath.getPath());
     }
 
     /**
@@ -317,7 +322,7 @@ public class ArtifactResource {
         fixPathIfNeeded();
         try {
             if (isRequestToNoneLocalRepo()) {
-                return nonLocalRepoResponse();
+                throw new BadRequestException("This method can only be invoked on local repositories.");
             }
             ItemInfo lastModifiedItem = restAddon().getLastModified(path);
             String uri = getLastModifiedRequestUri(lastModifiedItem);
@@ -327,9 +332,9 @@ public class ArtifactResource {
             Date lastModifiedDate = new Date(lastModifiedItem.getLastModified());
             return Response.ok(itemLastModified, MT_ITEM_LAST_MODIFIED).lastModified(lastModifiedDate).build();
         } catch (IllegalArgumentException iae) {
-            return sendAndCreateBadRequestResponse(iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (ItemNotFoundRuntimeException infre) {
-            return sendAndCreateNotFoundResponse(infre.getMessage());
+            throw new NotFoundException(infre.getMessage());
         }
     }
 
@@ -379,10 +384,10 @@ public class ArtifactResource {
             }
         }
         if (!itemProperties.properties.isEmpty()) {
-            itemProperties.slf = request.getRequestURL().toString();
+            itemProperties.slf = getRequestStorageUri();
             return okResponse(itemProperties, MT_ITEM_PROPERTIES);
         }
-        return sendAndCreateNotFoundResponse("No properties could be found.");
+        throw new NotFoundException("No properties could be found.");
     }
 
     private Response preparePropertiesXmlResponse() throws IOException {
@@ -390,7 +395,7 @@ public class ArtifactResource {
         if (properties != null && !properties.isEmpty()) {
             return okResponse(properties, MediaType.APPLICATION_XML);
         }
-        return sendAndCreateNotFoundResponse("No properties could be found.");
+        throw new NotFoundException("No properties could be found.");
     }
 
     private Properties resolveProperties() throws IOException {
@@ -432,7 +437,7 @@ public class ArtifactResource {
     private Response preparePermissionsResponse() throws IOException {
         if (isMediaTypeAcceptableByUser(MT_ITEM_PERMISSIONS)) {
             if (isRequestToNoneLocalRepo()) {
-                return nonLocalRepoResponse();
+                throw new BadRequestException("This method can only be invoked on local repositories.");
             }
             return getPermissionsResponse(path);
         } else {
@@ -445,22 +450,22 @@ public class ArtifactResource {
             ItemPermissions itemPermissions = restAddon().getItemPermissions(request, path);
             return okResponse(itemPermissions, MT_ITEM_PERMISSIONS);
         } catch (IllegalArgumentException iae) {
-            return sendAndCreateBadRequestResponse(iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (ItemNotFoundRuntimeException infre) {
-            return sendAndCreateNotFoundResponse(infre.getMessage());
+            throw new NotFoundException(infre.getMessage());
         }
     }
 
     private Response prepareStorageInfoResponse() throws IOException {
         RepoPath repoPath = repoPathFromRequestPath();
-        if (!authorizationService.canRead(repoPath)) {
-            return prepareUnAuthorizedResponse(repoPath);
-        }
         String repoKey = repoPath.getRepoKey();
         RestBaseStorageInfo storageInfoRest;
         org.artifactory.fs.ItemInfo itemInfo = null;
         if (isLocalRepo(repoKey)) {
             try {
+                if (!authorizationService.canRead(repoPath)) {
+                    return prepareUnAuthorizedResponse(repoPath);
+                }
                 itemInfo = repositoryService.getItemInfo(repoPath);
             } catch (ItemNotFoundRuntimeException e) {
                 //no item found, will send 404
@@ -474,8 +479,7 @@ public class ArtifactResource {
         }
 
         if (itemInfo == null) {
-            RestUtils.sendNotFoundResponse(response);
-            return null;
+            throw new NotFoundException("Unable to find item");
         }
 
         storageInfoRest = createStorageInfoData(repoKey, itemInfo);
@@ -600,34 +604,7 @@ public class ArtifactResource {
         return !isLocalRepo(repoPathFromRequestPath().getRepoKey());
     }
 
-    private Response nonLocalOrVirtualRepoResponse() throws IOException {
-        return sendAndCreateBadRequestResponse("This method can only be invoked on local repositories.");
-    }
-
-    private Response nonLocalRepoResponse() throws IOException {
-        return sendAndCreateBadRequestResponse("This method can only be invoked on local repositories.");
-    }
-
-    private Response sendAndCreateBadRequestResponse(String message) throws IOException {
-        response.sendError(HttpStatus.SC_BAD_REQUEST, message);
-        return Response.status(HttpStatus.SC_BAD_REQUEST).entity(message).build();
-    }
-
-    private Response sendAndCreateNotFoundResponse(String message) throws IOException {
-        response.sendError(HttpStatus.SC_NOT_FOUND, message);
-        return Response.status(HttpStatus.SC_NOT_FOUND).entity(message).build();
-    }
-
-    private Response sendAndCreateForbiddenResponse(String message) throws IOException {
-        response.sendError(HttpStatus.SC_FORBIDDEN, message);
-        return Response.status(HttpStatus.SC_FORBIDDEN).entity(message).build();
-    }
-
     private RestAddon restAddon() {
         return addonsManager.addonByType(RestAddon.class);
-    }
-
-    public boolean isRequestToLocalOrVirtualRepo() {
-        return true;
     }
 }

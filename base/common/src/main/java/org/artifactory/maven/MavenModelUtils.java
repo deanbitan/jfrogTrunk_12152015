@@ -50,6 +50,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -463,5 +464,44 @@ public abstract class MavenModelUtils {
             mavenArtifactInfo.setType(matcher.group(8));
         }
         return mavenArtifactInfo;
+    }
+
+    /**
+     * Returns a MavenArtifactInfo based on the supplied maven GAV coordinates, e.g. "group.id:artifactId:version"
+     *
+     * @param gav GAV, GAVC or GACV string
+     * @return MavenMetadataInfo object with gathered info
+     */
+    @Nonnull
+    public static MavenArtifactInfo getInfoFromGavString(String gav) {
+        MavenArtifactInfo result = new MavenArtifactInfo();
+        String[] splitId = gav.split(":");
+        if (splitId.length == 4) {
+            result.setGroupId(splitId[0]);
+            result.setArtifactId(splitId[1]);
+            result.setClassifier(splitId[2]);
+            result.setVersion(splitId[3]);
+        } else if (splitId.length == 3) {
+            result.setGroupId(splitId[0]);
+            result.setArtifactId(splitId[1]);
+            result.setVersion(splitId[2]);
+        }
+        return result;
+    }
+
+    /**
+     * Constructs GAV or GACV string representation of the given MavenArtifactInfo.
+     * @param info Maven info to use
+     * @param gacv if true, creates "GroupId:ArtifactId:Classifier:Version" string, else create
+     *             "GroupId:ArtifactId:Version"
+     * @return GAV or GACV string
+     */
+    public static String getGavStringFromMavenInfo(MavenArtifactInfo info, boolean gacv) {
+        StringBuilder builder = new StringBuilder(info.getGroupId());
+        builder.append(":").append(info.getArtifactId());
+        if (gacv) {
+            builder.append(":").append(info.getClassifier());
+        }
+        return builder.append(":").append(info.getVersion()).toString();
     }
 }

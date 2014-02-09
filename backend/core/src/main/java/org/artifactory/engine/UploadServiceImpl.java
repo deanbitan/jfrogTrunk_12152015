@@ -47,7 +47,6 @@ import org.artifactory.md.MutablePropertiesInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.md.PropertiesXmlProvider;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.model.xstream.fs.PropertiesImpl;
@@ -110,9 +109,6 @@ public class UploadServiceImpl implements InternalUploadService {
 
     @Autowired
     private BasicAuthenticationEntryPoint authenticationEntryPoint;
-
-    @Autowired
-    private ArchiveIndexer archiveIndexer;
 
     @Autowired
     private AddonsManager addonsManager;
@@ -614,7 +610,6 @@ public class UploadServiceImpl implements InternalUploadService {
                 response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
                 return;
             }
-            indexArchiveIfNeeded(request, repoPath, resource.getInfo().getSha1());
             sendSuccessfulResponse(request, response, repoPath, false);
         } catch (BadPomException bpe) {
             response.sendError(HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
@@ -709,23 +704,6 @@ public class UploadServiceImpl implements InternalUploadService {
                 checksums.add(new ChecksumInfo(ChecksumType.md5, md5, null));
             }
             fileInfo.setChecksums(checksums);
-        }
-    }
-
-    private void indexArchiveIfNeeded(ArtifactoryRequest request, RepoPath repoPath, String sha1) {
-        //Async index the uploaded file if needed
-        MimeType ct = NamingUtils.getMimeType(repoPath.getPath());
-        boolean indexArchive = ct.isArchive() && ct.isIndex();
-        // internal request can flag not to index (to allow manual control)
-        if (indexArchive && request instanceof InternalArtifactoryRequest) {
-            indexArchive = !((InternalArtifactoryRequest) request).isSkipJarIndexing();
-        }
-        if (indexArchive) {
-            // TODO: Find a way to activate this. generates big waste of queue energy in the indexer!
-            // Check if the checksum is already indexed
-            //if (!archiveIndexer.isIndexed(sha1)) {
-            archiveIndexer.asyncIndex(repoPath);
-            //}
         }
     }
 

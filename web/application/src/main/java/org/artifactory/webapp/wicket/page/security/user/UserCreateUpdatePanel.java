@@ -58,6 +58,7 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.util.validation.NameValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
@@ -304,7 +305,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     boolean userHasPermissions = authorizationService.userHasPermissions(username);
                     if (!userHasPermissions) {
                         successMessage += "\nUser has no assigned permissions yet. You can directly assign " +
-                                "permissions to the user or add him to an exiting group that has assigned permissions.";
+                                "permissions to the user or add him to an existing group that has assigned permissions.";
                     }
                     getPage().info(successMessage);
                 }
@@ -313,7 +314,8 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
 
             private void updateUser(String username) {
                 // get the user info from the database and update it from the model
-                MutableUserInfo userInfo = InfoFactoryHolder.get().copyUser(userGroupService.findUser(username));
+                UserInfo origUser = userGroupService.findUser(username);
+                MutableUserInfo userInfo = InfoFactoryHolder.get().copyUser(origUser);
                 userInfo.setEmail(entity.getEmail());
                 userInfo.setAdmin(entity.isAdmin());
                 userInfo.setUpdatableProfile(entity.isUpdatableProfile());
@@ -324,7 +326,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 } else if (StringUtils.hasText(entity.getPassword())) {
                     userInfo.setPassword(securityService.generateSaltedPassword(entity.getPassword()));
                 }
-                userGroupService.updateUser(userInfo);
+                userGroupService.updateUser(userInfo, !userInfo.hasSameAuthorizationContext(origUser));
                 getPage().info("User '" + username + "' successfully updated.");
             }
         };

@@ -18,29 +18,20 @@
 
 package org.artifactory.storage.db.itest.spring;
 
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.db.DbType;
-import org.artifactory.storage.db.spring.ArtifactoryDataSource;
-import org.artifactory.storage.db.spring.ArtifactoryPoolableConnectionFactory;
+import org.artifactory.storage.db.spring.ArtifactoryTomcatDataSource;
 import org.artifactory.util.ResourceUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
 
 /**
  * A Spring {@link org.springframework.context.annotation.Configuration} to initialized database beans.
@@ -55,10 +46,14 @@ public class DbTestConfigFactory implements BeanFactoryAware {
     @Bean(name = "dataSource")
     public DataSource createDataSource() {
         StorageProperties storageProperties = beanFactory.getBean("storageProperties", StorageProperties.class);
-        ArtifactoryDataSource dataSource = new ArtifactoryDataSource(storageProperties);
+        /*ArtifactoryDataSource dataSource = new ArtifactoryDbcpDataSource(storageProperties);
         GenericObjectPool pool = (GenericObjectPool) ReflectionTestUtils.getField(dataSource, "_pool");
         PoolableConnectionFactory factory = (PoolableConnectionFactory) ReflectionTestUtils.getField(pool, "_factory");
-        factory.setDefaultAutoCommit(true);
+        factory.setDefaultAutoCommit(true);*/
+        ArtifactoryTomcatDataSource dataSource = new ArtifactoryTomcatDataSource(storageProperties);
+        // the db tests has limited tx support (which is mostly controlled by the business logic layer) so we are using
+        // auto commit
+        dataSource.setDefaultAutoCommit(true);
         return dataSource;
     }
 
@@ -67,10 +62,10 @@ public class DbTestConfigFactory implements BeanFactoryAware {
      * @see org.artifactory.storage.db.spring.DbConfigFactory#createUniqueIdsDataSource()
      */
     @Bean(name = "uniqueIdsDataSource")
-    public PoolingDataSource createUniqueIdsDataSource() {
+    public DataSource createUniqueIdsDataSource() {
         StorageProperties storageProperties = beanFactory.getBean("storageProperties", StorageProperties.class);
 
-        GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
+        /*GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
         poolConfig.maxActive = 1;
         poolConfig.maxIdle = 1;
         ObjectPool connectionPool = new GenericObjectPool(null, poolConfig);
@@ -83,7 +78,8 @@ public class DbTestConfigFactory implements BeanFactoryAware {
         PoolableConnectionFactory pcf = new ArtifactoryPoolableConnectionFactory(connectionFactory,
                 connectionPool, null, null, false, true);
         pcf.setDefaultTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        return new PoolingDataSource(connectionPool);
+        return new PoolingDataSource(connectionPool);*/
+        return ArtifactoryTomcatDataSource.createUniqueIdDataSource(storageProperties);
     }
 
     @Bean(name = "storageProperties")

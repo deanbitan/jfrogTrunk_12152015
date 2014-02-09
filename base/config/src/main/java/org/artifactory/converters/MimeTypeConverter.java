@@ -20,35 +20,34 @@ package org.artifactory.converters;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.mime.version.MimeTypesVersion;
 import org.artifactory.version.CompoundVersionDetails;
 
 import java.io.File;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public class MimeTypeConverter implements ArtifactoryConverterAdapter {
-    private final File mimeTypesFile;
+    private final File path;
 
-    public MimeTypeConverter(ArtifactoryHome artifactoryHome) {
-        mimeTypesFile = artifactoryHome.getMimeTypesFile();
+    public MimeTypeConverter(File path) {
+        this.path = path;
     }
 
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
-        if (!mimeTypesFile.exists()) {
+        if (!path.exists()) {
             throw new RuntimeException(
-                    "Couldn't start Artifactory. Mime types file is missing: " + mimeTypesFile.getAbsolutePath());
+                    "Couldn't start Artifactory. Mime types file is missing: " + path.getAbsolutePath());
         }
 
         try {
-            String mimeTypesXml = Files.toString(mimeTypesFile, Charsets.UTF_8);
+            String mimeTypesXml = Files.toString(path, Charsets.UTF_8);
             MimeTypesVersion mimeTypesVersion = MimeTypesVersion.findVersion(mimeTypesXml);
             if (!mimeTypesVersion.isCurrent()) {
                 String result = mimeTypesVersion.convert(mimeTypesXml);
-                Files.write(result, mimeTypesFile, Charsets.UTF_8);
+                Files.write(result, path, Charsets.UTF_8);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute mimetypes conversion", e);
@@ -57,20 +56,16 @@ public class MimeTypeConverter implements ArtifactoryConverterAdapter {
 
     @Override
     public boolean isInterested(CompoundVersionDetails source, CompoundVersionDetails target) {
-        if (!mimeTypesFile.exists()) {
+        if (!path.exists()) {
             return false;
         }
         try {
-            String mimeTypesXml = Files.toString(mimeTypesFile, Charsets.UTF_8);
+            String mimeTypesXml = Files.toString(path, Charsets.UTF_8);
             MimeTypesVersion mimeTypesVersion = MimeTypesVersion.findVersion(mimeTypesXml);
             return !mimeTypesVersion.isCurrent();
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute mimetypes conversion", e);
 
         }
-    }
-
-    @Override
-    public void conversionEnded() {
     }
 }

@@ -14,10 +14,12 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.converters.ConverterProvider;
+import org.artifactory.converters.ConverterManager;
+import org.artifactory.converters.VersionProvider;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.spring.SpringConfigPaths;
+import org.mockito.Mockito;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Map;
@@ -46,6 +48,9 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         }
         if (type.equals(HaCommonAddon.class)) {
             return (T) new DummyHaCommonAddon();
+        }
+        if (type.equals(RepositoryService.class)) {
+            return (T) Mockito.mock(RepositoryService.class);
         }
         return applicationContext.getBean(type);
     }
@@ -110,7 +115,12 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
     }
 
     @Override
-    public ConverterProvider getConverterManager() {
+    public ConverterManager getConverterManager() {
+        return null;
+    }
+
+    @Override
+    public VersionProvider getVersionProvider() {
         return null;
     }
 

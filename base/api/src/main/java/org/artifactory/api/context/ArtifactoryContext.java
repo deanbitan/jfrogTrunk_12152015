@@ -23,7 +23,8 @@ import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.converters.ConverterProvider;
+import org.artifactory.converters.ConverterManager;
+import org.artifactory.converters.VersionProvider;
 import org.artifactory.spring.SpringConfigPaths;
 
 import java.util.Map;
@@ -63,5 +64,7 @@ public interface ArtifactoryContext extends ImportableExportable {
 
     void setOffline();
 
-    ConverterProvider getConverterManager();
+    ConverterManager getConverterManager();
+
+    VersionProvider getVersionProvider();
 }

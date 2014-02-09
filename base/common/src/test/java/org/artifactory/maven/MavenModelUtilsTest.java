@@ -25,6 +25,7 @@ import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoBuilder;
@@ -192,6 +193,31 @@ public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
         artifactoryProperties.setProperty(ConstantValues.mvnMetadataVersion3Enabled.getPropertyName(), "false");
         buildSnapshotMavenMetadata(false);
         artifactoryProperties.setProperty(ConstantValues.mvnMetadataVersion3Enabled.getPropertyName(), "true");
+    }
+
+    public void gavStringToInfo() {
+        MavenArtifactInfo result = MavenModelUtils.getInfoFromGavString("");
+        assertEquals(result.getArtifactId(), UnitInfo.NA);
+        assertEquals(result.getGroupId(), UnitInfo.NA);
+        assertEquals(result.getVersion(), UnitInfo.NA);
+        assertNull(result.getClassifier());
+
+        String groupId = "some.group.id";
+        String artifactId = "artifact.id";
+        String version = "version.1-2";
+        String classifier = "classifier";
+
+        result = MavenModelUtils.getInfoFromGavString(groupId + ":" + artifactId + ":" + version);
+        assertEquals(result.getGroupId(), groupId);
+        assertEquals(result.getArtifactId(), artifactId);
+        assertEquals(result.getVersion(), version);
+        assertNull(result.getClassifier());
+
+        result = MavenModelUtils.getInfoFromGavString(groupId + ":" + artifactId + ":" + classifier + ":" + version);
+        assertEquals(result.getGroupId(), groupId);
+        assertEquals(result.getArtifactId(), artifactId);
+        assertEquals(result.getVersion(), version);
+        assertEquals(result.getClassifier(), classifier);
     }
 
     private void buildSnapshotMavenMetadata(boolean shouldContainM3Metadata) {

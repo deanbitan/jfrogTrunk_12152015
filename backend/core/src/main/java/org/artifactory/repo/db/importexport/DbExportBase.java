@@ -127,11 +127,11 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             }
             //If a file export fails, we collect the error but not fail the whole export
         } catch (FileNotFoundException e) {
-            status.error("Failed to export " + targetFile.getAbsolutePath() + " since it is non-accessible.",
+            status.error("Failed to export '" + targetFile.getAbsolutePath() + "' since it is non-accessible.",
                     e, log);
         } catch (Exception e) {
-            status.error("Failed to export " + targetFile.getAbsolutePath() + " to file '" +
-                    targetFile.getPath() + "'.", e, log);
+            status.error("Failed to export '" + targetFile.getAbsolutePath() + "' due to:" + e.getMessage(),
+                    e, log);
         }
     }
 

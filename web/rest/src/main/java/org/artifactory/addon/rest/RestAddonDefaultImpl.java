@@ -276,4 +276,10 @@ public class RestAddonDefaultImpl implements RestAddon {
             int depth, int listFolders, int mdTimestamps, int includeRootPath) {
         throw new MissingRestAddonException();
     }
+
+    @Override
+    public Response getLatestVersionByProperties(String repoKey, String path, Map<String, String[]> parameterMap,
+            HttpServletRequest request) {
+        throw new MissingRestAddonException();
+    }
 }

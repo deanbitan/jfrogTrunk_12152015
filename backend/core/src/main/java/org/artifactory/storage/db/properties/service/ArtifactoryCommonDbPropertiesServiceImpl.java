@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 @Service
 public class ArtifactoryCommonDbPropertiesServiceImpl implements ArtifactoryCommonDbPropertiesService {
@@ -33,6 +33,11 @@ public class ArtifactoryCommonDbPropertiesServiceImpl implements ArtifactoryComm
     @Override
     public DbProperties getDbProperties() {
         return dbPropertiesService.getDbProperties();
+    }
+
+    @Override
+    public boolean isDbPropertiesTableExists() {
+        return dbPropertiesService.isDbPropertiesTableExists();
     }
 
     @Override

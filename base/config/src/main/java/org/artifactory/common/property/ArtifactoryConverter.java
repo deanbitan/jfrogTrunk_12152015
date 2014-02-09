@@ -12,6 +12,4 @@ public interface ArtifactoryConverter {
      * dependencies between the services as declared in {@link org.artifactory.spring.Reloadable#initAfter()}.
      */
     void convert(CompoundVersionDetails source, CompoundVersionDetails target);
-
-
 }

@@ -23,15 +23,15 @@ import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.VersionEntry;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.util.RestUtils;
 import org.springframework.util.AntPathMatcher;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
@@ -42,16 +42,14 @@ import java.util.List;
  */
 public class ArtifactLatestVersionSearchResource {
     private RestAddon restAddon;
-    private HttpServletResponse response;
 
-    public ArtifactLatestVersionSearchResource(RestAddon restAddon, HttpServletResponse response) {
+    public ArtifactLatestVersionSearchResource(RestAddon restAddon) {
         this.restAddon = restAddon;
-        this.response = response;
     }
 
     @GET
     @Produces({MediaType.TEXT_PLAIN})
-    public String get(
+    public Response get(
             @QueryParam(SearchRestConstants.PARAM_GAVC_GROUP_ID) String groupId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_ARTIFACT_ID) String artifactId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_VERSION) String version,
@@ -65,8 +63,7 @@ public class ArtifactLatestVersionSearchResource {
             List<VersionEntry> results = artifactVersions.getResults();
 
             if (results.isEmpty()) {
-                RestUtils.sendNotFoundResponse(response);
-                return null;
+                throw new NotFoundException("Unable to find artifact versions");
             }
 
             boolean searchForReleaseVersion = StringUtils.isBlank(version);
@@ -90,16 +87,14 @@ public class ArtifactLatestVersionSearchResource {
             }
 
             if (latest == null) {
-                RestUtils.sendNotFoundResponse(response, notFoundMessage);
-                return null;
+                throw new NotFoundException(notFoundMessage);
             } else {
-                return latest.getVersion();
+                return Response.ok(latest.getVersion()).build();
             }
 
         } catch (IllegalArgumentException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
-        return null;
     }
 
     private VersionEntry getLatestReleaseVersion(List<VersionEntry> results) {

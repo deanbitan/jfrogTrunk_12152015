@@ -41,14 +41,6 @@ public interface Security {
     boolean canRead(RepoPath path);
 
     /**
-     * @return True if the current user can read the specified path implicitly by having a read permissions on part of
-     *         the path
-     * @deprecated Equivalent to canRead on a folder path - Will be removed in next major version
-     */
-    @Deprecated
-    boolean canImplicitlyReadParentPath(RepoPath repoPath);
-
-    /**
      * @return True if the current user can annotate the specified path.
      */
     boolean canAnnotate(RepoPath repoPath);
@@ -131,6 +123,7 @@ public interface Security {
 
     /**
      * Accessible only if current user is an admin.
+     *
      * @return The user with the given username if exists or null.
      * @throws SecurityException if the current user is not an admin user
      */
@@ -152,11 +145,10 @@ public interface Security {
      * <li>user.getBintrayAuth() will be updated if not null</li>
      * </ul>
      *
-     *
      * @param user the user with all the fields to update
      * @return the new updated user data
-     * @throws SecurityException if the current user is not an admin user, if the user passed is the anonymous user,
-     * if one of the group passed does not exists
+     * @throws SecurityException                        if the current user is not an admin user, if the user passed is the anonymous user,
+     *                                                  if one of the group passed does not exists
      * @throws org.artifactory.storage.StorageException if the user could not updated
      */
     void updateUser(User user);

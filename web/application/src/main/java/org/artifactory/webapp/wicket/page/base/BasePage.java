@@ -40,12 +40,11 @@ import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
-import org.artifactory.api.storage.StorageService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.WicketProperty;
-import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.HasModalHandler;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -56,11 +55,11 @@ import org.artifactory.common.wicket.component.panel.feedback.aggregated.Aggrega
 import org.artifactory.common.wicket.component.panel.sidemenu.MenuPanel;
 import org.artifactory.common.wicket.resources.domutils.CommonJsPackage;
 import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.storage.StorageService;
 import org.artifactory.storage.db.servers.model.ArtifactoryServer;
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
 import org.artifactory.web.ui.skins.GreenSkin;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
-import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
 import org.artifactory.webapp.wicket.page.search.artifact.ArtifactSearchPage;
 import org.slf4j.Logger;
@@ -124,7 +123,6 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         add(licenseLabel);
 
         add(new LicenseFooterLabel("licenseFooter"));
-        add(new StorageQuotaLabel("storageQuotaFooter"));
 
         add(new HeaderLogoPanel("logo"));
 
@@ -135,6 +133,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         addMenu();
         addSearchForm();
         addModalHandler();
+        add(new FloatingMessage("baseFloatingMessage"));
     }
 
     @Override
@@ -244,23 +243,6 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         return "Logged In as";
     }
 
-    private String getUrlBaseNotConfiguredFooterMessage() {
-        //base url is configured footer message
-        try {
-            if (ArtifactoryHome.get().isHaConfigured()) {
-                String urlBase = centralConfigService.getDescriptor().getUrlBase();
-                if (StringUtils.isBlank(urlBase)) {
-                    //using internal link into Artifactory would not work in that case, because it is based on url base...
-                    return "Custom URL Base is not properly configured. Please check the configuration in " +
-                            "Admin -> Configuration -> General.";
-                }
-            }
-        } catch (Exception e) {
-            log.error("Could not verify base url", e);
-        }
-        return "";
-    }
-
     private boolean isSignedInOrAnonymous() {
         return (ArtifactoryWebSession.get().isSignedIn() && !authorizationService.isAnonymous()) ||
                 (authorizationService.isAnonymous() && authorizationService.isAnonAccessEnabled());
@@ -268,6 +250,91 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
     private boolean isNotSignedInOrAnonymous() {
         return !ArtifactoryWebSession.get().isSignedIn() || authorizationService.isAnonymous();
+    }
+
+    private static class FloatingMessage extends WebMarkupContainer {
+
+        @SpringBean
+        private AddonsManager addons;
+
+        @SpringBean
+        private CentralConfigService centralConfig;
+
+        @SpringBean
+        private AuthorizationService authorizationService;
+
+        @SpringBean
+        private StorageService storageService;
+
+        boolean shouldDisplay;
+
+        public FloatingMessage(String id) {
+            super(id);
+            setOutputMarkupId(true);
+            shouldDisplay = false;
+            addNoBaseUrlmessage();
+            addOfflineMessage();
+            addQuotaMessage();
+            setVisible(shouldDisplay);
+        }
+
+        private void addNoBaseUrlmessage() {
+            if (authorizationService.isAdmin() && addons.isHaLicensed() && !ContextHelper.get().isOffline()) {
+                String message = getUrlBaseNotConfiguredMessage();
+                if (StringUtils.isNotBlank(message)) {
+                    add(new Label("noBaseUrlMessage", message));
+                    shouldDisplay = true;
+                    return;
+                }
+            }
+            add(new WebMarkupContainer("noBaseUrlMessage"));
+        }
+
+        private void addOfflineMessage() {
+            if (ContextHelper.get().isOffline()) {
+                shouldDisplay = true;
+                add(new Label("offlineMessage", "Artifactory is offline"));
+            } else {
+                add(new WebMarkupContainer("offlineMessage"));
+            }
+        }
+
+        private void addQuotaMessage() {
+            if (authorizationService.isAdmin()) {
+                String message = null;
+                StorageQuotaInfo info = storageService.getStorageQuotaInfo(0);
+                if (info != null) {
+                    if (info.isLimitReached()) {
+                        message = info.getErrorMessage();
+                    } else if (info.isWarningLimitReached()) {
+                        message = info.getWarningMessage();
+                    }
+                    if (message != null) {
+                        shouldDisplay = true;
+                        add(new Label("quotaMessage", message));
+                        return;
+                    }
+                }
+            }
+            add(new WebMarkupContainer("quotaMessage"));
+        }
+
+        private String getUrlBaseNotConfiguredMessage() {
+            //base url is configured footer message
+            try {
+                if (ArtifactoryHome.get().isHaConfigured()) {
+                    String urlBase = centralConfig.getDescriptor().getUrlBase();
+                    if (StringUtils.isBlank(urlBase)) {
+                        //using internal link into Artifactory would not work in that case, because it is based on url base...
+                        return "Custom URL Base is not properly configured. Please check the configuration in " +
+                                "Admin -> Configuration -> General.";
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Could not verify base url", e);
+            }
+            return "";
+        }
     }
 
     private static class FooterLabel extends Label {
@@ -327,10 +394,6 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
             String message = null;
             if (authorizationService.isAdmin() || isTrial()) {
                 message = addonsWebManager.getLicenseFooterMessage();
-                if (StringUtils.isEmpty(message)) {
-                    message = getUrlBaseNotConfiguredFooterMessage();
-
-                }
                 setDefaultModelObject(message);
             }
             setVisible(StringUtils.isNotEmpty(message));
@@ -346,38 +409,4 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         }
     }
 
-    private static class StorageQuotaLabel extends Label implements IHeaderContributor {
-        @SpringBean
-        private AuthorizationService authorizationService;
-
-        @SpringBean
-        private StorageService storageService;
-
-        public StorageQuotaLabel(String id) {
-            super(id, "");
-            setOutputMarkupId(true);
-            setEscapeModelStrings(false);
-
-            String message = null;
-            if (authorizationService.isAdmin()) {
-                StorageQuotaInfo info = storageService.getStorageQuotaInfo(0);
-                if (info != null) {
-                    if (info.isLimitReached()) {
-                        add(new CssClass("storage-quota-limit"));
-                        message = info.getErrorMessage();
-                    } else if (info.isWarningLimitReached()) {
-                        add(new CssClass("storage-quota-warning"));
-                        message = info.getWarningMessage();
-                    }
-                    setDefaultModelObject(message);
-                }
-            }
-            setVisible(StringUtils.isNotEmpty(message));
-        }
-
-        @Override
-        public void renderHead(IHeaderResponse response) {
-            response.renderJavaScript("DomUtils.footerHeight = 18;", getMarkupId() + "js");
-        }
-    }
 }

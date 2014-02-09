@@ -18,7 +18,7 @@ public interface HaCommonAddon extends Addon {
     /**
      * Server ID in case of a non HA Artifactory node
      */
-    String ARTIFACTORY_PRO = "Artifactory Pro";
+    String ARTIFACTORY_PRO = "Artifactory";
 
     String STATS_SEMAPHORE_NAME = "flushStatsSemaphore";
     String INDEXING_SEMAPHORE_NAME = "indexingSemaphore";
@@ -36,7 +36,7 @@ public interface HaCommonAddon extends Addon {
 
     /**
      * @return {@code true} if HA is enabled and activated, and current Artifactory instance is the primary.
-     * <p>is HA is <b>not enabled</b>, return true
+     *         <p>is HA is <b>not enabled</b>, return true
      */
     boolean isPrimary();
 

@@ -27,6 +27,7 @@ import org.artifactory.api.rest.search.result.CreatedInRangeRestSearchResult;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -34,11 +35,11 @@ import org.artifactory.util.HttpUtils;
 import org.artifactory.util.SerializablePair;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -52,15 +53,12 @@ public class CreatedInRangeResource {
     private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     public CreatedInRangeResource(AuthorizationService authorizationService, SearchService searchService,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+            HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
-        this.response = response;
     }
 
     /**
@@ -74,6 +72,7 @@ public class CreatedInRangeResource {
      * Where the url is the full url of the modified artifact and the modified is the created or modified date of the
      * artifact that is in within the time range.
      *
+     *
      * @param from          The time to start the search. Exclusive (eg, >). If empty will start from 1st Jan 1970
      * @param to            The time to end search. Inclusive (eg, <=), If empty, will not use current time as the
      *                      limit
@@ -82,7 +81,7 @@ public class CreatedInRangeResource {
      */
     @GET
     @Produces({SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public CreatedInRangeRestSearchResult get(@QueryParam(PARAM_IN_RANGE_FROM) Long from,
+    public Response get(@QueryParam(PARAM_IN_RANGE_FROM) Long from,
             @QueryParam(PARAM_IN_RANGE_TO) Long to,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         if (authorizationService.isAnonymous()) {
@@ -91,7 +90,7 @@ public class CreatedInRangeResource {
         return search(from, to, reposToSearch);
     }
 
-    private CreatedInRangeRestSearchResult search(Long from, Long to, StringList reposToSearch) throws IOException {
+    private Response search(Long from, Long to, StringList reposToSearch) throws IOException {
         Calendar fromCal = null;
         if (from != null) {
             fromCal = Calendar.getInstance();
@@ -106,8 +105,7 @@ public class CreatedInRangeResource {
         try {
             results = searchService.searchArtifactsCreatedOrModifiedInRange(fromCal, toCal, reposToSearch);
         } catch (RepositoryRuntimeException e) {
-            RestUtils.sendNotFoundResponse(response, e.getMessage());
-            return null;
+            throw new NotFoundException(e.getMessage());
         }
 
         if (!results.isEmpty()) {
@@ -119,11 +117,10 @@ public class CreatedInRangeResource {
                         new CreatedInRangeRestSearchResult.CreatedEntry(uri, time);
                 rangeRestSearchResult.results.add(entry);
             }
-            return rangeRestSearchResult;
+            return Response.ok(rangeRestSearchResult).type(MT_CREATED_IN_RANGE_SEARCH_RESULT).build();
         }
 
-        RestUtils.sendNotFoundResponse(response, NOT_FOUND);
-        return null;
+        throw new NotFoundException(NOT_FOUND);
     }
 
     private String buildStorageUri(SerializablePair<RepoPath, Calendar> result) {

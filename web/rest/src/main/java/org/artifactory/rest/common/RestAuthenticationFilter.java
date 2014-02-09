@@ -20,7 +20,7 @@ package org.artifactory.rest.common;
 
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
-import org.apache.commons.httpclient.HttpStatus;
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.api.rest.constant.HaRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.security.HaSystemAuthenticationToken;
@@ -32,11 +32,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
-import java.io.IOException;
 import java.security.Principal;
 
 /**
@@ -65,12 +62,7 @@ public class RestAuthenticationFilter implements ContainerRequestFilter {
                 //If anon access is allowed and we didn't bother authenticating try to perform the action as a user
                 request.setSecurityContext(new RoleAuthenticator(UserInfo.ANONYMOUS, AuthorizationService.ROLE_USER));
             } else {
-                response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"Artifactory API\"");
-                try {
-                    response.sendError(HttpStatus.SC_UNAUTHORIZED);
-                } catch (IOException e) {
-                    throw new WebApplicationException(HttpStatus.SC_UNAUTHORIZED);
-                }
+                throw new AuthorizationRestException();
             }
         } else {
             //Set the authenticated user and role

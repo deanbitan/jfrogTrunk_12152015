@@ -260,8 +260,6 @@ public class DeployServiceImpl implements DeployService {
 
             status.status("Successfully deployed " + archiveContentSize + " artifacts from archive: " + bundleName
                     + " (" + timeTaken + " seconds).", log);
-            //Trigger indexing for marked files
-            archiveIndexer.asyncIndexMarkedArchives();
         } catch (Exception e) {
             status.error(e.getMessage(), e, log);
         } finally {

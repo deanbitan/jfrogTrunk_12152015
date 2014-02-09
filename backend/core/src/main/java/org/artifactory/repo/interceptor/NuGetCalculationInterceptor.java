@@ -83,7 +83,7 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
     private void extractNuPkgInfoIfNeeded(VfsItem createdItem, MutableStatusHolder statusHolder) {
         if (shouldTakeAction(createdItem)) {
             addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo(((FileInfo) createdItem.getInfo()),
-                    statusHolder);
+                    statusHolder, true);
         }
     }
 
@@ -104,7 +104,7 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
                  * calculation
                  */
                 addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo((FileInfo) targetItem.getInfo(),
-                        statusHolder);
+                        statusHolder, true);
             } else {
                 addonsManager.addonByType(NuGetAddon.class).addNuPkgToRepoCache(targetItem.getRepoPath(),
                         nuPkgProperties);

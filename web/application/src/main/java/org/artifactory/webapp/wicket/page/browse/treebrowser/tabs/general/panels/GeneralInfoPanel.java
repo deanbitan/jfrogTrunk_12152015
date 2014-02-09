@@ -52,6 +52,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.util.NumberFormatter;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -60,8 +61,6 @@ import org.artifactory.webapp.actionable.model.LocalRepoActionableItem;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.tabs.stats.StatsTabPanel;
-
-import java.text.DecimalFormat;
 
 /**
  * Displays general item information. Placed inside the general info panel.
@@ -264,7 +263,7 @@ public class GeneralInfoPanel extends Panel {
         @Override
         public Component getLazyLoadComponent(String markupId) {
             long count = repositoryService.getArtifactCount(repoPath);
-            return new Label(markupId, new DecimalFormat("#,###").format(count));
+            return new Label(markupId, NumberFormatter.formatLong(count));
         }
     }
 

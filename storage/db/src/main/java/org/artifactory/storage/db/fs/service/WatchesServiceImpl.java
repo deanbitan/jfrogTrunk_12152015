@@ -28,7 +28,7 @@ import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.ha.message.HaMessageTopic;
 import org.artifactory.addon.ha.message.WatchesHaMessage;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MutableWatchersInfo;
 import org.artifactory.fs.WatcherInfo;
 import org.artifactory.fs.WatchersInfo;
@@ -72,10 +72,11 @@ public class WatchesServiceImpl implements WatchesService, InternalWatchesServic
     private FileService fileService;
 
     private Multimap<RepoPath, Watch> watchersCache;
+    private volatile boolean initialized = false;
 
     @Override
     public WatchersInfo getWatches(RepoPath repoPath) {
-        MutableWatchersInfo watchers = new XStreamInfoFactory().createWatchers();
+        MutableWatchersInfo watchers = InfoFactoryHolder.get().createWatchers();
         Collection<Watch> nodeWatches = getWatchersFromCache(repoPath);
         for (Watch nodeWatch : nodeWatches) {
             watchers.addWatcher(watchToWatchInfo(nodeWatch));
@@ -237,29 +238,32 @@ public class WatchesServiceImpl implements WatchesService, InternalWatchesServic
     }
 
     private Multimap<RepoPath, Watch> getWatchersCache() {
-        populateCacheIfEmpty();
+        lazyInitCacheIfNeeded();
         return watchersCache;
     }
 
-    private void populateCacheIfEmpty() {
-        if (watchersCache == null) {
-            watchersCache = HashMultimap.create();
-            watchersCache = Multimaps.synchronizedMultimap(watchersCache);
-        }
+    private void lazyInitCacheIfNeeded() {
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    if (watchersCache == null) {
+                        watchersCache = HashMultimap.create();
+                        watchersCache = Multimaps.synchronizedMultimap(watchersCache);
+                    }
 
-        if (!watchersCache.isEmpty()) {
-            return;
-        }
-
-        try {
-            //TODO: [by YS] consider using single query to get watch + repo path
-            List<Watch> nodeWatches = watchesDao.getWatches();
-            for (Watch nodeWatch : nodeWatches) {
-                RepoPath repoPath = fileService.loadItem(nodeWatch.getNodeId()).getRepoPath();
-                watchersCache.put(repoPath, nodeWatch);
+                    try {
+                        //TODO: [by YS] consider using single query to get watch + repo path
+                        List<Watch> nodeWatches = watchesDao.getWatches();
+                        for (Watch nodeWatch : nodeWatches) {
+                            RepoPath repoPath = fileService.loadItem(nodeWatch.getNodeId()).getRepoPath();
+                            watchersCache.put(repoPath, nodeWatch);
+                        }
+                        initialized = true;
+                    } catch (SQLException e) {
+                        throw new StorageException("Failed to load watches", e);
+                    }
+                }
             }
-        } catch (SQLException e) {
-            throw new StorageException("Failed to load watches", e);
         }
     }
 

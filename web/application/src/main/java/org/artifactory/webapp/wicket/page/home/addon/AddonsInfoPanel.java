@@ -27,6 +27,7 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonInfo;
+import org.artifactory.addon.AddonState;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.AddonsWebManager;
 import org.artifactory.api.config.CentralConfigService;
@@ -87,8 +88,8 @@ public class AddonsInfoPanel extends TitledPanel {
                         addonInfo.getAddonDisplayName()));
                 item.add(new Label("image", "").add(new CssClass("addon-" + addonInfo.getAddonName())));
 
-                String addonState = addonInfo.getAddonState().getName();
-                item.add(new Label("status", addonState));
+                String stateString = getAddonStatus(addonInfo.getAddonState());
+                item.add(new Label("status", stateString));
                 if (item.getIndex() % 2 == 0) {
                     item.add(new CssClass("even"));
                 }
@@ -97,7 +98,7 @@ public class AddonsInfoPanel extends TitledPanel {
         addonTable.add(listView);
         add(addonTable);
 
-        add(new Label("addonsDisabled", "All add-ons are disabled")
+        add(new Label("addonsDisabled", "No addons available")
                 .setVisible(currentLicenseValid && !noAddons && noEnabledAddons));
 
         add(new Label("noAddons", "No add-ons currently installed.").setVisible(noAddons));
@@ -112,9 +113,23 @@ public class AddonsInfoPanel extends TitledPanel {
         add(noLicenseKeyLabel);
     }
 
+    private String getAddonStatus(AddonState addonState) {
+        switch (addonState) {
+            case NOT_CONFIGURED:    // Fall-through
+            case ACTIVATED:
+                return "Available";
+            case DISABLED:
+                return "Disabled";
+            case INACTIVATED:   // Fall-through
+            case NOT_LICENSED:  // Fall-through
+            default:
+                return "Not Available";
+        }
+    }
+
     @Override
     public String getTitle() {
-        return "Pro Add-ons";
+        return "Available Add-ons";
     }
 
     private String getAddonUrl(String addonId) {

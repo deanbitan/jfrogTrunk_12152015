@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.fs.itest.service;
 
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MutableStatsInfo;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.model.common.RepoPathImpl;
@@ -136,7 +136,7 @@ public class StatsServiceImplTest extends DbBaseTest {
         assertNull(statsService.getStats(filePath));
 
         long lastDownloaded = System.currentTimeMillis();
-        MutableStatsInfo statsInfo = new XStreamInfoFactory().createStats();
+        MutableStatsInfo statsInfo = InfoFactoryHolder.get().createStats();
         statsInfo.setDownloadCount(888);
         statsInfo.setLastDownloaded(lastDownloaded);
         statsInfo.setLastDownloadedBy("yossis");
@@ -155,7 +155,7 @@ public class StatsServiceImplTest extends DbBaseTest {
         assertNotNull(statsService.getStats(filePath));
 
         long lastDownloaded = System.currentTimeMillis() + 3000;
-        MutableStatsInfo statsInfo = new XStreamInfoFactory().createStats();
+        MutableStatsInfo statsInfo = InfoFactoryHolder.get().createStats();
         statsInfo.setDownloadCount(999);
         statsInfo.setLastDownloaded(lastDownloaded);
         statsInfo.setLastDownloadedBy("talias");

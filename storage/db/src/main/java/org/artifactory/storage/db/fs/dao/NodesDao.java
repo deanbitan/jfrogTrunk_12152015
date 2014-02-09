@@ -19,6 +19,7 @@
 package org.artifactory.storage.db.fs.dao;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ConstantValues;
@@ -27,9 +28,11 @@ import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.fs.entity.Node;
 import org.artifactory.storage.db.fs.entity.NodePath;
 import org.artifactory.storage.db.fs.util.NodeUtils;
+import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.storage.fs.repo.RepoStorageSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +43,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A data access object for node table access.
@@ -367,10 +371,6 @@ public class NodesDao extends BaseDao {
         return results;
     }
 
-    public List<Node> searchAllPoms() throws SQLException {
-        return searchFileByName("%.pom");
-    }
-
     //TODO: [by YS] this is a just a temp naive search for maven plugin metadata
     public List<Node> searchFilesByProperty(String repo, String propKey, String propValue) throws SQLException {
         ResultSet resultSet = null;
@@ -383,6 +383,39 @@ public class NodesDao extends BaseDao {
                     repo, propKey, propValue);
             while (resultSet.next()) {
                 results.add(nodeFromResultSet(resultSet));
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return results;
+    }
+
+    public List<Node> searchFilesByProperty(PropertiesFilterQueryBuilder propertyFilter) throws SQLException {
+        ResultSet resultSet = null;
+        List<Node> results = new ArrayList<>();
+        try {
+            resultSet = jdbcHelper.executeSelect(propertyFilter.createNodeQuery());
+            while (resultSet.next()) {
+                results.add(nodeFromResultSet(resultSet));
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return results;
+    }
+
+    public Set<RepoStorageSummary> getRepositoriesStorageSummary() throws SQLException {
+        ResultSet resultSet = null;
+        Set<RepoStorageSummary> results = Sets.newHashSet();
+        try {
+            resultSet = jdbcHelper.executeSelect(
+                    "SELECT repo, " +
+                            "SUM(CASE WHEN node_type = 0 THEN 1 ELSE 0 END) as folders, " +
+                            "SUM(CASE WHEN node_type = 1 THEN 1 ELSE 0 END) as files, " +
+                            "SUM(bin_length) " +
+                            "FROM nodes GROUP BY repo");
+            while (resultSet.next()) {
+                results.add(repoSummaryFromResultSet(resultSet));
             }
         } finally {
             DbUtils.close(resultSet);
@@ -410,5 +443,10 @@ public class NodesDao extends BaseDao {
         Node node = new Node(nodeId, isFile, repoName, path, fileName, depth, created, createdBy,
                 modified, modifiedBy, updated, length, sha1Actual, sha1Original, md5Actual, md5Original);
         return node;
+    }
+
+    private RepoStorageSummary repoSummaryFromResultSet(ResultSet rs) throws SQLException {
+        // don't count the repo folder itself -> folderCount - 1
+        return new RepoStorageSummary(rs.getString(1), rs.getLong(2) - 1, rs.getLong(3), rs.getLong(4));
     }
 }

@@ -29,6 +29,7 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.ResourceUtils;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -42,6 +43,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class ArtifactoryFilter implements Filter {
+
+    private boolean contextFailed = false;
 
     private FilterConfig filterConfig;
 
@@ -62,7 +65,13 @@ public class ArtifactoryFilter implements Filter {
             return;
         }
         try {
-            bind();
+            ServletContext servletContext = filterConfig.getServletContext();
+            ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
+            if (context == null) {
+                respondFailedToInitialize(response);
+                return;
+            }
+            bind(context);
             if (response instanceof HttpServletResponse) {
                 HttpServletResponse httpResponse = (HttpServletResponse) response;
                 if (!httpResponse.containsHeader("Server")) {
@@ -86,9 +95,7 @@ public class ArtifactoryFilter implements Filter {
         }
     }
 
-    private void bind() {
-        ServletContext servletContext = filterConfig.getServletContext();
-        ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
+    private void bind(ArtifactoryContext context) {
         ArtifactoryContextThreadBinder.bind(context);
         ArtifactoryHome.bind(context.getArtifactoryHome());
     }
@@ -96,6 +103,19 @@ public class ArtifactoryFilter implements Filter {
     private void unbind() {
         ArtifactoryContextThreadBinder.unbind();
         ArtifactoryHome.unbind();
+    }
+
+    private void respondFailedToInitialize(ServletResponse response) throws IOException {
+        if (!contextFailed) {
+            org.slf4j.Logger log = LoggerFactory.getLogger(ArtifactoryFilter.class);
+            log.error("Artifactory failed to initialize: Context is null");
+            contextFailed = true;
+        }
+
+        if (response instanceof HttpServletResponse) {
+            HttpUtils.sendErrorResponse((HttpServletResponse) response, HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                    "Artifactory failed to initialize: check Artifactory logs for errors.");
+        }
     }
 
     @Override

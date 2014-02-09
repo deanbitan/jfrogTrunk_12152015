@@ -19,15 +19,13 @@
 package org.artifactory.storage.db.upgrades.common;
 
 import ch.qos.logback.classic.util.ContextInitializer;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.itest.DbTestUtils;
+import org.artifactory.storage.db.spring.ArtifactoryDataSource;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
-import org.artifactory.test.TestUtils;
 import org.artifactory.util.ResourceUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -45,7 +43,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Date: 8/5/13 9:58 AM
@@ -100,12 +97,12 @@ public abstract class UpgradeBaseTest extends AbstractTestNGSpringContextTests {
         return new ArtifactoryHomeBoundTest();
     }
 
+    @AfterMethod
     protected void verifyDbResourcesReleased() throws IOException, SQLException {
         // make sure there are no active connections
-        PoolingDataSource ds = (PoolingDataSource) jdbcHelper.getDataSource();
-        GenericObjectPool pool = TestUtils.getField(ds, "_pool", GenericObjectPool.class);
-        assertEquals(pool.getNumActive(), 0, "Found " + pool.getNumActive() + " active connections after test ended:\n"
-                + TestUtils.invokeMethodNoArgs(pool, "debugInfo"));
+        ArtifactoryDataSource ds = (ArtifactoryDataSource) jdbcHelper.getDataSource();
+        assertEquals(ds.getActiveConnectionsCount(), 0, "Found " + ds.getActiveConnectionsCount() +
+                " active connections after test ended");
         artifactoryHomeBoundTest.unbindArtifactoryHome();
     }
 

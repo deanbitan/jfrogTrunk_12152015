@@ -41,6 +41,13 @@ public interface AddonsManager {
 
     boolean isLicenseInstalled();
 
+    /**
+     * Indicates whether there's a valid HA or Trial license installed.
+     *
+     * @return True if the license is either HA or Trial.
+     */
+    boolean isHaLicensed();
+
     VerificationResult isLicenseKeyValid(String licenseKey);
 
     /**

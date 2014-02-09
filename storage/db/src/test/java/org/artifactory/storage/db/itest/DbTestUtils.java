@@ -29,7 +29,9 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * A utility class for integration tests to clean and setup the database
@@ -71,14 +73,18 @@ public class DbTestUtils {
     public static void dropAllExistingTables(Connection con) throws SQLException {
         for (String table : tables) {
             if (tableExists(table, con)) {
-                con.createStatement().execute("DROP TABLE " + table);
+                try (Statement statement = con.createStatement()) {
+                    statement.execute("DROP TABLE " + table);
+                }
             }
         }
     }
 
     private static void deleteFromAllTables(Connection con) throws SQLException {
         for (String table : tables) {
-            con.createStatement().execute("DELETE FROM " + table);
+            try (Statement statement = con.createStatement()) {
+                statement.execute("DELETE FROM " + table);
+            }
         }
     }
 
@@ -89,6 +95,30 @@ public class DbTestUtils {
             }
         }
         return false;
+    }
+
+    public static int getColumnSize(Connection con, String tableName, String columnName) throws SQLException {
+        DatabaseMetaData metaData = con.getMetaData();
+        if (metaData.storesLowerCaseIdentifiers()) {
+            tableName = tableName.toLowerCase();
+            columnName = columnName.toLowerCase();
+        } else if (metaData.storesUpperCaseIdentifiers()) {
+            tableName = tableName.toUpperCase();
+            columnName = columnName.toUpperCase();
+        }
+
+        try(Statement statement = con.createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SELECT * from " + tableName);
+            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+            int columnCount = resultSetMetaData.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                if (resultSetMetaData.getColumnName(i).equals(columnName)) {
+                    return resultSetMetaData.getColumnDisplaySize(i);
+                }
+            }
+        }
+
+        return -1;
     }
 
     private static void createSchema(Connection con, DbType dbType) throws SQLException, IOException {
@@ -103,9 +133,10 @@ public class DbTestUtils {
         } else if (metaData.storesUpperCaseIdentifiers()) {
             tableName = tableName.toUpperCase();
         }
-        ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"});
-        boolean tableExists = rs.next();
-        return tableExists;
+        try (ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"})) {
+            boolean tableExists = rs.next();
+            return tableExists;
+        }
     }
 
     private static InputStream getDbSchemaSql(DbType dbType) {

@@ -25,12 +25,10 @@ import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
@@ -60,9 +58,6 @@ import java.util.Locale;
  */
 public class ImportSystemPanel extends TitledPanel {
     private static final Logger log = LoggerFactory.getLogger(ImportSystemPanel.class);
-
-    @SpringBean
-    private ArchiveIndexer archiveIndexer;
 
     @WicketProperty
     private File importFromPath;
@@ -247,7 +242,6 @@ public class ImportSystemPanel extends TitledPanel {
                         }
                     }
                     status.reset();
-                    archiveIndexer.asyncIndexMarkedArchives();
                 }
             }
         };

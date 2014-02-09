@@ -26,6 +26,7 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.stats.StatsSearchControls;
 import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -33,11 +34,11 @@ import org.springframework.beans.support.MutableSortDefinition;
 import org.springframework.beans.support.PropertyComparator;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -51,19 +52,17 @@ public class UsageSinceResource {
     private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     public UsageSinceResource(AuthorizationService authorizationService, SearchService searchService,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
-        this.response = response;
     }
 
     @GET
     @Produces({SearchRestConstants.MT_USAGE_SINCE_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public LastDownloadRestResult get(
+    public Response get(
             @QueryParam(SearchRestConstants.PARAM_SEARCH_NOT_USED_SINCE) Long lastDownloaded,
             @QueryParam(SearchRestConstants.PARAM_CREATED_BEFORE) Long createdBefore,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
@@ -73,11 +72,10 @@ public class UsageSinceResource {
         return search(lastDownloaded, createdBefore, reposToSearch);
     }
 
-    private LastDownloadRestResult search(Long lastDownloaded, Long createdBefore, List<String> reposToSearch)
+    private Response search(Long lastDownloaded, Long createdBefore, List<String> reposToSearch)
             throws IOException {
         if (lastDownloaded == null) {
-            RestUtils.sendNotFoundResponse(response, NOT_FOUND);
-            return null;
+            throw new NotFoundException(NOT_FOUND);
         }
 
         StatsSearchControls searchControls = new StatsSearchControls();
@@ -96,13 +94,11 @@ public class UsageSinceResource {
         try {
             results = searchService.searchArtifactsNotDownloadedSince(searchControls).getResults();
         } catch (RepositoryRuntimeException e) {
-            RestUtils.sendNotFoundResponse(response, e.getMessage());
-            return null;
+            throw new NotFoundException(e.getMessage());
         }
 
         if (results.isEmpty()) {
-            RestUtils.sendNotFoundResponse(response, NOT_FOUND);
-            return null;
+            throw new NotFoundException(NOT_FOUND);
         }
 
         // sort by last downloaded
@@ -115,6 +111,7 @@ public class UsageSinceResource {
             LastDownloadRestResult.DownloadedEntry entry = new LastDownloadRestResult.DownloadedEntry(uri, lDownloaded);
             lastDownloadRestResult.results.add(entry);
         }
-        return lastDownloadRestResult;
+
+        return Response.ok(lastDownloadRestResult).build();
     }
 }

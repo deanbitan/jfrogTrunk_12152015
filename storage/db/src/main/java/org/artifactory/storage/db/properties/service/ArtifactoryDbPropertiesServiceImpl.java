@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import java.sql.SQLException;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 @Service
 public class ArtifactoryDbPropertiesServiceImpl implements ArtifactoryDbPropertiesService {
@@ -49,6 +49,15 @@ public class ArtifactoryDbPropertiesServiceImpl implements ArtifactoryDbProperti
             return dbPropertiesDao.getLatestProperties();
         } catch (SQLException e) {
             throw new StorageException("Failed to load db properties from database", e);
+        }
+    }
+
+    @Override
+    public boolean isDbPropertiesTableExists() {
+        try {
+            return dbPropertiesDao.isDbPropertiesTableExists();
+        } catch (SQLException e) {
+            throw new StorageException("Failed to check if the  db_properties table exists in the database", e);
         }
     }
 }

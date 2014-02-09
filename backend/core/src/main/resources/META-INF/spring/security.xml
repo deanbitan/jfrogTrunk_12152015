@@ -42,7 +42,7 @@
     </bean>
 
     <bean id="basicAuthenticationEntryPoint"
-          class="org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint">
+          class="org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationEntryPoint">
         <property name="realmName" value="Artifactory Realm"/>
     </bean>
 

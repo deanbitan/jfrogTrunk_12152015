@@ -20,7 +20,7 @@ public class MockArtifactoryHome extends ArtifactoryHome {
     }
 
     public CompoundVersionDetails readRunningArtifactoryVersion() {
-        return new CompoundVersionDetails(ArtifactoryVersion.v310, ArtifactoryVersion.v310.name(), "1",
+        return new CompoundVersionDetails(ArtifactoryVersion.getCurrent(), ArtifactoryVersion.getCurrent().name(), "1",
                 new Date().getTime());
     }
 
@@ -28,7 +28,7 @@ public class MockArtifactoryHome extends ArtifactoryHome {
         File artifactoryPropertiesFile = getHomeArtifactoryPropertiesFile();
         //Copy the artifactory.properties file into the data folder
         try {
-            String text = "artifactory.version=" + ArtifactoryVersion.v310.getValue() + "\n" +
+            String text = "artifactory.version=" + ArtifactoryVersion.getCurrent().getValue() + "\n" +
                     "artifactory.revision=1\n" +
                     "artifactory.release=1\n";
             //Copy from default
@@ -43,7 +43,7 @@ public class MockArtifactoryHome extends ArtifactoryHome {
         File artifactoryPropertiesFile = getHaArtifactoryPropertiesFile();
         //Copy the artifactory.properties file into the data folder
         try {
-            String text = "artifactory.version=" + ArtifactoryVersion.v310.getValue() + "\n" +
+            String text = "artifactory.version=" + ArtifactoryVersion.getCurrent().getValue() + "\n" +
                     "artifactory.revision=1\n" +
                     "artifactory.release=1\n";
             //Copy from default

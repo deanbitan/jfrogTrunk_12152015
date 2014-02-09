@@ -26,6 +26,7 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -33,11 +34,11 @@ import org.springframework.beans.support.MutableSortDefinition;
 import org.springframework.beans.support.PropertyComparator;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
@@ -53,7 +54,6 @@ public class ArchiveSearchResource {
     private AuthorizationService authorizationService;
     private SearchService searchService;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     /**
      * Main constructor
@@ -61,12 +61,10 @@ public class ArchiveSearchResource {
      * @param searchService Search service instance
      */
     public ArchiveSearchResource(AuthorizationService authorizationService, SearchService searchService,
-            HttpServletRequest request,
-            HttpServletResponse response) {
+            HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.request = request;
-        this.response = response;
     }
 
     /**
@@ -78,7 +76,7 @@ public class ArchiveSearchResource {
      */
     @GET
     @Produces({SearchRestConstants.MT_ARCHIVE_ENTRY_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public ArchiveRestSearchResult get(
+    public Response get(
             @QueryParam(SearchRestConstants.PARAM_SEARCH_NAME) String name,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         return search(name, reposToSearch);
@@ -91,34 +89,29 @@ public class ArchiveSearchResource {
      * @param name          Entry name to search for
      * @param reposToSearch Specific repositories to search in  @return Rest search results object
      */
-    private ArchiveRestSearchResult search(String name, List<String> reposToSearch) throws IOException {
+    private Response search(String name, List<String> reposToSearch) throws IOException {
         ArchiveSearchControls controls = new ArchiveSearchControls();
         controls.setName(name);
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
 
         if (controls.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity("The search term cannot be empty").build();
         }
         if (controls.isWildcardsOnly()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Search term containing only wildcards is not permitted");
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity("Search term containing only wildcards is not permitted").build();
         }
 
         ItemSearchResults<ArchiveSearchResult> searchResults;
         try {
             searchResults = searchService.searchArchiveContent(controls);
         } catch (RepositoryRuntimeException e) {
-            RestUtils.sendNotFoundResponse(response, e.getMessage());
-            return null;
+            throw new NotFoundException(e.getMessage());
         }
         //TODO: [by ys] use multi map
         List<ArchiveSearchResult> results = searchResults.getResults();
         if (results.isEmpty()) {
-            RestUtils.sendNotFoundResponse(response, NOT_FOUND);
-            return null;
+            throw new NotFoundException(NOT_FOUND);
         }
 
         MutableSortDefinition definition = new MutableSortDefinition("entry", false, true);
@@ -143,7 +136,7 @@ public class ArchiveSearchResource {
         ArchiveRestSearchResult.ArchiveEntry archiveEntry =
                 new ArchiveRestSearchResult.ArchiveEntry(entryToCheck, fileInfoUris);
         archiveRestSearchResult.results.add(archiveEntry);
-        return archiveRestSearchResult;
 
+        return Response.ok(archiveRestSearchResult).build();
     }
 }

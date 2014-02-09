@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.webapp.servlet;
+package org.artifactory.file.lock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ import java.nio.channels.FileLock;
  *
  * @author mamo
  */
-public class ArtifactoryLockFile {
+public class ArtifactoryLockFile implements LockFile {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryLockFile.class);
 
     private File file;
@@ -43,7 +43,7 @@ public class ArtifactoryLockFile {
         file = lockFile;
     }
 
-    public ArtifactoryLockFile tryLock() {
+    public LockFile tryLock() {
         boolean existing = file.exists();
 
         try {
@@ -81,8 +81,12 @@ public class ArtifactoryLockFile {
         if (!file.delete()) {
             log.warn("Could not delete lock file. [" + file + "]");
         }
-
+        fileLock = null;
         file = null;
+    }
+
+    public boolean isLockedByMe() {
+        return fileLock != null;
     }
 
     private void closeRandomAccessFile() {

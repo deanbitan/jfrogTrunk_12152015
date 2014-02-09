@@ -23,11 +23,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.storage.db.binstore.dao.BinariesDao;
 import org.artifactory.storage.db.binstore.entity.BinaryData;
 import org.artifactory.storage.db.itest.DbBaseTest;
-import org.artifactory.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -115,9 +115,9 @@ public class BinariesDaoTest extends DbBaseTest {
 
     @Test(dependsOnMethods = "createBinary")
     public void testGetCountAndTotalSize() throws SQLException {
-        Pair<Long, Long> countAndTotalSize = binariesDao.getCountAndTotalSize();
-        assertEquals(countAndTotalSize.getFirst().longValue(), 6L);
-        assertEquals(countAndTotalSize.getSecond().longValue(), 3 + 2725 + 33670080 + 1 + 20);
+        BinariesInfo binariesInfo = binariesDao.getCountAndTotalSize();
+        assertEquals(binariesInfo.getBinariesCount(), 6L);
+        assertEquals(binariesInfo.getBinariesSize(), 3 + 2725 + 33670080 + 1 + 20);
     }
 
     @Test(dependsOnMethods = {
@@ -136,9 +136,9 @@ public class BinariesDaoTest extends DbBaseTest {
             nbDeleted += binariesDao.deleteEntry(sha1ToDelete);
         }
         assertEquals(nbDeleted, 2);
-        Pair<Long, Long> countAndTotalSize = binariesDao.getCountAndTotalSize();
-        assertEquals(countAndTotalSize.getFirst().longValue(), 4L);
-        assertEquals(countAndTotalSize.getSecond().longValue(), 3 + 2725 + 1 + 20);
+        BinariesInfo countAndTotalSize = binariesDao.getCountAndTotalSize();
+        assertEquals(countAndTotalSize.getBinariesCount(), 4L);
+        assertEquals(countAndTotalSize.getBinariesSize(), 3 + 2725 + 1 + 20);
     }
 
     public void findChecksumsBySha1() throws SQLException {

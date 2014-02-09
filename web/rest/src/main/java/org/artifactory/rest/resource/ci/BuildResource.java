@@ -40,6 +40,9 @@ import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.exception.CancelException;
+import org.artifactory.rest.common.exception.BadRequestException;
+import org.artifactory.rest.common.exception.NotFoundException;
+import org.artifactory.rest.common.exception.RestException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -136,10 +139,8 @@ public class BuildResource {
             return builds;
 
         }
-        String msg = "No builds were found";
-        response.sendError(HttpStatus.SC_NOT_FOUND, msg);
-        return null;
 
+        throw new NotFoundException("No builds were found");
     }
 
     /**
@@ -166,9 +167,8 @@ public class BuildResource {
             }
             return builds;
         }
-        String msg = String.format("No build was found for build name: %s", buildName);
-        response.sendError(HttpStatus.SC_NOT_FOUND, msg);
-        return null;
+
+        throw new NotFoundException(String.format("No build was found for build name: %s", buildName));
     }
 
     /**
@@ -203,26 +203,21 @@ public class BuildResource {
             String msg = String.format("No build was found for build name: %s, build number: %s %s",
                     buildName, buildNumber,
                     StringUtils.isNotBlank(buildStarted) ? ", build started: " + buildStarted : "");
-            response.sendError(HttpStatus.SC_NOT_FOUND, msg);
-            return null;
+            throw new NotFoundException(msg);
         }
 
         if (queryParamsContainKey("diff")) {
             Build secondBuild = buildService.getLatestBuildByNameAndNumber(buildName, diffNumber);
             if (secondBuild == null) {
-                String msg = String.format("No build was found for build name: %s , build number: %s ", buildName,
-                        diffNumber);
-                response.sendError(HttpStatus.SC_NOT_FOUND, msg);
-                return null;
+                throw new NotFoundException(String.format("No build was found for build name: %s , build number: %s ",
+                        buildName, diffNumber));
             }
             BuildRun buildRun = buildService.getBuildRun(build.getName(), build.getNumber(), build.getStarted());
             BuildRun secondBuildRun = buildService.getBuildRun(secondBuild.getName(), secondBuild.getNumber(),
                     secondBuild.getStarted());
             BuildNumberComparator comparator = new BuildNumberComparator();
             if (comparator.compare(buildRun, secondBuildRun) < 0) {
-                response.sendError(HttpStatus.SC_BAD_REQUEST,
-                        "Build number should be greater than the build number to compare against.");
-                return null;
+                throw new BadRequestException("Build number should be greater than the build number to compare against.");
             }
             return prepareBuildDiffResponse(build, secondBuild, request);
         } else {
@@ -248,7 +243,7 @@ public class BuildResource {
      *
      * @param buildPatternArtifactsRequests contains build name and build number or keyword
      * @return build outputs (build dependencies and generated artifacts).
-     *         The returned array will always be the same size as received, returning nulls on non-found builds.
+     * The returned array will always be the same size as received, returning nulls on non-found builds.
      */
     @POST
     @Path("/patternArtifacts")
@@ -279,8 +274,7 @@ public class BuildResource {
     public void addBuild(Build build) throws Exception {
         log.info("Adding build '{} #{}'", build.getName(), build.getNumber());
         if (!authorizationService.canDeployToLocalRepository()) {
-            response.sendError(HttpStatus.SC_FORBIDDEN);
-            return;
+            throw new AuthorizationRestException();
         }
 
         try {
@@ -290,8 +284,7 @@ public class BuildResource {
                 log.debug("An error occurred while adding the build '" + build.getName() + " #" + build.getNumber() +
                         "'.", e);
             }
-            response.sendError(e.getErrorCode(), e.getMessage());
-            return;
+            throw new RestException(e.getErrorCode(), e.getMessage());
         }
         log.info("Added build '{} #{}'", build.getName(), build.getNumber());
         BuildRetention retention = build.getBuildRetention();
@@ -300,10 +293,10 @@ public class BuildResource {
             MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
             restAddon.discardOldBuilds(build.getName(), retention, multiStatusHolder);
             if (multiStatusHolder.hasErrors()) {
-                response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Errors have occurred while maintaining " +
+                throw new RestException("Errors have occurred while maintaining " +
                         "build retention. Please review the system logs for further information.");
             } else if (multiStatusHolder.hasWarnings()) {
-                response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Warnings have been produced while " +
+                throw new RestException("Warnings have been produced while " +
                         "maintaining build retention. Please review the system logs for further information.");
             }
         }
@@ -334,14 +327,12 @@ public class BuildResource {
             return Response.status(promotionResult.errorsOrWarningHaveOccurred() ?
                     HttpStatus.SC_BAD_REQUEST : HttpStatus.SC_OK).entity(promotionResult).build();
         } catch (IllegalArgumentException | ItemNotFoundRuntimeException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException dnee) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, dnee.getMessage());
+            throw new NotFoundException(dnee.getMessage());
         } catch (ParseException pe) {
-            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Unable to parse given build start date: " +
-                    pe.getMessage());
+            throw new RestException("Unable to parse given build start date: " + pe.getMessage());
         }
-        return null;
     }
 
     /**
@@ -368,12 +359,10 @@ public class BuildResource {
 
             return String.format("Build renaming of '%s' to '%s' was successfully started.\n", from, to);
         } catch (IllegalArgumentException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException dnne) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, dnne.getMessage());
+            throw new NotFoundException(dnne.getMessage());
         }
-
-        return null;
     }
 
     /**
@@ -396,9 +385,9 @@ public class BuildResource {
 
             restAddon.deleteBuilds(response, buildName, buildNumbers, artifacts, deleteAll);
         } catch (IllegalArgumentException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException dnne) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, dnne.getMessage());
+            throw new NotFoundException(dnne.getMessage());
         }
         response.flushBuffer();
     }

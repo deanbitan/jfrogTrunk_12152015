@@ -9,7 +9,6 @@ import org.artifactory.version.CompoundVersionDetails;
  * Author: gidis
  */
 public class MockArtifactoryStateManager implements ArtifactoryStateManager {
-    private boolean conversionFinished;
 
     @Override
     public boolean forceState(ArtifactoryServerState state) {
@@ -18,11 +17,6 @@ public class MockArtifactoryStateManager implements ArtifactoryStateManager {
 
     @Override
     public void beforeDestroy() {
-    }
-
-    @Override
-    public void conversionFinished() {
-        conversionFinished = true;
     }
 
     @Override
@@ -41,7 +35,4 @@ public class MockArtifactoryStateManager implements ArtifactoryStateManager {
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
     }
 
-    public boolean isConversionFinished() {
-        return conversionFinished;
-    }
 }

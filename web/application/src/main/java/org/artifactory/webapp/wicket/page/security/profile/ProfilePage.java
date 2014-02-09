@@ -148,7 +148,7 @@ public class ProfilePage extends AuthenticatedPage {
                             }
                         }
                     }
-                    userGroupService.updateUser(mutableUser);
+                    userGroupService.updateUser(mutableUser, false);
                     AccessLogger.updated("User " + mutableUser.getUsername() + " has updated his profile successfully");
                     info("Profile successfully updated.");
                 }

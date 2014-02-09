@@ -39,7 +39,9 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.ha.HaNodeProperties;
-import org.artifactory.converters.ConverterProvider;
+import org.artifactory.converters.ConverterManager;
+import org.artifactory.converters.VersionProvider;
+import org.artifactory.converters.VersionProviderImpl;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.logging.LoggingService;
 import org.artifactory.repo.service.ExportJob;
@@ -90,7 +92,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     private ConcurrentHashMap<Class, Object> beansForType = new ConcurrentHashMap<>();
     private List<ReloadableBean> reloadableBeans;
     private final ArtifactoryHome artifactoryHome;
-    private final ConverterProvider converterManager;
+    private final ConverterManager converterManager;
+    private VersionProviderImpl versionProvider;
     private final String contextId;
     private final SpringConfigPaths springConfigPaths;
     private volatile boolean ready;
@@ -99,13 +102,14 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
 
     public ArtifactoryApplicationContext(
             String contextId, SpringConfigPaths springConfigPaths, ArtifactoryHome artifactoryHome,
-            ConverterProvider converterManager)
+            ConverterManager converterManager, VersionProviderImpl versionProvider)
             throws BeansException {
         super(springConfigPaths.getAllPaths(), false, null);
         this.contextId = contextId;
         this.artifactoryHome = artifactoryHome;
         this.springConfigPaths = springConfigPaths;
         this.converterManager = converterManager;
+        this.versionProvider = versionProvider;
         this.started = System.currentTimeMillis();
         refresh();
         contextCreated();
@@ -152,8 +156,13 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     }
 
     @Override
-    public ConverterProvider getConverterManager() {
+    public ConverterManager getConverterManager() {
         return converterManager;
+    }
+
+    @Override
+    public VersionProvider getVersionProvider() {
+        return versionProvider;
     }
 
     @Override
@@ -205,8 +214,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             }
             log.debug("Reloadable list of beans: {}", reloadableBeans);
             log.info("Artifactory context starting up...");
-
-            converterManager.dbAccessReady();
+            versionProvider.loadDbVersion();    // db should have been initialized by now -> we can read the db version
             for (ReloadableBean reloadableBean : reloadableBeans) {
                 String beanIfc = getInterfaceName(reloadableBean);
                 log.info("Initializing {}", beanIfc);
@@ -218,7 +226,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 }
                 log.debug("Initialized {}", beanIfc);
             }
-            converterManager.conversionEnded();
+            converterManager.conversionFinished();
             setReady(true);
         } finally {
             ArtifactoryContextThreadBinder.unbind();
@@ -736,12 +744,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     private void exportSecurity(ExportSettingsImpl settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         SecurityService security = getSecurityService();
-        if (security != null) {
-            status.status("Exporting security...", log);
-            security.exportTo(settings);
-        } else {
-            status.status("No security defined no export done", log);
-        }
+        status.status("Exporting security...", log);
+        security.exportTo(settings);
     }
 
     private void exportBuildInfo(ExportSettingsImpl exportSettings) {
@@ -752,12 +756,8 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
 
         BuildService build = beanForType(BuildService.class);
-        if (build != null) {
-            status.status("Exporting build info...", log);
-            build.exportTo(exportSettings);
-        } else {
-            status.status("No build info defined. No export done", log);
-        }
+        status.status("Exporting build info...", log);
+        build.exportTo(exportSettings);
     }
 
     public List<ReloadableBean> getBeans() {

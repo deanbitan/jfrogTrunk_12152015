@@ -21,12 +21,15 @@ package org.artifactory.storage.db.properties.service;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.storage.db.properties.model.DbProperties;
 
+
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public interface ArtifactoryDbPropertiesService {
     @Lock
     void updateDbProperties(DbProperties dbProperties);
 
     DbProperties getDbProperties();
+
+    public boolean isDbPropertiesTableExists();
 }

@@ -18,16 +18,7 @@
 
 package org.artifactory.rest.common;
 
-import org.artifactory.api.rest.constant.ArtifactRestConstants;
-import org.artifactory.api.rest.constant.BuildRestConstants;
-import org.artifactory.api.rest.constant.PluginRestConstants;
-import org.artifactory.api.rest.constant.ReplicationRestConstants;
-import org.artifactory.api.rest.constant.RepositoriesRestConstants;
-import org.artifactory.api.rest.constant.RestConstants;
-import org.artifactory.api.rest.constant.SearchRestConstants;
-import org.artifactory.api.rest.constant.SecurityRestConstants;
-import org.artifactory.api.rest.constant.SystemRestConstants;
-import org.artifactory.common.ConstantValues;
+import org.artifactory.api.rest.constant.*;
 import org.codehaus.jackson.jaxrs.JacksonJsonProvider;
 import org.codehaus.jackson.map.AnnotationIntrospector;
 import org.codehaus.jackson.map.DeserializationConfig;
@@ -85,6 +76,7 @@ import javax.ws.rs.ext.Provider;
         SecurityRestConstants.MT_USERS,
         SecurityRestConstants.MT_PERMISSION_TARGETS,
         ReplicationRestConstants.MT_REPLICATION_REQUEST,
+        ReplicationsRestConstants.MT_REPLICATION_CONFIG_REQUEST,
         BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_REQUEST,
         BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST
 })
@@ -133,6 +125,7 @@ import javax.ws.rs.ext.Provider;
         SecurityRestConstants.MT_PERMISSION_TARGETS,
         ReplicationRestConstants.MT_REPLICATION_REQUEST,
         ReplicationRestConstants.MT_REPLICATION_STATUS,
+        ReplicationsRestConstants.MT_REPLICATION_CONFIG_REQUEST,
         PluginRestConstants.MT_BUILD_STAGING_STRATEGY,
         BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_RESULT,
         SearchRestConstants.MT_ARTIFACT_VERSIONS_SEARCH_RESULT,
@@ -164,9 +157,8 @@ public class JsonProvider extends JacksonJsonProvider implements ContextResolver
     @Override
     public ObjectMapper getContext(Class objectType) {
         ObjectMapper mapper = getMapper();
-        if (ConstantValues.dev.getBoolean()) {
-            mapper.getSerializationConfig().set(SerializationConfig.Feature.INDENT_OUTPUT, true);
-        }
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+
         return mapper;
     }
 

@@ -27,16 +27,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public class LoggingConverter implements ArtifactoryConverterAdapter {
     private static final Logger log = LoggerFactory.getLogger(LoggingConverter.class);
-    private File from;
-    private File to;
+    private File path;
 
-    public LoggingConverter(File from, File to) {
-        this.from = from;
-        this.to = to;
+    public LoggingConverter(File path) {
+        this.path = path;
     }
 
     @Override
@@ -45,8 +43,8 @@ public class LoggingConverter implements ArtifactoryConverterAdapter {
             // Perform the logback conversion here because if we do it after configuration is loaded, we must wait 'till
             // the changes are detected by the watchdog (possibly missing out on important log messages)
             //Might be first run, protect
-            if (from.exists()) {
-                LoggingVersion.convert(source.getVersion(), target.getVersion(), from, to);
+            if (path.exists()) {
+                LoggingVersion.convert(source.getVersion(), target.getVersion(), path);
             }
         } catch (FatalConversionException e) {
             //When a fatal conversion happens fail the context loading
@@ -64,10 +62,6 @@ public class LoggingConverter implements ArtifactoryConverterAdapter {
     @Override
     public boolean isInterested(CompoundVersionDetails source, CompoundVersionDetails target) {
         return source != null && !source.isCurrent();
-    }
-
-    @Override
-    public void conversionEnded() {
     }
 }
 

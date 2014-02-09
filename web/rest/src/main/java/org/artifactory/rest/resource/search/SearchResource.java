@@ -78,7 +78,7 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_ARTIFACT)
     public ArtifactSearchResource artifactQuery() {
         return new ArtifactSearchResource(authorizationService, searchService, repositoryService, repoBrowsingService,
-                request, response);
+                request);
     }
 
     /**
@@ -88,7 +88,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_ARCHIVE)
     public ArchiveSearchResource archiveQuery() {
-        return new ArchiveSearchResource(authorizationService, searchService, request, response);
+        return new ArchiveSearchResource(authorizationService, searchService, request);
     }
 
     /**
@@ -99,7 +99,7 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_GAVC)
     public GavcSearchResource gavcQuery() {
         return new GavcSearchResource(authorizationService, searchService, repositoryService, repoBrowsingService,
-                request, response);
+                request);
     }
 
     /**
@@ -110,7 +110,7 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_PROPERTY)
     public PropertySearchResource propertyQuery() {
         return new PropertySearchResource(authorizationService, searchService, repositoryService, repoBrowsingService,
-                request, response);
+                request);
     }
 
     /**
@@ -120,7 +120,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_USAGE_SINCE)
     public UsageSinceResource notDownloadedSinceQuery() {
-        return new UsageSinceResource(authorizationService, searchService, request, response);
+        return new UsageSinceResource(authorizationService, searchService, request);
     }
 
     /**
@@ -130,7 +130,7 @@ public class SearchResource {
      */
     @Path(SearchRestConstants.PATH_CREATED_IN_RANGE)
     public CreatedInRangeResource createdInDateRangeQuery() {
-        return new CreatedInRangeResource(authorizationService, searchService, request, response);
+        return new CreatedInRangeResource(authorizationService, searchService, request);
     }
 
     @Path(SearchRestConstants.PATH_PATTERN)
@@ -161,24 +161,24 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_DEPENDENCY)
     public DependencySearchResource dependencySearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new DependencySearchResource(restAddon, request, response);
+        return new DependencySearchResource(restAddon, request);
     }
 
     @Path(SearchRestConstants.PATH_VERSIONS)
     public ArtifactVersionsSearchResource versionsSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new ArtifactVersionsSearchResource(restAddon, response);
+        return new ArtifactVersionsSearchResource(restAddon);
     }
 
     @Path(SearchRestConstants.PATH_LATEST_VERSION)
     public ArtifactLatestVersionSearchResource latestVersionSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new ArtifactLatestVersionSearchResource(restAddon, response);
+        return new ArtifactLatestVersionSearchResource(restAddon);
     }
 
     @Path(SearchRestConstants.PATH_BUILD_ARTIFACTS)
     public BuildArtifactsSearchResource buildArtifactsSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new BuildArtifactsSearchResource(restAddon, authorizationService, request, response);
+        return new BuildArtifactsSearchResource(restAddon, authorizationService, request);
     }
 }

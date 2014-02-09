@@ -18,7 +18,8 @@
 
 package org.artifactory.storage.db.fs.model;
 
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.exception.CancelException;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.MutableFolderInfo;
 import org.artifactory.sapi.fs.MutableVfsFolder;
@@ -39,7 +40,7 @@ public class DbMutableFolder extends DbMutableItem<MutableFolderInfo> implements
     private static final Logger log = LoggerFactory.getLogger(DbMutableFolder.class);
 
     public DbMutableFolder(StoringRepo repo, long id, FolderInfo folderInfo) {
-        super(repo, id, new XStreamInfoFactory().copyFolderInfo(folderInfo));
+        super(repo, id, InfoFactoryHolder.get().copyFolderInfo(folderInfo));
     }
 
     @Override
@@ -73,7 +74,12 @@ public class DbMutableFolder extends DbMutableItem<MutableFolderInfo> implements
             return true;
         }
 
-        fireBeforeDeleteEvent();
+        try {
+            fireBeforeDeleteEvent();
+        } catch (CancelException e) {
+            log.info("Deletion of {} was canceled by user plugin", getRepoPath());
+            throw e;
+        }
 
         List<MutableVfsItem> children = getMutableChildren();
         for (MutableVfsItem child : children) {

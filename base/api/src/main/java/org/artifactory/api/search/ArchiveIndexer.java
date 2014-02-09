@@ -31,11 +31,10 @@ import javax.annotation.Nullable;
  */
 public interface ArchiveIndexer {
 
-    @Async(delayUntilAfterCommit = true)
-    void asyncIndex(RepoPath archiveRepoPath);
-
     /**
-     * Indexes all the archives that were marked
+     * Async indexes all the archives that were marked.
+     * <p>Does not guarantee actual indexing, it is the responsibility of {@link ArchiveIndexer} to decide on indexing
+     * or even stop indexing in the middle.
      */
     @Async(delayUntilAfterCommit = true)
     void asyncIndexMarkedArchives();
@@ -48,8 +47,9 @@ public interface ArchiveIndexer {
 
     /**
      * Recursively adds the given repo path to the archive indexing queue.
+     * <p>Does not call {@link #asyncIndexMarkedArchives()}, this responsibility left to the client.
      *
-     * @param Base          repository path to start indexing from
+     * @param baseRepoPath  repository path to start indexing from
      * @param indexAllRepos If true ignores the base repo path and index all the local/cache repositories
      */
     @Async(delayUntilAfterCommit = true)

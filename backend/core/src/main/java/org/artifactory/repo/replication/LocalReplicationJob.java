@@ -32,6 +32,7 @@ import org.artifactory.schedule.StopStrategy;
 import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
+import org.artifactory.search.archive.ArchiveIndexerImpl;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.quartz.JobDataMap;
@@ -46,7 +47,10 @@ import org.slf4j.LoggerFactory;
  */
 @JobCommand(schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.CURRENT,
         keyAttributes = {Task.REPO_KEY},
-        commandsToStop = {@StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)}
+        commandsToStop = {
+                @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE),
+                @StopCommand(command = ArchiveIndexerImpl.ArchiveIndexJob.class, strategy = StopStrategy.STOP)
+        }
 )
 public class LocalReplicationJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(LocalReplicationJob.class);

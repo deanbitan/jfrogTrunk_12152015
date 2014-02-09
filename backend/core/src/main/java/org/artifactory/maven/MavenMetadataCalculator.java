@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -164,6 +165,9 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
 
         RepoPath firstPom = poms.iterator().next().getRepoPath();
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(firstPom);
+        if (!artifactInfo.isValid()) {
+            return true;
+        }
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
         metadata.setArtifactId(artifactInfo.getArtifactId());
@@ -258,6 +262,9 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
             return;
         }
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(samplePomRepoPath);
+        if (!artifactInfo.isValid()) {
+            return;
+        }
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
         metadata.setArtifactId(artifactInfo.getArtifactId());
@@ -372,12 +379,34 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         try {
             RepoPathImpl mavenMetadataPath = new RepoPathImpl(repoPath, MavenNaming.MAVEN_METADATA_NAME);
             if (getRepositoryService().exists(mavenMetadataPath)) {
-                log.debug("Deleting {}", mavenMetadataPath);
-                getRepositoryService().undeploy(mavenMetadataPath, false, false);
+                boolean delete = true;
+                String metadataStr = getRepositoryService().getStringContent(mavenMetadataPath);
+                try {
+                    Metadata metadata = MavenModelUtils.toMavenMetadata(metadataStr);
+                    if (isSnapshotMavenMetadata(metadata) && !MavenNaming.isSnapshot(repoPath.getPath())) {
+                        // RTFACT-6242 - don't delete user deployed maven-metadata (maven 2 bug)
+                        delete = false;
+                    }
+                } catch (IOException e) {
+                    // ignore -> delete
+                }
+                if (delete) {
+                    log.debug("Deleting {}", mavenMetadataPath);
+                    getRepositoryService().undeploy(mavenMetadataPath, false, false);
+                }
             }
         } catch (Exception e) {
             status.error("Error while removing maven metadata from " + repoPath + ".", e, log);
         }
+    }
+
+    private boolean isSnapshotMavenMetadata(Metadata metadata) {
+        Versioning versioning = metadata.getVersioning();
+        if (versioning == null) {
+            return false;
+        }
+        List<SnapshotVersion> snapshots = versioning.getSnapshotVersions();
+        return snapshots != null;
     }
 
     private static class SnapshotVersionType {

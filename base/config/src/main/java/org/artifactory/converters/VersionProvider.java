@@ -21,14 +21,17 @@ package org.artifactory.converters;
 import org.artifactory.version.CompoundVersionDetails;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public interface VersionProvider {
-    public CompoundVersionDetails getRunningVersionDetails();
+    public CompoundVersionDetails getRunning();
 
-    CompoundVersionDetails getOriginalHaVersionDetails();
+    CompoundVersionDetails getOriginalHa();
 
-    CompoundVersionDetails getOriginalHomeVersionDetails();
+    CompoundVersionDetails getOriginalHome();
 
-    CompoundVersionDetails getOriginalServiceVersionDetails();
+    CompoundVersionDetails getOriginalService();
+
+    public boolean isOriginalServiceVersionReady();
+
 }

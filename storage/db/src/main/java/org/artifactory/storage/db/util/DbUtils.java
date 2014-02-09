@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -56,12 +57,12 @@ public abstract class DbUtils {
      */
     public static void close(@Nullable Connection con, @Nullable Statement stmt, @Nullable ResultSet rs) {
         try {
-            close(con);
+            close(rs);
         } finally {
             try {
                 close(stmt);
             } finally {
-                close(rs);
+                close(con);
             }
         }
     }
@@ -76,12 +77,12 @@ public abstract class DbUtils {
     public static void close(@Nullable Connection con, @Nullable Statement stmt, @Nullable ResultSet rs,
             @Nullable DataSource ds) {
         try {
-            close(con, ds);
+            close(rs);
         } finally {
             try {
                 close(stmt);
             } finally {
-                close(rs);
+                close(con, ds);
             }
         }
     }
@@ -225,5 +226,18 @@ public abstract class DbUtils {
                 }
             }
         }
+    }
+
+    public static boolean tableExists(DatabaseMetaData metaData, String tableName) throws SQLException {
+        boolean schemaExists;
+        if (metaData.storesLowerCaseIdentifiers()) {
+            tableName = tableName.toLowerCase();
+        } else if (metaData.storesUpperCaseIdentifiers()) {
+            tableName = tableName.toUpperCase();
+        }
+        try (ResultSet rs = metaData.getTables(null, null, tableName, new String[]{"TABLE"})) {
+            schemaExists = rs.next();
+        }
+        return schemaExists;
     }
 }

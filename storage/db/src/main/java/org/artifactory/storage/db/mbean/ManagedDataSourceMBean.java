@@ -21,4 +21,8 @@ public interface ManagedDataSourceMBean {
 
     String getUrl();
 
+    long getSelectQueriesCount();
+
+    long getUpdateQueriesCount();
+
 }

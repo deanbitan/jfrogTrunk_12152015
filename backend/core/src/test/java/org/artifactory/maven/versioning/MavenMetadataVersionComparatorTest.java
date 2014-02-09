@@ -19,7 +19,7 @@
 package org.artifactory.maven.versioning;
 
 import org.apache.commons.lang.SystemUtils;
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.storage.fs.tree.FileNode;
@@ -59,11 +59,11 @@ public class MavenMetadataVersionComparatorTest {
     public void compare1And2() {
         VersionNameMavenMetadataVersionComparator comparator = new VersionNameMavenMetadataVersionComparator();
 
-        MutableFileInfo olderFileInfo = new XStreamInfoFactory().createFileInfo(new RepoPathImpl("repo", "2.0"));
+        MutableFileInfo olderFileInfo = InfoFactoryHolder.get().createFileInfo(new RepoPathImpl("repo", "2.0"));
         olderFileInfo.setCreated(System.currentTimeMillis());
         ItemNode older = new FileNode(olderFileInfo);
 
-        MutableFileInfo newerFileInfo = new XStreamInfoFactory().createFileInfo(new RepoPathImpl("repo", "1.1"));
+        MutableFileInfo newerFileInfo = InfoFactoryHolder.get().createFileInfo(new RepoPathImpl("repo", "1.1"));
         newerFileInfo.setCreated(System.currentTimeMillis() + TimeUnit.HOURS.toMillis(2));
         ItemNode newer = new FileNode(newerFileInfo);
 

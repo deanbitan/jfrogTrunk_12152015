@@ -25,7 +25,6 @@ import org.apache.maven.index.artifact.Gav;
 import org.apache.maven.index.artifact.GavCalculator;
 import org.apache.maven.index.locator.GavHelpedLocator;
 import org.apache.maven.model.Model;
-import org.artifactory.fs.ItemInfo;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.storage.fs.tree.ItemNode;
@@ -77,7 +76,7 @@ public class MainArtifactLocator implements GavHelpedLocator {
 
             RepoPathImpl artifactRepoPath = new RepoPathImpl(sourceAdapter.getRepoPath().getParent(), artifactName);
             ItemTree itemTree = new ItemTree(artifactRepoPath);
-            ItemNode<? extends ItemInfo> mainArtifactNode = itemTree.getRootNode();
+            ItemNode mainArtifactNode = itemTree.getRootNode();
             if (mainArtifactNode == null) {
                 return null;
             } else {

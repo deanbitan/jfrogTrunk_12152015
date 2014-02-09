@@ -57,7 +57,8 @@ public class SpringConfigPaths {
         List<String> allPaths = new ArrayList<>();
         allPaths.addAll(paths);
         for (AddonInfo info : installedAddonPaths.values()) {
-            if (!info.getAddonState().equals(AddonState.DISABLED)) {
+            AddonState addonState = info.getAddonState();
+            if (addonState.equals(AddonState.ACTIVATED) || addonState.equals(AddonState.INACTIVATED)) {
                 allPaths.add(info.getAddonPath());
             }
         }

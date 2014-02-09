@@ -21,10 +21,10 @@ package org.artifactory.rest.resource.system;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.api.storage.StorageService;
 import org.artifactory.backup.InternalBackupService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.storage.StorageService;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
 

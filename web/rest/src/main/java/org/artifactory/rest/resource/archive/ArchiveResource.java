@@ -28,12 +28,14 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.constant.ArchiveRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.exception.BadRequestException;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.util.RestUtils;
+import org.artifactory.search.archive.InternalArchiveIndexer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +44,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -70,9 +71,6 @@ public class ArchiveResource {
     private static final Logger log = LoggerFactory.getLogger(ArchiveResource.class);
 
     @Context
-    private HttpServletResponse response;
-
-    @Context
     private CloseableService closeableService;
 
     @Autowired
@@ -85,35 +83,28 @@ public class ArchiveResource {
     private RepositoryService repositoryService;
 
     @Autowired
-    private ArchiveIndexer archiveIndexer;
+    private InternalArchiveIndexer archiveIndexer;
 
     @POST
     @Path(ArchiveRestConstants.PATH_BUILD_ARTIFACTS)
     @Consumes({BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST, MediaType.APPLICATION_JSON})
     public Response getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) throws IOException {
         if (isBlank(buildArtifactsRequest.getBuildName())) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Cannot search without build name.");
-            return null;
+            throw new BadRequestException("Cannot search without build name.");
         }
         boolean buildNumberIsBlank = isBlank(buildArtifactsRequest.getBuildNumber());
         boolean buildStatusIsBlank = isBlank(buildArtifactsRequest.getBuildStatus());
         if (buildNumberIsBlank && buildStatusIsBlank) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Cannot search without build number or build status.");
-            return null;
+            throw new BadRequestException("Cannot search without build number or build status.");
         }
         if (!buildNumberIsBlank && !buildStatusIsBlank) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Cannot search with both build number and build status parameters, " +
-                            "please omit build number if your are looking for latest build by status " +
-                            "or omit build status to search for specific build version.");
-            return null;
+            throw new BadRequestException("Cannot search with both build number and build status parameters, " +
+                    "please omit build number if your are looking for latest build by status " +
+                    "or omit build status to search for specific build version.");
         }
 
         if (buildArtifactsRequest.getArchiveType() == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Archive type cannot be empty, please provide a type of zip/tar/tar.gz/tgz.");
-            return null;
+            throw new BadRequestException("Archive type cannot be empty, please provide a type of zip/tar/tar.gz/tgz.");
         }
 
         if (!authorizationService.isAuthenticated()) {
@@ -124,11 +115,9 @@ public class ArchiveResource {
         try {
             final File buildArtifactsArchive = restAddon.getBuildArtifactsArchive(buildArtifactsRequest);
             if (buildArtifactsArchive == null) {
-                RestUtils.sendNotFoundResponse(response,
-                        String.format("Could not find any build artifacts for build '%s' number '%s'.",
-                                buildArtifactsRequest.getBuildName(),
-                                buildArtifactsRequest.getBuildNumber()));
-                return null;
+                throw new NotFoundException(String.format("Could not find any build artifacts for build '%s' number '%s'.",
+                                        buildArtifactsRequest.getBuildName(),
+                                        buildArtifactsRequest.getBuildNumber()));
             }
 
             markForDeletionAtResponseEnd(buildArtifactsArchive);
@@ -136,9 +125,8 @@ public class ArchiveResource {
             MimeType mimeType = NamingUtils.getMimeType(buildArtifactsArchive.getName());
             return Response.ok().entity(buildArtifactsArchive).type(mimeType.getType()).build();
         } catch (IOException e) {
-            RestUtils.sendNotFoundResponse(response, "Failed to create builds artifacts archive");
             log.error("Failed to create builds artifacts archive: " + e.getMessage(), e);
-            return null;
+            throw new NotFoundException("Failed to create builds artifacts archive");
         }
     }
 
@@ -158,10 +146,13 @@ public class ArchiveResource {
         }
 
         if (indexAllRepos != 1 && recursive == 0) {
-            archiveIndexer.asyncIndex(repoPath);
+            archiveIndexer.markArchiveForIndexing(repoPath);
         } else {
             archiveIndexer.recursiveMarkArchivesForIndexing(repoPath, indexAllRepos == 1);
         }
+
+        //trigger async archive indexing now
+        archiveIndexer.asyncIndexMarkedArchives();
 
         String message;
         if (repoPath != null) {

@@ -52,13 +52,17 @@ public interface NuGetAddon extends Addon {
      *
      * @param fileInfo     NuGet package
      * @param statusHolder Status holder for logging
+     * @param addToCache   Whether to add the package into the memory cache
      */
     @Async(transactional = true, delayUntilAfterCommit = true, authenticateAsSystem = true)
-    void extractNuPkgInfo(FileInfo fileInfo, MutableStatusHolder statusHolder);
+    void extractNuPkgInfo(FileInfo fileInfo, MutableStatusHolder statusHolder, boolean addToCache);
 
     /**
      * Synchronously extracts the spec from the nupkg and saves it as a binary property (along with ID, version and digest)
      * for easier availability when searching. Used mainly in batch extractions of multiple packages.
+     *
+     * <p><b>NOTE!</b> This method does NOT add the package into the memory cache, it is assumed
+     * that the cache is getting populated in one go after extracting all of the repository packages.
      *
      * @param fileInfo     NuGet package
      * @param statusHolder Status holder for logging

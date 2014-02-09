@@ -21,6 +21,7 @@ package org.artifactory.storage.db.fs.dao;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.storage.db.fs.entity.NodeProperty;
+import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
@@ -41,7 +42,7 @@ import java.util.List;
 @Repository
 public class PropertiesDao extends BaseDao {
     private static final Logger log = LoggerFactory.getLogger(PropertiesDao.class);
-    private static final int PROP_VALUE_MAX_SIZE = 2048;
+    private static final int PROP_VALUE_MAX_SIZE = 4000;
 
     @Autowired
     public PropertiesDao(JdbcHelper jdbcHelper) {
@@ -77,6 +78,21 @@ public class PropertiesDao extends BaseDao {
         }
     }
 
+    public List<String> getPropertiesByPropKey(PropertiesFilterQueryBuilder propertyFilter) throws SQLException {
+        ResultSet resultSet = null;
+        List<String> results = Lists.newArrayList();
+        try {
+            // the child path must be the path+name of the parent
+            resultSet = jdbcHelper.executeSelect(propertyFilter.createDistinctVersionQuery());
+            while (resultSet.next()) {
+                results.add(resultSet.getString(1));
+            }
+            return results;
+        } finally {
+            DbUtils.close(resultSet);
+        }
+    }
+
     public int deleteNodeProperties(long nodeId) throws SQLException {
         return jdbcHelper.executeUpdate("DELETE FROM node_props WHERE node_id = ?", nodeId);
     }
@@ -84,8 +100,8 @@ public class PropertiesDao extends BaseDao {
     public int create(NodeProperty property) throws SQLException {
         String propValue = nullIfEmpty(property.getPropValue());
         if (propValue != null && propValue.length() > PROP_VALUE_MAX_SIZE) {
-            log.info("Trimming property value to 2048 characters '{}'", property.getPropKey());
-            log.debug("Trimming property value to 2048 characters {}: {}", property.getPropKey(),
+            log.info("Trimming property value to 4000 characters '{}'", property.getPropKey());
+            log.debug("Trimming property value to 4000 characters {}: {}", property.getPropKey(),
                     property.getPropValue());
             propValue = StringUtils.substring(propValue, 0, PROP_VALUE_MAX_SIZE);
         }

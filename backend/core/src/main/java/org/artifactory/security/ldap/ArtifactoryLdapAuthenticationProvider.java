@@ -184,7 +184,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
                     log.debug("User '{}' has email address '{}'", userName, email);
                     if (StringUtils.isBlank(userInfo.getEmail()) && !userInfo.isTransientUser()) {
                         userInfo.setEmail(email);
-                        userGroupService.updateUser(userInfo);
+                        userGroupService.updateUser(userInfo, false);
                     }
                 }
             }

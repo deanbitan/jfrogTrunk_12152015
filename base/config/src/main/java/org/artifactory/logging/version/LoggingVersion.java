@@ -43,8 +43,6 @@ public enum LoggingVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v304, new LogbackConfigSwapper()),
     v2(ArtifactoryVersion.v310, ArtifactoryVersion.getCurrent(), null);
 
-    public static final String LOGGING_CONVERSION_PERFORMED = "loggingConversionPerformed";
-
     private static final Logger log = LoggerFactory.getLogger(LoggingVersion.class);
 
     private final VersionComparator comparator;
@@ -118,15 +116,14 @@ public enum LoggingVersion implements SubConfigElementVersion {
         FileUtils.writeStringToFile(logbackConfigFile, result, "utf-8");
     }
 
-    public static void convert(ArtifactoryVersion from, ArtifactoryVersion target, File fromFile, File targetFile)
+    public static void convert(ArtifactoryVersion from, ArtifactoryVersion target, File path)
             throws IOException {
         boolean foundConversion = false;
         // All converters of versions above me needs to be executed in sequence
         LoggingVersion[] versions = LoggingVersion.values();
         for (LoggingVersion version : versions) {
             if (version.comparator.isAfter(from) && !version.comparator.supports(from)) {
-                version.convert(fromFile, targetFile);
-
+                version.convert(path, path);
             }
         }
         // Write to log only if conversion has been executed

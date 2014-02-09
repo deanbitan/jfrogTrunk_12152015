@@ -30,11 +30,16 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.rest.ErrorResponse;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -305,5 +310,15 @@ public abstract class HttpUtils {
         }
         String contentLengthString = contentLengthHeader.getValue();
         return Long.parseLong(contentLengthString);
+    }
+
+    public static void sendErrorResponse(HttpServletResponse response, int statusCode, String message)
+            throws IOException {
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setStatus(statusCode);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+        ErrorResponse errorResponse = new ErrorResponse(statusCode, message);
+        response.getWriter().write(mapper.writeValueAsString(errorResponse));
     }
 }

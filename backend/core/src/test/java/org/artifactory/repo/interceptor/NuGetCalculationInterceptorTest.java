@@ -94,7 +94,7 @@ public class NuGetCalculationInterceptorTest {
         VfsFile vfsItemMock = createAndGetFsItemMock(repoPath);
         FileInfo fileInfoMock = createAndGetFileInfoMock(repoPath);
         expect(vfsItemMock.getInfo()).andReturn(fileInfoMock).anyTimes();
-        nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), isA(MutableStatusHolder.class));
+        nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), isA(MutableStatusHolder.class), eq(true));
         expectLastCall();
         replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
         nuGetCalculationInterceptor.afterCreate(vfsItemMock, new MultiStatusHolder());
@@ -138,7 +138,7 @@ public class NuGetCalculationInterceptorTest {
         setVfsFileMockProperties(targetVfsFile, null);
 
         MultiStatusHolder statusHolder = new MultiStatusHolder();
-        nuGetAddon.extractNuPkgInfo(fileInfoMock, statusHolder);
+        nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), eq(statusHolder), eq(true));
         expectLastCall();
 
         replay(targetVfsFile, repoServiceMock, nuGetCalculationInterceptor.addonsManager);
@@ -155,7 +155,7 @@ public class NuGetCalculationInterceptorTest {
         expect(vfsItemMock.getInfo()).andReturn(fileInfoMock).anyTimes();
         MultiStatusHolder statusHolder = new MultiStatusHolder();
 
-        nuGetAddon.extractNuPkgInfo(fileInfoMock, statusHolder);
+        nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), eq(statusHolder), eq(true));
         expectLastCall();
 
         replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager, nuGetAddon);

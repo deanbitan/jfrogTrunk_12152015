@@ -29,6 +29,7 @@ import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.exception.BadRequestException;
 import org.artifactory.sapi.common.ImportSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,8 +107,6 @@ public class ImportResource {
             if (!httpResponse.isCommitted()) {
                 return Response.serverError().entity(e.getMessage()).build();
             }
-        } finally {
-            ContextHelper.get().beanForType(ArchiveIndexer.class).asyncIndexMarkedArchives();
         }
         return Response.ok().build();
     }
@@ -123,6 +122,11 @@ public class ImportResource {
             @QueryParam(RepositoriesRestConstants.INCLUDE_METADATA) String includeMetadata,
             //Verbose - default 0
             @QueryParam(RepositoriesRestConstants.VERBOSE) String verbose) throws IOException {
+
+        if (StringUtils.isBlank(path)) {
+            throw new BadRequestException("You must provide a repository path to import from.");
+        }
+
         ImportExportStreamStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         String repoNameToImport = targetRepo;
         if (StringUtils.isBlank(repoNameToImport)) {
@@ -158,10 +162,6 @@ public class ImportResource {
             }
         } catch (Exception e) {
             statusHolder.error("Unable to import repository", e, log);
-        } finally {
-            if (!importSettings.isIndexMarkedArchives()) {
-                archiveIndexer.asyncIndexMarkedArchives();
-            }
         }
     }
 }

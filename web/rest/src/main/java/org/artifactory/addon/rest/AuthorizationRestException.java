@@ -24,7 +24,7 @@ import javax.ws.rs.core.Response;
 /**
  * Authorization exception (403 Forbidden) for REST API usage
  * <p/>
- * <strong>NOTE!</strong> Do not attempt to set an entity since {@link org.artifactory.rest.common.ArtifactoryRestExceptionMapper}
+ * <strong>NOTE!</strong> Do not attempt to set an entity since {@link org.artifactory.rest.common.exception.ArtifactoryRestExceptionMapper}
  * will not intercept it for manipulating the response status.
  * Jersey exception mappers only intercept exceptions without an entity in them.
  *
@@ -34,5 +34,9 @@ public class AuthorizationRestException extends WebApplicationException {
 
     public AuthorizationRestException() {
         super(Response.status(Response.Status.FORBIDDEN).build());
+    }
+
+    public AuthorizationRestException(String message) {
+        super(Response.status(Response.Status.FORBIDDEN).entity(message).build());
     }
 }

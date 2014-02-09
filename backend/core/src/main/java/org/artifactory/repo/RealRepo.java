@@ -46,7 +46,7 @@ public interface RealRepo<T extends RealRepoDescriptor> extends Repo<T> {
      * @param downloadRequest True if the originating request is for download, false for upload
      * @return Test result
      */
-    BasicStatusHolder assertValidPath(RepoPath repoPaht, boolean downloadRequest);
+    BasicStatusHolder assertValidPath(RepoPath path, boolean downloadRequest);
 
     boolean accepts(RepoPath repoPath);
 }

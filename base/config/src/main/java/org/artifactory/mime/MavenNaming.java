@@ -39,6 +39,7 @@ public abstract class MavenNaming {
 
     public static final String MAVEN_METADATA_NAME = "maven-metadata.xml";
     public static final String SNAPSHOT = "SNAPSHOT";
+    public static final String SNAPSHOT_SUFFIX = "-" + SNAPSHOT;
     public static final String NEXUS_INDEX_DIR = ".index";
     public static final String NEXUS_INDEX_PREFIX = "nexus-maven-repository-index";
     public static final String NEXUS_INDEX_ZIP = NEXUS_INDEX_PREFIX + ".zip";
@@ -57,7 +58,7 @@ public abstract class MavenNaming {
      * @return True if the version is a non-unique snapshot version (ie, ends with -SNAPSHOT)
      */
     public static boolean isNonUniqueSnapshotVersion(String version) {
-        return version.endsWith("-" + SNAPSHOT);
+        return version.endsWith(SNAPSHOT_SUFFIX);
     }
 
     /**
@@ -65,15 +66,15 @@ public abstract class MavenNaming {
      * @return True if the path is of a non-unique snapshot version file
      */
     public static boolean isNonUniqueSnapshot(String path) {
-        int idx = path.indexOf("-" + SNAPSHOT + ".");
+        int idx = path.indexOf(SNAPSHOT_SUFFIX + ".");
         if (idx < 0) {
-            idx = path.indexOf("-" + SNAPSHOT + "-");
+            idx = path.indexOf(SNAPSHOT_SUFFIX + "-");
         }
         return idx > 0 && idx > path.lastIndexOf('/');
     }
 
     public static boolean isUniqueSnapshot(String path) {
-        int versionIdx = path.indexOf(SNAPSHOT + "/");
+        int versionIdx = path.indexOf(SNAPSHOT_SUFFIX + "/");
         if (versionIdx > 0) {
             String fileName = PathUtils.getFileName(path);
             return isUniqueSnapshotFileName(fileName);
@@ -93,11 +94,11 @@ public abstract class MavenNaming {
         }
         //A path ending with just the version dir
         if (!result) {
-            int versionIdx = path.indexOf(SNAPSHOT + "/");
+            int versionIdx = path.indexOf(SNAPSHOT_SUFFIX + "/");
             result = versionIdx > 0 && path.lastIndexOf('/') == versionIdx + 8;
         }
         if (!result) {
-            result = path.endsWith(SNAPSHOT);
+            result = path.endsWith(SNAPSHOT_SUFFIX);
         }
         return result;
     }
@@ -132,7 +133,7 @@ public abstract class MavenNaming {
         Pair<String, String> nameAndParent = NamingUtils.getMetadataNameAndParent(path);
         String name = nameAndParent.getFirst();
         String parent = nameAndParent.getSecond();
-        return parent != null && parent.endsWith("-" + SNAPSHOT) && isMavenMetadataFileName(name);
+        return parent != null && parent.endsWith(SNAPSHOT_SUFFIX) && isMavenMetadataFileName(name);
     }
 
     /**
@@ -187,8 +188,8 @@ public abstract class MavenNaming {
     /**
      * @param fileName The file name to test if is a unique snapshot
      * @return True if the file name is of the form artifactId-version-date.time-buildNumber.type
-     *         <p/>
-     *         For example: artifactory-1.0-20081214.090217-4.pom
+     * <p/>
+     * For example: artifactory-1.0-20081214.090217-4.pom
      */
     public static boolean isUniqueSnapshotFileName(String fileName) {
         Matcher matcher = UNIQUE_SNAPSHOT_NAME_PATTERN.matcher(fileName);

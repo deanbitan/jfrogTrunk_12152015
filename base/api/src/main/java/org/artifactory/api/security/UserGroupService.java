@@ -47,7 +47,7 @@ public interface UserGroupService {
     @Nonnull
     UserInfo findUser(String username);
 
-    void updateUser(MutableUserInfo user);
+    void updateUser(MutableUserInfo user, boolean activateListeners);
 
     @Lock
     boolean createUser(MutableUserInfo user);

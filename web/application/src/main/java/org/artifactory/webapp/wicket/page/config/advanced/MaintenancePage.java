@@ -33,7 +33,6 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.cleanup.ArtifactCleanupService;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.api.storage.StorageService;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.CancelLink;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
@@ -46,6 +45,7 @@ import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
+import org.artifactory.storage.StorageService;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.services.cron.CronNextDatePanel;
@@ -225,7 +225,7 @@ public class MaintenancePage extends AuthenticatedPage {
         gcBorder.add(new SchemaHelpBubble("cronExp.help"));
         gcBorder.add(new CronNextDatePanel("cronNextDatePanel", cronExpTextField));
 
-        TitledAjaxLink collectLink = new TitledAjaxLink("collect", "Run Storage Garbage Collection") {
+        TitledAjaxLink collectLink = new TitledAjaxLink("collect", "Run Now") {
             @Override
             public void onClick(AjaxRequestTarget target) {
                 MultiStatusHolder statusHolder = new MultiStatusHolder();

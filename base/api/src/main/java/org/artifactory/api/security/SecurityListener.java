@@ -22,6 +22,7 @@ package org.artifactory.api.security;
  * A listener for security service events
  * <p/>
  * TODO [YS]: this interface should be merged with {@link org.artifactory.security.interceptor.SecurityConfigurationChangesInterceptors}
+ * TODO [FS]: The security conf change listener has no on updates events
  *
  * @author Yoav Landman
  */

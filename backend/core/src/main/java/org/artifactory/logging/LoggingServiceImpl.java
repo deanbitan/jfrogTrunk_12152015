@@ -75,7 +75,7 @@ public class LoggingServiceImpl implements LoggingService {
 
     private void convertAndSave(File from, ImportSettings settings) throws IOException {
         ArtifactoryHome artifactoryHome = ArtifactoryHome.get();
-        CompoundVersionDetails source = ContextHelper.get().getConverterManager().getOriginalHomeVersionDetails();
+        CompoundVersionDetails source = ContextHelper.get().getVersionProvider().getOriginalHome();
 
         ArtifactorySystemProperties properties = artifactoryHome.getArtifactoryProperties();
 
@@ -85,7 +85,6 @@ public class LoggingServiceImpl implements LoggingService {
             ArtifactoryVersion importedVersion = BackupUtils.findVersion(settings.getBaseDir());
             LoggingVersion originalVersion = importedVersion.getSubConfigElementVersion(LoggingVersion.class);
             originalVersion.convert(from.getParentFile(), from.getParentFile());
-            properties.setProperty(LoggingVersion.LOGGING_CONVERSION_PERFORMED, "true");
         }
     }
 }

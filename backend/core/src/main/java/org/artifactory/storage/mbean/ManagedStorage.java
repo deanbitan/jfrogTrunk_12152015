@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.mbean;
 
-import org.artifactory.api.storage.StorageService;
+import org.artifactory.storage.StorageService;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 
 /**

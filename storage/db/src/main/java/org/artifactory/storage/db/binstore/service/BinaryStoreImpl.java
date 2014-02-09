@@ -24,6 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -43,7 +44,6 @@ import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.storage.db.util.blob.BlobWrapperFactory;
 import org.artifactory.storage.fs.service.ArchiveEntriesService;
-import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -390,9 +390,9 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         final GarbageCollectorInfo result = new GarbageCollectorInfo();
         Collection<BinaryData> binsToDelete;
         try {
-            Pair<Long, Long> countAndSize = binariesDao.getCountAndTotalSize();
-            result.initialCount = countAndSize.getFirst();
-            result.initialSize = countAndSize.getSecond();
+            BinariesInfo countAndSize = binariesDao.getCountAndTotalSize();
+            result.initialCount = countAndSize.getBinariesCount();
+            result.initialSize = countAndSize.getBinariesSize();
             binsToDelete = binariesDao.findPotentialDeletion();
         } catch (SQLException e) {
             throw new StorageException("Could not find potential Binaries to delete!", e);
@@ -413,8 +413,8 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         result.gcEndTime = System.currentTimeMillis();
 
         try {
-            Pair<Long, Long> countAndSize = binariesDao.getCountAndTotalSize();
-            result.printCollectionInfo(countAndSize.getSecond());
+            BinariesInfo countAndSize = binariesDao.getCountAndTotalSize();
+            result.printCollectionInfo(countAndSize.getBinariesCount());
         } catch (SQLException e) {
             log.error("Could not list files due to " + e.getMessage());
         }
@@ -539,13 +539,21 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
     }
 
+    /**
+     * @return Number of binaries and total size stored in the binary store
+     */
     @Override
-    public long getStorageSize() {
+    public BinariesInfo getBinariesInfo() {
         try {
-            return binariesDao.getCountAndTotalSize().getSecond();
+            return binariesDao.getCountAndTotalSize();
         } catch (SQLException e) {
             throw new StorageException("Could not calculate total size due to " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public long getStorageSize() {
+        return getBinariesInfo().getBinariesSize();
     }
 
     @Override

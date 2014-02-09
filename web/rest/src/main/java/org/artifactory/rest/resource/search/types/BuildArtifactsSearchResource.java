@@ -26,14 +26,15 @@ import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.DownloadRestSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.util.RestUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Map;
 
@@ -50,37 +51,32 @@ public class BuildArtifactsSearchResource {
     private final RestAddon restAddon;
     private AuthorizationService authorizationService;
     private HttpServletRequest request;
-    private final HttpServletResponse response;
 
     public BuildArtifactsSearchResource(RestAddon restAddon, AuthorizationService authorizationService,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request) {
         this.restAddon = restAddon;
         this.authorizationService = authorizationService;
         this.request = request;
-        this.response = response;
     }
 
     @POST
     @Consumes({BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST, MediaType.APPLICATION_JSON})
     @Produces({SearchRestConstants.MT_BUILD_ARTIFACTS_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public DownloadRestSearchResult get(BuildArtifactsRequest buildArtifactsRequest) throws IOException {
+    public Response get(BuildArtifactsRequest buildArtifactsRequest) throws IOException {
         if (isBlank(buildArtifactsRequest.getBuildName())) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Cannot search without build name.");
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity("Cannot search without build name.").build();
         }
         boolean buildNumberIsBlank = isBlank(buildArtifactsRequest.getBuildNumber());
         boolean buildStatusIsBlank = isBlank(buildArtifactsRequest.getBuildStatus());
         if (buildNumberIsBlank && buildStatusIsBlank) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Cannot search without build number or build status.");
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity(
+                    "Cannot search without build number or build status.").build();
         }
         if (!buildNumberIsBlank && !buildStatusIsBlank) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
+            return Response.status(Response.Status.BAD_REQUEST).entity(
                     "Cannot search with both build number and build status parameters, " +
                             "please omit build number if your are looking for latest build by status " +
-                            "or omit build status to search for specific build version.");
-            return null;
+                            "or omit build status to search for specific build version.").build();
         }
 
         if (!authorizationService.isAuthenticated()) {
@@ -91,15 +87,12 @@ public class BuildArtifactsSearchResource {
         try {
             buildArtifacts = restAddon.getBuildArtifacts(buildArtifactsRequest);
         } catch (IllegalArgumentException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getLocalizedMessage());
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build();
         }
         if (buildArtifacts == null || buildArtifacts.isEmpty()) {
-            RestUtils.sendNotFoundResponse(response,
-                    String.format("Could not find any build artifacts for build '%s' number '%s'.",
-                            buildArtifactsRequest.getBuildName(),
-                            buildArtifactsRequest.getBuildNumber()));
-            return null;
+            throw new NotFoundException(String.format("Could not find any build artifacts for build '%s' number '%s'.",
+                                buildArtifactsRequest.getBuildName(),
+                                buildArtifactsRequest.getBuildNumber()));
         }
 
         DownloadRestSearchResult downloadRestSearchResult = new DownloadRestSearchResult();
@@ -108,6 +101,6 @@ public class BuildArtifactsSearchResource {
             downloadRestSearchResult.results.add(new DownloadRestSearchResult.SearchEntry(downloadUri));
         }
 
-        return downloadRestSearchResult;
+        return Response.ok(downloadRestSearchResult).build();
     }
 }

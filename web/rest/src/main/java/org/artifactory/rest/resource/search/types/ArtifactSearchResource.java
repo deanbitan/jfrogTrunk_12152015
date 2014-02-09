@@ -29,17 +29,17 @@ import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.util.RestUtils;
 import org.artifactory.rest.util.StorageInfoHelper;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
@@ -55,7 +55,6 @@ public class ArtifactSearchResource {
     private RepositoryService repositoryService;
     private RepositoryBrowsingService repoBrowsingService;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     /**
      * Main constructor
@@ -66,13 +65,12 @@ public class ArtifactSearchResource {
      */
     public ArtifactSearchResource(AuthorizationService authorizationService, SearchService searchService,
             RepositoryService repositoryService, RepositoryBrowsingService repoBrowsingService,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.repositoryService = repositoryService;
         this.repoBrowsingService = repoBrowsingService;
         this.request = request;
-        this.response = response;
     }
 
     /**
@@ -84,7 +82,7 @@ public class ArtifactSearchResource {
      */
     @GET
     @Produces({SearchRestConstants.MT_ARTIFACT_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public InfoRestSearchResult get(
+    public Response get(
             @QueryParam(SearchRestConstants.PARAM_SEARCH_NAME) String name,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
         return search(name, reposToSearch);
@@ -98,28 +96,25 @@ public class ArtifactSearchResource {
      * @param reposToSearch Specific repositories to search in
      * @return Rest search results object
      */
-    private InfoRestSearchResult search(String name, List<String> reposToSearch) throws IOException {
+    private Response search(String name, List<String> reposToSearch) throws IOException {
         ArtifactSearchControls controls = new ArtifactSearchControls();
         controls.setQuery(appendAndReturnWildcards(name));
         controls.setLimitSearchResults(authorizationService.isAnonymous());
         controls.setSelectedRepoForSearch(reposToSearch);
 
         if (controls.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity("The search term cannot be empty").build();
         }
         if (controls.isWildcardsOnly()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                    "Search term containing only wildcards is not permitted");
-            return null;
+            return Response.status(Response.Status.BAD_REQUEST).entity(
+                    "Search term containing only wildcards is not permitted").build();
         }
 
         ItemSearchResults<ArtifactSearchResult> searchResults;
         try {
             searchResults = searchService.searchArtifacts(controls);
         } catch (RepositoryRuntimeException e) {
-            RestUtils.sendNotFoundResponse(response, e.getMessage());
-            return null;
+            throw new NotFoundException(e.getMessage());
         }
         InfoRestSearchResult result = new InfoRestSearchResult();
         for (ArtifactSearchResult searchResult : searchResults.getResults()) {
@@ -128,7 +123,8 @@ public class ArtifactSearchResource {
                     itemInfo);
             result.results.add(storageInfoHelper.createStorageInfo());
         }
-        return result;
+
+        return Response.ok(result).build();
     }
 
     private String appendAndReturnWildcards(String name) {

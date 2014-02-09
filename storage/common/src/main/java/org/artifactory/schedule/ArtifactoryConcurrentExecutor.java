@@ -23,6 +23,8 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.storage.spring.ArtifactoryStorageContext;
 import org.artifactory.storage.spring.StorageContextHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +41,9 @@ import java.util.concurrent.TimeUnit;
  * @author Fred Simon
  */
 public class ArtifactoryConcurrentExecutor implements Executor {
+
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryConcurrentExecutor.class);
+
     private final ArtifactoryStorageContext storageContext;
     private final ThreadPoolExecutor executor;
 
@@ -59,7 +65,12 @@ public class ArtifactoryConcurrentExecutor implements Executor {
     public void execute(Runnable task) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         task = new RunnableWrapper(task, authentication);
-        executor.execute(task);
+        try {
+            executor.execute(task);
+        } catch (RejectedExecutionException e) {
+            log.warn("Task {} was rejected by scheduler: {}", task.toString(), e.getMessage());
+            throw e;
+        }
     }
 
     <T> Future<T> submit(Runnable task, T result) {

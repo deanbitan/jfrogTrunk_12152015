@@ -319,11 +319,12 @@ public interface RepositoryService extends ImportableExportable {
     boolean exists(RepoPath repoPath);
 
     /**
-     * Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path.
+     * Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path that can be read by the
+     * current user.
      * An empty list is returned if the path doesn't exist of is not pointing to a folder.
      *
      * @param repoPath The repo path to list children
-     * @return Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path
+     * @return Returns a list of children {@link org.artifactory.fs.ItemInfo} of the given repo path or empty list.
      */
     @Nonnull
     List<ItemInfo> getChildren(RepoPath repoPath);
@@ -378,8 +379,8 @@ public interface RepositoryService extends ImportableExportable {
     /**
      * Checks if the specified repoPath is accepted by the include/exclude rules of the repoPath's repository.
      *
-     * @param repoPath
-     * @return
+     * @param repoPath The repo path to check
+     * @return True if the repository accepts the given path
      */
     boolean isRepoPathAccepted(RepoPath repoPath);
 
@@ -388,7 +389,7 @@ public interface RepositoryService extends ImportableExportable {
      *
      * @param repoPath Repo path to check
      * @return True if the the current user can read the path and the path is accepted by the repo. When the path is not
-     *         accepted, the method will return true if the user has annotate permissions or higher
+     * accepted, the method will return true if the user has annotate permissions or higher
      */
     boolean isRepoPathVisible(RepoPath repoPath);
 
@@ -473,7 +474,7 @@ public interface RepositoryService extends ImportableExportable {
     /**
      * @param remoteRepoKey The remote repository key
      * @return The next date (in milliseconds) the online monitor will check for online status of the assumed offline
-     *         repository. 0 if the remote repository is not found or not assumed offline.
+     * repository. 0 if the remote repository is not found or not assumed offline.
      * @see org.artifactory.repo.RemoteRepo#isAssumedOffline()
      * @see org.artifactory.repo.RemoteRepo#getNextOnlineCheckMillis()
      */

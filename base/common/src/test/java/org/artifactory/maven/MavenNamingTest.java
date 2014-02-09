@@ -34,6 +34,14 @@ import static org.testng.Assert.*;
 @Test
 public class MavenNamingTest extends ArtifactoryHomeBoundTest {
 
+    public void isSnapshotVersion() {
+        assertTrue(MavenNaming.isSnapshot("1.5-SNAPSHOT"));
+        assertFalse(MavenNaming.isSnapshot("1.5-SNAPSHOT123"));
+        assertFalse(MavenNaming.isSnapshot("1.5"));
+        assertFalse(MavenNaming.isSnapshot("1.5SNAPSHOT/1.5SNAPSHOT"));
+        assertFalse(MavenNaming.isSnapshot("1.5.SNAPSHOT"));
+    }
+
     public void isNonUniqueSnapshotVersion() {
         assertTrue(MavenNaming.isNonUniqueSnapshotVersion("1.2-SNAPSHOT"));
         assertFalse(MavenNaming.isNonUniqueSnapshotVersion("1.2-SNAPSHOT123"));
@@ -59,7 +67,11 @@ public class MavenNamingTest extends ArtifactoryHomeBoundTest {
 
     public void testIsVersionUniqueSnapshot() {
         assertTrue(MavenNaming.isUniqueSnapshot("g/a/1.0-SNAPSHOT/artifact-5.4-20081214.090217-4.pom"));
+        assertFalse(MavenNaming.isUniqueSnapshot("g/a/1.0SNAPSHOT/artifact-5.4-20081214.090217-4.pom"));
         assertFalse(MavenNaming.isUniqueSnapshot("g/a/1.0/artifact-5.4-20081214.090217-4.pom"));
+    }
+
+    public void testIsVersionUniqueSnapshotFileName() {
         assertTrue(MavenNaming.isUniqueSnapshotFileName("artifact-5.4-20081214.090217-4.pom"));
         assertTrue(MavenNaming.isUniqueSnapshotFileName("artifact-5.4-20081214.090217-4-classifier.pom"));
         assertFalse(MavenNaming.isUniqueSnapshotFileName("-20081214.090217-4.pom"), "No artifact id");
@@ -114,6 +126,7 @@ public class MavenNamingTest extends ArtifactoryHomeBoundTest {
         assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0-SNAPSHOT"), "Not metadata path");
         assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0-SNAPSHOT/"), "Not metadata path");
         assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0-SNAPSHOT/:matadata-name"), "Not maven metadata");
+        assertFalse(MavenNaming.isSnapshotMavenMetadata("path/1.0.SNAPSHOT/maven-metadata.xml"));
     }
 
     public void isMavenMetadataChecksum() {

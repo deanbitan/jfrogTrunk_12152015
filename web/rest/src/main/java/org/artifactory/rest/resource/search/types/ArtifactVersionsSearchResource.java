@@ -24,15 +24,15 @@ import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.VersionEntry;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.util.RestUtils;
 import org.springframework.util.AntPathMatcher;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
@@ -43,16 +43,14 @@ import java.util.List;
  */
 public class ArtifactVersionsSearchResource {
     private RestAddon restAddon;
-    private HttpServletResponse response;
 
-    public ArtifactVersionsSearchResource(RestAddon restAddon, HttpServletResponse response) {
+    public ArtifactVersionsSearchResource(RestAddon restAddon) {
         this.restAddon = restAddon;
-        this.response = response;
     }
 
     @GET
     @Produces({SearchRestConstants.MT_ARTIFACT_VERSIONS_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public ArtifactVersionsResult get(
+    public Response get(
             @QueryParam(SearchRestConstants.PARAM_GAVC_GROUP_ID) String groupId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_ARTIFACT_ID) String artifactId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_VERSION) String version,
@@ -64,22 +62,20 @@ public class ArtifactVersionsSearchResource {
             ArtifactVersionsResult artifactVersions = restAddon.getArtifactVersions(groupId, artifactId, version,
                     reposToSearch, useRemote);
             if (artifactVersions.getResults().isEmpty()) {
-                RestUtils.sendNotFoundResponse(response);
+                throw new NotFoundException("Unable to find artifact versions");
             } else {
                 char[] wildcardsArr = {'*', '?'};
                 if (StringUtils.containsAny(version, wildcardsArr)) {
-                    return matchByPattern(artifactVersions, version);
-                } else {
-                    return artifactVersions;
+                    matchByPattern(artifactVersions, version);
                 }
+                return Response.ok(artifactVersions).build();
             }
         } catch (IllegalArgumentException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
         }
-        return null;
     }
 
-    private ArtifactVersionsResult matchByPattern(ArtifactVersionsResult artifactVersions, String version) {
+    private void matchByPattern(ArtifactVersionsResult artifactVersions, String version) {
         List<VersionEntry> filteredResults = Lists.newArrayList();
         AntPathMatcher matcher = new AntPathMatcher();
         for (VersionEntry result : artifactVersions.getResults()) {
@@ -89,6 +85,5 @@ public class ArtifactVersionsSearchResource {
         }
 
         artifactVersions.setResults(filteredResults);
-        return artifactVersions;
     }
 }

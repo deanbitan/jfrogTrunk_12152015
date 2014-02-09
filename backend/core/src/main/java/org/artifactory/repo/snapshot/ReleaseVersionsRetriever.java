@@ -46,7 +46,7 @@ public class ReleaseVersionsRetriever extends VersionsRetriever {
     @Override
     protected void internalCollectVersionsItems(StoringRepo repo, ItemNode node) {
         if (node.isFolder()) {
-            List<ItemNode<? extends ItemInfo>> children = node.getChildren();
+            List<ItemNode> children = node.getChildren();
             for (ItemNode child : children) {
                 internalCollectVersionsItems(repo, child);
             }

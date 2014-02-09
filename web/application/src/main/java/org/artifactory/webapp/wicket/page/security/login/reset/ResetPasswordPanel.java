@@ -106,7 +106,7 @@ public class ResetPasswordPanel extends TitledActionPanel {
                     String chosenPassword = passwordTextField.getValue();
                     user.setPassword(securityService.generateSaltedPassword(chosenPassword));
                     user.setGenPasswordKey(null);
-                    userGroupService.updateUser(user);
+                    userGroupService.updateUser(user, false);
                     log.info("The user: '{}' has successfully reset his password.", user.getUsername());
                     Session.get().info("Password reset successfully.");
                     setResponse();

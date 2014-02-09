@@ -152,18 +152,18 @@ public class RepoLayoutUtilsTest {
         assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org]-momo", false), "[org]-momo");
         assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org]-momo", true), "[org]-momo");
 
-        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[popo<[^\\](.+)>]-momo", false),
-                "[popo]-momo");
-        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[popo<[^\\](.+)>]-momo", true),
-                "[popo]-momo");
+        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[popo<[^\\].+?>]-momo", false),
+                "[popo<[^\\].+?>]-momo");
+        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[popo<[^\\].+?>]-momo", true),
+                "[popo<[^\\].+?>]-momo");
 
         assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-[momo])", false), "[org](-[momo])");
         assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-[momo])", true), "[org](-[momo])");
 
-        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-[momo<[^\\](.+)>])", false),
-                "[org](-[momo])");
-        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-[momo<[^\\](.+)>])", true),
-                "[org](-[momo])");
+        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-[momo<[^\\][.+]>])", false),
+                "[org](-[momo<[^\\][.+]>])");
+        assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-[momo<[^\\][.+]>])", true),
+                "[org](-[momo<[^\\][.+]>])");
 
         assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-momo)", false), "[org]-momo");
         assertEquals(RepoLayoutUtils.removeReplacedTokenOptionalBrackets("[org](-momo)", true), "[org]");
@@ -174,47 +174,48 @@ public class RepoLayoutUtilsTest {
 
         assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org]-momo"), "[org]-momo");
 
-        assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org<[^\\](.+)>]-momo"), "[org]-momo");
+        assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org<[^\\](.+)>]-momo"), "[org<[^\\](.+)>]-momo");
 
         assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org](-[momo])"), "[org]");
 
-        assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org](-[momo<[^\\](.+)>])"), "[org]");
+        assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org](-[momo<[^\\][.+]>])"), "[org]");
 
         assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org](-momo)"), "[org](-momo)");
 
-        assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org<[^\\](.+)>](-momo)"), "[org](-momo)");
+        assertEquals(RepoLayoutUtils.removeUnReplacedTokenOptionalBrackets("[org<[^\\].+>](-momo)"), "[org<[^\\].+>](-momo)");
     }
 
     public void testGenerateRegExpFromPatternOfDefaultLayouts() {
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
                 RepoLayoutUtils.MAVEN_2_DEFAULT.getArtifactPathPattern(),
-                "(?<orgPath>.+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>SNAPSHOT))?/" +
-                        "(?<module>\\2)\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-" +
-                        "(?:[0-9]+))))?(?:\\-(?<classifier>[^/]+?))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
+                "(?<orgPath>.+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:-(?<folderItegRev>SNAPSHOT))?/" +
+                        "(?<module>\\2)-(?<baseRev>\\3)(?:-(?<fileItegRev>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-" +
+                        "(?:[0-9]+))))?(?:-(?<classifier>[^/]+?))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_2_DEFAULT,
                 RepoLayoutUtils.MAVEN_2_DEFAULT.getDescriptorPathPattern(),
-                "(?<orgPath>.+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>SNAPSHOT))?/" +
-                        "(?<module>\\2)\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-" +
-                        "(?:[0-9]+))))?(?:\\-(?<classifier>[^/]+?))?\\.pom");
+                "(?<orgPath>.+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:-(?<folderItegRev>SNAPSHOT))?/" +
+                        "(?<module>\\2)-(?<baseRev>\\3)(?:-(?<fileItegRev>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-" +
+                        "(?:[0-9]+))))?(?:-(?<classifier>[^/]+?))?\\.pom");
 
         testGeneratedPatternRegExp(RepoLayoutUtils.IVY_DEFAULT,
                 RepoLayoutUtils.IVY_DEFAULT.getArtifactPathPattern(),
-                "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>\\d{14}))?/" +
-                        "(?<type>[^/]+?)s/(?<module>\\2)(?:\\-(?<classifier>[^/]+?))?\\-" +
-                        "(?<baseRev>\\3)(?:\\-(?<fileItegRev>\\d{14}))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
+                "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:-(?<folderItegRev>\\d{14}))?/" +
+                        "(?<type>[^/]+?)s/(?<module>\\2)(?:-(?<classifier>[^/]+?))?-" +
+                        "(?<baseRev>\\3)(?:-(?<fileItegRev>\\d{14}))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.IVY_DEFAULT,
                 RepoLayoutUtils.IVY_DEFAULT.getDescriptorPathPattern(),
-                "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>\\d{14}))?/" +
-                        "(?<type>[^/]+?)s/ivy\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>\\d{14}))?\\.xml");
+                "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:-(?<folderItegRev>\\d{14}))?/" +
+                        "(?<type>[^/]+?)s/ivy-(?<baseRev>\\3)(?:-(?<fileItegRev>\\d{14}))?\\.xml");
 
         testGeneratedPatternRegExp(RepoLayoutUtils.GRADLE_DEFAULT,
                 RepoLayoutUtils.GRADLE_DEFAULT.getArtifactPathPattern(),
-                "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:\\-(?<folderItegRev>\\d{14}))?/" +
-                        "(?<module>\\2)\\-(?<baseRev>\\3)(?:\\-(?<fileItegRev>\\d{14}))?(?:\\-" +
+                "(?<org>[^/]+?)/(?<module>[^/]+)/(?<baseRev>[^/]+?)(?:-(?<folderItegRev>\\d{14}))?/" +
+                        "(?<module>\\2)-(?<baseRev>\\3)(?:-(?<fileItegRev>\\d{14}))?(?:-" +
                         "(?<classifier>[^/]+?))?\\.(?<ext>(?:(?!\\d))[^\\-/]+)");
         testGeneratedPatternRegExp(RepoLayoutUtils.GRADLE_DEFAULT,
                 RepoLayoutUtils.GRADLE_DEFAULT.getDescriptorPathPattern(),
-                "(?<org>[^/]+?)/(?<module>[^/]+)/ivy\\-(?<baseRev>[^/]+?)(?:\\-(?<fileItegRev>\\d{14}))?\\.xml");
+                "(?<org>[^/]+?)/(?<module>[^/]+)/ivy-(?<baseRev>[^/]+?)(?:-(?<fileItegRev>\\d{14}))?\\.xml");
+        // Test patterns that contain regex special characters
     }
 
     public void testDefaultTokenRegExpValues() {
@@ -266,6 +267,12 @@ public class RepoLayoutUtilsTest {
                 "[moo<SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))>]",
                 "(?<moo>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+)))");
         testGeneratedPatternRegExp(RepoLayoutUtils.MAVEN_1_DEFAULT, "[popo<\\d{14}>]", "(?<popo>\\d{14})");
+    }
+
+    public void testCustomTokenWithSpecialCharacters() {
+        testGeneratedPatternRegExp(RepoLayoutUtils.GRADLE_DEFAULT,
+                "^$Blah.special?{yes!}[moo<SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+))>]",
+                "\\^\\$Blah\\.special\\?\\{yes!\\}(?<moo>SNAPSHOT|(?:(?:[0-9]{8}.[0-9]{6})-(?:[0-9]+)))");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = ".*[momo].*unknown.*")

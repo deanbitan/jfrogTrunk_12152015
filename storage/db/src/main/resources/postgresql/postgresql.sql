@@ -48,13 +48,13 @@ CREATE TABLE node_props (
   prop_id    BIGINT NOT NULL,
   node_id    BIGINT NOT NULL,
   prop_key   VARCHAR(255),
-  prop_value VARCHAR(2048),
+  prop_value VARCHAR(4000),
   CONSTRAINT node_props_pk PRIMARY KEY (prop_id),
   CONSTRAINT node_props_nodes_fk FOREIGN KEY (node_id) REFERENCES nodes (node_id)
 );
 CREATE INDEX node_props_node_id_idx ON node_props (node_id);
 CREATE INDEX node_props_prop_key_idx ON node_props (prop_key);
-CREATE INDEX node_props_prop_value_idx ON node_props (prop_value);
+CREATE INDEX node_props_prop_value_idx ON node_props (LEFT(prop_value, 255));
 
 CREATE TABLE node_meta_infos (
   node_id           BIGINT NOT NULL,

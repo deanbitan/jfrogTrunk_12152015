@@ -19,7 +19,4 @@ public interface ArtifactoryStateManager extends ReloadableBean {
     boolean forceState(ArtifactoryServerState state);
 
     void beforeDestroy();
-
-    void conversionFinished();
-
 }

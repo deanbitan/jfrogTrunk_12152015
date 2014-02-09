@@ -45,10 +45,12 @@ import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.fs.session.StorageSessionHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * The exclusive provider of vfs items.
@@ -128,12 +130,9 @@ public class DbFsItemProvider implements VfsItemProvider {
             return mutableItem;
         }
 
-        // time to create a new item. start checking from the root to the requested repo path
-        // the goal is to create write locks on the parent folders only if they don't exist
-        // otherwise don't hold a lock on the parent folder (not even a read lock)
+        // time to create a new item. start checking from the parent to the requested repo path
+        safeCreateAncestors();
         try {
-            createAncestors();
-
             // get mutable item for the requested repo path
             LockEntryId lockEntryId = vault.getLock(repoPath);
             FsItemLockEntry sessionLockEntry = LockingHelper.writeLock(lockEntryId);
@@ -158,6 +157,32 @@ public class DbFsItemProvider implements VfsItemProvider {
             if (mutableItem == null) {
                 // item not found -> release the lock on this repo path
                 LockingHelper.removeLockEntry(repoPath);
+            }
+        }
+    }
+
+    public void safeCreateAncestors() {
+        // the goal is to create the parent folders outside the current transaction
+        // In import or copy move mode transaction globally managed by DB import handler
+        String transactionName = TransactionSynchronizationManager.getCurrentTransactionName();
+        if (StoringRepo.IMPORT_TX_NAME.equals(transactionName)
+                || StoringRepo.MOVE_OR_COPY_TX_NAME.equals(transactionName)) {
+            createAncestors();
+        } else {
+            DbService dbService = ContextHelper.get().beanForType(DbService.class);
+            Exception error = dbService.invokeInTransaction(new Callable<Exception>() {
+                @Override
+                public Exception call() throws Exception {
+                    try {
+                        createAncestors();
+                    } catch (Exception e) {
+                        return e;
+                    }
+                    return null;
+                }
+            });
+            if (error != null) {
+                throw new StorageException("Could not create parent folder of " + repoPath, error);
             }
         }
     }

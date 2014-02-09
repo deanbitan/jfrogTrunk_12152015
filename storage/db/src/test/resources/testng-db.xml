@@ -26,6 +26,11 @@
             <class name="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest"/>
         </classes>
     </test>
+    <test name="FileServiceRepoSummaryTest">
+        <classes>
+            <class name="org.artifactory.storage.db.fs.itest.service.FileServiceRepoStorageSummaryTest"/>
+        </classes>
+    </test>
     <test name="NodesDaoTest">
         <classes>
             <class name="org.artifactory.storage.db.fs.itest.dao.NodesDaoTest"/>

@@ -52,8 +52,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -67,6 +69,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
      * holds cached Authentication instances for the non ui requests based on the Authorization header and client ip
      */
     private ConcurrentMap<AuthCacheKey, Authentication> nonUiAuthCache;
+    private ConcurrentMap<String, AuthenticationCache> userChangedCache;
 
     @Override
     public void initLater(FilterConfig filterConfig) throws ServletException {
@@ -86,10 +89,19 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         ArtifactorySystemProperties properties =
                 ((ArtifactoryHome) filterConfig.getServletContext().getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR))
                         .getArtifactoryProperties();
-        ConstantValues idleTimeSecs = ConstantValues.securityAuthenticationCacheIdleTimeSecs;
-        Long cacheIdleSecs = properties.getLongProperty(idleTimeSecs.getPropertyName(), idleTimeSecs.getDefValue());
-        nonUiAuthCache = CacheBuilder.newBuilder().softValues().initialCapacity(100).expireAfterWrite(cacheIdleSecs,
-                TimeUnit.SECONDS).<AuthCacheKey, Authentication>build().asMap();
+        ConstantValues idleTimeSecsProp = ConstantValues.securityAuthenticationCacheIdleTimeSecs;
+        long cacheIdleSecs = properties.getLongProperty(idleTimeSecsProp.getPropertyName(),
+                idleTimeSecsProp.getDefValue());
+        ConstantValues initSizeProp = ConstantValues.securityAuthenticationCacheInitSize;
+        long initSize = properties.getLongProperty(initSizeProp.getPropertyName(), initSizeProp.getDefValue());
+        nonUiAuthCache = CacheBuilder.newBuilder().softValues()
+                .initialCapacity((int) initSize)
+                .expireAfterWrite(cacheIdleSecs, TimeUnit.SECONDS)
+                .<AuthCacheKey, Authentication>build().asMap();
+        userChangedCache = CacheBuilder.newBuilder().softValues()
+                .initialCapacity((int) initSize)
+                .expireAfterWrite(cacheIdleSecs, TimeUnit.SECONDS)
+                .<String, AuthenticationCache>build().asMap();
         SecurityService securityService = context.beanForType(SecurityService.class);
         securityService.addListener(this);
     }
@@ -97,6 +109,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
     @Override
     public void onClearSecurity() {
         nonUiAuthCache.clear();
+        userChangedCache.clear();
     }
 
     @Override
@@ -107,21 +120,13 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
     @Override
     public void onUserDelete(String username) {
         invalidateUserAuthCache(username);
-
     }
 
     private void invalidateUserAuthCache(String username) {
-        // remove the authentication of the username from the non-ui cache if exists
-        Iterator<Map.Entry<AuthCacheKey, Authentication>> cacheIter = nonUiAuthCache.entrySet().iterator();
-        while (cacheIter.hasNext()) {
-            Map.Entry<AuthCacheKey, Authentication> entry = cacheIter.next();
-            Authentication authentication = entry.getValue();
-            String principal = authentication.getPrincipal() + "";
-            if (username.equals(principal)) {
-                log.debug("Removing {} from the non-ui authentication cache", username);
-                cacheIter.remove();
-                // continue to iterate, there might be entries with the same username but another ip
-            }
+        // Flag change to force re-login
+        AuthenticationCache authenticationCache = userChangedCache.get(username);
+        if (authenticationCache != null) {
+            authenticationCache.changed();
         }
     }
 
@@ -134,6 +139,10 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         if (nonUiAuthCache != null) {
             nonUiAuthCache.clear();
             nonUiAuthCache = null;
+        }
+        if (userChangedCache != null) {
+            userChangedCache.clear();
+            userChangedCache = null;
         }
     }
 
@@ -156,9 +165,9 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         //Reuse the authentication if it exists
         Authentication authentication = RequestUtils.getAuthentication(request);
         boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
-        boolean reauthenticationRequired = isAuthenticated && authFilter.requiresReAuthentication(request,
-                authentication);
-        if (reauthenticationRequired) {
+        // Make sure this is called only once
+        boolean reAuthRequired = reAuthenticationRequired(request, authentication);
+        if (reAuthRequired) {
             /**
              * A re-authentication is required but we might still have data that needs to be invalidated (like the
              * Wicket session)
@@ -168,7 +177,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
                 logoutHandler.logout(request, response, authentication);
             }
         }
-        boolean authenticationRequired = !isAuthenticated || reauthenticationRequired;
+        boolean authenticationRequired = !isAuthenticated || reAuthRequired;
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if (authenticationRequired) {
             if (authFilter.acceptFilter(request)) {
@@ -182,15 +191,33 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         }
     }
 
+    private boolean reAuthenticationRequired(HttpServletRequest request, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            // Not authenticated so not required to redo ;-)
+            return false;
+        }
+        // If user changed force re-auth
+        String username = authentication.getName();
+        AuthenticationCache authenticationCache = userChangedCache.get(username);
+        if (authenticationCache != null && authenticationCache.isChanged(authentication)) {
+            authenticationCache.loggedOut(authentication);
+            return true;
+        }
+        return authFilter.requiresReAuthentication(request, authentication);
+    }
+
 
     private void authenticateAndExecute(HttpServletRequest request, HttpServletResponse response,
-            FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
+            FilterChain chain, SecurityContext securityContext)
+    throws IOException, ServletException {
         // Try to see if authentication in cache based on the hashed header and client ip
         Authentication authentication = getNonUiCachedAuthentication(request);
-        boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
-        if (isAuthenticated && !authFilter.requiresReAuthentication(request, authentication)) {
+        if (authentication != null && authentication.isAuthenticated()
+                && !reAuthenticationRequired(request, authentication)) {
             log.debug("Header authentication {} found in cache.", authentication);
             useAuthentication(request, response, chain, authentication, securityContext);
+            // Add to user change cache the login state
+            addToUserChange(authentication);
             return;
         }
         try {
@@ -198,6 +225,8 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         } finally {
             Authentication newAuthentication = securityContext.getAuthentication();
             if (newAuthentication != null && newAuthentication.isAuthenticated()) {
+                // Add to user change cache the login state
+                addToUserChange(newAuthentication);
                 // Save authentication like in Wicket Session (if session exists)
                 if (RequestUtils.setAuthentication(request, newAuthentication, false)) {
                     log.debug("Added authentication {} in Http session.", newAuthentication);
@@ -206,15 +235,27 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
                     // An authorization cache key with no header can only be used for Anonymous authentication
                     AuthCacheKey authCacheKey = new AuthCacheKey(
                             authFilter.getCacheKey(request), request.getRemoteAddr());
-                    if ((UserInfo.ANONYMOUS.equals(newAuthentication.getName()) && authCacheKey.hasEmptyHeader()) ||
-                            (!UserInfo.ANONYMOUS.equals(newAuthentication.getName()) &&
-                                    !authCacheKey.hasEmptyHeader())) {
+                    String username = newAuthentication.getName();
+                    if ((UserInfo.ANONYMOUS.equals(username) && authCacheKey.hasEmptyHeader()) ||
+                            (!UserInfo.ANONYMOUS.equals(username) && !authCacheKey.hasEmptyHeader())) {
                         nonUiAuthCache.put(authCacheKey, newAuthentication);
+                        userChangedCache.get(username).addAuthCacheKey(authCacheKey);
                         log.debug("Added authentication {} in cache.", newAuthentication);
                     }
                 }
             }
             securityContext.setAuthentication(null);
+        }
+    }
+
+    private void addToUserChange(Authentication authentication) {
+        String username = authentication.getName();
+        if (!UserInfo.ANONYMOUS.equals(username)) {
+            AuthenticationCache existingCache = userChangedCache.putIfAbsent(username,
+                    new AuthenticationCache(authentication));
+            if (existingCache != null) {
+                existingCache.loggedIn(authentication);
+            }
         }
     }
 
@@ -230,6 +271,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
                 final UsernamePasswordAuthenticationToken authRequest =
                         new UsernamePasswordAuthenticationToken(UserInfo.ANONYMOUS, "");
                 AuthenticationDetailsSource ads = new HttpAuthenticationDetailsSource();
+                //noinspection unchecked
                 authRequest.setDetails(ads.buildDetails(request));
                 // explicitly ask for the default spring authentication manager by name (we have another one which
                 // is only used by the basic authentication filter)
@@ -270,6 +312,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         try {
             securityContext.setAuthentication(authentication);
             chain.doFilter(request, response);
+            addToUserChange(authentication);
         } finally {
             securityContext.setAuthentication(null);
         }
@@ -316,6 +359,57 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
             int result = hashedHeader.hashCode();
             result = 31 * result + ip.hashCode();
             return result;
+        }
+    }
+
+    class AuthenticationCache {
+        Set<AuthCacheKey> authCacheKeys;
+        Map<Integer, Integer> authState = new HashMap<>(3);
+
+        AuthenticationCache(Authentication first) {
+            authState.put(first.hashCode(), 0);
+        }
+
+        synchronized void addAuthCacheKey(AuthCacheKey authCacheKey) {
+            if (authCacheKeys == null) {
+                authCacheKeys = new HashSet<>();
+            }
+            authCacheKeys.add(authCacheKey);
+        }
+
+        synchronized void changed() {
+            if (authCacheKeys != null) {
+                for (AuthCacheKey authCacheKey : authCacheKeys) {
+                    Authentication removed = nonUiAuthCache.remove(authCacheKey);
+                    if (removed != null) {
+                        Integer key = removed.hashCode();
+                        log.debug("Removed {}:{} from the non-ui authentication cache", removed.getName(), key);
+                        authState.put(key, 1);
+                    }
+                }
+                authCacheKeys.clear();
+            }
+            Set<Integer> keys = new HashSet<>(authState.keySet());
+            for (Integer key : keys) {
+                authState.put(key, 1);
+            }
+        }
+
+        boolean isChanged(Authentication auth) {
+            int key = auth.hashCode();
+            Integer state = authState.get(key);
+            if (state != null) {
+                return state == 1;
+            }
+            return false;
+        }
+
+        void loggedOut(Authentication auth) {
+            authState.put(auth.hashCode(), 2);
+        }
+
+        void loggedIn(Authentication auth) {
+            authState.put(auth.hashCode(), 0);
         }
     }
 

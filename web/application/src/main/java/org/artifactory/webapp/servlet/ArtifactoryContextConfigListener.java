@@ -26,8 +26,9 @@ import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.ha.HaNodeProperties;
-import org.artifactory.converters.ConverterProvider;
-import org.artifactory.converters.VersionProvider;
+import org.artifactory.converters.ConverterManager;
+import org.artifactory.converters.VersionProviderImpl;
+import org.artifactory.file.lock.ArtifactoryLockFile;
 import org.artifactory.log.logback.LogbackContextSelector;
 import org.artifactory.log.logback.LoggerConfigInfo;
 import org.artifactory.spring.SpringConfigPaths;
@@ -176,12 +177,15 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
         ArtifactoryHome artifactoryHome =
                 (ArtifactoryHome) servletContext.getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR);
-        VersionProvider converterManager = (VersionProvider) servletContext.getAttribute(
+        VersionProviderImpl versionProvider = (VersionProviderImpl) servletContext.getAttribute(
+                ArtifactoryHome.ARTIFACTORY_VERSION_PROVIDER_OBJ);
+        ConverterManager converterManager = (ConverterManager) servletContext.getAttribute(
                 ArtifactoryHome.ARTIFACTORY_CONVERTER_OBJ);
+
         if (artifactoryHome == null) {
             throw new IllegalStateException("Artifactory home not initialized.");
         }
-        CompoundVersionDetails runningVersionDetails = converterManager.getRunningVersionDetails();
+        CompoundVersionDetails runningVersionDetails = versionProvider.getRunning();
         String versionNumber = runningVersionDetails.getVersionName();
         String revision = runningVersionDetails.getRevision();
         versionNumber = fixVersion(versionNumber);
@@ -228,13 +232,13 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
                     "org.artifactory.spring.ArtifactoryApplicationContext", ClassUtils.getDefaultClassLoader());
             Constructor<?> constructor = contextClass.
                     getConstructor(String.class, SpringConfigPaths.class, ArtifactoryHome.class,
-                            ConverterProvider.class);
+                            ConverterManager.class, VersionProviderImpl.class);
             //Construct the context name based on the context path
             //(will not work with multiple servlet containers on the same vm!)
             String contextUniqueName = HttpUtils.getContextId(servletContext);
             SpringConfigPaths springConfigPaths = SpringConfigResourceLoader.getConfigurationPaths(artifactoryHome);
             context = (ApplicationContext) constructor.newInstance(
-                    contextUniqueName, springConfigPaths, artifactoryHome, converterManager);
+                    contextUniqueName, springConfigPaths, artifactoryHome, converterManager, versionProvider);
         } finally {
             ArtifactoryHome.unbind();
         }
@@ -281,7 +285,7 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
 
     /**
      * @return True if the current jvm version Java 7 and the loop predicate hotspot optimization is on. This was fixed
-     *         in JDK 1.7.0_01.
+     * in JDK 1.7.0_01.
      */
     private void warnIfJava7WithLoopPredicate(Logger log) {
         if ("1.7.0".equals(JdkVersion.getJavaVersion())) {

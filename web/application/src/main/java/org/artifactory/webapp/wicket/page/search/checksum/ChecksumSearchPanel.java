@@ -76,6 +76,8 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
 
     @Override
     protected void validateSearchControls() {
+        // RTFACT-6211 - clearing old search query before running new query
+        searchControls.clearChecksums();
         if (StringUtils.isNotBlank(query)) {
             if (StringUtils.length(query) == ChecksumType.md5.length()) {
                 searchControls.addChecksum(ChecksumType.md5, query);
@@ -109,7 +111,7 @@ public class ChecksumSearchPanel extends BaseSearchPanel<ArtifactSearchResult> {
 
     @Override
     public String getSearchExpression() {
-        return query.trim();
+        return query != null ? query.trim() : "";
     }
 
     @Override

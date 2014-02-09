@@ -125,6 +125,10 @@ label {
     text-align: center;
 }
 
+.right {
+    text-align: right;
+}
+
 input.text, textarea, select,
 .text-field /* for AOL */,
 .list, div.textbox, span.textbox, div.textbox,
@@ -573,7 +577,7 @@ input[disabled='disabled'][type='text'], input[disabled='disabled'][type='passwo
     margin-top: -4px;
 }
 
-.Chrome .upload-form  .button {
+.Chrome .upload-form .button {
     padding-left: 4px;
 }
 
@@ -741,7 +745,7 @@ span.textbox-disabled {
     border-bottom: 1px solid #3F6b98;
 }
 
-.side-menu  .menu-items .menu-items {
+.side-menu .menu-items .menu-items {
     border-bottom: none;
 }
 
@@ -1348,7 +1352,7 @@ div.styled-tab-panel div.tab-row li {
     height: 95px;
 }
 
-div.styled-tab-panel div.tab-row  li {
+div.styled-tab-panel div.tab-row li {
     background: transparent url("images/tree-inspector/tree-tabs/normal/tab-normal-center.gif") repeat-x top;
 }
 
@@ -1956,6 +1960,16 @@ div.footer, .copywrites, .version {
     font-weight: bold;
     padding: 3px;
     text-align: center;
+}
+
+.floating-message {
+    width: 100%;
+    background-color: #FF6241;
+    border-bottom: 1px solid ghostwhite;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    z-index: 100000;
 }
 
 .storage-quota-limit {
@@ -2988,12 +3002,12 @@ a.export-link {
 
 /*-- ModalWindow --*/
 
-div.wicket-modal div.w_modal  div.w_top_1 {
+div.wicket-modal div.w_modal div.w_top_1 {
     position: absolute;
     top: -3px;
 }
 
-div.wicket-modal div.w_modal  div.w_left {
+div.wicket-modal div.w_modal div.w_left {
     position: relative;
 }
 
@@ -3033,7 +3047,7 @@ div.wicket-modal div.w_modal div.w_content_1 {
     cursor: default;
 }
 
-div.wicket-modal div.w_modal  div.w_content_3 {
+div.wicket-modal div.w_modal div.w_content_3 {
     border: none;
 }
 
@@ -4638,7 +4652,11 @@ td.true span {
     color: #87B343;
 }
 
-.welcome-border  .value {
+.welcome-border .artifacts-count .value.button:hover {
+    text-decoration: underline;
+}
+
+.welcome-border .value {
     color: darkblue;
 }
 
@@ -4675,7 +4693,7 @@ td.true span {
 
 /*--MavenSettingsPanel----------------------------------------*/
 
-.Chrome .settings-border .border-content .field-row .field  button.styled-checkbox {
+.Chrome .settings-border .border-content .field-row .field button.styled-checkbox {
     margin: 0 -3px;
 }
 
@@ -4787,6 +4805,27 @@ div.wupb-progressBar .wupb-background {
     margin-right: 25px;
 }
 
+/*-- StorageSummaryPanel --*/
+
+.file-storage-summary .fieldset-border-wrapper {
+    margin-right: 15px;
+}
+
+.storage-table tr {
+    height: 22px;
+}
+
+.storage-table td.first-cell {
+    width: 30px;
+}
+
+.storage-table .icon {
+    padding-left: 24px;
+    background-repeat: no-repeat;
+    background-position: top;
+    padding-bottom: 3px;
+}
+
 /*-- CronNextDatePanel --*/
 
 .cron-fields input.text {
@@ -4846,7 +4885,7 @@ table.data-table tr.headers button.styled-checkbox .button-center {
     width: 200px;
 }
 
-.unlock-profile-form  button {
+.unlock-profile-form button {
     position: relative;
     top: -3px;
 }
@@ -4863,7 +4902,7 @@ table.data-table tr.headers button.styled-checkbox .button-center {
     margin-top: -3px;
 }
 
-.IE-7 .unlock-profile-form  button {
+.IE-7 .unlock-profile-form button {
     top: 5px;
     left: 3px;
 }
@@ -5691,7 +5730,7 @@ a.hide-link-checked:hover, a.hide-link-checked:focus {
     top: 10px;
 }
 
-div.styled-tab-panel div.tab-row li.disabled-addon  span {
+div.styled-tab-panel div.tab-row li.disabled-addon span {
     min-width: 70px;
     padding-right: 30px;
 }
@@ -6125,7 +6164,7 @@ td.warn span {
     height: 32px;
 }
 
-.repo-config .field-row  select {
+.repo-config .field-row select {
     width: 235px;
     height: 20px;
 }

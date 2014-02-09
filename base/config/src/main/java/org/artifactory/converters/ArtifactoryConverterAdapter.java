@@ -4,11 +4,10 @@ import org.artifactory.common.property.ArtifactoryConverter;
 import org.artifactory.version.CompoundVersionDetails;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public interface ArtifactoryConverterAdapter extends ArtifactoryConverter {
 
     boolean isInterested(CompoundVersionDetails source, CompoundVersionDetails target);
 
-    void conversionEnded();
 }

@@ -19,10 +19,13 @@
 package org.artifactory.webapp.wicket.page.home;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.wicket.Component;
 import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
@@ -32,18 +35,18 @@ import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.links.TitledPageLink;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
+import org.artifactory.util.NumberFormatter;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
 import org.artifactory.webapp.wicket.page.base.EditProfileLink;
 import org.artifactory.webapp.wicket.page.base.LoginLink;
-import org.artifactory.webapp.wicket.page.base.LogoutLink;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
+import org.artifactory.webapp.wicket.page.config.advanced.storage.StorageSummaryPage;
 import org.artifactory.webapp.wicket.page.home.news.ArtifactoryUpdatesPanel;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.Map;
 
@@ -87,11 +90,16 @@ public class WelcomeBorder extends TitledBorder {
     }
 
     private void addArtifactsCount() {
-        Label countLabel = new Label("artifactsCount", "");
+        Component countLabel;
+        if (authorizationService.isAdmin()) {
+            countLabel = new TitledPageLink("artifactsCount", "", StorageSummaryPage.class);
+        } else {
+            countLabel = new Label("artifactsCount", "");
+        }
         add(countLabel);
         try {
             long count = repoService.getArtifactCount();
-            countLabel.setDefaultModelObject(new DecimalFormat("#,###").format(count));
+            countLabel.setDefaultModelObject(NumberFormatter.formatLong(count));
         } catch (RepositoryRuntimeException e) {
             countLabel.setVisible(false);
             log.warn("Failed to retrieve artifacts count: " + e.getMessage());
@@ -101,7 +109,9 @@ public class WelcomeBorder extends TitledBorder {
     private void addCurrentUserInfo() {
         add(new TitledPageLink("browseLink", "browse", BrowseRepoPage.class));
         add(new LoginLink("loginLink", "log in"));
-        add(new LogoutLink("logoutLink", "log out"));
+        SamlAddon samlAddon = addonsManager.addonByType(SamlAddon.class);
+        AbstractLink logoutLink = samlAddon.getLogoutLink("logoutLink");
+        add(logoutLink);
         addLastLoginLabel();
         //addLastAccessLabel();
         add(new EditProfileLink("profileLink"));

@@ -27,7 +27,7 @@ import static org.artifactory.state.ArtifactoryServerState.*;
 import static org.artifactory.storage.db.servers.model.ArtifactoryServerRole.STANDALONE;
 
 /**
- * @author: gidis
+ * @author Gidi Shabat
  */
 @Reloadable(beanClass = ArtifactoryStateManager.class,
         initAfter = {DbService.class, InternalCentralConfigService.class})
@@ -77,7 +77,8 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
             throw new IllegalStateException("Artifactory server could not be found [" + getServerId() + "]");
         }
         // Allow to change the state only if not offline and the previous state was STARTING
-        if (!ContextHelper.get().isOffline() && STARTING == artifactoryServer.getServerState()) {
+        boolean allowedToPromote = STARTING == artifactoryServer.getServerState() || CONVERTING == artifactoryServer.getServerState();
+        if (!ContextHelper.get().isOffline() && allowedToPromote) {
             addonsManager.addonByType(HaAddon.class).updateArtifactoryServerRole();
             updateArtifactoryServerState(RUNNING);
         } else {
@@ -89,11 +90,6 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
     @Override
     public void beforeDestroy() {
         updateArtifactoryServerState(STOPPING);
-    }
-
-    @Override
-    public void conversionFinished() {
-        updateArtifactoryServerState(STARTING);
     }
 
     @Override
@@ -125,7 +121,7 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
     private ArtifactoryServer createOrUpdateCurrentArtifactoryServer(String serverId, String serverContextUrl,
             ArtifactoryServerState serverState) {
         ArtifactoryRunningMode runningMode = addonsManager.getArtifactoryRunningMode();
-        CompoundVersionDetails runningVersion = ContextHelper.get().getConverterManager().getRunningVersionDetails();
+        CompoundVersionDetails runningVersion = ContextHelper.get().getVersionProvider().getRunning();
 
         ArtifactoryServer prevArtifactoryServer = serversService.getArtifactoryServer(serverId);
         ArtifactoryServer artifactoryServer;

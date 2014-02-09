@@ -105,12 +105,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
         try {
             log.trace("Sending back error code {}. Reason: {}", statusCode, reason);
-            if (reason != null) {
-                //Send a description of the reason in the body
-                response.sendError(statusCode, reason);
-            } else {
-                response.sendError(statusCode);
-            }
+            HttpUtils.sendErrorResponse(response, statusCode, reason);
             flush();
         } catch (IOException e) {
             throw e;
@@ -123,7 +118,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
     public void sendAuthorizationRequired(String message, String realm) throws IOException {
         try {
             response.addHeader("WWW-Authenticate", "Basic realm=\"" + realm + "\"");
-            response.sendError(HttpStatus.SC_UNAUTHORIZED, message);
+            HttpUtils.sendErrorResponse(response, HttpStatus.SC_UNAUTHORIZED, "Unauthorized");
             flush();
         } catch (IOException e) {
             throw e;

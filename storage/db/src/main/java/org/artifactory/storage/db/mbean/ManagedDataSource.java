@@ -1,6 +1,7 @@
 package org.artifactory.storage.db.mbean;
 
 import org.artifactory.storage.db.spring.ArtifactoryDataSource;
+import org.artifactory.storage.db.util.JdbcHelper;
 
 /**
  * MBean wrapper for {@link org.artifactory.storage.db.spring.ArtifactoryDataSource}
@@ -10,9 +11,11 @@ import org.artifactory.storage.db.spring.ArtifactoryDataSource;
 public class ManagedDataSource implements ManagedDataSourceMBean {
 
     private final ArtifactoryDataSource artifactoryDataSource;
+    private final JdbcHelper jdbcHelper;
 
-    public ManagedDataSource(ArtifactoryDataSource dataSource) {
+    public ManagedDataSource(ArtifactoryDataSource dataSource, JdbcHelper jdbcHelper) {
         artifactoryDataSource = dataSource;
+        this.jdbcHelper = jdbcHelper;
     }
 
     @Override
@@ -48,5 +51,15 @@ public class ManagedDataSource implements ManagedDataSourceMBean {
     @Override
     public String getUrl() {
         return artifactoryDataSource.getUrl();
+    }
+
+    @Override
+    public long getSelectQueriesCount() {
+        return jdbcHelper.getSelectQueriesCount();
+    }
+
+    @Override
+    public long getUpdateQueriesCount() {
+        return jdbcHelper.getUpdateQueriesCount();
     }
 }

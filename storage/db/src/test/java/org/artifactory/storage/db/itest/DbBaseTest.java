@@ -19,12 +19,11 @@
 package org.artifactory.storage.db.itest;
 
 import ch.qos.logback.classic.util.ContextInitializer;
-import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.db.DbServiceImpl;
+import org.artifactory.storage.db.spring.ArtifactoryTomcatDataSource;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
@@ -34,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -98,6 +98,19 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
         TestUtils.invokeMethodNoArgs(dbService, "initializeIdGenerator");
     }
 
+    @AfterClass
+    public void verifyDbResourcesReleased() throws IOException, SQLException {
+        // make sure there are no active connections
+        /*PoolingDataSource ds = (PoolingDataSource) jdbcHelper.getDataSource();
+        GenericObjectPool pool = TestUtils.getField(ds, "_pool", GenericObjectPool.class);
+        assertEquals(pool.getNumActive(), 0, "Found " + pool.getNumActive() + " active connections after test ended:\n"
+                + TestUtils.invokeMethodNoArgs(pool, "debugInfo"));*/
+        ArtifactoryTomcatDataSource ds = (ArtifactoryTomcatDataSource) jdbcHelper.getDataSource();
+        assertEquals(ds.getActiveConnectionsCount(), 0, "Found " + ds.getActiveConnectionsCount() +
+                " active connections after test ended");
+        artifactoryHomeBoundTest.unbindArtifactoryHome();
+    }
+
     protected ArtifactoryHomeBoundTest createArtifactoryHomeTest() throws IOException {
         return new ArtifactoryHomeBoundTest();
     }
@@ -112,15 +125,6 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
 
     private String randomHexa(int count) {
         return RandomStringUtils.random(count, "abcdef0123456789".toCharArray());
-    }
-
-    public void verifyDbResourcesReleased() throws IOException, SQLException {
-        // make sure there are no active connections
-        PoolingDataSource ds = (PoolingDataSource) jdbcHelper.getDataSource();
-        GenericObjectPool pool = TestUtils.getField(ds, "_pool", GenericObjectPool.class);
-        assertEquals(pool.getNumActive(), 0, "Found " + pool.getNumActive() + " active connections after test ended:\n"
-                + TestUtils.invokeMethodNoArgs(pool, "debugInfo"));
-        artifactoryHomeBoundTest.unbindArtifactoryHome();
     }
 
     @BeforeMethod

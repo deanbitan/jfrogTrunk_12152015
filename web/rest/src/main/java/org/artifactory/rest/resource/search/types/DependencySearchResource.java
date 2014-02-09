@@ -18,12 +18,11 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SearchRestConstants;
+import org.artifactory.rest.common.exception.BadRequestException;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -38,12 +37,10 @@ public class DependencySearchResource {
 
     private RestAddon restAddon;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
-    public DependencySearchResource(RestAddon restAddon, HttpServletRequest request, HttpServletResponse response) {
+    public DependencySearchResource(RestAddon restAddon, HttpServletRequest request) {
         this.restAddon = restAddon;
         this.request = request;
-        this.response = response;
     }
 
     @GET
@@ -52,8 +49,7 @@ public class DependencySearchResource {
         try {
             return restAddon.searchDependencyBuilds(request, sha1);
         } catch (IllegalArgumentException iae) {
-            response.sendError(HttpStatus.SC_BAD_REQUEST, iae.getMessage());
+            throw new BadRequestException(iae.getMessage());
         }
-        return null;
     }
 }

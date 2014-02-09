@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -49,5 +51,12 @@ public class DbPropertiesDao extends BaseDao {
                 nullIfZeroOrNeg(dbProperties.getArtifactoryRevision()),
                 nullIfZeroOrNeg(dbProperties.getArtifactoryRelease()));
         return updateCount == 1;
+    }
+
+    public boolean isDbPropertiesTableExists() throws SQLException {
+        try (Connection con = jdbcHelper.getDataSource().getConnection()) {
+            DatabaseMetaData metaData = con.getMetaData();
+            return DbUtils.tableExists(metaData, DbPropertiesDao.TABLE_NAME);
+        }
     }
 }

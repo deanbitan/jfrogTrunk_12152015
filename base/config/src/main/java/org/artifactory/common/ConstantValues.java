@@ -66,6 +66,7 @@ public enum ConstantValues {
     gcFileScanSleepMillis("gc.fileScanSleepMillis", 250),
     gcMaxCacheEntries("gc.maxCacheEntries", 10000),
     trafficCollectionActive("traffic.collectionActive", FALSE),
+    securityAuthenticationCacheInitSize("security.authentication.cache.initSize", 100),
     securityAuthenticationCacheIdleTimeSecs("security.authentication.cache.idleTimeSecs", Seconds.MINUTE * 5),
     userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", 5),
     securityAuthenticationEncryptedPasswordSurroundChars(
@@ -139,7 +140,8 @@ public enum ConstantValues {
     securityCrowdGroupStartIndex("security.authentication.crowd.group.startIndex", 0),
     securityCrowdMaxGroupResults("security.authentication.crowd.group.maxResults", 9999),
     uiHideChecksums("ui.hideChecksums", FALSE),
-    archiveIndexerTaskIntervalSecs("archive.indexer.intervalSecs", 30),
+    archiveIndexerTaskIntervalSecs("archive.indexer.intervalSecs", 60),
+    inMemoryNuGetRemoteCaches("nuget.inMemoryRemoteCaches", TRUE),
     /*ha*/
     haHeartbeatIntervalSecs("ha.heartbeat.intervalSecs", 5),
     haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30);

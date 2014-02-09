@@ -18,7 +18,6 @@
 
 package org.artifactory.storage;
 
-import org.artifactory.api.storage.StorageService;
 import org.artifactory.spring.ReloadableBean;
 
 /**

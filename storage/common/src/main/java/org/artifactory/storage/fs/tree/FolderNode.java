@@ -18,14 +18,17 @@
 
 package org.artifactory.storage.fs.tree;
 
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.storage.fs.service.FileService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,32 +37,74 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public class FolderNode extends ItemNode<FolderInfo> {
+public class FolderNode extends ItemNode {
+    private static final Logger log = LoggerFactory.getLogger(FolderNode.class);
 
-    List<ItemNode<? extends ItemInfo>> cachedChildrenNodes;
-    private final ItemNodeFilter filter;
+    private List<ItemNode> cachedChildrenNodes;
+    private final TreeBrowsingCriteria criteria;
 
-    public FolderNode(FolderInfo itemInfo, @Nullable ItemNodeFilter filter) {
+    public FolderNode(FolderInfo itemInfo, TreeBrowsingCriteria criteria) {
         super(itemInfo);
-        this.filter = filter;
+        this.criteria = criteria;
     }
 
     @Override
-    public List<ItemNode<? extends ItemInfo>> getChildren() {
-        if (cachedChildrenNodes == null) {
-            List<ItemInfo> children = getFileService().loadChildren(itemInfo.getRepoPath());
-            cachedChildrenNodes = Lists.newArrayListWithCapacity(children.size());
-            for (ItemInfo child : children) {
-                if (filter == null || filter.accepts(child)) {
-                    if (child.isFolder()) {
-                        cachedChildrenNodes.add(new FolderNode((FolderInfo) child, filter));
-                    } else {
-                        cachedChildrenNodes.add(new FileNode((FileInfo) child));
-                    }
+    public List<ItemNode> getChildren() {
+        if (cachedChildrenNodes != null) {
+            return cachedChildrenNodes;
+        }
+        List<ItemInfo> children = getFileService().loadChildren(itemInfo.getRepoPath());
+        List<ItemNode> childrenNodes = Lists.newArrayListWithCapacity(children.size());
+
+        sort(children);
+
+        for (ItemInfo child : children) {
+            if (accepts(child)) {
+                if (child.isFolder()) {
+                    childrenNodes.add(new FolderNode((FolderInfo) child, criteria));
+                } else {
+                    childrenNodes.add(new FileNode((FileInfo) child));
                 }
             }
         }
-        return cachedChildrenNodes;
+
+        if (criteria.isCacheChildren()) {
+            cachedChildrenNodes = childrenNodes;
+        }
+
+        return childrenNodes;
+    }
+
+    @Override
+    public List<ItemInfo> getChildrenInfo() {
+        List<ItemNode> children = getChildren();
+        return Lists.transform(children, new Function<ItemNode, ItemInfo>() {
+            @Override
+            public ItemInfo apply(ItemNode input) {
+                return input.getItemInfo();
+            }
+        });
+    }
+
+    public boolean accepts(ItemInfo child) {
+        if (criteria.getFilters() == null) {
+            return true;
+        }
+        for (ItemNodeFilter filter : criteria.getFilters()) {
+            if (!filter.accepts(child)) {
+                log.debug("Filter {} rejected {}", filter, child);
+                return false;
+            }
+        }
+        // all filters accepted the item
+        return true;
+    }
+
+    private void sort(List<ItemInfo> children) {
+        if (criteria.getComparator() == null) {
+            return;
+        }
+        Collections.sort(children, criteria.getComparator());
     }
 
     @Override
@@ -69,6 +114,11 @@ public class FolderNode extends ItemNode<FolderInfo> {
         } else {
             return getFileService().hasChildren(itemInfo.getRepoPath());
         }
+    }
+
+    @Override
+    public FolderInfo getItemInfo() {
+        return (FolderInfo) super.getItemInfo();
     }
 
     private FileService getFileService() {

@@ -2177,11 +2177,9 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
             <xs:element name="cronExp" type="xs:string" default="* * 4 * * ?" minOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
-                        The Cron expression by which garbage collection frequency is determined. For detailed
-                        information see:
-                        <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The
-                            CronTrigger Tutorial
-                        </a>
+                        <![CDATA[
+                        The Cron expression by which garbage collection frequency is determined. For detailed information see: <a href="http://www.quartz-scheduler.org/docs/tutorials/crontrigger.html" target="_blank">The CronTrigger Tutorial </a>
+                        ]]>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

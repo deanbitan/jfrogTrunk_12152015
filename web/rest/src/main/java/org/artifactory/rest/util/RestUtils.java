@@ -18,23 +18,23 @@
 
 package org.artifactory.rest.util;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.rest.constant.SecurityRestConstants;
 import org.artifactory.api.search.SearchResultBase;
 import org.artifactory.repo.InternalRepoPathFactory;
+import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.joda.time.format.ISODateTimeFormat;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -62,14 +62,6 @@ public abstract class RestUtils {
         return ISODateTimeFormat.dateTime().parseMillis(dateTime);
     }
 
-    public static void sendNotFoundResponse(HttpServletResponse response, String message) throws IOException {
-        response.sendError(HttpStatus.SC_NOT_FOUND, message);
-    }
-
-    public static void sendNotFoundResponse(HttpServletResponse response) throws IOException {
-        response.sendError(HttpStatus.SC_NOT_FOUND);
-    }
-
     public static String buildStorageInfoUri(HttpServletRequest request, SearchResultBase result) {
         return buildStorageInfoUri(request, result.getRepoKey(), result.getRelativePath());
     }
@@ -85,7 +77,10 @@ public abstract class RestUtils {
         String servletContextUrl = HttpUtils.getServletContextUrl(request);
         StringBuilder sb = new StringBuilder(servletContextUrl);
         sb.append("/").append(RestConstants.PATH_API).append("/").append(ArtifactRestConstants.PATH_ROOT);
-        sb.append("/").append(repoKey).append("/").append(relativePath);
+        sb.append("/").append(repoKey);
+        if (StringUtils.isNotBlank(relativePath)) {
+            sb.append("/").append(relativePath);
+        }
         return sb.toString();
     }
 
@@ -158,5 +153,22 @@ public abstract class RestUtils {
 
         // If we got here it means client is using an old build-info (<= 2.0.11) we must manually decode the http params
         return true;
+    }
+
+    public enum RepoType {LOCAL, REMOTE, VIRTUAL}
+
+    /**
+     * @return the {@link org.artifactory.rest.util.RestUtils.RepoType} for the given {@code repoKey},
+     *          or null if not found
+     */
+    public static RepoType repoType(String repoKey) {
+        Repo repo = repositoryByKey(repoKey);
+        return repo == null ? null :
+                repo.isLocal() ? RepoType.LOCAL :
+                        repo.isReal() ? RepoType.REMOTE : RepoType.VIRTUAL;
+    }
+
+    private static Repo repositoryByKey(String repoKey) {
+        return ((InternalRepositoryService) ContextHelper.get().getRepositoryService()).repositoryByKey(repoKey);
     }
 }

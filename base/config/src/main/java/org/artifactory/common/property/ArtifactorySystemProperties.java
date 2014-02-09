@@ -77,7 +77,7 @@ public class ArtifactorySystemProperties {
             if (strValue == null) {
                 result = 0l;
             } else {
-                result = Long.parseLong(strValue);
+                result = Long.parseLong(strValue.trim());
             }
             artifactoryLongProperties.put(key, result);
         }

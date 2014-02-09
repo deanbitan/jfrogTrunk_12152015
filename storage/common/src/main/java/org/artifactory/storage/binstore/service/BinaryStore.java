@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.binstore.service;
 
+import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.binstore.BinaryInfo;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,8 +54,7 @@ public interface BinaryStore {
      *
      * @param sha1 the checksum key
      * @return The info if exists, null otherwise
-     * @throws org.artifactory.storage.StorageException
-     *          if an error happen accessing the binary store
+     * @throws org.artifactory.storage.StorageException if an error happen accessing the binary store
      */
     @Nullable
     BinaryInfo findBinary(String sha1);
@@ -67,8 +67,7 @@ public interface BinaryStore {
      *
      * @param checksums list of checksum keys to look for
      * @return A distinct set of binaries information found, may be empty if nothing found
-     * @throws org.artifactory.storage.StorageException
-     *          if an error happen accessing the binary store
+     * @throws org.artifactory.storage.StorageException if an error happen accessing the binary store
      */
     @Nonnull
     Set<BinaryInfo> findBinaries(@Nullable Collection<String> checksums);
@@ -92,6 +91,8 @@ public interface BinaryStore {
      * Will throw exceptions if this binary store is not in full healthy state.
      */
     void ping();
+
+    BinariesInfo getBinariesInfo();
 
     /**
      * Return the total size managed by this binary store.

@@ -7,7 +7,7 @@ import org.artifactory.version.ArtifactoryVersion;
 import java.util.Date;
 
 /**
- * Author: gidis
+ * @author Gidi Shabat
  */
 public class MockDbPropertiesService implements ArtifactoryCommonDbPropertiesService {
     private ArtifactoryVersion version;
@@ -31,6 +31,11 @@ public class MockDbPropertiesService implements ArtifactoryCommonDbPropertiesSer
         } else {
             return new DbProperties(new Date().getTime(), version.getValue(), (int) version.getRevision(), release);
         }
+    }
+
+    @Override
+    public boolean isDbPropertiesTableExists() {
+        return version != null && ArtifactoryVersion.v310.beforeOrEqual(version);
     }
 
     public boolean isUpdateDbPropertiesHasBeenCalled() {

@@ -109,9 +109,6 @@ public class ArchiveSearchPanel extends BaseSearchPanel<ArchiveSearchResult> {
                 new PropertyModel<Boolean>(this, "excludeInnerClasses")));
         form.add(new HelpBubble("excludeInnerClassesHelp", "Mark to exclude inner classes from the list of results."));
 
-        form.add(new HelpBubble("searchHelp",
-                "Archive entry name. * and ? are accepted.<br/>For package search add * after the prefix, e.g: org.jfrog.*"));
-
         //Group entry names which are similar but have different character cases
         getDataProvider().setGroupRenderer("searchResult.entry",
                 new ChoiceRenderer<ActionableSearchResult<ArchiveSearchResult>>("searchResult.entryName",

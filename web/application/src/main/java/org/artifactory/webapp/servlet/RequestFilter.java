@@ -21,6 +21,7 @@ package org.artifactory.webapp.servlet;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.traffic.RequestLogger;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.browse.listing.ArtifactListPage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.SimpleRepoBrowserPage;
 import org.slf4j.Logger;
@@ -170,7 +171,7 @@ public class RequestFilter extends DelayedFilterBase {
         public void sendError(int sc) throws IOException {
             if (notCommitted(sc)) {
                 status = sc;
-                super.sendError(sc);
+                HttpUtils.sendErrorResponse((HttpServletResponse) getResponse(), sc, null);
             }
         }
 
@@ -178,7 +179,7 @@ public class RequestFilter extends DelayedFilterBase {
         public void sendError(int sc, String msg) throws IOException {
             if (notCommitted(sc, msg)) {
                 status = sc;
-                super.sendError(sc, msg);
+                HttpUtils.sendErrorResponse((HttpServletResponse) getResponse(), sc, msg);
             }
         }
 

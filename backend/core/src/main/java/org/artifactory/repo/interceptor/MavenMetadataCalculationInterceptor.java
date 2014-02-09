@@ -18,8 +18,8 @@
 
 package org.artifactory.repo.interceptor;
 
+import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.maven.MavenMetadataService;
-import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.mime.MavenNaming;
@@ -83,8 +83,12 @@ public class MavenMetadataCalculationInterceptor extends StorageInterceptorAdapt
         }
 
         // it's a local non-cache repository, check the snapshot behavior
-        ModuleInfo moduleInfo = localRepo.getItemModuleInfo(fsItem.getPath());
-        if (moduleInfo.isIntegration() &&
+        MavenArtifactInfo moduleInfo = MavenArtifactInfo.fromRepoPath(fsItem.getRepoPath());
+        if (!moduleInfo.isValid()) {
+            return false;
+        }
+
+        if (MavenNaming.isSnapshot(fsItem.getPath()) &&
                 SnapshotVersionBehavior.DEPLOYER.equals(localRepo.getMavenSnapshotVersionBehavior())) {
             return false;
         }

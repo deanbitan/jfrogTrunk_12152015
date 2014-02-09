@@ -53,12 +53,6 @@ public interface AuthorizationService {
     boolean canRead(RepoPath path);
 
     /**
-     * @return True if the current user can read the specified path implicitly by having a read permissions on part of
-     *         the path
-     */
-    boolean canImplicitlyReadParentPath(RepoPath repoPath);
-
-    /**
      * @return True if the current user can annotate the specified path.
      */
     boolean canAnnotate(RepoPath repoPath);
@@ -153,7 +147,7 @@ public interface AuthorizationService {
 
     /**
      * @return The current logged in username. {@link org.artifactory.api.security.SecurityService#USER_SYSTEM} is
-     *         returned if no login information is found.
+     * returned if no login information is found.
      */
     @Nonnull
     String currentUsername();

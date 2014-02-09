@@ -21,6 +21,7 @@ package org.artifactory.storage.db.fs.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.checksum.ChecksumInfo;
@@ -41,8 +42,10 @@ import org.artifactory.storage.db.fs.entity.NodeBuilder;
 import org.artifactory.storage.db.fs.entity.NodePath;
 import org.artifactory.storage.db.fs.model.DbFsFile;
 import org.artifactory.storage.db.fs.model.DbFsFolder;
+import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.VfsItemNotFoundException;
+import org.artifactory.storage.fs.repo.RepoStorageSummary;
 import org.artifactory.storage.fs.repo.StoringRepo;
 import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.util.PathValidator;
@@ -321,6 +324,21 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public List<FileInfo> searchFilesByProperty(PropertiesFilter propertiesFilter) {
+        try {
+            PropertiesFilterQueryBuilder queryBuilder = new PropertiesFilterQueryBuilder(propertiesFilter);
+            List<Node> childrenNode = nodesDao.searchFilesByProperty(queryBuilder);
+            List<FileInfo> children = Lists.newArrayList();
+            for (Node child : childrenNode) {
+                children.add(fileInfoFromNode(child));
+            }
+            return children;
+        } catch (SQLException e) {
+            throw new VfsException("Search by properties failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public List<FileInfo> searchFilesWithBadChecksum(ChecksumType type) {
         try {
             List<Node> childrenNode = nodesDao.searchBadChecksums(type);
@@ -331,6 +349,15 @@ public class FileServiceImpl implements FileService {
             return children;
         } catch (SQLException e) {
             throw new VfsException("Search files with bad checksum failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Set<RepoStorageSummary> getRepositoriesStorageSummary() {
+        try {
+            return nodesDao.getRepositoriesStorageSummary();
+        } catch (SQLException e) {
+            throw new VfsException("Repository storage summary failed with exception: " + e.getMessage(), e);
         }
     }
 

@@ -29,17 +29,17 @@ import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
-import org.artifactory.rest.util.RestUtils;
 import org.artifactory.rest.util.StorageInfoHelper;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 
@@ -55,7 +55,6 @@ public class GavcSearchResource {
     private RepositoryService repositoryService;
     private RepositoryBrowsingService repoBrowsingService;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     /**
      * @param searchService       Search service instance
@@ -64,13 +63,12 @@ public class GavcSearchResource {
      */
     public GavcSearchResource(AuthorizationService authorizationService, SearchService searchService,
             RepositoryService repositoryService, RepositoryBrowsingService repoBrowsingService,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.searchService = searchService;
         this.repositoryService = repositoryService;
         this.repoBrowsingService = repoBrowsingService;
         this.request = request;
-        this.response = response;
     }
 
     /**
@@ -85,7 +83,7 @@ public class GavcSearchResource {
      */
     @GET
     @Produces({SearchRestConstants.MT_GAVC_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public InfoRestSearchResult get(
+    public Response get(
             @QueryParam(SearchRestConstants.PARAM_GAVC_GROUP_ID) String groupId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_ARTIFACT_ID) String artifactId,
             @QueryParam(SearchRestConstants.PARAM_GAVC_VERSION) String version,
@@ -105,7 +103,7 @@ public class GavcSearchResource {
      * @param reposToSearch Specific repositories to search in
      * @return Rest search results object
      */
-    private InfoRestSearchResult search(String groupId, String artifactId, String version, String classifier,
+    private Response search(String groupId, String artifactId, String version, String classifier,
             List<String> reposToSearch) throws IOException {
         if (hasAtLeastOneValidParameter(groupId, artifactId, version, classifier)) {
             GavcSearchControls searchControls = new GavcSearchControls();
@@ -117,21 +115,18 @@ public class GavcSearchResource {
             searchControls.setSelectedRepoForSearch(reposToSearch);
 
             if (searchControls.isEmpty()) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "The search term cannot be empty");
-                return null;
+                return Response.status(Response.Status.BAD_REQUEST).entity("The search term cannot be empty").build();
             }
             if (searchControls.isWildcardsOnly()) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                        "Search term containing only wildcards is not permitted");
-                return null;
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                        "Search term containing only wildcards is not permitted").build();
             }
 
             ItemSearchResults<GavcSearchResult> searchResults;
             try {
                 searchResults = searchService.searchGavc(searchControls);
             } catch (RepositoryRuntimeException e) {
-                RestUtils.sendNotFoundResponse(response, e.getMessage());
-                return null;
+                throw new NotFoundException(e.getMessage());
             }
 
             InfoRestSearchResult gavcRestSearchResult = new InfoRestSearchResult();
@@ -142,9 +137,11 @@ public class GavcSearchResource {
                         itemInfo);
                 gavcRestSearchResult.results.add(storageInfoHelper.createStorageInfo());
             }
-            return gavcRestSearchResult;
+            return Response.ok(gavcRestSearchResult).build();
         }
-        return null;
+
+        return Response.status(Response.Status.BAD_REQUEST).entity(
+                "Missing groupId or artifactId or version or classifier").build();
     }
 
     private boolean hasAtLeastOneValidParameter(String groupId, String artifactId, String version, String classifier) {

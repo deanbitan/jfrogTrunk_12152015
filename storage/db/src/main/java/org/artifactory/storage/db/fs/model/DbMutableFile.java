@@ -24,7 +24,8 @@ import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
-import org.artifactory.factory.xstream.XStreamInfoFactory;
+import org.artifactory.exception.CancelException;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.StatsInfo;
@@ -53,7 +54,7 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
     private StatsInfo stats;
 
     public DbMutableFile(StoringRepo storingRepo, long id, FileInfo info) {
-        super(storingRepo, id, new XStreamInfoFactory().copyFileInfo(info));
+        super(storingRepo, id, InfoFactoryHolder.get().copyFileInfo(info));
     }
 
     @Override
@@ -149,7 +150,12 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
             return true;
         }
 
-        fireBeforeDeleteEvent();
+        try {
+            fireBeforeDeleteEvent();
+        } catch (CancelException e) {
+            log.info("Deletion of {} was canceled by plugin", getRepoPath());
+            throw e;
+        }
 
         markForDeletion = true;
 

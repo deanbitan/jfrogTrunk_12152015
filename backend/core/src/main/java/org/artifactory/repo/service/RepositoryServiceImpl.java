@@ -61,7 +61,6 @@ import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
-import org.artifactory.api.storage.StorageService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
@@ -71,8 +70,8 @@ import org.artifactory.common.StatusHolder;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.*;
+import org.artifactory.exception.CancelException;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.factory.xstream.XStreamInfoFactory;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
@@ -128,6 +127,7 @@ import org.artifactory.security.ArtifactoryPermission;
 import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.storage.StorageService;
 import org.artifactory.storage.fs.lock.LockingHelper;
 import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.fs.service.ItemMetaInfo;
@@ -135,6 +135,10 @@ import org.artifactory.storage.fs.service.NodeMetaInfoService;
 import org.artifactory.storage.fs.service.PropertiesService;
 import org.artifactory.storage.fs.service.StatsService;
 import org.artifactory.storage.fs.stats.StatsFlushJob;
+import org.artifactory.storage.fs.tree.ItemNode;
+import org.artifactory.storage.fs.tree.ItemTree;
+import org.artifactory.storage.fs.tree.TreeBrowsingCriteria;
+import org.artifactory.storage.fs.tree.TreeBrowsingCriteriaBuilder;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.RepoLayoutUtils;
@@ -146,6 +150,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -166,6 +171,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.artifactory.storage.fs.repo.StoringRepo.MOVE_OR_COPY_TX_NAME;
 
 @Service
 @Reloadable(beanClass = InternalRepositoryService.class,
@@ -614,28 +621,16 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     @Nonnull
     public List<ItemInfo> getChildren(RepoPath repoPath) {
-        List<ItemInfo> filteredChildren = Lists.newArrayList();
-
-        LocalRepo repo = localOrCachedRepositoryByKey(repoPath.getRepoKey());
-        if (repo != null && repo.itemExists(repoPath.getPath())) {
-            List<ItemInfo> children = fileService.loadChildren(repoPath);
-            for (ItemInfo child : children) {
-                //Check if we should return the child
-                boolean childReader = authService.canImplicitlyReadParentPath(child.getRepoPath());
-                if (!childReader) {
-                    //Don't bother with stuff that we do not have read access to
-                    continue;
-                }
-                filteredChildren.add(child);
-            }
+        TreeBrowsingCriteria criteria = new TreeBrowsingCriteriaBuilder()
+                .sortAlphabetically().applySecurity().cacheChildren(false).build();
+        ItemNode rootNode = new ItemTree(repoPath, criteria).getRootNode();
+        if (rootNode != null) {
+            return rootNode.getChildrenInfo();
+        } else {
+            return Collections.emptyList();
         }
-
-        //Sort files by name
-        Collections.sort(filteredChildren);
-        return filteredChildren;
     }
 
-    //todo [mamo] make more efficient - no real need for ItemInfo
     @Override
     public List<String> getChildrenNames(RepoPath repoPath) {
         List<ItemInfo> childrenInfo = getChildren(repoPath);
@@ -659,7 +654,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public void saveFileInternal(RepoPath fileRepoPath, InputStream is) throws RepoRejectException, IOException {
         try {
-            MutableFileInfo fileInfo = new XStreamInfoFactory().createFileInfo(fileRepoPath);
+            MutableFileInfo fileInfo = InfoFactoryHolder.get().createFileInfo(fileRepoPath);
             fileInfo.createTrustedChecksums();
             SaveResourceContext saveContext = new SaveResourceContext.Builder(new FileResource(fileInfo), is).build();
             StoringRepo storingRepo = storingRepositoryByKey(fileRepoPath.getRepoKey());
@@ -961,7 +956,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public MoveMultiStatusHolder moveWithoutMavenMetadata(RepoPath from, RepoPath to, boolean dryRun, boolean suppressLayouts,
+    public MoveMultiStatusHolder moveWithoutMavenMetadata(RepoPath from, RepoPath to, boolean dryRun,
+            boolean suppressLayouts,
             boolean failFast) {
         MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to).copy(false).dryRun(dryRun).
                 executeMavenMetadataCalculation(false).suppressLayouts(suppressLayouts).failFast(failFast);
@@ -1039,6 +1035,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     private MoveMultiStatusHolder moveOrCopy(MoverConfig config) {
+        TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
         MoveMultiStatusHolder status = new MoveMultiStatusHolder();
         getRepoPathMover().moveOrCopy(status, config);
         return status;
@@ -1109,7 +1106,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 statusHolder).assertOverwrite(false).build();
         assertDelete(pathDeletionContext);
         if (!statusHolder.isError()) {
-            storingRepo.undeploy(repoPath, calcMavenMetadata);
+            try {
+                storingRepo.undeploy(repoPath, calcMavenMetadata);
+            } catch (CancelException e) {
+                statusHolder.error("Undeploy was canceled by user plugin", e.getErrorCode(), e, log);
+            }
         }
 
         if (pruneEmptyFolders && !repoPath.isRoot()) {
@@ -1579,9 +1580,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public boolean isRepoPathAccepted(RepoPath repoPath) {
-        if (repoPath.isRoot()) {
-            return true;
-        }
         LocalRepo repo = getLocalOrCachedRepository(repoPath);
         return repo.accepts(repoPath);
     }

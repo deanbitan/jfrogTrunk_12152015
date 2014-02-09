@@ -145,12 +145,14 @@ import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActio
 import org.artifactory.webapp.wicket.page.build.tabs.BuildSearchResultsPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.DisabledModuleInfoTabPanel;
 import org.artifactory.webapp.wicket.page.build.tabs.diff.DisabledBuildDiffTabPanel;
+import org.artifactory.webapp.wicket.page.config.HaNotConfiguredPage;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
 import org.artifactory.webapp.wicket.page.config.advanced.AdvancedCentralConfigPage;
 import org.artifactory.webapp.wicket.page.config.advanced.AdvancedSecurityConfigPage;
 import org.artifactory.webapp.wicket.page.config.advanced.MaintenancePage;
 import org.artifactory.webapp.wicket.page.config.advanced.SystemInfoPage;
+import org.artifactory.webapp.wicket.page.config.advanced.storage.StorageSummaryPage;
 import org.artifactory.webapp.wicket.page.config.general.BaseCustomizingPanel;
 import org.artifactory.webapp.wicket.page.config.general.CustomizingPanel;
 import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
@@ -754,6 +756,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         advancedConfiguration.addChild(new MenuNode("System Info", SystemInfoPage.class));
         advancedConfiguration.addChild(new MenuNode("System Logs", SystemLogsPage.class));
         advancedConfiguration.addChild(new MenuNode("Maintenance", MaintenancePage.class));
+        advancedConfiguration.addChild(new MenuNode("Storage Summary", StorageSummaryPage.class));
         advancedConfiguration.addChild(new MenuNode("Config Descriptor", AdvancedCentralConfigPage.class));
         advancedConfiguration.addChild(new MenuNode("Security Descriptor", AdvancedSecurityConfigPage.class));
         return advancedConfiguration;
@@ -816,6 +819,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public MenuNode getHaConfigPage(String nodeName) {
         if (getAddonsManager() instanceof OssAddonsManager) {
             return new DisabledAddonMenuNode(nodeName, AddonType.HA);
+        } else if (getAddonsManager().isHaLicensed()) {
+            return new MenuNode(nodeName, HaNotConfiguredPage.class);
         } else {
             return null;
         }
