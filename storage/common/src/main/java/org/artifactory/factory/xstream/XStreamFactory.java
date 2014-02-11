@@ -25,12 +25,17 @@ import com.thoughtworks.xstream.io.xml.QNameMap;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 import com.thoughtworks.xstream.io.xml.XmlFriendlyNameCoder;
 import com.thoughtworks.xstream.mapper.MapperWrapper;
+import com.thoughtworks.xstream.security.ArrayTypePermission;
+import com.thoughtworks.xstream.security.NoTypePermission;
+import com.thoughtworks.xstream.security.NullPermission;
+import com.thoughtworks.xstream.security.PrimitiveTypePermission;
 import javanet.staxutils.StaxUtilsXMLOutputFactory;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
 
 import javax.annotation.Nullable;
 import javax.xml.stream.XMLOutputFactory;
+import java.util.Collection;
 
 /**
  * @author Yoav Landman
@@ -90,6 +95,18 @@ public abstract class XStreamFactory {
             xstream.processAnnotations(annotatedClass);
         }
         xstream.alias("repoPath", RepoPath.class, RepoPathImpl.class);
+
+        // clear out existing permissions and set own ones
+        xstream.addPermission(NoTypePermission.NONE);
+        // allow some basics
+        xstream.addPermission(NullPermission.NULL);
+        xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
+        xstream.addPermission(ArrayTypePermission.ARRAYS);
+        xstream.allowTypeHierarchy(Collection.class);
+        xstream.allowTypeHierarchy(String.class);
+        // allow any type from the same package
+        xstream.allowTypesByWildcard(new String[]{"org.artifactory.**", "org.jfrog.**"});
+
         return xstream;
     }
 
