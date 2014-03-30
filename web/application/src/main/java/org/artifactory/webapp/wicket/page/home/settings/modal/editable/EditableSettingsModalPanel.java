@@ -55,7 +55,7 @@ public class EditableSettingsModalPanel extends BorderedModalPanel {
     private final TextArea<String> contentTextArea;
 
     public EditableSettingsModalPanel(final DownloadModalSettings settings) {
-        contentTextArea = new TextArea<>("content", Model.<String>of(settings.getContent()));
+        contentTextArea = new TextArea<>("content", Model.of(settings.getContent()));
         contentTextArea.setOutputMarkupId(true);
 
         FilteredResourcesWebAddon filteredResourcesWebAddon =

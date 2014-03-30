@@ -94,20 +94,24 @@ public class DbServiceImpl implements DbService {
                 // read ddl from file and execute
                 log.info("***Creating database schema***");
                 DbUtils.executeSqlStream(con, getDbSchemaSql());
+                updateDbProperties();
 
-                // Update DBProperties
-                long installTime = System.currentTimeMillis();
-                CompoundVersionDetails versionDetails = ArtifactoryHome.get().readRunningArtifactoryVersion();
-                String versionStr = versionDetails.getVersion().getValue();
-                long timestamp = versionDetails.getTimestamp();
-                int revisionInt = versionDetails.getRevisionInt();
-                dbPropertiesService.updateDbProperties(
-                        new DbProperties(installTime, versionStr, revisionInt, timestamp));
+
             }
         }
 
         // initialize id generator
         initializeIdGenerator();
+    }
+
+    private void updateDbProperties() {
+        // Update DBProperties
+        long installTime = System.currentTimeMillis();
+        CompoundVersionDetails versionDetails = ArtifactoryHome.get().readRunningArtifactoryVersion();
+        String versionStr = versionDetails.getVersion().getValue();
+        long timestamp = versionDetails.getTimestamp();
+        int revisionInt = versionDetails.getRevisionInt();
+        dbPropertiesService.updateDbProperties(new DbProperties(installTime, versionStr, revisionInt, timestamp));
     }
 
     @Override
@@ -235,6 +239,7 @@ public class DbServiceImpl implements DbService {
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         ArtifactoryDBVersion.convert(source.getVersion(), jdbcHelper, storageProperties.getDbType());
+        updateDbProperties();
     }
 
     @Override

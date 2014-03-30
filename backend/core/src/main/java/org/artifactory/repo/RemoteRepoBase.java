@@ -557,7 +557,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 try {
                     ResourceStreamHandle handle = pair.getFirst();
                     if (handle != null) {
-                        RepoRequests.logToContext("Found cached handle downloaded by a different HA node server");
+                        RepoRequests.logToContext(
+                                "Found cached handle downloaded by a different HA node server, notifying concurrent waiters");
+                        notifyConcurrentWaiters(requestContext, cachedResource, remoteRepoPath.getPath());
                         return handle;
                     }
                     RepoRequests.logToContext("Found no cached resource - starting download");
@@ -751,7 +753,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         if (!isMetadata) {
             // unexpire the file
             RepoRequests.logToContext("Un-expiring the resource");
-            localCacheRepo.unexpire(relativePath);
+            getRepositoryService().unexpireIfExists(localCacheRepo, relativePath);
             // remove it from bad retrieval caches
             RepoRequests.logToContext("Removing the resource from all failed caches");
             removeFromCaches(relativePath, false);

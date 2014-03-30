@@ -56,7 +56,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     /**
      * URL of remote version info
      */
-    private static String URL = "http://service.jfrog.org/api/version";
+    private static final String URL = "http://service.jfrog.org/api/version";
     /**
      * Key to use in version information cache
      */

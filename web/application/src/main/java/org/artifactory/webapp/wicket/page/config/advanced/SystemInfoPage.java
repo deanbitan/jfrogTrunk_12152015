@@ -52,7 +52,7 @@ import java.util.TreeSet;
 @AuthorizeInstantiation(AuthorizationService.ROLE_ADMIN)
 public class SystemInfoPage extends AuthenticatedPage {
 
-    private static String listFormat = "%1$-50s| %2$s%n";
+    private static final String listFormat = "%1$-50s| %2$s%n";
 
     /**
      * Default Constructor

@@ -58,14 +58,14 @@ public class VirtualRepoPanel extends RepoConfigCreateUpdatePanel<VirtualRepoDes
     protected List<ITab> getConfigurationTabs() {
         List<ITab> tabs = Lists.newArrayList();
 
-        tabs.add(new AbstractTab(Model.<String>of("Basic Settings")) {
+        tabs.add(new AbstractTab(Model.of("Basic Settings")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new VirtualRepoBasicPanel(panelId, action, getRepoDescriptor(), getCachingDescriptorHelper());
             }
         });
 
-        tabs.add(new AbstractTab(Model.<String>of("Advanced Settings")) {
+        tabs.add(new AbstractTab(Model.of("Advanced Settings")) {
             @Override
             public Panel getPanel(String panelId) {
                 return new VirtualRepoAdvancedPanel(panelId, action, getRepoDescriptor(), form);

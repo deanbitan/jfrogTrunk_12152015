@@ -149,6 +149,8 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
                 } else {
                     log.warn("Browsing secured S3 requires Artifactory Pro"); //TODO [mamo] should inform otherwise?
                 }
+            } else {
+                throw new IOException("Couldn't detect S3 root URL. Unknown error code: " + errorCode);
             }
         } finally {
             method.releaseConnection();

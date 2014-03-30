@@ -85,6 +85,34 @@
                 <span wicket:id="cleanupHelp"></span>
             </div>
         </div>
+
+        <div wicket:id="virtualCleanupBorder" class="cron-fields">
+            <div class="field-row">
+                <div class="field required field-sep" style="margin-left: 2px;">
+                    <label>
+                        <wicket:message key="cronExp"/>
+                        <span wicket:id="virtualCronExp.help"/>
+                    </label>
+
+                    <div class="value">
+                        <input wicket:id="cronExp" type="text" class="text"/>
+                    </div>
+                </div>
+
+                <div class="field field-sep">
+                    <label>Next Virtual Repositories Cleanup Time</label>
+
+                    <div class="value">
+                        <span wicket:id="virtualCronNextDatePanel"/>
+                    </div>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button wicket:id="virtualCleanup"></button>
+                <span wicket:id="virtualCleanupHelp"></span>
+            </div>
+        </div>
     </form>
 
     <div wicket:id="storage" class="storage">

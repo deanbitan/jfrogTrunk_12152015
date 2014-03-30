@@ -58,7 +58,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
     protected List<ITab> getConfigurationTabs() {
         List<ITab> tabList = Lists.newArrayList();
 
-        tabList.add(new AbstractTab(Model.<String>of("Basic Settings")) {
+        tabList.add(new AbstractTab(Model.of("Basic Settings")) {
 
             @Override
             public Panel getPanel(String panelId) {

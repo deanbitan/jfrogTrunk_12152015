@@ -18,11 +18,13 @@
 
 package org.artifactory.security;
 
+import org.artifactory.api.security.SecurityListener;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
+import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -47,6 +49,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.easymock.EasyMock.*;
 import static org.testng.Assert.*;
@@ -70,6 +73,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
     private LocalRepo cacheRepoMock;
     private InternalCentralConfigService centralConfigServiceMock;
     private UserGroupStoreService userGroupStoreService;
+    private SecurityListener securityListenerMock;
 
     @BeforeClass
     public void initArtifactoryRoles() {
@@ -80,6 +84,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         userGroupStoreService = createMock(UserGroupStoreService.class);
         localRepoMock = createLocalRepoMock();
         cacheRepoMock = createCacheRepoMock();
+        securityListenerMock = createMock(SecurityListener.class);
     }
 
     @BeforeMethod
@@ -675,6 +680,39 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         EasyMock.expectLastCall();
         replay(userGroupStoreService);
         service.updateUserLastLogin("user", "momo", System.currentTimeMillis() + 6000l);
+    }
+
+    public void testSelectiveReload() {
+        TreeSet<SecurityListener> securityListeners = new TreeSet<>();
+        securityListeners.add(securityListenerMock);
+        ReflectionTestUtils.setField(service, "securityListeners", securityListeners);
+        reset(securityListenerMock);
+        securityListenerMock.onClearSecurity();
+        expect(securityListenerMock.compareTo(securityListenerMock)).andReturn(0).anyTimes();
+        replay(securityListenerMock);
+
+        SecurityDescriptor newSecurityDescriptor = new SecurityDescriptor();
+        SecurityDescriptor oldSecurityDescriptor = new SecurityDescriptor();
+        oldSecurityDescriptor.addLdap(new LdapSetting());
+
+        CentralConfigDescriptor newConfigDescriptor = createMock(CentralConfigDescriptor.class);
+        expect(newConfigDescriptor.getSecurity()).andReturn(newSecurityDescriptor).anyTimes();
+        replay(newConfigDescriptor);
+
+        CentralConfigDescriptor oldConfigDescriptor = createMock(CentralConfigDescriptor.class);
+        expect(oldConfigDescriptor.getSecurity()).andReturn(oldSecurityDescriptor).anyTimes();
+        replay(oldConfigDescriptor);
+
+        expect(centralConfigServiceMock.getDescriptor()).andReturn(newConfigDescriptor).anyTimes();
+        replay(centralConfigServiceMock);
+
+        service.reload(oldConfigDescriptor);
+        verify(securityListenerMock);
+
+        // The security conf is the same, so onClearSecurity should NOT be called
+        service.reload(newConfigDescriptor);
+        verify(securityListenerMock);
+        ReflectionTestUtils.setField(service, "securityListeners", null);
     }
 
     private void verifyAnyRemoteOrAnyLocal(Authentication authentication, RepoPath securedPath) {

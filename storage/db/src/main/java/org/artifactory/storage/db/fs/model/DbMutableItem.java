@@ -36,6 +36,7 @@ import org.artifactory.storage.fs.repo.StoringRepo;
 import org.artifactory.storage.fs.service.ItemMetaInfo;
 import org.artifactory.storage.fs.service.NodeMetaInfoService;
 import org.artifactory.storage.spring.StorageContextHelper;
+import org.artifactory.util.PathValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +84,7 @@ public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<
 
     public DbMutableItem(StoringRepo repo, long id, T info) {
         super(repo, id, info);
+        PathValidator.validate(info.getRepoPath().toPath());
         this.id = id;
         this.mutableInfo = info;
         originalInfo = InfoFactoryHolder.get().copyItemInfo(info);

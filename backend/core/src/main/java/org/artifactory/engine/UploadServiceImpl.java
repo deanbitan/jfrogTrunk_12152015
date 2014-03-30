@@ -31,7 +31,6 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.InternalArtifactoryRequest;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;

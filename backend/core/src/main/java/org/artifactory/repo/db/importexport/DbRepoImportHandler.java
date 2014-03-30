@@ -137,16 +137,17 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             }
         }
 
-        status.status(String.format("%s import finished: Items imported: %s (%s files %s folders). " +
+        status.status(String.format("%s import finished with: %s Items imported: (%s files %s folders). " +
                 "Duration: %s IPS: %s Target: '%s'",
-                repo.getKey(), progressAccumulator.getItemsCount(), progressAccumulator.getFilesCount(),
-                progressAccumulator.getFoldersCount(),
+                repo.getKey(), progressAccumulator.getSuccessfulItemsCount(),
+                progressAccumulator.getSuccessfulFilesCount(),
+                progressAccumulator.getSuccessfulFoldersCount(),
                 progressAccumulator.getDurationString(), progressAccumulator.getItemsPerSecond(), fileSystemBaseDir),
                 log);
 
-        if (progressAccumulator.getItemsCount() > 1) {
+        if (progressAccumulator.getSuccessfulItemsCount() > 1) {
             StorageContextHelper.get().beanForType(StorageAggregationInterceptors.class).
-                    afterAllImport(rootRepoPath, progressAccumulator.getItemsCount(), status);
+                    afterAllImport(rootRepoPath, progressAccumulator.getSuccessfulItemsCount(), status);
         }
     }
 
@@ -157,9 +158,9 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             return;
         }
 
-        if (progressAccumulator.getItemsCount() > 0 &&
-                progressAccumulator.getItemsCount() % MAX_ITEMS_PER_TRANSACTION == 0) {
-            log.debug("Committing transaction artifacts count: {}", progressAccumulator.getItemsCount());
+        if (progressAccumulator.getSuccessfulItemsCount() > 0 &&
+                progressAccumulator.getSuccessfulItemsCount() % MAX_ITEMS_PER_TRANSACTION == 0) {
+            log.debug("Committing transaction artifacts count: {}", progressAccumulator.getSuccessfulItemsCount());
             commitTransaction(txStatus);
             startTransaction();
         }
@@ -205,8 +206,8 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
     private void importFile(final File fileToImport, final RepoPath target) {
         log.debug("Importing '{}'.", target);
         if (!settings.isIncludeMetadata() && !fileToImport.exists()) {
-            status.error("Cannot import non existent file (metadata is excluded): " +
-                    fileToImport.getAbsolutePath(), log);
+            addErrorMessage(fileToImport, target, "Cannot import non existent file (metadata is excluded): " +
+                    fileToImport.getAbsolutePath());
             return;
         }
         ArtifactoryStorageContext context = StorageContextHelper.get();
@@ -223,8 +224,9 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             }
             repositoryService.assertValidDeployPath(
                     new ValidDeployPathContext.Builder(localRepo, target).contentLength(length).build());
-        } catch (RepoRejectException e) {
-            status.error("Artifact rejected: " + e.getMessage(), log);
+        } catch (Exception e) {
+            addErrorMessage(fileToImport, target, "Artifact rejected: " + e.getMessage());
+            progressAccumulator.accumulateSkippedFile();
             return;
         }
         MutableVfsFile mutableFile = null;
@@ -235,14 +237,28 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             context.beanForType(ImportInterceptors.class).afterImport(mutableFile, status);
             log.debug("Imported '{}'.", target);
             AccessLogger.deployed(target);
-            progressAccumulator.accumulateFile();
+            progressAccumulator.accumulateSuccessfulFile();
         } catch (Exception e) {
-            status.error("Could not import file '" + fileToImport.getAbsolutePath() + "' into " + target + ".",
-                    e, log);
+            addErrorMessage(fileToImport, target, "Could not import file '" + fileToImport.getAbsolutePath() +
+                    " into " + target + ".", e);
             // mark the mutable item in error and let the session manager handle it
             if (mutableFile != null) {
                 mutableFile.markError();
             }
+            progressAccumulator.accumulateSkippedFile();
+        }
+    }
+
+    private void addErrorMessage(File from, RepoPath to, String message) {
+        addErrorMessage(from, to, message, null);
+    }
+
+    private void addErrorMessage(File from, RepoPath to, String message, Exception e) {
+        String msg = String.format("Import error: from: %s to %s reason: %s", from, to, message);
+        if (e == null) {
+            status.error(msg, log);
+        } else {
+            status.error(msg, e, log);
         }
     }
 
@@ -417,7 +433,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
                     importWatches(sourceFolder, mutableFolder, metadataEntries);
                 }
                 folderExistAfterImport = true;
-                progressAccumulator.accumulateFolder();
+                progressAccumulator.accumulateSuccessfulFolder();
             } catch (Exception e) {
                 // Just log an error and continue - will not import children
                 String msg = "Failed to import folder " + sourceFolder.getAbsolutePath() + " into '" + target + "'.";
@@ -425,7 +441,10 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
                 if (mutableFolder != null) {
                     mutableFolder.markError();
                 }
+                progressAccumulator.accumulateSkippedFolder();
             }
+        } else {
+            progressAccumulator.accumulateSkippedFolder();
         }
         return folderExistAfterImport;
     }

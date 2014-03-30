@@ -238,7 +238,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         // Only impossible are blocker here
         Predicate<Task> impossibleFilter = predicatePerStrategy.get(StopStrategy.IMPOSSIBLE);
         if (impossibleFilter != null) {
-            for (TaskBase activeTask : getActiveTasks(Predicates.<Task>and(notMyself, impossibleFilter))) {
+            for (TaskBase activeTask : getActiveTasks(Predicates.and(notMyself, impossibleFilter))) {
                 if (task.isManuallyActivated()) {
                     if (activeTask.processActive()) {
                         throw new IllegalStateException("Cannot start task (" + task + ") manually!" +
@@ -355,7 +355,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         // Stop early if impossible to run
         Predicate<Task> impossibleFilter = predicatePerStrategy.get(StopStrategy.IMPOSSIBLE);
         if (impossibleFilter != null) {
-            for (TaskBase activeTask : getActiveTasks(Predicates.<Task>and(notMyself, impossibleFilter))) {
+            for (TaskBase activeTask : getActiveTasks(Predicates.and(notMyself, impossibleFilter))) {
                 if (activeTask.processActive()) {
                     throw new IllegalArgumentException(
                             "Job " + typeToRun.getName() + " cannot stop related job " + activeTask + " while it's running!");
@@ -373,7 +373,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         // Then stop what's needed
         Predicate<Task> stopFilter = predicatePerStrategy.get(StopStrategy.STOP);
         if (stopFilter != null) {
-            for (TaskBase activeTask : getActiveTasks(Predicates.<Task>and(notMyself, stopFilter))) {
+            for (TaskBase activeTask : getActiveTasks(Predicates.and(notMyself, stopFilter))) {
                 // Just stop and keep for resume
                 activeTask.stop(true);
                 // Single execution task that are stopped don't need to be resumed because they'll die.
@@ -387,7 +387,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         // Then pause what's needed
         Predicate<Task> pauseFilter = predicatePerStrategy.get(StopStrategy.PAUSE);
         if (pauseFilter != null) {
-            for (TaskBase activeTask : getActiveTasks(Predicates.<Task>and(notMyself, pauseFilter))) {
+            for (TaskBase activeTask : getActiveTasks(Predicates.and(notMyself, pauseFilter))) {
                 // Just stop and always keep for resume, since even single execution paused should be resumed
                 activeTask.pause(true);
                 tokenStopped.add(activeTask.getToken());

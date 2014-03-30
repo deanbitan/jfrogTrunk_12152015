@@ -22,12 +22,9 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.model.FolderActionableItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Properties display tab panel. Holds properties info.
@@ -35,13 +32,8 @@ import org.slf4j.LoggerFactory;
  * @author Noam Tenne
  */
 public class PropertiesTabPanel extends Panel {
-    private static final Logger log = LoggerFactory.getLogger(PropertiesTabPanel.class);
-
     @SpringBean
     private AddonsManager addonsManager;
-
-    @SpringBean
-    private RepositoryService repoService;
 
     public PropertiesTabPanel(String id, RepoAwareActionableItem item) {
         super(id);

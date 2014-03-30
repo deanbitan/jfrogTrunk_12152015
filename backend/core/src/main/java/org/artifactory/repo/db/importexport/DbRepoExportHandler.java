@@ -65,6 +65,7 @@ public class DbRepoExportHandler extends DbExportBase {
     private final StoringRepo repo;
 
     public DbRepoExportHandler(StoringRepo repo, ExportSettings settings) {
+        super(new ImportExportAccumulator(repo.getKey(), EXPORT));
         this.repo = repo;
         setExportSettings(settings);
     }
@@ -81,14 +82,14 @@ public class DbRepoExportHandler extends DbExportBase {
             throw new RuntimeException("Failed to create export directory '" + targetExportFolder + "'.", e);
         }
         ItemInfo rootFolder = getFileService().loadItem(new RepoPathImpl(repo.getKey(), ""));
-        accumulator = new ImportExportAccumulator(repo.getKey(), EXPORT);
         exportRecursive(rootFolder);
         accumulator.finished();
-        status.status(String.format("%s export finished: Items exported: %s (%s files and %s folders). " +
-                "Duration: %s IPS: %s Target: '%s'",
-                repo.getKey(), accumulator.getItemsCount(), accumulator.getFilesCount(),
-                accumulator.getFoldersCount(), accumulator.getDurationString(), accumulator.getItemsPerSecond(),
-                targetExportFolder), log);
+        status.status(String.format("%s export finished with: %s Items exported (%s files and %s folders), " +
+                "%s Item skipped: (%s files and %s folders).Duration: %s IPS: %s Target: '%s'",
+                repo.getKey(), accumulator.getSuccessfulItemsCount(), accumulator.getSuccessfulFilesCount(),
+                accumulator.getSuccessfulFoldersCount(), accumulator.getSkippedItemsCount(),
+                accumulator.getSkippedFilesCount(), accumulator.getSkippedFoldersCount(),
+                accumulator.getDurationString(), accumulator.getItemsPerSecond(), targetExportFolder), log);
     }
 
     private void exportRecursive(ItemInfo sourceItem) {
@@ -113,11 +114,12 @@ public class DbRepoExportHandler extends DbExportBase {
         } catch (Exception e) {
             //If a child export fails, we collect the error but not fail the whole export
             File exportDir = settings.getBaseDir();
-            String msg;
-            if (exportDir != null) {
-                msg = "Failed to export '" + sourceItem.getRepoPath() + "' to dir '" + exportDir.getPath() + "'.";
+            String msg = String.format("Export error: from: %s to: %s reason: %s", sourceItem.getRepoPath(),
+                    exportDir != null ? exportDir.getPath() : "null", e.getMessage());
+            if (sourceItem.isFolder()) {
+                accumulator.accumulateSkippedFolder();
             } else {
-                msg = "Failed to export '" + sourceItem.getRepoPath() + "' to a null dir";
+                accumulator.accumulateSkippedFile();
             }
             status.error(msg, e, log);
         }
@@ -140,7 +142,7 @@ public class DbRepoExportHandler extends DbExportBase {
             exportMetadata(targetDir, sourceFolder);
         }
 
-        accumulator.accumulateFolder();
+        accumulator.accumulateSuccessfulFolder();
 
         List<ItemInfo> children = getRepositoryService().getChildren(sourceFolder.getRepoPath());
         for (ItemInfo child : children) {

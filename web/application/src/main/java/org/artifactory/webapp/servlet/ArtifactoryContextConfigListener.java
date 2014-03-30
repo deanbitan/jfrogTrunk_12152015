@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.servlet;
 
+import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.addon.AddonsManager;
@@ -35,6 +36,7 @@ import org.artifactory.spring.SpringConfigPaths;
 import org.artifactory.spring.SpringConfigResourceLoader;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +50,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -186,33 +191,8 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             throw new IllegalStateException("Artifactory home not initialized.");
         }
         CompoundVersionDetails runningVersionDetails = versionProvider.getRunning();
-        String versionNumber = runningVersionDetails.getVersionName();
-        String revision = runningVersionDetails.getRevision();
-        versionNumber = fixVersion(versionNumber);
-        revision = fixVersion(revision);
 
-        String msg =
-                "\n" +
-                        "               _   _  __           _\n" +
-                        "    /\\        | | (_)/ _|         | |\n" +
-                        "   /  \\   _ __| |_ _| |_ __ _  ___| |_ ___  _ __ _   _\n" +
-                        "  / /\\ \\ | '__| __| |  _/ _` |/ __| __/ _ \\| '__| | | |\n" +
-                        " / ____ \\| |  | |_| | || (_| | (__| || (_) | |  | |_| |\n" +
-                        "/_/    \\_\\_|   \\__|_|_| \\__,_|\\___|\\__\\___/|_|   \\__, |\n" +
-                        String.format(" Version:  %-39s__/ |\n", versionNumber) +
-                        String.format(" Revision: %-38s|___/\n", revision) +
-                        " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n";
-
-        //optionally log HA properties
-        if (artifactoryHome.isHaConfigured()) {
-            HaNodeProperties haNodeProperties = artifactoryHome.getHaNodeProperties();
-            if (haNodeProperties != null) {
-                msg += " Artifactory Cluster Home: '" + haNodeProperties.getClusterHome().getAbsolutePath() + "'\n" +
-                        " HA Node ID: '" + haNodeProperties.getServerId() + "'\n";
-            }
-        }
-
-        log.info(msg);
+        logAsciiArt(log, artifactoryHome, runningVersionDetails);
 
         warnIfJava7WithLoopPredicate(log);
 
@@ -253,13 +233,6 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
         servletContext.setAttribute(ArtifactoryContext.APPLICATION_CONTEXT_KEY, context);
     }
 
-    private String fixVersion(String version) {
-        if (version.startsWith("${")) {
-            return "Unknown";
-        }
-        return version;
-    }
-
     @Override
     public void contextDestroyed(ServletContextEvent event) {
         AbstractApplicationContext context = (AbstractApplicationContext) event.getServletContext().getAttribute(
@@ -281,6 +254,83 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             event.getServletContext().removeAttribute(ArtifactoryContext.APPLICATION_CONTEXT_KEY);
             event.getServletContext().removeAttribute(ArtifactoryHome.SERVLET_CTX_ATTR);
         }
+    }
+
+    private void logAsciiArt(Logger log, ArtifactoryHome artifactoryHome, CompoundVersionDetails versionDetails) {
+        String message = null;
+        try {
+            message = buildEditionMessage(artifactoryHome, versionDetails);
+        } catch (Exception e) {
+            log.warn("Failed to detect edition {}", e.getMessage());
+            log.debug("Failed to detect edition {}", e.getMessage(), e);
+        }
+        if (message == null) {
+            // build the generic version string (no edition details
+            buildNoEditionMessage(versionDetails);
+        }
+
+        // artifactory home location
+        message += " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n";
+
+        //optionally log HA properties
+        if (artifactoryHome.isHaConfigured()) {
+            HaNodeProperties haNodeProperties = artifactoryHome.getHaNodeProperties();
+            if (haNodeProperties != null) {
+                message += " Artifactory Cluster Home: '" + haNodeProperties.getClusterHome().getAbsolutePath()
+                        + "'\n HA Node ID: '" + haNodeProperties.getServerId() + "'\n";
+            }
+        }
+        log.info(message);
+    }
+
+    private String buildEditionMessage(ArtifactoryHome artifactoryHome, CompoundVersionDetails version)
+            throws Exception {
+        ArtifactoryEdition runningEdition = ArtifactoryEdition.detect(artifactoryHome);
+        InputStream resource = ResourceUtils.getResource("/ascii-editions.txt");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource, Charsets.UTF_8))) {
+            String edition;
+            while ((edition = reader.readLine()) != null) {
+                if (!runningEdition.name().equalsIgnoreCase(edition)) {
+                    // skip 8 lines to get to the next chunk
+                    for (int i = 0; i < 8; i++) {
+                        reader.readLine();
+                    }
+
+                } else {
+                    StringBuilder sb = new StringBuilder("\n");
+                    // height of the ascii art with no modifications
+                    for (int i = 0; i < 6; i++) {
+                        sb.append(reader.readLine()).append("\n");
+                    }
+                    // line 7 prepend the version
+                    String versionLine = reader.readLine();
+                    String versionStr = " Version:  " + version.getVersionName();
+                    sb.append(versionStr).append(versionLine.substring(versionStr.length())).append("\n");
+
+                    // line 8 prepend the revision
+                    String revisionLine = reader.readLine();
+                    String revisionStr = " Revision: " + version.getRevision();
+                    sb.append(revisionStr).append(revisionLine.substring(revisionStr.length())).append("\n");
+
+                    return sb.toString();
+                }
+            }
+        }
+        throw new IllegalArgumentException("Couldn't find matching art for " + runningEdition);
+    }
+
+    private String buildNoEditionMessage(CompoundVersionDetails versionDetails) {
+        String msg =
+                "\n" +
+                        "               _   _  __           _\n" +
+                        "    /\\        | | (_)/ _|         | |\n" +
+                        "   /  \\   _ __| |_ _| |_ __ _  ___| |_ ___  _ __ _   _\n" +
+                        "  / /\\ \\ | '__| __| |  _/ _` |/ __| __/ _ \\| '__| | | |\n" +
+                        " / ____ \\| |  | |_| | || (_| | (__| || (_) | |  | |_| |\n" +
+                        "/_/    \\_\\_|   \\__|_|_| \\__,_|\\___|\\__\\___/|_|   \\__, |\n" +
+                        String.format(" Version:  %-39s__/ |\n", versionDetails.getVersionName()) +
+                        String.format(" Revision: %-38s|___/\n", versionDetails.getRevision());
+        return msg;
     }
 
     /**
@@ -311,4 +361,5 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             }
         }
     }
+
 }

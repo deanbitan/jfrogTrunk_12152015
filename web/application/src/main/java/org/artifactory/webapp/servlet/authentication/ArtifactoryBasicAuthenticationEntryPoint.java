@@ -34,11 +34,25 @@ import java.io.IOException;
  */
 public class ArtifactoryBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
 
+    public static final String REALM = "Artifactory Realm";
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        // the inherited afterPropertiesSet checks that realmName is set
+        setRealmName(REALM);
+        super.afterPropertiesSet();
+    }
+
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
 
         response.addHeader("WWW-Authenticate", "Basic realm=\"" + getRealmName() + "\"");
         HttpUtils.sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
+    }
+
+    @Override
+    public String getRealmName() {
+        return REALM;
     }
 }

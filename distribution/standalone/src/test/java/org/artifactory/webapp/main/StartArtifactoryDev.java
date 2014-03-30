@@ -59,7 +59,6 @@ public class StartArtifactoryDev {
 
         File standaloneSrcDir = new File(prefix + "/open/distribution/standalone/src").getCanonicalFile();
         File devEtcDir = new File(standaloneSrcDir, "test/etc");
-        updateDefaultResources(devEtcDir);
 
         copyNewerDevResources(devEtcDir, devArtHome);
 
@@ -99,6 +98,7 @@ public class StartArtifactoryDev {
         IOFileFilter fileFilter = new NewerFileFilter(devEtcDir, homeEtcDir);
         fileFilter = FileFilterUtils.makeSVNAware(fileFilter);
         FileUtils.copyDirectory(devEtcDir, homeEtcDir, fileFilter, true);
+        updateDefaultMimetypes(homeEtcDir);
         deleteHaProps(homeEtcDir);
         /**
          * If the bootstrap already exists, it means it's not the first startup, so don't keep the original config file
@@ -118,7 +118,7 @@ public class StartArtifactoryDev {
         }
     }
 
-    private static void updateDefaultResources(File devEtcDir) {
+    private static void updateDefaultMimetypes(File devEtcDir) {
         File defaultMimeTypes = ResourceUtils.getResourceAsFile("/META-INF/default/mimetypes.xml");
         File devMimeTypes = new File(devEtcDir, "mimetypes.xml");
         if (!devMimeTypes.exists() || defaultMimeTypes.lastModified() > devMimeTypes.lastModified()) {

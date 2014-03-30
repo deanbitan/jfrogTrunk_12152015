@@ -43,7 +43,6 @@
 
     <bean id="basicAuthenticationEntryPoint"
           class="org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationEntryPoint">
-        <property name="realmName" value="Artifactory Realm"/>
     </bean>
 
     <!-- create authentication providers -->

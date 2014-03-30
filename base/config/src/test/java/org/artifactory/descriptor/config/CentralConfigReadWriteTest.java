@@ -160,6 +160,10 @@ public class CentralConfigReadWriteTest {
         cleanupConfigDescriptor.setCronExp("0 12 5 * * ?");
         desc.setCleanupConfig(cleanupConfigDescriptor);
 
+        CleanupConfigDescriptor virtualCleanupConfigDescriptor = new CleanupConfigDescriptor();
+        virtualCleanupConfigDescriptor.setCronExp("0 12 5 * * ?");
+        desc.setVirtualCacheCleanupConfig(virtualCleanupConfigDescriptor);
+
 
         File outputConfig = new File(testDir, "central.config.test.xml");
         JaxbHelper.writeConfig(desc, outputConfig);
@@ -236,6 +240,10 @@ public class CentralConfigReadWriteTest {
         CleanupConfigDescriptor cleanupConfigDescriptor = new CleanupConfigDescriptor();
         cleanupConfigDescriptor.setCronExp("sdfsdf");
         cc.setCleanupConfig(cleanupConfigDescriptor);
+
+        CleanupConfigDescriptor virtualCleanupConfigDescriptor = new CleanupConfigDescriptor();
+        virtualCleanupConfigDescriptor.setCronExp("sdfsdf");
+        cc.setVirtualCacheCleanupConfig(virtualCleanupConfigDescriptor);
 
         File outputConfig = new File(testDir, "config.defaults.test.xml");
         JaxbHelper.writeConfig(cc, outputConfig);

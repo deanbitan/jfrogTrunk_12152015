@@ -20,8 +20,6 @@ import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.InternalUsernamePasswordAuthenticationToken;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -30,9 +28,6 @@ import org.springframework.security.core.AuthenticationException;
  * User: gidis
  */
 public class ProfileLockPanel extends TitledPanel {
-    private static final Logger log = LoggerFactory.getLogger(ProfileLockPanel.class);
-    private ProfilePanel profilePanel;
-    private BintrayProfilePanel bintrayProfilePanel;
 
     @SpringBean
     private AuthenticationManager authenticationManager;

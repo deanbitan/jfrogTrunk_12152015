@@ -266,6 +266,8 @@ public class BuildServiceImpl implements InternalBuildService {
 
     @Override
     public void deleteBuild(BuildRun buildRun, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder) {
+        multiStatusHolder.debug("Starting to remove build '" + buildRun.getName() +
+                "' #" + buildRun.getNumber(), log);
         String buildName = buildRun.getName();
         if (deleteArtifacts) {
             removeBuildArtifacts(buildRun, multiStatusHolder);
@@ -275,6 +277,8 @@ public class BuildServiceImpl implements InternalBuildService {
         if (remainingBuilds.isEmpty()) {
             deleteBuild(buildName, false, multiStatusHolder);
         }
+        multiStatusHolder.debug("Finished removing build '" + buildRun.getName() +
+                "' #" + buildRun.getNumber(), log);
     }
 
     private void removeBuildArtifacts(BuildRun buildRun, MultiStatusHolder status) {
@@ -341,6 +345,13 @@ public class BuildServiceImpl implements InternalBuildService {
     @Override
     public Set<BuildRun> searchBuildsByName(String buildName) {
         return buildStoreService.findBuildsByName(buildName);
+    }
+
+    @Override
+    public List<String> getBuildNames() {
+        List<String> allBuildNames = buildStoreService.getAllBuildNames();
+        Collections.sort(allBuildNames, null);
+        return allBuildNames;
     }
 
     @Override

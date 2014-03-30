@@ -67,7 +67,6 @@ public abstract class BaseSearchPage extends AuthenticatedPage {
     public static final int PROPERTY_SEARCH_INDEX = 3;
     public static final int CHECKSUM_SEARCH_INDEX = 4;
     public static final int BINTRAY_SEARCH_INDEX = 5;
-    public static final int METADATA_SEARCH_INDEX = 6;
 
     private String searchQuery;
 

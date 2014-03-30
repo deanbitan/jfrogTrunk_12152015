@@ -92,6 +92,46 @@ public class SearchPattern implements Descriptor {
         this.managerPassword = managerPassword;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SearchPattern that = (SearchPattern) o;
+
+        if (searchSubTree != that.searchSubTree) {
+            return false;
+        }
+        if (managerDn != null ? !managerDn.equals(that.managerDn) : that.managerDn != null) {
+            return false;
+        }
+        if (managerPassword != null ? !managerPassword.equals(that.managerPassword) : that.managerPassword != null) {
+            return false;
+        }
+        if (searchBase != null ? !searchBase.equals(that.searchBase) : that.searchBase != null) {
+            return false;
+        }
+        if (searchFilter != null ? !searchFilter.equals(that.searchFilter) : that.searchFilter != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = searchFilter != null ? searchFilter.hashCode() : 0;
+        result = 31 * result + (searchBase != null ? searchBase.hashCode() : 0);
+        result = 31 * result + (searchSubTree ? 1 : 0);
+        result = 31 * result + (managerDn != null ? managerDn.hashCode() : 0);
+        result = 31 * result + (managerPassword != null ? managerPassword.hashCode() : 0);
+        return result;
+    }
+
     public void duplicate(SearchPattern searchPattern) {
         this.searchFilter = searchPattern.searchFilter;
         this.searchBase = searchPattern.searchBase;

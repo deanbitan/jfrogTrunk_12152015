@@ -167,7 +167,7 @@ public abstract class MavenModelUtils {
                     moduleInfo.getFileIntegrationRevision());
             //Should always be a pom, since this method is called only by PropertiesAddonImpl.assembleDynamicMetadata
             snapshotVersion.setExtension(moduleInfo.getExt());
-            versioning.setSnapshotVersions(Lists.<SnapshotVersion>newArrayList(snapshotVersion));
+            versioning.setSnapshotVersions(Lists.newArrayList(snapshotVersion));
         }
         return metadata;
     }
@@ -491,6 +491,7 @@ public abstract class MavenModelUtils {
 
     /**
      * Constructs GAV or GACV string representation of the given MavenArtifactInfo.
+     *
      * @param info Maven info to use
      * @param gacv if true, creates "GroupId:ArtifactId:Classifier:Version" string, else create
      *             "GroupId:ArtifactId:Version"

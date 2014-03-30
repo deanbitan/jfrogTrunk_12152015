@@ -44,6 +44,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private String repoLayoutRef;
     private boolean enableNuGetSupport = false;
     private boolean enableGemsSupport = false;
+    private boolean enableNpmSupport = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -72,6 +73,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
             setRepoLayoutRef(repoLayout.getName());
         }
         setEnableNuGetSupport(repoDescriptor.isEnableNuGetSupport());
+        setEnableNpmSupport(repoDescriptor.isEnableNpmSupport());
     }
 
     public void setKey(String key) {
@@ -154,6 +156,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setEnableGemsSupport(boolean enableGemsSupport) {
         this.enableGemsSupport = enableGemsSupport;
+    }
+
+    @Override
+    public boolean isEnableNpmSupport() {
+        return enableNpmSupport;
+    }
+
+    public void setEnableNpmSupport(boolean enableNpmSupport) {
+        this.enableNpmSupport = enableNpmSupport;
     }
 
     /**

@@ -25,6 +25,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.GemsWebAddon;
+import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.addon.wicket.YumWebAddon;
@@ -189,6 +190,13 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
                 }
             });
         }
+
+        if (getRepo().isEnableNpmSupport() && isNpmFile()) {
+            AddonsManager addonsProvider = getAddonsProvider();
+            NpmWebAddon npmWebAddon = addonsProvider.addonByType(NpmWebAddon.class);
+            ITab npmInfoTab = npmWebAddon.getNpmInfoTab("Npm Info", getFileInfo());
+            tabs.add(npmInfoTab);
+        }
     }
 
     @Override
@@ -256,6 +264,10 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     private boolean isGemFile() {
         MimeType mimeType = NamingUtils.getMimeType((getFileInfo().getName()));
         return "application/x-rubygems".equalsIgnoreCase(mimeType.getType());
+    }
+
+    private boolean isNpmFile() {
+        return getFileInfo().getName().endsWith(".tgz");
     }
 
     private boolean shouldShowTabs() {

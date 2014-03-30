@@ -29,7 +29,7 @@ import org.artifactory.webapp.actionable.event.ItemEvent;
  */
 public class ShowInCiServerAction extends ItemAction {
 
-    private static String ACTION_NAME = "Show in CI Server";
+    private static final String ACTION_NAME = "Show in CI Server";
     private String url;
 
     /**

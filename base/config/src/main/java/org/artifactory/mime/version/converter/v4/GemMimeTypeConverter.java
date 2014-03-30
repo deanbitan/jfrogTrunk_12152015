@@ -18,12 +18,10 @@
 
 package org.artifactory.mime.version.converter.v4;
 
-import org.artifactory.version.converter.XmlConverter;
+import org.artifactory.mime.MimeType;
+import org.artifactory.mime.MimeTypeBuilder;
+import org.artifactory.mime.version.converter.MimeTypeConverterBase;
 import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.Namespace;
-
-import java.util.List;
 
 /**
  * Adds the following entries to the mimetypes file if they don't exist:
@@ -34,43 +32,14 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public class GemMimeTypeConverter implements XmlConverter {
+public class GemMimeTypeConverter extends MimeTypeConverterBase {
     @Override
     public void convert(Document doc) {
-        Element rootElement = doc.getRootElement();
-        Namespace namespace = rootElement.getNamespace();
+        MimeType gemType = new MimeTypeBuilder("application/x-rubygems").extensions("gem").css("gem").build();
+        addIfNotExist(doc, gemType);
 
-        List mimetypes = rootElement.getChildren("mimetype", namespace);
-        if (mimetypes == null) {
-            return;
-        }
-
-        Element gem = getByType(mimetypes, namespace, "application/x-rubygems");
-        if (gem == null) {
-            gem = new Element("mimetype", namespace);
-            gem.setAttribute("type", "application/x-rubygems");
-            gem.setAttribute("extensions", "gem");
-            gem.setAttribute("css", "gem");
-            rootElement.addContent(gem);
-        }
-
-        Element nuspecType = getByType(mimetypes, namespace, "application/x-ruby-marshal");
-        if (nuspecType == null) {
-            nuspecType = new Element("mimetype", namespace);
-            nuspecType.setAttribute("type", "application/x-ruby-marshal");
-            nuspecType.setAttribute("extensions", "rz");
-            rootElement.addContent(nuspecType);
-        }
+        MimeType rzType = new MimeTypeBuilder("application/x-ruby-marshal").extensions("rz").build();
+        addIfNotExist(doc, rzType);
     }
 
-    private Element getByType(List mimetypes, Namespace namespace, String type) {
-        for (Object mimetype : mimetypes) {
-            Element mimeTypeElement = (Element) mimetype;
-            String typeValue = mimeTypeElement.getAttributeValue("type", namespace);
-            if (type.equals(typeValue)) {
-                return mimeTypeElement;
-            }
-        }
-        return null;
-    }
 }

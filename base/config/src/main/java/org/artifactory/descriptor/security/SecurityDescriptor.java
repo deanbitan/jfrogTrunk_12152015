@@ -19,6 +19,7 @@
 package org.artifactory.descriptor.security;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.collections.CollectionUtils;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
@@ -28,9 +29,11 @@ import org.artifactory.descriptor.security.sso.SamlSettings;
 import org.artifactory.util.AlreadyExistsException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlType;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -282,5 +285,81 @@ public class SecurityDescriptor implements Descriptor {
 
     public void setSamlSettings(SamlSettings samlSettings) {
         this.samlSettings = samlSettings;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SecurityDescriptor that = (SecurityDescriptor) o;
+
+        if (anonAccessEnabled != that.anonAccessEnabled) {
+            return false;
+        }
+        if (hideUnauthorizedResources != that.hideUnauthorizedResources) {
+            return false;
+        }
+        if (crowdSettings != null ? !crowdSettings.equals(that.crowdSettings) : that.crowdSettings != null) {
+            return false;
+        }
+        if (httpSsoSettings != null ? !httpSsoSettings.equals(that.httpSsoSettings) : that.httpSsoSettings != null) {
+            return false;
+        }
+        if (!equalLdapGroupLists(ldapGroupSettings, that.ldapGroupSettings)) {
+            return false;
+        }
+        if (!equalLdapLists(ldapSettings,that.ldapSettings)) {
+            return false;
+        }
+        if (passwordSettings != null ? !passwordSettings.equals(that.passwordSettings) :
+                that.passwordSettings != null) {
+            return false;
+        }
+        if (samlSettings != null ? !samlSettings.equals(that.samlSettings) : that.samlSettings != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (anonAccessEnabled ? 1 : 0);
+        result = 31 * result + (hideUnauthorizedResources ? 1 : 0);
+        result = 31 * result + (ldapSettings != null ? ldapSettings.hashCode() : 0);
+        result = 31 * result + (ldapGroupSettings != null ? ldapGroupSettings.hashCode() : 0);
+        result = 31 * result + (passwordSettings != null ? passwordSettings.hashCode() : 0);
+        result = 31 * result + (httpSsoSettings != null ? httpSsoSettings.hashCode() : 0);
+        result = 31 * result + (crowdSettings != null ? crowdSettings.hashCode() : 0);
+        result = 31 * result + (samlSettings != null ? samlSettings.hashCode() : 0);
+        return result;
+    }
+
+    public static boolean equalLdapLists(@Nullable List<LdapSetting> l1, @Nullable List<LdapSetting> l2) {
+        if (l1 == l2) return true;
+        if (l1 == null || l2 == null) return false;
+        if (l1.size() != l2.size()) return false;
+
+        for (int i = 0; i < l1.size(); i++) {
+            if (!l1.get(i).identicalConfiguration(l2.get(i))) return false;
+        }
+        return true;
+    }
+
+    public static boolean equalLdapGroupLists(@Nullable List<LdapGroupSetting> l1,
+            @Nullable List<LdapGroupSetting> l2) {
+        if (l1 == l2) return true;
+        if (l1 == null || l2 == null) return false;
+        if (l1.size() != l2.size()) return false;
+
+        for (int i = 0; i < l1.size(); i++) {
+            if (!l1.get(i).identicalConfiguration(l2.get(i))) return false;
+        }
+        return true;
     }
 }

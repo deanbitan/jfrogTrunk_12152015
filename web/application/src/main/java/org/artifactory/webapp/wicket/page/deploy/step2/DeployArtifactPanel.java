@@ -261,7 +261,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         }
 
         private void addTargetRepoDropDown() {
-            targetRepo = new DropDownChoice<LocalRepoDescriptor>(TARGET_REPO, model.repos);
+            targetRepo = new DropDownChoice<>(TARGET_REPO, model.repos);
             targetRepo.add(new AjaxFormComponentUpdatingBehavior("onchange") {
                 @Override
                 protected void onUpdate(AjaxRequestTarget target) {

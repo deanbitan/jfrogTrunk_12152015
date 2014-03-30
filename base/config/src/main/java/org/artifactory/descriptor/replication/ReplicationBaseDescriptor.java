@@ -41,7 +41,7 @@ public abstract class ReplicationBaseDescriptor implements TaskDescriptor {
     private String cronExp;
 
     @XmlElement(defaultValue = "true")
-    private boolean syncDeletes = true;
+    private boolean syncDeletes = false;
 
     @XmlElement(defaultValue = "true")
     private boolean syncProperties = true;

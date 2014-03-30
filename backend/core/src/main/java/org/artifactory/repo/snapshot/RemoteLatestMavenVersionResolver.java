@@ -127,7 +127,7 @@ public class RemoteLatestMavenVersionResolver extends LatestVersionResolver {
 
     private Metadata tryDownloadingMavenMetadata(RepoPath repoPath) {
         if (repoPath == null) {
-            log.debug("Could not download remote maven metadata for null repo path '{}'", repoPath);
+            log.debug("Could not download remote maven metadata for null repo path");
             return null;
         }
 

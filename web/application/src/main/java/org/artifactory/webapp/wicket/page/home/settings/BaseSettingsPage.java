@@ -23,6 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -49,6 +50,9 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
     @SpringBean
     private RepositoryService repositoryService;
 
+    @SpringBean
+    private CentralConfigService centralConfigService;
+
     protected List<? extends RepoDescriptor> virtualRepoDescriptors;
 
     protected List<? extends RepoDescriptor> localRepoDescriptors;
@@ -72,13 +76,12 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
                     "Settings Generator is disabled: Unable to find readable virtual repositories."));
         } else {
             //Get context URL
-            HttpServletRequest request = WicketUtils.getHttpServletRequest();
-            String servletContextUrl = HttpUtils.getServletContextUrl(request);
-            if (servletContextUrl.endsWith("/")) {
-                servletContextUrl = StringUtils.removeEnd(servletContextUrl, "/");
+            String contextUrl = getContextUrl();
+            if (contextUrl.endsWith("/")) {
+                contextUrl = StringUtils.removeEnd(contextUrl, "/");
             }
 
-            markupContainer.replaceWith(getSettingsPanel("settingsPanel", servletContextUrl));
+            markupContainer.replaceWith(getSettingsPanel("settingsPanel", contextUrl));
         }
     }
 
@@ -139,5 +142,14 @@ public abstract class BaseSettingsPage extends AuthenticatedPage {
             }
         }
         return false;
+    }
+
+    public String getContextUrl() {
+        String url = centralConfigService.getDescriptor().getUrlBase();
+        if (url == null) {
+            HttpServletRequest request = WicketUtils.getHttpServletRequest();
+            url = HttpUtils.getServletContextUrl(request);
+        }
+        return url;
     }
 }

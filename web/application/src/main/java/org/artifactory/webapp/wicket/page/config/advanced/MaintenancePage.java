@@ -32,6 +32,7 @@ import org.apache.wicket.validation.validator.RangeValidator;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.cleanup.ArtifactCleanupService;
+import org.artifactory.api.repo.cleanup.VirtualCacheCleanupService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.CancelLink;
@@ -72,8 +73,12 @@ public class MaintenancePage extends AuthenticatedPage {
     @SpringBean
     private ArtifactCleanupService artifactCleanupService;
 
+    @SpringBean
+    private VirtualCacheCleanupService virtualCacheCleanupService;
+
     private GcConfigDescriptor gcConfigDescriptor;
     private CleanupConfigDescriptor cleanupConfigDescriptor;
+    private CleanupConfigDescriptor virtualCacheCleanupConfigDescriptor;
     private QuotaConfigDescriptor quotaConfigDescriptor;
 
     public MaintenancePage() {
@@ -84,6 +89,7 @@ public class MaintenancePage extends AuthenticatedPage {
         MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
         gcConfigDescriptor = mutableDescriptor.getGcConfig();
         cleanupConfigDescriptor = mutableDescriptor.getCleanupConfig();
+        virtualCacheCleanupConfigDescriptor = mutableDescriptor.getVirtualCacheCleanupConfig();
         quotaConfigDescriptor = mutableDescriptor.getQuotaConfig();
         if (quotaConfigDescriptor == null) {
             quotaConfigDescriptor = new QuotaConfigDescriptor();
@@ -95,6 +101,7 @@ public class MaintenancePage extends AuthenticatedPage {
         addStorageMaintenance();
         addGarbageCollectorMaintenance(form);
         addArtifactsCleanupMaintenance(form);
+        addVirtualCleanupMaintenance(form);
         addDiskQuotaManagement(form);
         addButtons(form);
     }
@@ -107,6 +114,7 @@ public class MaintenancePage extends AuthenticatedPage {
                 mutableDescriptor.setGcConfig(gcConfigDescriptor);
                 mutableDescriptor.setCleanupConfig(cleanupConfigDescriptor);
                 mutableDescriptor.setQuotaConfig(quotaConfigDescriptor);
+                mutableDescriptor.setVirtualCacheCleanupConfig(virtualCacheCleanupConfigDescriptor);
                 centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
                 info("Maintenance settings were successfully saved.");
                 AjaxUtils.refreshFeedback();
@@ -268,6 +276,34 @@ public class MaintenancePage extends AuthenticatedPage {
         cleanupBorder.add(collectLink);
         HelpBubble cleanupHelpBubble = new HelpBubble("cleanupHelp", new ResourceModel("cleanupHelp"));
         cleanupBorder.add(cleanupHelpBubble);
+    }
+
+    private void addVirtualCleanupMaintenance(Form form) {
+        final Border virtualCleanupBorder = new TitledBorder("virtualCleanupBorder",
+                new CompoundPropertyModel(virtualCacheCleanupConfigDescriptor));
+        form.add(virtualCleanupBorder);
+        TextField<String> virtualCronExpTextField = new TextField<>("cronExp");
+        virtualCronExpTextField.setRequired(true);
+        virtualCronExpTextField.add(CronExpValidator.getInstance());
+        virtualCleanupBorder.add(virtualCronExpTextField);
+        virtualCleanupBorder.add(new SchemaHelpBubble("virtualCronExp.help", "cronExp"));
+        virtualCleanupBorder.add(new CronNextDatePanel("virtualCronNextDatePanel", virtualCronExpTextField));
+
+        TitledAjaxLink collectLink = new TitledAjaxLink("virtualCleanup", "Clean Virtual Repositories Now") {
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                virtualCacheCleanupService.callVirtualCacheCleanup(statusHolder);
+                if (statusHolder.isError()) {
+                    error("Could not run the virtual cache cleanup: " + statusHolder.getLastError().getMessage() + ".");
+                } else {
+                    info("Virtual cache cleanup was successfully scheduled to run in the background.");
+                }
+            }
+        };
+        virtualCleanupBorder.add(collectLink);
+        HelpBubble virtualCleanupHelpBubble = new HelpBubble("virtualCleanupHelp", new ResourceModel("virtualCleanupHelp"));
+        virtualCleanupBorder.add(virtualCleanupHelpBubble);
     }
 
     @Override

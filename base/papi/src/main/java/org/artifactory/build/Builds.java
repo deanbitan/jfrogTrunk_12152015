@@ -32,6 +32,11 @@ import java.util.Set;
 public interface Builds {
 
     /**
+     * @return a list of the names of all builds deployed to Artifactory
+     */
+    List<String> getBuildNames();
+
+    /**
      * Retrieve builds
      *
      * @param name    Builds name

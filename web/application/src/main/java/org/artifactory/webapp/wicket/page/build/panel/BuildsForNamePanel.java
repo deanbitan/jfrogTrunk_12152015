@@ -213,7 +213,7 @@ public class BuildsForNamePanel extends TitledPanel {
     private class LastReleaseStatusColumn extends UnStyledLinkColumn {
 
         public LastReleaseStatusColumn() {
-            super(Model.<String>of("Release Status"), "lastReleaseStatus");
+            super(Model.of("Release Status"), "lastReleaseStatus");
         }
 
         @Override

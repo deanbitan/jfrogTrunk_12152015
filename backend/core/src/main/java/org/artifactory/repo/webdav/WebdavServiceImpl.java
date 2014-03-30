@@ -43,6 +43,9 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,11 +68,9 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
+import java.util.Locale;
 
 /**
  * Service class to handle webdav protocol.<p/> Webdav RFCc at: <a href="http://www.ietf.org/rfc/rfc2518.txt">rfc2518</a>,
@@ -86,6 +87,7 @@ public class WebdavServiceImpl implements WebdavService {
      */
     private static final int INFINITY = 3;
 
+    // TODO [yLuft]: These should be enum
     /**
      * PROPFIND - Specify a property mask.
      */
@@ -109,13 +111,18 @@ public class WebdavServiceImpl implements WebdavService {
     /**
      * Simple date format for the creation date ISO representation (partial).
      */
-    protected static final SimpleDateFormat creationDateFormat =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
-    static {
-        //GMT timezone - all HTTP dates are on GMT
-        creationDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
+    protected static final DateTimeFormatter CREATION_DATE_FORMAT =
+            DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'").withZone(DateTimeZone.forID("GMT"))
+                    .withLocale(Locale.ENGLISH);
+
+    /**
+     * RFC 1123 date format to use in "getlastmodified" attribute
+     * http://tools.ietf.org/html/rfc2068#section-3.3.1
+     */
+    protected static final DateTimeFormatter LAST_MODIFIED_DATE_FORMAT =
+            DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZone(DateTimeZone.forID("GMT"))
+                    .withLocale(Locale.ENGLISH);
 
     @Autowired
     private AuthorizationService authService;
@@ -133,12 +140,16 @@ public class WebdavServiceImpl implements WebdavService {
         int depth = INFINITY;
         String depthStr = request.getHeader("Depth");
         if (depthStr != null) {
-            if ("0".equals(depthStr)) {
-                depth = 0;
-            } else if ("1".equals(depthStr)) {
-                depth = 1;
-            } else if ("infinity".equals(depthStr)) {
-                depth = INFINITY;
+            switch (depthStr) {
+                case "0":
+                    depth = 0;
+                    break;
+                case "1":
+                    depth = 1;
+                    break;
+                case "infinity":
+                    depth = INFINITY;
+                    break;
             }
         }
         List<String> properties = null;
@@ -201,7 +212,7 @@ public class WebdavServiceImpl implements WebdavService {
             rootItem = repoBrowsing.getLocalRepoBrowsableItem(repoPath);
         }
         if (rootItem != null) {
-            recursiveParseProperties(request, response, generatedXml, rootItem, propertyFindType, properties,
+            recursiveParseProperties(request, generatedXml, rootItem, propertyFindType, properties,
                     depth);
         } else {
             log.warn("Item '" + request.getRepoPath() + "' not found.");
@@ -396,10 +407,12 @@ public class WebdavServiceImpl implements WebdavService {
     @SuppressWarnings({"OverlyComplexMethod"})
     private void parseProperties(ArtifactoryRequest request, XmlWriter xmlResponse,
             BaseBrowsableItem item, int type, List<String> propertiesList) throws IOException {
+        // Last modified should be returned as RFC 1123 format.
+        // See https://tools.ietf.org/html/rfc4918#section-8
         RepoPath repoPath = item.getRepoPath();
-        String creationDate = getIsoDate(item.getCreated());
+        String creationDate = CREATION_DATE_FORMAT.print(item.getCreated());
         boolean isFolder = item.isFolder();
-        String lastModified = getIsoDate(item.getLastModified());
+        String rfcDate = LAST_MODIFIED_DATE_FORMAT.print(item.getLastModified());
         String resourceLength = item.getSize() + "";
 
         xmlResponse.writeElement(null, "response", XmlWriter.OPENING);
@@ -438,152 +451,157 @@ public class WebdavServiceImpl implements WebdavService {
 
         switch (type) {
             case FIND_ALL_PROP:
-                xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
-                xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
-
-                xmlResponse.writeProperty(null, "creationdate", creationDate);
-                xmlResponse.writeElement(null, "displayname", XmlWriter.OPENING);
-                xmlResponse.writeData(resourceName);
-                xmlResponse.writeElement(null, "displayname", XmlWriter.CLOSING);
-                if (!isFolder) {
-                    xmlResponse.writeProperty(null, "getlastmodified", lastModified);
-                    xmlResponse.writeProperty(null, "getcontentlength", resourceLength);
-
-                    MimeType ct = NamingUtils.getMimeType(path);
-                    if (ct != null) {
-                        xmlResponse.writeProperty(null, "getcontenttype", ct.getType());
-                    }
-                    xmlResponse.writeProperty(
-                            null, "getetag", getEtag(resourceLength, lastModified));
-                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
-                } else {
-                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.OPENING);
-                    xmlResponse.writeElement(null, "collection", XmlWriter.NO_CONTENT);
-                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.CLOSING);
-                }
-                xmlResponse.writeProperty(null, "source", "");
-                xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
-                xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
-                xmlResponse.writeText(status);
-                xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
-                xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
+                handleFindAllPropsResponse(xmlResponse, creationDate, isFolder, rfcDate, resourceLength, status,
+                        path,
+                        resourceName);
                 break;
             case FIND_PROPERTY_NAMES:
-                xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
-                xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
-                xmlResponse.writeElement(null, "creationdate", XmlWriter.NO_CONTENT);
-                xmlResponse.writeElement(null, "displayname", XmlWriter.NO_CONTENT);
-                if (!isFolder) {
-                    xmlResponse.writeElement(null, "getcontentlanguage", XmlWriter.NO_CONTENT);
-                    xmlResponse.writeElement(null, "getcontentlength", XmlWriter.NO_CONTENT);
-                    xmlResponse.writeElement(null, "getcontenttype", XmlWriter.NO_CONTENT);
-                    xmlResponse.writeElement(null, "getetag", XmlWriter.NO_CONTENT);
-                    xmlResponse.writeElement(null, "getlastmodified", XmlWriter.NO_CONTENT);
-                }
-                xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
-                xmlResponse.writeElement(null, "source", XmlWriter.NO_CONTENT);
-                xmlResponse.writeElement(null, "lockdiscovery", XmlWriter.NO_CONTENT);
-                xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
-                xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
-                xmlResponse.writeText(status);
-                xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
-                xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
+                handleFindPropNamesResponse(xmlResponse, isFolder, status);
                 break;
             case FIND_BY_PROPERTY:
-                //noinspection MismatchedQueryAndUpdateOfCollection
-                List<String> propertiesNotFound = new ArrayList<>();
-                // Parse the list of properties
-                xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
-                xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
-                for (String property : propertiesList) {
-                    if ("creationdate".equals(property)) {
-                        xmlResponse.writeProperty(null, "creationdate", creationDate);
-                    } else if ("displayname".equals(property)) {
-                        xmlResponse.writeElement(null, "displayname", XmlWriter.OPENING);
-                        xmlResponse.writeData(resourceName);
-                        xmlResponse.writeElement(null, "displayname", XmlWriter.CLOSING);
-                    } else if ("getcontentlanguage".equals(property)) {
-                        if (isFolder) {
-                            propertiesNotFound.add(property);
-                        } else {
-                            xmlResponse.writeElement(
-                                    null, "getcontentlanguage", XmlWriter.NO_CONTENT);
-                        }
-                    } else if ("getcontentlength".equals(property)) {
-                        if (isFolder) {
-                            propertiesNotFound.add(property);
-                        } else {
-                            xmlResponse.writeProperty(null, "getcontentlength", resourceLength);
-                        }
-                    } else if ("getcontenttype".equals(property)) {
-                        if (isFolder) {
-                            propertiesNotFound.add(property);
-                        } else {
-                            xmlResponse.writeProperty(null, "getcontenttype",
-                                    NamingUtils.getMimeTypeByPathAsString(path));
-                        }
-                    } else if ("getetag".equals(property)) {
-                        if (isFolder) {
-                            propertiesNotFound.add(property);
-                        } else {
-                            xmlResponse.writeProperty(null, "getetag",
-                                    getEtag(resourceLength, lastModified));
-                        }
-                    } else if ("getlastmodified".equals(property)) {
-                        if (isFolder) {
-                            propertiesNotFound.add(property);
-                        } else {
-                            xmlResponse.writeProperty(null, "getlastmodified", lastModified);
-                        }
-                    } else if ("source".equals(property)) {
-                        xmlResponse.writeProperty(null, "source", "");
-                    } else {
-                        propertiesNotFound.add(property);
-                    }
-                }
-                //Always include resource type
-                if (isFolder) {
-                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.OPENING);
-                    xmlResponse.writeElement(null, "collection", XmlWriter.NO_CONTENT);
-                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.CLOSING);
-                } else {
-                    xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
-                }
+                handleFindByPropResponse(xmlResponse, propertiesList, creationDate, isFolder, rfcDate,
+                        resourceLength,
+                        status, path,
+                        resourceName);
 
-                xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
-                xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
-                xmlResponse.writeText(status);
-                xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
-                xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
-
-                // TODO: [by fsi] Find out what this is for?
-                /*
-                if (propertiesNotFound.size() > 0) {
-                    status = "HTTP/1.1 " + WebdavStatus.SC_NOT_FOUND + " " +
-                            WebdavStatus.getStatusText(WebdavStatus.SC_NOT_FOUND);
-                    generatedXml.writeElement(null, "propstat", XmlWriter.OPENING);
-                    generatedXml.writeElement(null, "prop", XmlWriter.OPENING);
-                    for (String propertyNotFound : propertiesNotFound) {
-                        generatedXml.writeElement(null, propertyNotFound, XmlWriter.NO_CONTENT);
-                    }
-                    generatedXml.writeElement(null, "prop", XmlWriter.CLOSING);
-                    generatedXml.writeElement(null, "status", XmlWriter.OPENING);
-                    generatedXml.writeText(status);
-                    generatedXml.writeElement(null, "status", XmlWriter.CLOSING);
-                    generatedXml.writeElement(null, "propstat", XmlWriter.CLOSING);
-
-                }
-                */
                 break;
 
         }
         xmlResponse.writeElement(null, "response", XmlWriter.CLOSING);
     }
 
+    private void handleFindByPropResponse(XmlWriter xmlResponse, List<String> propertiesList, String creationDate,
+            boolean isFolder, String lastModified, String resourceLength, String status, String path,
+            String resourceName) throws IOException {
+        //noinspection MismatchedQueryAndUpdateOfCollection
+        List<String> propertiesNotFound = new ArrayList<>();
+        // Parse the list of properties
+        xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
+        xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
+        for (String property : propertiesList) {
+            switch (property) {
+                case "creationdate":
+                    xmlResponse.writeProperty(null, "creationdate", creationDate);
+                    break;
+                case "displayname":
+                    xmlResponse.writeElement(null, "displayname", XmlWriter.OPENING);
+                    xmlResponse.writeData(resourceName);
+                    xmlResponse.writeElement(null, "displayname", XmlWriter.CLOSING);
+                    break;
+                case "getcontentlanguage":
+                    if (isFolder) {
+                        propertiesNotFound.add(property);
+                    } else {
+                        xmlResponse.writeElement(
+                                null, "getcontentlanguage", XmlWriter.NO_CONTENT);
+                    }
+                    break;
+                case "getcontentlength":
+                    if (isFolder) {
+                        propertiesNotFound.add(property);
+                    } else {
+                        xmlResponse.writeProperty(null, "getcontentlength", resourceLength);
+                    }
+                    break;
+                case "getcontenttype":
+                    if (isFolder) {
+                        propertiesNotFound.add(property);
+                        //xmlResponse.writeProperty(null, "getcontenttype",
+                        //        NamingUtils.getMimeTypeByPathAsString(path));
+                    } else {
+                        xmlResponse.writeProperty(null, "getcontenttype",
+                                NamingUtils.getMimeTypeByPathAsString(path));
+                    }
+                    break;
+                case "getetag":
+                    xmlResponse.writeProperty(null, "getetag",
+                            getEtag(resourceLength, lastModified));
+                    break;
+                case "getlastmodified":
+                    xmlResponse.writeProperty(null, "getlastmodified", lastModified);
+                    break;
+                case "source":
+                    xmlResponse.writeProperty(null, "source", "");
+                    break;
+                default:
+                    propertiesNotFound.add(property);
+                    break;
+            }
+        }
+        //Always include resource type
+        if (isFolder) {
+            xmlResponse.writeElement(null, "resourcetype", XmlWriter.OPENING);
+            xmlResponse.writeElement(null, "collection", XmlWriter.NO_CONTENT);
+            xmlResponse.writeElement(null, "resourcetype", XmlWriter.CLOSING);
+        } else {
+            xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
+        }
+
+        xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
+        xmlResponse.writeText(status);
+        xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
+    }
+
+    private void handleFindPropNamesResponse(XmlWriter xmlResponse, boolean isFolder, String status) {
+        xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
+        xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
+        xmlResponse.writeElement(null, "creationdate", XmlWriter.NO_CONTENT);
+        xmlResponse.writeElement(null, "displayname", XmlWriter.NO_CONTENT);
+        if (!isFolder) {
+            xmlResponse.writeElement(null, "getcontentlanguage", XmlWriter.NO_CONTENT);
+            xmlResponse.writeElement(null, "getcontentlength", XmlWriter.NO_CONTENT);
+            xmlResponse.writeElement(null, "getcontenttype", XmlWriter.NO_CONTENT);
+            xmlResponse.writeElement(null, "getetag", XmlWriter.NO_CONTENT);
+            xmlResponse.writeElement(null, "getlastmodified", XmlWriter.NO_CONTENT);
+        }
+        xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
+        xmlResponse.writeElement(null, "source", XmlWriter.NO_CONTENT);
+        xmlResponse.writeElement(null, "lockdiscovery", XmlWriter.NO_CONTENT);
+        xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
+        xmlResponse.writeText(status);
+        xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
+    }
+
+    private void handleFindAllPropsResponse(XmlWriter xmlResponse, String creationDate, boolean isFolder,
+            String lastModified,
+            String resourceLength, String status, String path, String resourceName) throws IOException {
+        xmlResponse.writeElement(null, "propstat", XmlWriter.OPENING);
+        xmlResponse.writeElement(null, "prop", XmlWriter.OPENING);
+
+        xmlResponse.writeProperty(null, "creationdate", creationDate);
+        xmlResponse.writeElement(null, "displayname", XmlWriter.OPENING);
+        xmlResponse.writeData(resourceName);
+        xmlResponse.writeElement(null, "displayname", XmlWriter.CLOSING);
+        if (!isFolder) {
+            xmlResponse.writeProperty(null, "getlastmodified", lastModified);
+            xmlResponse.writeProperty(null, "getcontentlength", resourceLength);
+
+            MimeType ct = NamingUtils.getMimeType(path);
+            xmlResponse.writeProperty(null, "getcontenttype", ct.getType());
+            xmlResponse.writeProperty(
+                    null, "getetag", getEtag(resourceLength, lastModified));
+            xmlResponse.writeElement(null, "resourcetype", XmlWriter.NO_CONTENT);
+        } else {
+            xmlResponse.writeElement(null, "resourcetype", XmlWriter.OPENING);
+            xmlResponse.writeElement(null, "collection", XmlWriter.NO_CONTENT);
+            xmlResponse.writeElement(null, "resourcetype", XmlWriter.CLOSING);
+        }
+        xmlResponse.writeProperty(null, "source", "");
+        xmlResponse.writeElement(null, "prop", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "status", XmlWriter.OPENING);
+        xmlResponse.writeText(status);
+        xmlResponse.writeElement(null, "status", XmlWriter.CLOSING);
+        xmlResponse.writeElement(null, "propstat", XmlWriter.CLOSING);
+    }
+
     /**
      * goes recursive through all folders. used by propfind
      */
-    private void recursiveParseProperties(ArtifactoryRequest request, ArtifactoryResponse response,
+    private void recursiveParseProperties(ArtifactoryRequest request,
             XmlWriter generatedXml, BaseBrowsableItem currentItem, int propertyFindType, List<String> properties,
             int depth)
             throws IOException {
@@ -598,7 +616,7 @@ public class WebdavServiceImpl implements WebdavService {
             BrowsableItemCriteria criteria = new BrowsableItemCriteria.Builder(currentItem.getRepoPath()).build();
             List<BaseBrowsableItem> browsableChildren = repoBrowsing.getLocalRepoBrowsableChildren(criteria);
             for (BaseBrowsableItem child : browsableChildren) {
-                recursiveParseProperties(request, response, generatedXml, child,
+                recursiveParseProperties(request, generatedXml, child,
                         propertyFindType, properties, depth - 1);
             }
         }
@@ -610,13 +628,6 @@ public class WebdavServiceImpl implements WebdavService {
     private static String getEtag(String resourceLength, String lastModified)
             throws IOException {
         return "W/\"" + resourceLength + "-" + lastModified + "\"";
-    }
-
-    /**
-     * Get creation date in ISO format.
-     */
-    private static synchronized String getIsoDate(long creationDate) {
-        return creationDateFormat.format(new Date(creationDate));
     }
 
     private void logWebdavRequest(Document document) throws TransformerException {

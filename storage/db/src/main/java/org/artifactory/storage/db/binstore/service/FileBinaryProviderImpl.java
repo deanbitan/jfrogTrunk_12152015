@@ -57,8 +57,6 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
     @Nonnull
     public BinaryInfo addStream(InputStream in) throws IOException {
         check();
-        // TODO: How to know if next() should be called?
-
         File preFileStoreFile = null;
         Sha1Md5ChecksumInputStream checksumStream = null;
         try {
@@ -75,8 +73,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
             String sha1 = bd.getSha1();
             long fileLength = preFileStoreFile.length();
             if (fileLength != checksumStream.getTotalBytesRead()) {
-                //TODO: [by FSI] Should it be a real exception?
-                log.error("File length is " + fileLength + " while total bytes read on" +
+                throw new IOException("File length is " + fileLength + " while total bytes read on" +
                         " stream is " + checksumStream.getTotalBytesRead());
             }
 
@@ -85,18 +82,24 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
                 // move the file from the pre-filestore to the filestore
                 java.nio.file.Files.createDirectories(target.getParent());
                 try {
+                    log.trace("Moving {} to {}", preFileStoreFile.getAbsolutePath(), target);
                     java.nio.file.Files.move(preFileStoreFile.toPath(), target, StandardCopyOption.ATOMIC_MOVE);
+                    log.trace("Moved  {} to {}", preFileStoreFile.getAbsolutePath(), target);
                 } catch (FileAlreadyExistsException ignore) {
                     // May happen in heavy concurrency cases
+                    log.trace("Failed moving {} to {}. File already exist", preFileStoreFile.getAbsolutePath(), target);
                 }
                 preFileStoreFile = null;
+            } else {
+                log.trace("File {} already exist in the file store. Deleting temp file: {}",
+                        target, preFileStoreFile.getAbsolutePath());
             }
             return bd;
         } finally {
             IOUtils.closeQuietly(checksumStream);
             if (preFileStoreFile != null && preFileStoreFile.exists()) {
                 if (!preFileStoreFile.delete()) {
-                    log.error("Could not delete temp file " + preFileStoreFile.getAbsolutePath());
+                    log.error("Could not delete temp file {}", preFileStoreFile.getAbsolutePath());
                 }
             }
         }
@@ -111,7 +114,9 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
      */
     private File writeToTempFile(InputStream in) throws IOException {
         File temp = getTempBinFile();
+        log.trace("Saving temp file: {}", temp.getAbsolutePath());
         FileUtils.copyInputStreamToFile(in, temp);
+        log.trace("Saved  temp file: {}", temp.getAbsolutePath());
         return temp;
     }
 

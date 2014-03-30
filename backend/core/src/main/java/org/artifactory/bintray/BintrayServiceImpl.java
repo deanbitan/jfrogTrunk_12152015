@@ -457,7 +457,7 @@ public class BintrayServiceImpl implements BintrayService {
     @Override
     public String getVersionFilesUrl(BintrayParams bintrayParams) {
         return getBaseBintrayUrl() + bintrayParams.getRepo() + "/"
-                + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion() + "/files";
+                + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion() + "/view/files";
     }
 
     @Override

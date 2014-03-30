@@ -37,7 +37,7 @@ import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
-import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
+import org.artifactory.webapp.wicket.util.validation.PasswordStrengthValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +79,7 @@ public class ResetPasswordPanel extends TitledActionPanel {
 
             final PasswordTextField passwordTextField = new PasswordTextField("password", new Model<String>());
             passwordTextField.setRequired(true);
-            passwordTextField.add(PasswordStreangthValidator.getInstance());
+            passwordTextField.add(PasswordStrengthValidator.getInstance());
             resetForm.add(passwordTextField);
             PasswordTextField retypedPasswordTextField = new PasswordTextField("retypedPassword", new Model<String>());
             retypedPasswordTextField.setRequired(true);

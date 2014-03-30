@@ -32,7 +32,7 @@ import org.artifactory.webapp.wicket.page.browse.treebrowser.BrowseRepoPage;
  */
 public class ShowBuildItemInTreeAction extends ItemAction {
 
-    private static String ACTION_NAME = "Show Build Item In Tree";
+    private static final String ACTION_NAME = "Show Build Item In Tree";
     private RepoPath repoPath;
 
     /**

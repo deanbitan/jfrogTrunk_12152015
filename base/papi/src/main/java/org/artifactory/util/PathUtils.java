@@ -107,15 +107,47 @@ public class PathUtils {
     }
 
     /**
-     * @param path A file like path
-     * @return The name of the path as if it was a file (the string after the last '/' or '\')
+     * @param path A file like path.
+     * @return The name of the file from the path)
      */
     public static String getFileName(String path) {
         if (path == null) {
             return null;
         }
-        File dummy = new File(path);
-        return dummy.getName();
+        path = normalizePath(path);
+        if (path.length() == 0) {
+            return "";
+        }
+        int index = path.lastIndexOf("/");// returns -1 if n '/' exists
+        return path.substring(index + 1);
+    }
+
+    public static String normalizePath(String path) {
+        if (path == null) {
+            return null;
+        }
+        path = replaceBackslashesWithSlashes(path);
+        path = PathUtils.trimSlashes(path).toString();
+        path = removeDuplicateSlashes(path);
+        return path;
+    }
+
+    public static String removeDuplicateSlashes(String pathname) {
+        if (pathname == null) {
+            return null;
+        }
+
+        while (pathname.contains("//")) {
+            pathname = pathname.replace("//", "/");
+        }
+        return pathname;
+    }
+
+    public static String replaceBackslashesWithSlashes(String path) {
+        if (path == null) {
+            return null;
+        }
+        return StringUtils.replace(path, "\\", "/");
     }
 
     /**

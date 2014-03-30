@@ -208,6 +208,14 @@ public abstract class HttpUtils {
     }
 
     /**
+     * @param status The (http based) response code
+     * @return True if the code symbols a successful request cycle (i.e., in the 300-30x range)
+     */
+    public static boolean isRedirectionResponseCode(int status) {
+        return HttpStatus.SC_MULTIPLE_CHOICES <= status && status <= HttpStatus.SC_TEMPORARY_REDIRECT;
+    }
+
+    /**
      * Calculate a unique id for the VM to support Artifactories with the same ip (e.g. accross NATs)
      */
     public static String getHostId() {
@@ -261,6 +269,7 @@ public abstract class HttpUtils {
 
     /**
      * Removes the query parameters from the given url
+     *
      * @param url URL string with query parameters, e.g. "http://hello/world?lang=java&run=1"
      * @return new string object without the query parameters, e.g. "http://hello/world". If no query elements found the
      * original string is returned.
@@ -300,6 +309,7 @@ public abstract class HttpUtils {
 
     /**
      * Extracts the content length from the response header, or return -1 if the content-length field was not found.
+     *
      * @param method
      * @return
      */

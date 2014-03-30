@@ -118,7 +118,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon {
+        GemsAddon, HaAddon, NpmAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -475,6 +475,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void reindexAsync(String repoKey) {
+
     }
 
     @Override
@@ -558,5 +559,20 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void shutdown() {
+    }
+
+    @Override
+    public void addNpmPackage(FileInfo info) {
+
+    }
+
+    @Override
+    public void handleAddAfterCommit(FileInfo info) {
+
+    }
+
+    @Override
+    public void removeNpmPackage(FileInfo info) {
+
     }
 }

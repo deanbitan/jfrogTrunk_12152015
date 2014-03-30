@@ -175,15 +175,15 @@ public class StorageServiceImpl implements InternalStorageService {
         repos.addAll(repositoryService.getVirtualRepoDescriptors());
         final ImmutableMap<String, RepoDescriptor> reposMap =
                 Maps.uniqueIndex(repos, new Function<RepoDescriptor, String>() {
-            @Nullable
-            @Override
-            public String apply(@Nullable RepoDescriptor input) {
-                if (input == null) {
-                    return null;
-                }
-                return input.getKey();
-            }
-        });
+                    @Nullable
+                    @Override
+                    public String apply(@Nullable RepoDescriptor input) {
+                        if (input == null) {
+                            return null;
+                        }
+                        return input.getKey();
+                    }
+                });
         Iterable<RepoStorageSummaryInfo> infos = Iterables.transform(summaries,
                 new Function<RepoStorageSummary, RepoStorageSummaryInfo>() {
                     @Override
@@ -193,7 +193,8 @@ public class StorageServiceImpl implements InternalStorageService {
                                 r.getRepoKey(), repoType, r.getFoldersCount(), r.getFilesCount(), r.getUsedSpace());
                     }
 
-                    private RepositoryType getRepoType(String repoKey, ImmutableMap<String, RepoDescriptor> repoDescriptors) {
+                    private RepositoryType getRepoType(String repoKey,
+                            ImmutableMap<String, RepoDescriptor> repoDescriptors) {
                         RepoDescriptor repoDescriptor = repoDescriptors.get(repoKey);
                         if (repoDescriptor == null) {
                             return RepositoryType.BROKEN;
@@ -202,7 +203,7 @@ public class StorageServiceImpl implements InternalStorageService {
                         } else if (repoDescriptor instanceof VirtualRepoDescriptor) {
                             return RepositoryType.VIRTUAL;
                         } else if (repoDescriptor instanceof LocalCacheRepoDescriptor) {
-                                return RepositoryType.CACHE;
+                            return RepositoryType.CACHE;
                         } else if (repoDescriptor instanceof LocalRepoDescriptor) {
                             return RepositoryType.LOCAL;
                         } else {
@@ -254,7 +255,7 @@ public class StorageServiceImpl implements InternalStorageService {
         derbyUsed = dbService.getDatabaseType() == DbType.DERBY;
 
         ContextHelper.get().beanForType(MBeanRegistrationService.class).
-                register(new ManagedStorage(this, binaryStore), "Storage", "Binary Storage");
+                register(new ManagedStorage(binaryStore), "Storage", "Binary Storage");
 
         CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
         new GcSchedulerHandler(descriptor.getGcConfig(), null).reschedule();

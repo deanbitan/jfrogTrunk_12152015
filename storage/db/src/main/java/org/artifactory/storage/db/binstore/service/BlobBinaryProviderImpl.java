@@ -24,6 +24,7 @@ import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
+import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
 import org.artifactory.storage.db.util.DbUtils;
@@ -65,25 +66,24 @@ public class BlobBinaryProviderImpl extends BinaryProviderBase {
 
     @Override
     public boolean exists(String sha1, long length) {
-        ResultSet rs = null;
         try {
+            long lengthFound;
             if (databaseType != DbType.MSSQL) {
-                rs = jdbcHelper.executeSelect("SELECT LENGTH(data) FROM binary_blobs where sha1 = ?", sha1);
+                lengthFound = jdbcHelper.executeSelectLong(
+                        "SELECT LENGTH(data) FROM binary_blobs where sha1 = ?", sha1);
             } else {    // mssql use len() function
-                rs = jdbcHelper.executeSelect("SELECT LEN(data) FROM binary_blobs where sha1 = ?", sha1);
+                lengthFound = jdbcHelper.executeSelectLong("SELECT LEN(data) FROM binary_blobs where sha1 = ?", sha1);
             }
-            if (rs.next()) {
-                long lengthFound = rs.getLong(1);
+            if (lengthFound != DbService.NO_DB_ID) {
+                log.trace("Found sha1 {} with length {}", sha1, length);
                 if (length != lengthFound) {
-                    throw new BinaryNotFoundException(
-                            "Found a file with checksum '" + sha1 + "' but length is " + lengthFound + " not " + length);
+                    throw new BinaryNotFoundException("Found a file with checksum '"
+                            + sha1 + "' but length is " + lengthFound + " not " + length);
                 }
                 return true;
             }
         } catch (SQLException e) {
             throw new StorageException("Could not verify existence of " + sha1, e);
-        } finally {
-            DbUtils.close(rs);
         }
         return next().exists(sha1, length);
     }

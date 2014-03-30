@@ -51,6 +51,7 @@ import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavio
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.navigation.NavigationToolbarWithDropDown;
+import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.table.groupable.GroupableTable;
 import org.artifactory.common.wicket.component.table.groupable.column.GroupableColumn;
 import org.artifactory.common.wicket.component.table.groupable.provider.GroupableDataProvider;
@@ -293,7 +294,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
             }
             String limitDisclaimer = addons.addonByType(SearchAddon.class).getSearchLimitDisclaimer();
             resultsText.append(" results. Please consider refining your search.").append(limitDisclaimer);
-            Session.get().warn(resultsText.toString());
+            Session.get().warn(new UnescapedFeedbackMessage(resultsText.toString()));
             searchResultList = searchResultList.subList(0, maxResults);
         }
 

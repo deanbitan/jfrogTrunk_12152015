@@ -219,7 +219,7 @@ import static org.artifactory.addon.AddonType.*;
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
-        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon {
+        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -924,14 +924,14 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public ITab getHttpRepoReplicationPanel(String tabTitle, HttpRepoDescriptor repoDescriptor,
             RemoteReplicationDescriptor replicationDescriptor, CreateUpdateAction action) {
-        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.REPLICATION);
     }
 
     @Override
     public ITab getLocalRepoReplicationPanel(String tabTitle, LocalRepoDescriptor entity,
             LocalReplicationDescriptor replicationDescriptor,
             MutableCentralConfigDescriptor mutableDescriptor, CreateUpdateAction action) {
-        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.REPLICATION);
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.REPLICATION);
     }
 
     @Override
@@ -965,7 +965,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public ITab getRpmInfoTab(String tabTitle, FileInfo fileInfo) {
-        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.YUM);
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.YUM);
     }
 
     @Override
@@ -1044,12 +1044,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public ITab buildPackagesConfigTab(String id, RepoDescriptor repoDescriptor, Form form) {
-        return new DisabledAddonTab(Model.<String>of(id), AddonType.GEMS);
+        return new DisabledAddonTab(Model.of(id), AddonType.GEMS);
     }
 
     @Override
     public ITab getNuPkgInfoTab(String tabTitle, RepoPath nuPkgRepoPath) {
-        return new DisabledAddonTab(Model.<String>of(tabTitle), AddonType.NUGET);
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.NUGET);
     }
 
     @Override
@@ -1066,12 +1066,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public ITab getExternalComponentInfoTab(RepoAwareActionableItem repoItem) {
-        return new DisabledAddonTab(Model.<String>of("Governance"), AddonType.BLACKDUCK);
+        return new DisabledAddonTab(Model.of("Governance"), AddonType.BLACKDUCK);
     }
 
     @Override
     public ITab getBuildInfoTab(String title, Build build, boolean hasDeployOnLocal) {
-        return new DisabledAddonTab(Model.<String>of("Governance"), AddonType.BLACKDUCK);
+        return new DisabledAddonTab(Model.of("Governance"), AddonType.BLACKDUCK);
     }
 
     @Override
@@ -1108,6 +1108,26 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath) {
         return (WebMarkupContainer) new WebMarkupContainer(id).add(new DisabledAddonBehavior(GEMS));
+    }
+
+    @Override
+    public void createAndAddRepoConfigNpmSection(Form form, RepoDescriptor repoDescriptor, boolean isCreate) {
+        WebMarkupContainer npmSection = new WebMarkupContainer("npmSupportSection");
+        npmSection.add(new TitledBorderBehavior("fieldset-border", "Npm"));
+        npmSection.add(new DisabledAddonBehavior(AddonType.NPM));
+        npmSection.add(new StyledCheckbox("enableNpmSupport").setTitle("Enable Npm Support").setEnabled(false));
+        npmSection.add(new SchemaHelpBubble("enableNpmSupport.help"));
+        npmSection.add(new TitledAjaxSubmitLink("recalculateIndex", "Recalculate Index", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+            }
+        }.setEnabled(false));
+        form.add(npmSection);
+    }
+
+    @Override
+    public ITab getNpmInfoTab(String tabTitle, FileInfo fileInfo) {
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.NPM);
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

@@ -38,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -61,15 +60,13 @@ public class PatternSearchResource {
     private RepositoryService repositoryService;
     private RestAddon restAddon;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     public PatternSearchResource(AuthorizationService authorizationService, RepositoryService repositoryService,
-            RestAddon restAddon, HttpServletRequest request, HttpServletResponse response) {
+            RestAddon restAddon, HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.repositoryService = repositoryService;
         this.restAddon = restAddon;
         this.request = request;
-        this.response = response;
     }
 
     @GET

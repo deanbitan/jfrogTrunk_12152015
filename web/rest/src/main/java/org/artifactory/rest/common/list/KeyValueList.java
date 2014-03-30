@@ -99,7 +99,7 @@ public class KeyValueList extends ArrayList<String> {
                 //Empty value
                 Property propertyDescriptor = new Property();
                 propertyDescriptor.setName(key);
-                map.put(propertyDescriptor, Lists.<String>newArrayList(""));
+                map.put(propertyDescriptor, Lists.newArrayList(""));
             }
         }
         return map;

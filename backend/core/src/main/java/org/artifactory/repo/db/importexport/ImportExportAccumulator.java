@@ -45,8 +45,10 @@ public class ImportExportAccumulator {
     private final long startTime;
     private long endTime;
 
-    private int filesCount = 0;
-    private int foldersCount = 0;
+    private int skippedFilesCount = 0;
+    private int skippedFoldersCount = 0;
+    private int successfulFilesCount = 0;
+    private int successfulFoldersCount = 0;
 
     public ImportExportAccumulator(String repositoryKey, @Nonnull ProgressAccumulatorType type) {
         this.emitMessageValueEvery = ProgressAccumulatorType.EXPORT.equals(type) ? 3000 : 1000;
@@ -55,13 +57,24 @@ public class ImportExportAccumulator {
         this.startTime = System.nanoTime();
     }
 
-    public void accumulateFile() {
-        filesCount++;
+    public void accumulateSuccessfulFile() {
+        successfulFilesCount++;
         printProgress();
     }
 
-    public void accumulateFolder() {
-        foldersCount++;
+    public void accumulateSkippedFile() {
+        skippedFilesCount++;
+        printProgress();
+    }
+
+
+    public void accumulateSuccessfulFolder() {
+        successfulFoldersCount++;
+        printProgress();
+    }
+
+    public void accumulateSkippedFolder() {
+        skippedFoldersCount++;
         printProgress();
     }
 
@@ -70,29 +83,46 @@ public class ImportExportAccumulator {
     }
 
     private void printProgress() {
-        int totalItemsCount = filesCount + foldersCount;
-        if (totalItemsCount % emitMessageValueEvery == 0) {
+        int totalSuccessfulItemsCount = successfulFilesCount + successfulFoldersCount;
+        int totalSkippedItemsCount = skippedFilesCount + skippedFoldersCount;
+        if (totalSuccessfulItemsCount % emitMessageValueEvery == 0) {
             boolean exportProcess = ProgressAccumulatorType.EXPORT.equals(type);
             if (exportProcess) {
-                log.info("{} exported {} items ({} files {} folders {} ips) ...", repositoryKey,
-                        totalItemsCount, filesCount, foldersCount, getItemsPerSecond());
+                log.info("{} exported {} items ({} files {} folders {} ips) " +
+                        "{} skipped items ({} files {} folders)...", repositoryKey, totalSuccessfulItemsCount,
+                        successfulFilesCount, successfulFoldersCount, getItemsPerSecond(), totalSkippedItemsCount,
+                        skippedFilesCount, skippedFoldersCount);
             } else {
-                log.info("{} imported {} items ({} files {} folders {} ips) ...", repositoryKey,
-                        totalItemsCount, filesCount, foldersCount, getItemsPerSecond());
+                log.info("{} imported {} items ({} files {} folders {} ips) " +
+                        "{} skipped items ({} files {} folders)...", repositoryKey, totalSuccessfulItemsCount,
+                        successfulFilesCount, successfulFoldersCount, getItemsPerSecond(), totalSkippedItemsCount,
+                        skippedFilesCount, skippedFoldersCount);
             }
         }
     }
 
-    public int getItemsCount() {
-        return getFilesCount() + getFoldersCount();
+    public int getSuccessfulItemsCount() {
+        return getSuccessfulFilesCount() + getSuccessfulFoldersCount();
     }
 
-    public int getFilesCount() {
-        return filesCount;
+    public int getSkippedItemsCount() {
+        return getSkippedFilesCount() + getSkippedFoldersCount();
     }
 
-    public int getFoldersCount() {
-        return foldersCount;
+    public int getSkippedFilesCount() {
+        return skippedFilesCount;
+    }
+
+    public int getSkippedFoldersCount() {
+        return skippedFoldersCount;
+    }
+
+    public int getSuccessfulFilesCount() {
+        return successfulFilesCount;
+    }
+
+    public int getSuccessfulFoldersCount() {
+        return successfulFoldersCount;
     }
 
     public String getDurationString() {
@@ -105,7 +135,7 @@ public class ImportExportAccumulator {
     public String getItemsPerSecond() {
         long duration = getDurationNanos();
         double durationSecs = duration / 1_000_000_000.0;
-        double itemsPerSecond = (filesCount + foldersCount) / durationSecs;
+        double itemsPerSecond = (successfulFilesCount + successfulFoldersCount) / durationSecs;
         return numberFormat.format(itemsPerSecond);
     }
 

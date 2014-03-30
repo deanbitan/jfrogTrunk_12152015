@@ -164,9 +164,10 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
-        // TODO: [by FS] Removing all login caches when ANY conf changes is brutal!
         // Need to check if security conf changed then clear security caches
-        clearSecurityListeners();
+        if (!centralConfig.getDescriptor().getSecurity().equals(oldDescriptor.getSecurity())) {
+            clearSecurityListeners();
+        }
     }
 
     @Override
@@ -1264,6 +1265,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     private void clearSecurityData() {
         //Respect order for clean removal
         //Clean up all acls
+        log.debug("Clearing security data");
         aclStoreService.deleteAllAcls();
         //Remove all existing groups
         userGroupStoreService.deleteAllGroupsAndUsers();

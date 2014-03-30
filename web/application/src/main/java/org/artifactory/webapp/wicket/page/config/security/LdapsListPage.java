@@ -43,12 +43,11 @@ public class LdapsListPage extends AuthenticatedPage {
     @SpringBean
     private AddonsManager addonsManager;
 
-    private WebMarkupContainer ldapSettingPanel;
     private TitledPanel ldapGroupConfigurationPanel;
 
     public LdapsListPage() {
         LdapGroupWebAddon webAddon = addonsManager.addonByType(LdapGroupWebAddon.class);
-        ldapSettingPanel = webAddon.getLdapListPanel("ldapListPanel");
+        WebMarkupContainer ldapSettingPanel = webAddon.getLdapListPanel("ldapListPanel");
         add(ldapSettingPanel);
         ldapGroupConfigurationPanel = webAddon.getLdapGroupConfigurationPanel("ldapGroupListPanel");
         add(ldapGroupConfigurationPanel);

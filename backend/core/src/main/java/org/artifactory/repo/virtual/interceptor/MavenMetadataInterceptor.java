@@ -81,6 +81,7 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
     private RepoResource processMavenMetadata(VirtualRepo virtualRepo, InternalRequestContext context,
             RepoPath repoPath, List<RealRepo> repositories) {
 
+        boolean isSnapshotMavenMetadata = MavenNaming.isSnapshotMavenMetadata(context.getResourcePath());
         MergeableMavenMetadata mergedMavenMetadata = new MergeableMavenMetadata(context);
         // save forbidden unfound response
         UnfoundRepoResource forbidden = null;
@@ -89,6 +90,10 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
             if (repo.isCache()) {
                 //  Skip cache repos - we search in remote repos directly which will handle the cache retrieval
                 // and expiry
+                continue;
+            }
+            if (isSnapshotMavenMetadata && !repo.isHandleSnapshots()) {
+                // request for snapshot maven metadata but repo doesn't support snapshots - just skip it
                 continue;
             }
             InternalRequestContext translatedContext = virtualRepo.getDownloadStrategy().translateRepoRequestContext(

@@ -29,7 +29,7 @@
         syntax - The UI highlighter syntax to for this mime type (only relevant if this is a viewable type)
         css - The css class of a display icon for this mime type
 -->
-<mimetypes version="5">
+<mimetypes version="6">
 
     <mimetype type="text/plain" extensions="txt, properties, mf, asc" viewable="true" syntax="plain"/>
     <mimetype type="text/html" extensions="htm, html" viewable="true" syntax="xml"/>
@@ -45,6 +45,7 @@
     <mimetype type="application/xml-schema" extensions="xsd" viewable="true" syntax="xml" css="xml"/>
     <mimetype type="application/xml-external-parsed-entity" extensions="ent" viewable="true"/>
     <mimetype type="application/xhtml+xml" extensions="xhtml" viewable="true" syntax="xml"/>
+    <mimetype type="application/json" extensions="json" viewable="true" syntax="javascript"/>
 
     <mimetype type="application/x-java-pack200" extensions="jar.pack.gz" archive="true" index="true" css="jar"/>
     <mimetype type="application/x-java-archive-diff" extensions="jardiff" archive="false"/>

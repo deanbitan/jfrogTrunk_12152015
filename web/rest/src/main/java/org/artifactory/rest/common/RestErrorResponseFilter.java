@@ -44,7 +44,7 @@ public class RestErrorResponseFilter implements ContainerResponseFilter {
             if (entity == null) {
                 ErrorResponse errorResponse = new ErrorResponse(status, response.getStatusType().getReasonPhrase());
                 response.setResponse(createJsonErrorResponse(response.getResponse(), errorResponse));
-            } else if(entity instanceof String) {
+            } else if(entity instanceof String && !MediaType.APPLICATION_JSON_TYPE.equals(response.getMediaType())) {
                 ErrorResponse errorResponse = new ErrorResponse(status, (String) entity);
                 response.setResponse(createJsonErrorResponse(response.getResponse(), errorResponse));
             }

@@ -22,12 +22,14 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.HttpCacheAvoidableResource;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.ZipEntryResource;
@@ -37,10 +39,13 @@ import org.artifactory.traffic.entry.DownloadEntry;
 import org.artifactory.webapp.servlet.HttpArtifactoryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static org.artifactory.api.rest.constant.ArtifactRestConstants.MT_ITEM_PROPERTIES;
 
 /**
  * @author yoavl
@@ -80,8 +85,7 @@ public final class RequestResponseHelper {
             throw exception;
         }
         byte[] bytes = content.getBytes("utf-8");
-        InputStream is = new ByteArrayInputStream(bytes);
-        try {
+        try (InputStream is = new ByteArrayInputStream(bytes)) {
             String path = repoPath.getPath();
             String mimeType = NamingUtils.getMimeTypeByPathAsString(path);
             response.setContentType(mimeType);
@@ -92,8 +96,6 @@ public final class RequestResponseHelper {
             final long start = System.currentTimeMillis();
             response.sendStream(is);
             fireDownloadTrafficEvent(response, repoPath, bodySize, start);
-        } finally {
-            is.close();
         }
     }
 
@@ -135,6 +137,36 @@ public final class RequestResponseHelper {
         }
     }
 
+    public void updateResponseForProperties(ArtifactoryResponse response, RepoResource res,
+            String content, MediaType mediaType) throws IOException {
+        RepoPath propsDownloadRepoPath;
+        if (mediaType.equals(MediaType.APPLICATION_XML)) {
+            propsDownloadRepoPath = RepoPathFactory.create(res.getRepoPath().getRepoKey(),
+                    res.getRepoPath().getPath() + "?" + ArtifactRestConstants.PROPERTIES_XML_PARAM);
+            response.setContentType(mediaType.getType());
+        } else if (mediaType.equals(MediaType.APPLICATION_JSON)) {
+            propsDownloadRepoPath = RepoPathFactory.create(res.getRepoPath().getRepoKey(),
+                    res.getRepoPath().getPath() + "?" + ArtifactRestConstants.PROPERTIES_PARAM);
+            response.setContentType(MT_ITEM_PROPERTIES);
+        } else {
+            response.sendError(HttpStatus.SC_BAD_REQUEST, "Media Type " + mediaType + " not supported!", log);
+            return;
+        }
+
+        // props generated xml and json always browsable
+        setBasicHeaders(response, res, false);
+        noCache(response);
+        byte[] bytes = content.getBytes("utf-8");
+        try (InputStream is = new ByteArrayInputStream(bytes)) {
+            int bodySize = bytes.length;
+            response.setContentLength(bodySize);
+            AccessLogger.downloaded(propsDownloadRepoPath);
+            final long start = System.currentTimeMillis();
+            response.sendStream(is);
+            fireDownloadTrafficEvent(response, propsDownloadRepoPath, bodySize, start);
+        }
+    }
+
     private void updateResponseFromRepoResource(ArtifactoryResponse response, RepoResource res) {
         String mimeType = res.getMimeType();
         response.setContentType(mimeType);
@@ -142,6 +174,16 @@ public final class RequestResponseHelper {
             //Only set the content length once
             response.setContentLength(res.getSize());
         }
+        setBasicHeaders(response, res, contentBrowsingDisabled(res));
+
+        if (res instanceof HttpCacheAvoidableResource) {
+            if (((HttpCacheAvoidableResource) res).avoidHttpCaching()) {
+                noCache(response);
+            }
+        }
+    }
+
+    private void setBasicHeaders(ArtifactoryResponse response, RepoResource res, boolean contentBrowsingDisabled) {
         response.setLastModified(res.getLastModified());
         RepoResourceInfo info = res.getInfo();
 
@@ -161,21 +203,19 @@ public final class RequestResponseHelper {
                 ZipEntryResource zipEntryResource = (ZipEntryResource) res;
                 fileName = zipEntryResource.getEntryPath();
             }
+            ((HttpArtifactoryResponse) response).setFilename(fileName);
 
             // content disposition is not set only for archive resources when archived browsing is enabled
-            if (contentBrowsingDisabled(res)) {
+            if (contentBrowsingDisabled) {
                 ((HttpArtifactoryResponse) response).setContentDispositionAttachment(fileName);
             }
-            ((HttpArtifactoryResponse) response).setFilename(fileName);
         }
+    }
 
-        if (res instanceof HttpCacheAvoidableResource) {
-            if (((HttpCacheAvoidableResource) res).avoidHttpCaching()) {
-                response.setHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-                response.setHeader("Pragma", "no-cache");
-                response.setHeader("Cache-Control", "no-cache, no-store");
-            }
-        }
+    private void noCache(ArtifactoryResponse response) {
+        response.setHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Cache-Control", "no-cache, no-store");
     }
 
     private boolean isNotZipResource(RepoResource res) {

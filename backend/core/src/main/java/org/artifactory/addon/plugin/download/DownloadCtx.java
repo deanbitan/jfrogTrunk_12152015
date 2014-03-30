@@ -1,5 +1,7 @@
 package org.artifactory.addon.plugin.download;
 
+import org.artifactory.repo.RepoPath;
+
 /**
  * Download context filled up by a {@link BeforeDownloadRequestAction} plugin extension
  *
@@ -9,8 +11,10 @@ public class DownloadCtx {
 
     private boolean expired;
 
+    private RepoPath modifiedRepoPath;
+
     /**
-     * Returns true if the resource being downloaded is marked as an expired resource,
+     * @return true if the resource being downloaded is marked as an expired resource,
      * see {@link #setExpired(boolean)} for full details about expired resources.
      */
     public boolean isExpired() {
@@ -27,5 +31,21 @@ public class DownloadCtx {
      */
     public void setExpired(boolean expired) {
         this.expired = expired;
+    }
+
+    /**
+     * The modified repo path provided by the user plugin for a given query
+     * @return a modified repo path used inside Artifactory to answer the given request
+     */
+    public RepoPath getModifiedRepoPath() {
+        return modifiedRepoPath;
+    }
+
+    /**
+     * Override the actual repo path used inside the Artifactory download process to answer the given download request.
+     * @param modifiedRepoPath The new repo path to use
+     */
+    public void setModifiedRepoPath(RepoPath modifiedRepoPath) {
+        this.modifiedRepoPath = modifiedRepoPath;
     }
 }

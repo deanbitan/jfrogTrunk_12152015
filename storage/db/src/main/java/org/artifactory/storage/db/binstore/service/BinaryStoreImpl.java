@@ -329,7 +329,14 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         if (result == null) {
             BinaryInfo bi = getFirstBinaryProvider().addStream(in);
-            result = insertRecordInDb(convertToBinaryData(bi));
+            // From here we managed to create a binary record on the binary provider
+            // So, failing on the insert in DB (because saving the file took to long)
+            // can be re-tried based on the sha1
+            try {
+                result = insertRecordInDb(convertToBinaryData(bi));
+            } catch (StorageException e) {
+                throw new StorageRetryException(bi, e);
+            }
         }
         return result;
     }

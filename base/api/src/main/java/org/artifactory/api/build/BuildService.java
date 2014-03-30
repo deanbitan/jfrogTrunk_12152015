@@ -110,6 +110,8 @@ public interface BuildService extends ImportableExportable {
      */
     Set<BuildRun> searchBuildsByName(String buildName);
 
+    List<String> getBuildNames();
+
     /**
      * Returns a sorted list of all previous builds to the given one
      *

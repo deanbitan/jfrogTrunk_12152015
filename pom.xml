@@ -20,7 +20,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.1.1.1</version>
+    <version>3.2.0</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -47,7 +47,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sourceforgeId>175347</sourceforgeId>
         <sourceforgeName>artifactory</sourceforgeName>
-        <spring.version>4.0.1.RELEASE</spring.version>
+        <spring.version>4.0.2.RELEASE</spring.version>
         <spring.security.version>3.2.0.RELEASE</spring.security.version>
         <build.info.version>2.2.3</build.info.version>
         <wicket.version>1.5.5</wicket.version>
@@ -131,85 +131,85 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-common</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-common</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
                 <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-green-skin</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
@@ -631,25 +631,6 @@
                         <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>2.2.5</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.xml.stream</groupId>
-                        <artifactId>stax-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>2.2.5-b05</version>
-                <scope>runtime</scope>
             </dependency>
 
             <dependency>
@@ -1140,27 +1121,39 @@
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
+                <artifactId>repomd</artifactId>
+                <version>3.0.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-indexer</artifactId>
-                <version>2.0.5</version>
+                <version>3.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-extractor</artifactId>
-                <version>2.0.5</version>
+                <version>3.0.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-writer</artifactId>
-                <version>2.0.5</version>
+                <version>3.0.0</version>
 
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
-                <artifactId>gems-indexer</artifactId>
-                <version>2.0.5</version>
+                <artifactId>gems-extractor</artifactId>
+                <version>3.0.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jfrog.metadata</groupId>
+                <artifactId>npm</artifactId>
+                <version>3.0.0</version>
             </dependency>
 
             <dependency>
@@ -1224,12 +1217,12 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>3.1.1.1</version>
+                <version>3.2.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
@@ -1292,6 +1285,14 @@
                         <artifactId>commons-logging</artifactId>
                         <groupId>commons-logging</groupId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>javax.xml.bind</groupId>
+                        <artifactId>jaxb-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -1306,6 +1307,10 @@
                     <exclusion>
                         <groupId>org.apache.geronimo.specs</groupId>
                         <artifactId>geronimo-annotation_1.0_spec</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.xml.bind</groupId>
+                        <artifactId>jaxb-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1407,7 +1412,7 @@
             <dependency>
                 <groupId>org.iostreams</groupId>
                 <artifactId>iostreams</artifactId>
-                <version>0.1</version>
+                <version>0.2</version>
             </dependency>
 
             <dependency>
@@ -1477,6 +1482,10 @@
                                         <!-- stax-api is included in java 6 -->
                                         <exclude>stax:stax-api</exclude>
                                         <exclude>javax.xml.stream:stax-api</exclude>
+                                        <!-- included in java 6 -->
+                                        <exclude>javax.xml.bind:jaxb-api</exclude>
+                                        <exclude>com.sun.xml.bind:jaxb-impl</exclude>
+
                                         <!-- google-collections cannot co-exist with guava -->
                                         <exclude>com.google.collections:google-collections</exclude>
                                         <!--we use log4j over slf4j -->
@@ -1491,6 +1500,8 @@
                                         <exclude>org.apache.geronimo.specs:geronimo-javamail_1.4_spec</exclude>
                                         <exclude>org.apache.geronimo.specs:geronimo-activation_1.1_spec</exclude>
                                         <exclude>org.apache.geronimo.specs:geronimo-annotation_1.0_spec</exclude>
+                                        <!-- package changed to com.google.code.findbugs -->
+                                        <exclude>net.sourceforge.findbugs:jsr305</exclude>
                                     </excludes>
                                 </bannedDependencies>
                                 <requireJavaVersion>

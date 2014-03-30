@@ -49,4 +49,8 @@ public interface ArtifactRestConstants {
     String PARAM_DELETE = "delete";
     String PARAM_OVERWRITE = "overwrite";
     String PARAM_TIMEOUT = "timeout";
+
+    String TRACE_PARAM = "trace";
+    String PROPERTIES_PARAM = "properties";
+    String PROPERTIES_XML_PARAM = "propertiesXml";
 }

@@ -34,7 +34,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 
@@ -48,9 +47,6 @@ import javax.ws.rs.core.Context;
 @Path(SearchRestConstants.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_USER, AuthorizationService.ROLE_ADMIN})
 public class SearchResource {
-
-    @Context
-    private HttpServletResponse response;
 
     @Context
     private HttpServletRequest request;
@@ -136,20 +132,20 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_PATTERN)
     public PatternSearchResource patternSearchQuery() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new PatternSearchResource(authorizationService, repositoryService, restAddon, request, response);
+        return new PatternSearchResource(authorizationService, repositoryService, restAddon, request);
     }
 
     @Path(SearchRestConstants.PATH_LICENSE)
     public LicenseResource licensesSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new LicenseResource(restAddon, request, repositoryService, authorizationService);
+        return new LicenseResource(restAddon, request, repositoryService);
     }
 
     @Path(SearchRestConstants.PATH_CHECKSUM)
     public ChecksumSearchResource checksumSearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return new ChecksumSearchResource(authorizationService, restAddon, repositoryService, repoBrowsingService,
-                request, response);
+                request);
     }
 
     @Path(SearchRestConstants.PATH_BAD_CHECKSUM)

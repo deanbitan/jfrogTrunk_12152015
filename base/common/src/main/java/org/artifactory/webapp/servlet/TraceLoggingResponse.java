@@ -166,6 +166,20 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
     }
 
     @Override
+    public boolean isPropertiesQuery() {
+        return false;
+    }
+
+    @Override
+    public String getPropertiesMediaType() {
+        return null;
+    }
+
+    @Override
+    public void setPropertiesMediaType(String propsQueryFormat) {
+    }
+
+    @Override
     public void flush() {
     }
 
@@ -201,7 +215,7 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
             throws IOException {
         Writer writer = null;
         try {
-            artifactoryResponse.setContentType(MediaType.TEXT_PLAIN.getType());
+            artifactoryResponse.setContentType(MediaType.TEXT_PLAIN.toString());
             writer = artifactoryResponse.getWriter();
             writer.append("Request ID: ").append(requestId).append("\n");
             writer.append("Repo Path ID: ").append(requestPath).append("\n");

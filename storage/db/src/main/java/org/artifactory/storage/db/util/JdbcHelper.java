@@ -157,7 +157,7 @@ public class JdbcHelper {
      *
      * @param query  The select query to execute
      * @param params The query parameters
-     * @return Long value if a result was found or {@link org.artifactory.storage.db.DbService.NO_DB_ID} if not found
+     * @return Long value if a result was found or {@link org.artifactory.storage.db.DbService#NO_DB_ID} if not found
      */
     public long executeSelectLong(String query, Object... params) throws SQLException {
         try (ResultSet resultSet = executeSelect(query, params)) {

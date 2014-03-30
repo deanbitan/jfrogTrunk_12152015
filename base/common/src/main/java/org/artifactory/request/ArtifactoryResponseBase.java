@@ -38,6 +38,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private int status = HttpStatus.SC_OK;
     private Exception exception;
     private long contentLength = -1;
+    private String propertiesMediaType = null;
 
     @Override
     public void sendStream(InputStream is) throws IOException {
@@ -78,7 +79,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
 
     @Override
     public void sendSuccess() {
-        if (isSuccessful()) {
+        if (isSuccessful() || HttpUtils.isRedirectionResponseCode(status)) {
             flush();
         } else {
             log.error("Could not send success. Exiting status: {}.", status);
@@ -157,6 +158,21 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;
+    }
+
+    @Override
+    public boolean isPropertiesQuery() {
+        return propertiesMediaType != null;
+    }
+
+    @Override
+    public String getPropertiesMediaType() {
+        return propertiesMediaType;
+    }
+
+    @Override
+    public void setPropertiesMediaType(String propsQueryFormat) {
+        this.propertiesMediaType = propsQueryFormat;
     }
 
     protected abstract void sendErrorInternal(int code, String reason) throws IOException;

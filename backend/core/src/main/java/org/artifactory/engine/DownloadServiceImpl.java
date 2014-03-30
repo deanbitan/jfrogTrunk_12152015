@@ -18,6 +18,7 @@
 
 package org.artifactory.engine;
 
+import com.google.common.collect.Iterables;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
@@ -29,16 +30,23 @@ import org.artifactory.addon.plugin.download.BeforeDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeDownloadRequestAction;
 import org.artifactory.addon.plugin.download.DownloadCtx;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
+import org.artifactory.api.request.TranslatedArtifactoryRequest;
+import org.artifactory.api.rest.artifact.ItemProperties;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.StringResourceStreamHandle;
+import org.artifactory.md.MetadataDefinitionService;
+import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.Repo;
@@ -62,9 +70,11 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.version.CompoundVersionDetails;
+import org.codehaus.jackson.JsonGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Service;
 
@@ -72,6 +82,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.io.StringWriter;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -134,11 +147,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
         RepoRequests.logToContext("Request source = %s, Last modified = %s, If modified since = %s, Thread name = %s",
                 request.getClientAddress(), centralConfig.format(request.getLastModified()),
                 request.getIfModifiedSince(), Thread.currentThread().getName());
-
-        PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
-        DownloadCtx downloadCtx = new DownloadCtx();
-        pluginAddon.execPluginActions(BeforeDownloadRequestAction.class, downloadCtx, request, request.getRepoPath());
-        RepoRequests.logToContext("Executing any BeforeDownloadRequest user plugins that may exist");
+        if (response.isPropertiesQuery()) {
+            RepoRequests.logToContext("Requesting properties only with format " + response.getPropertiesMediaType());
+        }
 
         //Check that this is not a recursive call
         if (request.isRecursive()) {
@@ -148,11 +159,30 @@ public class DownloadServiceImpl implements InternalDownloadService {
             return;
         }
 
+        PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+        DownloadCtx downloadCtx = new DownloadCtx();
+        RepoRequests.logToContext("Executing any BeforeDownloadRequest user plugins that may exist");
+        pluginAddon.execPluginActions(BeforeDownloadRequestAction.class, downloadCtx, request, request.getRepoPath());
+
+        if (downloadCtx.getModifiedRepoPath() != null) {
+            RepoRequests.logToContext("BeforeDownloadRequest user plugins provided a modified repo path: " +
+                    downloadCtx.getModifiedRepoPath().getId());
+            request = new TranslatedArtifactoryRequest(downloadCtx.getModifiedRepoPath(), request);
+        }
+
         if (NamingUtils.isMetadata(request.getPath())) {
             // the repo filter redirects for the ":properties" paths. This is here to protect direct calls to this
             // method (mainly from
             response.sendError(HttpStatus.SC_CONFLICT, "Old metadata notation is not supported anymore: " +
                     request.getRepoPath(), log);
+        }
+
+        String repoKey = request.getRepoKey();
+        if (VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(repoKey)
+                && ConstantValues.disableGlobalRepoAccess.getBoolean()) {
+            // The global /repo is disabled. Cannot be used here, returning 403!
+            response.sendError(HttpStatus.SC_FORBIDDEN, "Accessing the global virtual repository /repo is disabled!",
+                    log);
         }
 
         addonsManager.interceptResponse(response);
@@ -162,7 +192,6 @@ public class DownloadServiceImpl implements InternalDownloadService {
         }
 
         try {
-            String repoKey = request.getRepoKey();
             RepoResource resource;
             Repo repository = repositoryService.repositoryByKey(repoKey);
 
@@ -291,7 +320,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
         //Send the resource file back (will update the cache for remote repositories)
         ResourceStreamHandle handle = getAlternateHandle(requestContext, response, responseRepoPath);
-        if (response.isError()) {
+        boolean alternateRedirect = HttpUtils.isRedirectionResponseCode(response.getStatus()) && handle != null;
+        // Error is every value that is not between 200-207, in case of alternateRedirect the status is 30x therefore we have to exclude this case
+        if (response.isError() && !alternateRedirect) {
             RepoRequests.logToContext("Alternative response reset status as error - returning");
             return;
         }
@@ -306,9 +337,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
             }
             AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
             PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
+            RepoRequests.logToContext("Executing any BeforeDownload user plugins that may exist");
             pluginAddon.execPluginActions(BeforeDownloadAction.class, null, requestContext.getRequest(),
                     responseRepoPath);
-            RepoRequests.logToContext("Executing any BeforeDownload user plugins that may exist");
 
             if (requestContext.getRequest().isHeadOnly()) {
                 /**
@@ -317,6 +348,29 @@ public class DownloadServiceImpl implements InternalDownloadService {
                  */
                 RepoRequests.logToContext("Request was of type HEAD - responding with no content");
                 requestResponseHelper.sendHeadResponse(response, resource);
+            } else if (response.isPropertiesQuery()) {
+                RepoRequests.logToContext("Request was of type Properties - responding with properties format "
+                        + response.getPropertiesMediaType());
+                Properties properties = repositoryService.getProperties(resource.getRepoPath());
+                if (properties != null && !properties.isEmpty()) {
+                    MediaType mediaType = MediaType.valueOf(response.getPropertiesMediaType());
+                    String content;
+                    if (mediaType.equals(MediaType.APPLICATION_XML)) {
+                        content = InternalContextHelper.get().beanForType(
+                                MetadataDefinitionService.class).getMetadataDefinition(
+                                Properties.class).getXmlProvider().toXml(properties);
+                    } else if (mediaType.equals(MediaType.APPLICATION_JSON)) {
+                        content = jsonProperties(responseRepoPath, properties);
+                    } else {
+                        response.sendError(HttpStatus.SC_BAD_REQUEST,
+                                "Media Type " + mediaType + " not supported!", log);
+                        return;
+                    }
+                    requestResponseHelper.updateResponseForProperties(response, resource, content, mediaType);
+                } else {
+                    RepoRequests.logToContext("No properties found. Responding with 404");
+                    response.sendError(HttpStatus.SC_NOT_FOUND, "No properties could be found.", log);
+                }
             } else {
                 RepoRequests.logToContext("Responding with selected content handle");
                 //Streaming the file is done outside a tx, so there is a chance that the content will change!
@@ -355,6 +409,21 @@ public class DownloadServiceImpl implements InternalDownloadService {
         } finally {
             IOUtils.closeQuietly(handle);
         }
+    }
+
+    private String jsonProperties(RepoPath repoPath, Properties properties) throws IOException {
+        ItemProperties itemProperties = new ItemProperties();
+        for (String propertyName : properties.keySet()) {
+            Set<String> propertySet = properties.get(propertyName);
+            if ((propertySet != null) && !propertySet.isEmpty()) {
+                itemProperties.properties.put(propertyName, Iterables.toArray(propertySet, String.class));
+            }
+        }
+        itemProperties.slf = repoPath.getRepoKey() + "/" + repoPath.getPath();
+        StringWriter out = new StringWriter();
+        JsonGenerator generator = JacksonFactory.createJsonGenerator(out);
+        generator.writeObject(itemProperties);
+        return out.getBuffer().toString();
     }
 
     private void sendError(InternalRequestContext requestContext, ArtifactoryResponse response, int status,
@@ -432,7 +501,14 @@ public class DownloadServiceImpl implements InternalDownloadService {
         String message = responseCtx.getMessage();
         RepoRequests.logToContext("Alternative response status is set to %s and message to '%s'", status, message);
         if (status != ResponseCtx.UNSET_STATUS) {
-            if (HttpUtils.isSuccessfulResponseCode(status)) {
+            Map<String, String> header = responseCtx.getHeader();
+            if (header != null) {
+                RepoRequests.logToContext("Found non-null alternative response header");
+                for (String key : header.keySet()) {
+                    response.setHeader(key, header.get(key));
+                }
+            }
+            if (HttpUtils.isSuccessfulResponseCode(status) || HttpUtils.isRedirectionResponseCode(status)) {
                 RepoRequests.logToContext("Setting response status to %s", status);
                 response.setStatus(status);
                 if (message != null) {
@@ -538,8 +614,8 @@ public class DownloadServiceImpl implements InternalDownloadService {
         } else {
             AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
             PluginsAddon pluginAddon = addonsManager.addonByType(PluginsAddon.class);
-            pluginAddon.execPluginActions(BeforeDownloadAction.class, null, request, responseRepoPath);
             RepoRequests.logToContext("Executing any BeforeDownloadAction user plugins that may exist");
+            pluginAddon.execPluginActions(BeforeDownloadAction.class, null, request, responseRepoPath);
             // send the checksum as the response body, use the original repo path (the checksum path,
             // not the file) from the request
             RepoRequests.logToContext("Sending checksum response with status %s", response.getStatus());

@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import static org.artifactory.repo.db.importexport.ImportExportAccumulator.ProgressAccumulatorType.EXPORT;
+
 /**
  * Handles export of search results.
  *
@@ -44,6 +46,7 @@ public class DbRepoExportSearchHandler extends DbExportBase {
     private final ExportSettingsImpl baseSettings;
 
     public DbRepoExportSearchHandler(SavedSearchResults searchResults, ExportSettingsImpl baseSettings) {
+        super(new ImportExportAccumulator("export-search-result", EXPORT));
         this.searchResults = searchResults;
         this.baseSettings = baseSettings;
         setExportSettings(createSettingsWithTimestampedBase());

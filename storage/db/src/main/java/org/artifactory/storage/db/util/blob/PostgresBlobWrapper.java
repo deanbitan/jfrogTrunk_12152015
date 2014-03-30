@@ -19,10 +19,10 @@
 package org.artifactory.storage.db.util.blob;
 
 import org.apache.commons.io.FileUtils;
+import org.iostreams.streams.in.DeleteOnCloseFileInputStream;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -76,20 +76,4 @@ public class PostgresBlobWrapper extends BlobWrapper {
             throw new RuntimeException("Couldn't create temp file", e);
         }
     }
-
-    private class DeleteOnCloseFileInputStream extends FileInputStream {
-        private final File file;
-
-        public DeleteOnCloseFileInputStream(File file) throws FileNotFoundException {
-            super(file);
-            this.file = file;
-        }
-
-        @Override
-        public void close() throws IOException {
-            super.close();
-            FileUtils.deleteQuietly(file);
-        }
-    }
-
 }

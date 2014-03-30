@@ -59,7 +59,6 @@ public class LicenseResource {
     private final RestAddon restAddon;
     private final HttpServletRequest request;
     private final RepositoryService repositoryService;
-    private final AuthorizationService authorizationService;
     private static final Function<LocalRepoDescriptor, String> DESCRIPTORS_TO_KEYS =
             new Function<LocalRepoDescriptor, String>() {
                 @Override
@@ -69,12 +68,10 @@ public class LicenseResource {
             };
 
 
-    public LicenseResource(RestAddon restAddon, HttpServletRequest request, RepositoryService repositoryService,
-            AuthorizationService authorizationService) {
+    public LicenseResource(RestAddon restAddon, HttpServletRequest request, RepositoryService repositoryService) {
         this.restAddon = restAddon;
         this.request = request;
         this.repositoryService = repositoryService;
-        this.authorizationService = authorizationService;
     }
 
     /**

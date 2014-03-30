@@ -135,6 +135,38 @@ public class LdapSetting implements Descriptor {
         this.emailAttribute = ldapSetting.emailAttribute;
     }
 
+    public boolean identicalConfiguration(LdapSetting that) {
+        if (this == that) {
+            return true;
+        }
+        if (that == null) {
+            return false;
+        }
+        if (autoCreateUser != that.autoCreateUser) {
+            return false;
+        }
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (emailAttribute != null ? !emailAttribute.equals(that.emailAttribute) : that.emailAttribute != null) {
+            return false;
+        }
+        if (!key.equals(that.key)) {
+            return false;
+        }
+        if (ldapUrl != null ? !ldapUrl.equals(that.ldapUrl) : that.ldapUrl != null) {
+            return false;
+        }
+        if (search != null ? !search.equals(that.search) : that.search != null) {
+            return false;
+        }
+        if (userDnPattern != null ? !userDnPattern.equals(that.userDnPattern) : that.userDnPattern != null) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

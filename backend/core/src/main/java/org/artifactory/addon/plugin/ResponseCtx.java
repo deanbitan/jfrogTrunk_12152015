@@ -20,12 +20,15 @@ package org.artifactory.addon.plugin;
 
 import org.artifactory.addon.plugin.download.ResourceStreamCtx;
 
+import java.util.Map;
+
 public class ResponseCtx extends ResourceStreamCtx {
 
     public final static int UNSET_STATUS = -1;
 
     private int status = UNSET_STATUS;
     private String message;
+    private Map<String, String> header;
 
     public int getStatus() {
         return status;
@@ -35,6 +38,10 @@ public class ResponseCtx extends ResourceStreamCtx {
         return message;
     }
 
+    public Map<String, String> getHeader() {
+        return header;
+    }
+
     public void setStatus(int status) {
         this.status = status;
     }
@@ -42,4 +49,9 @@ public class ResponseCtx extends ResourceStreamCtx {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public void setHeader(Map<String, String> header) {
+        this.header = header;
+    }
+
 }

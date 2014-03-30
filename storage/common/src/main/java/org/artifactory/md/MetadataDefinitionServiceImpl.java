@@ -82,7 +82,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
         GenericXmlProvider mavenMetadataXmlProvider = new GenericXmlProvider(MavenNaming.MAVEN_METADATA_NAME);
         createMetadataDefinition(String.class, String.class,
                 mavenMetadataXmlProvider,
-                new GenericPersistenceHandler(mavenMetadataXmlProvider, false), false);
+                new GenericPersistenceHandler(mavenMetadataXmlProvider), false);
     }
 
     @Override
@@ -121,7 +121,7 @@ public class MetadataDefinitionServiceImpl implements MetadataDefinitionService 
             log.debug("Creating new Metadata definition on demand for '{}'.", metadataName);
             GenericXmlProvider xmlProvider = new GenericXmlProvider(metadataName);
             definition = new MetadataDefinition<>(xmlProvider,
-                    new GenericPersistenceHandler(xmlProvider, true), false);
+                    new GenericPersistenceHandler(xmlProvider), false);
         }
         return definition;
     }

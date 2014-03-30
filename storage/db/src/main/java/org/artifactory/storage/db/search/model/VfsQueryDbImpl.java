@@ -528,7 +528,7 @@ public class VfsQueryDbImpl implements VfsQuery {
         } else {
             if (expectedResultType == VfsQueryResultType.ANY_ITEM) {
                 query.append("nodes.depth IN ");
-                query.addListParam(Lists.<Integer>asList(fixedDepth, fixedDepth + 1, new Integer[0]));
+                query.addListParam(Lists.asList(fixedDepth, fixedDepth + 1, new Integer[0]));
                 query.nextBool = VfsBoolType.AND;
             } else {
                 query.append("nodes.depth = ");

@@ -137,6 +137,47 @@ public class LdapGroupSetting implements Descriptor {
         this.enabledLdap = enabledLdap;
     }
 
+    public boolean identicalConfiguration(LdapGroupSetting that) {
+        if (this == that) {
+            return true;
+        }
+        if (that == null) {
+            return false;
+        }
+        if (subTree != that.subTree) {
+            return false;
+        }
+        if (descriptionAttribute != null ? !descriptionAttribute.equals(that.descriptionAttribute) :
+                that.descriptionAttribute != null) {
+            return false;
+        }
+        if (enabledLdap != null ? !enabledLdap.equals(that.enabledLdap) : that.enabledLdap != null) {
+            return false;
+        }
+        if (filter != null ? !filter.equals(that.filter) : that.filter != null) {
+            return false;
+        }
+        if (groupBaseDn != null ? !groupBaseDn.equals(that.groupBaseDn) : that.groupBaseDn != null) {
+            return false;
+        }
+        if (groupMemberAttribute != null ? !groupMemberAttribute.equals(that.groupMemberAttribute) :
+                that.groupMemberAttribute != null) {
+            return false;
+        }
+        if (groupNameAttribute != null ? !groupNameAttribute.equals(that.groupNameAttribute) :
+                that.groupNameAttribute != null) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (strategy != that.strategy) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

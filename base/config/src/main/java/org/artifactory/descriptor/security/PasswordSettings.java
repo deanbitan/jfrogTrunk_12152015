@@ -56,4 +56,27 @@ public class PasswordSettings implements Descriptor {
         return (EncryptionPolicy.SUPPORTED.equals(encryptionPolicy) ||
                 EncryptionPolicy.REQUIRED.equals(encryptionPolicy));
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        PasswordSettings that = (PasswordSettings) o;
+
+        if (encryptionPolicy != that.encryptionPolicy) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return encryptionPolicy != null ? encryptionPolicy.hashCode() : 0;
+    }
 }

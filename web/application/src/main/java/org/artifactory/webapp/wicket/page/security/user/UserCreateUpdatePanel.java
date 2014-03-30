@@ -61,7 +61,7 @@ import org.artifactory.security.UserGroupInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.util.SerializablePair;
 import org.artifactory.webapp.wicket.util.validation.NameValidator;
-import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
+import org.artifactory.webapp.wicket.util.validation.PasswordStrengthValidator;
 import org.ocpsoft.prettytime.PrettyTime;
 import org.springframework.util.StringUtils;
 
@@ -123,7 +123,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             }
         };
         passwordField.setRequired(create).setOutputMarkupId(true);
-        passwordField.add(PasswordStreangthValidator.getInstance());
+        passwordField.add(PasswordStrengthValidator.getInstance());
         passwordField.setResetPassword(false);
         border.add(passwordField);
 

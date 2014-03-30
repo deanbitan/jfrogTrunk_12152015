@@ -18,12 +18,10 @@
 
 package org.artifactory.mime.version.converter.v3;
 
-import org.artifactory.version.converter.XmlConverter;
+import org.artifactory.mime.MimeType;
+import org.artifactory.mime.MimeTypeBuilder;
+import org.artifactory.mime.version.converter.MimeTypeConverterBase;
 import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.Namespace;
-
-import java.util.List;
 
 /**
  * Adds the following entries to the mimetypes file if they don't exist:
@@ -34,48 +32,16 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public class NuPkgMimeTypeConverter implements XmlConverter {
+public class NuPkgMimeTypeConverter extends MimeTypeConverterBase {
     @Override
     public void convert(Document doc) {
-        Element rootElement = doc.getRootElement();
-        Namespace namespace = rootElement.getNamespace();
 
-        List mimetypes = rootElement.getChildren("mimetype", namespace);
-        if (mimetypes == null) {
-            return;
-        }
+        MimeType nupkg = new MimeTypeBuilder("application/x-nupkg")
+                .extensions("nupkg").css("nupkg").archive(true).index(true).build();
+        addIfNotExist(doc, nupkg);
 
-        Element nupkgType = getByType(mimetypes, namespace, "application/x-nupkg");
-        if (nupkgType == null) {
-            nupkgType = new Element("mimetype", namespace);
-            nupkgType.setAttribute("type", "application/x-nupkg");
-            nupkgType.setAttribute("extensions", "nupkg");
-            nupkgType.setAttribute("archive", "true");
-            nupkgType.setAttribute("index", "true");
-            nupkgType.setAttribute("css", "nupkg");
-            rootElement.addContent(nupkgType);
-        }
-
-        Element nuspecType = getByType(mimetypes, namespace, "application/x-nuspec+xml");
-        if (nuspecType == null) {
-            nuspecType = new Element("mimetype", namespace);
-            nuspecType.setAttribute("type", "application/x-nuspec+xml");
-            nuspecType.setAttribute("extensions", "nuspec");
-            nuspecType.setAttribute("viewable", "true");
-            nuspecType.setAttribute("syntax", "xml");
-            nuspecType.setAttribute("css", "xml");
-            rootElement.addContent(nuspecType);
-        }
-    }
-
-    private Element getByType(List mimetypes, Namespace namespace, String type) {
-        for (Object mimetype : mimetypes) {
-            Element mimeTypeElement = (Element) mimetype;
-            String typeValue = mimeTypeElement.getAttributeValue("type", namespace);
-            if (type.equals(typeValue)) {
-                return mimeTypeElement;
-            }
-        }
-        return null;
+        MimeType nupspec = new MimeTypeBuilder("application/x-nuspec+xml")
+                .extensions("nuspec").css("xml").syntax("xml").viewable(true).build();
+        addIfNotExist(doc, nupspec);
     }
 }

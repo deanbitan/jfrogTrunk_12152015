@@ -74,6 +74,14 @@ public class MimeTypesReaderTest {
         assertTrue(result.getByExtension("ivy").isIndex());
     }
 
+    public void readConvertVersion5() {
+        File versionsDirectory = ResourceUtils.getResourceAsFile("/org/artifactory/mime/version/mimetypes-v5.xml");
+        MimeTypes result = new MimeTypesReader().read(versionsDirectory);
+        MimeType json = result.getByExtension("json");
+        assertNotNull(json, "Expected new json mime type not found");
+        assertTrue(json.isViewable());
+    }
+
     public void versionsRead() {
         File versionsDirectory = ResourceUtils.getResourceAsFile(
                 "/org/artifactory/mime/version/mimetypes-v1.xml").getParentFile();

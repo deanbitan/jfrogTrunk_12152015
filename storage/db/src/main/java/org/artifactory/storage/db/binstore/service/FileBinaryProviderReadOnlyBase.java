@@ -46,7 +46,7 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
     public FileBinaryProviderReadOnlyBase(File binariesDir) {
         // Main filestore directory
         this.binariesDir = binariesDir;
-        if (!binariesDir.exists() && !binariesDir.mkdirs()) {
+        if (!this.binariesDir.exists() && !this.binariesDir.mkdirs()) {
             throw new StorageException("Could not create file store folder: " + binariesDir.getAbsolutePath());
         }
 
@@ -64,24 +64,19 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
     }
 
     @Override
-    protected void check() {
-        super.check();
-        if (binariesDir == null || tempBinariesDir == null) {
-            throw new IllegalStateException("Binary Provider " + this + " not initialized!");
-        }
-    }
-
-    @Override
     public boolean exists(String sha1, long length) {
         check();
         File file = getFile(sha1);
         if (file.exists()) {
+            log.trace("File found: {}", file.getAbsolutePath());
             if (file.length() != length) {
                 log.error("Found a file with checksum '" + sha1 + "' " +
                         "but length is " + file.length() + " not " + length);
                 return false;
             }
             return true;
+        } else {
+            log.trace("File not found: {}", file.getAbsolutePath());
         }
         return next().exists(sha1, length);
     }
@@ -98,8 +93,10 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
         File file = getFile(sha1);
         try {
             if (!file.exists()) {
+                log.trace("File not found: {}", file.getAbsolutePath());
                 return next().getStream(sha1);
             }
+            log.trace("File found: {}", file.getAbsolutePath());
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
             throw new BinaryNotFoundException("Couldn't access file '" + file.getAbsolutePath(), e);

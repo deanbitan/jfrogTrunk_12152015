@@ -23,11 +23,8 @@ package org.artifactory.md;
  */
 public class GenericPersistenceHandler extends AbstractXmlContentPersistenceHandler<String, String> {
 
-    private final boolean saveXmlHierarchy;
-
-    public GenericPersistenceHandler(XmlMetadataProvider<String, String> xmlProvider, boolean saveXmlHierarchy) {
+    public GenericPersistenceHandler(XmlMetadataProvider<String, String> xmlProvider) {
         super(xmlProvider);
-        this.saveXmlHierarchy = saveXmlHierarchy;
     }
 
     @Override

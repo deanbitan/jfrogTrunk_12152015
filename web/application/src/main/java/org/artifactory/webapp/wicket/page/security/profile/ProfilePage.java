@@ -60,7 +60,6 @@ public class ProfilePage extends AuthenticatedPage {
     private final TitledAjaxSubmitLink updateLink;
     private final Form form;
     private final BintrayProfilePanel bintrayProfilePanel;
-    private final ProfileLockPanel profileLockPanel;
     private MavenSettingsPanel mavenSettingsPanel;
 
     public ProfilePage() {
@@ -105,7 +104,8 @@ public class ProfilePage extends AuthenticatedPage {
         bintrayProfilePanel = new BintrayProfilePanel("bintrayProfilePanel", profile);
         form.add(bintrayProfilePanel);
 
-        profileLockPanel = new ProfileLockPanel(profilePanel, bintrayProfilePanel, this, profile, adminAuthOverlay);
+        ProfileLockPanel profileLockPanel = new ProfileLockPanel(profilePanel, bintrayProfilePanel, this, profile,
+                adminAuthOverlay);
         form.add(profileLockPanel);
 
         WebMarkupContainer mavenSettingsPanel = new WebMarkupContainer("mavenSettingsPanel");

@@ -33,7 +33,7 @@ public abstract class ReplicationBaseDescriptorTest<T extends ReplicationBaseDes
         T replicationDescriptor = constructDescriptor();
         assertFalse(replicationDescriptor.isEnabled(), "Default enabled state should be false.");
         assertNull(replicationDescriptor.getCronExp(), "Default cron exp should be null.");
-        assertTrue(replicationDescriptor.isSyncDeletes(), "Default replication deletes state should be true.");
+        assertFalse(replicationDescriptor.isSyncDeletes(), "Default replication deletes state should be true.");
         assertTrue(replicationDescriptor.isSyncProperties(), "Default replication properties state should be true.");
         assertNull(replicationDescriptor.getPathPrefix(), "Default path prefix should be null.");
         assertNull(replicationDescriptor.getRepoKey(), "Default repo key should be null.");

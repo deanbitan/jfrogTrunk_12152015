@@ -19,7 +19,6 @@
 package org.artifactory.storage.db;
 
 import org.artifactory.api.common.MultiStatusHolder;
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +57,7 @@ public interface DbService extends ReloadableBean {
      * Enforce a new separate transaction to execute the given callable statement.
      *
      * @param execute The Callable statement execute inside the NEW TX
-     * @param <T> The return type
+     * @param <T>     The return type
      * @return Whatever the callable returned
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)

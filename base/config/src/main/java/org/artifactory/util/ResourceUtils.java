@@ -86,6 +86,13 @@ public abstract class ResourceUtils {
         }
     }
 
+    /**
+     * Returns the specified resource input stream. Throws an exception if the resource is not found int the class path.
+     *
+     * @param path The resource path
+     * @return The classpath resource input stream
+     * @see Class#getResourceAsStream(java.lang.String)
+     */
     public static InputStream getResource(String path) {
         InputStream is = ResourceUtils.class.getResourceAsStream(path);
         assertResourceNotNull(path, is);

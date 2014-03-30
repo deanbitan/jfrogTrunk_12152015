@@ -79,4 +79,10 @@ public interface ArtifactoryResponse {
     Exception getException();
 
     void sendAuthorizationRequired(String message, String realm) throws IOException;
+
+    boolean isPropertiesQuery();
+
+    String getPropertiesMediaType();
+
+    void setPropertiesMediaType(String propsQueryFormat);
 }

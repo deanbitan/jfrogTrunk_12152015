@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- // @formatter:off -->
+
 <!--
   ~ Artifactory is a binaries repository manager.
   ~ Copyright (C) 2012 JFrog Ltd.
@@ -16,15 +18,14 @@
   ~ You should have received a copy of the GNU Lesser General Public License
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
-
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.5.3"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.5.3
-        http://www.jfrog.org/xsd/artifactory-v1_5_3.xsd">
+        xmlns="http://artifactory.jfrog.org/xsd/1.5.4"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.5.4
+        http://www.jfrog.org/xsd/artifactory-v1_5_4.xsd">
     <!--
     enable/disable anonymous downloads
     -->
-    <security>
+        <security>
         <anonAccessEnabled>true</anonAccessEnabled>
     </security>
     <backups>
@@ -323,4 +324,8 @@
         <!-- by default cleanup once a day at 05:12AM -->
         <cronExp>0 12 5 * * ?</cronExp>
     </cleanupConfig>
+    <virtualCacheCleanupConfig>
+        <!-- by default cleanup once a day at 05:00AM -->
+        <cronExp>0 12 0 * * ?</cronExp>
+    </virtualCacheCleanupConfig>
 </config>

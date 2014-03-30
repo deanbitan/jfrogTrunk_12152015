@@ -68,7 +68,7 @@ public final class JacksonReader {
      */
     public static <T> T bytesAsValueTypeReference(byte[] bytes, TypeReference<T> valueTypeReference)
             throws IOException {
-        return JacksonFactory.createJsonParser(bytes).<T>readValueAs(valueTypeReference);
+        return JacksonFactory.createJsonParser(bytes).readValueAs(valueTypeReference);
     }
 
     /**
@@ -95,7 +95,7 @@ public final class JacksonReader {
      */
     public static <T> T streamAsValueTypeReference(InputStream inputStream, TypeReference<T> valueTypeReference)
             throws IOException {
-        return JacksonFactory.createJsonParser(inputStream).<T>readValueAs(valueTypeReference);
+        return JacksonFactory.createJsonParser(inputStream).readValueAs(valueTypeReference);
     }
 
     /**

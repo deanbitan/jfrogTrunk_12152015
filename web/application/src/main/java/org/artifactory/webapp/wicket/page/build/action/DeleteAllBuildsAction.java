@@ -45,7 +45,7 @@ import java.util.List;
 public class DeleteAllBuildsAction extends ItemAction {
     private static final Logger log = LoggerFactory.getLogger(DeleteAllBuildsAction.class);
 
-    private static String ACTION_NAME = "Delete All Builds";
+    private static final String ACTION_NAME = "Delete All Builds";
     private String buildName;
 
     /**

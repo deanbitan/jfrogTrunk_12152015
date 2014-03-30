@@ -21,8 +21,6 @@ package org.artifactory.backup;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.descriptor.backup.BackupDescriptor;
-import org.artifactory.repo.cleanup.ArtifactCleanupJob;
-import org.artifactory.repo.cleanup.IntegrationCleanupJob;
 import org.artifactory.repo.index.MavenIndexerJob;
 import org.artifactory.repo.index.MavenIndexerServiceImpl;
 import org.artifactory.repo.service.ImportJob;
@@ -31,10 +29,8 @@ import org.artifactory.schedule.StopCommand;
 import org.artifactory.schedule.StopStrategy;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
-import org.artifactory.search.archive.ArchiveIndexerImpl;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
@@ -46,16 +42,12 @@ import org.slf4j.LoggerFactory;
 @JobCommand(schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.CURRENT,
         keyAttributes = {BackupJob.BACKUP_KEY},
         commandsToStop = {
-                @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = StopStrategy.PAUSE),
                 @StopCommand(command = MavenIndexerServiceImpl.FindOrCreateMavenIndexJob.class,
                         strategy = StopStrategy.PAUSE),
                 @StopCommand(command = MavenIndexerServiceImpl.SaveMavenIndexFileJob.class,
                         strategy = StopStrategy.PAUSE),
                 @StopCommand(command = MavenIndexerJob.class, strategy = StopStrategy.PAUSE),
-                @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
-                @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),
-                @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE),
-                @StopCommand(command = ArchiveIndexerImpl.ArchiveIndexJob.class, strategy = StopStrategy.STOP)})
+                @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)})
 public class BackupJob extends QuartzCommand {
 
     private static final Logger log = LoggerFactory.getLogger(BackupJob.class);

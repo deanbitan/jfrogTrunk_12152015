@@ -240,6 +240,8 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
 
     void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor);
 
+    void setVirtualCacheCleanupConfig(CleanupConfigDescriptor virtualCacheCleanupConfig);
+
     void setQuotaConfig(QuotaConfigDescriptor descriptor);
 
     void setExternalProvidersDescriptor(ExternalProvidersDescriptor externalProvidersDescriptor);

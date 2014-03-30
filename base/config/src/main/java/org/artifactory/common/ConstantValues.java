@@ -49,6 +49,7 @@ public enum ConstantValues {
     substituteRepoKeys("repo.key.subst."),
     repoConcurrentDownloadSyncTimeoutSecs("repo.concurrentDownloadSyncTimeoutSecs", Seconds.MINUTE * 15),
     downloadStatsEnabled("repo.downloadStatsEnabled", TRUE),
+    disableGlobalRepoAccess("repo.global.disabled", FALSE),
     fsItemCacheIdleTimeSecs("fsitem.cache.idleTimeSecs", Seconds.MINUTE * 20),
     searchMaxResults("search.maxResults", 500),
     searchUserQueryLimit("search.userQueryLimit", 1000),
@@ -130,6 +131,8 @@ public enum ConstantValues {
     integrationCleanupQuietPeriodSecs("integrationCleanup.quietPeriodSecs", 60),
     folderPruningIntervalSecs("folderPruning.intervalSecs", 300),
     folderPruningQuietPeriodSecs("folderPruning.quietPeriodSecs", 60),
+    virtualCleanupMaxAgeHours("repo.virtualCacheCleanup.maxAgeHours", 168),
+    virtualCleanupNamePattern("repo.virtualCacheCleanup.pattern", "*.pom"),
     defaultSaltValue("security.authentication.password.salt", "CAFEBABEEBABEFAC"),
     dbIdGeneratorFetchAmount("db.idGenerator.fetch.amount", 2000),
     dbIdGeneratorMaxUpdateRetries("db.idGenerator.max.update.retries", 50),
@@ -142,9 +145,12 @@ public enum ConstantValues {
     uiHideChecksums("ui.hideChecksums", FALSE),
     archiveIndexerTaskIntervalSecs("archive.indexer.intervalSecs", 60),
     inMemoryNuGetRemoteCaches("nuget.inMemoryRemoteCaches", TRUE),
+    nuGetRequireAuthentication("nuget.forceAuthentication", FALSE),
     /*ha*/
     haHeartbeatIntervalSecs("ha.heartbeat.intervalSecs", 5),
-    haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30);
+    haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30),
+    npmIndexQuietPeriodSecs("npm.index.quietPeriodSecs", 60),
+    npmIndexCycleSecs("npm.index.cycleSecs", 60);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

@@ -296,6 +296,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                     log.error("{}: Failed to download '{}'. Received status code {} and caught exception: {}",
                             HttpRepo.this, fullUrl, statusLine != null ? statusLine.getStatusCode() : "unknown",
                             throwable.getMessage());
+                    log.debug("Failed to download '"+ fullUrl + "'", throwable);
                     RepoRequests.logToContext("Failed to download: %s", throwable.getMessage());
                 } else {
                     logDownload(fullUrl,

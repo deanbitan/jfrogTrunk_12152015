@@ -18,7 +18,6 @@
 
 package org.artifactory.storage.mbean;
 
-import org.artifactory.storage.StorageService;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 
 /**
@@ -27,11 +26,9 @@ import org.artifactory.storage.binstore.service.InternalBinaryStore;
  * @author Yossi Shaul
  */
 public class ManagedStorage implements ManagedStorageMBean {
-    private final StorageService storageService;
     private final InternalBinaryStore binaryStore;
 
-    public ManagedStorage(StorageService storageService, InternalBinaryStore binaryStore) {
-        this.storageService = storageService;
+    public ManagedStorage(InternalBinaryStore binaryStore) {
         this.binaryStore = binaryStore;
     }
 

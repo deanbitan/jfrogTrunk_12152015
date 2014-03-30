@@ -292,8 +292,10 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
         private void addOfflineMessage() {
             if (ContextHelper.get().isOffline()) {
+                String message = "Artifactory " + addons.getArtifactoryRunningMode() + " is running in offline state." +
+                        " For more details please check the logs.";
                 shouldDisplay = true;
-                add(new Label("offlineMessage", "Artifactory is offline"));
+                add(new Label("offlineMessage", message));
             } else {
                 add(new WebMarkupContainer("offlineMessage"));
             }

@@ -23,19 +23,19 @@ import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
 
 /**
- * Validates passwords strenght (currently we only enforce minimum length)..
+ * Validates passwords strength (currently we only enforce minimum length)..
  *
  * @author Tal Abramson
  */
-public class PasswordStreangthValidator extends StringValidator {
-    private static final PasswordStreangthValidator INSTANCE = new PasswordStreangthValidator();
-    private int PASSWORD_MIN_LENGTH = 4;
+public class PasswordStrengthValidator extends StringValidator {
+    private static final PasswordStrengthValidator INSTANCE = new PasswordStrengthValidator();
+    private static final int PASSWORD_MIN_LENGTH = 4;
 
-    private PasswordStreangthValidator() {
+    private PasswordStrengthValidator() {
         // singleton private constructor
     }
 
-    public static PasswordStreangthValidator getInstance() {
+    public static PasswordStrengthValidator getInstance() {
         return INSTANCE;
     }
 

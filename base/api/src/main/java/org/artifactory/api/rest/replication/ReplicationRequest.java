@@ -26,7 +26,7 @@ import java.io.Serializable;
 public class ReplicationRequest implements Serializable {
 
     private boolean properties = true;
-    private boolean delete = true;
+    private boolean delete = false;
 
     /**
      * Needed only for local replications

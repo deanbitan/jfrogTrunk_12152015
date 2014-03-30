@@ -73,8 +73,8 @@ import java.util.Map;
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
-                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "quotaConfig",
-                "externalProviders"},
+                "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "virtualCacheCleanupConfig",
+                "quotaConfig", "externalProviders"},
         namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
@@ -161,6 +161,9 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private CleanupConfigDescriptor cleanupConfig;
+
+    @XmlElement
+    private CleanupConfigDescriptor virtualCacheCleanupConfig;
 
     @XmlElement
     private ExternalProvidersDescriptor externalProviders;
@@ -867,6 +870,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor) {
         this.cleanupConfig = cleanupConfigDescriptor;
+    }
+
+    @Override
+    public CleanupConfigDescriptor getVirtualCacheCleanupConfig() {
+        return virtualCacheCleanupConfig;
+    }
+
+    @Override
+    public void setVirtualCacheCleanupConfig(CleanupConfigDescriptor virtualCacheCleanupConfig) {
+        this.virtualCacheCleanupConfig = virtualCacheCleanupConfig;
     }
 
     @Override

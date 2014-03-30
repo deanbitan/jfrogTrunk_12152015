@@ -114,7 +114,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      */
     void assertValidDeployPath(ValidDeployPathContext validDeployPathContext) throws RepoRejectException;
 
-    @Lock
     <T extends RemoteRepoDescriptor> ResourceStreamHandle downloadAndSave(InternalRequestContext requestContext,
             RemoteRepo<T> remoteRepo, RepoResource res) throws IOException, RepoRejectException;
 
@@ -154,7 +153,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     VirtualRepo getGlobalVirtualRepo();
 
     /**
-     * A convenient method fro saving internally generated files to the repositories.
+     * A convenient method for saving internally generated files to the repositories.
      *
      * @param fileRepoPath Repository path to store the input stream
      * @param is           The input stream to store. Will be closed before returning from this method

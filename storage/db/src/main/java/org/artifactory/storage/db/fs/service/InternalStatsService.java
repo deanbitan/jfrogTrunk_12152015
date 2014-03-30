@@ -18,7 +18,6 @@
 
 package org.artifactory.storage.db.fs.service;
 
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.storage.fs.service.StatsService;
 
 /**

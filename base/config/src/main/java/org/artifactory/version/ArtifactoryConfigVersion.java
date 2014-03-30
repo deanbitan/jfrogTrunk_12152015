@@ -50,6 +50,7 @@ import org.artifactory.version.converter.v147.JfrogRemoteRepoUrlConverter;
 import org.artifactory.version.converter.v147.UnusedArtifactCleanupSwitchConverter;
 import org.artifactory.version.converter.v149.ReplicationElementNameConverter;
 import org.artifactory.version.converter.v152.BlackDuckProxyConverter;
+import org.artifactory.version.converter.v153.VirtualCacheCleanupConverter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -192,7 +193,7 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v1418("http://artifactory.jfrog.org/xsd/1.4.18",
             "http://www.jfrog.org/xsd/artifactory-v1_4_18.xsd",
             ArtifactoryVersion.v266,
-            ArtifactoryVersion.v267),
+            ArtifactoryVersion.v2671),
     v150("http://artifactory.jfrog.org/xsd/1.5.0",
             "http://www.jfrog.org/xsd/artifactory-v1_5_0.xsd",
             ArtifactoryVersion.v300,
@@ -208,6 +209,10 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v153("http://artifactory.jfrog.org/xsd/1.5.3",
             "http://www.jfrog.org/xsd/artifactory-v1_5_3.xsd",
             ArtifactoryVersion.v310,
+            ArtifactoryVersion.v3111, new VirtualCacheCleanupConverter()),
+    v154("http://artifactory.jfrog.org/xsd/1.5.4",
+            "http://www.jfrog.org/xsd/artifactory-v1_5_4.xsd",
+            ArtifactoryVersion.v320,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;

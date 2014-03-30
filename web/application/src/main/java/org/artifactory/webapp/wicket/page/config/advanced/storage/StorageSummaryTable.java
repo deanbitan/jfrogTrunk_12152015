@@ -52,8 +52,8 @@ import static org.artifactory.api.repo.storage.RepoStorageSummaryInfo.Repository
  * @author Yossi Shaul
  */
 public class StorageSummaryTable extends TitledPanel {
-
     private final StorageSummaryInfo storageSummary;
+    private final int numberOfRowsInTable = 200;
 
     public StorageSummaryTable(String id, StorageSummaryInfo storageSummary) {
         super(id);
@@ -61,7 +61,7 @@ public class StorageSummaryTable extends TitledPanel {
         setOutputMarkupId(true);
         List<IColumn<RepoStorageSummaryInfo>> columns = getColumns();
         SortableTable<RepoStorageSummaryInfo> table = new SortableTable<>(
-                "storageSummaryTable", columns, new StorageSummarySortableDataProvider(), 50);
+                "storageSummaryTable", columns, new StorageSummarySortableDataProvider(), numberOfRowsInTable);
         add(table);
         add(new CssClass("storage-table"));
     }
@@ -196,11 +196,20 @@ public class StorageSummaryTable extends TitledPanel {
         @Override
         public Iterator<RepoStorageSummaryInfo> iterator(int first, int count) {
             ListPropertySorter.sort(repoSummaries, getSort());
-            // subtract the total line
-            List<RepoStorageSummaryInfo> sorted = Lists.newArrayList(repoSummaries.subList(first, count - 1));
-            // now add the total to the end
-            sorted.add(totalStorageSummary);
+            List<RepoStorageSummaryInfo> sorted;
+            if (lastPage(first, count)) {
+                // subtract the total line
+                sorted = Lists.newArrayList(repoSummaries.subList(first, first + count - 1));
+                // now add the total to the end
+                sorted.add(totalStorageSummary);
+            } else {
+                sorted = Lists.newArrayList(repoSummaries.subList(first, first + count));
+            }
             return sorted.iterator();
+        }
+
+        private boolean lastPage(int first, int count) {
+            return repoSummaries.size() - first < numberOfRowsInTable;
         }
 
         @Override

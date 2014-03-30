@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
-        "repoLayout", "enableNuGetSupport", "enableGemsSupport"}, namespace = Descriptor.NS)
+        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport"}, namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     @XmlID
@@ -54,6 +54,8 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     private boolean enableNuGetSupport;
 
     private boolean enableGemsSupport;
+
+    private boolean enableNpmSupport;
 
     @Override
     public String getKey() {
@@ -125,6 +127,15 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setEnableGemsSupport(boolean enableGemsSupport) {
         this.enableGemsSupport = enableGemsSupport;
+    }
+
+    @Override
+    public boolean isEnableNpmSupport() {
+        return enableNpmSupport;
+    }
+
+    public void setEnableNpmSupport(boolean enableNpmSupport) {
+        this.enableNpmSupport = enableNpmSupport;
     }
 
     @Override

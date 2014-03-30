@@ -42,4 +42,6 @@ public interface RepositoryConfiguration {
     boolean isEnableNuGetSupport();
 
     boolean isEnableGemsSupport();
+
+    boolean isEnableNpmSupport();
 }

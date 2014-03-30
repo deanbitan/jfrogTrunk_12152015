@@ -44,7 +44,7 @@ import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordSt
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.security.CryptoHelper;
 import org.artifactory.security.MutableUserInfo;
-import org.artifactory.webapp.wicket.util.validation.PasswordStreangthValidator;
+import org.artifactory.webapp.wicket.util.validation.PasswordStrengthValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -118,7 +118,7 @@ public class ProfilePanel extends TitledPanel {
             newPassword = new PasswordTextField("newPassword");
             newPassword.setRequired(false);
             newPassword.setEnabled(false);
-            newPassword.add(PasswordStreangthValidator.getInstance());
+            newPassword.add(PasswordStrengthValidator.getInstance());
 
 
             strength = new PasswordStrengthComponentPanel("strengthPanel",

@@ -20,9 +20,6 @@ package org.artifactory.storage.fs.service;
 
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.sapi.common.Lock;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
 

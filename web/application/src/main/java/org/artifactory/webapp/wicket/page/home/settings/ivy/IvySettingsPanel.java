@@ -95,8 +95,7 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
             credentialsElement.setAttribute("username",
                     filteredResourcesWebAddon.getGeneratedSettingsUsernameTemplate());
 
-            credentialsElement.setAttribute("passwd",
-                    filteredResourcesWebAddon.getGeneratedSettingsUserCredentialsTemplate(false));
+            credentialsElement.setAttribute("passwd", "@PASS_ATTR_PLACEHOLDER@");
 
             rootNode.addContent(credentialsElement);
         }
@@ -140,7 +139,13 @@ public class IvySettingsPanel extends BaseIvySettingsGeneratorPanel {
 
         document.setRootElement(rootNode);
 
-        return new XMLOutputter(Format.getPrettyFormat()).outputString(document);
+        String result = new XMLOutputter(Format.getPrettyFormat()).outputString(document);
+        // after the xml is generated replace the password placeholder with the template placeholder (otherwise jdom
+        // escapes this string)
+        FilteredResourcesWebAddon filteredResourcesWebAddon =
+                addonsManager.addonByType(FilteredResourcesWebAddon.class);
+        return result.replace("@PASS_ATTR_PLACEHOLDER@",
+                filteredResourcesWebAddon.getGeneratedSettingsUserCredentialsTemplate(false));
     }
 
     @Override

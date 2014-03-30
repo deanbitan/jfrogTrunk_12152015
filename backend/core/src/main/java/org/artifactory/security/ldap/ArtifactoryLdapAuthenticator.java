@@ -19,6 +19,7 @@
 package org.artifactory.security.ldap;
 
 import com.google.common.collect.Maps;
+import org.apache.commons.lang.ObjectUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -84,10 +85,12 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
-        // TODO: [by FS] Removing all LDAP connectors when ANY conf changes is brutal!
-        // Need to check if security conf changed then re-init
-        authenticators = null;
-        init();
+        if (!centralConfig.getDescriptor().getSecurity().equals(oldDescriptor.getSecurity())
+                || !ObjectUtils.equals(centralConfig.getDescriptor().getDefaultProxy(), oldDescriptor.getDefaultProxy())
+                || authenticators == null) {
+            authenticators = null;
+            init();
+        }
     }
 
     @Override

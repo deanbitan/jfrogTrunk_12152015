@@ -57,6 +57,9 @@ public abstract class NumberFormatter {
      * @return A formatted percentage value for the given fraction
      */
     public static String formatPercentage(double fraction) {
+        if (Double.isNaN(fraction)) {
+            return "N/A";
+        }
         return new DecimalFormat("###.##%").format(fraction);
     }
 }

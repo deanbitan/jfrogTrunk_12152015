@@ -36,6 +36,7 @@ import java.util.Properties;
 
 import static java.lang.String.valueOf;
 import static org.artifactory.version.ArtifactoryVersion.v304;
+import static org.artifactory.version.ArtifactoryVersion.v310;
 
 /**
  * @author Gidi Shabat
@@ -77,12 +78,14 @@ public class VersionProviderImpl implements VersionProvider {
             log.debug("Current running version is : {}", runningVersion.getVersion().name());
             originalHomeVersion = runningVersion;
             originalHaVersion = runningVersion;
-            updateOriginaHomelVersion();
+            updateOriginalHomeVersion();
             verifyVersion(originalHomeVersion.getVersion(), runningVersion.getVersion());
             log.debug("Last Artifactory home version is: {}", originalHomeVersion.getVersion().name());
-            updateOriginalHalVersion();
-            verifyVersion(originalHaVersion.getVersion(), runningVersion.getVersion());
-            log.debug("Last Artifactory cluster home version is: {}", originalHaVersion.getVersion().name());
+            if (artifactoryHome.isHaConfigured()) {
+                updateOriginalHalVersion();
+                verifyVersion(originalHaVersion.getVersion(), runningVersion.getVersion());
+                log.debug("Last Artifactory cluster home version is: {}", originalHaVersion.getVersion().name());
+            }
         } catch (Exception e) {
             log.error("Fail to load artifactory.properties", e);
         }
@@ -102,9 +105,14 @@ public class VersionProviderImpl implements VersionProvider {
                 // If the db_properties table exists, but no version found the we can't conclude the original version
                 // in such case the vest choice is to assume that the home version is equals to the database version.
                 if (dbProperties == null) {
-                    log.info("The db_properties table is empty: assuming that the db version is the original local" +
-                            " home version");
-                    originalServiceVersion = originalHomeVersion;
+                    //TODO [Gidi] this case should not happened check with Yossi
+                    // In this case it is ok to assume that the version is 3.1.0 since the DB_PROPERTIES table exists and above is
+                    // allowed only from version 3.0.0 and no conversion has been added between version 3.0.0 to 3.1.0
+                    // except the addition of DB_PROPERTIES and the ARTIFACTORY_SERVERS tables.
+                    String version = v310.name();
+                    String revision = valueOf(v310.getRevision());
+                    long timestampOfVersion311 = 1387059697274l;
+                    originalServiceVersion = new CompoundVersionDetails(v310, version, revision, timestampOfVersion311);
                 } else {
                     originalServiceVersion = getDbCompoundVersionDetails(dbProperties);
                 }
@@ -174,7 +182,7 @@ public class VersionProviderImpl implements VersionProvider {
         originalHaVersion = ArtifactoryVersionReader.read(artifactoryPropertiesFile);
     }
 
-    private void updateOriginaHomelVersion() throws IOException {
+    private void updateOriginalHomeVersion() throws IOException {
         File artifactoryPropertiesFile = artifactoryHome.getHomeArtifactoryPropertiesFile();
         // If the properties file doesn't exists, then create it
         if (!artifactoryPropertiesFile.exists()) {

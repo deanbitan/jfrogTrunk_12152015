@@ -128,6 +128,11 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isEnableNpmSupport() {
+        return remoteRepo.isEnableNpmSupport();
+    }
+
+    @Override
     public boolean isArchiveBrowsingEnabled() {
         return remoteRepo.isArchiveBrowsingEnabled();
     }

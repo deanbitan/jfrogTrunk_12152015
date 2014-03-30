@@ -47,10 +47,9 @@ import java.util.Set;
  * @author Noam Y. Tenne
  */
 public class DeleteBuildAction extends ItemAction {
-
     private static final Logger log = LoggerFactory.getLogger(DeleteBuildAction.class);
 
-    private static String ACTION_NAME = "Delete";
+    private static final String ACTION_NAME = "Delete";
     private BuildRun buildRun;
 
     /**

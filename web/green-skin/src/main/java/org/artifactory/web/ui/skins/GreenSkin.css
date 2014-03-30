@@ -5650,6 +5650,10 @@ table.data-table td.add-value-row {
     background: url(images/addons/16gems.png) no-repeat left top;
 }
 
+.addon-npm {
+    background: url(images/addons/16npm.png) no-repeat left top;
+}
+
 .addon-ha {
     background: url(images/addons/16ha.png) no-repeat left top;
 }

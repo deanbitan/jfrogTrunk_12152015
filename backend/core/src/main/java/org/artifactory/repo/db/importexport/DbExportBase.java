@@ -49,7 +49,6 @@ import org.artifactory.storage.spring.StorageContextHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,8 +68,12 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
 
     protected ExportSettings settings;
     protected MutableStatusHolder status;
-    @Nullable
-    protected ImportExportAccumulator accumulator;
+    protected final ImportExportAccumulator accumulator;
+
+    protected DbExportBase(ImportExportAccumulator accumulator) {
+        this.accumulator = accumulator;
+    }
+
 
     protected void setExportSettings(ExportSettings settings) {
         this.settings = settings;
@@ -78,7 +81,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
     }
 
     protected void exportFile(FileInfo sourceFile) {
-        status.debug("Exporting file '" + sourceFile.getRepoKey() + "'...", log);
+        status.debug("Exporting file '" + sourceFile.getRepoPath() + "'...", log);
 
         File targetBase;
         if (settings.isCreateArchive()) {
@@ -122,16 +125,16 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             if (settings.isM2Compatible()) {
                 writeChecksums(targetFile, sourceFile);
             }
-            if (accumulator != null) {
-                accumulator.accumulateFile();
-            }
+            accumulator.accumulateSuccessfulFile();
             //If a file export fails, we collect the error but not fail the whole export
         } catch (FileNotFoundException e) {
             status.error("Failed to export '" + targetFile.getAbsolutePath() + "' since it is non-accessible.",
                     e, log);
+            accumulator.accumulateSkippedFile();
         } catch (Exception e) {
             status.error("Failed to export '" + targetFile.getAbsolutePath() + "' due to:" + e.getMessage(),
                     e, log);
+            accumulator.accumulateSkippedFile();
         }
     }
 
@@ -141,6 +144,8 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
         }
         if (settings.isIncremental() && targetFile.exists()) {
             // incremental export - only export the file if it is newer
+            log.trace("Source file last modified {} vs target file last modified {}", sourceFile.getLastModified(),
+                    targetFile.lastModified());
             if (sourceFile.getLastModified() <= targetFile.lastModified()) {
                 log.debug("Skipping not modified file {}", sourceFile.getRepoPath());
                 return true;

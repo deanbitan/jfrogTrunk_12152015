@@ -66,4 +66,18 @@ public abstract class RepoRequests {
         }
         return originatedHeaders;
     }
+
+    /**
+     * Use with caution, This might return an empty string when calling internally from a different thread!
+     *
+     * @return The servlet context url if the thread local is bounded, otherwise returns an empty string
+     */
+    public static String getServletContextUrl() {
+        RepoRequestContext repoRequestContext = context.get();
+        if (repoRequestContext != null) {
+            return repoRequestContext.getArtifactoryRequest().getServletContextUrl();
+        }
+
+        return "";
+    }
 }

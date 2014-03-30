@@ -82,7 +82,7 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
         for (ModuleInfo moduleInfo : moduleInfoToRepoPaths.keySet()) {
 
             searchResults.add(new VersionUnitSearchResult(
-                    new VersionUnit(moduleInfo, Sets.<RepoPath>newHashSet(moduleInfoToRepoPaths.get(moduleInfo)))));
+                    new VersionUnit(moduleInfo, Sets.newHashSet(moduleInfoToRepoPaths.get(moduleInfo)))));
         }
 
         return searchResults;

@@ -33,7 +33,7 @@ import org.artifactory.webapp.wicket.page.build.page.BuildBrowserRootPage;
  */
 public class GoToBuildAction extends ItemAction {
 
-    private static String ACTION_NAME = "Go To Build";
+    private static final String ACTION_NAME = "Go To Build";
     private BuildRun buildRun;
     private String moduleId;
 

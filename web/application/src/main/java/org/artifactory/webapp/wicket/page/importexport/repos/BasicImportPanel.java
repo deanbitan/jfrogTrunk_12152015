@@ -30,7 +30,6 @@ import org.artifactory.api.common.ImportExportStatusHolder;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -59,9 +58,6 @@ public abstract class BasicImportPanel extends TitledPanel {
 
     @SpringBean
     private RepositoryService repositoryService;
-
-    @SpringBean
-    private ArchiveIndexer archiveIndexer;
 
     @WicketProperty
     private String targetRepoKey;

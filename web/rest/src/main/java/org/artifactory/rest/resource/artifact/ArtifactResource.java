@@ -116,8 +116,6 @@ public class ArtifactResource {
     private static final String MD_TIMESTAMPS_PARAM = "mdTimestamps";
     private static final String INCLUDE_ROOT_PATH_PARAM = "includeRootPath";
     private static final String LAST_MODIFIED_PARAM = "lastModified";
-    private static final String PROPERTIES_PARAM = "properties";
-    private static final String PROPERTIES_XML_PARAM = "propertiesXml";
     private static final String PERMISSIONS_PARAM = "permissions";
     private static final String STATS_PARAM = "stats";
 
@@ -597,7 +595,8 @@ public class ArtifactResource {
     private Response notAcceptableResponse(String producedMediaType) {
         return Response.status(HttpStatus.SC_NOT_ACCEPTABLE).entity(
                 "Resource produces " + producedMediaType
-                        + " but client only accepts " + requestHeaders.getAcceptableMediaTypes()).build();
+                        + " but client only accepts " + requestHeaders.getAcceptableMediaTypes()
+        ).build();
     }
 
     private boolean isRequestToNoneLocalRepo() {

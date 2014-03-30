@@ -26,6 +26,7 @@ import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.UploadService;
+import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.exception.CancelException;
@@ -40,6 +41,7 @@ import org.artifactory.webapp.wicket.page.browse.listing.ArtifactListPage;
 import org.artifactory.webapp.wicket.page.browse.simplebrowser.SimpleRepoBrowserPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 import javax.annotation.Nonnull;
 import javax.servlet.FilterChain;
@@ -107,13 +109,15 @@ public class RepoFilter extends DelayedFilterBase {
             //Handle upload and download requests
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
 
-            if ("get".equals(method) && servletPath.endsWith("/")) {
+            if ("get".equals(method) && artifactoryRequest.isDirectoryRequest()) {
                 //Check that this is not a recursive call
                 if (artifactoryRequest.isRecursive()) {
                     String msg = "Recursive call detected for '" + request + "'. Returning nothing.";
                     artifactoryResponse.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
                     return;
                 }
+                // TODO: [by fsi] all the servlet path analysis was already done in the ArtifactoryRequest object
+                // TODO: Needs to be reused here!
                 log.debug("Serving a directory get request.");
                 if (RequestUtils.isWebdavRequest(request)) {
                     doWebDavDirectory(response, artifactoryRequest);
@@ -135,12 +139,23 @@ public class RepoFilter extends DelayedFilterBase {
                      * Do not check for this parameter when not performing a get/head request so that the container
                      * doesn't try to read the parameters and verify the size of the form in case of an upload
                      */
-                    String trace = artifactoryRequest.getParameter("trace");
-                    if (trace != null) {
+                    if (artifactoryRequest.getParameter(ArtifactRestConstants.TRACE_PARAM) != null) {
                         //Re-init the context with the trace logging response
                         artifactoryResponse = new TraceLoggingResponse(artifactoryResponse);
                         initRequestContext(method, artifactoryRequest, artifactoryResponse);
                     }
+
+                    // TODO: Should we return 405 Method not allowed for head request on properties:
+                    // TODO: For now the HEAD request will ignore this properties query param
+                    if (artifactoryRequest.getParameter(ArtifactRestConstants.PROPERTIES_PARAM) != null) {
+                        //Set the response to return only the properties of the item in json format
+                        artifactoryResponse.setPropertiesMediaType(MediaType.APPLICATION_JSON.toString());
+                    }
+                    if (artifactoryRequest.getParameter(ArtifactRestConstants.PROPERTIES_XML_PARAM) != null) {
+                        //Set the response to return only the properties of the item in json format
+                        artifactoryResponse.setPropertiesMediaType(MediaType.APPLICATION_XML.toString());
+                    }
+
                     doDownload(request, response, method, artifactoryRequest, artifactoryResponse);
                     return;
                 }

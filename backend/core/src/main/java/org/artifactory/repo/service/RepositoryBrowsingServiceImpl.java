@@ -226,6 +226,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         try {
             remoteItems.addAll(repo.listRemoteResources(relativePath));
         } catch (IOException e) {
+            log.info("Error while listing remote resources: {}", e.getMessage());
             log.debug("Error while listing remote resources", e);
             // probably remote not found - return 404 only if current folder doesn't exist in the cache
             if (!pathExistsInCache) {
@@ -289,7 +290,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                     virtualItem = new VirtualBrowsableItem(child.getName(), child.isFolder(), child.getCreated(),
                             child.getLastModified(), child.getSize(), InternalRepoPathFactory.create(virtualRepoKey,
                             childRelativePath),
-                            Lists.<String>newArrayList(getSearchableRepoKeys(virtualRepos)));
+                            Lists.newArrayList(getSearchableRepoKeys(virtualRepos)));
                     virtualItem.setRemote(true);    // default to true
                     childrenToReturn.put(childRelativePath, virtualItem);
                 }

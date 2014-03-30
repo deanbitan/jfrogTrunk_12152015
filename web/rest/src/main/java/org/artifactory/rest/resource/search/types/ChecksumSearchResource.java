@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -58,17 +57,15 @@ public class ChecksumSearchResource {
     private RepositoryService repositoryService;
     private RepositoryBrowsingService repoBrowsingService;
     private HttpServletRequest request;
-    private HttpServletResponse response;
 
     public ChecksumSearchResource(AuthorizationService authorizationService, RestAddon restAddon,
             RepositoryService repositoryService, RepositoryBrowsingService repoBrowsingService,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletRequest request) {
         this.authorizationService = authorizationService;
         this.restAddon = restAddon;
         this.repositoryService = repositoryService;
         this.repoBrowsingService = repoBrowsingService;
         this.request = request;
-        this.response = response;
     }
 
     /**

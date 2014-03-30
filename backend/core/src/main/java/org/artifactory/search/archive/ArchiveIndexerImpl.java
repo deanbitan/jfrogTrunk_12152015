@@ -25,7 +25,6 @@ import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.backup.BackupJob;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
@@ -37,9 +36,6 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
-import org.artifactory.repo.index.MavenIndexerJob;
-import org.artifactory.repo.index.MavenIndexerServiceImpl;
-import org.artifactory.repo.service.ExportJob;
 import org.artifactory.repo.service.ImportJob;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.fs.VfsFile;
@@ -317,13 +313,8 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer {
             commandsToStop = {
                     //todo consider have group of index jobs/maintenance jobs/import-export jobs
                     @StopCommand(command = ImportJob.class, strategy = IMPOSSIBLE),
-                    @StopCommand(command = ExportJob.class, strategy = IMPOSSIBLE),
-                    @StopCommand(command = BackupJob.class, strategy = IMPOSSIBLE),
                     @StopCommand(command = ArtifactCleanupJob.class, strategy = IMPOSSIBLE),
                     @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = IMPOSSIBLE),
-                    @StopCommand(command = MavenIndexerServiceImpl.FindOrCreateMavenIndexJob.class, strategy = IMPOSSIBLE),
-                    @StopCommand(command = MavenIndexerServiceImpl.SaveMavenIndexFileJob.class, strategy = IMPOSSIBLE),
-                    @StopCommand(command = MavenIndexerJob.class, strategy = IMPOSSIBLE)
             })
     public static class ArchiveIndexJob extends QuartzCommand {
         @Override

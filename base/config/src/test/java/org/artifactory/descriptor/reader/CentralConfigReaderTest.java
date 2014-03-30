@@ -73,7 +73,8 @@ public class CentralConfigReaderTest extends ArtifactoryHomeBoundTest {
             executorService.submit(new ConfigReadWriteTester(oldArtifactoryConfig));
         }
         executorService.shutdown();
-        executorService.awaitTermination(15, TimeUnit.SECONDS);
+        //executorService.awaitTermination(15, TimeUnit.SECONDS);
+        executorService.awaitTermination(1500, TimeUnit.SECONDS);
 
         assertNull(failureMessage, failureMessage);
     }

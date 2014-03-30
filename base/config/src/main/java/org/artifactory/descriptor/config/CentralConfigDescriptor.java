@@ -114,6 +114,8 @@ public interface CentralConfigDescriptor extends Descriptor {
 
     CleanupConfigDescriptor getCleanupConfig();
 
+    CleanupConfigDescriptor getVirtualCacheCleanupConfig();
+
     QuotaConfigDescriptor getQuotaConfig();
 
     Map<String, LocalReplicationDescriptor> getLocalReplicationsMap();
