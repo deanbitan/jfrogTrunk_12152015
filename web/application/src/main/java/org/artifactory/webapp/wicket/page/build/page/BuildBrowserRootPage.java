@@ -18,8 +18,8 @@
 
 package org.artifactory.webapp.wicket.page.build.page;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -218,8 +218,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @param buildNumber  Number of build to locate
      * @param buildStarted Started time of build to locate
      * @return Build object if found.
-     * @throws AbortWithHttpErrorCodeException
-     *          If the build was not found
+     * @throws AbortWithHttpErrorCodeException If the build was not found
      */
     private Build getBuild(String buildName, String buildNumber, String buildStarted) {
         boolean buildStartedSupplied = StringUtils.isNotBlank(buildStarted);
@@ -259,8 +258,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * @param build    Build to search within
      * @param moduleId Module ID to locate
      * @return Module object if found.
-     * @throws AbortWithHttpErrorCodeException
-     *          If the module was not found
+     * @throws AbortWithHttpErrorCodeException If the module was not found
      */
     private Module getModule(Build build, String moduleId) {
         Module module = build.getModule(moduleId);
@@ -297,8 +295,7 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
      * Validates that the given key exists as a parameter key
      *
      * @param key Key to validate
-     * @throws AbortWithHttpErrorCodeException
-     *          If the key was not found
+     * @throws AbortWithHttpErrorCodeException If the key was not found
      */
     protected void validateKey(String key) {
         if (pageParameters.get(key).isEmpty()) {

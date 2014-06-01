@@ -18,8 +18,8 @@
 
 package org.artifactory.repo.virtual.interceptor;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.exception.RepoRejectException;

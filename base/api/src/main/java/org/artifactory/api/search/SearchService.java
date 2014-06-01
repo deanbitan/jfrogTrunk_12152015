@@ -18,6 +18,7 @@
 
 package org.artifactory.api.search;
 
+import org.artifactory.api.rest.search.common.RestDateFieldName;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchControls;
@@ -32,7 +33,6 @@ import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.build.BuildRun;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
-import org.artifactory.util.SerializablePair;
 
 import javax.annotation.Nullable;
 import java.util.Calendar;
@@ -45,6 +45,7 @@ import java.util.concurrent.TimeoutException;
  * @author Noam Tenne
  */
 public interface SearchService {
+
     /**
      * @param controls Search data (mainly the search term)
      * @return Artifacts found by the search, empty list if nothing was found
@@ -68,14 +69,21 @@ public interface SearchService {
     ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls);
 
     /**
+     * Search for files with dates fields passed that are included in the date range provided.
+     * One of the from or to date is mandatory.
+     *
      * @param from          The time to start the search exclusive (eg, >). If empty will start from 1st Jan 1970
      * @param to            The time to end search inclusive (eg, <=), If empty, will not use current time as the limit
      * @param reposToSearch Lists of repositories to search within
-     * @return List of file repo paths that were created or modifies between the input time range and the date the file
-     *         was modified. Empty if none is found.
+     * @param dates         Lists of date field names to look for
+     * @return List of artifacts that have a date between the input time range and the date the file
+     * was modified. Empty if none is found.
      */
-    List<SerializablePair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(
-            @Nullable Calendar from, @Nullable Calendar to, List<String> reposToSearch);
+    ItemSearchResults<ArtifactSearchResult> searchArtifactsInRange(
+            Calendar from,
+            Calendar to,
+            List<String> reposToSearch,
+            RestDateFieldName... dates);
 
     ItemSearchResults<StatsSearchResult> searchArtifactsNotDownloadedSince(StatsSearchControls controls);
 

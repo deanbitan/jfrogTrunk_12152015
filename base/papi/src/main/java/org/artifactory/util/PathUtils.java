@@ -383,6 +383,9 @@ public class PathUtils {
     }
 
     public static String getRelativePath(String parentPath, String childPath) {
+        if (childPath.startsWith("/")) {
+            childPath = childPath.substring(1);
+        }
         childPath = childPath.substring(parentPath.length(), childPath.length());
         childPath = formatRelativePath(childPath);
         return childPath;

@@ -24,7 +24,10 @@ import org.artifactory.common.wicket.component.LabeledValue;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.storage.FileStoreStorageSummary;
+import org.artifactory.storage.StorageProperties;
 import org.artifactory.util.NumberFormatter;
+
+import java.io.File;
 
 /**
  * A panel to display the file store summary.
@@ -37,9 +40,12 @@ public class FileStoreSummaryPanel extends FieldSetPanel {
 
         add(new LabeledValue("storageType",
                 fileStoreSummary.getBinariesStorageType().toString()));
-        add(new LabeledValue("storageDirectory",
-                fileStoreSummary.getBinariesFolder().getAbsolutePath()));
-        if (fileStoreSummary.getCacheSize() > 0) {
+        File binariesFolder = fileStoreSummary.getBinariesFolder();
+        String storageDirLabel = binariesFolder != null ?
+                binariesFolder.getAbsolutePath() : "Filesystem storage is not used";
+        add(new LabeledValue("storageDirectory", storageDirLabel));
+        if (fileStoreSummary.getCacheSize() > 0 || fileStoreSummary.getBinariesStorageType().equals(
+                StorageProperties.BinaryProviderType.fullDb)) {
             add(new LabeledValue("cacheSize", StorageUnit.toReadableString(fileStoreSummary.getCacheSize())));
         } else {
             add(new WebMarkupContainer("cacheSize"));
@@ -50,10 +56,12 @@ public class FileStoreSummaryPanel extends FieldSetPanel {
                 StorageUnit.toReadableString(fileStoreSummary.getTotalSpace())));
         add(new LabeledValue("usedSpace",
                 StorageUnit.toReadableString(fileStoreSummary.getUsedSpace()) + " (" +
-                        NumberFormatter.formatPercentage(fileStoreSummary.getUsedSpaceFraction()) + ")"));
+                        NumberFormatter.formatPercentage(fileStoreSummary.getUsedSpaceFraction()) + ")"
+        ));
         add(new LabeledValue("freeSpace",
                 StorageUnit.toReadableString(fileStoreSummary.getFreeSpace()) + " (" +
-                        NumberFormatter.formatPercentage(fileStoreSummary.getFreeSpaceFraction()) + ")"));
+                        NumberFormatter.formatPercentage(fileStoreSummary.getFreeSpaceFraction()) + ")"
+        ));
     }
 
     @Override

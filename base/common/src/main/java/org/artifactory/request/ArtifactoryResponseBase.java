@@ -18,8 +18,8 @@
 
 package org.artifactory.request;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.util.ExceptionUtils;
@@ -46,8 +46,8 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         setStatus(status);
         try {
             long bytesCopied = IOUtils.copyLarge(is, os);
-            if (bytesCopied == 0) {
-                log.warn("Zero bytes sent to client.");
+            if (bytesCopied == 0 && getContentLength() > 0) {
+                log.warn("Zero bytes sent to client but expected {} bytes.", getContentLength());
             } else {
                 long expectedLength = getContentLength();
                 if (expectedLength > 0 && bytesCopied != expectedLength) {

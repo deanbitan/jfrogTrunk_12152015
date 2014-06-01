@@ -18,13 +18,14 @@
 
 package org.artifactory.util;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.RestConstants;
@@ -37,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
+import javax.annotation.Nullable;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -201,18 +203,18 @@ public abstract class HttpUtils {
 
     /**
      * @param status The (http based) response code
-     * @return True if the code symbols a successful request cycle (i.e., in the 200-20x range)
+     * @return True if the code symbols a successful request cycle (i.e., in the 200-299 range)
      */
     public static boolean isSuccessfulResponseCode(int status) {
-        return HttpStatus.SC_OK <= status && status <= HttpStatus.SC_MULTI_STATUS;
+        return HttpStatus.SC_OK <= status && status <= 299;
     }
 
     /**
      * @param status The (http based) response code
-     * @return True if the code symbols a successful request cycle (i.e., in the 300-30x range)
+     * @return True if the code symbols a successful request cycle (i.e., in the 300-399 range)
      */
     public static boolean isRedirectionResponseCode(int status) {
-        return HttpStatus.SC_MULTIPLE_CHOICES <= status && status <= HttpStatus.SC_TEMPORARY_REDIRECT;
+        return HttpStatus.SC_MULTIPLE_CHOICES <= status && status <= 399;
     }
 
     /**
@@ -230,17 +232,21 @@ public abstract class HttpUtils {
     }
 
     /**
-     * Returns a gzip aware input stream
+     * Returns a gzip aware input stream from the response.
      *
-     * @param method The method to read the response from
+     * @param response The method to read the response from
      * @return Returns a gzip aware input stream
-     * @throws IOException
      */
-    public static InputStream getGzipAwareResponseStream(HttpMethodBase method) throws IOException {
-        InputStream is = method.getResponseBodyAsStream();
-        Header[] contentEncodings = method.getResponseHeaders("Content-Encoding");
-        for (int i = 0, n = contentEncodings.length; i < n; i++) {
-            if ("gzip".equalsIgnoreCase(contentEncodings[i].getValue())) {
+    @Nullable
+    public static InputStream getGzipAwareResponseStream(HttpResponse response) throws IOException {
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            return null;
+        }
+        InputStream is = entity.getContent();
+        Header[] contentEncodings = response.getHeaders(HttpHeaders.CONTENT_ENCODING);
+        for (org.apache.http.Header contentEncoding : contentEncodings) {
+            if ("gzip".equalsIgnoreCase(contentEncoding.getValue())) {
                 return new GZIPInputStream(is);
             }
         }
@@ -310,16 +316,42 @@ public abstract class HttpUtils {
     /**
      * Extracts the content length from the response header, or return -1 if the content-length field was not found.
      *
-     * @param method
-     * @return
+     * @param response The response
+     * @return Content length in bytes or -1 if header not found
      */
-    public static long getContentLength(HttpMethod method) {
-        Header contentLengthHeader = method.getResponseHeader("Content-Length");
-        if (contentLengthHeader == null) {
+    public static long getContentLength(HttpResponse response) {
+        Header contentLengthHeader = response.getFirstHeader(HttpHeaders.CONTENT_LENGTH);
+        if (contentLengthHeader != null) {
+            return extractContentLengthFromHeader(contentLengthHeader.getValue());
+        } else {
             return -1;
         }
-        String contentLengthString = contentLengthHeader.getValue();
-        return Long.parseLong(contentLengthString);
+    }
+
+    /**
+     * Return content length as long (required for uploaded files > 2GB).
+     * The servlet api can only return this as int.
+     *
+     * @param request The request
+     * @return The content length in bytes or -1 if not found
+     */
+    public static long getContentLength(HttpServletRequest request) {
+        return extractContentLengthFromHeader(request.getHeader(HttpHeaders.CONTENT_LENGTH));
+    }
+
+    private static long extractContentLengthFromHeader(String lengthHeader) {
+        long contentLength;
+        if (lengthHeader != null) {
+            try {
+                contentLength = Long.parseLong(lengthHeader);
+            } catch (NumberFormatException e) {
+                log.trace("Bad Content-Length value {}", lengthHeader);
+                contentLength = -1;
+            }
+        } else {
+            contentLength = -1;
+        }
+        return contentLength;
     }
 
     public static void sendErrorResponse(HttpServletResponse response, int statusCode, String message)

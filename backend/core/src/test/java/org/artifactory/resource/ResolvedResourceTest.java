@@ -115,6 +115,7 @@ public class ResolvedResourceTest {
     }
 
     private Checksum[] calcChecksum(String content) throws IOException {
-        return Checksums.calculate(new ByteArrayInputStream(content.getBytes("utf-8")), ChecksumType.values());
+        return Checksums.calculate(new ByteArrayInputStream(content.getBytes("utf-8")),
+                ChecksumType.BASE_CHECKSUM_TYPES);
     }
 }

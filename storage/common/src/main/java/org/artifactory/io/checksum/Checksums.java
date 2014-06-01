@@ -44,16 +44,6 @@ public abstract class Checksums {
     }
 
     /**
-     * Calculate checksums for all known checksum types. Closes the input stream when done.
-     *
-     * @param in Input streams for which checksums are calculated
-     * @return Array of all computed checksums
-     */
-    public static Checksum[] calculateAll(InputStream in) throws IOException {
-        return calculate(in, ChecksumType.values());
-    }
-
-    /**
      * Calculate checksum for the input type. Closes the input stream when done.
      *
      * @param in   Input streams for which checksums are calculated
@@ -83,7 +73,7 @@ public abstract class Checksums {
      * @param in    Input streams for which checksums are calculated
      * @param types Checksum types to calculate
      * @return Pair where the first element is the amount of bytes read and the second is array of all computed
-     *         checksums
+     * checksums
      * @throws IOException On any exception reading from the stream
      */
     public static Pair<Long, Checksum[]> calculateWithLength(InputStream in, ChecksumType... types) throws IOException {

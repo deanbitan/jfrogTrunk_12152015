@@ -18,7 +18,7 @@
 
 package org.artifactory.addon.wicket;
 
-import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
@@ -62,7 +62,7 @@ public interface NuGetWebAddon extends Addon {
      * @param repo    Descriptor of currently configured repo
      * @return HTTP method to execute
      */
-    HttpMethodBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo);
+    HttpRequestBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo);
 
     /**
      * Returns the NuPkg information tab

@@ -74,11 +74,12 @@ public class Checksum {
         if (checksum != null) {
             throw new IllegalStateException("Checksum already calculated.");
         }
-        //Encodes a 128 bit or 160-bit byte array into a String
+        // Encodes a byte array into a String that should be the length of the type (2 chars per byte)
         byte[] bytes = digest.digest();
-        if (bytes.length != 16 && bytes.length != 20) {
+        if (bytes.length * 2 != type.length()) {
             int bitLength = bytes.length * 8;
-            throw new IllegalArgumentException("Unrecognised length for binary data: " + bitLength + " bits");
+            throw new IllegalArgumentException(
+                    "Unrecognised length for binary data: " + bitLength + " bits instead of " + (type.length() * 4));
         }
         StringBuilder sb = new StringBuilder();
         for (byte aBinaryData : bytes) {

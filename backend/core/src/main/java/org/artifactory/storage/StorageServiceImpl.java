@@ -120,24 +120,11 @@ public class StorageServiceImpl implements InternalStorageService {
     }
 
     @Override
-    //TODO: [by YS] change to the new directories
     public void logStorageSizes() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n-----Derby storage sizes-----\n");
         ArtifactoryHome artifactoryHome = ContextHelper.get().getArtifactoryHome();
-        File dataDir = artifactoryHome.getHaAwareDataDir();
-        // print the size of derby directories (derby is the new name, db and store for old installations)
-        File[] dirs = {new File(dataDir, "derby"), new File(dataDir, "db"), binaryStore.getBinariesDir()};
-        for (File dir : dirs) {
-            if (dir.exists()) {
-                long sizeOfDirectory = FileUtils.sizeOfDirectory(dir);
-                String sizeOfDirectoryGb = StorageUnit.toReadableString(sizeOfDirectory);
-                sb.append(dir.getName()).append("=").append(sizeOfDirectory).append(" bytes ").append(" (").append(
-                        (sizeOfDirectoryGb)).append(")").append("\n");
-            }
-        }
-        sb.append("-----------------------");
-        log.info(sb.toString());
+        File derbyDirectory = new File(artifactoryHome.getDataDir(), "derby");
+        long sizeOfDirectory = FileUtils.sizeOfDirectory(derbyDirectory);
+        log.info("Derby database storage size: {} ({})", StorageUnit.toReadableString(sizeOfDirectory), derbyDirectory);
     }
 
     @Override
@@ -161,8 +148,11 @@ public class StorageServiceImpl implements InternalStorageService {
         if (!quotaConfig.isEnabled()) {
             return null;
         }
-
         File binariesFolder = binaryStore.getBinariesDir();
+        if (binariesFolder == null) {
+            return null;
+        }
+
         return new StorageQuotaInfo(binariesFolder, quotaConfig.getDiskSpaceLimitPercentage(),
                 quotaConfig.getDiskSpaceWarningPercentage(), fileContentLength);
     }

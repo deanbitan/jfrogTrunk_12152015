@@ -19,11 +19,15 @@
 package org.artifactory.version;
 
 import com.google.common.cache.CacheBuilder;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.NameValuePair;
-import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.version.ArtifactoryVersioning;
@@ -40,9 +44,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static org.artifactory.common.ConstantValues.artifactoryVersion;
 
 /**
  * Main implementation of the Version Info Service. Can be used to retrieve the latest version and revision numbers.
@@ -129,35 +136,36 @@ public class VersionInfoServiceImpl implements VersionInfoService {
      */
     @Override
     public synchronized Future<ArtifactoryVersioning> getRemoteVersioningAsync(Map<String, String> headersMap) {
-        GetMethod getMethod = new GetMethod(URL);
-        NameValuePair[] httpMethodParams = new NameValuePair[]{
-                new NameValuePair(ConstantValues.artifactoryVersion.getPropertyName(),
-                        ConstantValues.artifactoryVersion.getString()),
-                new NameValuePair(PARAM_JAVA_VERSION, System.getProperty(PARAM_JAVA_VERSION)),
-                new NameValuePair(PARAM_OS_ARCH, System.getProperty(PARAM_OS_ARCH)),
-                new NameValuePair(PARAM_OS_NAME, System.getProperty(PARAM_OS_NAME)),
-                new NameValuePair(PARAM_HASH, addonsManager.getLicenseKeyHash())
-        };
-        getMethod.setQueryString(httpMethodParams);
-        //Append headers
-        setHeader(getMethod, headersMap, "User-Agent");
-        setHeader(getMethod, headersMap, "Referer");
-
-        ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
-        HttpClient client = new HttpClientConfigurator()
-                .soTimeout(15000)
-                .connectionTimeout(1500)
-                .retry(0, false)
-                .proxy(proxy)
-                .getClient();
 
         ArtifactoryVersioning result;
+        CloseableHttpClient client = null;
+        CloseableHttpResponse response = null;
         try {
+            URI versionQueryUrl = new URIBuilder(URL)
+                    .addParameter(artifactoryVersion.getPropertyName(), artifactoryVersion.getString())
+                    .addParameter(PARAM_JAVA_VERSION, System.getProperty(PARAM_JAVA_VERSION))
+                    .addParameter(PARAM_OS_ARCH, System.getProperty(PARAM_OS_ARCH))
+                    .addParameter(PARAM_OS_NAME, System.getProperty(PARAM_OS_NAME))
+                    .addParameter(PARAM_HASH, addonsManager.getLicenseKeyHash()).build();
+
+            HttpGet getMethod = new HttpGet(versionQueryUrl);
+            //Append headers
+            setHeader(getMethod, headersMap, HttpHeaders.USER_AGENT);
+            setHeader(getMethod, headersMap, HttpHeaders.REFERER);
+
+            ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
+            client = new HttpClientConfigurator()
+                    .soTimeout(15000)
+                    .connectionTimeout(1500)
+                    .retry(0, false)
+                    .proxy(proxy)
+                    .getClient();
+
             log.debug("Retrieving Artifactory versioning from remote server");
-            client.executeMethod(getMethod);
+            response = client.execute(getMethod);
             String returnedInfo = null;
-            if (getMethod.getStatusCode() == HttpStatus.SC_OK) {
-                returnedInfo = getMethod.getResponseBodyAsString();
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                returnedInfo = EntityUtils.toString(response.getEntity());
             }
             if (StringUtils.isBlank(returnedInfo)) {
                 log.debug("Versioning response contains no data");
@@ -168,19 +176,22 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         } catch (Exception e) {
             log.debug("Failed to retrieve Artifactory versioning from remote server {}", e.getMessage());
             result = createServiceUnavailableVersioning();
+        } finally {
+            IOUtils.closeQuietly(client);
+            IOUtils.closeQuietly(response);
         }
 
         cache.put(VersionInfoServiceImpl.CACHE_KEY, result);
         return new AsyncResult<>(result);
     }
 
-    private void setHeader(GetMethod getMethod, Map<String, String> headersMap, String headerKey) {
+    private void setHeader(HttpGet getMethod, Map<String, String> headersMap, String headerKey) {
         String headerVal = headersMap.get(headerKey.toUpperCase());
         if ("Referer".equalsIgnoreCase(headerKey)) {
             headerVal = HttpUtils.adjustRefererValue(headersMap, headerVal);
         }
         if (headerVal != null) {
-            getMethod.setRequestHeader(headerKey, headerVal);
+            getMethod.setHeader(headerKey, headerVal);
         }
     }
 

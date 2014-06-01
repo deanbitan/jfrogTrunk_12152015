@@ -49,6 +49,7 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
@@ -236,7 +237,8 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                     String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
                     error(new UnescapedFeedbackMessage(
                             status.getStatusMsg() + " Please see the <a href=\"" + systemLogsPage +
-                                    "\">logs</a> page for more details"));
+                                    "\">logs</a> page for more details"
+                    ));
                 }
                 for (StatusEntry info : infos) {
                     info(info.getMessage());
@@ -267,8 +269,11 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
         }
 
         // if the search filter has value set the search pattern
+        String managerPassword = searchPattern.getManagerPassword();
         if (StringUtils.hasText(searchPattern.getSearchFilter()) || (StringUtils.hasText(
-                searchPattern.getManagerDn()) && StringUtils.hasText(searchPattern.getManagerPassword()))) {
+                searchPattern.getManagerDn()) && StringUtils.hasText(managerPassword))) {
+            // Encrypt password before updating the entity
+            searchPattern.setManagerPassword(CryptoHelper.encryptIfNeeded(managerPassword));
             entity.setSearch(searchPattern);
         }
 

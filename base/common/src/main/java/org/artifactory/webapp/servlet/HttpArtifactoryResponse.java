@@ -18,7 +18,8 @@
 
 package org.artifactory.webapp.servlet;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.ArtifactoryResponseBase;
@@ -136,7 +137,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
             response.setContentLength((int) length);
         } else {
             // servlet api doesn't support long values, set the header manually
-            response.setHeader("Content-Length", length + "");
+            response.setHeader(HttpHeaders.CONTENT_LENGTH, length + "");
         }
     }
 

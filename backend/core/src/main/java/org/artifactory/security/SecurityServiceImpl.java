@@ -60,6 +60,7 @@ import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.security.SecurityConstants;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.security.interceptor.SecurityConfigurationChangesInterceptors;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
@@ -87,6 +88,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.crypto.SecretKey;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -94,6 +96,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.KeyPair;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -235,7 +238,8 @@ public class SecurityServiceImpl implements InternalSecurityService {
                     if (!configurationFile.canRead() || !configurationFile.canWrite()) {
                         throw new ConfigurationException(
                                 "Insufficient permissions. Security configuration import requires " +
-                                        "both read and write permissions for " + configAbsolutePath);
+                                        "both read and write permissions for " + configAbsolutePath
+                        );
                     }
                     try {
                         SecurityInfo descriptorToSave = new SecurityInfoReader().read(configurationFile);
@@ -579,6 +583,26 @@ public class SecurityServiceImpl implements InternalSecurityService {
     @Nullable
     public GroupInfo findGroup(String groupName) {
         return userGroupStoreService.findGroup(groupName);
+    }
+
+    @Override
+    public String createEncryptedPasswordIfNeeded(UserInfo user, String password) {
+        if (isPasswordEncryptionEnabled()) {
+            KeyPair keyPair;
+            if (StringUtils.isBlank(user.getPrivateKey())) {
+                MutableUserInfo mutableUser = InfoFactoryHolder.get().copyUser(user);
+                keyPair = CryptoHelper.generateKeyPair();
+                mutableUser.setPrivateKey(CryptoHelper.convertToString(keyPair.getPrivate()));
+                mutableUser.setPublicKey(CryptoHelper.convertToString(keyPair.getPublic()));
+                updateUser(mutableUser, false);
+            } else {
+                keyPair = CryptoHelper.createKeyPair(user.getPrivateKey(), user.getPublicKey());
+            }
+
+            SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(keyPair);
+            return CryptoHelper.encryptSymmetric(password, secretKey);
+        }
+        return password;
     }
 
     /**

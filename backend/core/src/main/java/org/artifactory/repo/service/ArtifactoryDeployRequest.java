@@ -61,7 +61,7 @@ public class ArtifactoryDeployRequest extends InternalArtifactoryRequest {
     }
 
     @Override
-    public int getContentLength() {
+    public long getContentLength() {
         return contentLength;
     }
 

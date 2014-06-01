@@ -32,6 +32,7 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
 import org.artifactory.webapp.wicket.util.CronUtils;
@@ -145,6 +146,8 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
                 error("Invalid cron expression");
                 return false;
             }
+
+            replicationDescriptor.setPassword(CryptoHelper.encryptIfNeeded(replicationDescriptor.getPassword()));
         }
 
         return true;

@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.sapi.search.VfsBoolType;
 import org.artifactory.sapi.search.VfsComparatorType;
+import org.artifactory.sapi.search.VfsDateFieldName;
 import org.artifactory.sapi.search.VfsFunctionType;
 import org.artifactory.sapi.search.VfsQueryFieldType;
 
@@ -50,14 +51,14 @@ class VfsQueryCriterionDbImpl extends BaseVfsQueryCriterion {
         this.propertyName = propertyName;
         if ("node_name".equals(propertyName)
                 || "node_path".equals(propertyName)
-                || "modified".equals(propertyName)
-                || "created".equals(propertyName)) {
+                || VfsDateFieldName.LAST_MODIFIED.propName.equals(propertyName)
+                || VfsDateFieldName.CREATED.propName.equals(propertyName)) {
             fieldType = VfsQueryFieldType.BASE_NODE;
         } else if ("entry_path".equals(propertyName)) {
             fieldType = VfsQueryFieldType.ARCHIVE_PATH;
         } else if ("entry_name".equals(propertyName)) {
             fieldType = VfsQueryFieldType.ARCHIVE_NAME;
-        } else if ("last_downloaded".equals(propertyName)) {
+        } else if (VfsDateFieldName.LAST_DOWNLOADED.propName.equals(propertyName)) {
             fieldType = VfsQueryFieldType.STATISTIC;
         } else if (propertyName.startsWith(ChecksumType.sha1.name())
                 || propertyName.startsWith(ChecksumType.md5.name())) {

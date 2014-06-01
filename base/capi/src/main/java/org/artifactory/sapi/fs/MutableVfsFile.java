@@ -55,7 +55,7 @@ public interface MutableVfsFile extends MutableVfsItem<MutableFileInfo>, VfsFile
      */
     void setClientMd5(String md5);
 
-    void fillData(InputStream in);
+    void fillBinaryData(InputStream in);
 
     /**
      * Sets the statistics data on this mutable file. Used only during import.
@@ -80,5 +80,5 @@ public interface MutableVfsFile extends MutableVfsItem<MutableFileInfo>, VfsFile
      * @param length The length of the binary
      * @return True if the record exists or was added successfully
      */
-    boolean useData(String sha1, String md5, long length);
+    boolean tryUsingExistingBinary(String sha1, String md5, long length);
 }

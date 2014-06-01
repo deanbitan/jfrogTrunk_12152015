@@ -19,13 +19,16 @@
 package org.artifactory.storage.db.fs.model;
 
 import com.google.common.collect.Lists;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.exception.CancelException;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.MutableFolderInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.StorageInterceptors;
@@ -131,8 +134,8 @@ public class DbFsItemProvider implements VfsItemProvider {
         }
 
         // time to create a new item. start checking from the parent to the requested repo path
-        safeCreateAncestors();
         try {
+            safeCreateAncestors();
             // get mutable item for the requested repo path
             LockEntryId lockEntryId = vault.getLock(repoPath);
             FsItemLockEntry sessionLockEntry = LockingHelper.writeLock(lockEntryId);
@@ -153,6 +156,8 @@ public class DbFsItemProvider implements VfsItemProvider {
                 throw new IllegalStateException("Mutable item cannot be null when create is on: " + repoPath);
             }
             return mutableItem;
+        } catch (RepoRejectException e) {
+            throw new IllegalArgumentException("Could not create fsItem", e);
         } finally {
             if (mutableItem == null) {
                 // item not found -> release the lock on this repo path
@@ -161,7 +166,7 @@ public class DbFsItemProvider implements VfsItemProvider {
         }
     }
 
-    public void safeCreateAncestors() {
+    protected void safeCreateAncestors() throws RepoRejectException {
         // the goal is to create the parent folders outside the current transaction
         // In import or copy move mode transaction globally managed by DB import handler
         String transactionName = TransactionSynchronizationManager.getCurrentTransactionName();
@@ -187,15 +192,23 @@ public class DbFsItemProvider implements VfsItemProvider {
         }
     }
 
-    private void createAncestors() {
+    private void createAncestors() throws RepoRejectException {
         // in most cases the parent already exist so perform a quick check before looping from the root
         if (repoPath.getParent() == null || itemExists(repoPath.getParent())) {
+            if (itemExistsAndIsFile(repoPath.getParent())) {
+                throw new RepoRejectException("Parent " + repoPath.getParent().getPath() + " must be a folder",
+                        HttpStatus.SC_BAD_REQUEST);
+            }
             return;
         }
         List<RepoPath> ancestors = getAncestors();
         for (RepoPath ancestor : ancestors) {
             // first check if it's already locked by this session
             FsItemLockEntry sessionLockEntry = LockingHelper.getLockEntry(ancestor);
+            if (itemExistsAndIsFile(ancestor)) {
+                throw new RepoRejectException("Parent " + repoPath.getParent().getPath() + " must be a folder",
+                        HttpStatus.SC_BAD_REQUEST);
+            }
             if ((sessionLockEntry == null || sessionLockEntry.getMutableFsItem() == null) && !itemExists(ancestor)) {
                 // acquire the write lock
                 LockEntryId lockEntryId = vault.getLock(ancestor);
@@ -275,6 +288,19 @@ public class DbFsItemProvider implements VfsItemProvider {
             throw new StorageException(e);
         }
         return item;
+    }
+
+    private boolean itemExistsAndIsFile(RepoPath repoPath) {
+        if (repoPath == null) {
+            return false;
+        }
+        FileService fileService = ContextHelper.get().beanForType(FileService.class);
+        try {
+            ItemInfo itemInfo = fileService.loadItem(repoPath);
+            return !itemInfo.isFolder();
+        } catch (VfsItemNotFoundException e) {
+            return false;
+        }
     }
 
     private boolean itemExists(RepoPath repoPath) {

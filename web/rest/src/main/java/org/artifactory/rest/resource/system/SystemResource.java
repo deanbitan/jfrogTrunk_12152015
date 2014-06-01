@@ -25,6 +25,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.backup.InternalBackupService;
 import org.artifactory.info.InfoWriter;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.storage.StorageService;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,6 +91,13 @@ public class SystemResource {
     @Path(SystemRestConstants.PATH_STORAGE)
     public StorageResource getStorageResource() {
         return new StorageResource(storageService, backupService, binaryStore, httpResponse);
+    }
+
+    @Path(SystemRestConstants.PATH_ENCRYPT)
+    @Produces(MediaType.TEXT_PLAIN)
+    public String encryptWithMasterKey() {
+        CryptoHelper.createKeyFile();
+        return "DONE";
     }
 
 }

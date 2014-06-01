@@ -23,6 +23,7 @@ import org.apache.commons.compress.utils.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.jackson.JacksonReader;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.storage.db.build.entity.BuildEntity;
 import org.artifactory.storage.db.build.entity.BuildPromotionStatus;
 import org.artifactory.storage.db.build.entity.BuildProperty;
@@ -303,12 +304,37 @@ public class BuildsDao extends BaseDao {
         return buildNames;
     }
 
-    public Collection<BuildEntity> findBuildForModuleIds(Set<Long> moduleIds) throws SQLException {
+    public Collection<BuildEntity> findBuildsForArtifactChecksum(ChecksumType type, String checksum) throws SQLException {
         Collection<BuildEntity> results = Lists.newArrayList();
         ResultSet rs = null;
         try {
-            rs = jdbcHelper.executeSelect("SELECT DISTINCT * FROM builds b, build_modules m" +
-                    " WHERE b.build_id = m.build_id AND m.module_id IN (#)", moduleIds);
+            rs = jdbcHelper.executeSelect("SELECT DISTINCT b.* FROM builds b, build_artifacts ba, build_modules bm" +
+                    " WHERE b.build_id = bm.build_id" +
+                    " AND bm.module_id = ba.module_id" +
+                    " AND ba." + type.name() + " = ?" +
+                    " AND ba.module_id = bm.module_id", checksum);
+            while (rs.next()) {
+                results.add(resultSetToBuild(rs));
+            }
+        } finally {
+            DbUtils.close(rs);
+        }
+        for (BuildEntity buildEntity : results) {
+            buildEntity.setProperties(findBuildProperties(buildEntity.getBuildId()));
+            buildEntity.setPromotions(findBuildPromotions(buildEntity.getBuildId()));
+        }
+        return results;
+    }
+
+    public Collection<BuildEntity> findBuildsForDependencyChecksum(ChecksumType type, String checksum) throws SQLException {
+        Collection<BuildEntity> results = Lists.newArrayList();
+        ResultSet rs = null;
+        try {
+            rs = jdbcHelper.executeSelect("SELECT DISTINCT b.* FROM builds b, build_dependencies bd, build_modules bm" +
+                    " WHERE b.build_id = bm.build_id" +
+                    " AND bm.module_id = bd.module_id" +
+                    " AND bd." + type.name() + " = ?" +
+                    " AND bd.module_id = bm.module_id", checksum);
             while (rs.next()) {
                 results.add(resultSetToBuild(rs));
             }

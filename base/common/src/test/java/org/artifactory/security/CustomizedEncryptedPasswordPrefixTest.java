@@ -20,6 +20,8 @@ package org.artifactory.security;
 
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.security.crypto.ArtifactoryBase64;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.ArtifactoryHomeStub;
 import org.testng.annotations.Test;
@@ -37,14 +39,21 @@ import static org.testng.Assert.assertTrue;
 @Test
 public class CustomizedEncryptedPasswordPrefixTest extends ArtifactoryHomeBoundTest {
 
+    @Test(enabled = false)
+    public void testStandardEncryptCharacters() throws Exception {
+        nullifyEncryptionPrefix();
+        setSurroundAndBase("%%&&", "false");
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
+        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
+        assertTrue(encrypted.startsWith("A"), "Encrypted password should have been prefixed with A " +
+                "since customized surrounding characters are ignored in Base58.");
+    }
+
     @Test
     public void testCustomizedEncryptedPasswordPrefixSurroundingCharacters() throws Exception {
-        Field encryptionPrefix = CryptoHelper.class.getDeclaredField("encryptionPrefix");
-        encryptionPrefix.setAccessible(true);
-        encryptionPrefix.set(null, null);
-        ((ArtifactoryHomeStub) ArtifactoryHome.get()).setProperty(
-                ConstantValues.securityAuthenticationEncryptedPasswordSurroundChars, "%%&&");
-        SecretKey secretKey = CryptoHelper.generatePbeKey("toto");
+        nullifyEncryptionPrefix();
+        setSurroundAndBase("%%&&", "true");
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
         String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
         assertTrue(encrypted.startsWith("%%DESede&&"), "Encrypted password should have been prefixed with the " +
                 "customized surrounding characters.");
@@ -52,14 +61,25 @@ public class CustomizedEncryptedPasswordPrefixTest extends ArtifactoryHomeBoundT
 
     @Test
     public void testCustomizedEncryptedPasswordPrefixWithInvalidSurroundingCharacters() throws Exception {
-        Field encryptionPrefix = CryptoHelper.class.getDeclaredField("encryptionPrefix");
-        encryptionPrefix.setAccessible(true);
-        encryptionPrefix.set(null, null);
-        ((ArtifactoryHomeStub) ArtifactoryHome.get()).setProperty(
-                ConstantValues.securityAuthenticationEncryptedPasswordSurroundChars, "###*&");
-        SecretKey secretKey = CryptoHelper.generatePbeKey("toto");
+        nullifyEncryptionPrefix();
+        setSurroundAndBase("###*&", "true");
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
         String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
         assertTrue(encrypted.startsWith("{DESede}"), "Encrypted password should have been prefixed with the " +
                 "default surrounding characters since the customized ones were not of an even number.");
     }
+
+    private static void nullifyEncryptionPrefix() throws NoSuchFieldException, IllegalAccessException {
+        Field encryptionPrefix = ArtifactoryBase64.class.getDeclaredField("encryptionPrefix");
+        encryptionPrefix.setAccessible(true);
+        encryptionPrefix.set(null, null);
+    }
+
+    private static void setSurroundAndBase(String surroundChars, String base64) {
+        ((ArtifactoryHomeStub) ArtifactoryHome.get()).setProperty(
+                ConstantValues.securityAuthenticationEncryptedPasswordSurroundChars, surroundChars);
+        ((ArtifactoryHomeStub) ArtifactoryHome.get()).setProperty(
+                ConstantValues.securityUseBase64, base64);
+    }
+
 }

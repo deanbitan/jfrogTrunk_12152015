@@ -20,9 +20,9 @@ package org.artifactory.addon;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.ha.message.HaMessage;
 import org.artifactory.addon.ha.message.HaMessageTopic;

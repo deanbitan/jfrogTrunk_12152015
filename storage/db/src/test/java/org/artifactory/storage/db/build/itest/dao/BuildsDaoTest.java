@@ -21,9 +21,11 @@ package org.artifactory.storage.db.build.itest.dao;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.UnmodifiableIterator;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.storage.db.build.entity.BuildEntity;
 import org.artifactory.storage.db.build.entity.BuildPromotionStatus;
 import org.artifactory.storage.db.build.entity.BuildProperty;
+import org.fest.assertions.Assertions;
 import org.jfrog.build.api.release.PromotionStatus;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -31,6 +33,7 @@ import org.testng.annotations.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -157,6 +160,52 @@ public class BuildsDaoTest extends BuildsDaoBaseTest {
         badBuild.setProperties(new HashSet<BuildProperty>());
         badBuild.setPromotions(new HashSet<BuildPromotionStatus>());
         createBuild(badBuild, "1");
+    }
+
+    public void testFindBuildsForArtifactSHA1Checksum() throws SQLException {
+        Collection<BuildEntity> builds = buildsDao.findBuildsForArtifactChecksum(ChecksumType.sha1,
+                "acab88fc2a043c2479a6de676a2f8179e9ea2167");
+
+        assertEquals(builds.size(), 3);
+        Assertions.assertThat(builds).doesNotHaveDuplicates();
+        for (BuildEntity build : builds) {
+            assertTrue(build.getBuildId() == 1 || build.getBuildId() == 2 || build.getBuildId() == 3,
+                    "Build id should be 1 or 2 or 3");
+        }
+    }
+
+    public void testFindBuildsForArtifactMD5Checksum() throws SQLException {
+        Collection<BuildEntity> builds = buildsDao.findBuildsForArtifactChecksum(ChecksumType.md5,
+                "b02a360ecad98a34b59863c1e65bcf71");
+
+        assertEquals(builds.size(), 2);
+        Assertions.assertThat(builds).doesNotHaveDuplicates();
+        for (BuildEntity build : builds) {
+            assertTrue(build.getBuildId() == 1 || build.getBuildId() == 3, "Build id should be 1 or 3");
+        }
+    }
+
+    public void testFindBuildsForDependencySHA1Checksum() throws SQLException {
+        Collection<BuildEntity> builds = buildsDao.findBuildsForDependencyChecksum(ChecksumType.sha1,
+                "ccab88fc2a043c2479a6de676a2f8179e9ea2167");
+
+        assertEquals(builds.size(), 2);
+        Assertions.assertThat(builds).doesNotHaveDuplicates();
+        for (BuildEntity build : builds) {
+            assertTrue(build.getBuildId() == 1 || build.getBuildId() == 2,
+                    "Build id should be 1 or 2");
+        }
+    }
+
+    public void testFindBuildsForDependencyMD5Checksum() throws SQLException {
+        Collection<BuildEntity> builds = buildsDao.findBuildsForDependencyChecksum(ChecksumType.md5,
+                "d02a360ecad98a34b59863c1e65bcf71");
+
+        assertEquals(builds.size(), 2);
+        Assertions.assertThat(builds).doesNotHaveDuplicates();
+        for (BuildEntity build : builds) {
+            assertTrue(build.getBuildId() == 2 || build.getBuildId() == 3, "Build id should be 2 or 3");
+        }
     }
 
     private void doDelete(long buildId, int nbDeletedRows) throws SQLException {
@@ -335,9 +384,9 @@ public class BuildsDaoTest extends BuildsDaoBaseTest {
     //@Test(dependsOnMethods = { ".*test.*" })
     @AfterClass
     public void fullDelete() throws SQLException {
-        assertEquals(buildArtifactsDao.deleteAllBuildArtifacts(), 0);
-        assertEquals(buildDependenciesDao.deleteAllBuildDependencies(), 0);
-        assertEquals(buildModulesDao.deleteAllBuildModules(), 0);
+        assertEquals(buildArtifactsDao.deleteAllBuildArtifacts(), 6);
+        assertEquals(buildDependenciesDao.deleteAllBuildDependencies(), 5);
+        assertEquals(buildModulesDao.deleteAllBuildModules(), 4);
         assertEquals(buildsDao.deleteAllBuilds(), 17);
     }
 

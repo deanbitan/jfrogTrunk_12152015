@@ -28,6 +28,7 @@ import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.util.PathUtils;
 import org.artifactory.version.CompoundVersionDetails;
@@ -136,7 +137,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         if (searchPattern != null) {
             if (PathUtils.hasText(searchPattern.getManagerDn())) {
                 contextSource.setUserDn(searchPattern.getManagerDn());
-                contextSource.setPassword(searchPattern.getManagerPassword());
+                contextSource.setPassword(CryptoHelper.decryptIfNeeded(searchPattern.getManagerPassword()));
             } else {
                 contextSource.setAnonymousReadOnly(true);
             }

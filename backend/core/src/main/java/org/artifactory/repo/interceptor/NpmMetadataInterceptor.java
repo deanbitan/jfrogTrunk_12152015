@@ -77,7 +77,7 @@ public class NpmMetadataInterceptor extends StorageInterceptorAdapter implements
     }
 
     @Override
-    public void afterAllImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status) {
+    public void afterRepoImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status) {
         if (repositoryService.localRepoDescriptorByKey(rootRepoPath.getRepoKey()) != null) {
             addonsManager.addonByType(NpmAddon.class).reindexAsync(rootRepoPath.getRepoKey());
         }
@@ -86,7 +86,7 @@ public class NpmMetadataInterceptor extends StorageInterceptorAdapter implements
     private boolean shouldTakeAction(VfsItem item) {
         if (item.isFile()) {
             RepoPath repoPath = item.getRepoPath();
-                if (repoPath.getPath().matches(".+/-/.+\\.tgz")) {
+            if (repoPath.getPath().matches(".+/-/.+\\.tgz")) {
                 String repoKey = repoPath.getRepoKey();
                 RepoDescriptor repoDescriptor = repositoryService.localRepoDescriptorByKey(repoKey);
                 return ((repoDescriptor != null) && repoDescriptor.isEnableNpmSupport());

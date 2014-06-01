@@ -81,6 +81,13 @@ public interface FileService {
     long getNodeId(RepoPath repoPath);
 
     /**
+     * Returns the node ID if path exists and points to a file
+     * @param repoPath
+     * @return the nodeID
+     */
+    long getFileNodeId(RepoPath repoPath);
+
+    /**
      * A convenience method to return the actual sha1 checksum of a file node. Will return null if the node doesn't
      * exist or is not a file.
      *

@@ -21,8 +21,8 @@ package org.artifactory.rest.resource.ci;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 import com.sun.jersey.api.core.ExtendedUriInfo;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
@@ -217,7 +217,8 @@ public class BuildResource {
                     secondBuild.getStarted());
             BuildNumberComparator comparator = new BuildNumberComparator();
             if (comparator.compare(buildRun, secondBuildRun) < 0) {
-                throw new BadRequestException("Build number should be greater than the build number to compare against.");
+                throw new BadRequestException(
+                        "Build number should be greater than the build number to compare against.");
             }
             return prepareBuildDiffResponse(build, secondBuild, request);
         } else {
@@ -260,7 +261,8 @@ public class BuildResource {
                     public BuildPatternArtifacts apply(BuildPatternArtifactsRequest input) {
                         return restAddon.getBuildPatternArtifacts(input, contextUrl);
                     }
-                });
+                }
+        );
     }
 
 

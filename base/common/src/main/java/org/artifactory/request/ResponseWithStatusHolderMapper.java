@@ -18,7 +18,7 @@
 
 package org.artifactory.request;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.common.StatusHolder;
 
 /**

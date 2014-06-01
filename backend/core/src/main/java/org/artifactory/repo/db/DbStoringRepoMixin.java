@@ -19,9 +19,9 @@
 package org.artifactory.repo.db;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
@@ -260,8 +260,10 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
             //Unwrap any IOException and throw it
             Throwable ioCause = ExceptionUtils.getCauseOfTypes(e, IOException.class);
             if (ioCause != null) {
-                log.warn("IO error while trying to save resource {}'': {}",
-                        res.getRepoPath(), ioCause.getMessage());
+                log.error("IO error while trying to save resource {}'': {}: {}", res.getRepoPath(),
+                        ioCause.getClass().getName(), ioCause.getMessage());
+                log.debug("IO error while trying to save resource {}'': {}",
+                        res.getRepoPath(), ioCause.getMessage(), ioCause);
                 context.setException(ioCause);
                 throw (IOException) ioCause;
             }
@@ -308,6 +310,10 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
             JarEntry entry = jarInputStream.getNextJarEntry();
 
             if (entry == null) {
+                if (jarInputStream.getManifest() != null) {
+                    log.trace("Found manifest validating the content of '{}'.", pathId);
+                    return;
+                }
                 throw new IllegalStateException("Could not find entries within the archive.");
             }
             do {
@@ -403,7 +409,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         }
 
         PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
-        if (MavenNaming.isSnapshotMavenMetadata(path)) {
+        if (MavenNaming.isMavenMetadata(path)) {
             RepoResource mdResource = propertiesAddon.assembleDynamicMetadata(context, repoPath);
             if ((mdResource instanceof FileResource) && MavenNaming.isSnapshotMavenMetadata(path)) {
                 mdResource = resolveMavenMetadataForCompatibility(((FileResource) mdResource), context);
@@ -576,7 +582,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     }
 
     private void fillFileData(InputStream in, MutableVfsFile mutableFile) {
-        mutableFile.fillData(in); //May throw a checksum error
+        mutableFile.fillBinaryData(in); //May throw a checksum error
     }
 
     private void setClientChecksums(RepoResource res, MutableVfsFile mutableFile) {
@@ -589,7 +595,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
     }
 
     private void updateResourceWithActualBinaryData(RepoResource res, VfsFile vfsFile) {
-        // update the resource with actual checksums and size (calculated in fillData) - RTFACT-3112
+        // update the resource with actual checksums and size (calculated in fillBinaryData) - RTFACT-3112
         if (res.getInfo() instanceof MutableRepoResourceInfo) {
             ChecksumsInfo newlyCalculatedChecksums = vfsFile.getInfo().getChecksumsInfo();
             MutableRepoResourceInfo info = (MutableRepoResourceInfo) res.getInfo();

@@ -19,9 +19,12 @@
 package org.artifactory.repo.remote.browse;
 
 import com.google.common.base.Charsets;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.util.HttpUtils;
@@ -51,29 +54,28 @@ public abstract class RemoteRepositoryBrowser {
             url += "/";
         }
 
-        GetMethod method = new GetMethod(url);
-        int statusCode = client.executeMethod(method);
-        try {
-            assertSizeLimit(url, method);
+        HttpGet method = new HttpGet(url);
+        try (CloseableHttpResponse response = client.executeMethod(method)) {
+            assertSizeLimit(url, response);
 
-            InputStream responseBodyAsStream = HttpUtils.getGzipAwareResponseStream(method);
+            InputStream responseBodyAsStream = HttpUtils.getGzipAwareResponseStream(response);
             String responseString = IOUtils.toString(responseBodyAsStream, Charsets.UTF_8.name());
-            if (statusCode != HttpStatus.SC_OK) {
+            StatusLine status = response.getStatusLine();
+            if (status.getStatusCode() != HttpStatus.SC_OK) {
                 String message = "Unable to retrieve " + url + ": "
-                        + method.getStatusCode() + ": " + method.getStatusText();
-                throw new RemoteRequestException(message, statusCode, responseString);
+                        + status.getStatusCode() + ": " + status.getReasonPhrase();
+                throw new RemoteRequestException(message, status.getStatusCode(), responseString);
             }
 
             return responseString;
-        } finally {
-            method.releaseConnection();
         }
     }
 
-    protected void assertSizeLimit(String urlStr, GetMethod method) throws IOException {
-        if (HttpUtils.getContentLength(method) > StorageUnit.MB.toBytes(1)) {
+    protected void assertSizeLimit(String urlStr, HttpResponse response) throws IOException {
+        long contentLength = HttpUtils.getContentLength(response);
+        if (contentLength > StorageUnit.MB.toBytes(1)) {
             throw new IOException("Failed to retrieve directory listing from " + urlStr
-                    + ". Response Content-Length of " + HttpUtils.getContentLength(method)
+                    + ". Response Content-Length of " + contentLength
                     + " exceeds max of " + StorageUnit.MB.toBytes(1) + " bytes.");
         }
     }

@@ -76,6 +76,9 @@ public abstract class TaskCallback<C extends JobExecutionContext> {
         this.tasksStopped.clear();
         try {
             taskService.stopRelatedTasks(activeTask.getType(), this.tasksStopped, activeTask.getKeyValues());
+        } catch (TaskImpossibleToStartException e) {
+            log.debug("Task " + taskToken + " prohibited from running: " + e.getMessage(), e);
+            return false;
         } catch (Exception e) {
             log.warn("Couldn't start task " + taskToken + ": " + e.getMessage());
             log.debug("Couldn't start task " + taskToken + ": " + e.getMessage(), e);

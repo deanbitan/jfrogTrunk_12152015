@@ -31,6 +31,7 @@ public interface SearchRestConstants {
     String PATH_PROPERTY = "prop";
     String PATH_USAGE_SINCE = "usage";
     String PATH_CREATED_IN_RANGE = "creation";
+    String PATH_DATES_IN_RANGE = "dates";
     String PATH_PATTERN = "pattern";
     String PATH_LICENSE = "license";
     String PATH_CHECKSUM = "checksum";
@@ -83,6 +84,10 @@ public interface SearchRestConstants {
     //Artifact versions params
     String PARAM_FETCH_FROM_REMOTE = "remote";
 
+    // Dynamic search params
+    String PARAM_DATE_FIELDS = "dateFields";
+    String PARAM_RESULT_FIELDS = "resultFields";
+
     //Build artifacts params
     String BUILD_NAME_PARAM = "buildName";
     String BUILD_NUMBER_PARAM = "buildNumber";
@@ -108,6 +113,8 @@ public interface SearchRestConstants {
     String MT_ARTIFACT_VERSIONS_SEARCH_RESULT =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactVersionsResult+json";
     String MT_BUILD_ARTIFACTS_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".BuildArtifactsSearchResult+json";
+    String MT_ARTIFACT_RESULT =
+            RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactResult+json";
 
     String NOT_FOUND = "No results found.";
 }

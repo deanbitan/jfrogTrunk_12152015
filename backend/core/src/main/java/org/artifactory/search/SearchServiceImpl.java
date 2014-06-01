@@ -25,6 +25,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualRepoItem;
+import org.artifactory.api.rest.search.common.RestDateFieldName;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchControls;
 import org.artifactory.api.search.archive.ArchiveSearchControls;
@@ -63,6 +64,7 @@ import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.archive.ArchiveSearcher;
 import org.artifactory.search.build.BuildSearcher;
 import org.artifactory.search.deployable.VersionUnitSearcher;
+import org.artifactory.search.fields.FieldNameConverter;
 import org.artifactory.search.gavc.GavcSearcher;
 import org.artifactory.search.property.PropertySearcher;
 import org.artifactory.search.stats.LastDownloadedSearcher;
@@ -70,12 +72,14 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.util.GlobalExcludes;
 import org.artifactory.util.PathMatcher;
-import org.artifactory.util.SerializablePair;
 import org.artifactory.version.CompoundVersionDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -87,7 +91,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.artifactory.sapi.search.VfsBoolType.AND;
 import static org.artifactory.sapi.search.VfsBoolType.OR;
 import static org.artifactory.sapi.search.VfsComparatorType.*;
 import static org.artifactory.sapi.search.VfsQueryResultType.FILE;
@@ -99,6 +102,7 @@ import static org.artifactory.sapi.search.VfsQueryResultType.FILE;
 @Service
 @Reloadable(beanClass = InternalSearchService.class, initAfter = {InternalRepositoryService.class})
 public class SearchServiceImpl implements InternalSearchService {
+    private static final Logger log = LoggerFactory.getLogger(SearchServiceImpl.class);
 
     @Autowired
     private VfsQueryService vfsQueryService;
@@ -194,49 +198,61 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     @Override
-    public List<SerializablePair<RepoPath, Calendar>> searchArtifactsCreatedOrModifiedInRange(Calendar from,
+    public ItemSearchResults<ArtifactSearchResult> searchArtifactsInRange(
+            Calendar from,
             Calendar to,
-            List<String> reposToSearch) {
+            List<String> reposToSearch,
+            RestDateFieldName... dates) {
         if (from == null && to == null) {
-            return Collections.emptyList();
-        } else if (from == null) {
-            from = Calendar.getInstance();
-            from.setTimeInMillis(0);    // 1st Jan 1970
-        } else if (to == null) {
-            to = Calendar.getInstance();    // now
+            log.info("Received search artifacts in range with no range!");
+            return new ItemSearchResults<>(Collections.<ArtifactSearchResult>emptyList(), 0L);
+        }
+        if (dates == null || dates.length == 0) {
+            log.info("Received search artifacts in range with no date field!");
+            return new ItemSearchResults<>(Collections.<ArtifactSearchResult>emptyList(), 0);
         }
 
         // all artifactory files that were created or modified after input date
         VfsQuery query = vfsQueryService.createQuery().expectedResult(FILE)
                 .setRepoKeys(reposToSearch)
-                .name(MavenNaming.MAVEN_METADATA_NAME).comp(NOT_EQUAL)
-                .startGroup()
-                .prop("created").comp(GREATER_THAN).val(from).nextBool(OR)
-                .prop("modified").comp(GREATER_THAN).val(from)
-                .endGroup(AND)
-                .startGroup()
-                .prop("created").comp(LOWER_THAN_EQUAL).val(to).nextBool(OR)
-                .prop("modified").comp(LOWER_THAN_EQUAL).val(to)
-                .endGroup(null);
-        VfsQueryResult queryResult = query.execute(Integer.MAX_VALUE);
-
-        List<SerializablePair<RepoPath, Calendar>> result = Lists.newArrayList();
-        for (VfsQueryRow row : queryResult.getAllRows()) {
-            ItemInfo item = row.getItem();
-            Calendar modified = Calendar.getInstance();
-            modified.setTimeInMillis(item.getCreated());
-            if (!(modified.after(from) && modified.before(to) || modified.equals(to))) {
-                // if created not in range then the last modified is
-                modified.setTimeInMillis(item.getLastModified());
+                .name(MavenNaming.MAVEN_METADATA_NAME).comp(NOT_EQUAL);
+        // If only one date make it simple
+        if (dates.length == 1) {
+            addDateRangeFilter(query, from, to, dates[0]);
+        } else {
+            query.startGroup();
+            for (int i = 0; i < dates.length; i++) {
+                RestDateFieldName date = dates[i];
+                query.startGroup();
+                addDateRangeFilter(query, from, to, date);
+                // The last one is null end group
+                if (i < dates.length - 1) {
+                    query.endGroup(OR);
+                } else {
+                    query.endGroup(null);
+                }
             }
-            RepoPath repoPath = item.getRepoPath();
-            if (!isRangeResultValid(repoPath, reposToSearch)) {
-                continue;
-            }
-
-            result.add(new SerializablePair<>(repoPath, modified));
+            query.endGroup(null);
         }
-        return result;
+        VfsQueryResult queryResult = query.execute(Integer.MAX_VALUE);
+        // There are no limit here the the getCount is really the total amount
+        List<ArtifactSearchResult> results = new ArrayList<>((int) queryResult.getCount());
+        for (VfsQueryRow vfsQueryRow : queryResult.getAllRows()) {
+            ItemInfo item = vfsQueryRow.getItem();
+            if (isRangeResultValid(item.getRepoPath(), reposToSearch)) {
+                results.add(new ArtifactSearchResult(item));
+            }
+        }
+        return new ItemSearchResults<>(results, queryResult.getCount());
+    }
+
+    private void addDateRangeFilter(VfsQuery query, Calendar from, Calendar to, RestDateFieldName dateField) {
+        if (from != null) {
+            query.prop(FieldNameConverter.fromRest(dateField).propName).comp(GREATER_THAN).val(from);
+        }
+        if (to != null) {
+            query.prop(FieldNameConverter.fromRest(dateField).propName).comp(LOWER_THAN_EQUAL).val(to);
+        }
     }
 
     @Override

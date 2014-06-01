@@ -18,7 +18,7 @@
 
 package org.artifactory.repo.webdav;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 
 import java.util.HashMap;
 import java.util.Map;

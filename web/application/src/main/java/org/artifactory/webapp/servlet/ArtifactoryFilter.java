@@ -18,8 +18,8 @@
 
 package org.artifactory.webapp.servlet;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ArtifactoryContext;

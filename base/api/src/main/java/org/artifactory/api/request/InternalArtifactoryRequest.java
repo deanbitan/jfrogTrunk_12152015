@@ -101,7 +101,7 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
      * @return 0 - the internal request has no content (only url and headers)
      */
     @Override
-    public int getContentLength() {
+    public long getContentLength() {
         return 0;
     }
 

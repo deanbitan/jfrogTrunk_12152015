@@ -357,7 +357,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         if (impossibleFilter != null) {
             for (TaskBase activeTask : getActiveTasks(Predicates.and(notMyself, impossibleFilter))) {
                 if (activeTask.processActive()) {
-                    throw new IllegalArgumentException(
+                    throw new TaskImpossibleToStartException(
                             "Job " + typeToRun.getName() + " cannot stop related job " + activeTask + " while it's running!");
                 }
                 // Immediate stop fails if task in running mode

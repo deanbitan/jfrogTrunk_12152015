@@ -18,40 +18,59 @@
 
 package org.artifactory.repo.service;
 
-import org.artifactory.api.config.ImportSettingsImpl;
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.artifactory.api.config.RepositoryImportSettingsImpl;
 import org.artifactory.backup.BackupJob;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
 import org.artifactory.repo.cleanup.IntegrationCleanupJob;
+import org.artifactory.repo.db.importexport.DbRepoImportHandler;
 import org.artifactory.repo.index.MavenIndexerJob;
 import org.artifactory.repo.index.MavenIndexerServiceImpl;
 import org.artifactory.repo.replication.LocalReplicationJob;
 import org.artifactory.repo.replication.RemoteReplicationJob;
-import org.artifactory.sapi.common.BaseSettings;
+import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
 import org.artifactory.schedule.StopStrategy;
 import org.artifactory.schedule.Task;
+import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.search.archive.ArchiveIndexerImpl;
-import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.task.AsyncTaskExecutor;
 
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
 import static org.artifactory.schedule.StopStrategy.STOP;
 
 /**
+ * This job triggers the actual import process of either single or multiple repositories.
+ *
  * @author freds
- * @date Nov 6, 2008
+ * @author Yoav Luft
  */
 @JobCommand(manualUser = TaskUser.CURRENT,
         keyAttributes = {Task.REPO_KEY},
@@ -73,54 +92,175 @@ import static org.artifactory.schedule.StopStrategy.STOP;
 public class ImportJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(ImportJob.class);
 
-    public static final String DELETE_REPO = "deleteRepo";
+    private RepositoryImportSettingsImpl importSettings;
+    private MutableStatusHolder statusHolder;
+    private InternalRepositoryService repositoryService;
+    private ImportHandlerCallablesFactory callablesFactory;
+    private final Semaphore parallelImportsGate;
+    private AsyncTaskExecutor taskExecutor;
+
+    public ImportJob() {
+        int maxParallelImports = Math.max(ConstantValues.importMaxParallelRepos.getInt(), 1);
+        parallelImportsGate = new Semaphore(maxParallelImports);
+        callablesFactory = new ImportHandlerCallablesFactory(parallelImportsGate, TaskCallback.currentTaskToken());
+        taskExecutor = new CachedThreadPoolTaskExecutor();
+        repositoryService = InternalContextHelper.get().beanForType(InternalRepositoryService.class);
+    }
+
+    /**
+     * Constructor for use by tests
+     */
+    ImportJob(AsyncTaskExecutor executor, ImportHandlerCallablesFactory callablesFactory, Semaphore gate,
+            InternalRepositoryService repositoryService) {
+        parallelImportsGate = gate;
+        this.callablesFactory = callablesFactory;
+        this.taskExecutor = executor;
+        this.repositoryService = repositoryService;
+    }
 
     @Override
     protected void onExecute(JobExecutionContext callbackContext) {
-        Semaphore gateToRelease = null;
-        MutableStatusHolder status = null;
         try {
-            JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
-            String repoKey = (String) jobDataMap.get(Task.REPO_KEY);
-            if (repoKey == null) {
-                throw new IllegalStateException("Cannot Import unknown target for job " + this);
+            initializeFromContext(callbackContext);
+            deleteRepositories();
+            List<Callable<DbRepoImportHandler>> importers = prepareImportHandlerCallables();
+            List<Future<DbRepoImportHandler>> handlerFutures = new ArrayList<>(importers.size());
+            for (Callable<DbRepoImportHandler> importer : importers) {
+                // we acquire an import permit here and each importer is responsible to release it when it ends
+                parallelImportsGate.acquire();
+                handlerFutures.add(taskExecutor.submit(importer));
             }
-            boolean deleteRepo = (Boolean) jobDataMap.get(DELETE_REPO);
-            ImportSettingsImpl settings = (ImportSettingsImpl) jobDataMap.get(ImportSettingsImpl.class.getName());
-            gateToRelease = (Semaphore) jobDataMap.get(Semaphore.class.getName());
-            status = settings.getStatusHolder();
-            InternalRepositoryService repositoryService =
-                    InternalContextHelper.get().beanForType(InternalRepositoryService.class);
-            if (BaseSettings.FULL_SYSTEM.equals(repoKey)) {
-                repositoryService.importFrom(settings);
-            } else {
-                if (repoKey.equals(PermissionTargetInfo.ANY_REPO)) {
-                    repositoryService.importAll(settings);
-                } else {
-                    if (deleteRepo && repositoryService.repositoryByKey(repoKey) != null) {
-                        status.status("Fully removing repository '" + repoKey + "'.", log);
-                        RepoPath deleteRepoPath = InternalRepoPathFactory.repoRootPath(repoKey);
-                        try {
-                            repositoryService.undeploy(deleteRepoPath);
-                        } catch (Exception e) {
-                            log.error(e.getMessage(), e);
-                        }
-                        status.status("Repository '" + repoKey + "' fully deleted.", log);
-                    }
-                    repositoryService.importRepo(repoKey, settings);
-                }
+            log.debug("All import threads were submitted");
+            for (Future<DbRepoImportHandler> handlerFuture : handlerFutures) {
+                // serially call finalize for each repo which will trigger another retry phase if required
+                // this has to be serial to avoid further concurrent import conflicts
+                finalizeImport(handlerFuture);
             }
-        } catch (RuntimeException e) {
-            if (status != null) {
-                status.error("Error occurred during import: " + e.getMessage(), e, log);
+            log.info("Import of {} repositories completed", importSettings.getRepositories().size());
+            checkForUnusedSubdirectories();
+        } catch (Exception e) {
+            if (statusHolder != null) {
+                statusHolder.error("Error occurred during import: " + e.getMessage(), e, log);
             } else {
                 log.error("Error occurred during import", e);
             }
-        } finally {
-            if (gateToRelease != null) {
-                gateToRelease.release();
+        }
+    }
+
+    private void finalizeImport(Future<DbRepoImportHandler> handlerFuture) {
+        try {
+            DbRepoImportHandler importHandler = handlerFuture.get();
+            importHandler.finalizeImport();
+        } catch (InterruptedException e) {
+            log.info("Import was interrupted");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            log.error("Import had failed due to {}: {}", cause.getClass().getName(), cause.getMessage());
+            log.debug("Import had failed due to {}: {}",
+                    cause.getClass().getName(), cause.getMessage(), cause);
+            if (statusHolder != null) {
+                statusHolder.error("Error occurred during import: " + cause.getMessage(), cause, log);
+            }
+        } catch (RuntimeException e) {
+            // Extract cause
+            if (statusHolder != null) {
+                statusHolder.error("Error occurred during import: " + e.getMessage(), e, log);
+            } else {
+                log.error("Error occurred during import", e);
             }
         }
+    }
+
+    private List<Callable<DbRepoImportHandler>> prepareImportHandlerCallables() {
+        List<String> repoKeysToImport = importSettings.getRepositories();
+        List<Callable<DbRepoImportHandler>> importers = new ArrayList<>(repoKeysToImport.size());
+        for (String repoKey : repoKeysToImport) {
+            try {
+                Callable<DbRepoImportHandler> handlerCallable = createHandlerCallable(repoKey);
+                importers.add(handlerCallable);
+            } catch (FileNotFoundException e) {
+                if (importSettings.isFailIfEmpty()) {
+                    throw new RuntimeException(e);
+                } else {
+                    statusHolder.warn(e.getMessage(), log);
+                }
+            }
+        }
+        return importers;
+    }
+
+    private Callable<DbRepoImportHandler> createHandlerCallable(String repoKey) throws FileNotFoundException {
+        File repoRoot;
+        if (importSettings.isSingleRepoImport()) {
+            repoRoot = importSettings.getBaseDir();
+        } else {
+            // base dir is the root repositories dir (e.g., the specific repo is under 'repositories/repoKey')
+            repoRoot = getRepoRootDir(repoKey, importSettings.getBaseDir());
+        }
+        return callablesFactory.create(repoKey, repoRoot);
+    }
+
+    private void deleteRepositories() {
+        for (String repoKey : importSettings.getRepositoriesToDelete()) {
+            deleteExistingRepository(repoKey);
+        }
+    }
+
+    private void deleteExistingRepository(String repoKey) {
+        statusHolder.status("Fully removing repository '" + repoKey + "'.", log);
+        RepoPath deleteRepoPath = InternalRepoPathFactory.repoRootPath(repoKey);
+        try {
+            repositoryService.undeploy(deleteRepoPath);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        statusHolder.status("Repository '" + repoKey + "' fully deleted.", log);
+    }
+
+    private void initializeFromContext(JobExecutionContext callbackContext) {
+        JobDataMap jobDataMap = callbackContext.getJobDetail().getJobDataMap();
+        importSettings = (RepositoryImportSettingsImpl) jobDataMap.get(RepositoryImportSettingsImpl.class.getName());
+        callablesFactory.setBaseImportSettings(importSettings);
+        statusHolder = importSettings.getStatusHolder();
+    }
+
+    private void checkForUnusedSubdirectories() {
+        if (importSettings.isSingleRepoImport()) {
+            return;
+        }
+        Collection<String> directoryNames = collectSubdirectoriesNames();
+        if (importSettings.isFailIfEmpty()
+                && Collections.disjoint(importSettings.getRepositories(), directoryNames)) {
+            statusHolder.error("The selected directory did not contain any repositories.", log);
+        } else {
+            for (String subDir : directoryNames) {
+                boolean isMetadata = subDir.contains("metadata");
+                boolean isIndex = subDir.contains("index");
+                if (!isMetadata && !isIndex && !importSettings.getRepositories().contains(subDir)) {
+                    statusHolder.warn("The directory " + subDir + " does not match any repository key.", log);
+                }
+            }
+        }
+    }
+
+    private Collection<String> collectSubdirectoriesNames() {
+        File[] subDirectories = importSettings.getBaseDir().listFiles(
+                (java.io.FileFilter) DirectoryFileFilter.DIRECTORY);
+        return Collections2.transform(Arrays.asList(subDirectories), new Function<File, String>() {
+            @Nullable
+            @Override
+            public String apply(File file) {
+                return file.getName();
+            }
+        });
+    }
+
+    private File getRepoRootDir(String repoKey, File baseDir) throws FileNotFoundException {
+        File repoBaseDir = new File(baseDir, repoKey);
+        if (repoBaseDir.canRead() && repoBaseDir.isDirectory()) {
+            return repoBaseDir;
+        }
+        throw new FileNotFoundException("No directory for repository " + repoKey + " found at " + baseDir);
     }
 
 }

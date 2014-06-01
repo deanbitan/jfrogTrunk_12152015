@@ -24,19 +24,16 @@ import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.storage.StorageInterceptorAdapter;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.sapi.interceptor.ImportInterceptor;
-import org.artifactory.sapi.interceptor.StorageAggregationInterceptor;
 
 /**
  * Interceptor which handles archive indexing calculation upon creation
  *
  * @author Noam Tenne
  */
-public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter implements ImportInterceptor,
-        StorageAggregationInterceptor {
+public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter implements ImportInterceptor {
 
     /**
      * If the newly created item is a file, this method will mark it up for content indexing.
@@ -52,11 +49,6 @@ public class ArchiveIndexingInterceptor extends StorageInterceptorAdapter implem
     @Override
     public void afterImport(VfsItem fsItem, MutableStatusHolder statusHolder) {
         markArchiveForIndexing(fsItem);
-    }
-
-    @Override
-    public void afterAllImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status) {
-        ContextHelper.get().beanForType(ArchiveIndexer.class).asyncIndexMarkedArchives();
     }
 
     private void markArchiveForIndexing(VfsItem fsItem) {

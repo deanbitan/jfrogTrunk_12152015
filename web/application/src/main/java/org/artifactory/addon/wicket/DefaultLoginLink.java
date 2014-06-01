@@ -22,6 +22,7 @@ import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.component.links.TitledSubmitLink;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.security.AuthenticationHelper;
@@ -72,16 +73,20 @@ public class DefaultLoginLink extends TitledSubmitLink {
                 setResponsePage(ArtifactoryApplication.get().getHomePage());
             }
             //set a remember me cookie for the first success login
-            try {
-                rememberMeServices.loginSuccess(httpServletRequest, WicketUtils.getHttpServletResponse(),
-                        AuthenticationHelper.getAuthentication());
-            } catch (UsernameNotFoundException e) {
-                log.warn("Remember Me service is not supported for transient external users.");
+            if (!ConstantValues.securityDisableRememberMe.getBoolean()) {
+                try {
+                    rememberMeServices.loginSuccess(httpServletRequest, WicketUtils.getHttpServletResponse(),
+                            AuthenticationHelper.getAuthentication());
+                } catch (UsernameNotFoundException e) {
+                    log.warn("Remember Me service is not supported for transient external users.");
+                }
             }
         } else {
-            //Try the component based localizer first. If not found try the application localizer. Else use the default
-            error("Username or password are incorrect. Login failed.");
-            rememberMeServices.loginFail(httpServletRequest, getHttpServletResponse());
+            if (!ConstantValues.securityDisableRememberMe.getBoolean()) {
+                //Try the component based localizer first. If not found try the application localizer. Else use the default
+                error("Username or password are incorrect. Login failed.");
+                rememberMeServices.loginFail(httpServletRequest, getHttpServletResponse());
+            }
         }
     }
 

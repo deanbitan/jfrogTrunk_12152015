@@ -213,6 +213,16 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public long getFileNodeId(RepoPath repoPath) {
+        //TODO: [by YS] requires caching
+        try {
+            return nodesDao.getFileNodeId(NodePath.fromRepoPath(repoPath));
+        } catch (SQLException e) {
+            throw new VfsException("Couldn't get node id for: " + repoPath, e);
+        }
+    }
+
+    @Override
     public String getNodeSha1(RepoPath repoPath) {
         try {
             return nodesDao.getNodeSha1(NodePath.fromRepoPath(repoPath));

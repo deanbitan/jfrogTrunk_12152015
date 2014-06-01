@@ -22,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.maven.model.Activation;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Profile;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.Checksums;
@@ -187,8 +188,8 @@ public class PomTransformerTest {
     private void compareChecksums(String a, String b, boolean shouldBeEqual) throws IOException {
         InputStream streamA = IOUtils.toInputStream(a);
         InputStream streamB = IOUtils.toInputStream(b);
-        Checksum[] checksumsA = Checksums.calculateAll(streamA);
-        Checksum[] checksumsB = Checksums.calculateAll(streamB);
+        Checksum[] checksumsA = Checksums.calculate(streamA, ChecksumType.values());
+        Checksum[] checksumsB = Checksums.calculate(streamB, ChecksumType.values());
         for (int i = 0; i < checksumsA.length; i++) {
             if (shouldBeEqual) {
                 assertEquals(checksumsA[i].getChecksum(), checksumsB[i].getChecksum(),

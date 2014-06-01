@@ -18,7 +18,7 @@
 
 package org.artifactory.repo.virtual.interceptor;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.repo.RealRepo;
 import org.artifactory.repo.RepoPath;

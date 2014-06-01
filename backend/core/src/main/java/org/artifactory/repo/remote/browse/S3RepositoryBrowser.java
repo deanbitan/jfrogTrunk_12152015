@@ -20,13 +20,15 @@ package org.artifactory.repo.remote.browse;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.api.context.ContextHelper;
@@ -126,14 +128,14 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
         // generate a random string to force 404
         String randomString = RandomStringUtils.randomAlphanumeric(16);
         url = url + "/" + randomString;
-        GetMethod method = new GetMethod(url);
-        try {
+        HttpGet method = new HttpGet(url);
+        try (CloseableHttpResponse response = client.executeMethod(method)) {
             // most likely to get 404 if the repository exists
-            int statusCode = client.executeMethod(method);
-            assertSizeLimit(url, method);
+            assertSizeLimit(url, response);
             String responseString = IOUtils.toString(
-                    HttpUtils.getGzipAwareResponseStream(method), Charsets.UTF_8.name());
-            log.debug("Detect S3 root url got response code {} with content: {}", statusCode, responseString);
+                    HttpUtils.getGzipAwareResponseStream(response), Charsets.UTF_8.name());
+            log.debug("Detect S3 root url got response code {} with content: {}",
+                    response.getStatusLine().getStatusCode(), responseString);
             Document doc = XmlUtils.parse(responseString);
             Element root = doc.getRootElement();
             String errorCode = root.getChildText("Code", root.getNamespace());
@@ -152,8 +154,6 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
             } else {
                 throw new IOException("Couldn't detect S3 root URL. Unknown error code: " + errorCode);
             }
-        } finally {
-            method.releaseConnection();
         }
         log.debug("Detected S3 root URL: {}", rootUrl);
         return rootUrl;
@@ -162,15 +162,16 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
     private String detectRootUrlSecured(String url) throws IOException {
         String securedUrl = buildSecuredS3RequestUrl(url, httpRepo, "") +
                 "&prefix=" + getPrefix(url) + "&delimiter=/&max-keys=1";
-        GetMethod method = new GetMethod(securedUrl);
-        int statusCode = client.executeMethod(method);
-        if (statusCode == 200) {
-            String rootUrl = StringUtils.removeEnd(httpRepo.getUrl(), getPrefix(httpRepo.getUrl()));
-            if (!rootUrl.endsWith("/")) {
-                rootUrl += "/";
+        HttpGet method = new HttpGet(securedUrl);
+        try (CloseableHttpResponse response = client.executeMethod(method)) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                String rootUrl = StringUtils.removeEnd(httpRepo.getUrl(), getPrefix(httpRepo.getUrl()));
+                if (!rootUrl.endsWith("/")) {
+                    rootUrl += "/";
+                }
+                secured = true;
+                return rootUrl;
             }
-            secured = true;
-            return rootUrl;
         }
         return null;
     }
@@ -180,16 +181,13 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
      * @param client Http client to use
      * @return True if the url points to an S3 repository.
      */
-    public static boolean isS3Repository(String url, HttpClient client) {
-        HeadMethod headMethod = new HeadMethod(HttpUtils.encodeQuery(url));
-        try {
-            client.executeMethod(headMethod);
-            Header s3RequestId = headMethod.getResponseHeader(HEADER_S3_REQUEST_ID);
+    public static boolean isS3Repository(String url, CloseableHttpClient client) {
+        HttpHead headMethod = new HttpHead(HttpUtils.encodeQuery(url));
+        try (CloseableHttpResponse response = client.execute(headMethod)) {
+            Header s3RequestId = response.getFirstHeader(HEADER_S3_REQUEST_ID);
             return s3RequestId != null;
         } catch (IOException e) {
             log.debug("Failed detecting S3 repository: " + e.getMessage(), e);
-        } finally {
-            headMethod.releaseConnection();
         }
         return false;
     }

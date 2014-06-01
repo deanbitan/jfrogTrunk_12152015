@@ -19,7 +19,7 @@
 package org.artifactory.rest.resource.plugin;
 
 import com.google.common.collect.Maps;
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.addon.rest.RestAddon;

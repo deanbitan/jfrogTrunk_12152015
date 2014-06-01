@@ -30,7 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * TODO: Documentation
+ * Criteria builder for tree browsing.
  *
  * @author Yossi Shaul
  */

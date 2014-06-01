@@ -1,10 +1,6 @@
 UPDATE unique_ids SET current_id = 10000 WHERE index_type = 'general';
 
 INSERT INTO build_modules VALUES
-(1, 1, 'ba:moda1'),
-(2, 2, 'bb:modb1'),
-(3, 2, 'bb:modb2'),
-(4, 3, 'ba:moda1'),
 (5, 3, 'ba:moda2'),
 (6, 4, 'bb:modb1'),
 (7, 4, 'bb:modb2'),

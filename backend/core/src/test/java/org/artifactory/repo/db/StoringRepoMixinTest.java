@@ -48,7 +48,9 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
 
     LocalCacheRepo storingRepo = createMock(LocalCacheRepo.class);
     ArtifactoryContext context = createMock(ArtifactoryContext.class);
-    LocalRepoDescriptor localRepoDescriptor = new LocalRepoDescriptor(); {
+    LocalRepoDescriptor localRepoDescriptor = new LocalRepoDescriptor();
+
+    {
         localRepoDescriptor.setKey("somekey");
     }
 
@@ -61,7 +63,7 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
 
     @Test
     public void testChecksumProtection() throws Exception {
-        for (ChecksumType checksumType : ChecksumType.values()) {
+        for (ChecksumType checksumType : ChecksumType.BASE_CHECKSUM_TYPES) {
             PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo,
                     checksumType.ext()).assertOverwrite(true).build();
             assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),

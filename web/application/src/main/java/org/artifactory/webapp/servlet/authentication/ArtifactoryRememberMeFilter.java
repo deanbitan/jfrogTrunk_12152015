@@ -19,6 +19,9 @@
 package org.artifactory.webapp.servlet.authentication;
 
 import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.webapp.servlet.RequestUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -45,10 +48,18 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        ServletContext servletContext = filterConfig.getServletContext();
-        ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
-        rememberMeDelegateFilter = context.beanForType(RememberMeAuthenticationFilter.class);
-        rememberMeDelegateFilter.init(filterConfig);
+        ArtifactorySystemProperties properties =
+                ((ArtifactoryHome) filterConfig.getServletContext().getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR))
+                        .getArtifactoryProperties();
+        ConstantValues disableRememberMeProp = ConstantValues.securityDisableRememberMe;
+        Boolean disableRememberMe = properties.getBooleanProperty(disableRememberMeProp.getPropertyName(),
+                disableRememberMeProp.getDefValue());
+        if (!disableRememberMe) {
+            ServletContext servletContext = filterConfig.getServletContext();
+            ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);
+            rememberMeDelegateFilter = context.beanForType(RememberMeAuthenticationFilter.class);
+            rememberMeDelegateFilter.init(filterConfig);
+        }
     }
 
     public boolean requiresReAuthentication(ServletRequest request, Authentication authentication) {
@@ -57,6 +68,10 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
 
     @Override
     public boolean acceptFilter(ServletRequest request) {
+        if (rememberMeDelegateFilter == null) {
+            return false;
+        }
+
         Cookie[] cookies = ((HttpServletRequest) request).getCookies();
 
         if ((cookies == null) || (cookies.length == 0)) {
@@ -84,12 +99,16 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        rememberMeDelegateFilter.doFilter(request, response, chain);
+        if (rememberMeDelegateFilter != null) {
+            rememberMeDelegateFilter.doFilter(request, response, chain);
+        }
     }
 
     @Override
     public void destroy() {
-        rememberMeDelegateFilter.destroy();
+        if (rememberMeDelegateFilter != null) {
+            rememberMeDelegateFilter.destroy();
+        }
     }
 
     @Override

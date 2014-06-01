@@ -20,9 +20,11 @@ package org.artifactory.repo.remote.browse;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -46,11 +48,11 @@ public class HtmlRepositoryBrowserTest {
 
     @BeforeClass
     public void setUp() {
-        final HttpClient hc = new HttpClient();
+        final CloseableHttpClient hc = HttpClients.createDefault();
         HttpExecutor httpExecutor = new HttpExecutor() {
             @Override
-            public int executeMethod(HttpMethod method) throws IOException {
-                return hc.executeMethod(method);
+            public CloseableHttpResponse executeMethod(HttpRequestBase method) throws IOException {
+                return hc.execute(method);
             }
         };
         urlLister = new HtmlRepositoryBrowser(httpExecutor);

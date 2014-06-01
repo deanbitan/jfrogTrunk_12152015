@@ -23,13 +23,14 @@ import org.apache.wicket.event.IEvent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.border.fieldset.FieldSetBorder;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.security.CryptoHelper;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserInfo;
+import org.artifactory.security.crypto.CryptoHelper;
 
 import javax.crypto.SecretKey;
 
@@ -65,13 +66,14 @@ public class MavenSettingsPanel extends TitledPanel {
     public void displayEncryptedPassword(MutableUserInfo userInfo) {
         WebMarkupContainer settingsSnippet = new WebMarkupContainer("settingsSnippet");
         String currentPassword = getUserProfile().getCurrentPassword();
-        SecretKey secretKey = CryptoHelper.generatePbeKey(userInfo.getPrivateKey());
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(userInfo.getPrivateKey(), userInfo.getPublicKey());
         String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
         settingsSnippet.add(createSettingXml(userInfo, encryptedPassword));
 
+        // With Base58 new encryption this not needed anymore
         Component nonMavenPasswordLabel = new WebMarkupContainer("nonMavenPassword");
         settingsSnippet.add(nonMavenPasswordLabel);
-        if (CryptoHelper.isEncryptedPasswordPrefixedWithDefault(encryptedPassword)) {
+        if (ConstantValues.securityUseBase64.getBoolean()) {
             nonMavenPasswordLabel.replaceWith(new Label("nonMavenPassword",
                     "Non-maven clients should use a non-escaped password: " + encryptedPassword));
         }
@@ -83,9 +85,7 @@ public class MavenSettingsPanel extends TitledPanel {
     }
 
     private Component createSettingXml(UserInfo userInfo, String encryptedPassword) {
-        if (CryptoHelper.isEncryptedPasswordPrefixedWithDefault(encryptedPassword)) {
-            encryptedPassword = CryptoHelper.escapeEncryptedPassword(encryptedPassword);
-        }
+        encryptedPassword = CryptoHelper.needsEscaping(encryptedPassword);
         StringBuilder sb = new StringBuilder();
         sb.append("<server>\n");
         sb.append("    <id>${server-id}</id>\n");

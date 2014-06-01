@@ -18,8 +18,8 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
@@ -88,7 +88,8 @@ public class PatternSearchResource {
                     "Artifacts pattern search returned 0 results because it " +
                             "exceeded the configured timeout (" + secs + " seconds). Please make sure your query is not too " +
                             "broad, causing the search to scan too many nodes, or ask your Artifactory administrator to " +
-                            "change the default timeout.");
+                            "change the default timeout."
+            );
         } catch (Exception e) {
             String errorMessage =
                     String.format("Error occurred while searching for artifacts matching the pattern '%s': %s", pattern,

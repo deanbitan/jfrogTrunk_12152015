@@ -21,9 +21,9 @@ package org.artifactory.repo;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.RestCoreAddon;
@@ -33,6 +33,7 @@ import org.artifactory.addon.plugin.download.AltRemotePathAction;
 import org.artifactory.addon.plugin.download.PathCtx;
 import org.artifactory.addon.plugin.download.ResourceStreamCtx;
 import org.artifactory.addon.replication.ReplicationAddon;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
@@ -44,6 +45,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.concurrent.ExpiringDelayed;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
+import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.engine.InternalDownloadService;
 import org.artifactory.factory.InfoFactoryHolder;
@@ -76,7 +78,6 @@ import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.Pair;
-import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -357,7 +358,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         try {
             RepoRequests.logToContext(
                     "Main ZIP resource {} exist remotely but is expired or is not present in the caches - " +
-                            "doing eager download.", repoPath);
+                            "doing eager download.", repoPath
+            );
             EagerResourcesDownloader eagerResourcesDownloader = InternalContextHelper.get().beanForType(
                     EagerResourcesDownloader.class);
             eagerResourcesDownloader.downloadNow(repoPath, new InternalArtifactoryRequest(repoPath));
@@ -452,15 +454,20 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Override
     public StatusHolder checkDownloadIsAllowed(RepoPath repoPath) {
         String path = repoPath.getPath();
-        StatusHolder status = assertValidPath(repoPath, true);
+        BasicStatusHolder status = assertValidPath(repoPath, true);
         if (status.isError()) {
             return status;
         }
+
+        // permissions are always on the cache repo key
+        RepoPath cacheRepoPath = InternalRepoPathFactory.create(getKey() + LocalCacheRepoDescriptor.PATH_SUFFIX, path);
         if (localCacheRepo != null) {
-            repoPath = InternalRepoPathFactory.create(localCacheRepo.getKey(), path);
-            status = localCacheRepo.checkDownloadIsAllowed(repoPath);
+            return localCacheRepo.checkDownloadIsAllowed(cacheRepoPath);
+        } else {
+            // cache repo doesn't exist so remote has to check the permissions
+            assertReadPermissions(cacheRepoPath, status);
+            return status;
         }
-        return status;
     }
 
     @Override
@@ -839,7 +846,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     private Set<ChecksumInfo> getRemoteChecksums(String path) {
         Set<ChecksumInfo> checksums = new HashSet<>();
-        for (ChecksumType checksumType : ChecksumType.values()) {
+        for (ChecksumType checksumType : ChecksumType.BASE_CHECKSUM_TYPES) {
             String checksum = null;
             try {
                 RepoRequests.logToContext("Trying to find remote checksum - %s", checksumType.ext());
@@ -987,19 +994,19 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             return;
         }
 
-        String path = repoPath.getPath();
-        int lastDotIndex = path.lastIndexOf('.');
         String eagerPath;
 
         boolean artifactIsPom = "pom".equals(artifactInfo.getType());
         boolean artifactIsJar = "jar".equals(artifactInfo.getType());
 
+        MavenArtifactInfo eagerFetchArtifactInfo = new MavenArtifactInfo(artifactInfo);
         if (fetchJarsEagerly && artifactIsPom) {
-            eagerPath = path.substring(0, lastDotIndex) + ".jar";
+            eagerFetchArtifactInfo.setType(MavenArtifactInfo.JAR);
+            eagerPath = eagerFetchArtifactInfo.getPath();
             RepoRequests.logToContext("Eagerly fetching JAR '%s'", eagerPath);
         } else if (fetchSourcesEagerly && artifactIsJar) {
-            // create a path to the sources
-            eagerPath = PathUtils.injectString(path, "-sources", lastDotIndex);
+            eagerFetchArtifactInfo.setClassifier("sources");
+            eagerPath = eagerFetchArtifactInfo.getPath();
             RepoRequests.logToContext("Eagerly fetching source JAR '%s'", eagerPath);
         } else {
             RepoRequests.logToContext("Eager JAR and source JAR fetching is not attempted");
@@ -1089,7 +1096,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
 
             LocalCacheRepo cache = getLocalCacheRepo();
-            RepoResource cachedPropertiesResource = cache.getInfo(new NullRequestContext(propertiesRepoPath));
+            RepoResource cachedPropertiesResource;
+            if (cache != null) {
+                cachedPropertiesResource = cache.getInfo(new NullRequestContext(propertiesRepoPath));
+            } else {
+                RepoRequests.logToContext("Local cache repo was not initialized");
+                return;
+            }
 
             Properties properties = (Properties) InfoFactoryHolder.get().createProperties();
 
@@ -1165,6 +1178,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 new ConcurrentLinkedQueue<>();
         private final ReferenceQueue<ResourceStreamHandle> handlesRefQueue = new ReferenceQueue<>();
 
+        @SuppressWarnings({"unchecked"})
         public void add(ResourceStreamHandle handle) {
             WeakReference<ResourceStreamHandle> ref = new WeakReference<>(handle, handlesRefQueue);
             handles.add(ref);

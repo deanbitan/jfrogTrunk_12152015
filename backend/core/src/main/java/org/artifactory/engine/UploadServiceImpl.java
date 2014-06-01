@@ -19,10 +19,11 @@
 package org.artifactory.engine;
 
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.addon.replication.ReplicationAddon;
@@ -84,8 +85,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import static org.apache.commons.httpclient.HttpStatus.SC_CONFLICT;
-import static org.apache.commons.httpclient.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.*;
 import static org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType.SERVER;
 import static org.artifactory.descriptor.repo.SnapshotVersionBehavior.DEPLOYER;
 
@@ -139,7 +139,7 @@ public class UploadServiceImpl implements InternalUploadService {
         } else if (request.isChecksum()) {
             validateAndUploadChecksum(request, response, repo);
         } else if (NamingUtils.isMetadata(request.getPath())) {
-            response.sendError(HttpStatus.SC_CONFLICT, "Old metadata notation is not supported anymore: " +
+            response.sendError(SC_CONFLICT, "Old metadata notation is not supported anymore: " +
                     request.getRepoPath(), log);
         } else {
             uploadArtifact(request, response, repo);
@@ -153,7 +153,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void validateRequestAndUpload(ArtifactoryRequest request, ArtifactoryResponse response)
             throws IOException {
         if (isRequestedRepoKeyInvalid(request)) {
-            response.sendError(HttpStatus.SC_NOT_FOUND, "No target local repository specified in deploy request.", log);
+            response.sendError(SC_NOT_FOUND, "No target local repository specified in deploy request.", log);
             return;
         }
 
@@ -170,7 +170,7 @@ public class UploadServiceImpl implements InternalUploadService {
 
         try {
             // Servlet container doesn't support long values so we take it manually from the header
-            String contentLengthHeader = request.getHeader("Content-Length");
+            String contentLengthHeader = request.getHeader(HttpHeaders.CONTENT_LENGTH);
             long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
             boolean directoryRequest = request.isDirectoryRequest();
             RepoPath repoPath = InternalRepoPathFactory.create(targetRepository.getKey(), request.getPath(),
@@ -212,7 +212,7 @@ public class UploadServiceImpl implements InternalUploadService {
                     "). Use a local repository as deployment target.";
         } else {
 
-            responseStatus = HttpStatus.SC_NOT_FOUND;
+            responseStatus = SC_NOT_FOUND;
             responseMessage = "Could not find a local repository named " + repoKey + " to deploy to.";
         }
         response.sendError(responseStatus, responseMessage, log);
@@ -282,7 +282,7 @@ public class UploadServiceImpl implements InternalUploadService {
 
     private void validateAndUploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException {
-        int length = request.getContentLength();
+        long length = request.getContentLength();
         if (isAbnormalChecksumContentLength(length)) {
             // something is fishy, checksum file should not be so big...
             response.sendError(SC_CONFLICT, "Suspicious checksum file, content length of " + length +
@@ -309,7 +309,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void validateAndUploadProperties(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
             throws IOException {
         //TORE: [by YS] this doesn't belong here
-        int length = request.getContentLength();
+        long length = request.getContentLength();
         if (isAbnormalPropertiesContentLength(length)) {
             // something is fishy, checksum file should not be so big...
             response.sendError(SC_CONFLICT, "Properties content length of " + length +
@@ -335,7 +335,7 @@ public class UploadServiceImpl implements InternalUploadService {
             Properties properties = new PropertiesImpl(propertiesInfo);
             boolean success = repoService.setProperties(itemRepoPath, properties);
             if (success) {
-                response.setStatus(HttpStatus.SC_CREATED);
+                response.setStatus(SC_CREATED);
             } else {
                 response.sendError(SC_NOT_FOUND, "Failed to set properties on " + itemRepoPath, log);
             }
@@ -346,11 +346,11 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
-    private boolean isAbnormalChecksumContentLength(int length) {
+    private boolean isAbnormalChecksumContentLength(long length) {
         return length > 1024;
     }
 
-    private boolean isAbnormalPropertiesContentLength(int length) {
+    private boolean isAbnormalPropertiesContentLength(long length) {
         return length > 4092;
     }
 
@@ -456,7 +456,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void sendUploadedChecksumResponse(ArtifactoryRequest request, ArtifactoryResponse response,
             RepoPath targetFileRepoPath) {
         response.setHeader("Location", buildArtifactUrl(request, targetFileRepoPath));
-        response.setStatus(HttpStatus.SC_CREATED);
+        response.setStatus(SC_CREATED);
         response.sendSuccess();
         addonsManager.addonByType(ReplicationAddon.class).offerLocalReplicationDeploymentEvent(request.getRepoPath());
     }
@@ -469,7 +469,7 @@ public class UploadServiceImpl implements InternalUploadService {
             return;
         }
 
-        int length = request.getContentLength();
+        long length = request.getContentLength();
         log.info("Deploy to '{}' Content-Length: {}", request.getRepoPath(), length < 0 ? "unspecified" : length);
         uploadFile(request, response, repo);
     }
@@ -558,7 +558,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void uploadItemWithReusedOrProvidedContent(ArtifactoryRequest request, ArtifactoryResponse response,
             LocalRepo repo, RepoResource res) throws IOException, RepoRejectException {
 
-        log.debug("Client '{}' supports Expect 100/continue", request.getHeader("User-Agent"));
+        log.debug("Client '{}' supports Expect 100/continue", request.getHeader(HttpHeaders.USER_AGENT));
         String sha1 = HttpUtils.getSha1Checksum(request);
         if (ChecksumType.sha1.isValid(sha1)) {
             log.debug("Expect continue deploy to '{}' with SHA1: {}", res.getRepoPath(), sha1);
@@ -611,7 +611,7 @@ public class UploadServiceImpl implements InternalUploadService {
             }
             sendSuccessfulResponse(request, response, repoPath, false);
         } catch (BadPomException bpe) {
-            response.sendError(HttpStatus.SC_CONFLICT, bpe.getMessage(), log);
+            response.sendError(SC_CONFLICT, bpe.getMessage(), log);
         }
     }
 

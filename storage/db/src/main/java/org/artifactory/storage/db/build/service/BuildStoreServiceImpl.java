@@ -432,28 +432,21 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             log.info("Looking for invalid checksum " + type.name() + " '" + checksum + "'");
         }
         try {
-            Set<Long> moduleIds = Sets.newHashSet();
-            if (criteria.searchInDependencies()) {
-                List<BuildDependency> dependencies =
-                        buildDependenciesDao.findDependenciesForChecksum(type, checksum);
-                for (BuildDependency buildDependency : dependencies) {
-                    moduleIds.add(buildDependency.getModuleId());
-                }
-            }
-            if (criteria.searchInArtifacts()) {
-                List<BuildArtifact> artifacts =
-                        buildArtifactsDao.findArtifactsForChecksum(type, checksum);
-                for (BuildArtifact buildArtifact : artifacts) {
-                    moduleIds.add(buildArtifact.getModuleId());
-                }
-            }
             Set<BuildRun> results = Sets.newHashSet();
-            if (!moduleIds.isEmpty()) {
-                Collection<BuildEntity> buildEntities = buildsDao.findBuildForModuleIds(moduleIds);
+            if (criteria.searchInDependencies()) {
+                Collection<BuildEntity> buildEntities = buildsDao.findBuildsForDependencyChecksum(type, checksum);
                 for (BuildEntity buildEntity : buildEntities) {
                     results.add(getBuildRun(buildEntity));
                 }
             }
+
+            if (criteria.searchInArtifacts()) {
+                Collection<BuildEntity> buildEntities = buildsDao.findBuildsForArtifactChecksum(type, checksum);
+                for (BuildEntity buildEntity : buildEntities) {
+                    results.add(getBuildRun(buildEntity));
+                }
+            }
+
             return results;
         } catch (SQLException e) {
             throw new StorageException("Could not find builds for " + type.name() + " '" + checksum + "'", e);

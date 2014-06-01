@@ -23,11 +23,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.GemsAddon;
 import org.artifactory.addon.NuGetAddon;
@@ -39,6 +41,7 @@ import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.config.ImportSettingsImpl;
+import org.artifactory.api.config.RepositoryImportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.jackson.JacksonReader;
 import org.artifactory.api.maven.MavenMetadataService;
@@ -160,14 +163,13 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -753,12 +755,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      */
     @Override
     public void importAll(ImportSettingsImpl settings) {
-        if (TaskCallback.currentTaskToken() == null) {
-            importAsync(PermissionTargetInfo.ANY_REPO, settings, false, null);
-        } else {
-            //Import the local repositories
-            importAll(getLocalAndCacheRepoKeys(), Collections.<String>emptyList(), settings);
-        }
+        RepositoryImportSettingsImpl repositoriesImportSettings =
+                new RepositoryImportSettingsImpl(settings.getBaseDir(), settings);
+        repositoriesImportSettings.setRepositories(getLocalAndCacheRepoKeys());
+        repositoriesImportSettings.setRepositoriesToDelete(Collections.<String>emptyList());
+        repositoriesImportSettings.setFailIfEmpty(false);
+        importRepositoriesFromSettings(repositoriesImportSettings);
     }
 
     /**
@@ -768,20 +770,62 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     public void importRepo(String repoKey, ImportSettingsImpl settings) {
+        RepositoryImportSettingsImpl singleRepoImportSettings =
+                new RepositoryImportSettingsImpl(settings.getBaseDir(), settings);
+        singleRepoImportSettings.setRepositories(Lists.newArrayList(repoKey));
+        singleRepoImportSettings.setSingleRepoImport(true);
+        importRepositoriesFromSettings(singleRepoImportSettings);
+    }
+
+    /**
+     * This method will delete and import all the local and cached repositories listed in the (newly loaded) config
+     * file. This action is resource intensive and is done in multiple transactions to avoid out of memory exceptions.
+     */
+    @Override
+    public void importFrom(ImportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
-        if (TaskCallback.currentTaskToken() == null) {
-            importAsync(repoKey, settings, false, null);
-        } else {
-            //Import each file separately to avoid a long running transaction
-            LocalRepo localRepo = localOrCachedRepositoryByKey(repoKey);
-            if (localRepo == null) {
-                String msg = "The repo key " + repoKey + " is not a local or cached repository!";
-                IllegalArgumentException ex = new IllegalArgumentException(msg);
-                status.error(msg, ex, log);
+        File repoRootPath = getRepositoriesExportDir(settings.getBaseDir());
+        if (!repoRootPath.exists() || !repoRootPath.isDirectory()) {
+            if (settings.isFailIfEmpty()) {
+                throw new IllegalArgumentException(
+                        "Import root " + repoRootPath + " does not exist or not a directory");
+            } else {
+                status.status("No repositories root to import at " + repoRootPath, log);
                 return;
             }
-            localRepo.importFrom(settings);
         }
+        List<String> repositoryKeysForDeletion = getLocalAndCacheRepoKeys();
+        List<String> localRepoKeysForImport = settings.getRepositories();
+        if (localRepoKeysForImport.isEmpty()) {
+            localRepoKeysForImport = new ArrayList<>(repositoryKeysForDeletion);
+        }
+        RepositoryImportSettingsImpl repositoriesImportSettings = new RepositoryImportSettingsImpl(repoRootPath,
+                settings);
+        repositoriesImportSettings.setRepositories(localRepoKeysForImport);
+        repositoriesImportSettings.setRepositoriesToDelete(repositoryKeysForDeletion);
+        repositoriesImportSettings.setFailIfEmpty(false);
+        importRepositoriesFromSettings(repositoriesImportSettings);
+    }
+
+    private void importRepositoriesFromSettings(ImportSettingsImpl settings) {
+        String jobToken = "No Job";
+        boolean taskCompletion = false;
+        MutableStatusHolder status = settings.getStatusHolder();
+        try {
+            jobToken = createAndStartImportJob(settings);
+            taskCompletion = taskService.waitForTaskCompletion(jobToken);
+        } finally {
+            if (!taskCompletion && !status.isError()) {
+                // Add error of no completion
+                status.error("The task " + jobToken + " did not complete correctly.", log);
+            }
+        }
+    }
+
+    private String createAndStartImportJob(ImportSettingsImpl settings) {
+        TaskBase task = TaskUtils.createManualTask(ImportJob.class, 0L);
+        task.addAttribute(RepositoryImportSettingsImpl.class.getName(), settings);
+        return taskService.startTask(task, true);
     }
 
     @Override
@@ -982,6 +1026,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast) {
+        TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
         Set<RepoPath> pathsToMoveIncludingParents = aggregatePathsToMove(pathsToMove, targetLocalRepoKey, false);
 
         log.debug("The following paths will be moved: {}", pathsToMoveIncludingParents);
@@ -1017,6 +1062,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast) {
+        TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
         Set<RepoPath> pathsToCopyIncludingParents = aggregatePathsToMove(pathsToCopy, targetLocalRepoKey, true);
 
         log.debug("The following paths will be copied: {}", pathsToCopyIncludingParents);
@@ -1335,22 +1381,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return repo;
     }
 
-    /**
-     * This method will delete and import all the local and cached repositories listed in the (newly loaded) config
-     * file. This action is resource intensive and is done in multiple transactions to avoid out of memory exceptions.
-     */
-    @Override
-    public void importFrom(ImportSettings settings) {
-        MutableStatusHolder status = settings.getStatusHolder();
-        if (TaskCallback.currentTaskToken() == null) {
-            importAsync(BaseSettings.FULL_SYSTEM, settings, false, null);
-        } else {
-            status.status("Importing repositories...", log);
-            internalImportFrom(settings);
-            status.status("Finished importing repositories...", log);
-        }
-    }
-
     @Override
     public boolean isRemoteAssumedOffline(@Nonnull String remoteRepoKey) {
         RemoteRepo remoteRepo = remoteRepositoryByKey(remoteRepoKey);
@@ -1441,7 +1471,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             // Note: don't display the disk usage in the status holder - this message is written back to the user
             statusHolder.error(
                     "Datastore disk usage is too high. Contact your Artifactory administrator to add additional " +
-                            "storage space or change the disk quota limits.", HttpStatus.SC_REQUEST_TOO_LONG, log);
+                            "storage space or change the disk quota limits.", HttpStatus.SC_REQUEST_TOO_LONG, log
+            );
 
             log.error(info.getErrorMessage());
         } else if (info.isWarningLimitReached()) {
@@ -1673,8 +1704,27 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             throw new ItemNotFoundRuntimeException("Could not find item: " + pathToSearch.getId());
         }
 
-        ItemInfo itemLastModified = collectLastModifiedRecursively(pathToSearch);
-        return itemLastModified;
+        return collectLastModified(pathToSearch);
+    }
+
+    private ItemInfo collectLastModified(RepoPath pathToSearch) {
+        TreeBrowsingCriteria criteria = new TreeBrowsingCriteriaBuilder().applySecurity().build();
+        ItemTree itemTree = new ItemTree(pathToSearch, criteria);
+        LinkedList<ItemNode> fringe = Lists.newLinkedList();
+        fringe.add(itemTree.getRootNode());
+        ItemInfo lastModified = null;
+        while (!fringe.isEmpty()) {
+            ItemNode last = fringe.removeLast();
+            if (last.hasChildren()) {
+                fringe.addAll(last.getChildren());
+            }
+            if (!last.isFolder()) {
+                if (lastModified == null || last.getItemInfo().getLastModified() > lastModified.getLastModified()) {
+                    lastModified = last.getItemInfo();
+                }
+            }
+        }
+        return lastModified;
     }
 
     @Override
@@ -1705,53 +1755,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         }
     }
 
-    /**
-     * Returns the latest modified item of the given file or folder (recursively)
-     *
-     * @param pathToSearch Repo path to search in
-     * @return Latest modified item
-     */
-    private ItemInfo collectLastModifiedRecursively(RepoPath pathToSearch) {
-        ItemInfo latestItem = getItemInfo(pathToSearch);
-
-        if (latestItem.isFolder()) {
-            List<ItemInfo> children = getChildren(pathToSearch);
-            for (ItemInfo child : children) {
-                ItemInfo itemInfo = collectLastModifiedRecursively(child.getRepoPath());
-                if (itemInfo.getLastModified() > latestItem.getLastModified()) {
-                    latestItem = itemInfo;
-                }
-            }
-        }
-
-        return latestItem;
-    }
-
-    private String importAsync(@Nonnull String repoKey, ImportSettings settings, boolean deleteExistingRepo,
-            Semaphore activeImportsGate) {
-        MutableStatusHolder status = settings.getStatusHolder();
-        TaskBase task = TaskUtils.createManualTask(ImportJob.class, 0L);
-        task.addAttribute(Task.REPO_KEY, repoKey);
-        task.addAttribute(ImportJob.DELETE_REPO, deleteExistingRepo);
-        task.addAttribute(ImportSettingsImpl.class.getName(), settings);
-        if (activeImportsGate != null) {
-            activeImportsGate.acquireUninterruptibly();
-            task.addAttribute(Semaphore.class.getName(), activeImportsGate);
-        }
-        taskService.startTask(task, true);
-        if (activeImportsGate == null) {
-            // No gate, need to wait
-            boolean completed = taskService.waitForTaskCompletion(task.getToken(), Long.MAX_VALUE);
-            if (!completed) {
-                if (!status.isError()) {
-                    // Add error of no completion
-                    status.error("The task " + task + " did not complete correctly.", log);
-                }
-            }
-        }
-        return task.getToken();
-    }
-
     private void exportAsync(@Nonnull String repoKey, ExportSettings settings) {
         MutableStatusHolder status = settings.getStatusHolder();
         TaskBase task = TaskUtils.createManualTask(ExportJob.class, 0L);
@@ -1777,98 +1780,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return localRepo;
     }
 
-    /**
-     * Do the actual full import.
-     *
-     * @param settings
-     * @return true if success, false otherwise
-     */
-    private boolean internalImportFrom(ImportSettings settings) {
-        MutableStatusHolder status = settings.getStatusHolder();
-        File repoRootPath = getRepositoriesExportDir(settings.getBaseDir());
-        //Keep the current list of repositories for deletion after or during import
-        List<String> oldRepoList = getLocalAndCacheRepoKeys();
-        //Import all local repositories
-        List<String> newRepoList = settings.getRepositories();
-        if (newRepoList.isEmpty()) {
-            newRepoList = new ArrayList<>(oldRepoList);
-        }
-        ImportSettingsImpl repositoriesImportSettings = new ImportSettingsImpl(repoRootPath, settings);
-        importAll(newRepoList, oldRepoList, repositoriesImportSettings);
-        return !status.isError();
-    }
-
     private List<String> getLocalAndCacheRepoKeys() {
         List<String> result = new ArrayList<>();
         for (LocalRepoDescriptor localRepoDescriptor : getLocalAndCachedRepoDescriptors()) {
             result.add(localRepoDescriptor.getKey());
         }
         return result;
-    }
-
-    @SuppressWarnings({"OverlyComplexMethod"})
-    private void importAll(List<String> newRepoList, List<String> oldRepoList, ImportSettingsImpl settings) {
-        MutableStatusHolder status = settings.getStatusHolder();
-        List<String> tokens = new ArrayList<>(newRepoList.size());
-        File baseDir = settings.getBaseDir();
-        String[] baseDirList = new String[]{};
-        if (baseDir.list() != null) {
-            baseDirList = baseDir.list();
-        }
-        List<String> listOfRepoKeys = Arrays.asList(baseDirList);
-        List<String> children = new ArrayList<>(listOfRepoKeys);
-
-        // avoid spawning too many threads
-        int maxParallelImports = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
-        Semaphore activeImportsGate = new Semaphore(maxParallelImports);
-
-        for (String newLocalRepoKey : newRepoList) {
-            File rootImportFolder = new File(settings.getBaseDir(), newLocalRepoKey);
-            try {
-                if (rootImportFolder.exists()) {
-                    if (rootImportFolder.isDirectory()) {
-                        ImportSettings repoSettings = new ImportSettingsImpl(rootImportFolder, settings);
-                        boolean deleteExistingRepo = false;
-                        if (oldRepoList.contains(newLocalRepoKey)) {
-                            // Full repo delete with undeploy on root repo path
-                            deleteExistingRepo = true;
-                        }
-                        String importTaskToken =
-                                importAsync(newLocalRepoKey, repoSettings, deleteExistingRepo, activeImportsGate);
-                        tokens.add(importTaskToken);
-                    }
-                    children.remove(newLocalRepoKey);
-                }
-            } catch (Exception e) {
-                status.error("Could not import repository " + newLocalRepoKey + " from " + rootImportFolder, e, log);
-                if (settings.isFailFast()) {
-                    return;
-                }
-            }
-        }
-
-        if ((children.size() == baseDirList.length) && settings.isFailIfEmpty()) {
-            status.error("The selected directory did not contain any repositories.", log);
-        } else {
-            for (String unusedDir : children) {
-                boolean isMetadata = unusedDir.contains("metadata");
-                boolean isIndex = unusedDir.contains("index");
-                if (!isMetadata && !isIndex) {
-                    status.warn("The directory " + unusedDir + " does not match any repository key.", log);
-                }
-            }
-        }
-
-        for (String token : tokens) {
-            try {
-                taskService.waitForTaskCompletion(token);
-            } catch (Exception e) {
-                status.error("error waiting for repository import completion", e, log);
-                if (settings.isFailFast()) {
-                    return;
-                }
-            }
-        }
     }
 
     private void initAllRepoKeysCache() {
@@ -1912,8 +1829,10 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                     status.error("Could not locate artifact '" + repoPath + "'.", HttpStatus.SC_NOT_FOUND, log);
                 } else {
                     status.error("Not enough permissions to overwrite artifact '" + repoPath + "' (user '" +
-                            authService.currentUsername() + "' needs DELETE permission).", HttpStatus.SC_FORBIDDEN,
-                            log);
+                                    authService.currentUsername() + "' needs DELETE permission).",
+                            HttpStatus.SC_FORBIDDEN,
+                            log
+                    );
                 }
             }
         }
@@ -2062,18 +1981,17 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 append("?").append(RepositoriesRestConstants.PARAM_REPO_TYPE).append("=").
                 append(RepoDetailsType.REMOTE.name());
 
-        InputStream responseStream = null;
-        try {
-            responseStream = executeGetMethod(urlBuilder.toString(), headersMap);
-            if (responseStream == null) {
+        try (CloseableHttpResponse response = executeGetMethod(urlBuilder.toString(), headersMap)) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                return JacksonReader.streamAsValueTypeReference(response.getEntity().getContent(),
+                        new TypeReference<List<RepoDetails>>() {
+                        }
+                );
+            } else {
                 return Lists.newArrayList();
             }
-            return JacksonReader.streamAsValueTypeReference(responseStream, new TypeReference<List<RepoDetails>>() {
-            });
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            IOUtils.closeQuietly(responseStream);
         }
     }
 
@@ -2085,18 +2003,17 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      * @return RemoteRepoDescriptor
      */
     private RemoteRepoDescriptor getSharedRemoteRepoConfig(String configUrl, Map<String, String> headersMap) {
-        InputStream responseStream = null;
-        try {
-            responseStream = executeGetMethod(configUrl, headersMap);
-            if (responseStream == null) {
+        try (CloseableHttpResponse response = executeGetMethod(configUrl, headersMap)) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                return JacksonReader.streamAsValueTypeReference(response.getEntity().getContent(),
+                        new TypeReference<HttpRepoDescriptor>() {
+                        }
+                );
+            } else {
                 return null;
             }
-            return JacksonReader.streamAsValueTypeReference(responseStream, new TypeReference<HttpRepoDescriptor>() {
-            });
         } catch (Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            IOUtils.closeQuietly(responseStream);
         }
     }
 
@@ -2105,30 +2022,22 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      *
      * @param url        URL to query
      * @param headersMap Map of headers to set for client
-     * @return Input stream if execution was successfull, Null if not
-     * @throws IOException
+     * @return The http response
      */
-    private InputStream executeGetMethod(String url, Map<String, String> headersMap) throws IOException {
-        GetMethod getMethod = new GetMethod(url);
-
-        //Append headers
-        setHeader(getMethod, headersMap, "User-Agent");
-        setHeader(getMethod, headersMap, "Referer");
+    private CloseableHttpResponse executeGetMethod(String url, Map<String, String> headersMap) throws IOException {
+        HttpGet getMethod = new HttpGet(url);
+        setHeader(getMethod, headersMap, HttpHeaders.USER_AGENT);
+        setHeader(getMethod, headersMap, HttpHeaders.REFERER);
 
         ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
 
-        HttpClient client = new HttpClientConfigurator()
+        CloseableHttpClient client = new HttpClientConfigurator()
                 .soTimeout(15000)
                 .connectionTimeout(15000)
                 .retry(0, false)
                 .proxy(proxy).getClient();
 
-        client.executeMethod(getMethod);
-        if (getMethod.getStatusCode() == HttpStatus.SC_OK) {
-            return getMethod.getResponseBodyAsStream();
-        }
-
-        return null;
+        return client.execute(getMethod);
     }
 
     /**
@@ -2138,22 +2047,14 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
      * @param headersMap Map of headers to set
      * @param headerKey  Key of header to set
      */
-    private void setHeader(GetMethod getMethod, Map<String, String> headersMap, String headerKey) {
+    private void setHeader(HttpGet getMethod, Map<String, String> headersMap, String headerKey) {
         String headerVal = headersMap.get(headerKey.toUpperCase());
-        if ("Referer".equalsIgnoreCase(headerKey)) {
+        if (HttpHeaders.REFERER.equalsIgnoreCase(headerKey)) {
             headerVal = adjustRefererValue(headersMap, headerVal);
         }
         if (headerVal != null) {
-            getMethod.setRequestHeader(headerKey, headerVal);
+            getMethod.setHeader(headerKey, headerVal);
         }
-    }
-
-    private LocalRepo localRepositoryByKeyFailIfNull(RepoPath localRepoPath) {
-        LocalRepo localRepo = localRepositoryByKey(localRepoPath.getRepoKey());
-        if (localRepo == null) {
-            throw new IllegalArgumentException("Couldn't find local non-cache repository for path " + localRepoPath);
-        }
-        return localRepo;
     }
 
     private void registerRepositoriesMBeans() {

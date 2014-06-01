@@ -20,8 +20,8 @@ package org.artifactory.rest.resource.artifact;
 
 import com.google.common.collect.Iterables;
 import com.sun.jersey.api.core.ExtendedUriInfo;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
@@ -74,6 +74,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nonnull;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -336,7 +337,7 @@ public class ArtifactResource {
         }
     }
 
-    private String getLastModifiedRequestUri(ItemInfo lastModifiedItem) {
+    private String getLastModifiedRequestUri(@Nonnull ItemInfo lastModifiedItem) {
         return RestUtils.buildStorageInfoUri(request, lastModifiedItem.getRepoKey(),
                 lastModifiedItem.getRelPath());
     }

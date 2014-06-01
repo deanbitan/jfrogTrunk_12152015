@@ -49,8 +49,8 @@ public class BuildModulesDaoTest extends BuildsDaoBaseTest {
 
     @AfterClass
     public void testFullDelete() throws SQLException {
-        assertEquals(buildArtifactsDao.deleteAllBuildArtifacts(), 0);
-        assertEquals(buildDependenciesDao.deleteAllBuildDependencies(), 0);
+        assertEquals(buildArtifactsDao.deleteAllBuildArtifacts(), 6);
+        assertEquals(buildDependenciesDao.deleteAllBuildDependencies(), 5);
         assertEquals(buildModulesDao.deleteAllBuildModules(), 23);
         assertEquals(buildsDao.deleteAllBuilds(), 23);
     }

@@ -48,9 +48,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.EmptyStackException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * Date: 8/5/11
@@ -67,8 +69,7 @@ public class VfsQueryDbImpl implements VfsQuery {
     protected final List<VfsQueryPathCriterionDbImpl> pathCriteria = Lists.newArrayList();
     private final List<OrderBy> orders = Lists.newArrayList();
 
-    // TODO: Should be a stack
-    private BaseGroupCriterion currentGroup = null;
+    private Stack<BaseGroupCriterion> groups = new Stack<>();
     private VfsQueryCriterionDbImpl currentCriteria = null;
 
     public VfsQueryDbImpl() {
@@ -192,7 +193,7 @@ public class VfsQueryDbImpl implements VfsQuery {
         addCurrentCriteriaIfNeeded();
         BaseGroupCriterion newGroup = new BaseGroupCriterion();
         internalAddCriterion(newGroup);
-        currentGroup = newGroup;
+        groups.push(newGroup);
         return this;
     }
 
@@ -205,20 +206,24 @@ public class VfsQueryDbImpl implements VfsQuery {
 
     @Override
     public VfsQuery endGroup(@Nullable VfsBoolType bool) {
-        addCurrentCriteriaIfNeeded();
-        if (currentGroup == null) {
-            throw new IllegalStateException("Cannot end group that did not start!");
+        try {
+            BaseGroupCriterion groupCriterion = groups.pop();
+            if (currentCriteria != null) {
+                groupCriterion.addCriterion(currentCriteria);
+                currentCriteria = null;
+            }
+            if (bool != null) {
+                groupCriterion.nextBool = bool;
+            }
+            return this;
+        } catch (EmptyStackException e) {
+            throw new IllegalStateException("Cannot end group that did not start!", e);
         }
-        if (bool != null) {
-            currentGroup.nextBool = bool;
-        }
-        currentGroup = null;
-        return this;
     }
 
     private void internalAddCriterion(BaseVfsQueryCriterion criterion) {
-        if (currentGroup != null) {
-            currentGroup.addCriterion(criterion);
+        if (!groups.isEmpty()) {
+            groups.peek().addCriterion(criterion);
         } else {
             defaultGroup.addCriterion(criterion);
         }
@@ -227,7 +232,7 @@ public class VfsQueryDbImpl implements VfsQuery {
     @Override
     @Nonnull
     public VfsQueryResult execute(int limit) {
-        if (currentGroup != null) {
+        if (!groups.isEmpty()) {
             throw new IllegalStateException("Cannot execute while group still active!");
         }
         addCurrentCriteriaIfNeeded();

@@ -18,10 +18,10 @@
 
 package org.artifactory.request;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.NullWriter;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.common.StatusHolder;
 import org.slf4j.Logger;

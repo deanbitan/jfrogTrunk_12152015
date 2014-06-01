@@ -90,53 +90,56 @@
         </triggeringPolicy>
     </appender>
     <root>
-        <level value="WARN"/>
+        <level value="warn"/>
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>
     <logger name="org.artifactory">
-        <level value="INFO"/>
+        <level value="info"/>
     </logger>
     <logger name="org.artifactory.repo.index">
-        <level value="ERROR"/>
+        <level value="error"/>
     </logger>
     <logger name="org.artifactory.info.InfoWriter">
-        <level value="WARN"/>
+        <level value="warn"/>
     </logger>
     <logger name="org.artifactory.security.AccessLogger" additivity="false">
-        <level value="INFO"/>
+        <level value="info"/>
         <appender-ref ref="ACCESS"/>
     </logger>
     <logger name="org.artifactory.api.common.ImportExportStatusHolder" additivity="false">
-        <level value="DEBUG"/>
+        <level value="debug"/>
         <appender-ref ref="IMPORT.EXPORT"/>
     </logger>
     <logger name="org.artifactory.traffic.TrafficLogger" additivity="false">
-        <level value="INFO"/>
+        <level value="info"/>
         <appender-ref ref="TRAFFIC"/>
     </logger>
     <logger name="org.artifactory.traffic.RequestLogger" additivity="false">
-        <level value="INFO"/>
+        <level value="info"/>
         <appender-ref ref="REQUEST"/>
     </logger>
 
     <!-- third party loggers -->
-    <logger name="org.apache.wicket">
-        <level value="ERROR"/>
-    </logger>
-    <logger name="org.apache.jasper">
-        <level value="INFO"/>
-    </logger>
-    <logger name="httpclient.wire">
-        <level value="INFO"/>
-    </logger>
-    <logger name="org.eclipse.jetty">
-        <level value="INFO"/>
-    </logger>
-    <logger name="org.apache.commons.httpclient">
-        <level value="INFO"/>
+    <logger name="com.sun.jersey">
+        <level value="warn"/>
     </logger>
     <logger name="org.springframework">
-        <level value="WARN"/>
+        <level value="warn"/>
+    </logger>
+    <logger name="org.apache.http.impl.client">
+        <level value="info"/>
+    </logger>
+    <logger name="org.apache.http.headers">
+        <level value="info"/>
+    </logger>
+    <logger name="org.apache.http.wire">
+        <level value="info"/>
+    </logger>
+    <logger name="org.apache.wicket">
+        <level value="error"/>
+    </logger>
+    <logger name="org.apache.cxf">
+        <level value="error"/>
     </logger>
 </configuration>

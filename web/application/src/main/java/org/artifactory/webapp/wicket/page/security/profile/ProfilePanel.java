@@ -42,8 +42,8 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordStrengthComponentPanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
-import org.artifactory.security.CryptoHelper;
 import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.webapp.wicket.util.validation.PasswordStrengthValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -173,7 +173,8 @@ public class ProfilePanel extends TitledPanel {
         // display the encrypted password
         if (securityService.isPasswordEncryptionEnabled()) {
             String currentPassword = getUserProfile().getCurrentPassword();
-            SecretKey secretKey = CryptoHelper.generatePbeKey(mutableUser.getPrivateKey());
+            SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(mutableUser.getPrivateKey(),
+                    mutableUser.getPublicKey());
             String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
             encryptedPasswordLabel.setDefaultModelObject(encryptedPassword);
         }
@@ -183,8 +184,8 @@ public class ProfilePanel extends TitledPanel {
         if (!StringUtils.hasText(mutableUser.getPrivateKey())) {
             log.debug("Generating new KeyPair for {}", mutableUser.getUsername());
             KeyPair keyPair = CryptoHelper.generateKeyPair();
-            mutableUser.setPrivateKey(CryptoHelper.toBase64(keyPair.getPrivate()));
-            mutableUser.setPublicKey(CryptoHelper.toBase64(keyPair.getPublic()));
+            mutableUser.setPrivateKey(CryptoHelper.convertToString(keyPair.getPrivate()));
+            mutableUser.setPublicKey(CryptoHelper.convertToString(keyPair.getPublic()));
             userGroupService.updateUser(mutableUser, false);
         }
     }

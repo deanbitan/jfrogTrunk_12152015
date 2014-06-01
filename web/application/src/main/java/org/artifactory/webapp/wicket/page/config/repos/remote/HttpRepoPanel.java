@@ -19,11 +19,13 @@
 package org.artifactory.webapp.wicket.page.config.repos.remote;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.HeadMethod;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
@@ -44,6 +46,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
@@ -54,6 +57,7 @@ import org.artifactory.webapp.wicket.util.CronUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
@@ -193,6 +197,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
             }
         }
 
+        repoDescriptor.setPassword(CryptoHelper.encryptIfNeeded(repoDescriptor.getPassword()));
+
         return true;
     }
 
@@ -208,25 +214,29 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                 }
                 // always test with url trailing slash
                 String url = PathUtils.addTrailingSlash(repo.getUrl());
-                HttpMethodBase testMethod = getRemoteRepoTestMethod(url);
-
-                HttpClient client = new HttpClientConfigurator()
-                        .hostFromUrl(url)
-                                //.defaultMaxConnectionsPerHost(5)
-                                //.maxTotalConnections(5)
-                        .connectionTimeout(repo.getSocketTimeoutMillis())
-                        .soTimeout(repo.getSocketTimeoutMillis())
-                        .staleCheckingEnabled(true)
-                        .retry(1, false)
-                        .localAddress(repo.getLocalAddress())
-                        .proxy(repo.getProxy())
-                        .authentication(repo.getUsername(), repo.getPassword())
-                        .getClient();
+                HttpRequestBase testMethod = getRemoteRepoTestMethod(url);
+                CloseableHttpClient client = getRemoteRepoTestHttpClient(repo, url);
+                CloseableHttpResponse response = null;
                 try {
-                    int status = client.executeMethod(testMethod);
-                    if (!(status == HttpStatus.SC_OK || status == HttpStatus.SC_NO_CONTENT)) {
-                        String reason = testMethod.getStatusText();
-                        error("Connection failed: Error " + status + ": " + reason);
+                    response = client.execute(testMethod);
+                    boolean success = remoteRepoTestValidStatus(response.getStatusLine().getStatusCode());
+                    if (!success) {
+                        IOUtils.closeQuietly(response);
+                        final Header serverHeader = response.getFirstHeader("Server");
+                        // S3 hosted repositories are not hierarchical and does not have a notion of "collection" (folder, directory)
+                        // Therefore we should not add the trailing slash when testing them
+                        if (serverHeader != null && "AmazonS3".equals(serverHeader.getValue())) {
+                            log.debug("Remote repository is hosted on Amazon S3, trying without a trailing slash");
+
+                            url = repo.getUrl();
+                            testMethod = getRemoteRepoTestMethod(url);
+                            response = client.execute(testMethod);
+                            success = remoteRepoTestValidStatus(response.getStatusLine().getStatusCode());
+                        }
+                    }
+                    if (!success) {
+                        error("Connection failed: Error " + response.getStatusLine().getStatusCode() + ": " +
+                                response.getStatusLine().getReasonPhrase());
                     } else {
                         info("Successfully connected to server");
                     }
@@ -243,29 +253,47 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     error("Connection failed with general exception: " + e.getMessage());
                     log.debug("Test connection to '" + url + "' failed with exception", e);
                 } finally {
-                    testMethod.releaseConnection();
+                    IOUtils.closeQuietly(response);
+                    IOUtils.closeQuietly(client);
                 }
                 AjaxUtils.refreshFeedback(target);
             }
         };
     }
 
-    protected HttpMethodBase getRemoteRepoTestMethod(String url) {
-        HttpMethodBase testMethod = null;
+    protected HttpRequestBase getRemoteRepoTestMethod(String url) {
+        HttpRequestBase testMethod = null;
         HttpRepoDescriptor repo = getRepoDescriptor();
 
-        if (testMethod == null) {
-            if (repo.isEnableGemsSupport()) {
-                GemsWebAddon gemsAddon = addons.addonByType(GemsWebAddon.class);
-                testMethod = gemsAddon.getRemoteRepoTestMethod(url, repo);
-            }
+        if (repo.isEnableGemsSupport()) {
+            GemsWebAddon gemsAddon = addons.addonByType(GemsWebAddon.class);
+            testMethod = gemsAddon.getRemoteRepoTestMethod(url, repo);
         }
         if (testMethod == null) {
             testMethod = addons.addonByType(NuGetWebAddon.class).getRemoteRepoTestMethod(url, repo);
         }
         if (testMethod == null) {
-            testMethod = new HeadMethod(HttpUtils.encodeQuery(url));
+            testMethod = new HttpHead(HttpUtils.encodeQuery(url));
         }
         return testMethod;
+    }
+
+    protected CloseableHttpClient getRemoteRepoTestHttpClient(HttpRepoDescriptor repo, String url) {
+        return new HttpClientConfigurator()
+                .hostFromUrl(url)
+                        //.defaultMaxConnectionsPerHost(5)
+                        //.maxTotalConnections(5)
+                .connectionTimeout(repo.getSocketTimeoutMillis())
+                .soTimeout(repo.getSocketTimeoutMillis())
+                .staleCheckingEnabled(true)
+                .retry(1, false)
+                .localAddress(repo.getLocalAddress())
+                .proxy(repo.getProxy())
+                .authentication(repo.getUsername(), CryptoHelper.decryptIfNeeded(repo.getPassword()))
+                .getClient();
+    }
+
+    protected boolean remoteRepoTestValidStatus(int status) {
+        return status == HttpServletResponse.SC_OK || status == HttpServletResponse.SC_NO_CONTENT;
     }
 }

@@ -18,9 +18,8 @@
 
 package org.artifactory.repo.snapshot;
 
-import com.google.common.base.Charsets;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.Versioning;
@@ -36,17 +35,11 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
-import org.artifactory.request.InternalArtifactoryResponse;
+import org.artifactory.request.InternalCapturingResponse;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
  * Resolves the latest unique snapshot version given a non-unique Maven snapshot artifact request for remote
@@ -150,44 +143,4 @@ public class RemoteLatestMavenVersionResolver extends LatestVersionResolver {
         return null;
     }
 
-    private class InternalCapturingResponse extends InternalArtifactoryResponse {
-        /**
-         * Either the output stream or the writer might be used. Never both of them.
-         */
-        ByteArrayOutputStream out;
-        private StringWriter stringWriter;
-        private PrintWriter writer;
-
-        @Override
-        public OutputStream getOutputStream() throws IOException {
-            if (out == null) {
-                out = new ByteArrayOutputStream();
-            }
-            return out;
-        }
-
-        @Override
-        public PrintWriter getWriter() throws IOException {
-            if (stringWriter == null) {
-                stringWriter = new StringWriter();
-                writer = new PrintWriter(stringWriter);
-            }
-            return writer;
-        }
-
-        /**
-         * Returns the string representing the response. Only call this method if the expected response is text base.
-         *
-         * @return The response result as a stream.
-         */
-        public String getResultAsString() {
-            if (out != null) {
-                return new String(out.toByteArray(), Charsets.UTF_8);
-            } else if (stringWriter != null) {
-                return stringWriter.toString();
-            } else {
-                return null;
-            }
-        }
-    }
 }

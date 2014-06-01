@@ -20,6 +20,7 @@ package org.artifactory.storage;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.storage.db.DbType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,9 @@ public class StorageProperties {
     }
 
     public String getPassword() {
-        return getProperty(Key.password);
+        String password = getProperty(Key.password);
+        password = CryptoHelper.decryptIfNeeded(password);
+        return password;
     }
 
     public int getMaxActiveConnections() {

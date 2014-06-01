@@ -122,12 +122,14 @@ public class LoginPanel extends TitledActionPanel {
         StyledCheckbox checkbox = new StyledCheckbox("rememberMe") {
             @Override
             protected String getCheckboxInputName(String defaultName) {
+                // set the parameter name to springs' remember me filter default name
                 return AbstractRememberMeServices.DEFAULT_PARAMETER;
             }
         };
-        // set the parameter name to springs' remember me filter default name
-        add(checkbox);
         checkbox.setSubmitButton((Component) loginLink);
+        checkbox.setOutputMarkupPlaceholderTag(true);
+        checkbox.setVisible(!ConstantValues.securityDisableRememberMe.getBoolean());
+        add(checkbox);
 
         // add cancel link
         addButton(new TitledPageLink("cancel", "Cancel", ArtifactoryApplication.get().getHomePage()));

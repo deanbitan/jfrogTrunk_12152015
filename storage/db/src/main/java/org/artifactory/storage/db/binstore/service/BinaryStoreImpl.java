@@ -29,9 +29,9 @@ import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.storage.BinaryAlreadyExistsException;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
-import org.artifactory.storage.StorageRetryException;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
@@ -270,6 +270,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         return firstBinaryProvider;
     }
 
+    @Nullable
     public FileBinaryProvider getFileBinaryProvider() {
         return fileBinaryProvider;
     }
@@ -280,7 +281,11 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public File getBinariesDir() {
-        return getFileBinaryProvider().getBinariesDir();
+        if (getFileBinaryProvider() != null) {
+            return getFileBinaryProvider().getBinariesDir();
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -335,7 +340,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             try {
                 result = insertRecordInDb(convertToBinaryData(bi));
             } catch (StorageException e) {
-                throw new StorageRetryException(bi, e);
+                throw new BinaryAlreadyExistsException(bi, e);
             }
         }
         return result;
@@ -367,7 +372,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             return results;
         }
         try {
-            for (ChecksumType checksumType : ChecksumType.values()) {
+            for (ChecksumType checksumType : ChecksumType.BASE_CHECKSUM_TYPES) {
                 Collection<String> validChecksums = extractValid(checksumType, checksums);
                 if (!validChecksums.isEmpty()) {
                     Collection<BinaryData> found = binariesDao.search(checksumType, validChecksums);
@@ -421,7 +426,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
         try {
             BinariesInfo countAndSize = binariesDao.getCountAndTotalSize();
-            result.printCollectionInfo(countAndSize.getBinariesCount());
+            result.printCollectionInfo(countAndSize.getBinariesSize());
         } catch (SQLException e) {
             log.error("Could not list files due to " + e.getMessage());
         }
@@ -437,7 +442,9 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                                 public String apply(@Nullable BinaryData input) {
                                     return input == null ? "" : input.getSha1();
                                 }
-                            }));
+                            }
+                    )
+            );
         } catch (SQLException e) {
             throw new StorageException("Could search for checksum list!", e);
         }
@@ -518,22 +525,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         try {
             boolean binaryExists = binariesDao.exists(sha1);
             if (!binaryExists) {
-                // insert a new binary record to the db
-                try {
-                    binariesDao.create(dataRecord);
-                } catch (SQLException e) {
-                    // TORE: Error handling should provide clean way to check for duplicate key errors
-                    // Check if it's duplicate key
-                    String message = e.getMessage();
-                    if (message.contains("duplicate key") // Derby message
-                            || message.contains("Duplicate entry") // MySQL message
-                            || message.contains("unique constraint") // Oracle message
-                            ) {
-                        throw new StorageRetryException(convertToBinaryInfo(dataRecord), e);
-                    } else {
-                        throw e;
-                    }
-                }
+                createDataRecord(dataRecord, sha1);
             }
             // Always reselect from DB before returning
             BinaryData justInserted = binariesDao.load(sha1);
@@ -544,6 +536,27 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         } catch (SQLException e) {
             throw new StorageException("Failed to insert new binary record: " + e.getMessage(), e);
         }
+    }
+
+    private void createDataRecord(BinaryData dataRecord, String sha1) throws SQLException {
+        // insert a new binary record to the db
+        try {
+            binariesDao.create(dataRecord);
+        } catch (SQLException e) {
+            if (isDuplicatedEntryException(e)) {
+                log.debug("Simultaneous insert of binary {} detected, binary will be checked.", sha1, e);
+                throw new BinaryAlreadyExistsException(convertToBinaryInfo(dataRecord), e);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private boolean isDuplicatedEntryException(SQLException exception) {
+        String message = exception.getMessage();
+        return message.contains("duplicate key") // Derby message
+                || message.contains("Duplicate entry") // MySQL message
+                || message.contains("unique constraint"); // Oracle message
     }
 
     /**
@@ -565,8 +578,9 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public void ping() {
-        if (!getBinariesDir().canWrite()) {
-            throw new StorageException("Cannot write to " + getBinariesDir().getAbsolutePath());
+        File binariesDir = getBinariesDir();
+        if (binariesDir != null && !binariesDir.canWrite()) {
+            throw new StorageException("Cannot write to " + binariesDir.getAbsolutePath());
         }
         try {
             if (binariesDao.exists("does not exists")) {
@@ -579,7 +593,11 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public void prune(MultiStatusHolder statusHolder) {
-        getFileBinaryProvider().prune(statusHolder);
+        if (fileBinaryProvider != null) {
+            fileBinaryProvider.prune(statusHolder);
+        } else {
+            statusHolder.warn("Filesystem storage is not used. Skipping prune", log);
+        }
     }
 
     public boolean isUsedByReader(String sha1) {
@@ -603,10 +621,10 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             String sha1 = bd.getSha1();
             if (!isUsedByReader(sha1)) {
                 if (deleteEntry(sha1)) {
-                    log.trace("Deleted {} record from binaries");
+                    log.trace("Deleted {} record from binaries table", sha1);
                     result.checksumsCleaned++;
                     if (getFirstBinaryProvider().delete(sha1)) {
-                        log.trace("Deleted {} binary");
+                        log.trace("Deleted {} binary", sha1);
                         result.binariesCleaned++;
                         result.totalSizeCleaned += bd.getLength();
                     } else {
@@ -614,7 +632,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                     }
                 }
             } else {
-                log.info("Binary " + sha1 + " is being read! Not deleting.");
+                log.info("Binary {} is being read! Not deleting.", sha1);
             }
             return null;
         }

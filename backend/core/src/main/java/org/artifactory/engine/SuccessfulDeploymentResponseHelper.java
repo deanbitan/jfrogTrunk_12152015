@@ -18,8 +18,9 @@
 
 package org.artifactory.engine;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.jackson.JacksonFactory;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
@@ -58,7 +59,7 @@ public class SuccessfulDeploymentResponseHelper {
             RepoPath repoPath, String url, boolean isDirectory) throws IOException {
 
         Writer writer = response.getWriter();
-        response.setHeader("Location", url);
+        response.setHeader(HttpHeaders.LOCATION, url);
         response.setStatus(HttpStatus.SC_CREATED);
         response.setContentType(ArtifactRestConstants.MT_ITEM_CREATED);
         RestBaseStorageInfo storageInfo;

@@ -18,16 +18,19 @@
 
 package org.artifactory.repo;
 
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.IncludeExcludeException;
 import org.artifactory.api.repo.exception.SnapshotPolicyException;
+import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.security.AccessLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,4 +108,15 @@ public abstract class RealRepoBase<T extends RealRepoDescriptor> extends RepoBas
         }
         return statusHolder;
     }
+
+    protected void assertReadPermissions(RepoPath repoPath, MutableStatusHolder status) {
+        AuthorizationService authService = getAuthorizationService();
+        boolean canRead = authService.canRead(repoPath);
+        if (!canRead) {
+            status.error("Download request for repo:path '" + repoPath + "' is forbidden for user '" +
+                    authService.currentUsername() + "'.", HttpStatus.SC_FORBIDDEN, log);
+            AccessLogger.downloadDenied(repoPath);
+        }
+    }
+
 }

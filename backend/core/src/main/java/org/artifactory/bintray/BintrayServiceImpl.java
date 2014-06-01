@@ -20,16 +20,18 @@ package org.artifactory.bintray;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.bintray.BintrayItemInfo;
 import org.artifactory.api.bintray.BintrayPackageInfo;
@@ -41,6 +43,7 @@ import org.artifactory.api.bintray.RepoPackage;
 import org.artifactory.api.bintray.exception.BintrayException;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.jackson.JacksonReader;
 import org.artifactory.api.mail.MailService;
 import org.artifactory.api.search.BintrayItemSearchResults;
@@ -64,7 +67,6 @@ import org.artifactory.sapi.search.VfsQueryRow;
 import org.artifactory.sapi.search.VfsQueryService;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.security.UserInfo;
-import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.util.EmailException;
 import org.artifactory.util.HttpClientConfigurator;
@@ -139,16 +141,17 @@ public class BintrayServiceImpl implements BintrayService {
             @Nullable Map<String, String> headersMap) throws IOException {
         MultiStatusHolder status = new MultiStatusHolder();
 
-        HttpClient client = createHTTPClient();
-        if (itemInfo.isFolder()) {
-            List<ItemInfo> children = repoService.getChildrenDeeply(itemInfo.getRepoPath());
-            for (ItemInfo child : children) {
-                if (!child.isFolder()) {
-                    performPush(client, (FileInfo) itemInfo, bintrayParams, status, headersMap);
+        try (CloseableHttpClient client = createHTTPClient()) {
+            if (itemInfo.isFolder()) {
+                List<ItemInfo> children = repoService.getChildrenDeeply(itemInfo.getRepoPath());
+                for (ItemInfo child : children) {
+                    if (!child.isFolder()) {
+                        performPush(client, (FileInfo) itemInfo, bintrayParams, status, headersMap);
+                    }
                 }
+            } else {
+                performPush(client, (FileInfo) itemInfo, bintrayParams, status, headersMap);
             }
-        } else {
-            performPush(client, (FileInfo) itemInfo, bintrayParams, status, headersMap);
         }
 
         return status;
@@ -162,22 +165,23 @@ public class BintrayServiceImpl implements BintrayService {
         status.status("Starting pushing build '" + buildNameAndNumber + "' to Bintray.", log);
         Set<FileInfo> artifactsToPush = collectArtifactsToPush(build, status);
         if (artifactsToPush != null) {
-            HttpClient client = createHTTPClient();
-            status.status("Found " + artifactsToPush.size() + " artifacts to push.", log);
-            for (FileInfo fileInfo : artifactsToPush) {
-                bintrayParams.setPath(fileInfo.getRelPath());
-                if (bintrayParams.isUseExistingProps()) {
-                    BintrayParams paramsFromProperties = createParamsFromProperties(fileInfo.getRepoPath());
-                    bintrayParams.setRepo(paramsFromProperties.getRepo());
-                    bintrayParams.setPackageId(paramsFromProperties.getPackageId());
-                    bintrayParams.setVersion(paramsFromProperties.getVersion());
-                    bintrayParams.setPath(paramsFromProperties.getPath());
-                }
-                try {
-                    performPush(client, fileInfo, bintrayParams, status, headersMap);
-                } catch (IOException e) {
-                    sendBuildPushNotification(status, buildNameAndNumber);
-                    throw e;
+            try (CloseableHttpClient client = createHTTPClient()) {
+                status.status("Found " + artifactsToPush.size() + " artifacts to push.", log);
+                for (FileInfo fileInfo : artifactsToPush) {
+                    bintrayParams.setPath(fileInfo.getRelPath());
+                    if (bintrayParams.isUseExistingProps()) {
+                        BintrayParams paramsFromProperties = createParamsFromProperties(fileInfo.getRepoPath());
+                        bintrayParams.setRepo(paramsFromProperties.getRepo());
+                        bintrayParams.setPackageId(paramsFromProperties.getPackageId());
+                        bintrayParams.setVersion(paramsFromProperties.getVersion());
+                        bintrayParams.setPath(paramsFromProperties.getPath());
+                    }
+                    try {
+                        performPush(client, fileInfo, bintrayParams, status, headersMap);
+                    } catch (IOException e) {
+                        sendBuildPushNotification(status, buildNameAndNumber);
+                        throw e;
+                    }
                 }
             }
         }
@@ -337,7 +341,7 @@ public class BintrayServiceImpl implements BintrayService {
         return fileInfoSet;
     }
 
-    private void performPush(HttpClient client, FileInfo fileInfo, BintrayParams bintrayParams,
+    private void performPush(CloseableHttpClient client, FileInfo fileInfo, BintrayParams bintrayParams,
             MultiStatusHolder status, @Nullable Map<String, String> headersMap) throws IOException {
         if (!bintrayParams.isValid()) {
             String message = String.format("Skipping push for '%s' since one of the Bintray properties is missing.",
@@ -349,7 +353,8 @@ public class BintrayServiceImpl implements BintrayService {
         if (!authorizationService.canAnnotate(fileInfo.getRepoPath())) {
             String message = String.format(
                     "You do not have annotate permissions on the published files in Artifactory. " +
-                            "Bintray package and version properties will not be recorded.");
+                            "Bintray package and version properties will not be recorded."
+            );
             status.warn(message, log);
         }
 
@@ -358,17 +363,17 @@ public class BintrayServiceImpl implements BintrayService {
         String requestUrl = getBaseBintrayApiUrl() + PATH_CONTENT + "/" + bintrayParams.getRepo() + "/"
                 + bintrayParams.getPackageId() + "/" + bintrayParams.getVersion() + "/" + path;
 
-        InputStream elementInputStream = null;
-        PutMethod putMethod = null;
+        CloseableHttpResponse response = null;
         try {
-            elementInputStream = binaryStore.getBinary(fileInfo.getSha1());
-            RequestEntity requestEntity = new InputStreamRequestEntity(elementInputStream, fileInfo.getSize());
-            putMethod = createPutMethod(requestUrl, headersMap, requestEntity);
-            int statusCode = client.executeMethod(putMethod);
+            InputStream elementInputStream = binaryStore.getBinary(fileInfo.getSha1());
+            HttpEntity requestEntity = new InputStreamEntity(elementInputStream, fileInfo.getSize());
+            HttpPut putMethod = createPutMethod(requestUrl, headersMap, requestEntity);
+            response = client.execute(putMethod);
+            int statusCode = response.getStatusLine().getStatusCode();
             String message;
             if (statusCode != HttpStatus.SC_CREATED) {
                 message = String.format("Push failed for '%s' with status: %s %s", path, statusCode,
-                        putMethod.getStatusText());
+                        response.getStatusLine().getReasonPhrase());
                 status.error(message, statusCode, log);
             } else {
                 message = String.format(
@@ -380,10 +385,7 @@ public class BintrayServiceImpl implements BintrayService {
                 }
             }
         } finally {
-            if (putMethod != null) {
-                putMethod.releaseConnection();
-            }
-            IOUtils.closeQuietly(elementInputStream);
+            IOUtils.closeQuietly(response);
         }
     }
 
@@ -509,30 +511,31 @@ public class BintrayServiceImpl implements BintrayService {
 
     @Override
     public BintrayItemSearchResults<BintrayItemInfo> searchByName(String query,
-            @Nullable Map<String, String> headersMap)
-            throws IOException, BintrayException {
+            @Nullable Map<String, String> headersMap) throws IOException, BintrayException {
         String requestUrl = getBaseBintrayApiUrl() + "search/file/?subject=bintray&repo=jcenter&name=" + query;
         log.debug("requestUrl=\"" + requestUrl + "\"");
-        GetMethod getMethod = createGetMethod(requestUrl, headersMap);
-        HttpClient client = createHTTPClient(new UsernamePasswordCredentials("", ""));
-        int status = client.executeMethod(getMethod);
-        if (status != HttpStatus.SC_OK) {
-            throw new BintrayException(getMethod.getStatusText(), getMethod.getStatusCode());
-        } else {
-            InputStream responseStream = null;
-            try {
-                int rangeLimitTotal = Integer.parseInt(getMethod.getResponseHeader(RANGE_LIMIT_TOTAL).getValue());
-                responseStream = getMethod.getResponseBodyAsStream();
-                List<BintrayItemInfo> listResult = JacksonReader.streamAsValueTypeReference(
-                        responseStream, new TypeReference<List<BintrayItemInfo>>() {
-                });
-                BintrayItemSearchResults<BintrayItemInfo> results = new BintrayItemSearchResults<>(listResult,
-                        rangeLimitTotal);
-                fillLocalRepoPaths(listResult);
-                fixDateFormat(listResult);
-                return results;
-            } finally {
-                IOUtils.closeQuietly(responseStream);
+        try (CloseableHttpClient client = createHTTPClient(new UsernamePasswordCredentials("", ""))) {
+            HttpGet getMethod = createGetMethod(requestUrl, headersMap);
+            CloseableHttpResponse response = client.execute(getMethod);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != HttpStatus.SC_OK) {
+                throw new BintrayException(response.getStatusLine().getReasonPhrase(), statusCode);
+            } else {
+                try {
+                    int rangeLimitTotal = Integer.parseInt(response.getFirstHeader(RANGE_LIMIT_TOTAL).getValue());
+                    InputStream responseStream = response.getEntity().getContent();
+                    List<BintrayItemInfo> listResult = JacksonReader.streamAsValueTypeReference(
+                            responseStream, new TypeReference<List<BintrayItemInfo>>() {
+                            }
+                    );
+                    BintrayItemSearchResults<BintrayItemInfo> results = new BintrayItemSearchResults<>(listResult,
+                            rangeLimitTotal);
+                    fillLocalRepoPaths(listResult);
+                    fixDateFormat(listResult);
+                    return results;
+                } finally {
+                    IOUtils.closeQuietly(response);
+                }
             }
         }
     }
@@ -592,15 +595,16 @@ public class BintrayServiceImpl implements BintrayService {
     private BintrayItemInfo getBintrayItemInfoByChecksum(final String sha1, @Nullable Map<String, String> headersMap) {
         String itemInfoRequest = String.format("%ssearch/file/?sha1=%s&subject=bintray&repo=jcenter",
                 getBaseBintrayApiUrl(), sha1);
-        InputStream responseStream = null;
         BintrayItemInfo result = ITEM_RETRIEVAL_ERROR;
+        CloseableHttpClient client = getUserOrSystemApiKeyHttpClient();
+        CloseableHttpResponse response = null;
         try {
             log.debug("Bintray item request:{}", itemInfoRequest);
-            GetMethod getMethod = createGetMethod(itemInfoRequest, headersMap);
-            HttpClient client = getUserOrSystemApiKeyHttpClient();
-            int status = client.executeMethod(getMethod);
-            if (status != HttpStatus.SC_OK) {
-                if (status == HttpStatus.SC_UNAUTHORIZED) {
+            HttpGet getMethod = createGetMethod(itemInfoRequest, headersMap);
+            response = client.execute(getMethod);
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode != HttpStatus.SC_OK) {
+                if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
                     String userName = getCurrentUser().getUsername();
                     log.info("Bintray authentication failure: item {}, user {}", sha1, userName);
                     result = ITEM_RETRIEVAL_ERROR;
@@ -609,11 +613,12 @@ public class BintrayServiceImpl implements BintrayService {
                     result = ITEM_NOT_FOUND;
                 }
             } else {
-                int rangeLimitTotal = Integer.parseInt(getMethod.getResponseHeader(RANGE_LIMIT_TOTAL).getValue());
-                responseStream = getMethod.getResponseBodyAsStream();
+                int rangeLimitTotal = Integer.parseInt(response.getFirstHeader(RANGE_LIMIT_TOTAL).getValue());
+                InputStream responseStream = response.getEntity().getContent();
                 List<BintrayItemInfo> listResult = JacksonReader.streamAsValueTypeReference(
                         responseStream, new TypeReference<List<BintrayItemInfo>>() {
-                });
+                        }
+                );
                 BintrayItemSearchResults<BintrayItemInfo> results = new BintrayItemSearchResults<>(
                         listResult,
                         rangeLimitTotal);
@@ -630,22 +635,10 @@ public class BintrayServiceImpl implements BintrayService {
             log.debug("Failure during Bintray fetching package {}: {}", sha1, e);
             result = ITEM_RETRIEVAL_ERROR;
         } finally {
-            IOUtils.closeQuietly(responseStream);
+            IOUtils.closeQuietly(response);
+            IOUtils.closeQuietly(client);
         }
         return result;
-    }
-
-    private HttpClient getUserOrSystemApiKeyHttpClient() {
-        HttpClient client;
-        if (isUserHasBintrayAuth()) {
-            client = createHTTPClient();
-        } else if (hasBintraySystemUser()) {
-            client = createHTTPClient(new UsernamePasswordCredentials(ConstantValues.bintraySystemUser.getString(),
-                    ConstantValues.bintraySystemUserApiKey.getString()));
-        } else {
-            throw new IllegalStateException("User doesn't have bintray credentials");
-        }
-        return client;
     }
 
     @Override
@@ -662,7 +655,8 @@ public class BintrayServiceImpl implements BintrayService {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                InputStream responseStream = null;
+                CloseableHttpClient client = null;
+                CloseableHttpResponse response = null;
                 try {
                     BintrayPackageInfo result;
                     // Try to get Bintray info for item by sha1
@@ -686,11 +680,12 @@ public class BintrayServiceImpl implements BintrayService {
                             append(bintrayItemInfo.getPackage());
                     final String url = urlBuilder.toString();
                     log.debug("Bintray package request:{}", url);
-                    GetMethod getMethod = createGetMethod(url, headersMap);
-                    HttpClient client = getUserOrSystemApiKeyHttpClient();
-                    int status = client.executeMethod(getMethod);
-                    if (status != HttpStatus.SC_OK) {
-                        if (status == HttpStatus.SC_UNAUTHORIZED) {
+                    HttpGet getMethod = createGetMethod(url, headersMap);
+                    client = getUserOrSystemApiKeyHttpClient();
+                    response = client.execute(getMethod);
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    if (statusCode != HttpStatus.SC_OK) {
+                        if (statusCode == HttpStatus.SC_UNAUTHORIZED) {
                             String userName = getCurrentUser().getUsername();
                             log.info("Bintray authentication failure: user {}", userName);
                             result = PACKAGE_RETRIEVAL_ERROR;
@@ -698,10 +693,11 @@ public class BintrayServiceImpl implements BintrayService {
                             result = PACKAGE_NOT_FOUND;
                         }
                     } else {
-                        responseStream = getMethod.getResponseBodyAsStream();
+                        InputStream responseStream = response.getEntity().getContent();
                         result = JacksonReader.streamAsValueTypeReference(
                                 responseStream, new TypeReference<BintrayPackageInfo>() {
-                        });
+                                }
+                        );
                     }
 
                     bintrayPackageCache.put(sha1, result);
@@ -710,7 +706,8 @@ public class BintrayServiceImpl implements BintrayService {
                     log.debug("Failure during Bintray fetching package {}: {}", sha1, e);
                     bintrayPackageCache.put(sha1, PACKAGE_RETRIEVAL_ERROR);
                 } finally {
-                    IOUtils.closeQuietly(responseStream);
+                    IOUtils.closeQuietly(response);
+                    IOUtils.closeQuietly(client);
                 }
             }
         };
@@ -730,13 +727,14 @@ public class BintrayServiceImpl implements BintrayService {
     private InputStream executeGet(String requestUrl, UsernamePasswordCredentials creds,
             @Nullable Map<String, String> headersMap)
             throws IOException, BintrayException {
-        GetMethod getMethod = createGetMethod(requestUrl, headersMap);
-        HttpClient client = createHTTPClient(creds);
-        int status = client.executeMethod(getMethod);
-        if (status != HttpStatus.SC_OK) {
-            throw new BintrayException(getMethod.getStatusText(), getMethod.getStatusCode());
+        HttpGet getMethod = createGetMethod(requestUrl, headersMap);
+        CloseableHttpClient client = createHTTPClient(creds);
+        CloseableHttpResponse response = client.execute(getMethod);
+        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+            throw new BintrayException(response.getStatusLine().getReasonPhrase(),
+                    response.getStatusLine().getStatusCode());
         } else {
-            return getMethod.getResponseBodyAsStream();
+            return response.getEntity().getContent();
         }
     }
 
@@ -748,25 +746,25 @@ public class BintrayServiceImpl implements BintrayService {
         return PathUtils.addTrailingSlash(ConstantValues.bintrayApiUrl.getString());
     }
 
-    private PutMethod createPutMethod(String requestUrl, @Nullable Map<String, String> headersMap,
-            RequestEntity requestEntity) {
-        PutMethod putMethod = new PutMethod(HttpUtils.encodeQuery(requestUrl));
-        putMethod.setRequestEntity(requestEntity);
+    private HttpPut createPutMethod(String requestUrl, @Nullable Map<String, String> headersMap,
+            HttpEntity requestEntity) {
+        HttpPut putMethod = new HttpPut(HttpUtils.encodeQuery(requestUrl));
+        putMethod.setEntity(requestEntity);
         updateHeaders(headersMap, putMethod);
         return putMethod;
     }
 
-    private GetMethod createGetMethod(String requestUrl, @Nullable Map<String, String> headersMap) {
-        GetMethod getMethod = new GetMethod(HttpUtils.encodeQuery(requestUrl));
+    private HttpGet createGetMethod(String requestUrl, @Nullable Map<String, String> headersMap) {
+        HttpGet getMethod = new HttpGet(HttpUtils.encodeQuery(requestUrl));
         updateHeaders(headersMap, getMethod);
         return getMethod;
     }
 
-    private void updateHeaders(Map<String, String> headersMap, HttpMethodBase method) {
-        method.setRequestHeader("user-agent", HttpUtils.getArtifactoryUserAgent());
+    private void updateHeaders(Map<String, String> headersMap, HttpRequestBase method) {
+        method.setHeader(HttpHeaders.USER_AGENT, HttpUtils.getArtifactoryUserAgent());
         if (headersMap != null) {
             String headerVal = HttpUtils.adjustRefererValue(headersMap, headersMap.get("Referer".toUpperCase()));
-            method.setRequestHeader("Referer", headerVal);
+            method.setHeader("Referer", headerVal);
         }
     }
 
@@ -785,18 +783,31 @@ public class BintrayServiceImpl implements BintrayService {
                 "Couldn't find Bintray credentials, please configure them from the user profile page.");
     }
 
-    private HttpClient createHTTPClient() {
+    private CloseableHttpClient getUserOrSystemApiKeyHttpClient() {
+        CloseableHttpClient client;
+        if (isUserHasBintrayAuth()) {
+            client = createHTTPClient();
+        } else if (hasBintraySystemUser()) {
+            client = createHTTPClient(new UsernamePasswordCredentials(ConstantValues.bintraySystemUser.getString(),
+                    ConstantValues.bintraySystemUserApiKey.getString()));
+        } else {
+            throw new IllegalStateException("User doesn't have bintray credentials");
+        }
+        return client;
+    }
+
+    private CloseableHttpClient createHTTPClient() {
         return createHTTPClient(getCurrentUserBintrayCreds());
     }
 
-    private HttpClient createHTTPClient(UsernamePasswordCredentials creds) {
-        ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
+    private CloseableHttpClient createHTTPClient(UsernamePasswordCredentials creds) {
+        ProxyDescriptor proxy = ContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
 
         return new HttpClientConfigurator()
                 .hostFromUrl(getBaseBintrayApiUrl())
                 .soTimeout(15000)
                 .connectionTimeout(15000)
-                .retry(0, false)
+                .noRetry()
                 .proxy(proxy)
                 .authentication(creds)
                 .getClient();

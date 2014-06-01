@@ -109,7 +109,7 @@ public enum StorageUnit {
     public abstract double toBytes(int size);
 
     /**
-     * Convert the number of bytes to a human readable size, if the size is more than 1000 megabytes display the correct
+     * Convert the number of bytes to a human readable size, if the size is more than 1024 megabytes display the correct
      * number of gigabytes.
      *
      * @param size The size in bytes.
@@ -120,8 +120,7 @@ public enum StorageUnit {
         if (size < UNITS_TO_NEXT_UNIT) {
             return size + " bytes";
         }
-        DecimalFormat decimalFormat = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.ENGLISH));
-        decimalFormat.setMinimumFractionDigits(2);
+        DecimalFormat decimalFormat = createFormat();
         // convert to KB
         double readableSize = KB.fromBytes(size);
         // if less than 1 MB
@@ -136,6 +135,10 @@ public enum StorageUnit {
         }
         readableSize = GB.fromBytes(size);
         return decimalFormat.format(readableSize) + " GB";
+    }
+
+    public static String format(double size) {
+        return createFormat().format(size);
     }
 
     public static long fromReadableString(String humanReadableSize) {
@@ -157,5 +160,11 @@ public enum StorageUnit {
             case 'g':
                 return l;
         }
+    }
+
+    private static DecimalFormat createFormat() {
+        DecimalFormat decimalFormat = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.ENGLISH));
+        decimalFormat.setMinimumFractionDigits(2);
+        return decimalFormat;
     }
 }

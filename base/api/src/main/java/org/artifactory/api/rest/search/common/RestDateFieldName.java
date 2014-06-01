@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2012 JFrog Ltd.
+ * Copyright (C) 2014 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,19 +16,28 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.util;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.artifactory.api.rest.search.common;
 
 /**
- * @author Yoav Landman
+ * Date: 5/11/14 3:29 PM
+ *
+ * @author freds
  */
-public abstract class HttpClientUtils {
-    private static final Logger log = LoggerFactory.getLogger(HttpClientUtils.class);
+public enum RestDateFieldName {
+    LAST_MODIFIED("lastModified"), CREATED("created"), LAST_DOWNLOADED("lastDownloaded");
 
-    private HttpClientUtils() {
-        // utility class
+    public String fieldName;
+
+    RestDateFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
 
+    public static RestDateFieldName byFieldName(String fieldName) {
+        for (RestDateFieldName dateFieldName : values()) {
+            if (dateFieldName.fieldName.equals(fieldName)) {
+                return dateFieldName;
+            }
+        }
+        return null;
+    }
 }

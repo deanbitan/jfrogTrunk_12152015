@@ -51,8 +51,7 @@ public class ChecksumsTest {
 
     public void calculateSha1AndMd5() throws IOException {
         byte[] bytes = "and this is another test".getBytes();
-        Checksum[] results = Checksums.calculate(new ByteArrayInputStream(bytes),
-                ChecksumType.sha1, ChecksumType.md5);
+        Checksum[] results = Checksums.calculate(new ByteArrayInputStream(bytes), ChecksumType.BASE_CHECKSUM_TYPES);
         assertNotNull(results, "Results should not be null");
         assertEquals(results.length, 2, "Expecting two calculated value");
         assertEquals(results[0].getChecksum(), "5258d99970d60aed055c0056a467a0422acf7cb8",
@@ -63,9 +62,9 @@ public class ChecksumsTest {
 
     public void calculateAllKnownChecksums() throws IOException {
         byte[] bytes = "and this is another test".getBytes();
-        Checksum[] results = Checksums.calculateAll(new ByteArrayInputStream(bytes));
+        Checksum[] results = Checksums.calculate(new ByteArrayInputStream(bytes), ChecksumType.BASE_CHECKSUM_TYPES);
         assertNotNull(results, "Results should not be null");
-        assertEquals(results.length, ChecksumType.values().length, "Expecting two calculated value");
+        assertEquals(results.length, ChecksumType.BASE_CHECKSUM_TYPES.length, "Expecting two calculated value");
         assertEquals(results[0].getChecksum(), "5258d99970d60aed055c0056a467a0422acf7cb8",
                 "Wrong SHA1 calculated");
         assertEquals(results[1].getChecksum(), "72f1aea68f75f79889b99cd4ff7acc83",

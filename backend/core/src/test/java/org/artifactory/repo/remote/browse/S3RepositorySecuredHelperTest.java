@@ -18,7 +18,9 @@
 
 package org.artifactory.repo.remote.browse;
 
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.repo.HttpRepo;
+import org.artifactory.test.ArtifactoryHomeStub;
 import org.easymock.EasyMock;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -32,6 +34,7 @@ public class S3RepositorySecuredHelperTest {
 
     @Test
     public void testBuildSecuredS3RequestUrl() throws Exception {
+        ArtifactoryHome.bind(new ArtifactoryHomeStub());
         HttpRepo httpRepo = EasyMock.createMock(HttpRepo.class);
         EasyMock.expect(httpRepo.getUsername()).andReturn("aws-sandbox@jfrog.com").anyTimes();
         EasyMock.expect(httpRepo.getPassword()).andReturn("forgot").anyTimes();

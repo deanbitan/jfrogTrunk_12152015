@@ -39,7 +39,7 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
 
     @BeforeClass
     protected void setUp() throws Exception {
-        System.setProperty(ConstantValues.mvnCustomTypes.getPropertyName(), "tar.gz, custom.jar");
+        System.setProperty(ConstantValues.mvnCustomTypes.getPropertyName(), "tar.gz, custom.jar, tar.bz2");
     }
 
     @AfterClass
@@ -182,6 +182,18 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         assertEquals(artifactInfo.getType(), "tar.gz");
     }
 
+    public void testTarBz2() {
+        RepoPath path = new RepoPathImpl("repo",
+                "org/jfrog/artifactory/10.0-SNAPSHOT/artifactory-10.0-20150515.164556-7-sources.tar.bz2");
+        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
+        assertTrue(artifactInfo.isValid());
+        assertEquals(artifactInfo.getGroupId(), "org.jfrog");
+        assertEquals(artifactInfo.getArtifactId(), "artifactory");
+        assertEquals(artifactInfo.getVersion(), "10.0-20150515.164556-7");
+        assertEquals(artifactInfo.getClassifier(), "sources");
+        assertEquals(artifactInfo.getType(), "tar.bz2");
+    }
+
     public void fileExtensionAsNumber() {
         RepoPath path = InfoFactoryHolder.get().createRepoPath("repo",
                 "/org/jfrog/artifactory-core/2.0/artifactory-core-2.0.386");
@@ -200,5 +212,16 @@ public class MavenArtifactInfoTest extends ArtifactoryHomeBoundTest {
         RepoPath path = InfoFactoryHolder.get().createRepoPath("repo", "com/5.4-SNAPSHOT/bob.jar");
         MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
         assertFalse(artifactInfo.isValid());
+    }
+
+    public void fromPathWithoutExtension() {
+        RepoPath path = InfoFactoryHolder.get().createRepoPath("repo", "org/something/1/noExtension");
+        MavenArtifactInfo artifactInfo = MavenArtifactInfo.fromRepoPath(path);
+        assertTrue(artifactInfo.isValid());
+        assertEquals(artifactInfo.getGroupId(), "org");
+        assertEquals(artifactInfo.getArtifactId(), "something");
+        assertEquals(artifactInfo.getVersion(), "1");
+        assertNull(artifactInfo.getClassifier());
+        assertEquals(artifactInfo.getType(), "jar");
     }
 }

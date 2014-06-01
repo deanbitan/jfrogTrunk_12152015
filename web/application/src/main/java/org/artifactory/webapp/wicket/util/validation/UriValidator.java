@@ -18,14 +18,17 @@
 
 package org.artifactory.webapp.wicket.util.validation;
 
-import org.apache.commons.httpclient.URI;
-import org.apache.commons.httpclient.URIException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URIUtils;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.util.PathUtils;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 
 /**
@@ -57,13 +60,14 @@ public class UriValidator extends StringValidator {
         }
 
         try {
-            URI parsedUri = new URI(uri, false);
+            URI parsedUri = new URIBuilder(uri).build();
             String scheme = parsedUri.getScheme();
             if (!anySchemaAllowed() && StringUtils.isBlank(scheme)) {
                 addError(validatable, String.format(
                         "Url scheme cannot be empty. The following schemes are allowed: %s. " +
                                 "For example: %s://host",
-                        Arrays.asList(allowedSchemes), allowedSchemes[0]));
+                        Arrays.asList(allowedSchemes), allowedSchemes[0]
+                ));
 
             } else if (!allowedSchema(scheme)) {
                 addError(validatable, String.format(
@@ -71,11 +75,11 @@ public class UriValidator extends StringValidator {
                         scheme, Arrays.asList(allowedSchemes)));
             }
 
-            String host = parsedUri.getHost();
+            HttpHost host = URIUtils.extractHost(parsedUri);
             if (host == null) {
-                addError(validatable, "Cannot resolve host from url");
+                addError(validatable, "Cannot resolve host from url: " + uri);
             }
-        } catch (URIException e) {
+        } catch (URISyntaxException e) {
             addError(validatable, String.format("'%s' is not a valid url", uri));
         }
     }

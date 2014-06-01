@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.servlet;
 
+import org.apache.http.HttpHeaders;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ContextHelper;
@@ -47,7 +48,7 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
 
     @Override
     public long getLastModified() {
-        return httpRequest.getDateHeader("Last-Modified");
+        return httpRequest.getDateHeader(HttpHeaders.LAST_MODIFIED);
     }
 
     @Override
@@ -67,7 +68,7 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
 
     @Override
     public long getIfModifiedSince() {
-        return httpRequest.getDateHeader("If-Modified-Since");
+        return httpRequest.getDateHeader(HttpHeaders.IF_MODIFIED_SINCE);
     }
 
     @Override
@@ -108,8 +109,8 @@ public class HttpArtifactoryRequest extends ArtifactoryRequestBase {
      * @see javax.servlet.ServletRequest#getContentLength()
      */
     @Override
-    public int getContentLength() {
-        return httpRequest.getContentLength();
+    public long getContentLength() {
+        return HttpUtils.getContentLength(httpRequest);
     }
 
     @Override

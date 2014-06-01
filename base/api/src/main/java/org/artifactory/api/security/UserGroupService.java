@@ -145,4 +145,6 @@ public interface UserGroupService {
      */
     @Nullable
     GroupInfo findGroup(String groupName);
+
+    String createEncryptedPasswordIfNeeded(UserInfo user, String password);
 }

@@ -30,7 +30,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.sapi.fs.MutableVfsFile;
-import org.artifactory.storage.StorageRetryException;
+import org.artifactory.storage.BinaryAlreadyExistsException;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.repo.StoringRepo;
@@ -90,7 +90,7 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
 
 
     @Override
-    public boolean useData(String sha1, String md5, long length) {
+    public boolean tryUsingExistingBinary(String sha1, String md5, long length) throws BinaryAlreadyExistsException {
         BinaryInfo binary = getBinaryStore().addBinaryRecord(sha1, md5, length);
         if (binary != null) {
             setFileBinaryInfo(binary);
@@ -100,14 +100,14 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
     }
 
     @Override
-    public void fillData(InputStream in) {
+    public void fillBinaryData(InputStream in) {
         //Check if needs to create checksum and not checksum file
         log.debug("Calculating checksums of '{}'.", getRepoPath());
         BinaryInfo binary;
         try {
             // call the binary service to add the current binary
             binary = getBinaryStore().addBinary(in);
-        } catch (StorageRetryException e) {
+        } catch (BinaryAlreadyExistsException e) {
             if (log.isDebugEnabled()) {
                 log.info("Retrying add binary after receiving retry exception", e);
             } else {
@@ -119,7 +119,6 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
             throw new VfsException("Failed to add input stream for '" + getRepoPath() + "'", e);
         }
 
-        // set the actual checksums on the file extra info
         setFileBinaryInfo(binary);
     }
 

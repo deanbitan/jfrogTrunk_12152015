@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2013 JFrog Ltd.
+ * Copyright (C) 2014 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,24 +16,12 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.storage;
-
-import org.artifactory.binstore.BinaryInfo;
+package org.artifactory.sapi.search;
 
 /**
- * All exceptions that means the request can be redone (dup keys or others).
+ * Date: 5/11/14 3:14 PM
  *
- * @author Fred Simon
+ * @author freds
  */
-public class StorageRetryException extends StorageException {
-    private final BinaryInfo binaryInfo;
-
-    public StorageRetryException(BinaryInfo binaryInfo, Throwable cause) {
-        super("Insertion of " + binaryInfo + " failed. Auto retry exception", cause);
-        this.binaryInfo = binaryInfo;
-    }
-
-    public BinaryInfo getBinaryInfo() {
-        return binaryInfo;
-    }
+public enum VfsItemFieldName {
 }

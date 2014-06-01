@@ -19,7 +19,7 @@
 package org.artifactory.rest.resource.system;
 
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -99,7 +99,8 @@ public class ExportResource {
             if (!httpResponse.isCommitted() && holder.isError()) {
                 return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(
                         "Export finished with errors. Check " +
-                                "Artifactory logs for more details.").build();
+                                "Artifactory logs for more details."
+                ).build();
             }
         } catch (Exception e) {
             if (!httpResponse.isCommitted()) {

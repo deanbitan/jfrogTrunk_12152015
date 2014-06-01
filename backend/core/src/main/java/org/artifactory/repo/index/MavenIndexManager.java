@@ -20,9 +20,9 @@ package org.artifactory.repo.index;
 
 
 import com.google.common.io.Closeables;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.io.NullResourceStreamHandle;
 import org.artifactory.io.TempFileStreamHandle;

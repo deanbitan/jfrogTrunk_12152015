@@ -237,7 +237,7 @@ public abstract class BaseRepoPathMover {
 
     private void copyVfsFile(VfsFile sourceFile, MutableVfsFile targetFile) {
         // copy the info and the properties only (stats and watches are not required)
-        targetFile.useData(sourceFile.getSha1(), sourceFile.getMd5(), sourceFile.length());
+        targetFile.tryUsingExistingBinary(sourceFile.getSha1(), sourceFile.getMd5(), sourceFile.length());
         targetFile.fillInfo(sourceFile.getInfo());
         targetFile.setProperties(sourceFile.getProperties());
     }
@@ -245,7 +245,8 @@ public abstract class BaseRepoPathMover {
     private void moveVfsFile(VfsFile sourceFile, MutableVfsFile targetFile) {
         copyVfsFile(sourceFile, targetFile);
         LocalRepo localRepo = repositoryService.localOrCachedRepositoryByKey(sourceFile.getRepoKey());
-        MutableVfsFile mutableSourceFile = localRepo.getMutableFile(sourceFile.getRepoPath());
+        MutableVfsFile mutableSourceFile =
+                localRepo != null ? localRepo.getMutableFile(sourceFile.getRepoPath()) : null;
         if (mutableSourceFile != null) {
             mutableSourceFile.delete();
         } else {

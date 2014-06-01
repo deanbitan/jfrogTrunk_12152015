@@ -213,7 +213,7 @@ public class StatsServiceImpl implements InternalStatsService {
                 StatsSaveResult saveResult = createOrUpdateStats(event);
                 switch (saveResult) {
                     case Ignored:
-                        log.debug("Attempting to update stats of non-existing node at: {}", event.repoPath);
+                        log.debug("Attempting to update stats of non-existing or folder node at: {}", event.repoPath);
                         break;
                     case Updated:
                         if (processed % savedPerTx == 0) {
@@ -268,7 +268,7 @@ public class StatsServiceImpl implements InternalStatsService {
      * @return true if element should be consumed, false otherwise
      */
     private StatsSaveResult createOrUpdateStats(StatsEvent event) {
-        long nodeId = fileService.getNodeId(event.repoPath);
+        long nodeId = fileService.getFileNodeId(event.repoPath);
         if (nodeId == DbService.NO_DB_ID) {
             return StatsSaveResult.Ignored;
         }

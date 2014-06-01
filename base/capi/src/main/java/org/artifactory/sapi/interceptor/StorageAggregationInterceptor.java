@@ -27,5 +27,5 @@ import org.artifactory.repo.RepoPath;
  */
 public interface StorageAggregationInterceptor extends Interceptor {
 
-    void afterAllImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status);
+    void afterRepoImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status);
 }

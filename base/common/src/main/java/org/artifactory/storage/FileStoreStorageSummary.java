@@ -1,23 +1,24 @@
 /*
- * Artifactory is a binaries repository manager.
- * Copyright (C) 2014 JFrog Ltd.
- *
- * Artifactory is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * Artifactory is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
- */
+* Artifactory is a binaries repository manager.
+* Copyright (C) 2014 JFrog Ltd.
+*
+* Artifactory is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* Artifactory is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package org.artifactory.storage;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
 
@@ -39,11 +40,11 @@ public class FileStoreStorageSummary implements Serializable {
     private long usedSpace;
     private long cacheSize;
 
-    public FileStoreStorageSummary(File binariesFolder, BinaryProviderType binariesStorageType) {
+    public FileStoreStorageSummary(@Nullable File binariesFolder, BinaryProviderType binariesStorageType) {
         this.binariesFolder = binariesFolder;
         this.binariesStorageType = binariesStorageType;
-        freeSpace = binariesFolder.getFreeSpace();
-        totalSpace = binariesFolder.getTotalSpace();
+        freeSpace = binariesFolder != null ? binariesFolder.getFreeSpace() : 0;
+        totalSpace = binariesFolder != null ? binariesFolder.getTotalSpace() : 0;
         usedSpace = totalSpace - freeSpace;
     }
 
@@ -64,8 +65,10 @@ public class FileStoreStorageSummary implements Serializable {
     }
 
     /**
-     * @return The location on the filesystem storing the binaries (either the filestore or the cache).
+     * @return The location on the filesystem storing the binaries (either the filestore or the cache). Might be null
+     * when configured to use full db without a cache
      */
+    @Nullable
     public File getBinariesFolder() {
         return binariesFolder;
     }

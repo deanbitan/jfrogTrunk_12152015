@@ -129,6 +129,11 @@ public class SearchResource {
         return new CreatedInRangeResource(authorizationService, searchService, request);
     }
 
+    @Path(SearchRestConstants.PATH_DATES_IN_RANGE)
+    public AnyDateInRangeResource datesInRangeQuery() {
+        return new AnyDateInRangeResource(authorizationService, searchService, repositoryService);
+    }
+
     @Path(SearchRestConstants.PATH_PATTERN)
     public PatternSearchResource patternSearchQuery() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);

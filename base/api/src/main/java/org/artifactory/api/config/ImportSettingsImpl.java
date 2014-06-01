@@ -37,16 +37,15 @@ public class ImportSettingsImpl extends ImportExportSettingsImpl implements Impo
      * member is pointing to same instance during the all import process.
      */
     private static class SharedInfo {
+
         /**
          * The actual artifactory version that created the folder that need to be imported.
          */
         private ArtifactoryVersion exportVersion;
 
         private MetadataReader metadataReader;
-
         private boolean indexMarkedArchives;
 
-        // set this flag to true if Artifactory should mark uploaded artifacts with trusted metadata checksums mark
     }
 
     private final SharedInfo info;

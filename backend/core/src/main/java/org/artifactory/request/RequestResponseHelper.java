@@ -18,7 +18,7 @@
 
 package org.artifactory.request;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.request.ArtifactoryResponse;

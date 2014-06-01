@@ -19,10 +19,10 @@
 package org.artifactory.webapp.servlet;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.NullWriter;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.util.HttpUtils;

@@ -18,15 +18,17 @@
 
 package org.artifactory.message;
 
-
 import com.google.common.base.Charsets;
 import com.google.common.cache.CacheBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.message.ArtifactoryUpdatesService;
@@ -86,18 +88,16 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
 
     private Message getRemoteMessage() {
         final String url = ConstantValues.artifactoryUpdatesUrl.getString();
-        try {
-            GetMethod getMethod = new GetMethod(url);
-            HttpClient client = createHTTPClient();
-
-            client.executeMethod(getMethod);
-            if (getMethod.getStatusCode() == HttpStatus.SC_OK) {
-                final String body = messageBody(getMethod);
+        HttpGet getMethod = new HttpGet(url);
+        try (CloseableHttpClient client = createHTTPClient();
+             CloseableHttpResponse response = client.execute(getMethod)) {
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                final String body = messageBody(response);
                 final String id = messageId(body);
                 return new Message(id, body);
             }
-            log.debug(String.format("Tried fetching message from '%s' and got status %s", url,
-                    getMethod.getStatusCode()));
+            log.debug("Tried fetching message from '{}' and got status {}", url,
+                    response.getStatusLine().getStatusCode());
         } catch (IOException e) {
             log.debug(String.format("Exception while fetching message from '%s' ", url), e);
         }
@@ -115,12 +115,12 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
                 .replaceAll("=", "").replaceAll("\\+", "-").replaceAll("/", "_");
     }
 
-    private String messageBody(GetMethod getMethod) throws IOException {
-        final String body = getMethod.getResponseBodyAsString();
+    private String messageBody(HttpResponse response) throws IOException {
+        String body = EntityUtils.toString(response.getEntity());
         return StringUtils.defaultString(body);
     }
 
-    private HttpClient createHTTPClient() {
+    private CloseableHttpClient createHTTPClient() {
         ProxyDescriptor proxy = InternalContextHelper.get().getCentralConfig().getDescriptor().getDefaultProxy();
 
         return new HttpClientConfigurator()

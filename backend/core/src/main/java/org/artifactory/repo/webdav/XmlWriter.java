@@ -149,6 +149,62 @@ public class XmlWriter {
         writeElement(namespace, null, name, type);
     }
 
+    /**
+     *
+     * @param name              Element name
+     * @param type              Opening, closing or no content element
+     * @param namespace         Namespace abbreviation
+     * @param namespaceInfos    Namespace definitions
+     */
+    public void writeElement(String namespace, String name, int type, String... namespaceInfos) {
+        if ((namespace != null) && (namespace.length() > 0)) {
+            switch (type) {
+                case OPENING:
+                    if (namespaceInfos.length % 2 == 0) {
+                        buffer.append("<").append(namespace).append(":").append(name);
+                        for (int i = 0;  i < namespaceInfos.length; i += 2) {
+                            buffer.append(" xmlns:").append(namespaceInfos[i]).append("=\"")
+                                    .append(namespaceInfos[i + 1]).append("\"");
+                        }
+                        buffer.append(">");
+                    }
+                     else {
+                        buffer.append("<" + namespace + ":" + name + ">");
+                    }
+                    break;
+                case CLOSING:
+                    buffer.append("</" + namespace + ":" + name + ">\n");
+                    break;
+                case NO_CONTENT:
+                default:
+                    if (namespaceInfos.length % 2 == 0) {
+                        buffer.append("<").append(namespace).append(":").append(name);
+                        for (int i = 0;  i < namespaceInfos.length; i += 2) {
+                            buffer.append(" xmlns:").append(namespaceInfos[i]).append("=\"")
+                                    .append(namespaceInfos[i + 1]).append("\"");
+                        }
+                        buffer.append("/>");
+                    }
+                    else {
+                        buffer.append("<" + namespace + ":" + name + "/>");
+                    }
+                    break;
+            }
+        } else {
+            switch (type) {
+                case OPENING:
+                    buffer.append("<" + name + ">");
+                    break;
+                case CLOSING:
+                    buffer.append("</" + name + ">\n");
+                    break;
+                case NO_CONTENT:
+                default:
+                    buffer.append("<" + name + "/>");
+                    break;
+            }
+        }
+    }
 
     /**
      * Write an element.

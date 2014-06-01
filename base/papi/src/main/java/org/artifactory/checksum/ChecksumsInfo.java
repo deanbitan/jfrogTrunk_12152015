@@ -110,8 +110,7 @@ public class ChecksumsInfo implements Serializable {
      */
     //TODO: [by yl] Remove from papi
     public void createTrustedChecksums() {
-        ChecksumType[] types = ChecksumType.values();
-        for (ChecksumType type : types) {
+        for (ChecksumType type : ChecksumType.BASE_CHECKSUM_TYPES) {
             addChecksumInfo(new ChecksumInfo(type, TRUSTED_FILE_MARKER, null));
         }
     }

@@ -18,7 +18,8 @@
 
 package org.artifactory.repo.remote.browse;
 
-import org.apache.commons.httpclient.HttpMethod;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBase;
 
 import java.io.IOException;
 
@@ -29,5 +30,5 @@ import java.io.IOException;
  * @author Fred Simon
  */
 public interface HttpExecutor {
-    int executeMethod(HttpMethod method) throws IOException;
+    CloseableHttpResponse executeMethod(HttpRequestBase method) throws IOException;
 }

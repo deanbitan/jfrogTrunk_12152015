@@ -128,7 +128,7 @@ public class ResolvedResource implements RepoResource, HttpCacheAvoidableResourc
         try {
             ByteArrayInputStream bais = new StringInputStream(content);
 
-            Checksum[] checksums = Checksums.calculate(bais, ChecksumType.values());
+            Checksum[] checksums = Checksums.calculate(bais, ChecksumType.BASE_CHECKSUM_TYPES);
             ChecksumsInfo checksumsInfo = new ChecksumsInfo();
             for (Checksum checksum : checksums) {
                 ChecksumInfo checksumInfo =

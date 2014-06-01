@@ -36,4 +36,5 @@ public interface InternalSearchService extends SearchService, ReloadableBean {
      * @return Search results
      */
     ItemSearchResults<VersionUnitSearchResult> searchVersionUnits(VersionUnitSearchControls controls);
+
 }

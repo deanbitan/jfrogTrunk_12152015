@@ -21,6 +21,7 @@ package org.artifactory.repo.remote.browse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.utils.CharsetNames;
 import org.artifactory.repo.HttpRepo;
+import org.artifactory.security.crypto.CryptoHelper;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -48,7 +49,7 @@ public class S3RepositorySecuredHelper {
     public static String buildSecuredS3RequestUrl(String url, String prefix, HttpRepo httpRepo,
             long expiration) {
         String awsAccessKey = httpRepo.getUsername();
-        String awsSecretKey = httpRepo.getPassword();
+        String awsSecretKey = CryptoHelper.decryptIfNeeded(httpRepo.getPassword());
 
         try {
             String endpoint = S3_ENDPOINT;
@@ -64,7 +65,8 @@ public class S3RepositorySecuredHelper {
                     "GET\n" +
                             "\n\n" + //content-type,content-md5
                             String.valueOf(expires) + "\n" +
-                            "/" + bucketPath + prefixPath));
+                            "/" + bucketPath + prefixPath
+            ));
 
             String uriPath = prefixPath +
                     "?AWSAccessKeyId=" + awsAccessKey +

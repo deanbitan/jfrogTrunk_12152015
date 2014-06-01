@@ -21,6 +21,7 @@ package org.artifactory.webapp.wicket.page.security.user;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
@@ -73,6 +74,7 @@ import java.util.Set;
  * @author Yoav Landman
  */
 public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
+    public static final String SUPPRESS_ENTER_JS = "if(event.keyCode==13 ||\nwindow.event.keyCode==13){return false;}else{return true;}";
     @SpringBean
     private UserGroupService userGroupService;
 
@@ -120,6 +122,14 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
             @Override
             public boolean isEnabled() {
                 return !entity.isDisableInternalPassword();
+            }
+
+            @Override
+            protected void onComponentTag(ComponentTag tag) {
+                // Prevent submitting when pressing enter
+                super.onComponentTag(tag);
+                tag.put("onkeydown", SUPPRESS_ENTER_JS);
+                tag.put("onkeypress", SUPPRESS_ENTER_JS);
             }
         };
         passwordField.setRequired(create).setOutputMarkupId(true);

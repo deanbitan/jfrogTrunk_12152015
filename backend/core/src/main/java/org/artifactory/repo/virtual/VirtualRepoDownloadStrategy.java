@@ -19,8 +19,8 @@
 package org.artifactory.repo.virtual;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.config.CentralConfigService;
@@ -181,8 +181,9 @@ public class VirtualRepoDownloadStrategy {
             boolean isSnapshotPath = mavenSnapshotPath || path.contains("[INTEGRATION]");
             if (artifactModuleInfo.isIntegration() || (!artifactModuleInfo.isValid() && isSnapshotPath)) {
                 RepoRequests.logToContext("Processing request as a snapshot resource (Module info validity = %s, " +
-                        "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
-                        artifactModuleInfo.isValid(), artifactModuleInfo.isIntegration(), mavenSnapshotPath);
+                                "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
+                        artifactModuleInfo.isValid(), artifactModuleInfo.isIntegration(), mavenSnapshotPath
+                );
                 result = processSnapshot(context, repoPath, repositories);
             } else {
                 RepoRequests.logToContext("Processing request as a release resource");
@@ -198,9 +199,9 @@ public class VirtualRepoDownloadStrategy {
 
     /**
      * @return A list of local and remote repositories to search the resource in, ordered first by type (local non-cache
-     *         first) and secondly by order of appearance. We don't simply add all the lists since some of the real
-     *         repos are resolved transitively and we might have to remove them in case the path is excluded in the
-     *         virtual repo they belong to.
+     * first) and secondly by order of appearance. We don't simply add all the lists since some of the real
+     * repos are resolved transitively and we might have to remove them in case the path is excluded in the
+     * virtual repo they belong to.
      */
     private List<RealRepo> assembleSearchRepositoriesList(RepoPath repoPath, RequestContext context) {
         RepoRequests.logToContext("Preparing list of aggregated repositories to search in");
@@ -370,9 +371,10 @@ public class VirtualRepoDownloadStrategy {
                         (res.getLastModified() > latestRes.getLastModified());
 
                 RepoRequests.logToContext("Current found resource is the first candidate = %s, is an exact match " +
-                        "query while the former candidate isn't = %s, has later modified time than former = %s",
+                                "query while the former candidate isn't = %s, has later modified time than former = %s",
                         firstFoundResource, currentResourceIsAnExactMatchAndLatterFoundIsNot,
-                        currentResourceWasModifiedLater);
+                        currentResourceWasModifiedLater
+                );
 
                 //If we haven't found one yet
                 if (firstFoundResource ||

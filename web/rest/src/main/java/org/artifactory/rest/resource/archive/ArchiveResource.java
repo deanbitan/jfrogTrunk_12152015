@@ -19,8 +19,8 @@
 package org.artifactory.rest.resource.archive;
 
 import com.sun.jersey.spi.CloseableService;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
@@ -115,9 +115,10 @@ public class ArchiveResource {
         try {
             final File buildArtifactsArchive = restAddon.getBuildArtifactsArchive(buildArtifactsRequest);
             if (buildArtifactsArchive == null) {
-                throw new NotFoundException(String.format("Could not find any build artifacts for build '%s' number '%s'.",
-                                        buildArtifactsRequest.getBuildName(),
-                                        buildArtifactsRequest.getBuildNumber()));
+                throw new NotFoundException(
+                        String.format("Could not find any build artifacts for build '%s' number '%s'.",
+                                buildArtifactsRequest.getBuildName(),
+                                buildArtifactsRequest.getBuildNumber()));
             }
 
             markForDeletionAtResponseEnd(buildArtifactsArchive);

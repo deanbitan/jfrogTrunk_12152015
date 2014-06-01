@@ -69,7 +69,7 @@ public interface Request {
     /**
      * @return an integer containing the length in bytes of the request body or -1 if the length is not known
      */
-    int getContentLength();
+    long getContentLength();
 
     /**
      * Get the address of the client that triggered the request.

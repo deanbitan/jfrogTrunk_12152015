@@ -226,12 +226,12 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         try {
             remoteItems.addAll(repo.listRemoteResources(relativePath));
         } catch (IOException e) {
-            log.info("Error while listing remote resources: {}", e.getMessage());
+            log.info("Error while listing remote resources for {}: {}", repoPath.toPath(), e.getMessage());
             log.debug("Error while listing remote resources", e);
             // probably remote not found - return 404 only if current folder doesn't exist in the cache
             if (!pathExistsInCache) {
                 // no cache and remote failed - signal 404
-                throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
+                throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath + ": " + e.getMessage());
             }
         }
         // filter already existing local items
@@ -290,7 +290,8 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                     virtualItem = new VirtualBrowsableItem(child.getName(), child.isFolder(), child.getCreated(),
                             child.getLastModified(), child.getSize(), InternalRepoPathFactory.create(virtualRepoKey,
                             childRelativePath),
-                            Lists.newArrayList(getSearchableRepoKeys(virtualRepos)));
+                            Lists.newArrayList(getSearchableRepoKeys(virtualRepos))
+                    );
                     virtualItem.setRemote(true);    // default to true
                     childrenToReturn.put(childRelativePath, virtualItem);
                 }
@@ -474,7 +475,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             ChecksumsInfo checksumsInfo, BrowsableItem browsableItem) {
         List<BrowsableItem> browsableChecksumItems = Lists.newArrayList();
         Set<ChecksumInfo> checksums = checksumsInfo.getChecksums();
-        for (ChecksumType checksumType : ChecksumType.values()) {
+        for (ChecksumType checksumType : ChecksumType.BASE_CHECKSUM_TYPES) {
             String checksumValue = repo.getChecksumPolicy().getChecksum(checksumType, checksums);
             if (org.apache.commons.lang.StringUtils.isNotBlank(checksumValue)) {
                 BrowsableItem checksumItem = BrowsableItem.getChecksumItem(browsableItem, checksumType,

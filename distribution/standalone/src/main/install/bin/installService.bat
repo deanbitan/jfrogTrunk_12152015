@@ -1,4 +1,4 @@
-@echo off
+@echo off & cls & echo.
 rem Licensed to the Apache Software Foundation (ASF) under one or more
 rem contributor license agreements.  See the NOTICE file distributed with
 rem this work for additional information regarding copyright ownership.
@@ -13,6 +13,8 @@ rem distributed under the License is distributed on an "AS IS" BASIS,
 rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 rem See the License for the specific language governing permissions and
 rem limitations under the License.
+
+net file 1>NUL 2>NUL & if ERRORLEVEL 1 (echo "You must right-click and select &  ECHO \"RUN AS ADMINISTRATOR\"  to run this batch. Exiting..." & echo. & pause & exit /D)
 
 if "%OS%" == "Windows_NT" setlocal
 set "CURRENT_DIR=%cd%"
@@ -87,6 +89,7 @@ goto end
 rem --JvmMs 128 --JvmMx 256
 
 echo The service '%SERVICE_NAME%' has been installed.
+pause
 
 :end
 cd "%CURRENT_DIR%"

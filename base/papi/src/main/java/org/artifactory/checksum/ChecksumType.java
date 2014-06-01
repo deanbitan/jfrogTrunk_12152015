@@ -25,7 +25,10 @@ import org.artifactory.util.PathUtils;
  */
 public enum ChecksumType {
     sha1("SHA-1", ".sha1", 40),
-    md5("MD5", ".md5", 32);
+    md5("MD5", ".md5", 32),
+    sha256("SHA-256", ".sha256", 64);
+
+    public static final ChecksumType[] BASE_CHECKSUM_TYPES = new ChecksumType[]{sha1, md5};
 
     private final String alg;
     private final String ext;

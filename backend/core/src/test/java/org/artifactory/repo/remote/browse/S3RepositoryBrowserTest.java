@@ -18,14 +18,16 @@
 
 package org.artifactory.repo.remote.browse;
 
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.test.ArtifactoryHomeStub;
 import org.artifactory.test.mock.SimpleMockServer;
+import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.StringInputStream;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -54,7 +56,7 @@ import static org.testng.Assert.*;
 public class S3RepositoryBrowserTest {
 
     private SimpleMockServer server;
-    private HttpClient client;
+    private CloseableHttpClient client;
     private S3RepositoryBrowser s3Browser;
 
     public void detectRootLocal() throws IOException {
@@ -171,8 +173,8 @@ public class S3RepositoryBrowserTest {
     public void beforeTestMethod() {
         HttpExecutor httpExecutor = new HttpExecutor() {
             @Override
-            public int executeMethod(HttpMethod method) throws IOException {
-                return client.executeMethod(method);
+            public CloseableHttpResponse executeMethod(HttpRequestBase method) throws IOException {
+                return client.execute(method);
             }
         };
         s3Browser = new S3RepositoryBrowser(httpExecutor);
@@ -182,11 +184,11 @@ public class S3RepositoryBrowserTest {
     public void setup() {
         server = new SimpleMockServer(new S3Handler());
         server.start();
-        client = new HttpClient();
-        HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
-        connectionParams.setSoTimeout(2000);
-        connectionParams.setConnectionTimeout(30000);
-        connectionParams.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(1, false));
+        ArtifactoryHomeStub props = new ArtifactoryHomeStub();
+        props.setProperty(ConstantValues.artifactoryVersion, "TEST");
+        ArtifactoryHome.bind(props);
+        client = new HttpClientConfigurator().connectionTimeout(30000).soTimeout(2000).noRetry().getClient();
+        ArtifactoryHome.unbind();
     }
 
     @AfterClass

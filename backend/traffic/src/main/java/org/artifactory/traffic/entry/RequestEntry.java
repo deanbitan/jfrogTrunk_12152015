@@ -51,7 +51,7 @@ public class RequestEntry extends TokenizedTrafficEntry {
         this.path = tokens[6];
         this.protocol = tokens[7];
         this.returnCode = Integer.parseInt(tokens[8]);
-        this.contentLength = Integer.parseInt(tokens[9]);
+        this.contentLength = Long.parseLong(tokens[9]);
     }
 
     /**

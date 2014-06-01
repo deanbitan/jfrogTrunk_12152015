@@ -24,6 +24,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 
 /**
+ * A audit logger for various security access.
+ * An example of log line:
+ * <code>2014-05-08 15:52:27,456 [ACCEPTED DOWNLOAD] jcenter-cache:org/iostreams-0.2.jar for anonymous/127:0:0:1.</code>
+ * The columns are space delimited:
+ * <ol>
+ * <li>Log entry date in the format of YYYY-MM-DD HH:MM:SS,Millis</li>
+ * <li>Action result (denied or accepted) and type (@see {@link org.artifactory.security.AccessLogger.Action})</li>
+ * <li>Repo path (optional)</li>
+ * <li>Log message (optional)</li>
+ * <li>Username</li>
+ * <li>Remote user address</li>
+ * </ol>
+ *
  * @author Yoav Landman
  */
 public abstract class AccessLogger {
@@ -132,7 +145,8 @@ public abstract class AccessLogger {
             log.info(
                     (denied ? "[DENIED " : "[ACCEPTED ") + action.name() + "] " + (repoPath != null ? repoPath : "") +
                             (message != null ? message : "") + " for " + authentication.getName() + (address != null ?
-                            "/" + address : "") + ".");
+                            "/" + address : "") + "."
+            );
         }
     }
 }

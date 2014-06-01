@@ -21,8 +21,6 @@ package org.artifactory.api.webdav;
 import com.google.common.collect.Sets;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.request.ArtifactoryRequest;
-import org.artifactory.sapi.common.Lock;
-import org.artifactory.util.PathUtils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -33,28 +31,24 @@ import java.util.Set;
 public interface WebdavService {
 
     /**
+     * This is used by request utils and should go
+     * Supported web dav methods. (post method is not supported)
+     * TODO [yluft]: Remove this.
+     */
+    Set<String> WEBDAV_METHODS = Sets.newHashSet(
+            "propfind", "mkcol", "move", "delete", "options", "proppatch", "lock", "unlock");
+
+    /**
+     * Attempt to handle the request.
+     * @param request
+     * @param response
+     * @return true if request was handled, false if no method handler was found.
+     * @throws IOException
+     */
+    boolean handleRequest(String methodName, ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
+
+    /**
      * Supported web dav methods. (post method is not supported)
      */
-    Set<String> WEBDAV_METHODS = Sets.newHashSet("propfind", "mkcol", "move", "delete", "options"/*, "post"*/);
-
-    /**
-     * The supported webdav methods as a comma separated list
-     */
-    String WEBDAV_METHODS_LIST = PathUtils.collectionToDelimitedString(WEBDAV_METHODS);
-
-    /**
-     * PROPFIND Method.
-     */
-    void handlePropfind(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
-
-    @Lock
-    void handleMkcol(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
-
-    void handleDelete(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
-
-    void handleOptions(ArtifactoryResponse response) throws IOException;
-
-    void handlePost(ArtifactoryRequest request, ArtifactoryResponse response);
-
-    void handleMove(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException;
+    Set<String> supportedMethods();
 }

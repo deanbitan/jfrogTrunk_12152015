@@ -19,8 +19,8 @@
 package org.artifactory.engine;
 
 import com.google.common.collect.Iterables;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.ResponseCtx;
@@ -192,11 +192,11 @@ public class DownloadServiceImpl implements InternalDownloadService {
         }
 
         try {
-            RepoResource resource;
             Repo repository = repositoryService.repositoryByKey(repoKey);
 
             DownloadRequestContext requestContext = new DownloadRequestContext(request, downloadCtx.isExpired());
 
+            RepoResource resource;
             if (repository == null) {
                 RepoRequests.logToContext("Exiting download process - failed to find the repository");
                 resource = new UnfoundRepoResource(request.getRepoPath(), "Failed to find the repository '" + repoKey +
@@ -501,7 +501,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
         String message = responseCtx.getMessage();
         RepoRequests.logToContext("Alternative response status is set to %s and message to '%s'", status, message);
         if (status != ResponseCtx.UNSET_STATUS) {
-            Map<String, String> header = responseCtx.getHeader();
+            Map<String, String> header = responseCtx.getHeaders();
             if (header != null) {
                 RepoRequests.logToContext("Found non-null alternative response header");
                 for (String key : header.keySet()) {

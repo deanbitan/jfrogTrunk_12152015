@@ -159,7 +159,7 @@ public class ArtifactoryRequestTest extends ArtifactoryHomeBoundTest {
             }
 
             @Override
-            public int getContentLength() {
+            public long getContentLength() {
                 return 0;
             }
 

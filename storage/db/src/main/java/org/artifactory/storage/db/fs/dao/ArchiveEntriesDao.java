@@ -19,6 +19,7 @@
 package org.artifactory.storage.db.fs.dao;
 
 import com.google.common.collect.Sets;
+import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.fs.entity.ArchiveEntry;
 import org.artifactory.storage.db.util.BaseDao;
@@ -40,9 +41,12 @@ import java.util.Set;
 @Repository
 public class ArchiveEntriesDao extends BaseDao {
 
+    private final StorageProperties storageProps;
+
     @Autowired
-    public ArchiveEntriesDao(JdbcHelper jdbcHelper) {
+    public ArchiveEntriesDao(JdbcHelper jdbcHelper, StorageProperties storageProps) {
         super(jdbcHelper);
+        this.storageProps = storageProps;
     }
 
     @Nonnull
@@ -167,13 +171,25 @@ public class ArchiveEntriesDao extends BaseDao {
     }
 
     public int deleteUnusedPathIds() throws SQLException {
-        return jdbcHelper.executeUpdate("DELETE FROM archive_paths WHERE path_id NOT IN " +
-                "(SELECT entry_path_id FROM indexed_archives_entries)");
+        if (!storageProps.isPostgres()) {
+            return jdbcHelper.executeUpdate("DELETE FROM archive_paths WHERE path_id NOT IN " +
+                    "(SELECT entry_path_id FROM indexed_archives_entries)");
+        } else {
+            // NOT EXISTS is much faster on PostgreSQL (see RTFACT-6231)
+            return jdbcHelper.executeUpdate("DELETE FROM archive_paths WHERE NOT EXISTS " +
+                    "(SELECT 1 FROM indexed_archives_entries i WHERE i.entry_path_id = path_id)");
+        }
     }
 
     public int deleteUnusedNameIds() throws SQLException {
-        return jdbcHelper.executeUpdate("DELETE FROM archive_names WHERE name_id NOT IN " +
-                "(SELECT entry_name_id FROM indexed_archives_entries)");
+        if (!storageProps.isPostgres()) {
+            return jdbcHelper.executeUpdate("DELETE FROM archive_names WHERE name_id NOT IN " +
+                    "(SELECT entry_name_id FROM indexed_archives_entries)");
+        } else {
+            // NOT EXISTS is much faster on PostgreSQL (see RTFACT-6231)
+            return jdbcHelper.executeUpdate("DELETE FROM archive_names WHERE NOT EXISTS " +
+                    "(SELECT 1 FROM indexed_archives_entries i WHERE i.entry_name_id = name_id)");
+        }
     }
 
     private ArchiveEntry entryFromResultSet(ResultSet rs) throws SQLException {

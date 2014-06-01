@@ -18,7 +18,7 @@
 
 package org.artifactory.rest.resource.versions;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.config.CentralConfigService;

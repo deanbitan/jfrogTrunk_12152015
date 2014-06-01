@@ -18,7 +18,7 @@
 
 package org.artifactory.rest.common.exception;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.ErrorResponse;

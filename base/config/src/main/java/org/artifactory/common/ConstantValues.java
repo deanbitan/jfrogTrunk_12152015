@@ -72,12 +72,15 @@ public enum ConstantValues {
     userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", 5),
     securityAuthenticationEncryptedPasswordSurroundChars(
             "security.authentication.encryptedPassword.surroundChars", "{}"),
+    securityUseBase64("security.useBase64", TRUE),
+    securityMasterKeyLocation("security.master.key", "security/artifactory.key"),
+    securityDisableRememberMe("security.disableRememberMe", FALSE),
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
     mvnCentralIndexerMaxQueryIntervalSecs("mvn.central.indexerMaxQueryIntervalSecs", Seconds.DAY),
     mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
     mvnDynamicMetadataCacheRetentionSecs("mvn.dynamicMetadata.cacheRetentionSecs", 10),
     mvnMetadataVersion3Enabled("mvn.metadata.version3.enabled", TRUE),
-    mvnCustomTypes("mvn.custom.types", "tar.gz"),
+    mvnCustomTypes("mvn.custom.types", "tar.gz,tar.bz2"),
     requestDisableVersionTokens("request.disableVersionTokens", FALSE),
     requestSearchLatestReleaseByDateCreated("request.searchLatestReleaseByDateCreated", FALSE),
     buildMaxFoldersToScanForDeletionWarnings("build.maxFoldersToScanForDeletionWarnings", 2),
@@ -146,11 +149,11 @@ public enum ConstantValues {
     archiveIndexerTaskIntervalSecs("archive.indexer.intervalSecs", 60),
     inMemoryNuGetRemoteCaches("nuget.inMemoryRemoteCaches", TRUE),
     nuGetRequireAuthentication("nuget.forceAuthentication", FALSE),
-    /*ha*/
     haHeartbeatIntervalSecs("ha.heartbeat.intervalSecs", 5),
     haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30),
     npmIndexQuietPeriodSecs("npm.index.quietPeriodSecs", 60),
-    npmIndexCycleSecs("npm.index.cycleSecs", 60);
+    npmIndexCycleSecs("npm.index.cycleSecs", 60),
+    importMaxParallelRepos("import.max.parallelRepos", Runtime.getRuntime().availableProcessors() - 1);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

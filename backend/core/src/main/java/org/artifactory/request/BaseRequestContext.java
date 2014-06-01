@@ -20,6 +20,7 @@ package org.artifactory.request;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -53,7 +54,7 @@ public abstract class BaseRequestContext implements InternalRequestContext {
     @Override
     public boolean clientSupportsM3SnapshotVersions() {
         Request request = getRequest();
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
         if (StringUtils.isBlank(userAgent)) {
             return true;
         }

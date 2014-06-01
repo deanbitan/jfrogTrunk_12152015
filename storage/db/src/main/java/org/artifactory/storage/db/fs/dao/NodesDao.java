@@ -110,6 +110,22 @@ public class NodesDao extends BaseDao {
         }
     }
 
+    public long getFileNodeId(NodePath path) throws SQLException {
+        ResultSet resultSet = null;
+        try {
+            resultSet = jdbcHelper.executeSelect("SELECT node_id FROM nodes " +
+                    "WHERE node_type=1 AND repo = ? AND node_path = ? AND node_name = ?",
+                    path.getRepo(), dotIfNullOrEmpty(path.getPath()), dotIfNullOrEmpty(path.getName()));
+            if (resultSet.next()) {
+                return resultSet.getLong(1);
+            } else {
+                return DbService.NO_DB_ID;
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+    }
+
     public String getNodeSha1(NodePath path) throws SQLException {
         ResultSet resultSet = null;
         String sha1 = null;

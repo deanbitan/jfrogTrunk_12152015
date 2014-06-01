@@ -46,8 +46,7 @@ public interface InternalBinaryStore extends BinaryStore {
      * @param md5    The md5 of this new entry
      * @param length The length of the binary
      * @return The full binary info object created and stored, or null if no object
-     * @throws org.artifactory.storage.binstore.service.BinaryNotFoundException
-     *          if verification failed
+     * @throws org.artifactory.storage.binstore.service.BinaryNotFoundException if verification failed
      */
     @Nullable
     BinaryInfo addBinaryRecord(String sha1, String md5, long length) throws BinaryNotFoundException;
@@ -57,7 +56,6 @@ public interface InternalBinaryStore extends BinaryStore {
      *
      * @return The results of the GC process
      */
-    //@Transactional(propagation = Propagation.NOT_SUPPORTED)
     GarbageCollectorInfo garbageCollect();
 
     /**
@@ -73,6 +71,7 @@ public interface InternalBinaryStore extends BinaryStore {
      *
      * @return the folder for this binary store
      */
+    @Nullable
     File getBinariesDir();
 
     /**

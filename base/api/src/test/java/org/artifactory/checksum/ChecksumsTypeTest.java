@@ -54,6 +54,11 @@ public class ChecksumsTypeTest {
         assertFalse(ChecksumType.sha1.isValid("96bcc93bec1f99e45b6c1bdfcef73948b8fa122g"));
     }
 
+    public void invalidSha256Checksum() {
+        // good length but not hexadecimal
+        assertFalse(ChecksumType.sha256.isValid("e3b0x44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+    }
+
     public void validMD5Checksum() {
         assertTrue(ChecksumType.md5.isValid("2f222ca7499ed5bc49fe25a1182c59f7"));
         assertTrue(ChecksumType.md5.isValid("d06a3ab307d28384a235d0ab6b70d3ae"));
@@ -62,6 +67,11 @@ public class ChecksumsTypeTest {
     public void validSha1Checksum() {
         assertTrue(ChecksumType.sha1.isValid("911ca40cdb527969ee47dc6f782425d94a36b510"));
         assertTrue(ChecksumType.sha1.isValid("96bcc93bec1f99e45b6c1bdfcef73948b8fa122c"));
+    }
+
+    public void validSha256Checksum() {
+        assertTrue(ChecksumType.sha256.isValid("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"));
+        assertTrue(ChecksumType.sha256.isValid("5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"));
     }
 
 }

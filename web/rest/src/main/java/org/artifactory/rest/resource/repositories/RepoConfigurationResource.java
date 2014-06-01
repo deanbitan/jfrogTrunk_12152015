@@ -19,7 +19,7 @@
 package org.artifactory.rest.resource.repositories;
 
 import com.thoughtworks.xstream.XStream;
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;

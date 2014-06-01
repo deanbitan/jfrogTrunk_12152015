@@ -60,6 +60,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Date;
+import java.util.SortedSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
@@ -504,5 +505,22 @@ public abstract class MavenModelUtils {
             builder.append(":").append(info.getClassifier());
         }
         return builder.append(":").append(info.getVersion()).toString();
+    }
+
+    public static Metadata buildReleasesMavenMetadata(String organization, String module,
+            SortedSet<String> sortedVersions) {
+        Metadata metadata = new Metadata();
+        metadata.setGroupId(organization);
+        metadata.setArtifactId(module);
+        if (!sortedVersions.isEmpty()) {
+            metadata.setVersion(sortedVersions.first());
+            Versioning versioning = new Versioning();
+            metadata.setVersioning(versioning);
+            versioning.setVersions(Lists.newArrayList(sortedVersions));
+            versioning.setLastUpdatedTimestamp(new Date());
+            versioning.setLatest(sortedVersions.last());
+            versioning.setRelease(sortedVersions.last());
+        }
+        return metadata;
     }
 }

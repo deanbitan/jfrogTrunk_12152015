@@ -177,7 +177,7 @@ public class TranslatedArtifactoryRequest implements ArtifactoryRequest {
     }
 
     @Override
-    public int getContentLength() {
+    public long getContentLength() {
         return originalRequest.getContentLength();
     }
 

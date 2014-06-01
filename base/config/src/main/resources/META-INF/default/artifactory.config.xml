@@ -3,7 +3,7 @@
 
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2012 JFrog Ltd.
+  ~ Copyright (C) 2014 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -185,7 +185,7 @@
             <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://maven.springframework.org/milestone</url>
+            <url>http://repo.spring.io/milestone</url>
         </remoteRepository>
         <remoteRepository>
             <key>spring-release</key>
@@ -194,7 +194,7 @@
             <repoLayoutRef>maven-2-default</repoLayoutRef>
             <handleReleases>true</handleReleases>
             <handleSnapshots>false</handleSnapshots>
-            <url>http://maven.springframework.org/release</url>
+            <url>http://repo.spring.io/release</url>
         </remoteRepository>
         <remoteRepository>
             <key>google-code</key>

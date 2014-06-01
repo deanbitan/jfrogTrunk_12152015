@@ -18,7 +18,7 @@
 
 package org.artifactory.rest.resource.system;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.SystemRestConstants;

@@ -19,6 +19,7 @@
 package org.artifactory.rest.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
@@ -134,7 +135,7 @@ public abstract class RestUtils {
      * @return True if we need to manually decode the request params, false otherwise
      */
     public static boolean shouldDecodeParams(HttpServletRequest request) {
-        String userAgent = request.getHeader("User-Agent");
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
 
         // If the request didn't come from build info let Jersey do the work
         if (StringUtils.isBlank(userAgent) || !userAgent.startsWith("ArtifactoryBuildClient/")) {
@@ -155,11 +156,23 @@ public abstract class RestUtils {
         return true;
     }
 
+    public static Long extractLongEpoch(String from) {
+        Long fromLong = null;
+        if (from != null) {
+            if (from.contains("T")) {
+                fromLong = fromIsoDateString(from);
+            } else {
+                fromLong = Long.valueOf(from);
+            }
+        }
+        return fromLong;
+    }
+
     public enum RepoType {LOCAL, REMOTE, VIRTUAL}
 
     /**
      * @return the {@link org.artifactory.rest.util.RestUtils.RepoType} for the given {@code repoKey},
-     *          or null if not found
+     * or null if not found
      */
     public static RepoType repoType(String repoKey) {
         Repo repo = repositoryByKey(repoKey);

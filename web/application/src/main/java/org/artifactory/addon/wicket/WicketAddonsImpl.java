@@ -20,12 +20,12 @@ package org.artifactory.addon.wicket;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.apache.commons.httpclient.HttpMethodBase;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DurationFormatUtils;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.Page;
@@ -1038,8 +1038,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public HttpMethodBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo) {
-        return new HeadMethod(HttpUtils.encodeQuery(repoUrl));
+    public HttpRequestBase getRemoteRepoTestMethod(String repoUrl, HttpRepoDescriptor repo) {
+        return new HttpHead(HttpUtils.encodeQuery(repoUrl));
     }
 
     @Override

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Artifactory is a binaries repository manager.
-  ~ Copyright (C) 2012 JFrog Ltd.
+  ~ Copyright (C) 2014 JFrog Ltd.
   ~
   ~ Artifactory is free software: you can redistribute it and/or modify
   ~ it under the terms of the GNU Lesser General Public License as published by
@@ -135,27 +135,14 @@
     </logger>
 
     <!-- third party loggers -->
-    <logger name="com.atlassian.crowd.integration.service.soap.client.ClientPropertiesImpl">
-        <level value="warn"/>
-    </logger>
-
-    <logger name="org.apache.wicket">
-        <level value="error"/>
-    </logger>
-    <logger name="org.eclipse.jetty">
-        <level value="info"/>
-    </logger>
     <logger name="com.sun.jersey">
         <level value="warn"/>
     </logger>
-    <logger name="org.apache.commons.httpclient">
-        <level value="info"/>
-    </logger>
-    <logger name="httpclient.wire">
-        <level value="info"/>
-    </logger>
     <logger name="org.springframework">
         <level value="warn"/>
+    </logger>
+    <logger name="org.apache.wicket">
+        <level value="error"/>
     </logger>
     <logger name="org.apache.cxf">
         <level value="error"/>

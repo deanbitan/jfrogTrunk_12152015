@@ -19,6 +19,7 @@
 package org.artifactory.webapp.servlet;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
 import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.traffic.RequestLogger;
 import org.artifactory.util.HttpUtils;
@@ -66,7 +67,7 @@ public class RequestFilter extends DelayedFilterBase {
             contentLength = responseWrapper.getContentLength();
         }
         if (("put".equalsIgnoreCase(method)) || ("post".equalsIgnoreCase(method))) {
-            contentLength = request.getContentLength();
+            contentLength = HttpUtils.getContentLength(request);
         }
         String username = "non_authenticated_user";
         // First try to get the authentication from the session.
@@ -100,8 +101,6 @@ public class RequestFilter extends DelayedFilterBase {
     private static class CapturingHttpServletResponseWrapper extends HttpServletResponseWrapper {
         private int status;
         private long contentLength;
-
-        private String CONTENT_LENGTH_HEADER = "Content-Length";
 
         /**
          * Constructs a response adaptor wrapping the given response.
@@ -203,7 +202,7 @@ public class RequestFilter extends DelayedFilterBase {
         }
 
         private void captureString(String name, String value) {
-            if (name.equals(CONTENT_LENGTH_HEADER) && StringUtils.isNumeric(value)) {
+            if (name.equals(HttpHeaders.CONTENT_LENGTH) && StringUtils.isNumeric(value)) {
                 contentLength = Long.parseLong(value);
             }
         }

@@ -138,7 +138,9 @@ public class VirtualCacheCleanupServiceImpl implements InternalVirtualCacheClean
                 .setSingleRepoKey(repo.getKey())
                 .prop("created").comp(VfsComparatorType.LOWER_THAN_EQUAL).val(expiryTime);
         VfsQueryResult queryResult = query.execute(Integer.MAX_VALUE);
-        log.info("Found {} cached files in {}", queryResult.getCount(), repo.getKey());
+        if (queryResult.getCount() > 0) {
+            log.info("Found {} cached files in {}", queryResult.getCount(), repo.getKey());
+        }
         for (VfsQueryRow result : queryResult.getAllRows()) {
             log.trace("Undeploying old cached file {}", result.getItem().getName());
             repositoryService.undeploy(result.getItem().getRepoPath());

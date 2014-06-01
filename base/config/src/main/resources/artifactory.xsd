@@ -490,7 +490,7 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 The local address to be used when creating connections.
-                                Useful for specifying the interface to use on multi-homed systems.
+                                Useful for specifying the interface to use on systems with multiple network interfaces.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>

@@ -23,6 +23,7 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.PasswordSettings;
 import org.artifactory.descriptor.security.SecurityDescriptor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,6 @@ import org.springframework.security.core.AuthenticationException;
 
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
-import java.security.PrivateKey;
 
 /**
  * This authentication manager will decrypted any encrypted passwords according to the password and encryption policy
@@ -107,8 +107,8 @@ public class PasswordDecryptingManager implements AuthenticationManager {
             throw new IllegalArgumentException("Password not encrypted");
         }
 
-        PrivateKey privateKey = getPrivateKey(username);
-        SecretKey secretKey = CryptoHelper.generatePbeKey(CryptoHelper.toBase64(privateKey));
+        KeyPair keyPair = getKeyPair(username);
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(keyPair);
         try {
             return CryptoHelper.decryptSymmetric(encryptedPassword, secretKey);
         } catch (Exception e) {
@@ -117,7 +117,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
         }
     }
 
-    private PrivateKey getPrivateKey(String username) {
+    private KeyPair getKeyPair(String username) {
         UserInfo userInfo = userGroupService.findUser(username);
         String privateKey = userInfo.getPrivateKey();
         String publicKey = userInfo.getPublicKey();
@@ -127,8 +127,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
             throw new PasswordEncryptionException(message);
         }
 
-        KeyPair keyPair = CryptoHelper.createKeyPair(privateKey, publicKey);
-        return keyPair.getPrivate();
+        return CryptoHelper.createKeyPair(privateKey, publicKey);
     }
 
     public void setDelegate(AuthenticationManager delegate) {

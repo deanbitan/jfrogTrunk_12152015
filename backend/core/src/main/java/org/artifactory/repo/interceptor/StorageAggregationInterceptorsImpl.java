@@ -34,9 +34,9 @@ public class StorageAggregationInterceptorsImpl extends Interceptors<StorageAggr
         implements StorageAggregationInterceptors {
 
     @Override
-    public void afterAllImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status) {
+    public void afterRepoImport(RepoPath rootRepoPath, int itemsCount, MutableStatusHolder status) {
         for (StorageAggregationInterceptor interceptor : this) {
-            interceptor.afterAllImport(rootRepoPath, itemsCount, status);
+            interceptor.afterRepoImport(rootRepoPath, itemsCount, status);
         }
     }
 }

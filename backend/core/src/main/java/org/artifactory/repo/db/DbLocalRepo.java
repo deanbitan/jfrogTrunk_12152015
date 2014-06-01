@@ -19,12 +19,10 @@
 package org.artifactory.repo.db;
 
 import com.google.common.base.Charsets;
-import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.RepoRejectException;
-import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
@@ -56,7 +54,7 @@ import org.artifactory.sapi.fs.MutableVfsItem;
 import org.artifactory.sapi.fs.VfsFile;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
-import org.artifactory.security.AccessLogger;
+import org.artifactory.schedule.TaskCallback;
 import org.artifactory.storage.StorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,13 +132,7 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
         if (status.isError()) {
             return status;
         }
-        AuthorizationService authService = getAuthorizationService();
-        boolean canRead = authService.canRead(repoPath);
-        if (!canRead) {
-            status.error("Download request for repo:path '" + repoPath + "' is forbidden for user '" +
-                    authService.currentUsername() + "'.", HttpStatus.SC_FORBIDDEN, log);
-            AccessLogger.downloadDenied(repoPath);
-        }
+        assertReadPermissions(repoPath, status);
         return status;
     }
 
@@ -156,7 +148,9 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
 
     @Override
     public void importFrom(ImportSettings settings) {
-        new DbRepoImportHandler(this, settings).executeImport();
+        DbRepoImportHandler importHandler = new DbRepoImportHandler(this, settings, TaskCallback.currentTaskToken());
+        importHandler.executeImport();
+        importHandler.finalizeImport();
     }
 
 

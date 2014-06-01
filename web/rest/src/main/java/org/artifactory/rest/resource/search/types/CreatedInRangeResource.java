@@ -24,15 +24,17 @@ import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.rest.constant.SearchRestConstants;
 import org.artifactory.api.rest.search.result.CreatedInRangeRestSearchResult;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
-import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.HttpUtils;
-import org.artifactory.util.SerializablePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -42,22 +44,22 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.List;
 
 import static org.artifactory.api.rest.constant.SearchRestConstants.*;
 
 /**
  * @author Eli Givoni
  */
-public class CreatedInRangeResource {
+public class CreatedInRangeResource extends GenericSearchResource {
+    private static final Logger log = LoggerFactory.getLogger(CreatedInRangeResource.class);
+
     private AuthorizationService authorizationService;
-    private SearchService searchService;
     private HttpServletRequest request;
 
     public CreatedInRangeResource(AuthorizationService authorizationService, SearchService searchService,
             HttpServletRequest request) {
+        super(searchService);
         this.authorizationService = authorizationService;
-        this.searchService = searchService;
         this.request = request;
     }
 
@@ -71,7 +73,6 @@ public class CreatedInRangeResource {
      * </pre>
      * Where the url is the full url of the modified artifact and the modified is the created or modified date of the
      * artifact that is in within the time range.
-     *
      *
      * @param from          The time to start the search. Exclusive (eg, >). If empty will start from 1st Jan 1970
      * @param to            The time to end search. Inclusive (eg, <=), If empty, will not use current time as the
@@ -87,49 +88,47 @@ public class CreatedInRangeResource {
         if (authorizationService.isAnonymous()) {
             throw new AuthorizationRestException();
         }
-        return search(from, to, reposToSearch);
+        return search(from, to, reposToSearch, null, null);
     }
 
-    private Response search(Long from, Long to, StringList reposToSearch) throws IOException {
-        Calendar fromCal = null;
-        if (from != null) {
-            fromCal = Calendar.getInstance();
-            fromCal.setTimeInMillis(from);
-        }
-        Calendar toCal = null;
-        if (to != null) {
-            toCal = Calendar.getInstance();
-            toCal.setTimeInMillis(to);
-        }
-        List<SerializablePair<RepoPath, Calendar>> results;
-        try {
-            results = searchService.searchArtifactsCreatedOrModifiedInRange(fromCal, toCal, reposToSearch);
-        } catch (RepositoryRuntimeException e) {
-            throw new NotFoundException(e.getMessage());
-        }
+    protected Response createResponse(ItemSearchResults<ArtifactSearchResult> results, Calendar from,
+            Calendar to, StringList resultFieldNames) {
+        CreatedInRangeRestSearchResult rangeRestSearchResult = new CreatedInRangeRestSearchResult();
+        for (ArtifactSearchResult result : results.getResults()) {
+            ItemInfo item = result.getItemInfo();
+            RepoPath repoPath = item.getRepoPath();
+            String path = buildStoragePath(repoPath);
+            String uri = buildStorageUri(path);
 
-        if (!results.isEmpty()) {
-            CreatedInRangeRestSearchResult rangeRestSearchResult = new CreatedInRangeRestSearchResult();
-            for (SerializablePair<RepoPath, Calendar> result : results) {
-                String uri = buildStorageUri(result);
-                String time = RestUtils.toIsoDateString(result.getSecond().getTimeInMillis());
-                CreatedInRangeRestSearchResult.CreatedEntry entry =
-                        new CreatedInRangeRestSearchResult.CreatedEntry(uri, time);
-                rangeRestSearchResult.results.add(entry);
+            // Find if modified or created is the date that was used to find this artifact
+            Calendar dateFound = Calendar.getInstance();
+            dateFound.setTimeInMillis(item.getCreated());
+            if (to != null && !(dateFound.before(to) || dateFound.equals(to))) {
+                dateFound.setTimeInMillis(item.getLastModified());
+            } else if (from != null && !(dateFound.after(from) || dateFound.equals(from))) {
+                // if created not in range then the last modified is
+                dateFound.setTimeInMillis(item.getLastModified());
             }
-            return Response.ok(rangeRestSearchResult).type(MT_CREATED_IN_RANGE_SEARCH_RESULT).build();
-        }
 
-        throw new NotFoundException(NOT_FOUND);
+            String time = RestUtils.toIsoDateString(dateFound.getTimeInMillis());
+            CreatedInRangeRestSearchResult.CreatedEntry entry =
+                    new CreatedInRangeRestSearchResult.CreatedEntry(uri, time);
+            rangeRestSearchResult.results.add(entry);
+        }
+        return Response.ok(rangeRestSearchResult).type(MT_CREATED_IN_RANGE_SEARCH_RESULT).build();
     }
 
-    private String buildStorageUri(SerializablePair<RepoPath, Calendar> result) {
-        RepoPath repoPath = result.getFirst();
+    private String buildStoragePath(RepoPath repoPath) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(repoPath.getRepoKey()).append("/").append(repoPath.getPath());
+        return sb.toString();
+    }
+
+    private String buildStorageUri(String path) {
         String servletContextUrl = HttpUtils.getServletContextUrl(request);
         StringBuilder sb = new StringBuilder(servletContextUrl);
         sb.append("/").append(RestConstants.PATH_API).append("/").append(ArtifactRestConstants.PATH_ROOT);
-        sb.append("/").append(repoPath.getRepoKey()).append("/").append(repoPath.getPath());
+        sb.append("/").append(path);
         return sb.toString();
-
     }
 }

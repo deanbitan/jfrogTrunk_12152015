@@ -18,7 +18,7 @@
 
 package org.artifactory.resource;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.repo.RepoPath;
 

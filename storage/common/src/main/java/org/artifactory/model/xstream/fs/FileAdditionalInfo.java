@@ -89,8 +89,7 @@ public class FileAdditionalInfo extends ItemAdditionalInfo {
                         checksumsInfo.setChecksums(otherChecksumInfo.getChecksums());
                         modified = true;
                     } else {
-                        ChecksumType[] types = ChecksumType.values();
-                        for (ChecksumType type : types) {
+                        for (ChecksumType type : ChecksumType.BASE_CHECKSUM_TYPES) {
                             ChecksumInfo other = otherChecksumInfo.getChecksumInfo(type);
                             ChecksumInfo mine = this.checksumsInfo.getChecksumInfo(type);
                             if (mine == null) {

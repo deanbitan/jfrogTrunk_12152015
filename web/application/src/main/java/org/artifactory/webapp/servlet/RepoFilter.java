@@ -18,8 +18,7 @@
 
 package org.artifactory.webapp.servlet;
 
-import com.google.common.base.Predicate;
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.exception.FileExpectedException;
@@ -28,7 +27,6 @@ import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.webdav.WebdavService;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.exception.CancelException;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
@@ -43,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
-import javax.annotation.Nonnull;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
@@ -195,21 +192,9 @@ public class RepoFilter extends DelayedFilterBase {
 
     private void doWebDavMethod(HttpServletRequest request, HttpServletResponse response, String method,
             ArtifactoryRequest artifactoryRequest, ArtifactoryResponse artifactoryResponse) throws IOException {
-        if ("propfind".equals(method)) {
-            getWebdavService().handlePropfind(artifactoryRequest, artifactoryResponse);
-        } else if ("mkcol".equals(method)) {
-            getWebdavService().handleMkcol(artifactoryRequest, artifactoryResponse);
-        } else if ("delete".equals(method)) {
-            getWebdavService().handleDelete(artifactoryRequest, artifactoryResponse);
-        } else if ("options".equals(method)) {
-            getWebdavService().handleOptions(artifactoryResponse);
-        } else if ("move".equals(method)) {
-            getWebdavService().handleMove(artifactoryRequest, artifactoryResponse);
-        } else if ("post".equals(method)) {
-            getWebdavService().handlePost(artifactoryRequest, artifactoryResponse);
-        } else {
+        if (!getWebdavService().handleRequest(method, artifactoryRequest, artifactoryResponse)) {
             response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-            response.setHeader("Allow", WebdavService.WEBDAV_METHODS_LIST);
+            response.setHeader("Allow", PathUtils.collectionToDelimitedString(getWebdavService().supportedMethods()));
             log.info("Received unsupported request method: {} from:{ }.", method, request.getRemoteAddr());
         }
     }
@@ -258,7 +243,8 @@ public class RepoFilter extends DelayedFilterBase {
             }
         } catch (CancelException e) {
             RepoRequests.logToContext("Request has been canceled", e.getMessage(), e.getErrorCode());
-            artifactoryResponse.sendError(e.getErrorCode(), "Download request has been canceled: " + e.getMessage(), log);
+            artifactoryResponse.sendError(e.getErrorCode(), "Download request has been canceled: " + e.getMessage(),
+                    log);
             log.debug("Download request has been canceled" + e.getMessage(), e);
         } catch (Exception e) {
             RepoRequests.logToContext("Error handling request: %s - returning a %s response", e.getMessage(),
@@ -341,20 +327,6 @@ public class RepoFilter extends DelayedFilterBase {
         String str = request.getMethod() + " (" + new HttpAuthenticationDetails(request).getRemoteAddress() + ") " +
                 RequestUtils.getServletPathFromRequest(request) + (queryString != null ? queryString : "");
         return str;
-    }
-
-    private static class VirtualDescriptorPredicate implements Predicate<VirtualRepoDescriptor> {
-
-        private String repoKey;
-
-        private VirtualDescriptorPredicate(String repoKey) {
-            this.repoKey = repoKey;
-        }
-
-        @Override
-        public boolean apply(@Nonnull VirtualRepoDescriptor input) {
-            return repoKey.equals(input.getKey());
-        }
     }
 
     private static class InnerRequestWrapper extends HttpServletRequestWrapper {
