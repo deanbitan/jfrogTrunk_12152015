@@ -235,8 +235,9 @@ public abstract class CryptoHelper {
         if (isEncrypted(password)) {
             File keyFile = getKeyFile();
             if (!keyFile.exists()) {
-                throw new IllegalArgumentException("The Password is encrypted.\n" +
-                        "And no Master Key file found at " + keyFile.getAbsolutePath());
+                return password;
+                //throw new IllegalArgumentException("The Password is encrypted.\n" +
+                //        "And no Master Key file found at " + keyFile.getAbsolutePath());
             }
             SecretKey secretKey = getSecretKeyFromFile(keyFile);
             password = decryptSymmetric(password, secretKey);
