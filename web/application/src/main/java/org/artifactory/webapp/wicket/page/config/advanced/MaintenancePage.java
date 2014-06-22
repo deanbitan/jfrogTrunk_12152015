@@ -38,6 +38,7 @@ import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
 import org.artifactory.common.wicket.component.CancelLink;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -82,7 +83,7 @@ public class MaintenancePage extends AuthenticatedPage {
     private QuotaConfigDescriptor quotaConfigDescriptor;
 
     public MaintenancePage() {
-        Form form = new Form("form");
+        Form form = new SecureForm("form");
         form.setOutputMarkupId(true);
         add(form);
 

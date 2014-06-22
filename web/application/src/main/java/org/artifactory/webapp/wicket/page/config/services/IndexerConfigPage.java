@@ -20,8 +20,8 @@ package org.artifactory.webapp.wicket.page.config.services;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
-import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
 
 /**
@@ -48,7 +48,7 @@ public class IndexerConfigPage extends AuthenticatedPage {
         return "Maven Indexer Support";
     }
 
-    private static class IndexerForm extends Form {
+    private static class IndexerForm extends SecureForm {
         private IndexerForm() {
             super("form");
             setOutputMarkupId(true);

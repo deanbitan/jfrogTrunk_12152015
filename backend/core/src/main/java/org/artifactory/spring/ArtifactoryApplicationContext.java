@@ -52,6 +52,7 @@ import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskService;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.update.utils.BackupUtils;
@@ -468,7 +469,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         List<String> stoppedTasks = Lists.newArrayList();
         try {
             stopRelatedTasks(ImportJob.class, stoppedTasks);
-            importEtcDirectory(settings);
+            importResourcesFromEtcDirectory(settings);
             AddonsManager addonsManager = beanForType(AddonsManager.class);
 
             // import central configuration
@@ -692,8 +693,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     private void exportEtcDirectory(ExportSettings settings) {
         try {
             File targetBackupDir = new File(settings.getBaseDir(), "etc");
+            // TODO: [by fsi] Find a way to copy with permissions kept
             FileUtils.copyDirectory(artifactoryHome.getEtcDir(), targetBackupDir,
-                    new NotFileFilter(new NameFileFilter("artifactory.lic")));
+                    new NotFileFilter(new NameFileFilter("artifactory.lic")), true);
+            checkSecurityFolder(targetBackupDir);
         } catch (IOException e) {
             settings.getStatusHolder().error(
                     "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);
@@ -704,12 +707,21 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         if (artifactoryHome.isHaConfigured()) {
             try {
                 File targetBackupDir = new File(settings.getBaseDir(), "ha-etc");
+                // TODO: [by fsi] Find a way to copy with permissions kept
                 FileUtils.copyDirectory(artifactoryHome.getHaAwareEtcDir(), targetBackupDir,
                         new NotFileFilter(new NameFileFilter("artifactory.lic")));
+                checkSecurityFolder(targetBackupDir);
             } catch (IOException e) {
                 settings.getStatusHolder().error(
                         "Failed to export etc directory: " + artifactoryHome.getEtcDir().getAbsolutePath(), e, log);
             }
+        }
+    }
+
+    private void checkSecurityFolder(File targetBackupDir) throws IOException {
+        File masterKeyDest = new File(targetBackupDir, "etc/" + ConstantValues.securityMasterKeyLocation.getDefValue());
+        if (masterKeyDest.exists()) {
+            CryptoHelper.setPermissionsOnSecurityFolder(masterKeyDest.getParentFile());
         }
     }
 
@@ -722,7 +734,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
      *
      * @param settings basic settings with conf files
      */
-    private void importEtcDirectory(ImportSettings settings) {
+    private void importResourcesFromEtcDirectory(ImportSettings settings) {
         File importEtcDir = new File(settings.getBaseDir(), "etc");
         if (!importEtcDir.exists()) {
             // older versions didn't export the etc directory
@@ -736,7 +748,21 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 FileUtils.copyDirectory(customUiDir, artifactoryHome.getLogoDir());
             } catch (IOException e) {
                 settings.getStatusHolder().error(
-                        "Failed to import ui directory: " + importEtcDir.getAbsolutePath(), e, log);
+                        "Failed to import ui directory: " + customUiDir.getAbsolutePath(), e, log);
+            }
+        }
+
+        // copy the master encryption key if it exists
+        File etcSecurityDir = new File(importEtcDir, "security");
+        if (etcSecurityDir.exists()) {
+            try {
+                File destSecurityFolder = new File(artifactoryHome.getHaAwareEtcDir(), "security");
+                // TODO: [by fsi] Find a way to copy with permissions kept
+                FileUtils.copyDirectory(etcSecurityDir, destSecurityFolder);
+                CryptoHelper.setPermissionsOnSecurityFolder(destSecurityFolder);
+            } catch (IOException e) {
+                settings.getStatusHolder().error(
+                        "Failed to import security directory: " + etcSecurityDir.getAbsolutePath(), e, log);
             }
         }
     }

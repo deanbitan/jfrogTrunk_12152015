@@ -25,6 +25,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.webapp.wicket.page.base.AuthenticatedPage;
@@ -45,7 +46,7 @@ public class LicensePage extends AuthenticatedPage {
     private AuthorizationService authService;
 
     public LicensePage() {
-        Form form = new Form("form");
+        Form form = new SecureForm("form");
         add(form);
 
         LicensePanel licensePanel = new LicensePanel("licensePanel");

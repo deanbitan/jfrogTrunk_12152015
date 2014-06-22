@@ -44,7 +44,7 @@ public interface MutableVfsItem<T extends MutableItemInfo> extends VfsItem<T> {
 
     /**
      * @return True is this item was deleted from the database. This only happens after the item is marked for
-     *         deletion and the session is saved.
+     * deletion and the session is saved.
      */
     boolean isDeleted();
 
@@ -74,4 +74,10 @@ public interface MutableVfsItem<T extends MutableItemInfo> extends VfsItem<T> {
      * multiple small ones and on the other hand we don't want single failure to rollback the entire transaction.
      */
     void markError();
+
+    /**
+     * Releases any resources held by the current mutable item.
+     * This is called just before the write lock of the mutable item is released, regardless of the item state (success or failure).
+     */
+    void releaseResources();
 }

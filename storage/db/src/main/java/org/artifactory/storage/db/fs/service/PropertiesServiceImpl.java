@@ -125,7 +125,7 @@ public class PropertiesServiceImpl implements PropertiesService {
         try {
             return propertiesDao.deleteNodeProperties(nodeId);
         } catch (SQLException e) {
-            throw new StorageException("Failed to delete properties for node: " + nodeId);
+            throw new StorageException("Failed to delete properties for node: " + nodeId, e);
         }
     }
 }

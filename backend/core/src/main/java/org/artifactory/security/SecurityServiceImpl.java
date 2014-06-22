@@ -596,11 +596,11 @@ public class SecurityServiceImpl implements InternalSecurityService {
                 mutableUser.setPublicKey(CryptoHelper.convertToString(keyPair.getPublic()));
                 updateUser(mutableUser, false);
             } else {
-                keyPair = CryptoHelper.createKeyPair(user.getPrivateKey(), user.getPublicKey());
+                keyPair = CryptoHelper.createKeyPair(user.getPrivateKey(), user.getPublicKey(), false);
             }
 
             SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(keyPair);
-            return CryptoHelper.encryptSymmetric(password, secretKey);
+            return CryptoHelper.encryptSymmetric(password, secretKey, false);
         }
         return password;
     }

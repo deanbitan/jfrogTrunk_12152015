@@ -53,6 +53,7 @@ import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.file.path.RepoPathAutoCompleteTextField;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
@@ -99,7 +100,7 @@ public class DeployArtifactPanel extends TitledActionPanel {
         add(new DeployArtifactForm(file));
     }
 
-    private class DeployArtifactForm extends Form {
+    private class DeployArtifactForm extends SecureForm {
         private static final String TARGET_REPO = "targetRepo";
 
         @SpringBean

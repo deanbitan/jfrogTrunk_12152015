@@ -90,15 +90,15 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
         if (rootUrl == null) {
             detectRootUrl(url);
         }
-        url = forceDirectoryUrl(url);
         String s3Url = buildS3RequestUrl(url);
         log.debug("Request url: {} S3 url: {}", url, s3Url);
-        String result = getContent(s3Url);
+        String result = getFileListContent(s3Url);
         log.debug("S3 result: {}", result);
         return parseResponse(result);
     }
 
     private String buildS3RequestUrl(String url) {
+        url = forceDirectoryUrl(url);
         if (secured) {
             String pfx = getPrefix(url);
             return buildSecuredS3RequestUrl(url, httpRepo, "") + "&prefix=" + pfx + "&delimiter=/";

@@ -23,6 +23,7 @@ import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 
@@ -34,7 +35,7 @@ import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
  */
 public abstract class BorderedModalPanel extends BaseModalPanel {
 
-    protected final Form form = new Form("form");
+    protected final Form form = new SecureForm("form");
     protected final MarkupContainer border = new TitledBorder("border");
 
     protected BorderedModalPanel() {

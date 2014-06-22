@@ -30,6 +30,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.component.LabeledValue;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -72,7 +73,7 @@ public class ResetPasswordPanel extends TitledActionPanel {
         //If user is found
         final UserInfo userInfo = findUserByKey(passwordGenKey);
         if (userInfo != null) {
-            Form resetForm = new Form("resetForm");
+            Form resetForm = new SecureForm("resetForm");
 
             resetForm.add(new LabeledValue("description",
                     "Please choose a new password."));

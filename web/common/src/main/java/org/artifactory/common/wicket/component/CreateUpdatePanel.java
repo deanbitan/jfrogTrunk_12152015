@@ -20,6 +20,7 @@ package org.artifactory.common.wicket.component;
 
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 
 import java.util.Locale;
@@ -36,7 +37,7 @@ public abstract class CreateUpdatePanel<E> extends BaseModalPanel {
     public CreateUpdatePanel(CreateUpdateAction action, E entity) {
         this.entity = entity;
         this.action = action;
-        form = new Form<>("form", new CompoundPropertyModel<>(entity));
+        form = new SecureForm("form", new CompoundPropertyModel<>(entity));
         setOutputMarkupId(true);
     }
 

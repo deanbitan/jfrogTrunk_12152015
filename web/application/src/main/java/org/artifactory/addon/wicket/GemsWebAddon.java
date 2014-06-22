@@ -26,6 +26,9 @@ public interface GemsWebAddon extends Addon {
 
     /**
      * build a distribution management section for the General Info tab
+     *
+     * @param id The panel id
+     * @param repoPath The repo path of the root repository
      */
     WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath);
 

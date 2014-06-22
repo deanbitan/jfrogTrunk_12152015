@@ -21,6 +21,7 @@ package org.artifactory.storage.db.binstore.service;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -29,7 +30,7 @@ import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.ArtifactoryHome;
-import org.artifactory.storage.BinaryAlreadyExistsException;
+import org.artifactory.storage.BinaryInsertRetryException;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
@@ -62,6 +63,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.artifactory.storage.StorageProperties.BinaryProviderType;
 
@@ -92,15 +95,21 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Autowired
     private BlobWrapperFactory blobsFactory;
 
-    private ReadTrackingBinaryProvider firstBinaryProvider;
+    private UsageTrackingBinaryProvider firstBinaryProvider;
 
     private FileBinaryProvider fileBinaryProvider;
+
+    /**
+     * Map of delete protected sha1 checksums to the number of protections (active readers + writer count for each binary)
+     */
+    private ConcurrentMap<String, AtomicInteger> deleteProtectedBinaries;
 
     @PostConstruct
     public void initialize() {
         LinkedList<BinaryProviderBase> binaryProviders = Lists.newLinkedList();
         // Always starts with read tracker
-        firstBinaryProvider = new ReadTrackingBinaryProvider();
+        deleteProtectedBinaries = new MapMaker().makeMap();
+        firstBinaryProvider = new UsageTrackingBinaryProvider(this);
         binaryProviders.add(firstBinaryProvider);
         // Init of bin providers depending on constant values
         BinaryProviderType binaryProviderName = storageProperties.getBinariesStorageType();
@@ -243,7 +252,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     }
 
     private void setBinaryProvidersContext(LinkedList<BinaryProviderBase> binaryProviders) {
-        if (!(binaryProviders.getFirst() instanceof ReadTrackingBinaryProvider)) {
+        if (!(binaryProviders.getFirst() instanceof UsageTrackingBinaryProvider)) {
             throw new IllegalStateException("The first binary provider should be read tracking!");
         }
         // Make sure the last one is the empty binary provider
@@ -263,7 +272,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             previous = binaryProvider;
         }
         fileBinaryProvider = foundFileBinaryProvider;
-        firstBinaryProvider = (ReadTrackingBinaryProvider) binaryProviders.getFirst();
+        firstBinaryProvider = (UsageTrackingBinaryProvider) binaryProviders.getFirst();
     }
 
     private BinaryProviderBase getFirstBinaryProvider() {
@@ -273,10 +282,6 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Nullable
     public FileBinaryProvider getFileBinaryProvider() {
         return fileBinaryProvider;
-    }
-
-    public ReadTrackingBinaryProvider getReadTrackingBinaryProvider() {
-        return firstBinaryProvider;
     }
 
     @Override
@@ -308,14 +313,6 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
     }
 
-    private BinaryInfo convertToBinaryInfo(BinaryData bd) {
-        return new BinaryInfoImpl(bd.getSha1(), bd.getMd5(), bd.getLength());
-    }
-
-    private BinaryData convertToBinaryData(BinaryInfo bi) {
-        return new BinaryData(bi.getSha1(), bi.getMd5(), bi.getLength());
-    }
-
     @Override
     @Nonnull
     public BinaryInfo addBinary(InputStream in) throws IOException {
@@ -334,16 +331,25 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         if (result == null) {
             BinaryInfo bi = getFirstBinaryProvider().addStream(in);
+            log.trace("Inserted binary {} to file store", bi.getSha1());
             // From here we managed to create a binary record on the binary provider
             // So, failing on the insert in DB (because saving the file took to long)
             // can be re-tried based on the sha1
             try {
                 result = insertRecordInDb(convertToBinaryData(bi));
             } catch (StorageException e) {
-                throw new BinaryAlreadyExistsException(bi, e);
+                throw new BinaryInsertRetryException(bi, e);
             }
         }
         return result;
+    }
+
+    private BinaryInfo convertToBinaryInfo(BinaryData bd) {
+        return new BinaryInfoImpl(bd.getSha1(), bd.getMd5(), bd.getLength());
+    }
+
+    private BinaryData convertToBinaryData(BinaryInfo bi) {
+        return new BinaryData(bi.getSha1(), bi.getMd5(), bi.getLength());
     }
 
     @Override
@@ -503,6 +509,24 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     }
 
     @Override
+    public int incrementNoDeleteLock(String sha1) {
+        AtomicInteger previous = deleteProtectedBinaries.putIfAbsent(sha1, new AtomicInteger(1));
+        if (previous == null) {
+            return 1;
+        } else {
+            return previous.incrementAndGet();
+        }
+    }
+
+    @Override
+    public void decrementNoDeleteLock(String sha1) {
+        AtomicInteger usageCount = deleteProtectedBinaries.get(sha1);
+        if (usageCount != null) {
+            usageCount.decrementAndGet();
+        }
+    }
+
+    @Override
     public Collection<BinaryInfo> findAllBinaries() {
         try {
             Collection<BinaryData> allBinaries = binariesDao.findAll();
@@ -545,7 +569,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         } catch (SQLException e) {
             if (isDuplicatedEntryException(e)) {
                 log.debug("Simultaneous insert of binary {} detected, binary will be checked.", sha1, e);
-                throw new BinaryAlreadyExistsException(convertToBinaryInfo(dataRecord), e);
+                throw new BinaryInsertRetryException(convertToBinaryInfo(dataRecord), e);
             } else {
                 throw e;
             }
@@ -600,12 +624,17 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
     }
 
-    public boolean isUsedByReader(String sha1) {
-        return getReadTrackingBinaryProvider().isUsedByReader(sha1);
+    /**
+     * @param sha1 sha1 checksum of the binary to check
+     * @return True if the given binary is currently used by a reader (e.g., open stream) or writer
+     */
+    public boolean isActivelyUsed(String sha1) {
+        AtomicInteger usageCounter = deleteProtectedBinaries.get(sha1);
+        return usageCounter != null && usageCounter.get() > 0;
     }
 
     /**
-     * Deletes a single binary from the database and filesystem.
+     * Deletes a single binary from the database and filesystem if not in use.
      */
     private class BinaryCleaner implements Callable<Void> {
         private final GarbageCollectorInfo result;
@@ -619,17 +648,24 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         @Override
         public Void call() throws Exception {
             String sha1 = bd.getSha1();
-            if (!isUsedByReader(sha1)) {
-                if (deleteEntry(sha1)) {
-                    log.trace("Deleted {} record from binaries table", sha1);
-                    result.checksumsCleaned++;
-                    if (getFirstBinaryProvider().delete(sha1)) {
-                        log.trace("Deleted {} binary", sha1);
-                        result.binariesCleaned++;
-                        result.totalSizeCleaned += bd.getLength();
-                    } else {
-                        log.error("Could not delete binary '{}'", sha1);
+            deleteProtectedBinaries.putIfAbsent(sha1, new AtomicInteger(0));
+            AtomicInteger usageCounter = deleteProtectedBinaries.get(sha1);
+            if (usageCounter.compareAndSet(0, -30)) {
+                try {
+                    if (deleteEntry(sha1)) {
+                        log.trace("Deleted {} record from binaries table", sha1);
+                        result.checksumsCleaned++;
+                        if (getFirstBinaryProvider().delete(sha1)) {
+                            log.trace("Deleted {} binary", sha1);
+                            result.binariesCleaned++;
+                            result.totalSizeCleaned += bd.getLength();
+                        } else {
+                            log.error("Could not delete binary '{}'", sha1);
+                        }
                     }
+                } finally {
+                    // remove delete protection (even if delete was not successful)
+                    deleteProtectedBinaries.remove(sha1);
                 }
             } else {
                 log.info("Binary {} is being read! Not deleting.", sha1);

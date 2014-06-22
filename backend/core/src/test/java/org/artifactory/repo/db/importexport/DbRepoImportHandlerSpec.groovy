@@ -38,7 +38,8 @@ import org.artifactory.sapi.fs.MutableVfsFile
 import org.artifactory.sapi.fs.MutableVfsFolder
 import org.artifactory.schedule.TaskService
 import org.artifactory.spring.InternalArtifactoryContext
-import org.artifactory.storage.BinaryAlreadyExistsException
+import org.artifactory.storage.BinaryInsertRetryException
+import org.artifactory.storage.db.binstore.model.BinaryInfoImpl
 import org.artifactory.test.ArtifactoryHomeStub
 import org.artifactory.util.ResourceUtils
 import org.joda.time.DateTimeUtils
@@ -56,6 +57,7 @@ import java.nio.file.Paths
 class DbRepoImportHandlerSpec extends Specification {
 
     public static final String EMPTY_FILE_SHA1 = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    public static final String EMPTY_FILE_MD5 = 'd41d8cd98f00b204e9800998ecf8427e'
     File repoRoot
     MimeTypes mimeTypes
     private InternalRepositoryService repositoryService
@@ -160,7 +162,9 @@ class DbRepoImportHandlerSpec extends Specification {
         2 * localRepo.createOrGetFile(fileRepoPath) >> vfsFile
 
         _ * vfsFile.getRepoPath() >> fileRepoPath
-        1 * vfsFile.tryUsingExistingBinary(_, _, _) >> { throw new BinaryAlreadyExistsException() }
+        1 * vfsFile.tryUsingExistingBinary(_, _, _) >> {
+            throw new BinaryInsertRetryException(new BinaryInfoImpl(EMPTY_FILE_SHA1, EMPTY_FILE_MD5, 0), null)
+        }
 
         _ * localRepo.toString() >> "Mock for local repo 'test-repo'"
 

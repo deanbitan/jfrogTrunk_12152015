@@ -82,4 +82,12 @@ public interface NuGetWebAddon extends Addon {
 
     WebMarkupContainer getVirtualRepoConfigurationSection(String id, RepoDescriptor descriptor, Form form,
             boolean isCreate);
+
+    /**
+     * build a distribution management section for the General Info tab
+     *
+     * @param id The panel id
+     * @param repoPath The repo path of the root repository
+     */
+    WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath);
 }

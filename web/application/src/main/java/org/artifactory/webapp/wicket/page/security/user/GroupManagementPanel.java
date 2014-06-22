@@ -27,6 +27,7 @@ import org.artifactory.api.security.GroupNotFoundException;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.filteringselect.FilteringSelectBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -50,7 +51,7 @@ public class GroupManagementPanel extends FieldSetPanel {
     public GroupManagementPanel(String id, final UsersPanel usersListPanel) {
         super(id);
 
-        Form form = new Form("groupManagementForm");
+        Form form = new SecureForm("groupManagementForm");
         add(form);
 
         List<GroupInfo> groupInfos = userGroupService.getInternalGroups();

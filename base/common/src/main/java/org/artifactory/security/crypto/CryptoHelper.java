@@ -18,6 +18,7 @@
 
 package org.artifactory.security.crypto;
 
+import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.slf4j.Logger;
@@ -50,6 +51,8 @@ import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -76,38 +79,45 @@ public abstract class CryptoHelper {
     }
 
     public static String convertToString(Key key) {
-        return convertToString(key.getEncoded());
+        return convertToString(key.getEncoded(), true);
     }
 
     // Use whenever byte array needs to be converted to a readable string
-    public static String convertToString(byte[] encrypted) {
-        return ArtifactoryBase64.convertToString(encrypted);
-        /*if (ConstantValues.securityUseBase64.getBoolean()) {
-            return ArtifactoryBase64.convertToString(encrypted);
+    public static String convertToString(byte[] encrypted, boolean master) {
+        if (!master && ConstantValues.securityUseBase64.getBoolean()) {
+            // Master encryption supported only in base58
+            return ArtifactoryBase64.convertToString(encrypted, false);
         } else {
-            return ArtifactoryBase58.convertToString(encrypted);
-        }*/
+            return ArtifactoryBase58.convertToString(encrypted, master);
+        }
     }
 
     // Use whenever a string needs to be converted to the original byte array
-    public static byte[] convertToBytes(String encrypted) {
-        /*byte[] bytes = ArtifactoryBase58.extractBytes(encrypted);
-        if (bytes == null) {
+    public static byte[] convertToBytes(String encrypted, boolean master) {
+        byte[] bytes = ArtifactoryBase58.extractBytes(encrypted);
+        if (!master && bytes == null) {
             bytes = ArtifactoryBase64.extractBytes(encrypted);
-        }*/
-        byte[] bytes = ArtifactoryBase64.extractBytes(encrypted);
+        }
         if (bytes == null) {
             throw new IllegalArgumentException("String " + encrypted + " was not encrypted by Artifactory!");
         }
         return bytes;
     }
 
-    public static boolean isEncrypted(String in) {
+    public static boolean isMasterEncrypted(String in) {
+        if (in == null || in.length() == 0) {
+            return false;
+        }
+        // Master encryption supported only in base58
+        return ArtifactoryBase58.isMasterEncrypted(in);
+    }
+
+    public static boolean isPasswordEncrypted(String in) {
         if (in == null || in.length() == 0) {
             return false;
         }
 
-        return /*ArtifactoryBase58.isCorrectFormat(in) || */ArtifactoryBase64.isCorrectFormat(in);
+        return ArtifactoryBase58.isPasswordEncrypted(in) || ArtifactoryBase64.isPasswordEncrypted(in);
     }
 
     public static String needsEscaping(String encrypted) {
@@ -143,14 +153,14 @@ public abstract class CryptoHelper {
         }
     }
 
-    public static KeyPair createKeyPair(String stringBasePrivateKey, String stringBasePublicKey) {
-        byte[] privateKeyEncoded = convertToBytes(stringBasePrivateKey);
-        byte[] publicKeyEncoded = convertToBytes(stringBasePublicKey);
+    public static KeyPair createKeyPair(String stringBasePrivateKey, String stringBasePublicKey, boolean master) {
+        byte[] privateKeyEncoded = convertToBytes(stringBasePrivateKey, master);
+        byte[] publicKeyEncoded = convertToBytes(stringBasePublicKey, master);
         return createKeyPair(privateKeyEncoded, publicKeyEncoded);
     }
 
-    public static SecretKey generatePbeKeyFromKeyPair(String privateKey, String publicKey) {
-        KeyPair keyPair = createKeyPair(privateKey, publicKey);
+    public static SecretKey generatePbeKeyFromKeyPair(String privateKey, String publicKey, boolean master) {
+        KeyPair keyPair = createKeyPair(privateKey, publicKey, master);
         // Always use Base64 encoding (Historical and why not keep it reason)
         return generatePbeKeyFromKeyPair(keyPair);
     }
@@ -172,21 +182,21 @@ public abstract class CryptoHelper {
         }
     }
 
-    public static String encryptSymmetric(String plainText, SecretKey pbeKey) {
+    public static String encryptSymmetric(String plainText, SecretKey pbeKey, boolean master) {
         try {
             Cipher pbeCipher = Cipher.getInstance(SYM_ALGORITHM);
             PBEParameterSpec pbeParamSpec = new PBEParameterSpec(PBE_SALT, PBE_ITERATION_COUNT);
             pbeCipher.init(Cipher.ENCRYPT_MODE, pbeKey, pbeParamSpec);
             byte[] encrypted = pbeCipher.doFinal(stringToBytes(plainText));
-            return convertToString(encrypted);
+            return convertToString(encrypted, master);
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);
         }
     }
 
-    public static String decryptSymmetric(String encrypted, SecretKey pbeKey) {
+    public static String decryptSymmetric(String encrypted, SecretKey pbeKey, boolean master) {
         try {
-            byte[] bytes = convertToBytes(encrypted);
+            byte[] bytes = convertToBytes(encrypted, master);
             Cipher pbeCipher = Cipher.getInstance(SYM_ALGORITHM);
             PBEParameterSpec pbeParamSpec = new PBEParameterSpec(PBE_SALT, PBE_ITERATION_COUNT);
             pbeCipher.init(Cipher.DECRYPT_MODE, pbeKey, pbeParamSpec);
@@ -219,38 +229,61 @@ public abstract class CryptoHelper {
             return password;
         }
         // If already encrypted => no encrypt again
-        if (isEncrypted(password)) {
+        if (isMasterEncrypted(password)) {
             return password;
         }
 
-        File keyFile = getKeyFile();
+        File keyFile = getMasterKeyFile();
         if (!keyFile.exists()) {
             return password;
         }
         SecretKey secretKey = getSecretKeyFromFile(keyFile);
-        return encryptSymmetric(password, secretKey);
+        return encryptSymmetric(password, secretKey, true);
     }
 
     public static String decryptIfNeeded(String password) {
-        if (isEncrypted(password)) {
-            File keyFile = getKeyFile();
+        if (isMasterEncrypted(password)) {
+            File keyFile = getMasterKeyFile();
             if (!keyFile.exists()) {
-                return password;
-                //throw new IllegalArgumentException("The Password is encrypted.\n" +
-                //        "And no Master Key file found at " + keyFile.getAbsolutePath());
+                throw new IllegalArgumentException("The Password is encrypted.\n" +
+                        "And no Master Key file found at " + keyFile.getAbsolutePath());
             }
             SecretKey secretKey = getSecretKeyFromFile(keyFile);
-            password = decryptSymmetric(password, secretKey);
+            password = decryptSymmetric(password, secretKey, true);
         }
         return password;
     }
 
-    public static void createKeyFile() {
-        File keyFile = getKeyFile();
-        if (keyFile.exists()) {
+    /**
+     * Renames the master key file, effectively disabling encryption.
+     */
+    public static void removeMasterKeyFile() {
+        File keyFile = getMasterKeyFile();
+        if (!keyFile.exists()) {
             throw new RuntimeException(
+                    "Cannot remove master key file if it does not exists at " + keyFile.getAbsolutePath());
+        }
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmsss");
+        File renamed = new File(keyFile + "." + format.format(new Date()));
+        try {
+            FileUtils.moveFile(keyFile, renamed);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not rename master key file at " + keyFile.getAbsolutePath()
+                    + " to " + renamed.getAbsolutePath(), e);
+        }
+    }
+
+    /**
+     * Creates a master encryption key file. Throws an exception if the key file already exists of on any failure with
+     * file or key creation.
+     */
+    public static void createMasterKeyFile() {
+        File keyFile = getMasterKeyFile();
+        if (keyFile.exists()) {
+            throw new IllegalStateException(
                     "Cannot create new master key file if it already exists at " + keyFile.getAbsolutePath());
         }
+        log.info("Creating master encryption key at {}", keyFile.getAbsolutePath());
         KeyPair keyPair = generateKeyPair();
         try {
             File securityFolder = keyFile.getParentFile();
@@ -259,27 +292,14 @@ public abstract class CryptoHelper {
                     throw new RuntimeException(
                             "Could not create the folder containing the key file " + securityFolder.getAbsolutePath());
                 }
-                // The security folder should accessible only by the owner
-                if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
-                    Files.setPosixFilePermissions(securityFolder.toPath(), EnumSet.of(
-                            PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OWNER_WRITE,
-                            PosixFilePermission.OWNER_READ));
-                }
+                setPermissionsOnSecurityFolder(securityFolder);
             }
 
-            if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
-                Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(securityFolder.toPath());
-                if (filePermissions.contains(PosixFilePermission.GROUP_READ) || filePermissions.contains(
-                        PosixFilePermission.OTHERS_READ)) {
-                    throw new RuntimeException("The folder containing the key file " +
-                            securityFolder.getAbsolutePath() + " has too broad permissions!\n" +
-                            "Please limit access to the Artifactory user only!");
-                }
-            }
+            checkPermissionsOnSecurityFolder(securityFolder);
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(keyFile))) {
-                writer.write(convertToString(keyPair.getPrivate().getEncoded()));
+                writer.write(convertToString(keyPair.getPrivate().getEncoded(), true));
                 writer.newLine();
-                writer.write(convertToString(keyPair.getPublic().getEncoded()));
+                writer.write(convertToString(keyPair.getPublic().getEncoded(), true));
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -287,22 +307,10 @@ public abstract class CryptoHelper {
         }
     }
 
-    private static SecretKey getSecretKeyFromFile(File keyFile) {
-        SecretKey secretKey;
-        try {
-            try (BufferedReader reader = new BufferedReader(new FileReader(keyFile))) {
-                String privateKey = reader.readLine();
-                String publicKey = reader.readLine();
-                secretKey = generatePbeKeyFromKeyPair(privateKey, publicKey);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(
-                    "Could not read master key " + keyFile.getAbsolutePath() + " to decrypt password!", e);
-        }
-        return secretKey;
-    }
-
-    public static File getKeyFile() {
+    /**
+     * @return Master encryption file configured location. The file might not exist.
+     */
+    public static File getMasterKeyFile() {
         ArtifactoryHome home = ArtifactoryHome.get();
         String keyFileLocation = ConstantValues.securityMasterKeyLocation.getString();
         File keyFile = new File(keyFileLocation);
@@ -310,5 +318,45 @@ public abstract class CryptoHelper {
             keyFile = new File(home.getHaAwareEtcDir(), keyFileLocation);
         }
         return keyFile;
+    }
+
+    private static void checkPermissionsOnSecurityFolder(File securityFolder) throws IOException {
+        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(securityFolder.toPath());
+            if (filePermissions.contains(PosixFilePermission.GROUP_READ) || filePermissions.contains(
+                    PosixFilePermission.OTHERS_READ)) {
+                throw new RuntimeException("The folder containing the key file " +
+                        securityFolder.getAbsolutePath() + " has too broad permissions!\n" +
+                        "Please limit access to the Artifactory user only!");
+            }
+        }
+    }
+
+    public static void setPermissionsOnSecurityFolder(File securityFolder) throws IOException {
+        // The security folder should accessible only by the owner
+        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            Files.setPosixFilePermissions(securityFolder.toPath(), EnumSet.of(
+                    PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OWNER_READ));
+        }
+    }
+
+    private static SecretKey getSecretKeyFromFile(File keyFile) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(keyFile))) {
+            String privateKey = reader.readLine();
+            String publicKey = reader.readLine();
+            return generatePbeKeyFromKeyPair(privateKey, publicKey, true);
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "Could not read master key " + keyFile.getAbsolutePath() + " to decrypt password!", e);
+        }
+    }
+
+    public static boolean hasMasterKey() {
+        return getMasterKeyFile().exists();
+    }
+
+    public static String getKeyFilePath() {
+        return getMasterKeyFile().getPath();
     }
 }

@@ -27,6 +27,7 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
@@ -57,7 +58,7 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
      * Add the central configuration editor panel
      */
     private void addCentralConfigPanel() {
-        Form centralForm = new Form("centralForm");
+        Form centralForm = new SecureForm("centralForm");
         // Set the form as multi part since the config can be quite big and jetty for example
         // doesn't support more than 200K POST data, see RTFACT-4931
         centralForm.setMultiPart(true);

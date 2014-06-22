@@ -36,6 +36,7 @@ import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.file.browser.button.FileBrowserButton;
 import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextField;
 import org.artifactory.common.wicket.component.file.path.PathMask;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
@@ -85,7 +86,7 @@ public class ExportResultsPanel extends FieldSetPanel {
     public ExportResultsPanel(String id, final ActionableItem actionableItem) {
         super(id, Model.of("Export to Path"));
         searchResultName = actionableItem.getDisplayName();
-        Form exportForm = new Form("exportForm");
+        Form exportForm = new SecureForm("exportForm");
         add(exportForm);
         PropertyModel<File> pathModel = new PropertyModel<>(this, "exportToPath");
         final PathAutoCompleteTextField exportToPathTf = new PathAutoCompleteTextField("exportToPath", pathModel);

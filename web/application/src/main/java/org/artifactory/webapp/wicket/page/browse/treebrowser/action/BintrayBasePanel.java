@@ -37,6 +37,7 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.combobox.ComboBox;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -83,7 +84,7 @@ public abstract class BintrayBasePanel extends BaseModalPanel {
         descriptionLabel.setEscapeModelStrings(false);
         border.add(descriptionLabel);
 
-        final Form form = new Form("form");
+        final Form form = new SecureForm("form");
         form.setOutputMarkupId(true);
         border.add(form);
 

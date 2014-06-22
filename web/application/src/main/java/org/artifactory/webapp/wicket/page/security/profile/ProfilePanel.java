@@ -174,8 +174,8 @@ public class ProfilePanel extends TitledPanel {
         if (securityService.isPasswordEncryptionEnabled()) {
             String currentPassword = getUserProfile().getCurrentPassword();
             SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(mutableUser.getPrivateKey(),
-                    mutableUser.getPublicKey());
-            String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
+                    mutableUser.getPublicKey(), false);
+            String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey, false);
             encryptedPasswordLabel.setDefaultModelObject(encryptedPassword);
         }
     }

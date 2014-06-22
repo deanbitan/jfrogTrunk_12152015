@@ -61,7 +61,9 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
                 throw new RuntimeException(result.showMassage());
             }
             case duplicateServerIds: {
-                throw new RuntimeException(result.showMassage());
+                long lastHeartbeat = serversService.getCurrentMember().getLastHeartbeat();
+                throw new RuntimeException("Current Artifactory node last heartbeat is: " + lastHeartbeat + ". " +
+                        result.showMassage());
             }
             default: {
                 updateArtifactoryServerState(OFFLINE);

@@ -45,6 +45,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.wicket.WicketProperty;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.HasModalHandler;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -172,7 +173,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
     }
 
     private void addSearchForm() {
-        Form form = new Form("searchForm") {
+        Form form = new SecureForm("searchForm") {
             @Override
             public boolean isVisible() {
                 return isSignedInOrAnonymous();

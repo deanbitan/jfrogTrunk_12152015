@@ -30,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author Noam Y. Tenne
+ * @author Fred Simon
  */
 @Component
 public class OrderedRepositoriesConfigurationChangesInterceptor implements ConfigurationChangesInterceptor {

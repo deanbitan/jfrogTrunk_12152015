@@ -21,6 +21,7 @@ package org.artifactory.webapp.wicket.page.security.login;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.base.BasePage;
 
@@ -36,7 +37,7 @@ public class LoginPage extends BasePage implements Serializable {
         TitledBorder border = new TitledBorder("loginBorder", "outer-border");
         add(border);
 
-        final Form form = new Form<>("loginForm", new CompoundPropertyModel<>(new LoginInfo()));
+        final Form form = new SecureForm<>("loginForm", new CompoundPropertyModel<>(new LoginInfo()));
         border.add(form);
 
         form.add(new LoginPanel("loginPanel", form));

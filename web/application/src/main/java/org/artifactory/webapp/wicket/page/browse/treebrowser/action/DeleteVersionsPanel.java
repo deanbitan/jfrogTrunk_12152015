@@ -39,6 +39,7 @@ import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.wicket.component.confirm.AjaxConfirm;
 import org.artifactory.common.wicket.component.confirm.ConfirmDialog;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
@@ -77,7 +78,7 @@ public class DeleteVersionsPanel extends Panel {
             RepoAwareActionableItem source) {
         super(id);
 
-        Form form = new Form("form");
+        Form form = new SecureForm("form");
         add(form);
 
         Multimap<String, VersionUnit> vuGroupAndVersion = aggregateByGroupAndVersion(versionUnits);

@@ -34,6 +34,8 @@ public abstract class ArtifactoryBase58 {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryBase58.class);
 
     private static final char ARTIFACTORY_BYTE = 'A';
+    private static final char ARTIFACTORY_PASSWORD_BYTE = 'P';  // encrypted with user specific key
+    private static final char ARTIFACTORY_MASTER_BYTE = 'M';    // encrypted with master encryption key
     private static final char[] ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
             .toCharArray();
     private static final int BASE_58 = ALPHABET.length;
@@ -55,13 +57,28 @@ public abstract class ArtifactoryBase58 {
         return extractBytes(input) != null;
     }
 
+    public static boolean isPasswordEncrypted(String input) {
+        if (!isCorrectFormat(input)) {
+            return false;
+        }
+        return input.charAt(1) == ARTIFACTORY_PASSWORD_BYTE;
+    }
+
+    public static boolean isMasterEncrypted(String input) {
+        if (!isCorrectFormat(input)) {
+            return false;
+        }
+        return input.charAt(1) == ARTIFACTORY_MASTER_BYTE;
+    }
+
     public static byte[] extractBytes(String input) {
-        if (input != null && input.length() > 2 && input.charAt(0) == ARTIFACTORY_BYTE) {
+        if (input != null && input.length() > 3 && input.charAt(0) == ARTIFACTORY_BYTE
+                && (input.charAt(1) == ARTIFACTORY_MASTER_BYTE || input.charAt(1) == ARTIFACTORY_PASSWORD_BYTE)) {
             if (!isBase58(input)) {
                 return null;
             }
 
-            byte[] inputWithChk = decode(input.substring(1));
+            byte[] inputWithChk = decode(input.substring(2));
             MessageDigest digest = getSha256MessageDigest();
             byte[] bytes = copyOfRange(inputWithChk, 0, inputWithChk.length - 2);
             byte[] doubleDigest = digest.digest(digest.digest(bytes));
@@ -74,7 +91,7 @@ public abstract class ArtifactoryBase58 {
         return null;
     }
 
-    public static String convertToString(byte[] toEncode) {
+    public static String convertToString(byte[] toEncode, boolean master) {
         byte[] bytes;
         if (toEncode == null || toEncode.length == 0) {
             checkEmptyString();
@@ -87,7 +104,8 @@ public abstract class ArtifactoryBase58 {
             bytes[bytes.length - 2] = doubleDigest[0];
             bytes[bytes.length - 1] = doubleDigest[1];
         }
-        String result = "" + ARTIFACTORY_BYTE + encode(bytes);
+        String result = "" + ARTIFACTORY_BYTE + (master ? ARTIFACTORY_MASTER_BYTE : ARTIFACTORY_PASSWORD_BYTE)
+                + encode(bytes);
         return result;
     }
 
@@ -125,6 +143,12 @@ public abstract class ArtifactoryBase58 {
         return true;
     }
 
+    /**
+     * Pure base 58 encoding
+     *
+     * @param input Input to encode
+     * @return Decoded string
+     */
     public static String encode(byte[] input) {
         if (input.length == 0) {
             // paying with the same coin
@@ -178,6 +202,12 @@ public abstract class ArtifactoryBase58 {
         return new String(output);
     }
 
+    /**
+     * Pure base 58 decoding
+     *
+     * @param input Input to decode
+     * @return Decoded bytes
+     */
     public static byte[] decode(String input) {
         if (input.length() == 0) {
             // paying with the same coin

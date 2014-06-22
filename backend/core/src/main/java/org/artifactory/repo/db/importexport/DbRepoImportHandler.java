@@ -57,7 +57,7 @@ import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.storage.BinaryAlreadyExistsException;
+import org.artifactory.storage.BinaryInsertRetryException;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.fs.repo.StoringRepo;
 import org.artifactory.storage.spring.ArtifactoryStorageContext;
@@ -325,7 +325,7 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
             log.debug("Imported '{}'.", target);
             AccessLogger.deployed(target);
             progressAccumulator.accumulateSuccessfulFile();
-        } catch (BinaryAlreadyExistsException e) {
+        } catch (BinaryInsertRetryException e) {
             log.info("Import of {} will be retried", target);
             log.debug("Import of " + target + " will be retried", e);
             itemsToRetry.add(new ImportItem(fileToImport, target));

@@ -24,6 +24,7 @@ import org.artifactory.api.mail.MailServerConfiguration;
 import org.artifactory.api.mail.MailService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.util.EmailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,13 +190,14 @@ public class MailServiceImpl implements MailService {
      */
     private MailServerConfiguration getMailServerConfig() {
         CentralConfigDescriptor descriptor = centralConfig.getDescriptor();
-        MailServerDescriptor mailServer = descriptor.getMailServer();
-
-        if (mailServer == null) {
+        MailServerDescriptor m = descriptor.getMailServer();
+        if (m == null) {
             return null;
         }
 
-        return new MailServerConfiguration(mailServer);
+        return new MailServerConfiguration(m.isEnabled(), m.getHost(), m.getPort(), m.getUsername(),
+                CryptoHelper.decryptIfNeeded(m.getPassword()), m.getFrom(), m.getSubjectPrefix(),
+                m.isTls(), m.isSsl(), m.getArtifactoryUrl());
     }
 
     private void verifyParameters(String[] recipients, MailServerConfiguration config) {

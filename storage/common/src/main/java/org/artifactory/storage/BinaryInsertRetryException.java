@@ -25,30 +25,10 @@ import org.artifactory.binstore.BinaryInfo;
  *
  * @author Fred Simon
  */
-public class BinaryAlreadyExistsException extends StorageException {
+public class BinaryInsertRetryException extends StorageException {
     private final BinaryInfo binaryInfo;
 
-    public BinaryAlreadyExistsException() {
-        super("Empty binary already exists exception");
-        binaryInfo = new BinaryInfo() {
-            @Override
-            public String getSha1() {
-                return null;
-            }
-
-            @Override
-            public String getMd5() {
-                return null;
-            }
-
-            @Override
-            public long getLength() {
-                return 0;
-            }
-        };
-    }
-
-    public BinaryAlreadyExistsException(BinaryInfo binaryInfo, Throwable cause) {
+    public BinaryInsertRetryException(BinaryInfo binaryInfo, Throwable cause) {
         super("Insertion of " + binaryInfo + " failed. Auto retry exception", cause);
         this.binaryInfo = binaryInfo;
     }

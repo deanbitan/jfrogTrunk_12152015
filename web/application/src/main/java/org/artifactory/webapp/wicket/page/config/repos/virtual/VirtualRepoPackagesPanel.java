@@ -26,6 +26,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
 /**
@@ -41,7 +42,7 @@ public class VirtualRepoPackagesPanel extends Panel {
     public VirtualRepoPackagesPanel(String id, final VirtualRepoDescriptor descriptor, boolean isCreate) {
         super(id);
 
-        Form<VirtualRepoDescriptor> form = new Form<>("form", new CompoundPropertyModel<>(descriptor));
+        Form<VirtualRepoDescriptor> form = new SecureForm<>("form", new CompoundPropertyModel<>(descriptor));
         add(form);
 
         form.add(addonsManager.addonByType(NuGetWebAddon.class).

@@ -18,11 +18,11 @@
 
 package org.artifactory.storage.db.binstore.service;
 
-import com.google.common.collect.MapMaker;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProvider;
+import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,38 +30,25 @@ import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Date: 12/11/12
- * Time: 6:31 PM
+ * This binary provider wraps binary streams to protect the underlying binary from deletion while the streams is still open.
  *
  * @author freds
  */
-class ReadTrackingBinaryProvider extends BinaryProviderBase implements BinaryProvider {
-    private static final Logger log = LoggerFactory.getLogger(ReadTrackingBinaryProvider.class);
+class UsageTrackingBinaryProvider extends BinaryProviderBase implements BinaryProvider {
+    private static final Logger log = LoggerFactory.getLogger(UsageTrackingBinaryProvider.class);
 
-    private ConcurrentMap<String, AtomicInteger> readersCounter;
+    private final InternalBinaryStore binaryStore;
 
-    public ReadTrackingBinaryProvider() {
-        readersCounter = new MapMaker().makeMap();
-    }
-
-    public boolean isUsedByReader(String sha1) {
-        AtomicInteger readers = readersCounter.get(sha1);
-        return readers != null && readers.get() > 0;
+    UsageTrackingBinaryProvider(InternalBinaryStore binaryStore) {
+        this.binaryStore = binaryStore;
     }
 
     @Nonnull
     @Override
     public InputStream getStream(String sha1) throws BinaryNotFoundException {
-        readersCounter.putIfAbsent(sha1, new AtomicInteger(0));
-        AtomicInteger readersCount = readersCounter.get(sha1);
-        if (readersCount.get() < 0) {
-            throw new BinaryNotFoundException("File " + sha1 + " is currently being deleted!");
-        }
-        return new ReaderTrackingStream(next().getStream(sha1), sha1, readersCount);
+        return new ReaderTrackingStream(next().getStream(sha1), sha1, binaryStore);
     }
 
 
@@ -78,29 +65,19 @@ class ReadTrackingBinaryProvider extends BinaryProviderBase implements BinaryPro
 
     @Override
     public boolean delete(String sha1) {
-        AtomicInteger reader = readersCounter.get(sha1);
-        if (reader != null) {
-            if (reader.compareAndSet(0, -30)) {
-                // OK, marked for deletion with neg value on readers => can remove entry
-                readersCounter.remove(sha1);
-            } else {
-                log.info("Deletion of file '" + sha1 + "', blocked since it is still being read!");
-                return false;
-            }
-        }
         return next().delete(sha1);
     }
 
     static class ReaderTrackingStream extends BufferedInputStream implements BinaryStoreInputStream {
         private final String sha1;
-        private final AtomicInteger readersCount;
+        private InternalBinaryStore binaryStore;
         private boolean closed = false;
 
-        public ReaderTrackingStream(InputStream is, String sha1, AtomicInteger readersCount) {
+        public ReaderTrackingStream(InputStream is, String sha1, InternalBinaryStore binaryStore) {
             super(is);
             this.sha1 = sha1;
-            this.readersCount = readersCount;
-            int newReadersCount = readersCount.incrementAndGet();
+            this.binaryStore = binaryStore;
+            int newReadersCount = binaryStore.incrementNoDeleteLock(sha1);
             if (newReadersCount < 0) {
                 try {
                     // File being deleted...
@@ -124,7 +101,7 @@ class ReadTrackingBinaryProvider extends BinaryProviderBase implements BinaryPro
             } finally {
                 if (!closed) {
                     closed = true;
-                    readersCount.decrementAndGet();
+                    binaryStore.decrementNoDeleteLock(sha1);
                 }
             }
         }

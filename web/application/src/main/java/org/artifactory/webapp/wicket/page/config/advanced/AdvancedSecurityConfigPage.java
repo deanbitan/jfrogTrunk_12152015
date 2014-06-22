@@ -27,6 +27,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.panel.editor.TextEditorPanel;
@@ -58,7 +59,7 @@ public class AdvancedSecurityConfigPage extends AuthenticatedPage {
      * Add the security configuration editor panel
      */
     private void addSecurityConfigPanel() {
-        Form securityForm = new Form("securityForm");
+        Form securityForm = new SecureForm("securityForm");
         add(securityForm);
         final TextEditorPanel securityPanel = new TextEditorPanel("securityPanel", "Security Configuration Descriptor",
                 "Updating the configuration through direct manipulation of the XML descriptors is an advanced " +

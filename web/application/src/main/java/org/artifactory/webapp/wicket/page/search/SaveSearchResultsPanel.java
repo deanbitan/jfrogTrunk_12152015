@@ -38,6 +38,7 @@ import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.tooltip.TooltipBehavior;
 import org.artifactory.common.wicket.component.combobox.ComboBox;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.BaseTitledLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
@@ -82,7 +83,7 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
     }
 
     private void addSaveResultsForm() {
-        Form form = new Form("saveResultsForm");
+        Form form = new SecureForm("saveResultsForm");
         messageModel = Model.of();
         form.add(new TooltipBehavior(messageModel));
         add(form);

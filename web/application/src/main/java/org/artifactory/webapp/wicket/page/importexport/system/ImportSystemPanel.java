@@ -37,6 +37,7 @@ import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavio
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.file.browser.button.FileBrowserButton;
 import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextField;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
@@ -74,7 +75,7 @@ public class ImportSystemPanel extends TitledPanel {
     public ImportSystemPanel(String string) {
         super(string);
 
-        Form importForm = new Form("importForm");
+        Form importForm = new SecureForm("importForm");
         add(importForm);
         PropertyModel<File> pathModel = new PropertyModel<>(this, "importFromPath");
         final PathAutoCompleteTextField importToPathTf =

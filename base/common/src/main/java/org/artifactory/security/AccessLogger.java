@@ -43,7 +43,8 @@ public abstract class AccessLogger {
     private static final Logger log = LoggerFactory.getLogger(AccessLogger.class);
 
     public enum Action {
-        ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE, CREATE, UPDATE, APPROVE, DISAPPROVE
+        ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE, CREATE, UPDATE,
+        APPROVE, DISAPPROVE, FORM_SUBMIT
     }
 
     private AccessLogger() {
@@ -104,6 +105,10 @@ public abstract class AccessLogger {
 
     public static void unauthorizedSearch() {
         logAction(null, Action.SEARCH, true, AuthenticationHelper.getAuthentication());
+    }
+
+    public static void unauthorizedFormSubmit(String message) {
+        logAction(null, Action.FORM_SUBMIT, true, AuthenticationHelper.getAuthentication(), message);
     }
 
     public static void loggedIn(Authentication authentication) {

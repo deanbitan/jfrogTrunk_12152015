@@ -418,6 +418,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public void addNuPkgToRepoCacheAsync(RepoPath repoPath, Properties properties) {
+
+    }
+
+    @Override
     public void removeNuPkgFromRepoCache(String repoKey, String packageId, String packageVersion) {
     }
 

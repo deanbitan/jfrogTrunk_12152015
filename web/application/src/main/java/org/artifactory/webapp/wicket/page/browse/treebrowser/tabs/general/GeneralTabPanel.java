@@ -26,6 +26,8 @@ import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.GemsWebAddon;
+import org.artifactory.addon.wicket.NpmWebAddon;
+import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
@@ -61,12 +63,32 @@ public class GeneralTabPanel extends Panel {
         add(new GeneralInfoPanel("generalInfoPanel").init(repoItem));
 
         if (shouldDisplayDistributionManagement()) {
+            RepeatingView distributionManagement = new RepeatingView("distributionManagement");
+            add(distributionManagement);
+
             //TODO [mamo]: make it generic, let addon contribute ui sections
-            GemsWebAddon gemsWebAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(GemsWebAddon.class);
+            AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+            GemsWebAddon gemsWebAddon = addonsManager.addonByType(GemsWebAddon.class);
             if (!gemsWebAddon.isDefault() && repoItem.getRepo().isEnableGemsSupport()) {
-                add(gemsWebAddon.buildDistributionManagementPanel("distributionManagement", repoItem.getRepoPath()));
-            } else {
-                add(new DistributionManagementPanel("distributionManagement", repoItem));
+                distributionManagement.add(gemsWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(), repoItem.getRepoPath()));
+            }
+
+            NpmWebAddon npmWebAddon = addonsManager.addonByType(NpmWebAddon.class);
+            if (!npmWebAddon.isDefault() && repoItem.getRepo().isEnableNpmSupport()) {
+                distributionManagement.add(
+                        npmWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
+                                repoItem.getRepoPath()));
+            }
+
+            NuGetWebAddon nuGetWebAddon = addonsManager.addonByType(NuGetWebAddon.class);
+            if (!nuGetWebAddon.isDefault() && repoItem.getRepo().isEnableNuGetSupport()) {
+                distributionManagement.add(
+                        nuGetWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
+                                repoItem.getRepoPath()));
+            }
+
+            if(distributionManagement.size() == 0) {
+                distributionManagement.add(new DistributionManagementPanel(distributionManagement.newChildId(), repoItem));
             }
         } else {
             add(new WebMarkupContainer("distributionManagement"));

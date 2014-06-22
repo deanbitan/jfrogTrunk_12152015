@@ -405,7 +405,7 @@
                     <xs:documentation source="description">
                         Comma-separated list of artifact patterns to include when evaluating
                         artifact requests, in the form of x/y/**/z/*. When used, only requests
-                        matching one the include patterns are served.
+                        matching one of the include patterns are served.
                         By default all artifacts are included (**/*).
                     </xs:documentation>
                 </xs:annotation>

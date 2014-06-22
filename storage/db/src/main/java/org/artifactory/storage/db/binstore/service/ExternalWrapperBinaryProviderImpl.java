@@ -143,7 +143,7 @@ public class ExternalWrapperBinaryProviderImpl extends FileBinaryProviderReadOnl
         private final String sha1;
 
         CopyOnReadInputStream(InputStream in, String sha1) throws IOException {
-            super(in, getTempBinFile());
+            super(in, createTempBinFile());
             this.sha1 = sha1;
         }
 

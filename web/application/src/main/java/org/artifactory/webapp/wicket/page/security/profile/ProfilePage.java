@@ -31,6 +31,7 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.util.AjaxUtils;
@@ -75,7 +76,7 @@ public class ProfilePage extends AuthenticatedPage {
         setOutputMarkupId(true);
         setDefaultModel(new CompoundPropertyModel<>(profile));
 
-        form = new Form("form");
+        form = new SecureForm("form");
 
         //Submit
         updateLink = createUpdateProfileButton(form);
@@ -148,7 +149,7 @@ public class ProfilePage extends AuthenticatedPage {
                             }
                         }
                     }
-                    userGroupService.updateUser(mutableUser, false);
+                    userGroupService.updateUser(mutableUser, !mutableUser.hasSameAuthorizationContext(userInfo));
                     AccessLogger.updated("User " + mutableUser.getUsername() + " has updated his profile successfully");
                     info("Profile successfully updated.");
                 }

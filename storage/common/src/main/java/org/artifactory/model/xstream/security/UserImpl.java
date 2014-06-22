@@ -380,10 +380,17 @@ public class UserImpl implements MutableUserInfo {
         }
         return isAdmin() == o.isAdmin()
                 && isEnabled() == o.isEnabled()
-                && hasInvalidPassword() == o.hasInvalidPassword()
+                && hasSamePassword(o)
                 && isAccountNonLocked() == o.isAccountNonLocked()
                 && isCredentialsNonExpired() == o.isCredentialsNonExpired()
                 && equalGroupsSet(getGroups(), o.getGroups());
+    }
+
+    private boolean hasSamePassword(UserInfo user) {
+        if (password != null ? !password.equals(user.getPassword()) : user.getPassword() != null) {
+            return false;
+        }
+        return true;
     }
 
     private static boolean equalGroupsSet(Set<UserGroupInfo> s1, Set<UserGroupInfo> s2) {

@@ -174,6 +174,11 @@ public abstract class DbMutableItem<T extends MutableItemInfo> extends DbFsItem<
     }
 
     @Override
+    public void releaseResources() {
+        // nothing to release by default
+    }
+
+    @Override
     public boolean hasPendingChanges() {
         if (inError) {
             return false;

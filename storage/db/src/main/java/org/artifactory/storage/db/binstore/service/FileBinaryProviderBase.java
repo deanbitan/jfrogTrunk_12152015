@@ -65,7 +65,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
 
     protected boolean deleteNoChain(String sha1) {
         check();
-        if (getContext().isUsedByReader(sha1)) {
+        if (getContext().isActivelyUsed(sha1)) {
             log.info("File {} is read. Deletion is skipped", sha1);
             return false;
         }

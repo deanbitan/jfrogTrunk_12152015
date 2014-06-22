@@ -72,7 +72,7 @@ public enum ConstantValues {
     userLastAccessUpdatesResolutionSecs("security.userLastAccessUpdatesResolutionSecs", 5),
     securityAuthenticationEncryptedPasswordSurroundChars(
             "security.authentication.encryptedPassword.surroundChars", "{}"),
-    securityUseBase64("security.useBase64", TRUE),
+    securityUseBase64("security.useBase64", FALSE),
     securityMasterKeyLocation("security.master.key", "security/artifactory.key"),
     securityDisableRememberMe("security.disableRememberMe", FALSE),
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
@@ -102,6 +102,7 @@ public enum ConstantValues {
     s3backupAccountSecretKey("backup.s3.accountSecretKey"),
     httpAcceptEncodingGzip("http.acceptEncoding.gzip", true),
     httpUseExpectContinue("http.useExpectContinue", false),
+    enableCookieManagement("http.enableCookieManagement", false),
     filteringResourceSizeKb("filtering.resourceSizeKb", 64),
     searchForExistingResourceOnRemoteRequest("repo.remote.checkForExistingResourceOnRequest", TRUE),
     versionQueryEnabled("version.query.enabled", true),

@@ -22,10 +22,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.wicket.Page;
 import org.apache.wicket.extensions.ajax.markup.html.form.upload.UploadProgressBar;
-import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.model.util.ListModel;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.util.WicketUtils;
 
 import java.io.File;
@@ -33,7 +33,7 @@ import java.io.File;
 import static org.artifactory.util.Files.removeFile;
 
 
-public class FileUploadForm extends Form {
+public class FileUploadForm extends SecureForm {
     protected FileUploadField fileUploadField;
     private File uploadedFile;
     private UploadListener listener;

@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
@@ -52,11 +53,13 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
+import org.artifactory.request.RemoteRequestException;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.storage.fs.service.PropertiesService;
 import org.artifactory.storage.fs.tree.ItemNode;
 import org.artifactory.storage.fs.tree.ItemTree;
 import org.artifactory.storage.fs.tree.TreeBrowsingCriteriaBuilder;
+import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -226,8 +229,12 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         try {
             remoteItems.addAll(repo.listRemoteResources(relativePath));
         } catch (IOException e) {
-            log.info("Error while listing remote resources for {}: {}", repoPath.toPath(), e.getMessage());
             log.debug("Error while listing remote resources", e);
+            RemoteRequestException remoteError =
+                    (RemoteRequestException) ExceptionUtils.getCauseOfTypes(e, RemoteRequestException.class);
+            if (remoteError == null || remoteError.getRemoteReturnCode() != HttpStatus.SC_NOT_FOUND) {
+                log.info("Error while listing remote resources for {}: {}", repoPath.toPath(), e.getMessage());
+            }
             // probably remote not found - return 404 only if current folder doesn't exist in the cache
             if (!pathExistsInCache) {
                 // no cache and remote failed - signal 404

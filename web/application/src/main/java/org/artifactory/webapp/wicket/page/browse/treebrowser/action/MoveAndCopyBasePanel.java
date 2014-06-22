@@ -32,6 +32,7 @@ import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.common.StatusEntry;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -80,7 +81,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
     }
 
     protected void init() {
-        Form form = new Form("form");
+        Form form = new SecureForm("form");
         form.setOutputMarkupId(true);
         add(form);
 

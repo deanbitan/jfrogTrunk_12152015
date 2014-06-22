@@ -23,6 +23,8 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.property.ArtifactorySystemProperties;
 import org.artifactory.mime.MimeTypes;
 
+import java.io.File;
+
 /**
  * A stub of {@link ArtifactoryHome} for testing.
  *
@@ -31,7 +33,7 @@ import org.artifactory.mime.MimeTypes;
 public class ArtifactoryHomeStub extends ArtifactoryHome {
 
     public ArtifactoryHomeStub() {
-        super();
+        super(new File("./target"));
         setArtifactorySystemProperties(new ArtifactorySystemProperties());
     }
 

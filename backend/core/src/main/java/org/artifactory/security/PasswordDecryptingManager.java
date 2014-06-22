@@ -87,7 +87,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
         if (!encryptionEnabled) {
             return false;
         }
-        boolean isEncrypted = CryptoHelper.isEncrypted(password);
+        boolean isEncrypted = CryptoHelper.isPasswordEncrypted(password);
         log.trace("Detected {} password", isEncrypted ? "encrypted" : "cleartext");
         if (!isEncrypted) {
             if (!internalRequest && passwordSettings.isEncryptionRequired()) {
@@ -103,14 +103,14 @@ public class PasswordDecryptingManager implements AuthenticationManager {
     }
 
     private String decryptPassword(String encryptedPassword, String username) {
-        if (!CryptoHelper.isEncrypted(encryptedPassword)) {
+        if (!CryptoHelper.isPasswordEncrypted(encryptedPassword)) {
             throw new IllegalArgumentException("Password not encrypted");
         }
 
         KeyPair keyPair = getKeyPair(username);
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(keyPair);
         try {
-            return CryptoHelper.decryptSymmetric(encryptedPassword, secretKey);
+            return CryptoHelper.decryptSymmetric(encryptedPassword, secretKey, false);
         } catch (Exception e) {
             log.debug("Failed to decrypt user password: " + e.getMessage());
             throw new PasswordEncryptionException("Failed to decrypt password.", e);
@@ -127,7 +127,7 @@ public class PasswordDecryptingManager implements AuthenticationManager {
             throw new PasswordEncryptionException(message);
         }
 
-        return CryptoHelper.createKeyPair(privateKey, publicKey);
+        return CryptoHelper.createKeyPair(privateKey, publicKey, false);
     }
 
     public void setDelegate(AuthenticationManager delegate) {

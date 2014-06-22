@@ -19,20 +19,16 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.artifactory.addon.rest.AuthorizationRestException;
-import org.artifactory.api.rest.constant.ArtifactRestConstants;
-import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.rest.constant.SearchRestConstants;
+import org.artifactory.api.rest.search.common.RestDateFieldName;
 import org.artifactory.api.rest.search.result.CreatedInRangeRestSearchResult;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
-import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,14 +49,9 @@ import static org.artifactory.api.rest.constant.SearchRestConstants.*;
 public class CreatedInRangeResource extends GenericSearchResource {
     private static final Logger log = LoggerFactory.getLogger(CreatedInRangeResource.class);
 
-    private AuthorizationService authorizationService;
-    private HttpServletRequest request;
-
     public CreatedInRangeResource(AuthorizationService authorizationService, SearchService searchService,
             HttpServletRequest request) {
-        super(searchService);
-        this.authorizationService = authorizationService;
-        this.request = request;
+        super(searchService, authorizationService, request);
     }
 
     /**
@@ -82,23 +73,18 @@ public class CreatedInRangeResource extends GenericSearchResource {
      */
     @GET
     @Produces({SearchRestConstants.MT_CREATED_IN_RANGE_SEARCH_RESULT, MediaType.APPLICATION_JSON})
-    public Response get(@QueryParam(PARAM_IN_RANGE_FROM) Long from,
-            @QueryParam(PARAM_IN_RANGE_TO) Long to,
+    public Response get(@QueryParam(PARAM_IN_RANGE_FROM) Long from, @QueryParam(PARAM_IN_RANGE_TO) Long to,
             @QueryParam(SearchRestConstants.PARAM_REPO_TO_SEARCH) StringList reposToSearch) throws IOException {
-        if (authorizationService.isAnonymous()) {
-            throw new AuthorizationRestException();
-        }
-        return search(from, to, reposToSearch, null, null);
+        RestDateFieldName[] dateFields = {RestDateFieldName.CREATED, RestDateFieldName.LAST_MODIFIED};
+        return search(from, to, reposToSearch, dateFields);
     }
 
-    protected Response createResponse(ItemSearchResults<ArtifactSearchResult> results, Calendar from,
-            Calendar to, StringList resultFieldNames) {
+    @Override
+    protected Response createResponse(ItemSearchResults<ArtifactSearchResult> results, Calendar from, Calendar to,
+            RestDateFieldName[] dates) {
         CreatedInRangeRestSearchResult rangeRestSearchResult = new CreatedInRangeRestSearchResult();
         for (ArtifactSearchResult result : results.getResults()) {
             ItemInfo item = result.getItemInfo();
-            RepoPath repoPath = item.getRepoPath();
-            String path = buildStoragePath(repoPath);
-            String uri = buildStorageUri(path);
 
             // Find if modified or created is the date that was used to find this artifact
             Calendar dateFound = Calendar.getInstance();
@@ -112,23 +98,9 @@ public class CreatedInRangeResource extends GenericSearchResource {
 
             String time = RestUtils.toIsoDateString(dateFound.getTimeInMillis());
             CreatedInRangeRestSearchResult.CreatedEntry entry =
-                    new CreatedInRangeRestSearchResult.CreatedEntry(uri, time);
+                    new CreatedInRangeRestSearchResult.CreatedEntry(buildStorageUri(item.getRepoPath()), time);
             rangeRestSearchResult.results.add(entry);
         }
         return Response.ok(rangeRestSearchResult).type(MT_CREATED_IN_RANGE_SEARCH_RESULT).build();
-    }
-
-    private String buildStoragePath(RepoPath repoPath) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(repoPath.getRepoKey()).append("/").append(repoPath.getPath());
-        return sb.toString();
-    }
-
-    private String buildStorageUri(String path) {
-        String servletContextUrl = HttpUtils.getServletContextUrl(request);
-        StringBuilder sb = new StringBuilder(servletContextUrl);
-        sb.append("/").append(RestConstants.PATH_API).append("/").append(ArtifactRestConstants.PATH_ROOT);
-        sb.append("/").append(path);
-        return sb.toString();
     }
 }

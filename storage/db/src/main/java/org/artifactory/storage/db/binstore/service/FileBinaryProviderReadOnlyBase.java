@@ -103,7 +103,7 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
         }
     }
 
-    protected File getTempBinFile() throws IOException {
+    protected File createTempBinFile() throws IOException {
         return File.createTempFile("dbRecord", null, tempBinariesDir);
     }
 }

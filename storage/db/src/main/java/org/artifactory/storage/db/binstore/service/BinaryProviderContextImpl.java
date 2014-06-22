@@ -40,9 +40,12 @@ class BinaryProviderContextImpl implements BinaryProviderContext {
         return binaryStore.isInStore(sha1List);
     }
 
+    /**
+     * @see BinaryStoreImpl#isActivelyUsed(java.lang.String)
+     */
     @Override
-    public boolean isUsedByReader(String sha1) {
-        return binaryStore.isUsedByReader(sha1);
+    public boolean isActivelyUsed(String sha1) {
+        return binaryStore.isActivelyUsed(sha1);
     }
 
     @Override

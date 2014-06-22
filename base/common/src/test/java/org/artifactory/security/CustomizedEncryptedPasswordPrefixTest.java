@@ -44,7 +44,7 @@ public class CustomizedEncryptedPasswordPrefixTest extends ArtifactoryHomeBoundT
         nullifyEncryptionPrefix();
         setSurroundAndBase("%%&&", "false");
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
+        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey, false);
         assertTrue(encrypted.startsWith("A"), "Encrypted password should have been prefixed with A " +
                 "since customized surrounding characters are ignored in Base58.");
     }
@@ -54,7 +54,7 @@ public class CustomizedEncryptedPasswordPrefixTest extends ArtifactoryHomeBoundT
         nullifyEncryptionPrefix();
         setSurroundAndBase("%%&&", "true");
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
+        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey, false);
         assertTrue(encrypted.startsWith("%%DESede&&"), "Encrypted password should have been prefixed with the " +
                 "customized surrounding characters.");
     }
@@ -64,7 +64,7 @@ public class CustomizedEncryptedPasswordPrefixTest extends ArtifactoryHomeBoundT
         nullifyEncryptionPrefix();
         setSurroundAndBase("###*&", "true");
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
+        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey, false);
         assertTrue(encrypted.startsWith("{DESede}"), "Encrypted password should have been prefixed with the " +
                 "default surrounding characters since the customized ones were not of an even number.");
     }

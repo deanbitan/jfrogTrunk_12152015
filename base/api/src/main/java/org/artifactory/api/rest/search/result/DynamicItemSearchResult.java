@@ -20,7 +20,6 @@ package org.artifactory.api.rest.search.result;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Date: 5/11/14 2:51 PM
@@ -31,36 +30,9 @@ public class DynamicItemSearchResult {
     public List<SearchEntry> results = new ArrayList<>();
 
     public static class SearchEntry {
-        public boolean folder;
-        public String repo;
-        public String path;
+        public String uri;
         public String created;
-        public String createdBy;
         public String lastModified;
-        public String modifiedBy;
-        public String lastUpdated;
-        public String downloadCount;
         public String lastDownloaded;
-        public Map<String, String[]> properties;
-        public String mimeType;
-        public String size;
-        public Checksums checksums;
-        public Checksums originalChecksums;
-
-        public SearchEntry() {
-        }
-
-        public static class Checksums {
-            public String sha1;
-            public String md5;
-
-            public Checksums(String sha1, String md5) {
-                this.sha1 = sha1;
-                this.md5 = md5;
-            }
-
-            private Checksums() {
-            }
-        }
     }
 }

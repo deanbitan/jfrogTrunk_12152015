@@ -34,6 +34,7 @@ import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A data access object for binaries table access.
@@ -94,16 +95,27 @@ public class BinariesDao extends BaseDao {
         if (validChecksums == null || validChecksums.isEmpty()) {
             return results;
         }
-        ResultSet resultSet = null;
-        try {
-            resultSet = jdbcHelper.executeSelect("SELECT sha1, md5, bin_length FROM binaries" +
-                    " WHERE " + checksumType.name() + " IN (#)", validChecksums);
-            while (resultSet.next()) {
-                results.add(binaryFromResultSet(resultSet));
+
+        // Oracle limits the max elements in the IN clause to 1000. Lists bigger than max chunk value are done in
+        // multiple queries
+        List<String> checksums = Lists.newArrayList(validChecksums);
+        final int CHUNK = 500;
+        // split to chunks of no more than CHUNK
+        for (int i = 0; i < validChecksums.size(); i += CHUNK) {
+            int chunkMaxIndex = Math.min(i + CHUNK, validChecksums.size());
+            List<String> chunk = checksums.subList(i, chunkMaxIndex);
+            ResultSet resultSet = null;
+            try {
+                resultSet = jdbcHelper.executeSelect("SELECT sha1, md5, bin_length FROM binaries" +
+                        " WHERE " + checksumType.name() + " IN (#)", chunk);
+                while (resultSet.next()) {
+                    results.add(binaryFromResultSet(resultSet));
+                }
+            } finally {
+                DbUtils.close(resultSet);
             }
-        } finally {
-            DbUtils.close(resultSet);
         }
+
         return results;
     }
 

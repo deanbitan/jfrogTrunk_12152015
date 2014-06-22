@@ -179,7 +179,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     public void setConfigXml(String xmlConfig) {
         CentralConfigDescriptor newDescriptor = new CentralConfigReader().read(xmlConfig);
         reloadConfiguration(newDescriptor);
-        storeLatestConfigToFile(xmlConfig);
+        storeLatestConfigToFile(getConfigXml());
         addonsManager.addonByType(HaAddon.class).notify(CONFIG_CHANGE_TOPIC, null);
     }
 
@@ -313,6 +313,8 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
             //setDescriptor() will set the new date formatter and server name
             setDescriptor(newDescriptor, true);
 
+            // TODO: [by FSI] If reload fails, we have the new descriptor in memory but not used
+            // Need to find ways to revert or be very robust on reload.
             ctx.reload(oldDescriptor);
             log.info("Configuration reloaded.");
             AccessLogger.configurationChanged();

@@ -79,21 +79,21 @@ public class CryptoHelperTest extends ArtifactoryHomeBoundTest {
 
     public void encryptSymmetric() {
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
+        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey, false);
         log.debug("Symmetric encrypted toto: {}", encrypted);
         assertNotNull(encrypted);
-        assertTrue(CryptoHelper.isEncrypted(encrypted));
+        assertTrue(CryptoHelper.isPasswordEncrypted(encrypted));
     }
 
     public void encryptDecryptSymmetric() {
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
         String toEncrypt = "12345678901234567890";
-        String encrypted = CryptoHelper.encryptSymmetric(toEncrypt, secretKey);
-        assertTrue(CryptoHelper.isEncrypted(encrypted));
+        String encrypted = CryptoHelper.encryptSymmetric(toEncrypt, secretKey, false);
+        assertTrue(CryptoHelper.isPasswordEncrypted(encrypted));
         log.debug("Symmetric encrypted {}: {}", toEncrypt, encrypted);
-        String decrypted = CryptoHelper.decryptSymmetric(encrypted, secretKey);
+        String decrypted = CryptoHelper.decryptSymmetric(encrypted, secretKey, false);
         assertNotNull(decrypted);
-        assertFalse(CryptoHelper.isEncrypted(decrypted));
+        assertFalse(CryptoHelper.isPasswordEncrypted(decrypted));
         assertEquals(decrypted, toEncrypt);
     }
 
@@ -129,35 +129,44 @@ public class CryptoHelperTest extends ArtifactoryHomeBoundTest {
         PublicKey publicKey = original.getPublic();
 
         KeyPair restored = CryptoHelper.createKeyPair(CryptoHelper.convertToString(privateKey),
-                CryptoHelper.convertToString(publicKey));
+                CryptoHelper.convertToString(publicKey), false);
         assertEquals(restored.getPrivate(), original.getPrivate());
         assertEquals(restored.getPublic(), original.getPublic());
     }
 
     public void isEncrypted() {
-        assertFalse(CryptoHelper.isEncrypted("blabla"));
-        assertFalse(CryptoHelper.isEncrypted("{RSA}blabla"));
-        assertFalse(CryptoHelper.isEncrypted("{ENC}blabla"));
-        assertTrue(CryptoHelper.isEncrypted("{DESede}blabla"));
-        assertTrue(CryptoHelper.isEncrypted("\\{DESede\\}blabla"), "Escaped maven encryption prefix");
-        assertFalse(CryptoHelper.isEncrypted("\\{DESede}blabla"));
-        assertFalse(CryptoHelper.isEncrypted("{DESede\\}blabla"));
+        assertFalse(CryptoHelper.isPasswordEncrypted("blabla"));
+        assertFalse(CryptoHelper.isMasterEncrypted("blabla"));
+        assertFalse(CryptoHelper.isPasswordEncrypted("{RSA}blabla"));
+        assertFalse(CryptoHelper.isPasswordEncrypted("{ENC}blabla"));
+        assertTrue(CryptoHelper.isPasswordEncrypted("{DESede}blabla"));
+        assertFalse(CryptoHelper.isMasterEncrypted("{DESede}blabla"));
+        assertTrue(CryptoHelper.isPasswordEncrypted("\\{DESede\\}blabla"), "Escaped maven encryption prefix");
+        assertFalse(CryptoHelper.isMasterEncrypted("\\{DESede\\}blabla"), "Escaped maven encryption prefix not master");
+        assertFalse(CryptoHelper.isPasswordEncrypted("\\{DESede}blabla"));
+        assertFalse(CryptoHelper.isPasswordEncrypted("{DESede\\}blabla"));
     }
 
     public void encrypt() {
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey);
+        String encrypted = CryptoHelper.encryptSymmetric("toto", secretKey, false);
         assertNotNull(encrypted);
-        assertTrue(CryptoHelper.isEncrypted(encrypted));
+        assertTrue(CryptoHelper.isPasswordEncrypted(encrypted));
+        assertFalse(CryptoHelper.isMasterEncrypted(encrypted));
+        encrypted = CryptoHelper.encryptSymmetric("toto", secretKey, true);
+        assertNotNull(encrypted);
+        assertFalse(CryptoHelper.isPasswordEncrypted(encrypted));
+        assertTrue(CryptoHelper.isMasterEncrypted(encrypted));
     }
 
     public void encryptDecrypt() {
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric("momopopo", secretKey);
-        assertTrue(CryptoHelper.isEncrypted(encrypted));
-        String decrypted = CryptoHelper.decryptSymmetric(encrypted, secretKey);
+        // TODO: Check between master and not incompatible
+        String encrypted = CryptoHelper.encryptSymmetric("momopopo", secretKey, false);
+        assertTrue(CryptoHelper.isPasswordEncrypted(encrypted));
+        String decrypted = CryptoHelper.decryptSymmetric(encrypted, secretKey, false);
         assertNotNull(decrypted);
-        assertFalse(CryptoHelper.isEncrypted(decrypted));
+        assertFalse(CryptoHelper.isPasswordEncrypted(decrypted));
         assertEquals(decrypted, "momopopo");
     }
 
@@ -177,49 +186,77 @@ public class CryptoHelperTest extends ArtifactoryHomeBoundTest {
 
     public void decryptOldBase64Format() {
         List<OldEncryptedPassword> oldEncrypted = new ArrayList<>(3);
-        oldEncrypted.add(new OldEncryptedPassword(
+        OldEncryptedPassword jenkins = new OldEncryptedPassword(
                 "jenkins",
                 "MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEAhY7PeGz1M+TzcLeYPcdhtY+R8HuWY5ENZ15Iqi/75RRelhTvar5vdzMHSeaXcezVv/2a5sUUQ5ZoVQI6mBcVtQIDAQABAkAoEbZw/M976D6ZHJvSPRU1cYNpUMrHyGbrEkBevtKl4UpefDj3qUqusDR84fv4aeHzvKaxTx7s06k+/uNZUNBBAiEA65Zwxb6WqdGdpxrwB706bp5nUNZaFzVqmcYG2KAZ5ikCIQCRIUBVDogJqeuu6htlnrHnQNp05oxDwT24s80G4LusrQIgSy8IsGLhjDKEQJcdMSsXocPVrvupZqy6Z3bGKo31lfkCIHozhGbaUIPKlw/2QdFkOapd+lQ6mFqoyR7QDtA+xOgVAiEA0qlPXafzMLjEIjWZvHeg1oJhMsWsWGaAYlZtlkgsS4g=",
                 "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAIWOz3hs9TPk83C3mD3HYbWPkfB7lmORDWdeSKov++UUXpYU72q+b3czB0nml3Hs1b/9mubFFEOWaFUCOpgXFbUCAwEAAQ==",
                 "{DESede}Iz5I9KOc0co="
-        ));
-        oldEncrypted.add(new OldEncryptedPassword(
+        );
+        OldEncryptedPassword admin = new OldEncryptedPassword(
                 "password",
                 "MIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEAvZPtw3g4MFCDzQ+gCP1gBeNr+0Enl2OHyItnVDFCQ/yMn8WtfKrZqpKdef4N5gwdLGe9neFD1BdUDnyVkG3jFQIDAQABAkAYc60WKjptGOV3HI3SuwOYntW9qZC2uRK5bimctWHLrN0CRxOhfiYZxiX22SID0nZtPlKTiQvD4xkHbdWqJLjdAiEA/Qhi6vRywkEswjdPxCPCI8UJjeFUkLeB88uWhjGy538CIQC/zQxjuPRbIazaSpzRWMLdZiJB+PMVoZHODyVDIMFfawIhALyNN0jmB24Bqxy+os4B53VIKqpzMtT0Kf5Fw1EUT8B5AiASsrWzfxNrUvQb78wr6IBOvyc10UQ5Zp/lO7rBOY9AcwIhAOiNRF3kFQim8LUOqORm7gMh4I91NdN4G3BGN0GtOFBk",
                 "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAL2T7cN4ODBQg80PoAj9YAXja/tBJ5djh8iLZ1QxQkP8jJ/FrXyq2aqSnXn+DeYMHSxnvZ3hQ9QXVA58lZBt4xUCAwEAAQ==",
                 "{DESede}nO1mRNRdxXk/hP3mIVLBuA=="
-        ));
+        );
+        oldEncrypted.add(jenkins);
+        oldEncrypted.add(admin);
+        oldEncrypted.add(new OldEncryptedPassword(jenkins.clearText,
+                "{DESede}" + jenkins.privateKey,
+                "{DESede}" + jenkins.publicKey, jenkins.encryptedPassword));
+        oldEncrypted.add(new OldEncryptedPassword(admin.clearText,
+                "{DESede}" + admin.privateKey,
+                "{DESede}" + admin.publicKey, admin.encryptedPassword));
         for (OldEncryptedPassword oldData : oldEncrypted) {
-            KeyPair keyPair = CryptoHelper.createKeyPair(oldData.privateKey, oldData.publicKey);
+            KeyPair keyPair = CryptoHelper.createKeyPair(oldData.privateKey, oldData.publicKey, false);
             SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(keyPair);
-            String decrypted = CryptoHelper.decryptSymmetric(oldData.encryptedPassword, secretKey);
+            assertTrue(CryptoHelper.isPasswordEncrypted(oldData.encryptedPassword));
+            assertFalse(CryptoHelper.isMasterEncrypted(oldData.encryptedPassword));
+            String decrypted = CryptoHelper.decryptSymmetric(oldData.encryptedPassword, secretKey, false);
             assertNotNull(decrypted);
-            assertFalse(CryptoHelper.isEncrypted(decrypted));
+            assertFalse(CryptoHelper.isPasswordEncrypted(decrypted));
+            assertFalse(CryptoHelper.isMasterEncrypted(decrypted));
             assertEquals(decrypted, oldData.clearText);
         }
     }
 
-    @Test(enabled = false)
     public void encryptDecryptMasterKey() {
         // First make sure no master key around
-        File keyFile = CryptoHelper.getKeyFile();
-        if (keyFile.exists()) {
-            assertTrue(keyFile.delete());
-            File parentFile = keyFile.getParentFile();
-            if ("security".equals(parentFile.getName())) {
-                assertTrue(parentFile.delete());
-            }
+        if (CryptoHelper.hasMasterKey()) {
+            CryptoHelper.removeMasterKeyFile();
         }
         String pass = "mySuper34Hard42Password";
         String nonEncryptPass = CryptoHelper.encryptIfNeeded(pass);
         assertEquals(nonEncryptPass, pass, "Before creating master key, no encryption should run");
-        CryptoHelper.createKeyFile();
+        CryptoHelper.createMasterKeyFile();
         String encryptPass = CryptoHelper.encryptIfNeeded(pass);
         assertNotEquals(encryptPass, pass, "After creating master key, encryption should run");
-        assertTrue(encryptPass.startsWith("A"), "Encrypted password should start with A");
-        assertTrue(CryptoHelper.isEncrypted(encryptPass), "Encrypted password should be encrypted");
+        assertTrue(encryptPass.startsWith("AM"), "Encrypted password should start with AM");
+        assertTrue(CryptoHelper.isMasterEncrypted(encryptPass), "Encrypted password should be master encrypted");
+        assertFalse(CryptoHelper.isPasswordEncrypted(encryptPass),
+                "Encrypted password should not be password encrypted");
+        String encryptPass2 = CryptoHelper.encryptIfNeeded(encryptPass);
+        assertEquals(encryptPass2, encryptPass, "Encrypting twice should not do anything");
+
+        // Encrypting password then encrypt in master
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
+        String passEncrypt = CryptoHelper.encryptSymmetric(pass, secretKey, false);
+        assertNotEquals(passEncrypt, encryptPass, "Encrypting pass should be different");
+        assertFalse(CryptoHelper.isMasterEncrypted(passEncrypt), "Encrypted password should not be master encrypted");
+        assertTrue(CryptoHelper.isPasswordEncrypted(passEncrypt),
+                "Encrypted password should be password encrypted");
+        String encryptPassEncrypt = CryptoHelper.encryptIfNeeded(passEncrypt);
+        assertNotEquals(encryptPassEncrypt, passEncrypt, "Encrypting pass should be different");
+        assertTrue(CryptoHelper.isMasterEncrypted(encryptPassEncrypt), "Encrypted password should be master encrypted");
+        assertFalse(CryptoHelper.isPasswordEncrypted(encryptPassEncrypt),
+                "Encrypted password should not be password encrypted");
+
         String decrypted = CryptoHelper.decryptIfNeeded(encryptPass);
         assertEquals(decrypted, pass, "decrypted password should go back to origin");
+
+        String decryptedPass = CryptoHelper.decryptIfNeeded(encryptPassEncrypt);
+        assertEquals(decryptedPass, passEncrypt, "decrypted password encrypted should go back to pass encrypt");
+        assertEquals(CryptoHelper.decryptSymmetric(decryptedPass, secretKey, false), pass,
+                "decrypted password should go back to origin");
     }
 
     @Test(enabled = false)
@@ -230,13 +267,14 @@ public class CryptoHelperTest extends ArtifactoryHomeBoundTest {
         }
 
         SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(CryptoHelper.generateKeyPair());
-        String encrypted = CryptoHelper.encryptSymmetric(sb.toString(), secretKey);
+        // TODO: Check between master and not incompatible
+        String encrypted = CryptoHelper.encryptSymmetric(sb.toString(), secretKey, false);
         log.debug("Encrypted: {}", encrypted);
         assertNotNull(encrypted);
-        assertTrue(CryptoHelper.isEncrypted(encrypted));
-        String decrypted = CryptoHelper.decryptSymmetric(encrypted, secretKey);
+        assertTrue(CryptoHelper.isPasswordEncrypted(encrypted));
+        String decrypted = CryptoHelper.decryptSymmetric(encrypted, secretKey, false);
         assertEquals(decrypted, sb.toString());
-        assertFalse(CryptoHelper.isEncrypted(decrypted));
+        assertFalse(CryptoHelper.isPasswordEncrypted(decrypted));
     }
 
     public void availableAlgorithms() {
@@ -247,6 +285,16 @@ public class CryptoHelperTest extends ArtifactoryHomeBoundTest {
                 log.debug("Crypto:" + Arrays.asList(getProviderImpls(provider)));
             }
         }
+    }
+
+    public void removeKeyFile() {
+        if (!CryptoHelper.hasMasterKey()) {
+            CryptoHelper.createMasterKeyFile();
+        }
+        File master = CryptoHelper.getMasterKeyFile();
+        assertTrue(master.exists(), "Master encryption file not found at " + master.getAbsolutePath());
+        CryptoHelper.removeMasterKeyFile();
+        assertFalse(master.exists(), "Master encryption file found at " + master.getAbsolutePath());
     }
 
     // This method returns all available services types

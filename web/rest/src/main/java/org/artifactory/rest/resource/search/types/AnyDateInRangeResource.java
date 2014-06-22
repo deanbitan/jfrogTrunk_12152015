@@ -19,9 +19,8 @@
 
 package org.artifactory.rest.resource.search.types;
 
-import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.rest.search.common.RestResultFieldName;
+import org.artifactory.api.rest.search.common.RestDateFieldName;
 import org.artifactory.api.rest.search.result.DynamicItemSearchResult;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
@@ -29,17 +28,20 @@ import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.StatsInfo;
+import org.artifactory.rest.common.exception.BadRequestException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Calendar;
 
 import static org.artifactory.api.rest.constant.SearchRestConstants.*;
@@ -50,13 +52,11 @@ import static org.artifactory.api.rest.constant.SearchRestConstants.*;
 public class AnyDateInRangeResource extends GenericSearchResource {
     private static final Logger log = LoggerFactory.getLogger(AnyDateInRangeResource.class);
 
-    private AuthorizationService authorizationService;
     private RepositoryService repositoryService;
 
     public AnyDateInRangeResource(AuthorizationService authorizationService, SearchService searchService,
-            RepositoryService repositoryService) {
-        super(searchService);
-        this.authorizationService = authorizationService;
+            HttpServletRequest request, RepositoryService repositoryService) {
+        super(searchService, authorizationService, request);
         this.repositoryService = repositoryService;
     }
 
@@ -82,44 +82,42 @@ public class AnyDateInRangeResource extends GenericSearchResource {
     public Response dynamicGet(@QueryParam(PARAM_IN_RANGE_FROM) String from,
             @QueryParam(PARAM_IN_RANGE_TO) String to,
             @QueryParam(PARAM_REPO_TO_SEARCH) StringList reposToSearch,
-            @QueryParam(PARAM_DATE_FIELDS) StringList dateFields,
-            @QueryParam(PARAM_RESULT_FIELDS) StringList resultFields
-    ) throws IOException {
-        if (authorizationService.isAnonymous()) {
-            throw new AuthorizationRestException();
-        }
-        return search(RestUtils.extractLongEpoch(from),
-                RestUtils.extractLongEpoch(to),
-                reposToSearch, dateFields, resultFields);
+            @QueryParam(PARAM_DATE_FIELDS) StringList dateFields) throws IOException {
+
+        return search(RestUtils.extractLongEpoch(from), RestUtils.extractLongEpoch(to), reposToSearch,
+                getDateFields(dateFields));
     }
 
-    protected Response createResponse(ItemSearchResults<ArtifactSearchResult> results, Calendar from,
-            Calendar to, StringList resultFieldNames) {
-        RestResultFieldName[] resultFields;
-        if (resultFieldNames != null && !resultFieldNames.isEmpty()) {
-            resultFields = new RestResultFieldName[resultFieldNames.size()];
+    private RestDateFieldName[] getDateFields(StringList dateFieldNames) {
+        RestDateFieldName[] dateFields;
+        if (dateFieldNames != null && !dateFieldNames.isEmpty()) {
+            dateFields = new RestDateFieldName[dateFieldNames.size()];
             int i = 0;
-            for (String fieldName : resultFieldNames) {
-                RestResultFieldName byFieldName = RestResultFieldName.byFieldName(fieldName);
+            for (String fieldName : dateFieldNames) {
+                RestDateFieldName byFieldName = RestDateFieldName.byFieldName(fieldName);
                 if (byFieldName == null) {
-                    String msg = "Result field name " + fieldName + " unknown!";
-                    log.debug(msg);
-                    return Response.status(Response.Status.BAD_REQUEST).entity(msg).build();
+                    throw new BadRequestException("Date field name '" + fieldName + "' unknown!, " +
+                            "possible values are: " + Arrays.asList(RestDateFieldName.values()));
                 }
-                resultFields[i++] = byFieldName;
+                dateFields[i++] = byFieldName;
             }
         } else {
-            resultFields = new RestResultFieldName[]{RestResultFieldName.LAST_MODIFIED, RestResultFieldName.CREATED};
+            throw new BadRequestException("'dateFields' parameter cannot be empty!");
         }
+
+        return dateFields;
+    }
+
+    @Override
+    protected Response createResponse(ItemSearchResults<ArtifactSearchResult> results, Calendar from, Calendar to,
+            RestDateFieldName[] dates) {
         DynamicItemSearchResult restResults = new DynamicItemSearchResult();
         for (ArtifactSearchResult result : results.getResults()) {
             DynamicItemSearchResult.SearchEntry entry = new DynamicItemSearchResult.SearchEntry();
             ItemInfo itemInfo = result.getItemInfo();
-            entry.folder = itemInfo.isFolder();
-            entry.repo = itemInfo.getRepoKey();
-            entry.path = itemInfo.getRelPath();
-            for (RestResultFieldName resultField : resultFields) {
-                switch (resultField) {
+            entry.uri = buildStorageUri(itemInfo.getRepoPath());
+            for (RestDateFieldName restDateFieldName : dates) {
+                switch (restDateFieldName) {
                     case CREATED:
                         entry.created = RestUtils.toIsoDateString(itemInfo.getCreated());
                         break;
@@ -130,10 +128,8 @@ public class AnyDateInRangeResource extends GenericSearchResource {
                         StatsInfo stats = repositoryService.getStatsInfo(itemInfo.getRepoPath());
                         if (stats != null) {
                             entry.lastDownloaded = RestUtils.toIsoDateString(stats.getLastDownloaded());
-                            entry.downloadCount = "" + stats.getDownloadCount();
                         } else {
                             entry.lastDownloaded = "";
-                            entry.downloadCount = "0";
                         }
                         break;
                 }

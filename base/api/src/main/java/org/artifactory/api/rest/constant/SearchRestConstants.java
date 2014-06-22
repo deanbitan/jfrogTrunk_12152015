@@ -86,7 +86,6 @@ public interface SearchRestConstants {
 
     // Dynamic search params
     String PARAM_DATE_FIELDS = "dateFields";
-    String PARAM_RESULT_FIELDS = "resultFields";
 
     //Build artifacts params
     String BUILD_NAME_PARAM = "buildName";
@@ -113,8 +112,7 @@ public interface SearchRestConstants {
     String MT_ARTIFACT_VERSIONS_SEARCH_RESULT =
             RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactVersionsResult+json";
     String MT_BUILD_ARTIFACTS_SEARCH_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".BuildArtifactsSearchResult+json";
-    String MT_ARTIFACT_RESULT =
-            RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactResult+json";
+    String MT_ARTIFACT_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ArtifactResult+json";
 
     String NOT_FOUND = "No results found.";
 }

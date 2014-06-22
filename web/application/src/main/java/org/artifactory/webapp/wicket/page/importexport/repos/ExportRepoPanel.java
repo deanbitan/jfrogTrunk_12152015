@@ -37,6 +37,7 @@ import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.file.browser.button.FileBrowserButton;
 import org.artifactory.common.wicket.component.file.path.PathAutoCompleteTextField;
 import org.artifactory.common.wicket.component.file.path.PathMask;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
@@ -82,7 +83,7 @@ public class ExportRepoPanel extends TitledPanel {
 
     public ExportRepoPanel(String string) {
         super(string);
-        Form exportForm = new Form("exportForm");
+        Form exportForm = new SecureForm("exportForm");
         add(exportForm);
 
         IModel<String> sourceRepoModel = new PropertyModel<>(this, "sourceRepoKey");

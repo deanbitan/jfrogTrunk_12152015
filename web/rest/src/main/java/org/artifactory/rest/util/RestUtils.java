@@ -162,7 +162,9 @@ public abstract class RestUtils {
             if (from.contains("T")) {
                 fromLong = fromIsoDateString(from);
             } else {
-                fromLong = Long.valueOf(from);
+                if (StringUtils.isNotBlank(from)) {
+                    fromLong = Long.valueOf(from);
+                }
             }
         }
         return fromLong;

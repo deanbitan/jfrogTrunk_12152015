@@ -18,8 +18,6 @@
 
 package org.artifactory.api.mail;
 
-import org.artifactory.descriptor.mail.MailServerDescriptor;
-
 /**
  * Contains the different parameters of the mail server configuration
  *
@@ -38,23 +36,8 @@ public class MailServerConfiguration {
     private boolean useTls;
     private boolean useSsl;
 
-    public MailServerConfiguration(MailServerDescriptor mailServer) {
-        if (mailServer != null) {
-            enabled = mailServer.isEnabled();
-            host = mailServer.getHost();
-            port = mailServer.getPort();
-            username = mailServer.getUsername();
-            password = mailServer.getPassword();
-            from = mailServer.getFrom();
-            subjectPrefix = mailServer.getSubjectPrefix();
-            useTls = mailServer.isTls();
-            useSsl = mailServer.isSsl();
-            artifactoryUrl = mailServer.getArtifactoryUrl();
-        }
-    }
-
     public MailServerConfiguration(boolean enabled, String host, int port, String username, String password,
-            String from, String subjectPrefix, boolean useTls, boolean useSsl) {
+            String from, String subjectPrefix, boolean useTls, boolean useSsl, String artifactoryUrl) {
         this.enabled = enabled;
         this.host = host;
         this.port = port;
@@ -64,6 +47,7 @@ public class MailServerConfiguration {
         this.subjectPrefix = subjectPrefix;
         this.useTls = useTls;
         this.useSsl = useSsl;
+        this.artifactoryUrl = artifactoryUrl;
     }
 
     public boolean isEnabled() {

@@ -46,6 +46,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.ImmediateAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -235,7 +236,7 @@ public class BintraySearchPanel extends Panel {
     }
 
     private Form addForm(WebMarkupContainer searchBorder) {
-        Form form = new Form("form");
+        Form form = new SecureForm("form");
         form.setOutputMarkupId(true);
         searchBorder.add(form);
         return form;

@@ -474,8 +474,8 @@ public class ArtifactoryHome {
                         "/META-INF/default/" + ArtifactoryHome.MIME_TYPES_FILE_NAME);
                 FileUtils.copyURLToFile(configUrl, mimeTypesFile);
             } catch (Exception e) {
-                throw new IllegalStateException("Couldn't start Artifactory. Mime types file is missing: " +
-                        mimeTypesFile.getAbsolutePath());
+                throw new IllegalStateException("Couldn't start Artifactory. " +
+                        "Failed to copy default mime types file: " + mimeTypesFile.getAbsolutePath(), e);
             }
         }
 

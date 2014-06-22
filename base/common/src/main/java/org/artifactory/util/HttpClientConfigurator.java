@@ -37,7 +37,9 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
 import org.apache.http.protocol.HttpContext;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +67,9 @@ public class HttpClientConfigurator {
     public HttpClientConfigurator() {
         builder.setUserAgent(HttpUtils.getArtifactoryUserAgent());
         credsProvider = new BasicCredentialsProvider();
+        if (!ConstantValues.enableCookieManagement.getBoolean()) {
+            builder.disableCookieManagement();
+        }
     }
 
     public CloseableHttpClient getClient() {
@@ -204,7 +209,8 @@ public class HttpClientConfigurator {
             if (proxy.getUsername() != null) {
                 Credentials creds = null;
                 if (proxy.getDomain() == null) {
-                    creds = new UsernamePasswordCredentials(proxy.getUsername(), proxy.getPassword());
+                    creds = new UsernamePasswordCredentials(proxy.getUsername(),
+                            CryptoHelper.decryptIfNeeded(proxy.getPassword()));
                     //This will demote the NTLM authentication scheme so that the proxy won't barf
                     //when we try to give it traditional credentials. If the proxy doesn't do NTLM
                     //then this won't hurt it (jcej at tragus dot org)
@@ -217,7 +223,8 @@ public class HttpClientConfigurator {
                         String ntHost =
                                 StringUtils.isBlank(proxy.getNtHost()) ? InetAddress.getLocalHost().getHostName() :
                                         proxy.getNtHost();
-                        creds = new NTCredentials(proxy.getUsername(), proxy.getPassword(), ntHost, proxy.getDomain());
+                        creds = new NTCredentials(proxy.getUsername(),
+                                CryptoHelper.decryptIfNeeded(proxy.getPassword()), ntHost, proxy.getDomain());
                     } catch (UnknownHostException e) {
                         log.error("Failed to determine required local hostname for NTLM credentials.", e);
                     }

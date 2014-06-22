@@ -29,7 +29,7 @@ import java.util.Set;
 public interface BinaryProviderContext {
     Set<String> isInStore(Set<String> sha1);
 
-    boolean isUsedByReader(String sha1);
+    boolean isActivelyUsed(String sha1);
 
     BinaryProviderBase next();
 }

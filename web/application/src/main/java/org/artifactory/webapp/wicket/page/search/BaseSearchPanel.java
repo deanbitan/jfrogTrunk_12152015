@@ -48,6 +48,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.wicket.ajax.ImmediateAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.component.navigation.NavigationToolbarWithDropDown;
@@ -150,7 +151,7 @@ public abstract class BaseSearchPanel<T extends ItemSearchResult> extends Panel 
         searchBorder.add(table);
 
         //Form
-        Form form = new Form("form");
+        Form form = new SecureForm("form");
         form.setOutputMarkupId(true);
         searchBorder.add(form);
 

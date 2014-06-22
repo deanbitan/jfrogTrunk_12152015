@@ -25,6 +25,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.maven.MavenService;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.ModalHandler;
@@ -62,7 +63,7 @@ public abstract class BaseSettingsGeneratorPanel extends TitledPanel implements 
     protected BaseSettingsGeneratorPanel(String id, String servletContextUrl) {
         super(id);
         this.servletContextUrl = servletContextUrl;
-        form = new Form("form");
+        form = new SecureForm("form");
     }
 
     /**

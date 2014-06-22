@@ -113,7 +113,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
      * @throws IOException On failure writing to the temp file
      */
     private File writeToTempFile(InputStream in) throws IOException {
-        File temp = getTempBinFile();
+        File temp = createTempBinFile();
         log.trace("Saving temp file: {}", temp.getAbsolutePath());
         FileUtils.copyInputStreamToFile(in, temp);
         log.trace("Saved  temp file: {}", temp.getAbsolutePath());
@@ -137,7 +137,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
         for (File file : files) {
             String sha1 = file.getName();
             if (!existingSha1.contains(sha1)) {
-                if (getContext().isUsedByReader(sha1)) {
+                if (getContext().isActivelyUsed(sha1)) {
                     statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
                 } else {
                     long size = file.length();

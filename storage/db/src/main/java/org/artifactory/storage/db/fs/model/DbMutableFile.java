@@ -30,7 +30,8 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.sapi.fs.MutableVfsFile;
-import org.artifactory.storage.BinaryAlreadyExistsException;
+import org.artifactory.storage.BinaryInsertRetryException;
+import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.repo.StoringRepo;
@@ -52,6 +53,7 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
     private static final Logger log = LoggerFactory.getLogger(DbMutableFile.class);
 
     private StatsInfo stats;
+    private boolean placedBinaryDeleteProtectionLock;
 
     public DbMutableFile(StoringRepo storingRepo, long id, FileInfo info) {
         super(storingRepo, id, InfoFactoryHolder.get().copyFileInfo(info));
@@ -88,9 +90,8 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
         setClientMd5(clientMd5);
     }
 
-
     @Override
-    public boolean tryUsingExistingBinary(String sha1, String md5, long length) throws BinaryAlreadyExistsException {
+    public boolean tryUsingExistingBinary(String sha1, String md5, long length) throws BinaryInsertRetryException {
         BinaryInfo binary = getBinaryStore().addBinaryRecord(sha1, md5, length);
         if (binary != null) {
             setFileBinaryInfo(binary);
@@ -103,23 +104,27 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
     public void fillBinaryData(InputStream in) {
         //Check if needs to create checksum and not checksum file
         log.debug("Calculating checksums of '{}'.", getRepoPath());
-        BinaryInfo binary;
+        BinaryInfo binaryInfo;
         try {
             // call the binary service to add the current binary
-            binary = getBinaryStore().addBinary(in);
-        } catch (BinaryAlreadyExistsException e) {
+            binaryInfo = getBinaryStore().addBinary(in);
+        } catch (BinaryInsertRetryException e) {
             if (log.isDebugEnabled()) {
                 log.info("Retrying add binary after receiving retry exception", e);
             } else {
                 log.info("Retrying add binary after receiving exception: " + e.getMessage());
             }
             BinaryInfo retry = e.getBinaryInfo();
-            binary = getBinaryStore().addBinaryRecord(retry.getSha1(), retry.getMd5(), retry.getLength());
+            binaryInfo = getBinaryStore().addBinaryRecord(retry.getSha1(), retry.getMd5(), retry.getLength());
+            if (binaryInfo == null) {
+                throw new StorageException("Failed to add binary record with SHA1 " + retry.getSha1() + "during retry",
+                        e);
+            }
         } catch (IOException e) {
             throw new VfsException("Failed to add input stream for '" + getRepoPath() + "'", e);
         }
 
-        setFileBinaryInfo(binary);
+        setFileBinaryInfo(binaryInfo);
     }
 
     @Override
@@ -127,7 +132,9 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
         this.stats = statsInfo;
     }
 
-    private void setFileBinaryInfo(BinaryInfo binary) {
+    private void setFileBinaryInfo(@Nonnull BinaryInfo binary) {
+        getBinaryStore().incrementNoDeleteLock(binary.getSha1());
+        placedBinaryDeleteProtectionLock = true;
         // The size needs to be always consistent so no rely on MD
         mutableInfo.setSize(binary.getLength());
         ChecksumInfo sha1Orig = mutableInfo.getChecksumsInfo().getChecksumInfo(ChecksumType.sha1);
@@ -163,6 +170,12 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
     }
 
     @Override
+    public void releaseResources() {
+        super.releaseResources();
+        releaseInsertedStreamLock();
+    }
+
+    @Override
     public boolean hasPendingChanges() {
         if (inError) {
             return false;
@@ -194,6 +207,12 @@ public class DbMutableFile extends DbMutableItem<MutableFileInfo> implements Mut
             getStatsService().setStats(nodeId, stats);
         }
         return nodeId;
+    }
+
+    private void releaseInsertedStreamLock() {
+        if (placedBinaryDeleteProtectionLock) {
+            getBinaryStore().decrementNoDeleteLock(getSha1());
+        }
     }
 
     @Override

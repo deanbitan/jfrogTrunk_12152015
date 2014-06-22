@@ -46,8 +46,7 @@ public class HtmlRepositoryBrowser extends RemoteRepositoryBrowser {
 
     @Override
     public List<RemoteItem> listContent(String url) throws IOException {
-        url = forceDirectoryUrl(url);
-        String result = getContent(url);
+        String result = getFileListContent(url);
         return parseHtml(result, url);
     }
 

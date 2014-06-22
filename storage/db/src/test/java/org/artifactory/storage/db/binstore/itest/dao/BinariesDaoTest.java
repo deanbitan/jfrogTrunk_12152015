@@ -22,6 +22,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -36,6 +37,7 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import static org.testng.Assert.*;
@@ -148,6 +150,23 @@ public class BinariesDaoTest extends DbBaseTest {
                 "da39a3ee5e6b4b0d3255bfef95601890afd80709"
         ));
         assertFoundNodes(nodes);
+    }
+
+    // RTFACT-6364 - Oracle limits the number of elements in the IN clause to 1000
+    public void findChecksumsBySha1ThousandLimit() throws SQLException {
+        List<String> sha1s = Lists.newArrayListWithCapacity(2000);
+        for (int i = 0; i < 999; i++) {
+            sha1s.add(randomSha1());
+        }
+        binariesDao.search(ChecksumType.sha1, sha1s);
+
+        // 1000
+        sha1s.add(randomSha1());
+        binariesDao.search(ChecksumType.sha1, sha1s);
+
+        // 1001 (fails if not chunked in Oracle)
+        sha1s.add(randomSha1());
+        binariesDao.search(ChecksumType.sha1, sha1s);
     }
 
     private void assertFoundNodes(Collection<BinaryData> nodes) {

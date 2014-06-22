@@ -106,7 +106,7 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
                 addonsManager.addonByType(NuGetAddon.class).extractNuPkgInfo((FileInfo) targetItem.getInfo(),
                         statusHolder, true);
             } else {
-                addonsManager.addonByType(NuGetAddon.class).addNuPkgToRepoCache(targetItem.getRepoPath(),
+                addonsManager.addonByType(NuGetAddon.class).addNuPkgToRepoCacheAsync(targetItem.getRepoPath(),
                         nuPkgProperties);
             }
         }

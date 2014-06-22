@@ -42,6 +42,13 @@ public abstract class ArtifactoryBase64 {
         return extractBytes(in) != null;
     }
 
+    public static boolean isPasswordEncrypted(String in) {
+        if (!isCorrectFormat(in)) {
+            return false;
+        }
+        return in.startsWith(ESCAPED_DEFAULT_ENCRYPTION_PREFIX) || in.startsWith(getEncryptionPrefix());
+    }
+
     public static byte[] extractBytes(String encrypted) {
         String stripped;
         if (encrypted.startsWith(ESCAPED_DEFAULT_ENCRYPTION_PREFIX)) {
@@ -60,8 +67,12 @@ public abstract class ArtifactoryBase64 {
         return null;
     }
 
-    public static String convertToString(byte[] encrypted) {
-        return getEncryptionPrefix() + toBase64(encrypted);
+    public static String convertToString(byte[] encrypted, boolean master) {
+        if (master) {
+            return toBase64(encrypted);
+        } else {
+            return getEncryptionPrefix() + toBase64(encrypted);
+        }
     }
 
     private static String getEncryptionPrefix() {

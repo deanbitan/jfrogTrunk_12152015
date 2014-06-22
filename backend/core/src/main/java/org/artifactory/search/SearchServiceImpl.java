@@ -204,11 +204,11 @@ public class SearchServiceImpl implements InternalSearchService {
             List<String> reposToSearch,
             RestDateFieldName... dates) {
         if (from == null && to == null) {
-            log.info("Received search artifacts in range with no range!");
+            log.warn("Received search artifacts in range with no range!");
             return new ItemSearchResults<>(Collections.<ArtifactSearchResult>emptyList(), 0L);
         }
         if (dates == null || dates.length == 0) {
-            log.info("Received search artifacts in range with no date field!");
+            log.warn("Received search artifacts in range with no date field!");
             return new ItemSearchResults<>(Collections.<ArtifactSearchResult>emptyList(), 0);
         }
 

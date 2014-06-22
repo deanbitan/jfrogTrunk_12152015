@@ -30,6 +30,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.WebApplicationAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.titled.TitledActionPanel;
@@ -57,7 +58,7 @@ public class ForgotPasswordPanel extends TitledActionPanel {
     protected ForgotPasswordPanel(String id) {
         super(id);
 
-        Form forgotForm = new Form("forgotForm");
+        Form forgotForm = new SecureForm("forgotForm");
 
         forgotForm.add(new Label("description",
                 "Please enter your user name to receive a password reset link by email."));

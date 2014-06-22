@@ -27,6 +27,7 @@ import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.YumWebAddon;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 
 /**
@@ -42,7 +43,7 @@ public class LocalRepoPackagesPanel extends Panel {
     public LocalRepoPackagesPanel(String id, LocalRepoDescriptor descriptor, boolean isCreate) {
         super(id);
 
-        Form<LocalRepoDescriptor> form = new Form<>("form", new CompoundPropertyModel<>(descriptor));
+        Form<LocalRepoDescriptor> form = new SecureForm<>("form", new CompoundPropertyModel<>(descriptor));
         add(form);
 
         addonsManager.addonByType(YumWebAddon.class).createAndAddLocalRepoYumSection(form, descriptor.getKey(),

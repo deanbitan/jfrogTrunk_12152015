@@ -107,9 +107,12 @@ public class SessionLockEntry implements FsItemLockEntry {
     public boolean releaseWriteLock() {
         log.trace("Releasing WRITE lock on {}", lockEntryId);
         if (isWriteLockedByMe()) {
-            if (mutableItem != null && mutableItem.hasPendingChanges()) {
-                // local modification will be discarded
-                log.warn("Mutable item '{}' has local modifications that will be discarded.", mutableItem);
+            if (mutableItem != null) {
+                mutableItem.releaseResources();
+                if (mutableItem.hasPendingChanges()) {
+                    // local modification will be discarded
+                    log.warn("Mutable item '{}' has local modifications that will be discarded.", mutableItem);
+                }
             }
             mutableItem = null;
             lockEntryId.getLock().unlock();

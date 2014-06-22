@@ -37,6 +37,7 @@ import org.artifactory.api.mail.MailService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
@@ -45,6 +46,7 @@ import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.util.EmailException;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
@@ -77,7 +79,7 @@ public class MailConfigPanel extends TitledPanel {
     public MailConfigPanel(String id) {
         super(id);
         MailServerDescriptor descriptor = getMailServerDescriptor();
-        form = new Form<>("form", new CompoundPropertyModel<>(descriptor));
+        form = new SecureForm("form", new CompoundPropertyModel<>(descriptor));
 
         form.add(new StyledCheckbox("enabled"));
         form.add(new SchemaHelpBubble("enabled.help"));
@@ -171,8 +173,11 @@ public class MailConfigPanel extends TitledPanel {
                     displayError(target, "Please specify a recipient for the test message.");
                     return;
                 }
-                MailServerDescriptor descriptor = (MailServerDescriptor) form.getDefaultModelObject();
-                MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(descriptor);
+                MailServerDescriptor d = (MailServerDescriptor) form.getDefaultModelObject();
+                MailServerConfiguration mailServerConfiguration = new MailServerConfiguration(
+                        d.isEnabled(), d.getHost(), d.getPort(), d.getUsername(),
+                        CryptoHelper.decryptIfNeeded(d.getPassword()), d.getFrom(), d.getSubjectPrefix(),
+                        d.isTls(), d.isSsl(), d.getArtifactoryUrl());
                 if (!validateConfig(mailServerConfiguration)) {
                     displayError(target, "Sending a test message requires the configuration to be enabled with " +
                             "defined host and port properties, at least.");

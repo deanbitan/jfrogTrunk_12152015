@@ -30,6 +30,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.panel.upload.HideUploadProgressDecorator;
@@ -66,7 +67,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
         MutableCentralConfigDescriptor descriptor = centralConfigService.getMutableDescriptor();
         setDefaultModel(new CompoundPropertyModel(descriptor));
 
-        Form form = new Form("form", getDefaultModel());
+        Form form = new SecureForm("form", getDefaultModel());
         add(form);
 
         form.add(new AddonSettingsPanel("addonsSettingsPanel"));

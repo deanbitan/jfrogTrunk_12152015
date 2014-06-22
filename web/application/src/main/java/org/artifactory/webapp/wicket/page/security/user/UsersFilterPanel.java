@@ -28,6 +28,7 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.behavior.filteringselect.FilteringSelectBehavior;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.security.GroupInfo;
@@ -52,7 +53,7 @@ public class UsersFilterPanel extends FieldSetPanel {
     public UsersFilterPanel(String id, final UsersPanel usersListPanel) {
         super(id);
 
-        Form form = new Form("usersFilterForm");
+        Form form = new SecureForm("usersFilterForm");
         add(form);
 
         form.add(new TextField<>("usernameFilter", new PropertyModel<String>(this, "usernameFilter")));

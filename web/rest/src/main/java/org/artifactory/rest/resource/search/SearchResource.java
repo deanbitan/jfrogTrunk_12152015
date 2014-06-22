@@ -131,7 +131,7 @@ public class SearchResource {
 
     @Path(SearchRestConstants.PATH_DATES_IN_RANGE)
     public AnyDateInRangeResource datesInRangeQuery() {
-        return new AnyDateInRangeResource(authorizationService, searchService, repositoryService);
+        return new AnyDateInRangeResource(authorizationService, searchService, request, repositoryService);
     }
 
     @Path(SearchRestConstants.PATH_PATTERN)

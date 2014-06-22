@@ -1097,6 +1097,10 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             }
         }.setEnabled(false));
 
+        Label label = new Label("gemsRepoUrlLabel", "");
+        label.setVisible(false);
+        gemsSection.add(label);
+
         return gemsSection;
     }
 
@@ -1107,7 +1111,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath) {
-        return (WebMarkupContainer) new WebMarkupContainer(id).add(new DisabledAddonBehavior(GEMS));
+        return new WebMarkupContainer(id);
     }
 
     @Override
@@ -1122,6 +1126,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
             }
         }.setEnabled(false));
+        Label label = new Label("npmRepoUrlLabel", "");
+        label.setVisible(false);
+        npmSection.add(label);
         form.add(npmSection);
     }
 

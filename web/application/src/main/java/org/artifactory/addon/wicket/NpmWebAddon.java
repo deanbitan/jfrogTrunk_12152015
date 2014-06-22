@@ -19,10 +19,12 @@
 package org.artifactory.addon.wicket;
 
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
+import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Webapp Npm functionality interface
@@ -41,4 +43,12 @@ public interface NpmWebAddon extends Addon {
     void createAndAddRepoConfigNpmSection(Form form, RepoDescriptor repoDescriptor, boolean isCreate);
 
     ITab getNpmInfoTab(String tabTitle, FileInfo fileInfo);
+
+    /**
+     * build a distribution management section for the General Info tab
+     *
+     * @param id The panel id
+     * @param repoPath The repo path of the root repository
+     */
+    WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath);
 }

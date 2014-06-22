@@ -28,6 +28,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.util.PathUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,11 +49,9 @@ public abstract class RemoteRepositoryBrowser {
 
     public abstract List<RemoteItem> listContent(String url) throws IOException;
 
-    protected String getContent(String url) throws IOException {
+    protected String getFileListContent(String url) throws IOException {
         // add trailing slash for relative urls
-        if (!url.endsWith("/")) {
-            url += "/";
-        }
+        url = forceDirectoryUrl(url);
 
         HttpGet method = new HttpGet(url);
         try (CloseableHttpResponse response = client.executeMethod(method)) {
@@ -82,9 +81,6 @@ public abstract class RemoteRepositoryBrowser {
 
     protected String forceDirectoryUrl(String url) {
         // add trailing slash we are dealing with directories
-        if (!url.endsWith("/")) {
-            url += "/";
-        }
-        return url;
+        return PathUtils.addTrailingSlash(url);
     }
 }

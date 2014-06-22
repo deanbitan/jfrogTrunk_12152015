@@ -34,6 +34,7 @@ import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.WicketProperty;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
@@ -95,7 +96,7 @@ public abstract class BasicImportPanel extends TitledPanel {
     }
 
     private Form createImportForm() {
-        Form importForm = new Form("importForm");
+        Form importForm = new SecureForm("importForm");
         add(importForm);
         //Add the drop down choice for the targetRepo
         IModel<String> targetRepoModel = new PropertyModel<>(this, "targetRepoKey");

@@ -79,6 +79,9 @@ public interface NuGetAddon extends Addon {
      */
     void addNuPkgToRepoCache(RepoPath repoPath, Properties properties);
 
+    @Async(delayUntilAfterCommit = true)
+    void addNuPkgToRepoCacheAsync(RepoPath repoPath, Properties properties);
+
     /**
      * Removes a NuGet package from the local NuGet packages memory cache
      *

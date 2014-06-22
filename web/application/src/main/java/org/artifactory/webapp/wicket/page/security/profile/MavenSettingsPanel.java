@@ -66,8 +66,9 @@ public class MavenSettingsPanel extends TitledPanel {
     public void displayEncryptedPassword(MutableUserInfo userInfo) {
         WebMarkupContainer settingsSnippet = new WebMarkupContainer("settingsSnippet");
         String currentPassword = getUserProfile().getCurrentPassword();
-        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(userInfo.getPrivateKey(), userInfo.getPublicKey());
-        String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey);
+        SecretKey secretKey = CryptoHelper.generatePbeKeyFromKeyPair(userInfo.getPrivateKey(), userInfo.getPublicKey(),
+                false);
+        String encryptedPassword = CryptoHelper.encryptSymmetric(currentPassword, secretKey, false);
         settingsSnippet.add(createSettingXml(userInfo, encryptedPassword));
 
         // With Base58 new encryption this not needed anymore

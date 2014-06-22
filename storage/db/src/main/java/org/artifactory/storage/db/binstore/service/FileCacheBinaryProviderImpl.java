@@ -157,7 +157,7 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
         }
         for (File file : files) {
             String sha1 = file.getName();
-            if (getContext().isUsedByReader(sha1)) {
+            if (getContext().isActivelyUsed(sha1)) {
                 statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
             } else {
                 lruCache.remove(sha1);
@@ -264,7 +264,7 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
         final String sha1;
 
         SavedToFileOnReadInputStream(InputStream delegate, String sha1) throws IOException {
-            super(delegate, getTempBinFile());
+            super(delegate, createTempBinFile());
             this.sha1 = sha1;
         }
 
@@ -305,7 +305,7 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
 
     class SavedToFileOnWriteInputStream extends SavedToFileInputStream {
         SavedToFileOnWriteInputStream(InputStream delegate) throws IOException {
-            super(delegate, getTempBinFile());
+            super(delegate, createTempBinFile());
         }
 
         @Override

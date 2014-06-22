@@ -116,15 +116,15 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
     }
 
     protected String randomMd5() {
-        return randomHexa(32);
+        return randomHex(32);
     }
 
     protected String randomSha1() {
-        return randomHexa(40);
+        return randomHex(40);
     }
 
-    private String randomHexa(int count) {
-        return RandomStringUtils.random(count, "abcdef0123456789".toCharArray());
+    private String randomHex(int count) {
+        return RandomStringUtils.random(count, "abcdef0123456789");
     }
 
     @BeforeMethod

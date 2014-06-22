@@ -23,7 +23,7 @@ package org.artifactory.api.rest.search.common;
  *
  * @author freds
  */
-public enum RestDateFieldName {
+public enum  RestDateFieldName {
     LAST_MODIFIED("lastModified"), CREATED("created"), LAST_DOWNLOADED("lastDownloaded");
 
     public String fieldName;
@@ -39,5 +39,11 @@ public enum RestDateFieldName {
             }
         }
         return null;
+    }
+
+
+    @Override
+    public String toString() {
+        return fieldName;
     }
 }

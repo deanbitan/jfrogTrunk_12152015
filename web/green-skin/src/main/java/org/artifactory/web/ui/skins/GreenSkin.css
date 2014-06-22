@@ -397,6 +397,13 @@ span.label-gray {
     padding-left: 22px;
 }
 
+.info-bold {
+    background: url("images/icons/information.gif") left top no-repeat;
+    padding-bottom: 3px;
+    font-weight: bold;
+    padding-left: 22px;
+}
+
 .small {
     font-size: 11px;
     font-weight: normal;

@@ -46,6 +46,7 @@ import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
@@ -106,7 +107,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
     public RemoteRepoImportPanel(CachingDescriptorHelper cachingDescriptorHelper) {
         setWidth(740);
         add(new CssClass("import-remote-repos"));
-        Form loadForm = new Form("loadForm");
+        Form loadForm = new SecureForm("loadForm");
         add(loadForm);
 
         MarkupContainer loadBorder = new TitledBorder("loadBorder");
@@ -123,7 +124,7 @@ public class RemoteRepoImportPanel extends BaseModalPanel {
         loadBorder.add(urlTextField);
         loadBorder.add(getLoadButton(loadForm));
 
-        Form listForm = new Form("listForm");
+        Form listForm = new SecureForm("listForm");
         add(listForm);
 
         MarkupContainer listBorder = new TitledBorder("listBorder");
