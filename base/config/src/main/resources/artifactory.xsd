@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.4"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.4"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.5"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.5"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -288,6 +288,15 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="debianTrivialLayout" type="xs:boolean" default="true" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                The default Debian architecture is "Automatic", to change the Debian architecture to
+                                'Trivial' (which is deprecated) and generate the indices in the root directory,
+                                set the Trivial Layout checkbox.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -444,6 +453,13 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Enable NodeJs NPM support for this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enableDebianSupport" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable support for Debian packages in this repository.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1227,6 +1243,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="debianSettings" type="DebianSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to GPG signing
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -1452,6 +1477,18 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
                         Without auto-user creation, you must manually create the user inside Artifactory to manage 
 						user permissions not attached to their default groups.
                                 ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DebianSettingsType">
+        <xs:sequence>
+            <xs:element name="passphrase" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[ Passphrase for GPG signing. ]]>
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

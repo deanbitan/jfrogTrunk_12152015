@@ -34,6 +34,7 @@ public interface SystemRestConstants {
     String PATH_PING = "ping";
     String PATH_ENCRYPT = "encrypt";
     String PATH_DECRYPT = "decrypt";
+    String PATH_LICENSE = "license";
     String MT_VERSION_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".Version+json";
     String MT_IMPORT_SETTINGS = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ImportSettings+json";
     String MT_EXPORT_SETTINGS = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ExportSettings+json";

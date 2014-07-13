@@ -118,7 +118,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon, NpmAddon {
+        GemsAddon, HaAddon, NpmAddon, DebianAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -403,6 +403,15 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void requestYumMetadataCalculation(LocalRepoDescriptor repo) {
+    }
+
+    @Override
+    public void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password) {
+    }
+
+    @Override
+    public String getPublicKeyDownloadTarget() {
+        return "";
     }
 
     @Override

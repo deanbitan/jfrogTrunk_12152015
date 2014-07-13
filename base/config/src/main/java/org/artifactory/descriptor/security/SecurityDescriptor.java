@@ -19,8 +19,8 @@
 package org.artifactory.descriptor.security;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.collections.CollectionUtils;
 import org.artifactory.descriptor.Descriptor;
+import org.artifactory.descriptor.security.debian.DebianSettings;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
@@ -33,7 +33,6 @@ import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlType;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -41,7 +40,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "hideUnauthorizedResources", "passwordSettings",
-        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings"},
+        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings", "debianSettings"},
         namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 
@@ -73,6 +72,9 @@ public class SecurityDescriptor implements Descriptor {
 
     @XmlElement(name = "samlSettings", required = false)
     private SamlSettings samlSettings;
+
+    @XmlElement(name = "debianSettings", required = false)
+    private DebianSettings debianSettings;
 
     public boolean isAnonAccessEnabled() {
         return anonAccessEnabled;
@@ -287,6 +289,14 @@ public class SecurityDescriptor implements Descriptor {
         this.samlSettings = samlSettings;
     }
 
+    public DebianSettings getDebianSettings() {
+        return debianSettings;
+    }
+
+    public void setDebianSettings(DebianSettings debianSettings) {
+        this.debianSettings = debianSettings;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -313,7 +323,7 @@ public class SecurityDescriptor implements Descriptor {
         if (!equalLdapGroupLists(ldapGroupSettings, that.ldapGroupSettings)) {
             return false;
         }
-        if (!equalLdapLists(ldapSettings,that.ldapSettings)) {
+        if (!equalLdapLists(ldapSettings, that.ldapSettings)) {
             return false;
         }
         if (passwordSettings != null ? !passwordSettings.equals(that.passwordSettings) :
@@ -321,6 +331,9 @@ public class SecurityDescriptor implements Descriptor {
             return false;
         }
         if (samlSettings != null ? !samlSettings.equals(that.samlSettings) : that.samlSettings != null) {
+            return false;
+        }
+        if (debianSettings != null ? !debianSettings.equals(that.debianSettings) : that.debianSettings != null) {
             return false;
         }
 
@@ -337,28 +350,45 @@ public class SecurityDescriptor implements Descriptor {
         result = 31 * result + (httpSsoSettings != null ? httpSsoSettings.hashCode() : 0);
         result = 31 * result + (crowdSettings != null ? crowdSettings.hashCode() : 0);
         result = 31 * result + (samlSettings != null ? samlSettings.hashCode() : 0);
+        result = 31 * result + (debianSettings != null ? debianSettings.hashCode() : 0);
         return result;
     }
 
     public static boolean equalLdapLists(@Nullable List<LdapSetting> l1, @Nullable List<LdapSetting> l2) {
-        if (l1 == l2) return true;
-        if (l1 == null || l2 == null) return false;
-        if (l1.size() != l2.size()) return false;
+        if (l1 == l2) {
+            return true;
+        }
+        if (l1 == null || l2 == null) {
+            return false;
+        }
+        if (l1.size() != l2.size()) {
+            return false;
+        }
 
         for (int i = 0; i < l1.size(); i++) {
-            if (!l1.get(i).identicalConfiguration(l2.get(i))) return false;
+            if (!l1.get(i).identicalConfiguration(l2.get(i))) {
+                return false;
+            }
         }
         return true;
     }
 
     public static boolean equalLdapGroupLists(@Nullable List<LdapGroupSetting> l1,
             @Nullable List<LdapGroupSetting> l2) {
-        if (l1 == l2) return true;
-        if (l1 == null || l2 == null) return false;
-        if (l1.size() != l2.size()) return false;
+        if (l1 == l2) {
+            return true;
+        }
+        if (l1 == null || l2 == null) {
+            return false;
+        }
+        if (l1.size() != l2.size()) {
+            return false;
+        }
 
         for (int i = 0; i < l1.size(); i++) {
-            if (!l1.get(i).identicalConfiguration(l2.get(i))) return false;
+            if (!l1.get(i).identicalConfiguration(l2.get(i))) {
+                return false;
+            }
         }
         return true;
     }

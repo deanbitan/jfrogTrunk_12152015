@@ -111,6 +111,10 @@ public abstract class DbBaseTest extends AbstractTestNGSpringContextTests {
         artifactoryHomeBoundTest.unbindArtifactoryHome();
     }
 
+    protected void addBean(Object bean, Class<?>... types) {
+        dummyArtifactoryContext.addBean(bean, types);
+    }
+
     protected ArtifactoryHomeBoundTest createArtifactoryHomeTest() throws IOException {
         return new ArtifactoryHomeBoundTest();
     }

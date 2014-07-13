@@ -49,6 +49,7 @@ import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
+import org.artifactory.api.request.ArtifactoryRequestBase;
 import org.artifactory.common.wicket.ajax.NoAjaxIndicatorDecorator;
 import org.artifactory.common.wicket.behavior.collapsible.CollapsibleBehavior;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
@@ -65,7 +66,9 @@ import org.artifactory.common.wicket.util.ComponentPersister;
 import org.artifactory.common.wicket.util.CookieUtils;
 import org.artifactory.descriptor.repo.LocalRepoAlphaComparator;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.maven.MavenModelUtils;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.ExceptionUtils;
@@ -398,7 +401,6 @@ public class DeployArtifactPanel extends TitledActionPanel {
             }
         }
 
-
         private class OnPomXmlChangeBehavior extends AjaxFormComponentUpdatingBehavior {
             private OnPomXmlChangeBehavior() {
                 super("onchange");
@@ -495,17 +497,18 @@ public class DeployArtifactPanel extends TitledActionPanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 ComponentPersister.saveChildren(DeployArtifactForm.this);
 
+                Properties props = parseMatrixParams();
                 try {
                     //Make sure not to override a good pom.
                     boolean deployPom = model.deployPom && model.isMavenArtifact;
                     if (deployPom) {
                         if (isPomArtifact()) {
-                            deployPom();
+                            deployPom(props);
                         } else {
-                            deployFileAndPom();
+                            deployFileAndPom(props);
                         }
                     } else {
-                        deployFile();
+                        deployFile(props);
                     }
                     String repoKey = model.targetRepo.getKey();
                     String artifactPath = model.getTargetPathFieldValue();
@@ -535,11 +538,24 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 }
             }
 
-            private void deployPom() throws Exception {
+            // this form supports properties with format similar to matrix params
+            private Properties parseMatrixParams() {
+                Properties props;
+                props = (Properties) InfoFactoryHolder.get().createProperties();
+                String targetPathFieldValue = model.getTargetPathFieldValue();
+                int matrixParamStart = targetPathFieldValue.indexOf(Properties.MATRIX_PARAMS_SEP);
+                if (matrixParamStart > 0) {
+                    ArtifactoryRequestBase.processMatrixParams(props, targetPathFieldValue.substring(matrixParamStart));
+                    model.targetPath = targetPathFieldValue.substring(0, matrixParamStart);
+                }
+                return props;
+            }
+
+            private void deployPom(Properties props) throws Exception {
                 if (model.pomChanged) {
                     savePomXml();
                 }
-                deployFile();
+                deployFile(props);
             }
 
             private void savePomXml() throws Exception {
@@ -555,17 +571,17 @@ public class DeployArtifactPanel extends TitledActionPanel {
                 }
             }
 
-            private void deployFileAndPom() throws IOException, RepoRejectException {
+            private void deployFileAndPom(Properties props) throws IOException, RepoRejectException {
                 ModuleInfo moduleInfo = repoService.getItemModuleInfo(
                         InternalRepoPathFactory.create(model.targetRepo.getKey(), model.getTargetPathFieldValue()));
                 mavenService.validatePomContent(model.pomXml, model.getTargetPathFieldValue(),
                         moduleInfo, model.targetRepo.isSuppressPomConsistencyChecks());
                 deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, model.pomXml, true, false,
-                        null);
+                        props);
             }
 
-            private void deployFile() throws RepoRejectException {
-                deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file);
+            private void deployFile(Properties props) throws RepoRejectException {
+                deployService.deploy(model.targetRepo, model.getArtifactInfo(), model.file, props);
             }
         }
 

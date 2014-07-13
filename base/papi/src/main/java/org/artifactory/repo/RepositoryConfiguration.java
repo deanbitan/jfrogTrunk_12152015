@@ -44,4 +44,8 @@ public interface RepositoryConfiguration {
     boolean isEnableGemsSupport();
 
     boolean isEnableNpmSupport();
+
+    boolean isEnableDebianSupport();
+
+    boolean isDebianTrivialLayout();
 }

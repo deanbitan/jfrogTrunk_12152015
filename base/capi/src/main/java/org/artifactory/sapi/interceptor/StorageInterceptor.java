@@ -49,7 +49,8 @@ public interface StorageInterceptor extends Interceptor {
 
     void beforePropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values);
 
-    void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values);
+    void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name,
+            String... values);
 
     void beforePropertyDelete(VfsItem fsItem, MutableStatusHolder statusHolder, String name);
 

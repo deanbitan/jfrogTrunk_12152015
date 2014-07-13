@@ -54,7 +54,7 @@ CREATE TABLE node_props (
 );
 CREATE INDEX node_props_node_id_idx ON node_props (node_id);
 CREATE INDEX node_props_prop_key_idx ON node_props (prop_key);
-CREATE INDEX node_props_prop_value_idx ON node_props (LEFT(prop_value, 255));
+CREATE INDEX node_props_prop_value_idx ON node_props (substr(prop_value, 1, 255));
 
 CREATE TABLE node_meta_infos (
   node_id           BIGINT NOT NULL,

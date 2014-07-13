@@ -50,9 +50,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -348,6 +346,8 @@ public interface RestAddon extends Addon {
      * @return Response context
      */
     ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params);
+
+    ResponseCtx deployPlugin(Reader pluginContent, String scriptName);
 
     /**
      * Searches for artifact versions by it's groupId and artifactId (version is optional and relates to

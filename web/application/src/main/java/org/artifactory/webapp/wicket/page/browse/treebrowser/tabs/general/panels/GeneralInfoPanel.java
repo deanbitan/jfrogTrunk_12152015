@@ -48,6 +48,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
@@ -336,8 +337,12 @@ public class GeneralInfoPanel extends Panel {
     }
 
     private void addLocalLayoutInfo(FieldSetBorder infoBorder, LocalRepoDescriptor repoDescriptor, boolean itemIsRepo) {
-        LabeledValue localLayoutLabel = new LabeledValue("localLayout", "Repository Layout: ",
-                repoDescriptor.getRepoLayout().getName());
+        RepoLayout repoLayout = repoDescriptor.getRepoLayout();
+        String name = "";
+        if (repoLayout != null) {
+            name = repoLayout.getName();
+        }
+        LabeledValue localLayoutLabel = new LabeledValue("localLayout", "Repository Layout: ", name);
         localLayoutLabel.setVisible(itemIsRepo);
         infoBorder.add(localLayoutLabel);
     }

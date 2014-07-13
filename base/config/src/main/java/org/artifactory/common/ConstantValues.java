@@ -91,6 +91,7 @@ public enum ConstantValues {
             "artifactoryRequestsToGlobalCanRetrieveRemoteArtifacts", FALSE),
     uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000),
     pluginScriptsRefreshIntervalSecs("plugin.scripts.refreshIntervalSecs", 0),
+    aolPluginSupport("plugin.aol.support", FALSE),
     uiChroot("ui.chroot"),
     artifactoryLicenseDir("licenseDir"),
     fileRollerMaxFilesToRetain("file.roller.maxFileToRetain", 10),
@@ -109,7 +110,9 @@ public enum ConstantValues {
     hostId("host.id"),
     responseDisableContentDispositionFilename("response.disableContentDispositionFilename", FALSE),
     yumCalculationRequestAggregationTimeWindowSecs("yum.calculationRequest.aggregationTimeWindowSecs", 60),
+    debianCalculationRequestAggregationTimeWindowSecs("debian.calculationRequest.aggregationTimeWindowSecs", 60),
     yumCalculationRequestAggregationCycleSecs("yum.calculationRequest.aggregationCycleSecs", 60),
+    debianCalculationRequestAggregationCycleSecs("debian.calculationRequest.aggregationCycleSecs", 60),
     globalExcludes("repo.includeExclude.globalExcludes"),
     archiveLicenseFileNames("archive.licenseFile.names", "license,LICENSE,license.txt,LICENSE.txt,LICENSE.TXT"),
     uiSearchMaxRowsPerPage("ui.search.maxRowsPerPage", 20),
@@ -154,7 +157,10 @@ public enum ConstantValues {
     haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30),
     npmIndexQuietPeriodSecs("npm.index.quietPeriodSecs", 60),
     npmIndexCycleSecs("npm.index.cycleSecs", 60),
-    importMaxParallelRepos("import.max.parallelRepos", Runtime.getRuntime().availableProcessors() - 1);
+    importMaxParallelRepos("import.max.parallelRepos", Runtime.getRuntime().availableProcessors() - 1),
+    debianDistributionPath("debian.distribution.path", "dists"),
+    debianIndexQuietPeriodSecs("debian.index.quietPeriodSecs", 60),
+    debianIndexCycleSecs("debian.index.cycleSecs", 60);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

@@ -70,7 +70,8 @@ public abstract class StorageInterceptorAdapter implements StorageInterceptor {
     }
 
     @Override
-    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name,
+            String... values) {
     }
 
     @Override

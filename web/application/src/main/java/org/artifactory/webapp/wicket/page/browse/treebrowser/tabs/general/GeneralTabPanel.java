@@ -25,6 +25,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.repeater.RepeatingView;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.DebianWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
@@ -84,6 +85,13 @@ public class GeneralTabPanel extends Panel {
             if (!nuGetWebAddon.isDefault() && repoItem.getRepo().isEnableNuGetSupport()) {
                 distributionManagement.add(
                         nuGetWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
+                                repoItem.getRepoPath()));
+            }
+
+            DebianWebAddon debianWebAddon = addonsManager.addonByType(DebianWebAddon.class);
+            if (!debianWebAddon.isDefault() && repoItem.getRepo().isEnableDebianSupport()) {
+                distributionManagement.add(
+                        debianWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
                                 repoItem.getRepoPath()));
             }
 

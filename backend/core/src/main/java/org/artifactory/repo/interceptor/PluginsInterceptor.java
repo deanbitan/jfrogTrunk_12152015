@@ -94,7 +94,8 @@ public class PluginsInterceptor extends StorageInterceptorAdapter {
     }
 
     @Override
-    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name,
+            String... values) {
         getPluginsAddon().execPluginActions(AfterPropertyCreateAction.class, null, fsItem.getInfo(), name, values);
     }
 

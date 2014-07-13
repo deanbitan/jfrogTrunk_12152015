@@ -1,5 +1,6 @@
 package org.artifactory.storage.db.itest;
 
+import com.google.common.collect.Maps;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ArtifactoryRunningMode;
 import org.artifactory.addon.OssAddonsManager;
@@ -30,11 +31,17 @@ import java.util.concurrent.Semaphore;
  */
 public class DummyArtifactoryContext implements ArtifactoryContext {
     private ApplicationContext applicationContext;
+    private Map<Class<?>, Object> beans = Maps.newHashMap();
 
     public DummyArtifactoryContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 
+    public void addBean(Object bean, Class<?>... types) {
+        for (Class<?> type : types) {
+            beans.put(type, bean);
+        }
+    }
     @Override
     public CentralConfigService getCentralConfig() {
         return null;
@@ -51,6 +58,9 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         }
         if (type.equals(RepositoryService.class)) {
             return (T) Mockito.mock(RepositoryService.class);
+        }
+        if (beans.containsKey(type)) {
+            return (T) beans.get(type);
         }
         return applicationContext.getBean(type);
     }

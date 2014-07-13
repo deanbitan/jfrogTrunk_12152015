@@ -47,4 +47,5 @@ public interface LocalRepositoryConfiguration extends RepositoryConfiguration {
     boolean isCalculateYumMetadata();
 
     int getYumRootDepth();
+
 }

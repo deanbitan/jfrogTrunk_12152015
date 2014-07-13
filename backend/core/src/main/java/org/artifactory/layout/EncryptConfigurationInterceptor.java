@@ -30,6 +30,7 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
+import org.artifactory.descriptor.security.debian.DebianSettings;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
@@ -84,6 +85,13 @@ public class EncryptConfigurationInterceptor implements ConfigurationChangesInte
                 if (StringUtils.isNotBlank(newPassword)) {
                     search.setManagerPassword(newPassword);
                 }
+            }
+        }
+        DebianSettings debianSettings = security.getDebianSettings();
+        if (debianSettings != null) {
+            String newPassword = getNewPassword(encrypt, debianSettings.getPassphrase());
+            if (StringUtils.isNotBlank(newPassword)) {
+                debianSettings.setPassphrase(newPassword);
             }
         }
         CrowdSettings crowdSettings = security.getCrowdSettings();

@@ -46,6 +46,7 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.interceptor.ImportInterceptors;
+import org.artifactory.repo.interceptor.StorageAggregationInterceptors;
 import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.sapi.common.ImportSettings;
@@ -187,6 +188,8 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
     private void runPostImportCalculations(RepoPath rootRepoPath) {
         if (!repo.isCache()) {
             ContextHelper.get().beanForType(MavenMetadataService.class).calculateMavenMetadataAsync(rootRepoPath, true);
+            ContextHelper.get().beanForType(StorageAggregationInterceptors.class).afterRepoImport(
+                    rootRepoPath, progressAccumulator.getSuccessfulItemsCount(), status);
 
             LocalRepoDescriptor descriptor = repo.getDescriptor();
             if (descriptor.isCalculateYumMetadata()) {

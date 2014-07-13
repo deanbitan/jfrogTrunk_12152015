@@ -303,7 +303,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 // Let's check if in bin provider
                 if (getFirstBinaryProvider().exists(sha1, length)) {
                     // Good let's use it
-                    return insertRecordInDb(new BinaryData(sha1, md5, length));
+                    return insertRecordInDb(sha1, md5, length);
                 }
                 return null;
             }
@@ -316,18 +316,10 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Override
     @Nonnull
     public BinaryInfo addBinary(InputStream in) throws IOException {
+        InternalBinaryStore txMe = ContextHelper.get().beanForType(InternalBinaryStore.class);
         BinaryInfo result = null;
         if (in instanceof BinaryStoreInputStream) {
-            String sha1 = ((BinaryStoreInputStream) in).getSha1();
-            log.debug("Trying to use useBinary instead of addBinary for {}", sha1);
-            try {
-                BinaryData binData = binariesDao.load(sha1);
-                if (binData != null) {
-                    result = convertToBinaryInfo(binData);
-                }
-            } catch (SQLException e) {
-                throw new StorageException("Could check for sha1 " + sha1 + " existence!", e);
-            }
+            result = txMe.safeGetBinaryInfo((BinaryStoreInputStream) in);
         }
         if (result == null) {
             BinaryInfo bi = getFirstBinaryProvider().addStream(in);
@@ -336,7 +328,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             // So, failing on the insert in DB (because saving the file took to long)
             // can be re-tried based on the sha1
             try {
-                result = insertRecordInDb(convertToBinaryData(bi));
+                result = txMe.insertRecordInDb(bi.getSha1(), bi.getMd5(), bi.getLength());
             } catch (StorageException e) {
                 throw new BinaryInsertRetryException(bi, e);
             }
@@ -344,12 +336,24 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         return result;
     }
 
-    private BinaryInfo convertToBinaryInfo(BinaryData bd) {
-        return new BinaryInfoImpl(bd.getSha1(), bd.getMd5(), bd.getLength());
+    @Override
+    public BinaryInfo safeGetBinaryInfo(BinaryStoreInputStream in) {
+        BinaryInfo result = null;
+        String sha1 = in.getSha1();
+        log.debug("Trying to use useBinary instead of addBinary for {}", sha1);
+        try {
+            BinaryData binData = binariesDao.load(sha1);
+            if (binData != null) {
+                result = convertToBinaryInfo(binData);
+            }
+        } catch (SQLException e) {
+            throw new StorageException("Could check for sha1 " + sha1 + " existence!", e);
+        }
+        return result;
     }
 
-    private BinaryData convertToBinaryData(BinaryInfo bi) {
-        return new BinaryData(bi.getSha1(), bi.getMd5(), bi.getLength());
+    private BinaryInfo convertToBinaryInfo(BinaryData bd) {
+        return new BinaryInfoImpl(bd.getSha1(), bd.getMd5(), bd.getLength());
     }
 
     @Override
@@ -540,12 +544,13 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
     }
 
+    @Override
     @Nonnull
-    private BinaryInfo insertRecordInDb(BinaryData dataRecord) throws StorageException {
+    public BinaryInfo insertRecordInDb(String sha1, String md5, long length) throws StorageException {
+        BinaryData dataRecord = new BinaryData(sha1, md5, length);
         if (!dataRecord.isValid()) {
             throw new StorageException("Cannot insert invalid binary record: " + dataRecord);
         }
-        String sha1 = dataRecord.getSha1();
         try {
             boolean binaryExists = binariesDao.exists(sha1);
             if (!binaryExists) {

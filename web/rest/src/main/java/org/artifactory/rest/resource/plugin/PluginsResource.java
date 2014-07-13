@@ -19,6 +19,7 @@
 package org.artifactory.rest.resource.plugin;
 
 import com.google.common.collect.Maps;
+import com.sun.jersey.api.Responses;
 import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.ResponseCtx;
@@ -26,6 +27,7 @@ import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.resource.ResourceStreamHandle;
+import org.artifactory.rest.ErrorResponse;
 import org.artifactory.rest.common.list.KeyValueList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -47,7 +49,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
@@ -87,10 +91,10 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response execute(@Context Request request,
-            InputStream body,
-            @PathParam("executionName") String executionName,
-            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+                            InputStream body,
+                            @PathParam("executionName") String executionName,
+                            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+                            @QueryParam(PARAM_ASYNC) int async) throws Exception {
         Map<String, List<String>> params =
                 paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
         try (ResourceStreamHandle handle = new SimpleResourceStreamHandle(body)) {
@@ -112,10 +116,10 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response executePut(@Context Request request,
-            InputStream body,
-            @PathParam("executionName") String executionName,
-            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+                               InputStream body,
+                               @PathParam("executionName") String executionName,
+                               @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+                               @QueryParam(PARAM_ASYNC) int async) throws Exception {
         return execute(request, body, executionName, paramsList, async);
     }
 
@@ -123,8 +127,8 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response execute(@Context Request request, @PathParam("executionName") String executionName,
-            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+                            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+                            @QueryParam(PARAM_ASYNC) int async) throws Exception {
         Map<String, List<String>> params =
                 paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
         ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName,
@@ -141,8 +145,8 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response executeDelete(@Context Request request, @PathParam("executionName") String executionName,
-            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+                                  @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+                                  @QueryParam(PARAM_ASYNC) int async) throws Exception {
         return execute(request, executionName, paramsList, async);
     }
 
@@ -171,6 +175,20 @@ public class PluginsResource {
         ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).promote(promotionName, buildName,
                 buildNumber, params);
         return responseFromResponseCtx(responseCtx);
+    }
+
+    @PUT
+    @Path("{scriptName: .+}")
+    @Consumes({"text/x-groovy", TEXT_PLAIN})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deploy(Reader pluginScript, @PathParam("scriptName") String scriptName) {
+        ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).deployPlugin(pluginScript, scriptName);
+        if(responseCtx.getStatus() >= 400) {
+            ErrorResponse errorResponse = new ErrorResponse(responseCtx.getStatus(), responseCtx.getMessage());
+            return Responses.clientError().type(MediaType.APPLICATION_JSON).entity(errorResponse).build();
+        } else {
+            return responseFromResponseCtx(responseCtx);
+        }
     }
 
     private Response responseFromResponseCtx(ResponseCtx responseCtx) {

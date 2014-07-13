@@ -20,9 +20,13 @@ package org.artifactory.storage.binstore.service;
 
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
+import org.artifactory.storage.StorageException;
+import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collection;
@@ -50,6 +54,32 @@ public interface InternalBinaryStore extends BinaryStore {
      */
     @Nullable
     BinaryInfo addBinaryRecord(String sha1, String md5, long length) throws BinaryNotFoundException;
+
+    /**
+     * Find if there is a DB entry for the associated checksum.
+     * Open and close a DB TX specifically for this check.
+     *
+     * @param in the InputStream wrapper coming from Artifactory
+     * @return null if no entry in DB, the DB info is exists.
+     */
+    @Nullable
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    BinaryInfo safeGetBinaryInfo(BinaryStoreInputStream in);
+
+    /**
+     * Create the entry in DB for this binary if it does not exists already.
+     * Returns the actual entry created.
+     * Open and close a DB TX specifically for this.
+     *
+     * @param sha1
+     * @param md5
+     * @param length
+     * @return the actual entry in DB matching the inputs
+     * @throws StorageException
+     */
+    @Nonnull
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    BinaryInfo insertRecordInDb(String sha1, String md5, long length) throws StorageException;
 
     /**
      * Activate Garbage Collection for this binary store

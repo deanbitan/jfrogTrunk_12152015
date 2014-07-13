@@ -10,6 +10,7 @@ import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.model.xstream.fs.FileInfoImpl;
 import org.artifactory.model.xstream.fs.FolderInfoImpl;
 import org.artifactory.storage.binstore.service.BinaryStore;
+import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.util.PathValidator;
@@ -43,9 +44,14 @@ public class FileServiceSpecialCharsTest extends DbBaseTest {
 
     @BeforeClass
     void insertBinaryEntry() throws IOException {
-        // Create a dummy binary entry for testing file creation
-        BinaryInfo binaryInfo = binaryStore.addBinary(new ByteInputStream(new byte[]{1, 2, 3}, 3));
-        sha1 = binaryInfo.getSha1();
+        bindDummyContext();
+        try {
+            // Create a dummy binary entry for testing file creation
+            BinaryInfo binaryInfo = binaryStore.addBinary(new ByteInputStream(new byte[]{1, 2, 3}, 3));
+            sha1 = binaryInfo.getSha1();
+        } finally {
+            unbindDummyContext();
+        }
     }
 
     public void createFolderValidChars() {

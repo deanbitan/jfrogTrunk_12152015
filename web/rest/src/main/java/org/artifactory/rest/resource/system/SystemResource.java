@@ -102,6 +102,11 @@ public class SystemResource {
         return new StorageResource(storageService, backupService, binaryStore, httpResponse);
     }
 
+    @Path(SystemRestConstants.PATH_LICENSE)
+    public ArtifactoryLicenseResource getLicenseResource() {
+        return new ArtifactoryLicenseResource();
+    }
+
     @POST
     @Path(SystemRestConstants.PATH_ENCRYPT)
     @Produces(MediaType.TEXT_PLAIN)

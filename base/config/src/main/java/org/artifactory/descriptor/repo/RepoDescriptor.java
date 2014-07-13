@@ -63,4 +63,8 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     boolean isEnableGemsSupport();
 
     boolean isEnableNpmSupport();
+
+    boolean isEnableDebianSupport();
+
+
 }

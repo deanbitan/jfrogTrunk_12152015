@@ -45,6 +45,8 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enableNuGetSupport = false;
     private boolean enableGemsSupport = false;
     private boolean enableNpmSupport = false;
+    private boolean enableDebianSupport = false;
+    private boolean debianTrivialLayout = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -165,6 +167,24 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setEnableNpmSupport(boolean enableNpmSupport) {
         this.enableNpmSupport = enableNpmSupport;
+    }
+
+    public void setEnableDebianSupport(boolean enableDebianSupport) {
+        this.enableDebianSupport = enableDebianSupport;
+    }
+
+    @Override
+    public boolean isEnableDebianSupport() {
+        return enableDebianSupport;
+    }
+
+    @Override
+    public boolean isDebianTrivialLayout() {
+        return debianTrivialLayout;
+    }
+
+    public void setDebianTrivialLayout(boolean debianTrivialLayout) {
+        this.debianTrivialLayout = debianTrivialLayout;
     }
 
     /**

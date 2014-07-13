@@ -26,6 +26,7 @@ import org.artifactory.sapi.common.ImportSettings;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,11 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     @Override
     public ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params) {
         throw new UnsupportedOperationException("Build promotion actions require Artifactory Pro.");
+    }
+
+    @Override
+    public ResponseCtx deployPlugin(Reader pluginContent, String scriptName) {
+        throw new UnsupportedOperationException("Deploying User Plugins require Artifactory Pro.");
     }
 
     @Override

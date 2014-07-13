@@ -24,6 +24,9 @@ import org.artifactory.build.staging.BuildStagingStrategy;
 import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 
@@ -42,4 +45,6 @@ public interface PluginsAddon extends Addon, ImportableExportable {
     Map<String, List<PluginInfo>> getPluginInfo(@Nullable String pluginType);
 
     ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params);
+
+    ResponseCtx deployPlugin(Reader pluginContent, String scriptName);
 }

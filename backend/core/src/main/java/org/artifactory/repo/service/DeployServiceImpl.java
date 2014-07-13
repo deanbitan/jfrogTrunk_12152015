@@ -37,7 +37,6 @@ import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.UploadService;
-import org.artifactory.api.search.ArchiveIndexer;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.md.Properties;
@@ -76,18 +75,16 @@ public class DeployServiceImpl implements DeployService {
     private InternalRepositoryService repositoryService;
 
     @Autowired
-    private ArchiveIndexer archiveIndexer;
-
-    @Autowired
     private UploadService uploadService;
 
     @Autowired
     private MavenService mavenService;
 
     @Override
-    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file) throws RepoRejectException {
+    public void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File file, Properties properties)
+            throws RepoRejectException {
         String pomString = mavenService.getPomModelString(file);
-        deploy(targetRepo, artifactInfo, file, pomString, false, false, null);
+        deploy(targetRepo, artifactInfo, file, pomString, false, false, properties);
     }
 
     @Override

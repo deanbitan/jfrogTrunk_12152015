@@ -4257,6 +4257,10 @@ div.general-settings-panel input.text-file {
     background-image: url("images/icons/ICN-gem.gif");
 }
 
+.deb {
+    background-image: url("images/icons/ICN-deb.png");
+}
+
 .jcenterBintrayIcon {
     background: url("images/jcenter.gif") no-repeat;
     background-size: 48px 48px;
@@ -5663,6 +5667,10 @@ table.data-table td.add-value-row {
 
 .addon-ha {
     background: url(images/addons/16ha.png) no-repeat left top;
+}
+
+.addon-debian {
+    background: url(images/addons/16debian.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/

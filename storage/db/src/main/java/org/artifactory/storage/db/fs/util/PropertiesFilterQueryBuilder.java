@@ -35,8 +35,18 @@ public class PropertiesFilterQueryBuilder {
         this.propertiesFilter = propertiesFilter;
     }
 
+    public String createDistinctFirst() {
+        String query = "SELECT distinct p1.prop_value FROM nodes n <PROPERTIES_FILTER> <PATH_FILTER> ";
+        query = query.replace("<PATH_FILTER>", createPathFilter());
+        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1());
+        return query;
+    }
+
     public String createDistinctVersionQuery() {
-        propertiesFilter.addFirst("version");
+        String distinct = propertiesFilter.getDistinct();
+        if (StringUtils.isNotEmpty(distinct)) {
+            propertiesFilter.addFirst(distinct);
+        }
         String query = "SELECT distinct p1.prop_value FROM nodes n <PROPERTIES_FILTER> <PATH_FILTER> ";
         query = query.replace("<PATH_FILTER>", createPathFilter());
         query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1());
@@ -81,17 +91,17 @@ public class PropertiesFilterQueryBuilder {
             join.append(".node_id ");
             where.append(" AND ");
             where.append(indexValue);
-                where.append(".prop_key='");
+            where.append(".prop_key='");
             where.append(pair.getFirst());
             where.append("' ");
             String value = pair.getSecond();
             if (value != null) {
-                    where.append(" AND ");
-                    where.append(indexValue);
-                    where.append(".prop_value='");
-                    where.append(value);
-                    where.append("' ");
-                }
+                where.append(" AND ");
+                where.append(indexValue);
+                where.append(".prop_value='");
+                where.append(value);
+                where.append("' ");
+            }
         }
 
         total.append(join.toString());

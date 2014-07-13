@@ -112,7 +112,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
                 + " (" + tt + "ms).", log);
         BinaryProviderBase next = next();
         if (next instanceof FileBinaryProviderBase) {
-            ((FileBinaryProvider)next()).prune(statusHolder);
+            ((FileBinaryProvider) next()).prune(statusHolder);
         }
     }
 

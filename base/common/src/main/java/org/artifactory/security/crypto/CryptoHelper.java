@@ -320,7 +320,7 @@ public abstract class CryptoHelper {
         return keyFile;
     }
 
-    private static void checkPermissionsOnSecurityFolder(File securityFolder) throws IOException {
+    public static void checkPermissionsOnSecurityFolder(File securityFolder) throws IOException {
         if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
             Set<PosixFilePermission> filePermissions = Files.getPosixFilePermissions(securityFolder.toPath());
             if (filePermissions.contains(PosixFilePermission.GROUP_READ) || filePermissions.contains(

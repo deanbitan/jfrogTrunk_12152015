@@ -83,6 +83,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -969,6 +970,32 @@ public class SecurityServiceImpl implements InternalSecurityService {
     public boolean isDisableInternalPassword() {
         UserInfo simpleUser = currentUser();
         return simpleUser != null && MutableUserInfo.INVALID_PASSWORD.equals(simpleUser.getPassword());
+    }
+
+    @Override
+    public String currentUserEncryptedPassword(boolean escape) {
+        Authentication authentication = AuthenticationHelper.getAuthentication();
+        if ((authentication != null) && authentication.isAuthenticated()) {
+            String authUsername = ((UserDetails) authentication.getPrincipal()).getUsername();
+            String password = (String) authentication.getCredentials();
+            if (StringUtils.isNotBlank(password)) {
+                UserInfo user = userGroupStoreService.findUser(authUsername);
+                if (user == null) {
+                    log.warn("Can't return the encrypted password of the unfound user '{}'", authUsername);
+                } else {
+                    String encrypted = createEncryptedPasswordIfNeeded(user, password);
+                    if (!encrypted.equals(password)) {
+                        if (escape) {
+                            return CryptoHelper.needsEscaping(encrypted);
+                        } else {
+                            return encrypted;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private boolean hasPermissionOnRoot(String repoKey) {

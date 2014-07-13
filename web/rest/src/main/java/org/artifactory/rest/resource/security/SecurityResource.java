@@ -19,10 +19,15 @@
 package org.artifactory.rest.resource.security;
 
 import org.apache.commons.codec.CharEncoding;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.rest.constant.SecurityRestConstants;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.api.security.SecurityService;
+import org.artifactory.rest.common.exception.NotFoundException;
+import org.artifactory.rest.common.exception.RestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -51,7 +56,7 @@ import java.net.URLDecoder;
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @Path(SecurityRestConstants.PATH_ROOT)
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
+@RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class SecurityResource {
 
     private static final String ENTITY_TYPE = "entityType";
@@ -61,6 +66,12 @@ public class SecurityResource {
     @Autowired
     AddonsManager addonsManager;
 
+    @Autowired
+    AuthorizationService authorizationService;
+
+    @Autowired
+    SecurityService securityService;
+
     @Context
     private HttpServletRequest request;
 
@@ -68,6 +79,7 @@ public class SecurityResource {
     @Path("{" + ENTITY_TYPE + ": .+}")
     @Produces({SecurityRestConstants.MT_USERS, SecurityRestConstants.MT_GROUPS,
             SecurityRestConstants.MT_PERMISSION_TARGETS, MediaType.APPLICATION_JSON})
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response getSecurityEntities(@PathParam(ENTITY_TYPE) String entityType) throws UnsupportedEncodingException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return restAddon.getSecurityEntities(request, decodeEntityKey(entityType));
@@ -77,6 +89,7 @@ public class SecurityResource {
     @Path(INNER_PATH)
     @Produces({SecurityRestConstants.MT_USER, SecurityRestConstants.MT_GROUP,
             SecurityRestConstants.MT_PERMISSION_TARGET, MediaType.APPLICATION_JSON})
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response getSecurityEntity(@PathParam(ENTITY_TYPE) String entityType,
             @PathParam(ENTITY_KEY) String entityKey) throws UnsupportedEncodingException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
@@ -85,6 +98,7 @@ public class SecurityResource {
 
     @DELETE
     @Path(INNER_PATH)
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response deleteSecurityEntity(@PathParam(ENTITY_TYPE) String entityType,
             @PathParam(ENTITY_KEY) String entityKey) throws UnsupportedEncodingException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
@@ -95,6 +109,7 @@ public class SecurityResource {
     @Path(INNER_PATH)
     @Consumes({SecurityRestConstants.MT_USER, SecurityRestConstants.MT_GROUP,
             SecurityRestConstants.MT_PERMISSION_TARGET, MediaType.APPLICATION_JSON})
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response createOrReplaceSecurityEntity(@PathParam(ENTITY_TYPE) String entityType,
             @PathParam(ENTITY_KEY) String entityKey) throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
@@ -105,10 +120,27 @@ public class SecurityResource {
     @Path(INNER_PATH)
     @Consumes({SecurityRestConstants.MT_USER, SecurityRestConstants.MT_GROUP,
             SecurityRestConstants.MT_PERMISSION_TARGET, MediaType.APPLICATION_JSON})
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     public Response updateSecurityEntity(@PathParam(ENTITY_TYPE) String entityType,
             @PathParam(ENTITY_KEY) String entityKey) throws IOException {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         return restAddon.updateSecurityEntity(entityType, decodeEntityKey(entityKey), request);
+    }
+
+    @GET
+    @Path("encryptedPassword")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getEncryptedPassword() {
+        if (!securityService.isPasswordEncryptionEnabled()) {
+            throw new RestException(HttpStatus.SC_CONFLICT, "Server doesn't support encrypted passwords");
+        }
+
+        String encryptedPassword = authorizationService.currentUserEncryptedPassword(false);
+        if (StringUtils.isNotBlank(encryptedPassword)) {
+            return Response.ok(encryptedPassword).build();
+        }
+
+        throw new NotFoundException("User not found: " + authorizationService.currentUsername());
     }
 
     private String decodeEntityKey(String entityKey) throws UnsupportedEncodingException {

@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "LocalRepoType", propOrder = {"snapshotVersionBehavior", "checksumPolicyType", "calculateYumMetadata",
-        "yumRootDepth", "yumGroupFileNames"}, namespace = Descriptor.NS)
+        "yumRootDepth", "yumGroupFileNames", "debianTrivialLayout"}, namespace = Descriptor.NS)
 public class LocalRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(defaultValue = "unique", required = false)
@@ -34,10 +34,11 @@ public class LocalRepoDescriptor extends RealRepoDescriptor {
     private LocalRepoChecksumPolicyType checksumPolicyType = LocalRepoChecksumPolicyType.CLIENT;
 
     private boolean calculateYumMetadata;
-
     private int yumRootDepth;
 
     private String yumGroupFileNames;
+
+    private boolean debianTrivialLayout = false;
 
     public SnapshotVersionBehavior getSnapshotVersionBehavior() {
         return snapshotVersionBehavior;
@@ -87,5 +88,13 @@ public class LocalRepoDescriptor extends RealRepoDescriptor {
 
     public void setYumGroupFileNames(String yumGroupFileNames) {
         this.yumGroupFileNames = yumGroupFileNames;
+    }
+
+    public boolean isDebianTrivialLayout() {
+        return debianTrivialLayout;
+    }
+
+    public void setDebianTrivialLayout(boolean debianTrivialLayout) {
+        this.debianTrivialLayout = debianTrivialLayout;
     }
 }

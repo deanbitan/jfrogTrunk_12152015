@@ -92,7 +92,8 @@ public class StorageInterceptorsImpl extends Interceptors<StorageInterceptor> im
     }
 
     @Override
-    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name, String... values) {
+    public void afterPropertyCreate(VfsItem fsItem, MutableStatusHolder statusHolder, String name,
+            String... values) {
         for (StorageInterceptor storageInterceptor : this) {
             storageInterceptor.afterPropertyCreate(fsItem, statusHolder, name, values);
         }

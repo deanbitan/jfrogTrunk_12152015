@@ -45,7 +45,7 @@ public class MimeTypesVersionTest {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void findNonExistentVersion() {
         String fakeVersion = ResourceUtils.getResourceAsString("/org/artifactory/mime/version/mimetypes-v1.xml");
-        fakeVersion = fakeVersion.replace("version=\"1\"", "version=\"789456\"");
+        fakeVersion = fakeVersion.replace("version=\"1\"", "version=\"9789456\"");
         MimeTypesVersion.findVersion(fakeVersion);
     }
 

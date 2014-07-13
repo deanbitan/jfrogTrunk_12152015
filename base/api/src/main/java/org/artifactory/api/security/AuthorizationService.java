@@ -173,4 +173,10 @@ public interface AuthorizationService {
     boolean userHasPermissionsOnRepositoryRoot(String repoKey);
 
     boolean isDisableInternalPassword();
+
+    /**
+     * @return The current authentication user encrypted password if exists.
+     * @param escape Should the return password get escaped
+     */
+    String currentUserEncryptedPassword(boolean escape);
 }

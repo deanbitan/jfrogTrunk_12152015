@@ -26,8 +26,7 @@ import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.ArtifactoryRunningMode;
-import org.artifactory.addon.license.VerificationResult;
+import org.artifactory.addon.license.LicenseInstaller;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.wicket.WicketProperty;
@@ -43,18 +42,12 @@ import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.base.BasePage;
 
-import static org.artifactory.addon.license.VerificationResult.*;
-
 /**
  * Artifactory license key management panel.
  *
  * @author Yossi Shaul
  */
 public class LicensePanel extends TitledPanel {
-    private final String NOT_SUPPORT_FOR_SWITCHING_MODE_ON_RUNTIME = "Changing Artifactory mode to offline" +
-            " since Artifactory doesn't allow to switch its mode during run time. Please restart the server";
-    private final String SUCCESSFULLY_INSTALL = "The license has been successfully installed.";
-
     @SpringBean
     private CentralConfigService configService;
 
@@ -99,57 +92,44 @@ public class LicensePanel extends TitledPanel {
     TitledAjaxSubmitLink createSaveButton(Form form) {
         TitledAjaxSubmitLink saveButton = new TitledAjaxSubmitLink("save", "Save", form) {
             @Override
-            protected void onSubmit(AjaxRequestTarget target, Form form) {
-                ArtifactoryRunningMode oldRunningMode = addonsManager.getArtifactoryRunningMode();
-                VerificationResult result = addonsManager.installLicense(licenseKey);
-                ArtifactoryRunningMode newRunningMode = addonsManager.getArtifactoryRunningMode();
-                boolean sameMode = ArtifactoryRunningMode.sameMode(oldRunningMode, newRunningMode);
-                if (result == valid) {
-                    if (sameMode) {
-                        handleSuccessFullInstall();
-                    } else {
-                        String message = SUCCESSFULLY_INSTALL + " " + NOT_SUPPORT_FOR_SWITCHING_MODE_ON_RUNTIME;
-                        handleSwitchingToOffline(message, target);
+            protected void onSubmit(final AjaxRequestTarget target, Form form) {
+                LicenseInstaller.LicenseInstallCallback callback = new LicenseInstaller.LicenseInstallCallback() {
+                    @Override
+                    public void handleSuccess() {
+                        boolean success = stateManager.forceState(ArtifactoryServerState.RUNNING);
+                        rebuildSiteMap();
+                        if (success) {
+                            Session.get().info(LicenseInstaller.SUCCESSFULLY_INSTALL);
+                        } else {
+                            Session.get().warn(
+                                    LicenseInstaller.SUCCESSFULLY_INSTALL + " In order for the change will take place, please restart the server");
+                        }
                     }
-                } else if (error == result || converting == result || invalidKey == result) {
-                    handleError(target);
-                } else {
-                    String message = SUCCESSFULLY_INSTALL + result.showMassage();
-                    handleSwitchingToOffline(message, target);
-                }
-            }
 
-            private void handleSuccessFullInstall() {
-                boolean success = stateManager.forceState(ArtifactoryServerState.RUNNING);
-                rebuildSiteMap();
-                if (success) {
-                    Session.get().info(SUCCESSFULLY_INSTALL);
-                } else {
-                    Session.get().warn(
-                            SUCCESSFULLY_INSTALL + " In order for the change will take place, please restart the server");
-                }
-            }
+                    @Override
+                    public void switchOffline(String message) {
+                        stateManager.forceState(ArtifactoryServerState.OFFLINE);
+                        rebuildSiteMap();
+                        Session.get().warn(message);
+                        AjaxUtils.refreshFeedback(target);
+                    }
 
-            private void handleError(AjaxRequestTarget target) {
-                error("Failed to install license. An error occurred during the license installation.");
-                AjaxUtils.refreshFeedback(target);
-            }
+                    @Override
+                    public void handleError(String message) {
+                        error("Failed to install license. An error occurred during the license installation.");
+                        AjaxUtils.refreshFeedback(target);
+                    }
 
-            private void handleSwitchingToOffline(String message, AjaxRequestTarget target) {
-                stateManager.forceState(ArtifactoryServerState.OFFLINE);
-                rebuildSiteMap();
-                Session.get().warn(message);
-                AjaxUtils.refreshFeedback(target);
-            }
+                    private void rebuildSiteMap() {
+                        // rebuild the site map and refresh the whole page to reload the new site map
+                        ArtifactoryApplication.get().rebuildSiteMap();
+                        Class<? extends BasePage> redirectPage = authService.isAdmin() ? LicensePage.class :
+                                ArtifactoryApplication.get().getHomePage();
 
-
-            private void rebuildSiteMap() {
-                // rebuild the site map and refresh the whole page to reload the new site map
-                ArtifactoryApplication.get().rebuildSiteMap();
-                Class<? extends BasePage> redirectPage = authService.isAdmin() ? LicensePage.class :
-                        ArtifactoryApplication.get().getHomePage();
-
-                setResponsePage(redirectPage);
+                        setResponsePage(redirectPage);
+                    }
+                };
+                new LicenseInstaller().install(licenseKey, callback);
             }
         };
         form.add(new DefaultButtonBehavior(saveButton));

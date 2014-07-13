@@ -35,6 +35,7 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoResolver;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.mime.DebianNaming;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -52,6 +53,7 @@ import org.artifactory.request.RepoRequests;
 import org.artifactory.request.RequestContext;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,6 +93,13 @@ public class VirtualRepoDownloadStrategy {
             // for index files just return the result from the cache (we don't want to process it or to return index
             // from other repositories)
             RepoRequests.logToContext("Requested resource is a Maven index - returning the cached resource");
+            return cachedResource;
+        }
+        String fileName = PathUtils.getFileName(path);
+        if (cachedResource.isFound() && DebianNaming.isSupportedIndex(fileName)) {
+            // for index files just return the result from the cache (we don't want to process it or to return index
+            // from other repositories)
+            RepoRequests.logToContext("Requested resource is a Debian index - returning the cached resource");
             return cachedResource;
         }
 
@@ -181,7 +190,7 @@ public class VirtualRepoDownloadStrategy {
             boolean isSnapshotPath = mavenSnapshotPath || path.contains("[INTEGRATION]");
             if (artifactModuleInfo.isIntegration() || (!artifactModuleInfo.isValid() && isSnapshotPath)) {
                 RepoRequests.logToContext("Processing request as a snapshot resource (Module info validity = %s, " +
-                                "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
+                        "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
                         artifactModuleInfo.isValid(), artifactModuleInfo.isIntegration(), mavenSnapshotPath
                 );
                 result = processSnapshot(context, repoPath, repositories);
@@ -371,7 +380,7 @@ public class VirtualRepoDownloadStrategy {
                         (res.getLastModified() > latestRes.getLastModified());
 
                 RepoRequests.logToContext("Current found resource is the first candidate = %s, is an exact match " +
-                                "query while the former candidate isn't = %s, has later modified time than former = %s",
+                        "query while the former candidate isn't = %s, has later modified time than former = %s",
                         firstFoundResource, currentResourceIsAnExactMatchAndLatterFoundIsNot,
                         currentResourceWasModifiedLater
                 );

@@ -195,6 +195,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -219,7 +220,7 @@ import static org.artifactory.addon.AddonType.*;
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
-        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon {
+        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -777,7 +778,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public MenuNode getKeyPairMenuNode() {
-        return new DisabledAddonMenuNode("Key-Pairs", WEBSTART);
+        return new DisabledAddonMenuNode("Signing Management", WEBSTART);
     }
 
     @Override
@@ -966,6 +967,44 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public ITab getRpmInfoTab(String tabTitle, FileInfo fileInfo) {
         return new DisabledAddonTab(Model.of(tabTitle), AddonType.YUM);
+    }
+
+    @Override
+    public void createAndAddLocalRepoDebianSection(Form form, RepoDescriptor repoDescriptor) {
+        WebMarkupContainer calculationBorder = new WebMarkupContainer("debianSupportSection");
+        calculationBorder.setOutputMarkupId(true);
+        calculationBorder.add(new TitledBorderBehavior("fieldset-border", "Debian"));
+        calculationBorder.add(new DisabledAddonBehavior(AddonType.DEBIAN));
+        calculationBorder.add(new StyledCheckbox("enableDebianSupport").setTitle("Enable Debian Support")
+                .setEnabled(false));
+        calculationBorder.add(new SchemaHelpBubble("enableDebianSupport.help").setEnabled(false));
+        if (repoDescriptor instanceof LocalRepoDescriptor) {
+            Component debianTrivialLayout = new StyledCheckbox("debianTrivialLayout").setTitle(
+                    "Trivial Layout").setEnabled(false);
+            calculationBorder.add(debianTrivialLayout);
+            calculationBorder.add(new SchemaHelpBubble("debianTrivialLayout.help", "debianTrivialLayout"));
+            TitledAjaxSubmitLink runCalculationButton = new TitledAjaxSubmitLink("recalculateIndex",
+                    "Recalculate Index",
+                    form) {
+                @Override
+                protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                }
+            };
+            runCalculationButton.setEnabled(false);
+            calculationBorder.add(runCalculationButton).setEnabled(false);
+            runCalculationButton.setEnabled(false);
+        }
+        form.add(calculationBorder);
+    }
+
+    @Override
+    public WebMarkupContainer getGpgKeyStorePanel(String id) {
+        return new WebMarkupContainer(id);
+    }
+
+    @Nullable
+    public ITab getDebianInfoTab(String tabTitle, FileInfo fileInfo) {
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.DEBIAN);
     }
 
     @Override

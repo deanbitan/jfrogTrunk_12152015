@@ -59,6 +59,7 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.db.DbCacheRepo;
 import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.remote.browse.RemoteItem;
+import org.artifactory.repo.remote.interceptor.RemoteRepoInterceptor;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
@@ -88,6 +89,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -134,6 +136,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private boolean globalOfflineMode;
     private final HandleRefsTracker handleRefsTracker;
     private final ConcurrentMap<String, DownloadEntry> downloadsInTransit;
+    // List of interceptors for various download resolution points
+    private Collection<RemoteRepoInterceptor> interceptors;
 
     protected RemoteRepoBase(T descriptor, InternalRepositoryService repositoryService,
             boolean globalOfflineMode,
@@ -172,6 +176,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         logCacheInfo();
         // Clean the old repo not needed anymore
         oldRemoteRepo = null;
+        interceptors = ContextHelper.get().beansForType(RemoteRepoInterceptor.class).values();
     }
 
     @Override
@@ -581,6 +586,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                 RepoRequests.logToContext("Found no completed concurrent download - starting download");
                 cachedResource = doDownloadAndSave(requestContext, cachedResource, remoteResource);
             }
+            notifyInterceptorsOnAfterRemoteDownload(remoteResource);
         }
 
         boolean cachedExpiredAndNewerThanRemote = cachedExpiredAndNewerThanRemote(remoteResource, cachedResource);
@@ -594,6 +600,12 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         RepoRequests.logToContext("Returning the cached resource");
         //Return the cached result (the newly downloaded or already cached resource)
         return localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
+    }
+
+    protected void notifyInterceptorsOnAfterRemoteDownload(RepoResource remoteResource) {
+        for (RemoteRepoInterceptor interceptor : interceptors) {
+            interceptor.afterRemoteDownload(remoteResource);
+        }
     }
 
     // this is the actual download of the resource

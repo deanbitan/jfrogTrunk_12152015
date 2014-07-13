@@ -33,6 +33,7 @@ public class PropertiesFilter {
     private List<Pair<String, String>> properties = new ArrayList<>();
     private String path;
     private String repo;
+    private String distinct;
 
     public void setRepo(String repo) {
         this.repo = repo;
@@ -80,5 +81,13 @@ public class PropertiesFilter {
                 iterator.remove();
             }
         }
+    }
+
+    public String getDistinct() {
+        return distinct;
+    }
+
+    public void setDistinct(String distinct) {
+        this.distinct = distinct;
     }
 }

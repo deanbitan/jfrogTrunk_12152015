@@ -49,6 +49,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
+import java.io.Reader;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -262,6 +263,11 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     @Override
     public ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public ResponseCtx deployPlugin(Reader pluginContent, String scriptName) {
         throw new MissingRestAddonException();
     }
 

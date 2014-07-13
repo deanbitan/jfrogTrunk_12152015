@@ -45,8 +45,6 @@ public interface BinaryStore {
      * @throws BinaryNotFoundException If the checksum does not exists in this store
      */
     @Nonnull
-    //TODO: [by YS] NOT_SUPPORTED causes active tx to suspend/resume and create new connection every time. check why it is required
-    //@Transactional(propagation = Propagation.NOT_SUPPORTED)
     InputStream getBinary(String sha1) throws BinaryNotFoundException;
 
     /**
@@ -76,13 +74,17 @@ public interface BinaryStore {
      * Add the whole content of the input stream in the binary store and close the input stream.
      * If the checksum for the whole stream already exists, the existing entry will be used.
      * The reference string is used for the reference count of this binary store.
+     * Transitionally, the calling transaction will be suspended and all action on filesystem
+     * will be done without DB TX opened. Then when binary data will need insert normal TX will be
+     * done internally to this method call.
+     * The input stream will not be consumed if the type is coming from here and the checksum is known.
      *
      * @param in the stream with all the bytes for the binary store
      * @return The info object for this binary entry
      * @throws java.io.IOException if the bytes cannot be read from the stream or saved in binary store
      */
     @Nonnull
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     BinaryInfo addBinary(InputStream in) throws IOException;
 
     /**

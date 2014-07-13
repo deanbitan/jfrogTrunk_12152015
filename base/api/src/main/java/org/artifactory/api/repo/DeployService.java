@@ -27,6 +27,7 @@ import org.artifactory.md.Properties;
 import org.artifactory.sapi.common.Lock;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 
 /**
@@ -38,7 +39,8 @@ public interface DeployService {
 
     @Request
     @Lock
-    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy) throws RepoRejectException;
+    void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, @Nullable Properties properties)
+            throws RepoRejectException;
 
     @Request
     @Lock
