@@ -18,13 +18,37 @@
 
 package org.artifactory.repo.remote.interceptor;
 
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.repo.RepoPath;
 
 /**
  * @author Gidi Shabat
  */
 public interface RemoteRepoInterceptor {
+
     /**
+     * Called just before an attempt to download a resource from remote repository. All the interceptors must return
+     * true in order for the download to proceed.
+     *
+     * @param descriptor     The remote repository descriptor
+     * @param remoteRepoPath Repo path of the remote resource
+     * @return True if downloading the specified resource is allowed
+     */
+    boolean isRemoteDownloadAllowed(RemoteRepoDescriptor descriptor, RepoPath remoteRepoPath);
+
+    /**
+     * Called just before an attempt to list remote repository content. All the interceptors must return
+     * true in order list remote items.
+     *
+     * @param descriptor          The remote repository descriptor
+     * @param remoteDirectoryPath Path of the remote directory
+     * @return True if listing the remote repo is allowed
+     */
+    boolean isRemoteRepoListingAllowed(RemoteRepoDescriptor descriptor, String remoteDirectoryPath);
+
+    /**
+     * Called at the end of a successful remote download
      */
     void afterRemoteDownload(RepoResource remoteResource);
 }

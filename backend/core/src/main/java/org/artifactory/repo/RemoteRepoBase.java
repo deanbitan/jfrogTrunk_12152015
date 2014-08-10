@@ -90,6 +90,7 @@ import java.io.InputStream;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -334,6 +335,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
         //not found in local cache - try to get it from the remote repository
         if (!isOffline()) {
+            boolean remoteDownloadAllowed = isRemoteDownloadAllowed(repoPath);
+            if (!remoteDownloadAllowed) {
+                RepoRequests.logToContext("Remote resource not allowed based on one of the interceptors");
+                return new UnfoundRepoResource(repoPath,
+                        "Remote download of " + repoPath + " is not allowed by this repo");
+            }
+
             RepoResource remoteResource = getRemoteResource(context, repoPath, foundExpiredInCache);
             if (!remoteResource.isFound() && foundExpiredInCache) {
                 RepoRequests.logToContext("Resource doesn't exist remotely but is expired in the caches - " +
@@ -535,11 +543,17 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         boolean cachedNotFoundAndNotExpired = notFoundAndNotExpired(cachedResource);
         RepoRequests.logToContext("Resource isn't cached and isn't expired = %s", cachedNotFoundAndNotExpired);
 
+        RepoPath remoteRepoPath = remoteResource.getRepoPath();
+        boolean remoteDownloadAllowed = isRemoteDownloadAllowed(remoteRepoPath);
+        if (!remoteDownloadAllowed) {
+            RepoRequests.logToContext("Remote resource not allowed based on one of the interceptors");
+        }
+
         // Retrieve remote artifact conditionally
-        if (!offline && (forceExpiryCheck || foundExpiredResourceAndNewerRemote || cachedNotFoundAndNotExpired)) {
+        if (!offline && remoteDownloadAllowed &&
+                (forceExpiryCheck || foundExpiredResourceAndNewerRemote || cachedNotFoundAndNotExpired)) {
             // Check for security deploy rights
             RepoRequests.logToContext("Asserting valid deployment path");
-            RepoPath remoteRepoPath = remoteResource.getRepoPath();
             ValidDeployPathContext validDeployPathContext = new ValidDeployPathContext
                     .Builder(localCacheRepo, remoteRepoPath)
                     .contentLength(remoteResource.getInfo().getSize())
@@ -600,6 +614,28 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         RepoRequests.logToContext("Returning the cached resource");
         //Return the cached result (the newly downloaded or already cached resource)
         return localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
+    }
+
+    private boolean isRemoteDownloadAllowed(RepoPath remoteRepoPath) {
+        for (RemoteRepoInterceptor interceptor : interceptors) {
+            RemoteRepoDescriptor descriptor = getDescriptor();
+            if (!interceptor.isRemoteDownloadAllowed(descriptor, remoteRepoPath)) {
+                // one veto is enough to prevent the download
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isRemoteRepoListingAllowed(String remoteDirectoryPath) {
+        for (RemoteRepoInterceptor interceptor : interceptors) {
+            RemoteRepoDescriptor descriptor = getDescriptor();
+            if (!interceptor.isRemoteRepoListingAllowed(descriptor, remoteDirectoryPath)) {
+                // one veto is enough to prevent the download
+                return false;
+            }
+        }
+        return true;
     }
 
     protected void notifyInterceptorsOnAfterRemoteDownload(RepoResource remoteResource) {
@@ -912,6 +948,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Nonnull
     public List<RemoteItem> listRemoteResources(String directoryPath) throws IOException {
         assert !isOffline() : "Should never be called in offline mode";
+
+        if (!isRemoteRepoListingAllowed(directoryPath)) {
+            return Collections.emptyList();
+        }
+
         List<RemoteItem> cachedUrls = remoteResourceCache.get(directoryPath);
         if (CollectionUtils.notNullOrEmpty(cachedUrls)) {
             return cachedUrls;
