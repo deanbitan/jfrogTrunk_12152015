@@ -48,4 +48,8 @@ public interface RepositoryConfiguration {
     boolean isEnableDebianSupport();
 
     boolean isDebianTrivialLayout();
+
+    boolean isEnablePypiSupport();
+
+    boolean isEnableDockerSupport();
 }

@@ -25,7 +25,6 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.fs.HttpCacheAvoidableResource;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
@@ -175,11 +174,8 @@ public final class RequestResponseHelper {
             response.setContentLength(res.getSize());
         }
         setBasicHeaders(response, res, contentBrowsingDisabled(res));
-
-        if (res instanceof HttpCacheAvoidableResource) {
-            if (((HttpCacheAvoidableResource) res).avoidHttpCaching()) {
-                noCache(response);
-            }
+        if (res.isExpirable()) {
+            noCache(response);
         }
     }
 
@@ -213,9 +209,7 @@ public final class RequestResponseHelper {
     }
 
     private void noCache(ArtifactoryResponse response) {
-        response.setHeader("Expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Cache-Control", "no-cache, no-store");
+        response.setHeader("Cache-Control", "no-store");
     }
 
     private boolean isNotZipResource(RepoResource res) {

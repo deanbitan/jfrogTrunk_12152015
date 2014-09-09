@@ -117,7 +117,7 @@ abstract class SavedToFileInputStream extends FilterInputStream {
     }
 
     void verifyTempDeleted() {
-        if (tempFile != null && tempFile.exists()) {
+        if (tempFile.exists()) {
             log.debug("Deleting temp file file " + tempFile.getAbsolutePath());
             if (!tempFile.delete()) {
                 log.error("Could not delete temp file " + tempFile.getAbsolutePath());

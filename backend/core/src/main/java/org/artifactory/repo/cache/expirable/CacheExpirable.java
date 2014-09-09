@@ -23,7 +23,8 @@ import org.artifactory.repo.LocalCacheRepo;
 import java.io.Serializable;
 
 /**
- * Interface for classes that determine whether an artifact can expire when in a cache
+ * Interface for classes that determine whether an artifact can expire.
+ * Examples of expirable artifacts are calculated metadata, non-unique snapshots, filtered resources etc.
  *
  * @author Noam Y. Tenne
  */

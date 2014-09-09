@@ -52,7 +52,6 @@ public class ArtifactoryHome {
     private static final String ARTIFACTORY_CONFIG_IMPORT_FILE = "artifactory.config.import.xml";
     public static final String ARTIFACTORY_CONFIG_BOOTSTRAP_FILE = "artifactory.config.bootstrap.xml";
     public static final String ARTIFACTORY_SYSTEM_PROPERTIES_FILE = "artifactory.system.properties";
-    public static final String ARTIFACTORY_CONVERSION_LOCK_FILE = "artifactory.conversion.lock";
     public static final String ARTIFACTORY_PROPERTIES_FILE = "artifactory.properties";
     public static final String LOGBACK_CONFIG_FILE_NAME = "logback.xml";
     public static final String MIME_TYPES_FILE_NAME = "mimetypes.xml";
@@ -445,14 +444,6 @@ public class ArtifactoryHome {
                 getHomeArtifactoryPropertiesFile());
     }
 
-    public File getHomeConversionLockFile() {
-        return new File(dataDir, ARTIFACTORY_CONVERSION_LOCK_FILE);
-    }
-
-    public File getHaConversionLockFile() {
-        return new File(haDataDir, ARTIFACTORY_CONVERSION_LOCK_FILE);
-    }
-
     public File getArtifactorySystemPropertiesFile() {
         return new File(getHaAwareEtcDir(), ARTIFACTORY_SYSTEM_PROPERTIES_FILE);
     }
@@ -491,29 +482,13 @@ public class ArtifactoryHome {
         return new File(getEtcDir(), MIME_TYPES_FILE_NAME);
     }
 
-    public File getHaMimeTypesFile() {
-        return new File(getHaEtcFile(), MIME_TYPES_FILE_NAME);
-    }
-
     public File getHaAwareMimeTypesFile() {
         return new File(getHaAwareEtcDir(), MIME_TYPES_FILE_NAME);
-    }
-
-    public File getHaEtcFile() {
-        return haEtcDir;
     }
 
     private static void checkWritableDirectory(File dir) {
         if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
             String message = "Directory '" + dir.getAbsolutePath() + "' is not writable!";
-            System.out.println(ArtifactoryHome.class.getName() + " - Warning: " + message);
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    private static void checkReadableDirectory(File dir) {
-        if (!dir.exists() || !dir.isDirectory() || !dir.canRead()) {
-            String message = "Directory '" + dir.getAbsolutePath() + "' is not readable!";
             System.out.println(ArtifactoryHome.class.getName() + " - Warning: " + message);
             throw new IllegalArgumentException(message);
         }
@@ -537,10 +512,6 @@ public class ArtifactoryHome {
 
     public static void unbind() {
         current.remove();
-    }
-
-    public File getHaDataDir() {
-        return haDataDir;
     }
 
     public File getStoragePropertiesFile() {

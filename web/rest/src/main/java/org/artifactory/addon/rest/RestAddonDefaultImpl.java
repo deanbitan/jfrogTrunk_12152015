@@ -273,7 +273,7 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     @Override
     public ArtifactVersionsResult getArtifactVersions(String groupId, String artifactId, @Nullable String version,
-            @Nullable StringList reposToSearch, boolean remote) {
+            @Nullable StringList reposToSearch, boolean remote, boolean limitSearch) {
         throw new MissingRestAddonException();
     }
 

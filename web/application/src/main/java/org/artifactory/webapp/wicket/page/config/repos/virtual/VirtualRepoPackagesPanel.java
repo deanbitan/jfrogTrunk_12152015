@@ -26,6 +26,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
+import org.artifactory.addon.wicket.PypiWebAddon;
 import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
@@ -52,5 +53,7 @@ public class VirtualRepoPackagesPanel extends Panel {
                 buildPackagesConfigSection("gemsSupportSection", descriptor, form));
 
         addonsManager.addonByType(NpmWebAddon.class).createAndAddRepoConfigNpmSection(form, descriptor, isCreate);
+
+        addonsManager.addonByType(PypiWebAddon.class).createAndAddPypiConfigSection(form, descriptor, isCreate);
     }
 }

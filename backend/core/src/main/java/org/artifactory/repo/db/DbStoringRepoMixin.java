@@ -414,6 +414,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
             if ((mdResource instanceof FileResource) && MavenNaming.isSnapshotMavenMetadata(path)) {
                 mdResource = resolveMavenMetadataForCompatibility(((FileResource) mdResource), context);
             }
+            mdResource.expirable();
             return mdResource;
         }
 

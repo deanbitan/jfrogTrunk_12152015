@@ -138,6 +138,11 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isEnablePypiSupport() {
+        return remoteRepo.isEnablePypiSupport();
+    }
+
+    @Override
     public boolean isArchiveBrowsingEnabled() {
         return remoteRepo.isArchiveBrowsingEnabled();
     }

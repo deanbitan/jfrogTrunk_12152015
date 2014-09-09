@@ -23,6 +23,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.storage.BinariesInfo;
@@ -115,8 +116,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         BinaryProviderType binaryProviderName = storageProperties.getBinariesStorageType();
         switch (binaryProviderName) {
             case filesystem:
-                fileBinaryProvider = new FileBinaryProviderImpl(ArtifactoryHome.get().getHaAwareDataDir(),
-                        storageProperties);
+                fileBinaryProvider = createFilesystemBinaryProvider();
                 binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
                 break;
             case cachedFS:
@@ -127,7 +127,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 } else {
                     throw new IllegalStateException("Binary provider typed cachedFS cannot have a zero cached size!");
                 }
-                binaryProviders.add(new FileBinaryProviderImpl(ArtifactoryHome.get().getDataDir(), storageProperties));
+                binaryProviders.add((BinaryProviderBase) createFilesystemBinaryProvider());
                 break;
             case fullDb:
                 if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {
@@ -142,13 +142,25 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         if (storageProperties.getBinaryProviderExternalDir() != null) {
             if (storageProperties.getBinaryProviderExternalMode() != null) {
-                binaryProviders.add(new ExternalWrapperBinaryProviderImpl(getBinariesDir(),
+                binaryProviders.add(new ExternalWrapperBinaryProviderImpl(fileBinaryProvider.getBinariesDir(),
                         storageProperties.getBinaryProviderExternalMode()));
             }
             binaryProviders.add(
                     new ExternalFileBinaryProviderImpl(new File(storageProperties.getBinaryProviderExternalDir())));
         }
         setBinaryProvidersContext(binaryProviders);
+    }
+
+    private FileBinaryProvider createFilesystemBinaryProvider() {
+        FileBinaryProvider provider;
+        if (StringUtils.isBlank(storageProperties.getBinaryProviderFilesystemSecondDir())) {
+            provider = new FileBinaryProviderImpl(
+                    ArtifactoryHome.get().getHaAwareDataDir(), storageProperties);
+        } else {
+            provider = new DoubleFileBinaryProviderImpl(
+                    ArtifactoryHome.get().getHaAwareDataDir(), storageProperties);
+        }
+        return provider;
     }
 
     @Override

@@ -30,6 +30,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.SecureRandom;
+import java.util.Random;
 
 /**
  * Date: 12/16/12
@@ -40,21 +42,26 @@ import java.io.InputStream;
 public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderReadOnlyBase.class);
 
+    protected final Random random;
     protected final File binariesDir;
     protected final File tempBinariesDir;
 
     public FileBinaryProviderReadOnlyBase(File binariesDir) {
         // Main filestore directory
         this.binariesDir = binariesDir;
-        if (!this.binariesDir.exists() && !this.binariesDir.mkdirs()) {
-            throw new StorageException("Could not create file store folder: " + binariesDir.getAbsolutePath());
-        }
-
         // folder for temporary binaries before moving to the permanent location
         this.tempBinariesDir = new File(binariesDir, "_pre");
+        verifyState(binariesDir);
+        this.random = new SecureRandom(tempBinariesDir.getAbsolutePath().getBytes());
+    }
+
+    protected void verifyState(File binariesDir) {
+        if (!this.binariesDir.exists() && !this.binariesDir.mkdirs()) {
+            throw new StorageException("Could not create file store folder '" + binariesDir.getAbsolutePath() + "'");
+        }
         if (!tempBinariesDir.exists() && !tempBinariesDir.mkdirs()) {
-            throw new StorageException("Could not create temporary pre store folder: " +
-                    tempBinariesDir.getAbsolutePath());
+            throw new StorageException("Could not create temporary pre store folder '" +
+                    tempBinariesDir.getAbsolutePath() + "'");
         }
     }
 
@@ -99,11 +106,17 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
             log.trace("File found: {}", file.getAbsolutePath());
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
-            throw new BinaryNotFoundException("Couldn't access file '" + file.getAbsolutePath(), e);
+            throw new BinaryNotFoundException("Couldn't access file '" + file.getAbsolutePath() + "'", e);
         }
     }
 
     protected File createTempBinFile() throws IOException {
-        return File.createTempFile("dbRecord", null, tempBinariesDir);
+        long n = random.nextLong();
+        if (n == Long.MIN_VALUE) {
+            n = 0;      // corner case
+        } else {
+            n = Math.abs(n);
+        }
+        return new File(tempBinariesDir, "dbRecord" + n + ".bin");
     }
 }

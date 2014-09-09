@@ -29,7 +29,8 @@ import javax.xml.bind.annotation.XmlType;
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "assumedOfflinePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
-        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget", "p2OriginalUrl"}, namespace = Descriptor.NS)
+        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget", "pypi", "p2OriginalUrl"},
+        namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     @XmlElement(required = true)
@@ -88,6 +89,8 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     private String p2OriginalUrl;
 
     private NuGetConfiguration nuget;
+
+    private PypiConfiguration pypi;
 
     public String getUrl() {
         return url;
@@ -265,5 +268,13 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
             return false;
         }
         return true;
+    }
+
+    public PypiConfiguration getPypi() {
+        return pypi;
+    }
+
+    public void setPypi(PypiConfiguration pypi) {
+        this.pypi = pypi;
     }
 }

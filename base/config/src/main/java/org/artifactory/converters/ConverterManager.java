@@ -7,7 +7,9 @@ public interface ConverterManager {
 
     void serviceConvert(ArtifactoryConverter artifactoryConverter);
 
-    void conversionFinished();
+    void afterAllInits();
+
+    void afterContextReady();
 
     boolean isConverting();
 }

@@ -13,6 +13,7 @@ import org.artifactory.version.ArtifactoryVersion;
 import org.joda.time.DateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.Assert;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,7 +55,8 @@ public class ConvertersManagerTestHelper {
         ((VersionProviderImpl) artifactoryContext.getVersionProvider()).loadDbVersion();
         MockHomeConverter artifactoryConverter = new MockHomeConverter(dbHomeTestFile);
         convertersManager.serviceConvert(artifactoryConverter);
-        convertersManager.conversionFinished();
+        convertersManager.afterAllInits();
+        convertersManager.afterContextReady();
         return artifactoryContext;
     }
 
@@ -95,35 +97,40 @@ public class ConvertersManagerTestHelper {
 
     public static void createHomeEnvironment(ArtifactoryVersion homeVersion, ArtifactoryVersion clusterVersion)
             throws IOException {
-        FileUtils.deleteDirectory(new File(home + ".artifactory"));
-        FileUtils.deleteDirectory(new File(home + ".artifactory-ha"));
-        FileUtils.deleteDirectory(new File(home + ".history"));
-        new File(home).mkdir();
-        new File(home + ".artifactory").mkdir();
-        new File(home + ".artifactory-ha").mkdir();
-        new File(home + ".history").mkdir();
-        new File(home + ".artifactory-ha/ha-data").mkdir();
-        new File(home + ".artifactory-ha/ha-etc").mkdir();
+        File homeDir = new File(home);
+        File artDir = new File(homeDir, ".artifactory");
+        File artHa = new File(homeDir, ".artifactory-ha");
+
+        FileUtils.deleteDirectory(artDir);
+        FileUtils.deleteDirectory(artHa);
+        FileUtils.deleteDirectory(new File(homeDir, ".history"));
+
+        homeDir.mkdir();
+        Assert.assertTrue(artDir.mkdir());
+        Assert.assertTrue(artHa.mkdir());
+        Assert.assertTrue(new File(homeDir, ".history").mkdir());
+        Assert.assertTrue(new File(artHa, "ha-data").mkdir());
+        Assert.assertTrue(new File(artHa, "ha-etc").mkdir());
         if (homeVersion != null) {
-            new File(home + ".artifactory/data").mkdir();
-            new File(home + ".artifactory/etc").mkdir();
+            File dataDir = new File(artDir, "data");
+            File etcDir = new File(artDir, "etc");
+            Assert.assertTrue(dataDir.mkdir());
+            Assert.assertTrue(etcDir.mkdir());
             Properties artifactoryProperties = createArtifactoryProperties(homeVersion);
             String basePath = "/converters/templates/home/" + homeVersion.getValue();
             Properties haNodeProperties = createHaNodeProperties();
-            try (FileOutputStream out = new FileOutputStream(
-                    home + ".artifactory/data/" + ARTIFACTORY_PROPERTIES_FILE)) {
+            try (FileOutputStream out = new FileOutputStream(new File(dataDir, ARTIFACTORY_PROPERTIES_FILE))) {
                 artifactoryProperties.store(out, "");
             }
-            try (FileOutputStream out = new FileOutputStream(
-                    home + ".artifactory/etc/" + ARTIFACTORY_HA_NODE_PROPERTIES_FILE)) {
+            try (FileOutputStream out = new FileOutputStream(new File(etcDir, ARTIFACTORY_HA_NODE_PROPERTIES_FILE))) {
                 haNodeProperties.store(out, "");
             }
             if (!homeVersion.isCurrent()) {
                 String logbackValue = ResourceUtils.getResourceAsString(basePath + "/" + LOGBACK_CONFIG_FILE_NAME);
                 String mimetypesValue = ResourceUtils.getResourceAsString(basePath + "/" + MIME_TYPES_FILE_NAME);
                 // HOME
-                FileUtils.write(new File(home + ".artifactory/etc/" + LOGBACK_CONFIG_FILE_NAME), logbackValue);
-                FileUtils.write(new File(home + ".artifactory/etc/" + MIME_TYPES_FILE_NAME), mimetypesValue);
+                FileUtils.write(new File(etcDir, LOGBACK_CONFIG_FILE_NAME), logbackValue);
+                FileUtils.write(new File(etcDir, MIME_TYPES_FILE_NAME), mimetypesValue);
             }
         }
         if (clusterVersion != null) {
@@ -152,7 +159,8 @@ public class ConvertersManagerTestHelper {
         properties.put(HaNodeProperties.PROP_CLUSTER_HOME,
                 System.getProperties().get("user.dir") + "/" + home + ".artifactory-ha");
         properties.put(HaNodeProperties.PROP_CONTEXT_URL, "localhost");
-        properties.put(HaNodeProperties.PROP_PRIMARY, "false");
+        // TODO: Test block when conf as slave
+        properties.put(HaNodeProperties.PROP_PRIMARY, "true");
         return properties;
     }
 

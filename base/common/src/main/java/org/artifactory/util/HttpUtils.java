@@ -49,7 +49,6 @@ import java.net.MalformedURLException;
 import java.rmi.dgc.VMID;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.zip.GZIPInputStream;
 
 /**
  * @author yoavl
@@ -232,25 +231,13 @@ public abstract class HttpUtils {
     }
 
     /**
-     * Returns a gzip aware input stream from the response.
-     *
-     * @param response The method to read the response from
-     * @return Returns a gzip aware input stream
+     * @param response The response to get the body from
+     * @return Returns the response body input stream or null is there is none.
      */
     @Nullable
-    public static InputStream getGzipAwareResponseStream(HttpResponse response) throws IOException {
+    public static InputStream getResponseBody(HttpResponse response) throws IOException {
         HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            return null;
-        }
-        InputStream is = entity.getContent();
-        Header[] contentEncodings = response.getHeaders(HttpHeaders.CONTENT_ENCODING);
-        for (org.apache.http.Header contentEncoding : contentEncodings) {
-            if ("gzip".equalsIgnoreCase(contentEncoding.getValue())) {
-                return new GZIPInputStream(is);
-            }
-        }
-        return is;
+        return entity == null ? null : entity.getContent();
     }
 
     public static String encodeQuery(String unescaped) {

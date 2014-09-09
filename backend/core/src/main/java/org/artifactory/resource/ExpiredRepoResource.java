@@ -101,6 +101,15 @@ public class ExpiredRepoResource implements RepoResource, UnfoundRepoResourceRea
     }
 
     @Override
+    public boolean isExpirable() {
+        return true;
+    }
+
+    @Override
+    public void expirable() {
+    }
+
+    @Override
     public String toString() {
         return wrappedResource.getRepoPath().toString();
     }

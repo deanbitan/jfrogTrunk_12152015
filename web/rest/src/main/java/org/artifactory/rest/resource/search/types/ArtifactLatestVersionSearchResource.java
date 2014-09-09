@@ -59,7 +59,7 @@ public class ArtifactLatestVersionSearchResource {
         try {
             boolean useRemote = remote == 1;
             ArtifactVersionsResult artifactVersions = restAddon.getArtifactVersions(
-                    groupId, artifactId, version, reposToSearch, useRemote);
+                    groupId, artifactId, version, reposToSearch, useRemote, false);
             List<VersionEntry> results = artifactVersions.getResults();
 
             if (results.isEmpty()) {

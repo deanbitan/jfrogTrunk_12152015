@@ -169,6 +169,10 @@ public class ExternalWrapperBinaryProviderImpl extends FileBinaryProviderReadOnl
                 }
             }
             moveTempFileTo(finalFile);
+            if (somethingWrong != null) {
+                log.error("Something went wrong saving the temp copy on read file!", somethingWrong);
+                return true;
+            }
             return true;
         }
     }

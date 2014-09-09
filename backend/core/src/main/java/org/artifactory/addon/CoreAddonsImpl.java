@@ -67,6 +67,8 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.remote.browse.HttpExecutor;
+import org.artifactory.repo.remote.browse.RemoteRepositoryBrowser;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.service.mover.MoverConfig;
 import org.artifactory.repo.virtual.VirtualRepo;
@@ -118,7 +120,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon, NpmAddon, DebianAddon {
+        GemsAddon, HaAddon, NpmAddon, DebianAddon, PypiAddon, DockerAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -406,7 +408,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password) {
+    public void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password, boolean delayed) {
     }
 
     @Override
@@ -587,6 +589,16 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void removeNpmPackage(FileInfo info) {
+
+    }
+
+    @Override
+    public RemoteRepositoryBrowser getRemoteBrowser(HttpExecutor executor) {
+        return null;
+    }
+
+    @Override
+    public void reindex(LocalRepoDescriptor descriptor, boolean async) {
 
     }
 }

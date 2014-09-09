@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.5"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.5"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.6"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.6"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -463,6 +463,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="enablePypiSupport" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable Python Package Index (PyPI) support for this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enableDockerSupport" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable Docker support for this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -710,6 +724,13 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="pypi" type="PypiConfigurationType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Proxy and cache NuGet libraries from the remote repository.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                     <xs:element name="p2OriginalUrl" type="xs:string" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
@@ -829,6 +850,31 @@
                         For example, the NuGet Gallery download URL is 'https://nuget.org/api/v2/package', so the repository
                         URL should be configured as 'https://nuget.org' and the download context path should be configured
                         as 'api/v2/package'.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PypiConfigurationType">
+        <xs:sequence>
+            <xs:element name="indexContextPath" type="xs:string" default="simple/" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path to the remote server's simple index.
+                        For example, for 'https://pypi.python.org/' it is 'simple/'
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="packagesContextPath" type="xs:string" default="packages/" minOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        The context path to where packages are stored at the remote server.
+                        For example, for 'https://pypi.python.org/' it is 'packages/'
                         ]]>
                     </xs:documentation>
                 </xs:annotation>

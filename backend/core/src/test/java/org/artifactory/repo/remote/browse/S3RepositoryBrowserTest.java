@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.remote.browse;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -31,6 +33,8 @@ import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.StringInputStream;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -54,6 +58,12 @@ import static org.testng.Assert.*;
  */
 @Test
 public class S3RepositoryBrowserTest {
+    private static final Logger log = LoggerFactory.getLogger(S3RepositoryBrowserTest.class);
+
+    static {
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        lc.getLogger(S3RepositoryBrowserTest.class).setLevel(Level.INFO);
+    }
 
     private SimpleMockServer server;
     private CloseableHttpClient client;
@@ -174,6 +184,7 @@ public class S3RepositoryBrowserTest {
         HttpExecutor httpExecutor = new HttpExecutor() {
             @Override
             public CloseableHttpResponse executeMethod(HttpRequestBase method) throws IOException {
+                log.info("Executing " + method.getURI() + " on dummy S3 repo!");
                 return client.execute(method);
             }
         };

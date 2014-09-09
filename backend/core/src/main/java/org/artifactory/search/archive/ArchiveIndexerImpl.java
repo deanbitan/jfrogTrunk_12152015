@@ -32,9 +32,9 @@ import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.model.xstream.fs.ZipEntryImpl;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
 import org.artifactory.repo.service.ImportJob;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -213,6 +213,7 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer {
     @Override
     public void markArchiveForIndexing(RepoPath repoPath) {
         if (!isIndexSupported(repoPath)) {
+            log.debug("Archive indexing is not supported for path '{}'", repoPath);
             return;
         }
 
@@ -230,7 +231,8 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer {
         if (indexAllRepos) {
             List<LocalRepoDescriptor> localRepos = repoService.getLocalAndCachedRepoDescriptors();
             for (LocalRepoDescriptor localRepo : localRepos) {
-                toIndex.add(InternalRepoPathFactory.repoRootPath(localRepo.getKey()));
+                // either root of all repos or relative path on each repo if provided
+                toIndex.add(RepoPathFactory.create(localRepo.getKey(), baseRepoPath.getPath()));
             }
         } else {
             toIndex.add(baseRepoPath);

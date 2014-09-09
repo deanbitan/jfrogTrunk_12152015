@@ -32,14 +32,14 @@ public interface RepoResource extends Serializable {
 
     /**
      * @return The resource repository path. This path might be virtual and is usually represent the path from the
-     *         request.
+     * request.
      */
     RepoPath getRepoPath();
 
     /**
      * @return The actual repo path the resource came from. Might be different from the request repo path. For example
-     *         when a request is made on a virtual repository, the response repo path should point to the actual
-     *         repository containing this resource.
+     * when a request is made on a virtual repository, the response repo path should point to the actual
+     * repository containing this resource.
      */
     RepoPath getResponseRepoPath();
 
@@ -62,4 +62,17 @@ public interface RepoResource extends Serializable {
     long getLastModified();
 
     String getMimeType();
+
+    /**
+     * Returns true if this resource represents a resource which might get expired (metadata, properties, non-unique
+     * snapshots etc.). Expirable resources should prevent or limit http caching.
+     *
+     * @return True if this resource is expirable
+     */
+    boolean isExpirable();
+
+    /**
+     * Sets this resource as expirable to indicate how http caches should cache this resource.
+     */
+    void expirable();
 }

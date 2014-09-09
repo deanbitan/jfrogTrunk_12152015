@@ -392,7 +392,9 @@ public class ArtifactResource {
     private Response preparePropertiesXmlResponse() throws IOException {
         Properties properties = resolveProperties();
         if (properties != null && !properties.isEmpty()) {
-            return okResponse(properties, MediaType.APPLICATION_XML);
+            return Response.ok(properties, MediaType.APPLICATION_XML)
+                    .header(org.apache.http.HttpHeaders.CACHE_CONTROL, "no-store")
+                    .build();
         }
         throw new NotFoundException("No properties could be found.");
     }

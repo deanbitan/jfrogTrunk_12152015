@@ -35,6 +35,7 @@ public class RemoteRepoResource implements RepoResource {
 
     private final MutableRepoResourceInfo info;
     private RepoPath responseRepoPath;
+    private boolean expirable;
 
     public RemoteRepoResource(RepoPath repoPath, long lastModified, long size, Set<ChecksumInfo> checksums) {
         if (NamingUtils.isMetadata(repoPath.getPath())) {
@@ -106,6 +107,16 @@ public class RemoteRepoResource implements RepoResource {
     @Override
     public String getMimeType() {
         return NamingUtils.getMimeType(getRepoPath().getPath()).getType();
+    }
+
+    @Override
+    public boolean isExpirable() {
+        return expirable;
+    }
+
+    @Override
+    public void expirable() {
+        expirable = true;
     }
 
     @Override

@@ -63,7 +63,7 @@ public abstract class DbItemInfoProxy implements ItemInfo {
 
     @Override
     public boolean isFolder() {
-        return getMaterialized().isFolder();
+        return nodePath.isFolder();
     }
 
     @Override

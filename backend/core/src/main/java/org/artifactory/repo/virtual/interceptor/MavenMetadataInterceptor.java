@@ -187,6 +187,9 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
         MutableMetadataInfo metadataInfo = InfoFactoryHolder.get().createMetadata(mavenMetadataRepoPath);
         metadataInfo.setLastModified(mergedMavenMetadata.getLastModified());
         metadataInfo.setSize(metadataContent.length());
-        return new ResolvedResource(new MetadataResource(metadataInfo), metadataContent);
+        MetadataResource wrappedResource = new MetadataResource(metadataInfo);
+        ResolvedResource resolvedResource = new ResolvedResource(wrappedResource, metadataContent);
+        resolvedResource.expirable();
+        return resolvedResource;
     }
 }

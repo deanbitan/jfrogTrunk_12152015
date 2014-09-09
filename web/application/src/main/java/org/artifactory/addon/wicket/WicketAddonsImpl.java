@@ -220,7 +220,9 @@ import static org.artifactory.addon.AddonType.*;
 public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, PropertiesWebAddon, SearchAddon,
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
-        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon {
+        P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
+        PypiWebAddon,
+        DockerWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Override
@@ -1174,6 +1176,59 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public ITab getNpmInfoTab(String tabTitle, FileInfo fileInfo) {
         return new DisabledAddonTab(Model.of(tabTitle), AddonType.NPM);
+    }
+
+    @Override
+    public void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor) {
+        WebMarkupContainer dockerSection = new WebMarkupContainer("dockerSupportSection");
+        dockerSection.add(new TitledBorderBehavior("fieldset-border", "Docker"));
+        dockerSection.add(new DisabledAddonBehavior(AddonType.DOCKER));
+        dockerSection.add(
+                new StyledCheckbox("enableDockerSupport").setTitle("Enable Docker Support").setEnabled(false));
+        dockerSection.add(new SchemaHelpBubble("enableDockerSupport.help"));
+        Label label = new Label("dockerRepoUrlLabel", "");
+        label.setVisible(false);
+        dockerSection.add(label);
+        form.add(dockerSection);
+    }
+
+    @Override
+    public ITab getDockerInfoTab(String tabTitle, FileInfo fileInfo) {
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.DOCKER);
+    }
+
+    @Override
+    public ITab getDockerAncestryTab(String tabTitle, FileInfo fileInfo) {
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.DOCKER);
+    }
+
+    @Override
+    public void createAndAddPypiConfigSection(Form form, RepoDescriptor repo, boolean isCreate) {
+        WebMarkupContainer section = new WebMarkupContainer("pypiSupportSection");
+        section.add(new TitledBorderBehavior("fieldset-border", "PyPI"));
+        section.add(new DisabledAddonBehavior(AddonType.PYPI));
+        StyledCheckbox enablePypiSupport = new StyledCheckbox("enablePypiSupport");
+        enablePypiSupport.setEnabled(false);
+        section.add(enablePypiSupport.setTitle("Enable PyPI Support").setOutputMarkupId(true));
+        section.add(new SchemaHelpBubble("enablePypiSupport.help"));
+        section.add(new Label("pypiRepoUrlLabel", "").setVisible(false));
+        if (repo instanceof LocalRepoDescriptor) {
+            section.add(new TitledAjaxSubmitLink("recalculateIndex", "Recalculate Index", form) {
+                @Override
+                protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+                }
+            }).setEnabled(false);
+        }
+    }
+
+    @Override
+    public ITab createPypiPackageInfoTab(String title, RepoPath packagePath) {
+        return new DisabledAddonTab(Model.of(title), AddonType.PYPI);
+    }
+
+    @Override
+    public boolean isPypiFile(FileInfo fileInfo) {
+        return false;
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

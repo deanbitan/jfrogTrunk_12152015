@@ -102,8 +102,9 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
             BinaryInfo bi = next().addStream(savedToFile);
             savedToFile.close();
             if (savedToFile.somethingWrong != null) {
-                throw new IOException("Something went wrong saving the cached file "
-                        + savedToFile.getTempFile(), savedToFile.somethingWrong);
+                throw new IOException(
+                        "Something went wrong saving '" + savedToFile.getTempFile().getAbsolutePath() + "'",
+                        savedToFile.somethingWrong);
             }
 
             File cachedFile = getFile(bi.getSha1());

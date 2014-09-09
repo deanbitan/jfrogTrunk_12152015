@@ -61,8 +61,7 @@ public abstract class DownloadButton extends TitledLink {
         IResourceStream resourceStream = getResourceStream();
         RequestCycle requestCycle = getRequestCycle();
         WebResponse response = (WebResponse) requestCycle.getResponse();
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+        response.setHeader("Cache-Control", "no-store");
 
         requestCycle.scheduleRequestHandlerAfterCurrent(
                 new ResourceStreamRequestHandler(resourceStream)

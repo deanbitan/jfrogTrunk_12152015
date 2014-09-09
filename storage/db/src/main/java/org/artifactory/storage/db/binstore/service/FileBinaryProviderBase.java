@@ -21,6 +21,7 @@ package org.artifactory.storage.db.binstore.service;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
@@ -40,6 +41,16 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
 
     public FileBinaryProviderBase(File binariesDir) {
         super(binariesDir);
+    }
+
+    @Override
+    protected void verifyState(File binariesDir) {
+        super.verifyState(binariesDir);
+        // the pre folder should be writable also
+        if (!tempBinariesDir.canWrite()) {
+            throw new StorageException("Temporary pre store folder '" +
+                    tempBinariesDir.getAbsolutePath() + "' is not writable!");
+        }
     }
 
     protected static File getDataFolder(File rootDataDir, StorageProperties storageProperties,

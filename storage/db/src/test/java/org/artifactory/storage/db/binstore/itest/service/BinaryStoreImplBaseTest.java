@@ -362,10 +362,12 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
     }
 
     protected void assertMessageContains(String statusMsg, int folders, int files, int bytes) {
-        assertTrue(statusMsg.contains("" + folders + " empty folders"), "Wrong status message " + statusMsg);
-        assertTrue(statusMsg.contains("" + files + " files"), "Wrong status message " + statusMsg);
-        assertTrue(statusMsg.contains("size of " + StorageUnit.toReadableString(bytes)),
-                "Wrong status message " + statusMsg);
+        String expected = "" + folders + " empty folders";
+        assertTrue(statusMsg.contains(expected), "Expected '" + expected + "' got status message '" + statusMsg + "'");
+        expected = "" + files + " files";
+        assertTrue(statusMsg.contains(expected), "Expected '" + expected + "' got status message '" + statusMsg + "'");
+        expected = "size of " + StorageUnit.toReadableString(bytes);
+        assertTrue(statusMsg.contains(expected), "Expected '" + expected + "' got status message '" + statusMsg + "'");
     }
 
     @Test(dependsOnMethods = "testLoadedNothingToDelete", dataProvider = "testBinFiles")

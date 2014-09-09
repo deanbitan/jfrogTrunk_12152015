@@ -31,6 +31,7 @@ public class MetadataResource implements RepoResource {
 
     private final MetadataInfo info;
     private RepoPath responsePath;
+    private boolean expirable = false;
 
     public MetadataResource(MetadataInfo info) {
         this.info = info;
@@ -107,5 +108,15 @@ public class MetadataResource implements RepoResource {
     @Override
     public String toString() {
         return info.getRepoPath().toString();
+    }
+
+    @Override
+    public boolean isExpirable() {
+        return expirable;
+    }
+
+    @Override
+    public void expirable() {
+        expirable = true;
     }
 }

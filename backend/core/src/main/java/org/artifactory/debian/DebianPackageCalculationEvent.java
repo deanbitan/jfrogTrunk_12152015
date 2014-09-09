@@ -25,11 +25,14 @@ public class DebianPackageCalculationEvent extends DebianCalculationEvent {
 
     private final String component;
     private final String architecture;
+    private String packageType;
 
-    public DebianPackageCalculationEvent(String distribution, String component, String architecture, String repoKey,
+    public DebianPackageCalculationEvent(String distribution, String component, String packageType, String architecture,
+            String repoKey,
             RepoType repoType) {
         super(distribution, repoKey, repoType);
         this.component = component;
+        this.packageType = packageType;
         this.architecture = architecture;
     }
 
@@ -94,7 +97,7 @@ public class DebianPackageCalculationEvent extends DebianCalculationEvent {
 
     @Override
     public DebianCalculationEvent duplicateForRepo(String key, RepoType type) {
-        return new DebianPackageCalculationEvent(distribution, component, architecture, key, type);
+        return new DebianPackageCalculationEvent(distribution, component, packageType, architecture, key, type);
     }
 
     public String getComponent() {
@@ -103,5 +106,9 @@ public class DebianPackageCalculationEvent extends DebianCalculationEvent {
 
     public String getArchitecture() {
         return architecture;
+    }
+
+    public String getPackageType() {
+        return packageType;
     }
 }

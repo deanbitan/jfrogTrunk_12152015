@@ -36,6 +36,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
+import org.artifactory.addon.PypiAddon;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
@@ -136,6 +137,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         if (s3Repository) {
             log.debug("Repository {} caches S3 repository", getKey());
             remoteBrowser = new S3RepositoryBrowser(clientExec, this);
+        } else if (getDescriptor().isEnablePypiSupport()) {
+            remoteBrowser = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
+                    PypiAddon.class).getRemoteBrowser(clientExec);
         } else {
             remoteBrowser = new HtmlRepositoryBrowser(clientExec);
         }
@@ -269,7 +273,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         logDownloading(fullUrl, contentLength);
         RepoRequests.logToContext("Downloading content");
 
-        final InputStream is = HttpUtils.getGzipAwareResponseStream(response);
+        final InputStream is = response.getEntity().getContent();
+        verifyContentEncoding(response);
         return new RemoteResourceStreamHandle() {
             private final BandwidthMonitorInputStream bmis = new BandwidthMonitorInputStream(is);
 
@@ -306,6 +311,17 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 RepoRequests.logToContext("Executed all AfterRemoteDownload user plugins");
             }
         };
+    }
+
+    private void verifyContentEncoding(HttpResponse response) throws IOException {
+        if (!ConstantValues.httpAcceptEncodingGzip.getBoolean() && response.getEntity() != null) {
+            Header[] contentEncodings = response.getHeaders(HttpHeaders.CONTENT_ENCODING);
+            for (Header contentEncoding : contentEncodings) {
+                if ("gzip".equalsIgnoreCase(contentEncoding.getValue())) {
+                    throw new IOException("Received gzip encoded stream while gzip compressions is disabled");
+                }
+            }
+        }
     }
 
     private void logDownloading(String fullUrl, long contentLength) {
@@ -367,7 +383,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         try {
             HttpClientContext httpClientContext = new HttpClientContext();
             response = executeMethod(method, httpClientContext);
-            return handleGetInfoResponse(repoPath, method, response, httpClientContext);
+            return handleGetInfoResponse(repoPath, method, response, httpClientContext, context);
         } catch (IOException e) {
             RepoRequests.logToContext("Failed to execute HEAD request: %s", e.getMessage());
             StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
@@ -420,10 +436,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      * @param method   executed {@link org.apache.http.client.methods.HttpHead} from which to process the response.
      * @param response The response to the get info request
      * @param context
+     * @param requestContext
      * @return
      */
     protected RepoResource handleGetInfoResponse(RepoPath repoPath, HttpRequestBase method,
-            CloseableHttpResponse response, @Nullable HttpClientContext context) {
+            CloseableHttpResponse response, @Nullable HttpClientContext context, RequestContext requestContext) {
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
             RepoRequests.logToContext("Received status 404 (message: %s) on remote info request - returning unfound " +
@@ -431,7 +448,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             return new UnfoundRepoResource(repoPath, response.getStatusLine().getReasonPhrase());
         }
 
-        assertNoRedirectToFolder(repoPath, context);
+        if (!isDisableFolderRedirectAssertion(requestContext)) {
+            assertNoRedirectToFolder(repoPath, context);
+        }
 
         // Some servers may return 204 instead of 200
         if (statusCode != HttpStatus.SC_OK && statusCode != HttpStatus.SC_NO_CONTENT) {
@@ -481,6 +500,20 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         RepoRequests.logToContext("Returning found remote resource info");
         RepoResource res = new RemoteRepoResource(repoPath, lastModified, contentLength, checksums);
         return res;
+    }
+
+    private boolean isDisableFolderRedirectAssertion(RequestContext context) {
+        if (context != null) {
+            String disableFolderRedirectAssertion = context.getRequest().getParameter(
+                    ArtifactoryRequest.PARAM_FOLDER_REDIRECT_ASSERTION);
+            if (StringUtils.isNotBlank(disableFolderRedirectAssertion) && Boolean.valueOf(disableFolderRedirectAssertion)) {
+                // Do not perform in case of parameter provided
+                RepoRequests.logToContext("Folder redirect assertion is disabled for internal download request");
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void assertNoRedirectToFolder(RepoPath repoPath, HttpClientContext context) {

@@ -33,6 +33,7 @@ import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.storage.fs.repo.RepoStorageSummary;
+import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -410,7 +411,9 @@ public class NodesDao extends BaseDao {
         ResultSet resultSet = null;
         List<Node> results = new ArrayList<>();
         try {
-            resultSet = jdbcHelper.executeSelect(propertyFilter.createNodeQuery());
+            Pair<String, List<String>> nodeQuery = propertyFilter.createNodeQuery();
+            String[] strings = nodeQuery.getSecond().toArray(new String[nodeQuery.getSecond().size()]);
+            resultSet = jdbcHelper.executeSelect(nodeQuery.getFirst(), strings);
             while (resultSet.next()) {
                 results.add(nodeFromResultSet(resultSet));
             }

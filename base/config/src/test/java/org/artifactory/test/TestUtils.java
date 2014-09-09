@@ -22,6 +22,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
@@ -136,4 +138,8 @@ public class TestUtils {
         lc.getLogger(name).setLevel(level);
     }
 
+    @Nonnull
+    public static String extractHost(@Nullable String host) {
+        return (host == null || "0.0.0.0".equals(host)) ? "127.0.0.1" : host;
+    }
 }

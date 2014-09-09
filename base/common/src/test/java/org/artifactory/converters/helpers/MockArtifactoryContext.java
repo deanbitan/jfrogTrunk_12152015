@@ -129,6 +129,11 @@ public class MockArtifactoryContext implements ArtifactoryContext {
     }
 
     @Override
+    public void destroy() {
+        // NOOP
+    }
+
+    @Override
     public void exportTo(ExportSettings settings) {
     }
 

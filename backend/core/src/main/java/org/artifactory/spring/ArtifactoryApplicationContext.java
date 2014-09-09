@@ -227,8 +227,9 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
                 }
                 log.debug("Initialized {}", beanIfc);
             }
-            converterManager.conversionFinished();
+            converterManager.afterAllInits();
             setReady(true);
+            converterManager.afterContextReady();
         } finally {
             ArtifactoryContextThreadBinder.unbind();
         }

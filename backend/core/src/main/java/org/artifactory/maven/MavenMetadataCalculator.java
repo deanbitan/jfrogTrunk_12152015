@@ -406,7 +406,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
             return false;
         }
         List<SnapshotVersion> snapshots = versioning.getSnapshotVersions();
-        return snapshots != null;
+        return snapshots != null && !snapshots.isEmpty();
     }
 
     private static class SnapshotVersionType {

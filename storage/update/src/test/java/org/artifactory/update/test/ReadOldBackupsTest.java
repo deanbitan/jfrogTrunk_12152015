@@ -62,8 +62,7 @@ public class ReadOldBackupsTest {
                 ArtifactoryVersion backupVersion = BackupUtils.findVersion(backupFolder);
                 Assert.assertEquals(backupVersion, version);
             } else {
-                log.warn("Version " + version + " does not have a backup test folder in " +
-                        backupVersionFolder);
+                log.debug("Version {} does not have a backup test folder in {}", version, backupVersionFolder);
             }
         }
     }

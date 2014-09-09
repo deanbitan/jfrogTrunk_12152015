@@ -161,6 +161,11 @@
             <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest"/>
         </classes>
     </test>
+    <test name="BinaryStoreImplDoubleFileProviderTest">
+        <classes>
+            <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplDoubleFileProviderTest"/>
+        </classes>
+    </test>
     <test name="BinaryStoreImplFullPathFileProviderTest">
         <classes>
             <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFullPathFileProviderTest"/>

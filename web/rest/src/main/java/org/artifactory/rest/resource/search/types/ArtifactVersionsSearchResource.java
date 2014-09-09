@@ -60,7 +60,7 @@ public class ArtifactVersionsSearchResource {
         try {
             boolean useRemote = remote == 1;
             ArtifactVersionsResult artifactVersions = restAddon.getArtifactVersions(groupId, artifactId, version,
-                    reposToSearch, useRemote);
+                    reposToSearch, useRemote, true);
             if (artifactVersions.getResults().isEmpty()) {
                 throw new NotFoundException("Unable to find artifact versions");
             } else {

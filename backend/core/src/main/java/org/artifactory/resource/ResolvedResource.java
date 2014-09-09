@@ -22,7 +22,6 @@ import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.fs.HttpCacheAvoidableResource;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.Checksums;
@@ -38,12 +37,12 @@ import java.io.IOException;
  *
  * @author Yossi Shaul
  */
-public class ResolvedResource implements RepoResource, HttpCacheAvoidableResource {
+public class ResolvedResource implements RepoResource {
 
     private final RepoResource wrappedResource;
     private final RepoResourceInfo repoResourceInfo;
     private final String content;
-    private boolean avoidHttpCaching;
+    private boolean expirable;
 
     public ResolvedResource(RepoResource wrappedResource, String content) {
         this(wrappedResource, content, true);
@@ -150,12 +149,12 @@ public class ResolvedResource implements RepoResource, HttpCacheAvoidableResourc
     }
 
     @Override
-    public boolean avoidHttpCaching() {
-        return avoidHttpCaching;
+    public boolean isExpirable() {
+        return expirable || wrappedResource.isExpirable();
     }
 
     @Override
-    public void setAvoidHttpCaching(boolean avoidHttpCaching) {
-        this.avoidHttpCaching = avoidHttpCaching;
+    public void expirable() {
+        expirable = true;
     }
 }

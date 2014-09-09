@@ -140,7 +140,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
     @Override
     protected void configureResponse(WebResponse response) {
         super.configureResponse(response);
-        response.setHeader("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate");
+        response.setHeader("Cache-Control", "no-store");
     }
 
     public abstract String getPageName();

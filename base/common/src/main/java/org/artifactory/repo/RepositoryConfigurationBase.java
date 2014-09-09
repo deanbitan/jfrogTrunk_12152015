@@ -47,6 +47,8 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enableNpmSupport = false;
     private boolean enableDebianSupport = false;
     private boolean debianTrivialLayout = false;
+    private boolean enablePypiSupport = false;
+    private boolean enableDockerSupport = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -76,6 +78,8 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         }
         setEnableNuGetSupport(repoDescriptor.isEnableNuGetSupport());
         setEnableNpmSupport(repoDescriptor.isEnableNpmSupport());
+        setEnablePypiSupport(repoDescriptor.isEnablePypiSupport());
+        setEnableDockerSupport(repoDescriptor.isEnableDockerSupport());
     }
 
     public void setKey(String key) {
@@ -185,6 +189,24 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setDebianTrivialLayout(boolean debianTrivialLayout) {
         this.debianTrivialLayout = debianTrivialLayout;
+    }
+
+    @Override
+    public boolean isEnablePypiSupport() {
+        return enablePypiSupport;
+    }
+
+    public void setEnablePypiSupport(boolean enablePypiSupport) {
+        this.enablePypiSupport = enablePypiSupport;
+    }
+
+    @Override
+    public boolean isEnableDockerSupport() {
+        return enableDockerSupport;
+    }
+
+    public void setEnableDockerSupport(boolean enableDockerSupport) {
+        this.enableDockerSupport = enableDockerSupport;
     }
 
     /**

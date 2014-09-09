@@ -67,4 +67,6 @@ public interface ArtifactoryContext extends ImportableExportable {
     ConverterManager getConverterManager();
 
     VersionProvider getVersionProvider();
+
+    void destroy();
 }

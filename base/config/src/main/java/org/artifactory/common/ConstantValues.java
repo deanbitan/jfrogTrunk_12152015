@@ -160,8 +160,10 @@ public enum ConstantValues {
     importMaxParallelRepos("import.max.parallelRepos", Runtime.getRuntime().availableProcessors() - 1),
     debianDistributionPath("debian.distribution.path", "dists"),
     debianIndexQuietPeriodSecs("debian.index.quietPeriodSecs", 60),
-    debianIndexCycleSecs("debian.index.cycleSecs", 60);
-
+    debianIndexCycleSecs("debian.index.cycleSecs", 2),
+    debianDefaultArchitectures("debian.default.architectures", "i386,amd64"),
+    pypiIndexQuietPeriodSecs("pypi.index.quietPeriodSecs", 60),
+    pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60);
     public static final String SYS_PROP_PREFIX = "artifactory.";
 
     private final String propertyName;

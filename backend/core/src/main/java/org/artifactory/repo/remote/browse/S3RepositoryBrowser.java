@@ -133,7 +133,7 @@ public class S3RepositoryBrowser extends RemoteRepositoryBrowser {
             // most likely to get 404 if the repository exists
             assertSizeLimit(url, response);
             String responseString = IOUtils.toString(
-                    HttpUtils.getGzipAwareResponseStream(response), Charsets.UTF_8.name());
+                    HttpUtils.getResponseBody(response), Charsets.UTF_8.name());
             log.debug("Detect S3 root url got response code {} with content: {}",
                     response.getStatusLine().getStatusCode(), responseString);
             Document doc = XmlUtils.parse(responseString);

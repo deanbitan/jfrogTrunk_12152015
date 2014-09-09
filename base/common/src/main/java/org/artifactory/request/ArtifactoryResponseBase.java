@@ -40,6 +40,14 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private long contentLength = -1;
     private String propertiesMediaType = null;
 
+    private static String makeDebugMessage(int statusCode, String reason) {
+        StringBuilder builder = new StringBuilder("Sending HTTP error code ").append(statusCode);
+        if (reason != null) {
+            builder.append(": ").append(reason);
+        }
+        return builder.toString();
+    }
+
     @Override
     public void sendStream(InputStream is) throws IOException {
         OutputStream os = getOutputStream();
@@ -68,13 +76,13 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     }
 
     @Override
-    public void setStatus(int status) {
-        this.status = status;
+    public int getStatus() {
+        return status;
     }
 
     @Override
-    public int getStatus() {
-        return status;
+    public void setStatus(int status) {
+        this.status = status;
     }
 
     @Override
@@ -111,14 +119,26 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         Throwable ioException = ExceptionUtils.getCauseOfTypes(exception, IOException.class);
         String reason;
         if (ioException != null) {
-            status = HttpStatus.SC_NOT_FOUND;
-            reason = ioException.getMessage();
-            logger.debug(makeDebugMessage(status, reason));
+            reason = ioException.getMessage() != null ? ioException.getMessage() : ioException.getClass().getName();
+            String message;
+            if (isCommitted()) {
+                // The client already received a status answer, so changing the status code
+                // is for internal use only. Meaning that traffic, request and access logger
+                // will not confuse this as a successful download.
+                // Using the 499 HTTP code used by Nginx for Client Closed Request
+                status = 499;
+                message = "Client Closed Request " + status + ": " + reason;
+            } else {
+                status = HttpStatus.SC_NOT_FOUND;
+                message = makeDebugMessage(status, reason);
+            }
+            logger.debug(message, exception);
+            logger.warn(message);
         } else {
             status = HttpStatus.SC_INTERNAL_SERVER_ERROR;
             reason = exception.getMessage();
             String message = makeDebugMessage(status, reason);
-            logger.debug(makeDebugMessage(status, reason), exception);
+            logger.debug(message, exception);
             logger.error(message);
         }
         sendErrorInternal(status, reason);
@@ -150,14 +170,14 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     }
 
     @Override
-    public boolean isContentLengthSet() {
-        return contentLength != -1;
-    }
-
-    @Override
     public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;
+    }
+
+    @Override
+    public boolean isContentLengthSet() {
+        return contentLength != -1;
     }
 
     @Override
@@ -176,12 +196,4 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     }
 
     protected abstract void sendErrorInternal(int code, String reason) throws IOException;
-
-    private static String makeDebugMessage(int statusCode, String reason) {
-        StringBuilder builder = new StringBuilder("Sending HTTP error code ").append(statusCode);
-        if (reason != null) {
-            builder.append(": ").append(reason);
-        }
-        return builder.toString();
-    }
 }

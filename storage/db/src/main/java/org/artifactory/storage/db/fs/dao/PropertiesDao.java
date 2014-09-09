@@ -25,6 +25,7 @@ import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,7 +84,9 @@ public class PropertiesDao extends BaseDao {
         List<String> results = Lists.newArrayList();
         try {
             // the child path must be the path+name of the parent
-            resultSet = jdbcHelper.executeSelect(propertyFilter.createDistinctVersionQuery());
+            Pair<String, List<String>> query = propertyFilter.createDistinctVersionQuery();
+            String[] strings = query.getSecond().toArray(new String[query.getSecond().size()]);
+            resultSet = jdbcHelper.executeSelect(query.getFirst(), strings);
             while (resultSet.next()) {
                 results.add(resultSet.getString(1));
             }

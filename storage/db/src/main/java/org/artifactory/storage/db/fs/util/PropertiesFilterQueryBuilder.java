@@ -18,9 +18,12 @@
 
 package org.artifactory.storage.db.fs.util;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.util.Pair;
+
+import java.util.List;
 
 /**
  * Helper to create properties filter query
@@ -35,47 +38,48 @@ public class PropertiesFilterQueryBuilder {
         this.propertiesFilter = propertiesFilter;
     }
 
-    public String createDistinctFirst() {
+    public Pair<String, List<String>> createDistinctFirst() {
+        List<String> params = Lists.newArrayList();
         String query = "SELECT distinct p1.prop_value FROM nodes n <PROPERTIES_FILTER> <PATH_FILTER> ";
-        query = query.replace("<PATH_FILTER>", createPathFilter());
-        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1());
-        return query;
+        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1(params));
+        query = query.replace("<PATH_FILTER>", createPathFilter(params));
+        return new Pair<>(query, params);
     }
 
-    public String createDistinctVersionQuery() {
+    public Pair<String, List<String>> createDistinctVersionQuery() {
+        List<String> params = Lists.newArrayList();
         String distinct = propertiesFilter.getDistinct();
         if (StringUtils.isNotEmpty(distinct)) {
             propertiesFilter.addFirst(distinct);
         }
         String query = "SELECT distinct p1.prop_value FROM nodes n <PROPERTIES_FILTER> <PATH_FILTER> ";
-        query = query.replace("<PATH_FILTER>", createPathFilter());
-        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1());
-        return query;
+        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1(params));
+        query = query.replace("<PATH_FILTER>", createPathFilter(params));
+        return new Pair<>(query, params);
     }
 
-    public String createNodeQuery() {
+    public Pair<String, List<String>> createNodeQuery() {
+        List<String> params = Lists.newArrayList();
         String query = "SELECT n.* FROM nodes n <PROPERTIES_FILTER> <PATH_FILTER>";
-        query = query.replace("<PATH_FILTER>", createPathFilter());
-        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1());
-        return query;
+        query = query.replace("<PROPERTIES_FILTER>", nodeIdsFilter1(params));
+        query = query.replace("<PATH_FILTER>", createPathFilter(params));
+        return new Pair<>(query, params);
     }
 
-    private String createPathFilter() {
+    private String createPathFilter(List<String> params) {
         StringBuilder stringBuilder = new StringBuilder();
         if (StringUtils.isNotEmpty(propertiesFilter.getRepo())) {
-            stringBuilder.append(" AND repo ='");
-            stringBuilder.append(propertiesFilter.getRepo());
-            stringBuilder.append("'");
+            stringBuilder.append(" AND repo =? ");
+            params.add(propertiesFilter.getRepo());
         }
         if (StringUtils.isNotEmpty(propertiesFilter.getPath())) {
-            stringBuilder.append(" AND node_path like '");
-            stringBuilder.append(propertiesFilter.getPath());
-            stringBuilder.append("%'");
+            stringBuilder.append(" AND node_path like ? ");
+            params.add(propertiesFilter.getPath() + "%");
         }
         return stringBuilder.toString();
     }
 
-    private String nodeIdsFilter1() {
+    private String nodeIdsFilter1(List<String> params) {
         StringBuilder total = new StringBuilder();
         StringBuilder join = new StringBuilder();
         StringBuilder where = new StringBuilder();
@@ -91,16 +95,14 @@ public class PropertiesFilterQueryBuilder {
             join.append(".node_id ");
             where.append(" AND ");
             where.append(indexValue);
-            where.append(".prop_key='");
-            where.append(pair.getFirst());
-            where.append("' ");
+            where.append(".prop_key=? ");
+            params.add(pair.getFirst());
             String value = pair.getSecond();
             if (value != null) {
                 where.append(" AND ");
                 where.append(indexValue);
-                where.append(".prop_value='");
-                where.append(value);
-                where.append("' ");
+                where.append(".prop_value like ? ");
+                params.add(value);
             }
         }
 

@@ -36,8 +36,6 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
 
     boolean isStoreArtifactsLocally();
 
-    boolean isHardFail();
-
     String getUrl();
 
     @Nullable
@@ -86,11 +84,10 @@ public interface RemoteRepo<T extends RemoteRepoDescriptor> extends RealRepo<T> 
      * List remote resources from a remote path.
      *
      * @param directoryPath The path of the remote repository listing
-     * @return A list of URLs that represent the remote hrefs of the remote resources.
-     * @throws IOException On any communication of parsing exception
+     * @return A list of URLs that represent the remote hrefs of the remote resources. Empty if not found of failed to parse the response.
      */
     @Nonnull
-    List<RemoteItem> listRemoteResources(String directoryPath) throws IOException;
+    List<RemoteItem> listRemoteResources(String directoryPath);
 
     /**
      * @return True if this repo supports listing remote directories AND it's not offline AND it's not blacklisted.

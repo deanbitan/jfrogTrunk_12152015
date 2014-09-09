@@ -78,6 +78,7 @@ import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
+import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,11 +231,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Override
     public String getUrl() {
         return getDescriptor().getUrl();
-    }
-
-    @Override
-    public boolean isHardFail() {
-        return getDescriptor().isHardFail();
     }
 
     @Override
@@ -437,7 +433,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
             putOffline();
             remoteResource = new UnfoundRepoResource(repoPath, reason);
-            if (!foundExpiredInCache && isHardFail()) {
+            if (!foundExpiredInCache && getDescriptor().isHardFail()) {
                 throw new RuntimeException(this + ": Error in getting information for '" + path + "'.", e);
             }
         }
@@ -946,7 +942,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     @Nonnull
-    public List<RemoteItem> listRemoteResources(String directoryPath) throws IOException {
+    public List<RemoteItem> listRemoteResources(String directoryPath) {
         assert !isOffline() : "Should never be called in offline mode";
 
         if (!isRemoteRepoListingAllowed(directoryPath)) {
@@ -958,19 +954,27 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             return cachedUrls;
         }
 
-        checkForRemoteListingInMissedCaches(directoryPath);
+        UnfoundRepoResource unfoundRepoResource = ((UnfoundRepoResource) missedRetrievalsCache.get(directoryPath));
+        if (unfoundRepoResource != null) {
+            return Collections.emptyList();
+        }
 
-        List<RemoteItem> urls;
+        List<RemoteItem> urls = null;
         String fullDirectoryUrl = appendAndGetUrl(directoryPath);
         try {
             urls = getChildUrls(fullDirectoryUrl);
         } catch (IOException e) {
+            log.debug("Error while listing remote resources", e);
             addRemoteListingEntryToMissedCache(directoryPath, e);
-            throw e;
+            RemoteRequestException remoteError =
+                    (RemoteRequestException) ExceptionUtils.getCauseOfTypes(e, RemoteRequestException.class);
+            if (remoteError == null || remoteError.getRemoteReturnCode() != HttpStatus.SC_NOT_FOUND) {
+                log.info("Error listing remote resources for {}: {}", directoryPath, e.getMessage());
+            }
         }
 
         if (CollectionUtils.isNullOrEmpty(urls)) {
-            log.debug("No remote URLS where found for: ", fullDirectoryUrl);
+            log.debug("No remote URLS where found for: {}", fullDirectoryUrl);
             return Lists.newArrayList();
         }
         remoteResourceCache.put(directoryPath, urls);
@@ -985,13 +989,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
         baseUrlBuilder.append(pathToAppend);
         return baseUrlBuilder.toString();
-    }
-
-    private void checkForRemoteListingInMissedCaches(String directoryPath) throws IOException {
-        UnfoundRepoResource unfoundRepoResource = ((UnfoundRepoResource) missedRetrievalsCache.get(directoryPath));
-        if (unfoundRepoResource != null) {
-            throw new IOException(unfoundRepoResource.getReason());
-        }
     }
 
     private void addRemoteListingEntryToMissedCache(String directoryPath, IOException e) {

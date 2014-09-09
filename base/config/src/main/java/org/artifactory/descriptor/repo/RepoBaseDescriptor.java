@@ -28,7 +28,8 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
-        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport", "enableDebianSupport"},
+        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport", "enableDebianSupport",
+        "enablePypiSupport", "enableDockerSupport"},
         namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
@@ -59,6 +60,10 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     private boolean enableNpmSupport;
 
     private boolean enableDebianSupport;
+
+    private boolean enablePypiSupport;
+
+    private boolean enableDockerSupport;
 
     @Override
     public String getKey() {
@@ -148,6 +153,24 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setEnableDebianSupport(boolean enableDebianSupport) {
         this.enableDebianSupport = enableDebianSupport;
+    }
+
+    @Override
+    public boolean isEnablePypiSupport() {
+        return enablePypiSupport;
+    }
+
+    public void setEnablePypiSupport(boolean enablePypiSupport) {
+        this.enablePypiSupport = enablePypiSupport;
+    }
+
+    @Override
+    public boolean isEnableDockerSupport() {
+        return enableDockerSupport;
+    }
+
+    public void setEnableDockerSupport(boolean enableDockerSupport) {
+        this.enableDockerSupport = enableDockerSupport;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.artifactory.mbean;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,9 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
+import java.net.Socket;
 import java.util.Set;
 
 @Service
@@ -95,6 +98,65 @@ public class MBeanRegistrationService {
             }
         }
         return count;
+    }
+
+    /**
+     * Reading state of MBean server, tries to shutdown the server as clean as possible
+     */
+    public void shutdownServer() {
+        MBeanServer server = getMBeanServer();
+        ObjectName name = null;
+        try {
+            name = new ObjectName("Catalina:type=Server");
+            if (!server.isRegistered(name)) {
+                // Try the embedded version
+                name = new ObjectName("Tomcat:type=Server");
+            }
+        } catch (MalformedObjectNameException e) {
+            log.error("Could not create tomcat mbean names", e);
+        }
+        if (name != null && server.isRegistered(name)) {
+            try {
+                log.info("Shutting down Tomcat server...");
+                int port = (int) server.getAttribute(name, "port");
+                if (port == -1) {
+                    log.info("No Tomcat management port defined. Shutting down manually...");
+                    new Thread(new ShutdownThread()).start();
+                } else {
+                    String address = (String) server.getAttribute(name, "address");
+                    String shutdownPassword = (String) server.getAttribute(name, "shutdown");
+                    log.info("Tomcat shutdown using " + address + ":" + port);
+                    Socket s = new Socket(address, port);
+                    PrintStream ps = new PrintStream(s.getOutputStream());
+                    ps.println(shutdownPassword);
+                    s.close();
+                }
+            } catch (Exception e) {
+                log.error("Failed to call tomcat shutdown!", e);
+            }
+        } else {
+            log.info("Shutting down Jetty server...");
+            new Thread(new ShutdownThread()).start();
+        }
+    }
+
+    static class ShutdownThread implements Runnable {
+        private final ArtifactoryContext ctx;
+
+        ShutdownThread() {
+            this.ctx = ContextHelper.get();
+        }
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(100L);
+                ctx.destroy();
+                System.exit(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**

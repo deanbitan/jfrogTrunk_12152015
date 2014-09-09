@@ -19,6 +19,8 @@
 package org.artifactory.test.mock;
 
 import org.apache.commons.io.IOUtils;
+import org.artifactory.test.TestUtils;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -71,11 +73,13 @@ public class SimpleMockServer {
     }
 
     public int getPort() {
-        return server.getConnectors()[0].getLocalPort();
+        Connector connector = server.getConnectors()[0];
+        return connector.getLocalPort() <= 0 ? connector.getPort() : connector.getLocalPort();
     }
 
     public String getBaseUrl() {
-        return "http://" + server.getConnectors()[0].getName() + "/";
+        Connector connector = server.getConnectors()[0];
+        return "http://" + TestUtils.extractHost(connector.getHost()) + ":" + getPort() + "/";
     }
 
     private static class SimpleMockHandler extends AbstractHandler {

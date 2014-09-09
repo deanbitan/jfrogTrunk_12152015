@@ -54,6 +54,8 @@ public interface ArtifactoryRequest extends Request {
 
     String PARAM_REPLICATION_DOWNLOAD_REQUESET = "artifactory.replicationDownloadRequest";
 
+    String PARAM_FOLDER_REDIRECT_ASSERTION = "artifactory.disableFolderRedirectAssertion";
+
     /**
      * The path prefix name for list browsing.
      */

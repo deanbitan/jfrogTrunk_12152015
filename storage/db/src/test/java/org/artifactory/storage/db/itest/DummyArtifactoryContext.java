@@ -135,6 +135,10 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
     }
 
     @Override
+    public void destroy() {
+    }
+
+    @Override
     public void exportTo(ExportSettings settings) {
     }
 

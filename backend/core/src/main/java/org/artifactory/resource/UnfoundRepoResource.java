@@ -106,4 +106,13 @@ public class UnfoundRepoResource implements RepoResource, UnfoundRepoResourceRea
     public String getMimeType() {
         return null;
     }
+
+    @Override
+    public boolean isExpirable() {
+        return false;
+    }
+
+    @Override
+    public void expirable() {
+    }
 }

@@ -21,6 +21,7 @@ package org.artifactory.logging.version;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.logging.version.v1.LogbackConfigSwapper;
+import org.artifactory.logging.version.v3.LogbackJFrogInfoConverter;
 import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.SubConfigElementVersion;
 import org.artifactory.version.VersionComparator;
@@ -41,7 +42,8 @@ import java.util.List;
  */
 public enum LoggingVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v304, new LogbackConfigSwapper()),
-    v2(ArtifactoryVersion.v310, ArtifactoryVersion.getCurrent(), null);
+    v2(ArtifactoryVersion.v310, ArtifactoryVersion.v3302, null),
+    v3(ArtifactoryVersion.v340, ArtifactoryVersion.getCurrent(), new LogbackJFrogInfoConverter());
 
     private static final Logger log = LoggerFactory.getLogger(LoggingVersion.class);
 

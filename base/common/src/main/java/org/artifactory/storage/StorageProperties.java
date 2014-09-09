@@ -105,6 +105,10 @@ public class StorageProperties {
         return getProperty(Key.binaryProviderExternalMode);
     }
 
+    public String getBinaryProviderFilesystemSecondDir() {
+        return getProperty(Key.binaryProviderFilesystemSecondDir);
+    }
+
     public long getBinaryProviderCacheMaxSize() {
         return StorageUnit.fromReadableString(getProperty(Key.binaryProviderCacheMaxSize, DEFAULT_MAX_CACHE_SIZE));
     }
@@ -167,6 +171,8 @@ public class StorageProperties {
         binaryProviderCacheMaxSize("binary.provider.cache.maxSize"),
         binaryProviderCacheDir("binary.provider.cache.dir"),
         binaryProviderFilesystemDir("binary.provider.filesystem.dir"),
+        binaryProviderFilesystemSecondDir("binary.provider.filesystem2.dir"),
+        binaryProviderFilesystemSecondCheckPeriod("binary.provider.filesystem2.checkPeriod"),
         binaryProviderExternalDir("binary.provider.external.dir"),
         binaryProviderExternalMode("binary.provider.external.mode");
 

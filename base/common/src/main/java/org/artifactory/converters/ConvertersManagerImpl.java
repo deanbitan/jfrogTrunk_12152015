@@ -1,20 +1,20 @@
 package org.artifactory.converters;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.ArtifactoryConverter;
-import org.artifactory.file.lock.LockFile;
-import org.artifactory.file.lock.LockFileForNoneLockingFileSystem;
 import org.artifactory.storage.db.properties.model.DbProperties;
 import org.artifactory.storage.db.properties.service.ArtifactoryCommonDbPropertiesService;
-import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
-import org.artifactory.version.ArtifactoryVersion;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.artifactory.addon.ha.message.HaMessageTopic.CONFIG_CHANGE_TOPIC;
 
 
 /**
@@ -23,6 +23,9 @@ import java.util.List;
  * environments, thoughts Artifactory converts each environment independently,
  * each environment has its own original version and each original version might
  * trigger the relevant conversion.
+ * For HA environment, only the primary master node can do a conversion of the
+ * cluster home and DB. And once primary is up and running,
+ * shutdown events are sent to the slaves.
  *
  * @author Gidi Shabat
  */
@@ -31,10 +34,10 @@ public class ConvertersManagerImpl implements ConverterManager {
 
     private final ArtifactoryHome artifactoryHome;
     private final VersionProviderImpl vp;
-    private final LockFile conversionLock;
     private List<ArtifactoryConverterAdapter> localHomeConverters = new ArrayList<>();
     private List<ArtifactoryConverterAdapter> clusterHomeConverters = new ArrayList<>();
-    private boolean serviceConversionStarted = false;
+    private boolean homeConversionRunning = false;
+    private boolean databaseConversionRunning = false;
 
     public ConvertersManagerImpl(ArtifactoryHome artifactoryHome, VersionProviderImpl vp) {
         // Initialize
@@ -45,20 +48,11 @@ public class ConvertersManagerImpl implements ConverterManager {
         localHomeConverters.add(new MimeTypeConverter(artifactoryHome.getMimeTypesFile()));
         // create cluster converters
         clusterHomeConverters.add(new MimeTypeConverter(artifactoryHome.getHaAwareMimeTypesFile()));
-        // We need to synchronize conversion only in ha mode therefore use real lock file in ha environment
-        if (artifactoryHome.isHaConfigured()) {
-            conversionLock = new LockFileForNoneLockingFileSystem(artifactoryHome.getHaConversionLockFile());
-        } else {
-            conversionLock = new DummyLockFile();
-        }
     }
 
     public void convertHomes() {
-        if (isLocalHomeInterested() || isHaInterested()) {
-            conversionLock.tryLock();
-            convertLocalHome();
-            convertCluster();
-        }
+        convertLocalHome();
+        convertCluster();
     }
 
     private void convertLocalHome() {
@@ -66,6 +60,7 @@ public class ConvertersManagerImpl implements ConverterManager {
             if (isLocalHomeInterested()) {
                 CompoundVersionDetails originalHome = vp.getOriginalHome();
                 CompoundVersionDetails running = vp.getRunning();
+                homeConversionRunning = true;
                 String message = "Starting home conversion, from {}, to {}";
                 log.info(message, originalHome.getVersion(), running.getVersion());
                 runConverters(localHomeConverters, originalHome, running);
@@ -81,6 +76,7 @@ public class ConvertersManagerImpl implements ConverterManager {
             if (isHaInterested()) {
                 CompoundVersionDetails originalHa = vp.getOriginalHa();
                 CompoundVersionDetails running = vp.getRunning();
+                homeConversionRunning = true;
                 String message = "Starting cluster home conversion, from {}, to {}";
                 log.info(message, originalHa.getVersion(), running.getVersion());
                 runConverters(clusterHomeConverters, originalHa, running);
@@ -94,15 +90,13 @@ public class ConvertersManagerImpl implements ConverterManager {
     @Override
     public void serviceConvert(ArtifactoryConverter artifactoryConverter) {
         try {
-            if (isServiceConversionInterested()) {
+            if (isDatabaseConversionInterested()) {
+                assertDatabaseConversionOnPrimaryOnly();
                 CompoundVersionDetails running = vp.getRunning();
-                CompoundVersionDetails originalService = vp.getOriginalService();
+                CompoundVersionDetails originalService = vp.getOriginalDatabaseVersion();
                 log.debug("Starting ReloadableBean conversion for: {}, from {} to {}",
                         artifactoryConverter.getClass().getName(), originalService, running);
-                if (vp.getRunning().getVersion().beforeOrEqual(ArtifactoryVersion.v310)) {
-                    assertIfNoOtherActiveServers();
-                }
-                conversionLock.tryLock();
+                databaseConversionRunning = true;
                 artifactoryConverter.convert(originalService, running);
                 log.debug("Finished ReloadableBean conversion for: {}", artifactoryConverter.getClass().getName());
             }
@@ -112,27 +106,52 @@ public class ConvertersManagerImpl implements ConverterManager {
     }
 
     @Override
-    public void conversionFinished() {
-        if (conversionLock.isLockedByMe()) {
+    public void afterAllInits() {
+        if (isConverting()) {
             try {
                 // Save home artifactory.properties
+                log.info("Updating local file data/artifactory.properties to running version");
                 artifactoryHome.writeBundledHomeArtifactoryProperties();
                 vp.reloadArtifactorySystemProperties(artifactoryHome.getHomeArtifactoryPropertiesFile());
-                // Save cluster artifactory.properties
-                if (artifactoryHome.isHaConfigured()) {
-                    artifactoryHome.writeBundledHaArtifactoryProperties();
-                    vp.reloadArtifactorySystemProperties(artifactoryHome.getHaArtifactoryPropertiesFile());
-                }
-                //Insert the new version to the database only if have to
-                ArtifactoryCommonDbPropertiesService dbPropertiesService = ContextHelper.get().beanForType(
-                        ArtifactoryCommonDbPropertiesService.class);
-                if (isServiceConversionInterested()) {
-                    dbPropertiesService.updateDbProperties(createDbPropertiesFromVersion(vp.getRunning()));
+                // HA etc cluster home or DB for non HA or primary only
+                if (isNonHaOrConfiguredPrimary()) {
+                    // Save cluster artifactory.properties
+                    if (artifactoryHome.isHaConfigured()) {
+                        log.info("Updating cluster file ha-data/artifactory.properties to running version");
+                        artifactoryHome.writeBundledHaArtifactoryProperties();
+                        vp.reloadArtifactorySystemProperties(artifactoryHome.getHaArtifactoryPropertiesFile());
+                    }
+                    //Insert the new version to the database only if have to
+                    ArtifactoryCommonDbPropertiesService dbPropertiesService = ContextHelper.get().beanForType(
+                            ArtifactoryCommonDbPropertiesService.class);
+                    if (isDatabaseConversionInterested()) {
+                        log.info("Updating database properties to running version");
+                        dbPropertiesService.updateDbProperties(createDbPropertiesFromVersion(vp.getRunning()));
+                    }
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to finish conversion", e);
+            }
+        }
+    }
+
+    @Override
+    public void afterContextReady() {
+        if (isConverting()) {
+            try {
+                // Now HA Addon is initialized check for primary with complete server list
+                AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+                if (addonsManager != null) {
+                    HaCommonAddon haAddon = addonsManager.addonByType(HaCommonAddon.class);
+                    if (haAddon != null) {
+                        // Send message to slaves shutdown
+                        log.info("Sending configuration update message to slaves");
+                        haAddon.notify(CONFIG_CHANGE_TOPIC, null);
+                    }
+                }
             } finally {
-                conversionLock.release();
+                homeConversionRunning = false;
+                databaseConversionRunning = false;
             }
         }
     }
@@ -140,7 +159,8 @@ public class ConvertersManagerImpl implements ConverterManager {
     private void handleException(Exception e) {
         log.error("Conversion failed. You should analyze the error and retry launching " +
                 "Artifactory. Error is: {}", e.getMessage());
-        conversionLock.release();
+        homeConversionRunning = false;
+        databaseConversionRunning = false;
         throw new RuntimeException(e.getMessage(), e);
     }
 
@@ -155,7 +175,7 @@ public class ConvertersManagerImpl implements ConverterManager {
 
     @Override
     public boolean isConverting() {
-        return conversionLock.isLockedByMe();
+        return homeConversionRunning || databaseConversionRunning;
     }
 
     private void runConverters(List<ArtifactoryConverterAdapter> converters, CompoundVersionDetails fromVersion,
@@ -167,21 +187,24 @@ public class ConvertersManagerImpl implements ConverterManager {
         }
     }
 
-    private void assertIfNoOtherActiveServers() {
-        if (!serviceConversionStarted) {
-            serviceConversionStarted = true;
-            ArtifactoryServersCommonService serversService = ContextHelper.get().beanForType(
-                    ArtifactoryServersCommonService.class);
-            if (serversService.getOtherActiveMembers().size() > 0) {
-                conversionLock.release();
-                throw new RuntimeException("Stopping Artifactory, couldn't start conversions, other active " +
-                        "servers have been found");
-            }
+    private void assertDatabaseConversionOnPrimaryOnly() {
+        if (artifactoryHome.isHaConfigured() && !isConfiguredPrimary()) {
+            throw new RuntimeException("Stopping Artifactory, couldn't start Artifactory upgrade, on slave node!\n" +
+                    "Please run Artifactory upgrade on the master first!");
         }
     }
 
-    private boolean isServiceConversionInterested() {
-        return vp.getOriginalService() != null && !vp.getOriginalService().isCurrent();
+    private boolean isNonHaOrConfiguredPrimary() {
+        return (!artifactoryHome.isHaConfigured() || isConfiguredPrimary());
+    }
+
+    private boolean isConfiguredPrimary() {
+        return artifactoryHome.isHaConfigured() && artifactoryHome.getHaNodeProperties() != null
+                && artifactoryHome.getHaNodeProperties().isPrimary();
+    }
+
+    private boolean isDatabaseConversionInterested() {
+        return vp.getOriginalDatabaseVersion() != null && !vp.getOriginalDatabaseVersion().isCurrent();
     }
 
     private boolean isLocalHomeInterested() {
@@ -194,7 +217,7 @@ public class ConvertersManagerImpl implements ConverterManager {
     }
 
     private boolean isHaInterested() {
-        if (!artifactoryHome.isHaConfigured()) {
+        if (!artifactoryHome.isHaConfigured() || !isConfiguredPrimary()) {
             return false;
         }
         for (ArtifactoryConverterAdapter converter : clusterHomeConverters) {
@@ -211,21 +234,5 @@ public class ConvertersManagerImpl implements ConverterManager {
 
     public List<ArtifactoryConverterAdapter> getClusterHomeConverters() {
         return clusterHomeConverters;
-    }
-
-    private class DummyLockFile implements LockFile {
-        @Override
-        public LockFile tryLock() {
-            return this;
-        }
-
-        @Override
-        public void release() {
-        }
-
-        @Override
-        public boolean isLockedByMe() {
-            return true;
-        }
     }
 }

@@ -31,6 +31,7 @@ import org.artifactory.repo.RepoPath;
 public class ZipEntryResource implements ZipEntryRepoResource {
     private final ZipEntryResourceInfo info;
     private RepoPath responsePath;
+    private boolean expirable;
 
     public ZipEntryResource(ZipEntryResourceInfo zipInfo) {
         this.info = zipInfo;
@@ -104,5 +105,15 @@ public class ZipEntryResource implements ZipEntryRepoResource {
     @Override
     public String getMimeType() {
         return info.getMimeType();
+    }
+
+    @Override
+    public boolean isExpirable() {
+        return expirable;
+    }
+
+    @Override
+    public void expirable() {
+        expirable = true;
     }
 }

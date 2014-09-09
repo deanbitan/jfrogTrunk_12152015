@@ -28,7 +28,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpStatus;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
@@ -53,20 +52,17 @@ import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
-import org.artifactory.request.RemoteRequestException;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.storage.fs.service.PropertiesService;
 import org.artifactory.storage.fs.tree.ItemNode;
 import org.artifactory.storage.fs.tree.ItemTree;
 import org.artifactory.storage.fs.tree.TreeBrowsingCriteriaBuilder;
-import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -225,22 +221,13 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     private void listRemoteBrowsableChildren(List<BaseBrowsableItem> children, RemoteRepo repo, String relativePath,
             boolean pathExistsInCache) {
         RepoPath repoPath = repo.getRepoPath(relativePath);
-        List<RemoteItem> remoteItems = Lists.newArrayList();
-        try {
-            remoteItems.addAll(repo.listRemoteResources(relativePath));
-        } catch (IOException e) {
-            log.debug("Error while listing remote resources", e);
-            RemoteRequestException remoteError =
-                    (RemoteRequestException) ExceptionUtils.getCauseOfTypes(e, RemoteRequestException.class);
-            if (remoteError == null || remoteError.getRemoteReturnCode() != HttpStatus.SC_NOT_FOUND) {
-                log.info("Error while listing remote resources for {}: {}", repoPath.toPath(), e.getMessage());
-            }
-            // probably remote not found - return 404 only if current folder doesn't exist in the cache
-            if (!pathExistsInCache) {
-                // no cache and remote failed - signal 404
-                throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath + ": " + e.getMessage());
-            }
+        List<RemoteItem> remoteItems = repo.listRemoteResources(relativePath);
+        // probably remote not found - return 404 only if current folder doesn't exist in the cache
+        if (remoteItems.isEmpty() && !pathExistsInCache) {
+            // no cache and remote failed - signal 404
+            throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
         }
+
         // filter already existing local items
         remoteItems = Lists.newArrayList(
                 Iterables.filter(remoteItems, new RemoteOnlyBrowsableItemPredicate(children)));

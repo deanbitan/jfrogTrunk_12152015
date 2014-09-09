@@ -30,8 +30,8 @@ public interface VersionProvider {
 
     CompoundVersionDetails getOriginalHome();
 
-    CompoundVersionDetails getOriginalService();
+    CompoundVersionDetails getOriginalDatabaseVersion();
 
-    public boolean isOriginalServiceVersionReady();
+    public boolean isOriginalDatabaseVersionReady();
 
 }

@@ -67,6 +67,14 @@ public class NodePath implements Serializable {
         return name;
     }
 
+    public boolean isFile() {
+        return file;
+    }
+
+    public boolean isFolder() {
+        return !file;
+    }
+
     /**
      * @return The depth of this node path. Repository root path has a depth of 0.
      */
@@ -106,7 +114,7 @@ public class NodePath implements Serializable {
 
     public RepoPath toRepoPath() {
         String pathAndName = StringUtils.isBlank(path) ? name : path + "/" + name;
-        return new RepoPathImpl(repo, pathAndName, !file);
+        return new RepoPathImpl(repo, pathAndName, isFolder());
     }
 
     public static NodePath fromRepoPath(RepoPath repoPath) {

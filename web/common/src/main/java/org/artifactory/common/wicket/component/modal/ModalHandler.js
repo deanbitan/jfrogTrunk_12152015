@@ -114,7 +114,7 @@ var ModalHandler = {
             width = modal.content.firstChild.scrollWidth + 5;
         }
         if (height == 0) {
-            height = modal.content.firstChild.scrollHeight + 6;
+            height = modal.content.firstChild.scrollHeight + 25;
         }
 
         var maxWidth = Wicket.Window.getViewportWidth();

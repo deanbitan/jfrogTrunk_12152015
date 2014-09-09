@@ -303,19 +303,24 @@ public class GeneralInfoPanel extends Panel {
         LabeledValue sizeLabel = new LabeledValue("size", "Size: ");
         infoBorder.add(sizeLabel);
 
-        LabeledValue ageLabel = new LabeledValue("age", "Age: ");
-        infoBorder.add(ageLabel);
+        LabeledValue lastModified = new LabeledValue("lastModified", "Last Modified: ");
+        infoBorder.add(lastModified);
+        infoBorder.add(new HelpBubble("lastModified.help",
+                "The time this artifact's file was modified. \nWill be identical to the artifact's 'Created' date when not available \n(for example, when deploying without the 'X-Artifactory-Last-Modified' request header)."));
 
-        String created = centralConfigService.format(itemInfo.getCreated());
+        String created = centralConfigService.format(itemInfo.getCreated())+ " " + DurationFormatUtils.formatDuration(System.currentTimeMillis()-itemInfo.getCreated(),"(d'd' H'h' m'm' s's' ago)") ;
         LabeledValue createdLabel = new LabeledValue("created", "Created: ", created);
         infoBorder.add(createdLabel);
+
+        infoBorder.add(new HelpBubble("created.help",
+                "The time this artifact was deployed to or cached in Artifactory."));
 
         LabeledValue moduleId = new LabeledValue("moduleId", "Module ID: ");
         infoBorder.add(moduleId);
 
         // disable/enable and set info according to the node type
         if (itemInfo.isFolder()) {
-            ageLabel.setVisible(false);
+            lastModified.setVisible(false);
             sizeLabel.setVisible(false);
             moduleId.setVisible(false);
         } else {
@@ -325,8 +330,8 @@ public class GeneralInfoPanel extends Panel {
 
             long size = file.getSize();
             //If we are looking at a cached item, check the expiry from the remote repository
-            String ageStr = DurationFormatUtils.formatDuration(file.getAge(), "d'd' H'h' m'm' s's'");
-            ageLabel.setValue(ageStr);
+            String ageStr = centralConfigService.format(itemInfo.getLastModified()) + " " + DurationFormatUtils.formatDuration(file.getAge(), "(d'd' H'h' m'm' s's' ago)");
+            lastModified.setValue(ageStr);
             sizeLabel.setValue(StorageUnit.toReadableString(size));
             if (moduleInfo.isValid()) {
                 moduleId.setValue(moduleInfo.getPrettyModuleId());

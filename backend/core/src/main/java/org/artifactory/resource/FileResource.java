@@ -41,6 +41,7 @@ public class FileResource implements RepoResource {
     private RepoPath responseRepoPath;
     private boolean exactQueryMatch;
     private String mimeType;
+    private boolean expirable;
 
     public FileResource(FileInfo fileInfo) {
         this(fileInfo, true);
@@ -121,7 +122,8 @@ public class FileResource implements RepoResource {
 
     /**
      * Set custom mime type for this resource. If not set the mime types file is consulted.
-     * @param mimeType  Custom mime type to set on this resource
+     *
+     * @param mimeType Custom mime type to set on this resource
      */
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
@@ -134,6 +136,16 @@ public class FileResource implements RepoResource {
             return -1;
         }
         return System.currentTimeMillis() - lastUpdated;
+    }
+
+    @Override
+    public boolean isExpirable() {
+        return expirable;
+    }
+
+    @Override
+    public void expirable() {
+        expirable = true;
     }
 
     @Override

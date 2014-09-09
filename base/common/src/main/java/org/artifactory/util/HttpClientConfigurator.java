@@ -70,6 +70,9 @@ public class HttpClientConfigurator {
         if (!ConstantValues.enableCookieManagement.getBoolean()) {
             builder.disableCookieManagement();
         }
+        if (!ConstantValues.httpAcceptEncodingGzip.getBoolean()) {
+            builder.disableContentCompression();
+        }
     }
 
     public CloseableHttpClient getClient() {

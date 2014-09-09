@@ -47,9 +47,7 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
         VerificationResult result = addonsManager.verifyAllArtifactoryServers();
         switch (result) {
             case valid: {
-                boolean converting = ContextHelper.get().getConverterManager().isConverting();
-                updateArtifactoryServerState(converting ? CONVERTING : STARTING);
-                addonsManager.addonByType(HaAddon.class).init();
+                initHa();
                 break;
             }
             case converting: {
@@ -70,6 +68,12 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
                 log.error(result.showMassage());
             }
         }
+    }
+
+    private void initHa() {
+        boolean converting = ContextHelper.get().getConverterManager().isConverting();
+        updateArtifactoryServerState(converting ? CONVERTING : STARTING);
+        addonsManager.addonByType(HaAddon.class).init();
     }
 
     @Override

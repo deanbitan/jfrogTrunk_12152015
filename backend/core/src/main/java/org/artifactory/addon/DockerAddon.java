@@ -1,6 +1,6 @@
 /*
  * Artifactory is a binaries repository manager.
- * Copyright (C) 2012 JFrog Ltd.
+ * Copyright (C) 2013 JFrog Ltd.
  *
  * Artifactory is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,29 +16,10 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.fs;
+package org.artifactory.addon;
 
 /**
- * Marks that a resource may avoid the HTTP cache by adding the headers:
- * <br/>
- * Expires: Thu, 01 Jan 1970 00:00:00 GMT
- * <br/>
- * Pragma: no-cache
- * <br/>
- * Cache-Control: no-cache, no-store
- * <br/>
- * To the resources response
- *
- * @author Noam Y. Tenne
+ * @author Shay Yaakov
  */
-public interface HttpCacheAvoidableResource {
-
-    /**
-     * Should the resource be sent with headers to avoid HTTP caching
-     *
-     * @return True if caching should be avoided
-     */
-    boolean avoidHttpCaching();
-
-    void setAvoidHttpCaching(boolean avoidHttpCaching);
+public interface DockerAddon extends Addon {
 }

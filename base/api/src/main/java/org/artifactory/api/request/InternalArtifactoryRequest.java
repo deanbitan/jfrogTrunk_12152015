@@ -41,6 +41,8 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private Boolean replicationDownloadRequest;
 
+    private Boolean disableFolderRedirectAssertion;
+
     private String alternativeRemoteDownloadUrl;
 
     private String servletContextUrl = "";
@@ -165,6 +167,10 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         this.replicationDownloadRequest = replicationDownloadRequest;
     }
 
+    public void setDisableFolderRedirectAssertion(Boolean disableFolderRedirectAssertion) {
+        this.disableFolderRedirectAssertion = disableFolderRedirectAssertion;
+    }
+
     @Override
     public void setZipResourcePath(String zipResourcePath) {
         super.setZipResourcePath(zipResourcePath);
@@ -187,6 +193,9 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         }
         if (PARAM_REPLICATION_DOWNLOAD_REQUESET.equals(name)) {
             return String.valueOf(replicationDownloadRequest);
+        }
+        if (PARAM_FOLDER_REDIRECT_ASSERTION.equals(name)) {
+            return String.valueOf(disableFolderRedirectAssertion);
         }
         return null;
     }

@@ -94,7 +94,7 @@ artifactory soft nproc $minNbProcess
 artifactory hard nproc $minNbProcess
 to your /etc/security/limits.conf file."
         fi
-
+	su -l $ARTIFACTORY_USER -c "mkdir -p $ARTIFACTORY_HOME/logs/catalina"
         su -l $ARTIFACTORY_USER -c "$TOMCAT_HOME/bin/startup.sh"
         RETVAL=$?
         if [ $RETVAL -ne 0 ]; then

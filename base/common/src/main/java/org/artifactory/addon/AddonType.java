@@ -46,6 +46,8 @@ public enum AddonType {
     GEMS("gems", "RubyGems", 1100),
     NPM("npm", "NPM", 870),
     DEBIAN("debian", "Debian", 900),
+    PYPI("pypi", "PyPI", 970),
+    DOCKER("docker", "Docker", 910),
     HA("ha", "High Availability", 2000);
 
 

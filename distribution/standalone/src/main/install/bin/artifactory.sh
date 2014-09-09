@@ -25,9 +25,9 @@ checkTomcatHome() {
 }
 
 createLogsLink() {
+    mkdir -p $ARTIFACTORY_HOME/logs/catalina || errorArtHome "Could not create dir $ARTIFACTORY_HOME/logs/catalina"
     if [ ! -L "$TOMCAT_HOME/logs" ];
     then
-        mkdir -p $ARTIFACTORY_HOME/logs/catalina || errorArtHome "Could not create dir $ARTIFACTORY_HOME/logs/catalina"
         ln -s $ARTIFACTORY_HOME/logs/catalina $TOMCAT_HOME/logs || \
             errorArtHome "Could not create link from $TOMCAT_HOME/logs to $ARTIFACTORY_HOME/logs/catalina"
     fi

@@ -115,6 +115,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         if (StringUtils.isBlank(currentConfigXml)) {
             currentConfigXml = loadConfigFromStorage();
             if (!StringUtils.isBlank(currentConfigXml)) {
+                // TODO: Check the version is good, because if converted means update = true
                 updateDescriptor = false;
             }
         }
@@ -345,8 +346,9 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         // Nothing to do
     }
 
-    // Convert and save the artifactory config descriptor
-
+    /**
+     * Convert and save the artifactory config descriptor
+     */
     @Override
     public void convert(CompoundVersionDetails source, CompoundVersionDetails target) {
         //Initialize the enum registration

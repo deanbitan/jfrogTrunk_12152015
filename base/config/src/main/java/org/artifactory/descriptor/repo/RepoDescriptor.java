@@ -66,5 +66,7 @@ public interface RepoDescriptor extends Descriptor, Comparable {
 
     boolean isEnableDebianSupport();
 
-
+    boolean isEnablePypiSupport();
+    
+    boolean isEnableDockerSupport();
 }

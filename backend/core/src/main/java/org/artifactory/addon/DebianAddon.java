@@ -25,7 +25,7 @@ import org.artifactory.descriptor.repo.LocalRepoDescriptor;
  */
 public interface DebianAddon extends Addon {
 
-    void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password);
+    void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password, boolean delayed);
 
     String getPublicKeyDownloadTarget();
 }

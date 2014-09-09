@@ -3848,6 +3848,10 @@ table.data-table tr.headers span.group-by-link {
     top: 6px;
 }
 
+table.data-table.one-column {
+    border-right: 1px solid #777777
+}
+
 table.data-table th.group-by-none span.group-by-text {
     display: none;
 }
@@ -5671,6 +5675,10 @@ table.data-table td.add-value-row {
 
 .addon-debian {
     background: url(images/addons/16debian.png) no-repeat left top;
+}
+
+.addon-docker {
+    background: url(images/addons/16docker.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/

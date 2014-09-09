@@ -358,10 +358,11 @@ public interface RestAddon extends Addon {
      * @param version       the artifact version, if null then perform the search on all available versions
      * @param reposToSearch limit the search to specific repos, if null then performs the search on all real repos
      * @param remote        whether to fetch maven-metadata from remote repository or not
+     * @param limitSearch
      * @return A wrapper class of the search results
      */
     ArtifactVersionsResult getArtifactVersions(String groupId, String artifactId, @Nullable String version,
-            @Nullable StringList reposToSearch, boolean remote);
+            @Nullable StringList reposToSearch, boolean remote, boolean limitSearch);
 
     void writeStreamingFileList(HttpServletResponse response, String requestUrl, String path, int deep, int depth,
             int listFolders, int mdTimestamps, int includeRootPath) throws IOException, BlackedOutException;

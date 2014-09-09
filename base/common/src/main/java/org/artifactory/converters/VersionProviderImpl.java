@@ -62,7 +62,7 @@ public class VersionProviderImpl implements VersionProvider {
      * The initial version from the database. Not null only after the call to loadDbVersion() method which
      * occurs first thing after access to the database is allowed.
      */
-    private CompoundVersionDetails originalServiceVersion;
+    private CompoundVersionDetails originalDatabaseVersion;
 
     private ArtifactoryHome artifactoryHome;
 
@@ -82,7 +82,7 @@ public class VersionProviderImpl implements VersionProvider {
             verifyVersion(originalHomeVersion.getVersion(), runningVersion.getVersion());
             log.debug("Last Artifactory home version is: {}", originalHomeVersion.getVersion().name());
             if (artifactoryHome.isHaConfigured()) {
-                updateOriginalHalVersion();
+                updateOriginalHaVersion();
                 verifyVersion(originalHaVersion.getVersion(), runningVersion.getVersion());
                 log.debug("Last Artifactory cluster home version is: {}", originalHaVersion.getVersion().name());
             }
@@ -112,9 +112,10 @@ public class VersionProviderImpl implements VersionProvider {
                     String version = v310.name();
                     String revision = valueOf(v310.getRevision());
                     long timestampOfVersion311 = 1387059697274l;
-                    originalServiceVersion = new CompoundVersionDetails(v310, version, revision, timestampOfVersion311);
+                    originalDatabaseVersion = new CompoundVersionDetails(v310, version, revision,
+                            timestampOfVersion311);
                 } else {
-                    originalServiceVersion = getDbCompoundVersionDetails(dbProperties);
+                    originalDatabaseVersion = getDbCompoundVersionDetails(dbProperties);
                 }
             } else {
                 // In this case it is ok to assume that the version is 3.0.4 since upgrade to 3.1.0 and above is
@@ -123,12 +124,12 @@ public class VersionProviderImpl implements VersionProvider {
                 String version = v304.name();
                 String revision = valueOf(v304.getRevision());
                 long timestampOfVersion304 = 1382872758304l;
-                originalServiceVersion = new CompoundVersionDetails(v304, version, revision, timestampOfVersion304);
+                originalDatabaseVersion = new CompoundVersionDetails(v304, version, revision, timestampOfVersion304);
             }
-            verifyVersion(originalServiceVersion.getVersion(), runningVersion.getVersion());
-            log.debug("Last Artifactory database version is: {}", originalServiceVersion.getVersion().name());
+            verifyVersion(originalDatabaseVersion.getVersion(), runningVersion.getVersion());
+            log.debug("Last Artifactory database version is: {}", originalDatabaseVersion.getVersion().name());
         } catch (Exception e) {
-            log.error("Failed to resolve DbProperties from database", originalServiceVersion.getVersion().name());
+            log.error("Failed to resolve DbProperties from database", originalDatabaseVersion.getVersion().name());
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -154,8 +155,8 @@ public class VersionProviderImpl implements VersionProvider {
     }
 
     @Override
-    public boolean isOriginalServiceVersionReady() {
-        return originalServiceVersion != null;
+    public boolean isOriginalDatabaseVersionReady() {
+        return originalDatabaseVersion != null;
     }
 
     /**
@@ -164,15 +165,15 @@ public class VersionProviderImpl implements VersionProvider {
      * @return
      */
     @Override
-    public CompoundVersionDetails getOriginalService() {
-        if (originalServiceVersion == null) {
+    public CompoundVersionDetails getOriginalDatabaseVersion() {
+        if (originalDatabaseVersion == null) {
             throw new RuntimeException(
                     "The original version from the database is not ready, use this method after dbService initialization");
         }
-        return originalServiceVersion;
+        return originalDatabaseVersion;
     }
 
-    private void updateOriginalHalVersion() throws IOException {
+    private void updateOriginalHaVersion() throws IOException {
         File artifactoryPropertiesFile = artifactoryHome.getHaArtifactoryPropertiesFile();
         // If the properties file doesn't exists, then create it
         if (!artifactoryPropertiesFile.exists()) {

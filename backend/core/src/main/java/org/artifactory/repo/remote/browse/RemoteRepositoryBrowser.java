@@ -29,6 +29,8 @@ import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +42,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public abstract class RemoteRepositoryBrowser {
+    private static final Logger log = LoggerFactory.getLogger(RemoteRepositoryBrowser.class);
 
     protected final HttpExecutor client;
 
@@ -52,12 +55,12 @@ public abstract class RemoteRepositoryBrowser {
     protected String getFileListContent(String url) throws IOException {
         // add trailing slash for relative urls
         url = forceDirectoryUrl(url);
-
+        log.debug("Listing remote items: {}", url);
         HttpGet method = new HttpGet(url);
         try (CloseableHttpResponse response = client.executeMethod(method)) {
             assertSizeLimit(url, response);
 
-            InputStream responseBodyAsStream = HttpUtils.getGzipAwareResponseStream(response);
+            InputStream responseBodyAsStream = HttpUtils.getResponseBody(response);
             String responseString = IOUtils.toString(responseBodyAsStream, Charsets.UTF_8.name());
             StatusLine status = response.getStatusLine();
             if (status.getStatusCode() != HttpStatus.SC_OK) {

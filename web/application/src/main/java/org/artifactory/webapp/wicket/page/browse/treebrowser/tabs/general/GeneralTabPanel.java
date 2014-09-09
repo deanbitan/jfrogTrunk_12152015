@@ -29,6 +29,7 @@ import org.artifactory.addon.wicket.DebianWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
+import org.artifactory.addon.wicket.PypiWebAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
@@ -92,6 +93,13 @@ public class GeneralTabPanel extends Panel {
             if (!debianWebAddon.isDefault() && repoItem.getRepo().isEnableDebianSupport()) {
                 distributionManagement.add(
                         debianWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
+                                repoItem.getRepoPath()));
+            }
+
+            PypiWebAddon pypiWebAddon = addonsManager.addonByType(PypiWebAddon.class);
+            if (!pypiWebAddon.isDefault() && repoItem.getRepo().isEnablePypiSupport()) {
+                distributionManagement.add(
+                        pypiWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
                                 repoItem.getRepoPath()));
             }
 

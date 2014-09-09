@@ -19,10 +19,10 @@
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns="http://artifactory.jfrog.org/xsd/1.5.4"
-        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.5.4
-        http://www.jfrog.org/xsd/artifactory-v1_5_4.xsd">
-    <!--
+        xmlns="http://artifactory.jfrog.org/xsd/1.5.5"
+        xsi:schemaLocation="http://artifactory.jfrog.org/xsd/1.5.5
+        http://www.jfrog.org/xsd/artifactory-v1_5_5.xsd">
+<!--
     enable/disable anonymous downloads
     -->
         <security>

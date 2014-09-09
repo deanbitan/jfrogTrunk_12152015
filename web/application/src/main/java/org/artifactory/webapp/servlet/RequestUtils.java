@@ -180,7 +180,12 @@ public abstract class RequestUtils {
 
     public static boolean isAuthHeaderPresent(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
-        return header != null && header.startsWith("Basic ");
+        if (header != null && header.startsWith("Basic ")) {
+            String auth = header.substring(6);
+            return !"Og==".equals(auth);
+        }
+
+        return false;
     }
 
     public static Authentication getAuthentication(HttpServletRequest request) {

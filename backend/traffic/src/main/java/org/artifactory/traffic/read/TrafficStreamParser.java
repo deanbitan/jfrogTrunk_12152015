@@ -72,7 +72,7 @@ public abstract class TrafficStreamParser {
                     TrafficEntry trafficEntry = TokenizedTrafficEntryFactory.newTrafficEntry(entryRow);
                     if (isWithinDateRange(trafficEntry, startDate, endDate)) {
                         entryList.add(trafficEntry);
-                    } else if (trafficEntry.getTime() > endDate.getTime()) {
+                    } else if (trafficEntry.getTime() >= endDate.getTime()) {
                         // file entries are sorted, once we reach an entry after the endDate we can stop parsing
                         break;
                     }
@@ -95,6 +95,6 @@ public abstract class TrafficStreamParser {
      */
     private static boolean isWithinDateRange(TrafficEntry baseEntry, Date startDate, Date endDate) {
         long entryTime = baseEntry.getTime();
-        return startDate.getTime() <= entryTime && entryTime <= endDate.getTime();
+        return startDate.getTime() <= entryTime && entryTime < endDate.getTime();
     }
 }
