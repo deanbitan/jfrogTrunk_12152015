@@ -67,8 +67,6 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.Repo;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.remote.browse.HttpExecutor;
-import org.artifactory.repo.remote.browse.RemoteRepositoryBrowser;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.service.mover.MoverConfig;
 import org.artifactory.repo.virtual.VirtualRepo;
@@ -590,11 +588,6 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public void removeNpmPackage(FileInfo info) {
 
-    }
-
-    @Override
-    public RemoteRepositoryBrowser getRemoteBrowser(HttpExecutor executor) {
-        return null;
     }
 
     @Override

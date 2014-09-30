@@ -305,8 +305,9 @@ public class GeneralInfoPanel extends Panel {
 
         LabeledValue lastModified = new LabeledValue("lastModified", "Last Modified: ");
         infoBorder.add(lastModified);
-        infoBorder.add(new HelpBubble("lastModified.help",
-                "The time this artifact's file was modified. \nWill be identical to the artifact's 'Created' date when not available \n(for example, when deploying without the 'X-Artifactory-Last-Modified' request header)."));
+        HelpBubble lastModifiedHelp = new HelpBubble("lastModified.help",
+                "The time this artifact's file was modified. \nWill be identical to the artifact's 'Created' date when not available \n(for example, when deploying without the 'X-Artifactory-Last-Modified' request header).");
+        infoBorder.add(lastModifiedHelp);
 
         String created = centralConfigService.format(itemInfo.getCreated())+ " " + DurationFormatUtils.formatDuration(System.currentTimeMillis()-itemInfo.getCreated(),"(d'd' H'h' m'm' s's' ago)") ;
         LabeledValue createdLabel = new LabeledValue("created", "Created: ", created);
@@ -321,6 +322,7 @@ public class GeneralInfoPanel extends Panel {
         // disable/enable and set info according to the node type
         if (itemInfo.isFolder()) {
             lastModified.setVisible(false);
+            lastModifiedHelp.setVisible(false);
             sizeLabel.setVisible(false);
             moduleId.setVisible(false);
         } else {

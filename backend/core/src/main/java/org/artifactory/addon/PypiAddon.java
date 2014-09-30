@@ -19,8 +19,6 @@
 package org.artifactory.addon;
 
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.repo.remote.browse.HttpExecutor;
-import org.artifactory.repo.remote.browse.RemoteRepositoryBrowser;
 
 /**
  * @author Yoav Luft
@@ -30,8 +28,6 @@ public interface PypiAddon extends Addon {
     String PROPERTIES_PREFIX = "pypi";
     String NAME_PROPERTY = PROPERTIES_PREFIX + ".name";
     String VERSION_PROPERTY = PROPERTIES_PREFIX + ".version";
-
-    RemoteRepositoryBrowser getRemoteBrowser(HttpExecutor executor);
 
     void reindex(LocalRepoDescriptor descriptor, boolean async);
 }

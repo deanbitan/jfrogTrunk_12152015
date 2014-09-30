@@ -76,7 +76,7 @@ public class DeleteAction extends RepoAwareItemAction {
     }
 
     protected StatusHolder callUndeploy(RepoPath repoPath) {
-        return getRepoService().undeploy(repoPath);
+        return getRepoService().undeploy(repoPath, true, true);
     }
 
     protected String getDeleteSuccessMessage(RepoPath repoPath) {

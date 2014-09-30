@@ -18,11 +18,9 @@
 
 package org.artifactory.build;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.io.FileUtils;
@@ -33,7 +31,6 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.BlackDuckAddon;
-import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.build.AfterBuildSaveAction;
@@ -48,7 +45,10 @@ import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
+import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.artifact.ChecksumSearchControls;
+import org.artifactory.api.search.property.PropertySearchControls;
+import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
@@ -56,7 +56,6 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.factory.xstream.XStreamFactory;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
-import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
@@ -65,7 +64,6 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.build.service.BuildStoreService;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.version.CompoundVersionDetails;
-import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
 import org.jfrog.build.api.BuildFileBean;
@@ -92,6 +90,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -286,15 +285,11 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildNumber = buildRun.getNumber();
         Build build = getBuild(buildRun);
         status.debug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
-        for (Module module : build.getModules()) {
-            for (Artifact artifact : module.getArtifacts()) {
-                Set<FileInfo> matchingArtifacts = getBuildFileBeanInfo(buildName, buildNumber, artifact, true);
-                for (FileInfo matchingArtifact : matchingArtifacts) {
-                    RepoPath repoPath = matchingArtifact.getRepoPath();
-                    BasicStatusHolder undeployStatus = repositoryService.undeploy(repoPath, true, true);
-                    status.merge(undeployStatus);
-                }
-            }
+        Map<BuildFileBean, FileInfo> buildArtifactsInfo = getBuildBeansInfo(build, true, true);
+        for (FileInfo fileInfo : buildArtifactsInfo.values()) {
+            RepoPath repoPath = fileInfo.getRepoPath();
+            BasicStatusHolder undeployStatus = repositoryService.undeploy(repoPath, true, true);
+            status.merge(undeployStatus);
         }
         status.debug("Finished removing the artifacts of build '" + buildName + "' #" + buildNumber, log);
     }
@@ -380,52 +375,95 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public Set<FileInfo> getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean,
-            boolean strictMatching) {
-        PropertiesAddon propertiesAddon = addonsManager.addonByType(PropertiesAddon.class);
-        ChecksumSearchControls controls = new ChecksumSearchControls();
-        controls.addChecksum(ChecksumType.sha1, bean.getSha1());
-        controls.addChecksum(ChecksumType.md5, bean.getMd5());
-        @SuppressWarnings("unchecked") ItemSearchResults<ItemSearchResult> results
-                = searchService.getArtifactsByChecksumResults(controls);
+    public Map<BuildFileBean, FileInfo> getBuildBeansInfo(Build build, boolean strictMatching, boolean artifacts) {
+        /**
+         * 1. property search by build.name and build.version
+         * 2. match results against artifacts/dependencies of actual build
+         * 3. if still left something inside the build + strict=false - do "fallback" of checksum search best matching
+         */
 
-        List<ItemSearchResult> resultList = results.getResults();
-        if (!strictMatching && (results.getFullResultsCount() == 1L)) {
-            ItemInfo itemInfo = resultList.get(0).getItemInfo();
-            return Sets.newHashSet((FileInfo) itemInfo);
-        } else if (!resultList.isEmpty()) {
-            Set<RepoPath> repoPaths = Sets.newHashSet(
-                    Iterables.transform(resultList, new Function<ItemSearchResult, RepoPath>() {
-                        @Override
-                        public RepoPath apply(ItemSearchResult input) {
-                            return input.getItemInfo().getRepoPath();
-                        }
-                    })
-            );
-            Map<RepoPath, Properties> resultProperties = propertiesAddon.getProperties(repoPaths);
-            return getBestMatchingResult(resultList, resultProperties, buildName, buildNumber, strictMatching);
+        Map<BuildFileBean, FileInfo> finalResults = new HashMap<>();
+
+        List<BuildFileBean> unmatchedBuildBeans = getBuildFileBeans(build, artifacts);
+        finalResults.putAll(searchFileInfosByBuildNameAndNumber(build, unmatchedBuildBeans));
+
+        if (!strictMatching && !unmatchedBuildBeans.isEmpty()) {
+            finalResults.putAll(searchFileInfosByChecksums(unmatchedBuildBeans));
         }
-        return Sets.newHashSet();
+
+        return finalResults;
     }
 
-    @Override
-    public Set<FileInfo> getBestMatchingResult(List<ItemSearchResult> searchResults,
-            Map<RepoPath, Properties> resultProperties,
-            String buildName, String buildNumber, boolean strictMatching) {
-
-        if (resultProperties.isEmpty()) {
-            Set<FileInfo> matchingItems = Sets.newHashSet();
-            if (!strictMatching) {
-                FileInfo latestItem = getLatestItem(searchResults);
-                if (latestItem != null) {
-                    matchingItems.add(latestItem);
+    private List<BuildFileBean> getBuildFileBeans(Build build, boolean artifacts) {
+        List<BuildFileBean> artifactsList = Lists.newArrayList();
+        for (Module module : build.getModules()) {
+            if (artifacts) {
+                if (module.getArtifacts() != null) {
+                    artifactsList.addAll(module.getArtifacts());
+                }
+            } else { // dependencies
+                if (module.getDependencies() != null) {
+                    artifactsList.addAll(module.getDependencies());
                 }
             }
-            return matchingItems;
-        } else {
-            return matchResultBuildNameAndNumber(searchResults, resultProperties, buildName, buildNumber,
-                    strictMatching);
         }
+        return artifactsList;
+    }
+
+    private Map<BuildFileBean, FileInfo> searchFileInfosByChecksums(List<BuildFileBean> unmatchedBuildBeans) {
+        Map<BuildFileBean, FileInfo> finalResults = new HashMap<>();
+        for (BuildFileBean unfoundBuildItem : unmatchedBuildBeans) {
+            ChecksumSearchControls controls = new ChecksumSearchControls();
+            controls.setLimitSearchResults(false);
+            controls.addChecksum(ChecksumType.sha1, unfoundBuildItem.getSha1());
+            controls.addChecksum(ChecksumType.md5, unfoundBuildItem.getMd5());
+            ItemSearchResults<ArtifactSearchResult> checksumResults = searchService.getArtifactsByChecksumResults(controls);
+            FileInfo latestItem = getLatestItem(checksumResults.getResults());
+            if (latestItem != null) {
+                finalResults.put(unfoundBuildItem, latestItem);
+            }
+        }
+
+        return finalResults;
+    }
+
+    private Map<BuildFileBean, FileInfo> searchFileInfosByBuildNameAndNumber(Build build,
+            List<BuildFileBean> unmatchedBuildBeans) {
+        final PropertySearchControls searchControls = new PropertySearchControls();
+        searchControls.setLimitSearchResults(false);
+        searchControls.put("build.name", build.getName(), false);
+        searchControls.put("build.number", build.getNumber(), false);
+        ItemSearchResults<PropertySearchResult> results = searchService.searchProperty(searchControls);
+        Map<BuildFileBean, FileInfo> foundResults = getFoundResults(unmatchedBuildBeans, results.getResults());
+        return foundResults;
+    }
+
+    private Map<BuildFileBean, FileInfo> getFoundResults(List<? extends BuildFileBean> unmatchedBuildBeans,
+            List<PropertySearchResult> results) {
+        Map<BuildFileBean, FileInfo> finalResults = new HashMap<>();
+        for (PropertySearchResult propertySearchResult : results) {
+            ItemInfo itemInfo = propertySearchResult.getItemInfo();
+            if (itemInfo instanceof FileInfo) {
+                final FileInfo fileInfo = (FileInfo) itemInfo;
+                BuildFileBean buildFileBean = Iterables.find(unmatchedBuildBeans, getFileInfoPredicate(fileInfo), null);
+                if (buildFileBean != null) {
+                    finalResults.put(buildFileBean, fileInfo);
+                    unmatchedBuildBeans.remove(buildFileBean);
+                }
+            }
+        }
+
+        return finalResults;
+    }
+
+    private Predicate<BuildFileBean> getFileInfoPredicate(final FileInfo fileInfo) {
+        return new Predicate<BuildFileBean>() {
+            @Override
+            public boolean apply(BuildFileBean input) {
+                return fileInfo.getSha1().equals(input.getSha1()) &&
+                        fileInfo.getMd5().equals(input.getMd5());
+            }
+        };
     }
 
     @Override
@@ -616,7 +654,7 @@ public class BuildServiceImpl implements InternalBuildService {
         if (buildAgent != null) {
             String buildAgentName = buildAgent.getName();
             return !"ivy".equalsIgnoreCase(buildAgentName) && !"maven".equalsIgnoreCase(buildAgentName) &&
-                    !"gradle".equalsIgnoreCase(buildAgentName);
+                    !"gradle".equalsIgnoreCase(buildAgentName)&&!"MSBuild".equalsIgnoreCase(buildAgentName);
         }
 
         BuildType type = build.getType();
@@ -721,83 +759,12 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     /**
-     * Returns the best matching file info object by build name and number
-     *
-     * @param searchResults    File bean search results
-     * @param resultProperties Search result property map
-     * @param buildName        Build name to search for
-     * @param buildNumber      Build number to search for
-     * @param strictMatching   True if the artifact finder should operate in strict mode
-     * @return The file info of a result that best matches the given build name and number
-     */
-    private Set<FileInfo> matchResultBuildNameAndNumber(List<ItemSearchResult> searchResults,
-            Map<RepoPath, Properties> resultProperties, String buildName, String buildNumber, boolean strictMatching) {
-        Map<RepoPath, Properties> matchingBuildNames = Maps.newHashMap();
-
-        for (Map.Entry<RepoPath, Properties> repoPathPropertiesEntry : resultProperties.entrySet()) {
-            Properties properties = repoPathPropertiesEntry.getValue();
-            Set<String> buildNames = properties.get("build.name");
-            if (buildNames != null && buildNames.contains(buildName)) {
-                matchingBuildNames.put(repoPathPropertiesEntry.getKey(), properties);
-            }
-        }
-
-        if (matchingBuildNames.isEmpty()) {
-            Set<FileInfo> matchingItems = Sets.newHashSet();
-            if (!strictMatching) {
-                FileInfo latestItem = getLatestItem(searchResults);
-                if (latestItem != null) {
-                    matchingItems.add(latestItem);
-                }
-            }
-            return matchingItems;
-        } else {
-            return matchResultBuildNumber(searchResults, resultProperties, matchingBuildNames, buildNumber,
-                    strictMatching);
-        }
-    }
-
-    /**
-     * Returns the best matching file info object by build number
-     *
-     * @param searchResults
-     * @param resultProperties Search result property map
-     * @param matchingPaths    File info paths that match by build name
-     * @param buildNumber      Build number to search for
-     * @param strictMatching   True if the artifact finder should operate in strict mode
-     * @return The file info of a result that best matches the given build number
-     */
-    private Set<FileInfo> matchResultBuildNumber(List<ItemSearchResult> searchResults,
-            Map<RepoPath, Properties> resultProperties,
-            Map<RepoPath, Properties> matchingPaths, String buildNumber, boolean strictMatching) {
-        Map<RepoPath, FileInfo> files = Maps.newHashMap();
-        for (ItemSearchResult searchResult : searchResults) {
-            ItemInfo itemInfo = searchResult.getItemInfo();
-            files.put(itemInfo.getRepoPath(), (FileInfo) itemInfo);
-        }
-        Set<FileInfo> matchingItems = Sets.newHashSet();
-        for (RepoPath repoPath : matchingPaths.keySet()) {
-            Properties properties = resultProperties.get(repoPath);
-            Set<String> buildNumbers = properties.get("build.number");
-            if (buildNumbers != null && buildNumbers.contains(buildNumber)) {
-                matchingItems.add(files.get(repoPath));
-            }
-        }
-
-        if (matchingItems.isEmpty() && !strictMatching && !matchingPaths.isEmpty()) {
-            RepoPath repoPath = matchingPaths.keySet().iterator().next();
-            matchingItems.add(files.get(repoPath));
-        }
-        return matchingItems;
-    }
-
-    /**
      * Returns the file info object of the result watch was last modified
      *
      * @param searchResults Search results to search within
      * @return Latest modified search result file info. Null if no results were given
      */
-    private FileInfo getLatestItem(List<ItemSearchResult> searchResults) {
+    private FileInfo getLatestItem(List<ArtifactSearchResult> searchResults) {
         FileInfo latestItem = null;
 
         for (ItemSearchResult result : searchResults) {

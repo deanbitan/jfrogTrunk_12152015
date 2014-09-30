@@ -18,6 +18,8 @@
 
 package org.artifactory.repo.cleanup;
 
+import com.google.common.collect.Maps;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import org.artifactory.api.module.ModuleInfo;
@@ -41,6 +43,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Calendar;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -133,6 +136,11 @@ public class IntegrationCleanupServiceImpl implements InternalIntegrationCleanup
     public void destroy() {
     }
 
+    /**
+     * The integration cleanup deletes artifacts according to the snapshot and the classifier,
+     * unlike the previous approach that was to deletes artifacts according to the snapshot only,
+     * See issue RTFACT-6675
+     */
     private void conditionalCleanup(RepoPath repoPath) {
         LocalRepo repo = repositoryService.localRepositoryByKey(repoPath.getRepoKey());
         if (repo == null) {
@@ -144,9 +152,39 @@ public class IntegrationCleanupServiceImpl implements InternalIntegrationCleanup
         ModuleInfo baseRevisionModule = getBaseRevisionModuleInfo(deployedModuleInfo);
         TreeMultimap<Calendar, ItemInfo> cleanupCandidates = retriever.collectVersionsItems(repo, baseRevisionModule,
                 false);
-        while (cleanupCandidates.keySet().size() > repo.getMaxUniqueSnapshots()) {
-            performCleanup(cleanupCandidates);
+        Map<String,TreeMultimap<Calendar, ItemInfo>> cleanupCandidatesByClassifier=forkByClassifier(cleanupCandidates);
+        for (TreeMultimap<Calendar, ItemInfo> calendarItemInfoTreeMultimap : cleanupCandidatesByClassifier.values()) {
+            while (calendarItemInfoTreeMultimap.keySet().size() > repo.getMaxUniqueSnapshots()) {
+                performCleanup(calendarItemInfoTreeMultimap);
+            }
         }
+
+    }
+
+
+
+    private Map<String, TreeMultimap<Calendar, ItemInfo>> forkByClassifier(
+            TreeMultimap<Calendar, ItemInfo> cleanupCandidates) {
+        Map<String, TreeMultimap<Calendar, ItemInfo>> result= Maps.newHashMap();
+        for (Calendar calendar : cleanupCandidates.keySet()) {
+            NavigableSet<ItemInfo> itemInfos = cleanupCandidates.get(calendar);
+            for (ItemInfo itemInfo : itemInfos) {
+                String classifier=resolveClassifier(itemInfo);
+                TreeMultimap<Calendar, ItemInfo> classifierMap = result.get(classifier);
+                if(classifierMap==null){
+                    //classifierMap= TreeMultimap.create(Ordering.natural().reverse(), Ordering.natural().reverse());
+                    classifierMap= TreeMultimap.create(Ordering.natural(), Ordering.natural());;
+                    result.put(classifier,classifierMap);
+                }
+                classifierMap.put(calendar,itemInfo);
+            }
+        }
+        return result;
+    }
+
+    private String resolveClassifier(ItemInfo itemInfo) {
+        String classifier = repositoryService.getItemModuleInfo(itemInfo.getRepoPath()).getClassifier();
+        return classifier!=null?classifier:"";
     }
 
     private ModuleInfo getBaseRevisionModuleInfo(ModuleInfo deployedModuleInfo) {

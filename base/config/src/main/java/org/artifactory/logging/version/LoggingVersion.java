@@ -42,7 +42,7 @@ import java.util.List;
  */
 public enum LoggingVersion implements SubConfigElementVersion {
     v1(ArtifactoryVersion.v122rc0, ArtifactoryVersion.v304, new LogbackConfigSwapper()),
-    v2(ArtifactoryVersion.v310, ArtifactoryVersion.v3302, null),
+    v2(ArtifactoryVersion.v310, ArtifactoryVersion.v331, null),
     v3(ArtifactoryVersion.v340, ArtifactoryVersion.getCurrent(), new LogbackJFrogInfoConverter());
 
     private static final Logger log = LoggerFactory.getLogger(LoggingVersion.class);

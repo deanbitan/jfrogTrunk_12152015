@@ -41,6 +41,7 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.concurrent.ExpiringDelayed;
@@ -568,6 +569,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     log.error("No concurrent download handle is available.");
                     RepoRequests.logToContext("Unable find available concurrent download handle");
                 }
+                ChecksumsInfo checksumsInfo = localCacheRepo.getInfo(requestContext).getInfo().getChecksumsInfo();
+                remoteResource.getInfo().getChecksumsInfo().setChecksums(checksumsInfo.getChecksums());
                 return handle;
             }
 
@@ -731,9 +734,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     ConstantValues.repoConcurrentDownloadSyncTimeoutSecs.getLong(), TimeUnit.SECONDS);
             if (success) {
                 try {
-                    ResourceStreamHandle cacheHandle = localCacheRepo.getResourceStreamHandle(request, cachedResource);
-                    if (cacheHandle != null) {
-                        return new Pair<>(cacheHandle, true);
+                    if (!cachedResource.isExpired()) {
+                        ResourceStreamHandle cacheHandle = localCacheRepo.getResourceStreamHandle(request, cachedResource);
+                        if (cacheHandle != null) {
+                            return new Pair<>(cacheHandle, true);
+                        }
                     }
                 } catch (FileNotFoundException e) {
                     String msg = "Unable to find cached resource stream handle, continuing with actual remote download.";

@@ -120,23 +120,20 @@ public interface BuildAddon extends Addon {
     /**
      * Returns a list of build-artifact actionable items
      *
-     * @param buildName   The name of the searched build
-     * @param buildNumber The number of the searched build
-     * @param artifacts   Artifacts to create actionable items from
+     * @param build     The searched build
+     * @param artifacts Artifacts to create actionable items from
      * @return Artifact actionable item list
      */
-    List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, String buildNumber,
-            List<Artifact> artifacts);
+    List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(Build build, List<Artifact> artifacts);
 
     /**
      * Populates dependency actionable items with their corresponding repo paths (if exist)
      *
-     * @param buildName    The name of the searched build
-     * @param buildNumber  The number of the searched build
+     * @param build        The searched build
      * @param dependencies Unpopulated actionable items
      * @return Dependency actionable item list
      */
-    List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName, String buildNumber,
+    List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(Build build,
             List<ModuleDependencyActionableItem> dependencies);
 
     /**
@@ -151,12 +148,11 @@ public interface BuildAddon extends Addon {
     /**
      * Returns a file info object for a build file bean
      *
-     * @param buildName   The name of the searched build
-     * @param buildNumber The number of the searched build
-     * @param bean        File bean to get info for
+     * @param build The searched build
+     * @param bean  File bean to get info for
      * @return file infos
      */
-    Set<FileInfo> getNonStrictBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean);
+    Set<FileInfo> getNonStrictBuildFileBeanInfo(Build build, BuildFileBean bean);
 
     /**
      * Searches for artifacts with build name properties that contain 'from' as a value and renames them to 'to'

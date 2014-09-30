@@ -32,6 +32,7 @@ import org.artifactory.repo.RepoPath;
  * @author Yoav Luft
  */
 public interface PypiWebAddon extends Addon {
+
     void createAndAddPypiConfigSection(Form form, RepoDescriptor repo, boolean isCreate);
 
     WebMarkupContainer buildDistributionManagementPanel(String id, RepoPath repoPath);

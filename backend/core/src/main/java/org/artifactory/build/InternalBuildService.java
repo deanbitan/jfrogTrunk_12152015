@@ -20,10 +20,7 @@ package org.artifactory.build;
 
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.build.ImportableExportableBuild;
-import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.fs.FileInfo;
-import org.artifactory.md.Properties;
-import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
@@ -32,9 +29,7 @@ import org.jfrog.build.api.BuildFileBean;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * The system-internal interface of the build service
@@ -49,30 +44,13 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
     String BACKUP_BUILDS_FOLDER = "builds.previous";
 
     /**
-     * Returns a file info object for a build file bean
+     * Returns a map of build artifact/dependency and it's matching FileInfo
      *
-     * @param buildName      The name of the searched build
-     * @param buildNumber    The number of the searched build
-     * @param bean           File bean to get info for
-     * @param strictMatching True if the artifact finder should operate in strict mode
-     * @return file infos
+     * @param build          The searched build (searching within it's artifacts/dependencies)
+     * @param strictMatching When false, fallback to searching by checksums in case the bean wasn't found by build.name and build.number properties
+     * @param artifacts      Whether to search for artifacts or dependencies
      */
-    Set<FileInfo> getBuildFileBeanInfo(String buildName, String buildNumber, BuildFileBean bean,
-            boolean strictMatching);
-
-    /**
-     * Returns the best matching file info object from the given results and criteria
-     *
-     * @param searchResults    File bean search results
-     * @param resultProperties Search result property map
-     * @param buildName        Build name to search for
-     * @param buildNumber      Build number to search for
-     * @param strictMatching   True if the artifact finder should operate in strict mode
-     * @return The file infos of a result that best match the given criteria
-     */
-    Set<FileInfo> getBestMatchingResult(List<ItemSearchResult> searchResults,
-            Map<RepoPath, Properties> resultProperties,
-            String buildName, String buildNumber, boolean strictMatching);
+    Map<BuildFileBean, FileInfo> getBuildBeansInfo(Build build, boolean strictMatching, boolean artifacts);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a

@@ -36,17 +36,16 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.DoesNotExistException;
-import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Dependency;
-import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -95,73 +94,40 @@ public class BaseBuildPromoter {
             MultiStatusHolder multiStatusHolder) {
         Set<RepoPath> itemsToMove = Sets.newHashSet();
 
-        List<Module> moduleList = getModuleList(build);
-        if (moduleList == null) {
-            return itemsToMove;
-        }
-
-        String buildName = build.getName();
-        String buildNumber = build.getNumber();
-
-        for (Module module : moduleList) {
-
-            List<Artifact> artifactList = module.getArtifacts();
-            if (artifacts && (artifactList != null)) {
-                for (Artifact artifact : artifactList) {
-                    handleArtifact(itemsToMove, buildName, buildNumber, artifact, failOnMissingArtifact, strictMatching,
-                            multiStatusHolder);
+        if (artifacts) {
+            Map<BuildFileBean, FileInfo> buildArtifactsInfo = buildService.getBuildBeansInfo(build, strictMatching,
+                    true);
+            if (buildArtifactsInfo.isEmpty()) {
+                String errorMessage = "Unable to find artifacts of build '" + build.getName() + "' #" + build.getNumber();
+                if (failOnMissingArtifact) {
+                    throw new ItemNotFoundRuntimeException(errorMessage + ": aborting promotion.");
                 }
+                multiStatusHolder.error(errorMessage, log);
+                return Sets.newHashSet();
             }
 
-            List<Dependency> dependencyList = module.getDependencies();
-            if (dependencies && (dependencyList != null)) {
-                for (Dependency dependency : dependencyList) {
-                    handleDependency(scopes, itemsToMove, buildName, buildNumber, dependency);
+            for (FileInfo fileInfo : buildArtifactsInfo.values()) {
+                itemsToMove.add(fileInfo.getRepoPath());
+            }
+        }
+
+        if (dependencies) {
+            Map<BuildFileBean, FileInfo> buildDependenciesInfo = buildService.getBuildBeansInfo(build, strictMatching,
+                    false);
+            for (Map.Entry<BuildFileBean, FileInfo> entry : buildDependenciesInfo.entrySet()) {
+                BuildFileBean key = entry.getKey();
+                if (key instanceof Dependency) {
+                    Dependency dependency = (Dependency) key;
+                    List<String> dependencyScopes = dependency.getScopes();
+                    if (org.artifactory.util.CollectionUtils.isNullOrEmpty(scopes) || (dependencyScopes != null &&
+                            CollectionUtils.containsAny(dependencyScopes, scopes))) {
+                        itemsToMove.add(entry.getValue().getRepoPath());
+                    }
                 }
             }
         }
 
         return itemsToMove;
-    }
-
-    private List<Module> getModuleList(Build build) {
-        if (build == null) {
-            return null;
-        }
-
-        List<Module> moduleList = build.getModules();
-        if (moduleList == null) {
-            return null;
-        }
-
-        return moduleList;
-    }
-
-    private void handleArtifact(Set<RepoPath> itemsToMove, String buildName, String buildNumber, Artifact artifact,
-            boolean failOnMissingArtifact, boolean strictMatching, MultiStatusHolder multiStatusHolder) {
-        Set<FileInfo> artifactInfos = locateItems(buildName, buildNumber, artifact, strictMatching);
-        if (artifactInfos.isEmpty()) {
-            String errorMessage = "Unable to find artifact '" + artifact.getName() +
-                    "' of build '" + buildName + "' #" + buildNumber;
-            if (failOnMissingArtifact) {
-                throw new ItemNotFoundRuntimeException(errorMessage + ": aborting promotion.");
-            }
-            multiStatusHolder.error(errorMessage, log);
-            return;
-        }
-        itemsToMove.add(artifactInfos.iterator().next().getRepoPath());
-    }
-
-    private void handleDependency(Collection<String> scopes, Set<RepoPath> itemsToMove, String buildName,
-            String buildNumber, Dependency dependency) {
-        List<String> dependencyScopes = dependency.getScopes();
-        if (org.artifactory.util.CollectionUtils.isNullOrEmpty(scopes) || (dependencyScopes != null &&
-                CollectionUtils.containsAny(dependencyScopes, scopes))) {
-            Set<FileInfo> dependencyInfos = locateItems(buildName, buildNumber, dependency, false);
-            if (dependencyInfos != null && !dependencyInfos.isEmpty()) {
-                itemsToMove.add(dependencyInfos.iterator().next().getRepoPath());
-            }
-        }
     }
 
     /**
@@ -192,19 +158,6 @@ public class BaseBuildPromoter {
             boolean failFast) {
         return repositoryService.copy(itemsToCopy, targetRepoKey,
                 (Properties) InfoFactoryHolder.get().createProperties(), dryRun, failFast);
-    }
-
-    /**
-     * Searches for the physical artifact of the given build file and adds it to the item collection if found
-     *
-     * @param buildName
-     * @param buildNumber
-     * @param buildFileBean  Build file to locate
-     * @param strictMatching True if the artifact finder should operate in strict mode
-     */
-    private Set<FileInfo> locateItems(String buildName, String buildNumber, BuildFileBean buildFileBean,
-            boolean strictMatching) {
-        return buildService.getBuildFileBeanInfo(buildName, buildNumber, buildFileBean, strictMatching);
     }
 
     protected void tagBuildItemsWithProperties(Set<RepoPath> itemsToTag, Properties properties, boolean failFast,

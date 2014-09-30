@@ -36,7 +36,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.protocol.HttpContext;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
-import org.artifactory.addon.PypiAddon;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
@@ -137,9 +136,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         if (s3Repository) {
             log.debug("Repository {} caches S3 repository", getKey());
             remoteBrowser = new S3RepositoryBrowser(clientExec, this);
-        } else if (getDescriptor().isEnablePypiSupport()) {
-            remoteBrowser = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
-                    PypiAddon.class).getRemoteBrowser(clientExec);
         } else {
             remoteBrowser = new HtmlRepositoryBrowser(clientExec);
         }
@@ -326,9 +322,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
     private void logDownloading(String fullUrl, long contentLength) {
         if (NamingUtils.isChecksum(fullUrl)) {
-            log.debug("{} downloading {} {} ", this, fullUrl, StorageUnit.toReadableString(contentLength));
+            log.debug("{} downloading {} {} ", this, fullUrl,
+                    contentLength >= 0 ? StorageUnit.toReadableString(contentLength) : "Unknown content length");
         } else {
-            log.info("{} downloading {} {} ", this, fullUrl, StorageUnit.toReadableString(contentLength));
+            log.info("{} downloading {} {} ", this, fullUrl,
+                    contentLength >= 0 ? StorageUnit.toReadableString(contentLength) : "Unknown content length");
         }
     }
 
@@ -432,9 +430,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      * Notice: for use with HEAD method, no content is expected in the response.
      * Process the remote repository's response and construct a repository resource.
      *
-     * @param repoPath of requested resource
-     * @param method   executed {@link org.apache.http.client.methods.HttpHead} from which to process the response.
-     * @param response The response to the get info request
+     * @param repoPath       of requested resource
+     * @param method         executed {@link org.apache.http.client.methods.HttpHead} from which to process the response.
+     * @param response       The response to the get info request
      * @param context
      * @param requestContext
      * @return
@@ -506,7 +504,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         if (context != null) {
             String disableFolderRedirectAssertion = context.getRequest().getParameter(
                     ArtifactoryRequest.PARAM_FOLDER_REDIRECT_ASSERTION);
-            if (StringUtils.isNotBlank(disableFolderRedirectAssertion) && Boolean.valueOf(disableFolderRedirectAssertion)) {
+            if (StringUtils.isNotBlank(disableFolderRedirectAssertion) && Boolean.valueOf(
+                    disableFolderRedirectAssertion)) {
                 // Do not perform in case of parameter provided
                 RepoRequests.logToContext("Folder redirect assertion is disabled for internal download request");
                 return true;

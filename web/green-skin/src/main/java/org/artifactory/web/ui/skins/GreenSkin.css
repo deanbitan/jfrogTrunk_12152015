@@ -5681,6 +5681,10 @@ table.data-table td.add-value-row {
     background: url(images/addons/16docker.png) no-repeat left top;
 }
 
+.addon-pypi {
+    background: url(images/addons/16pypi.png) no-repeat left top;
+}
+
 /*-- ProfilePanel --*/
 
 .settings-snippet {

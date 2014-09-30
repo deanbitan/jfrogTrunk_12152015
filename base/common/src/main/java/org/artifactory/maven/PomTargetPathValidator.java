@@ -59,6 +59,18 @@ public class PomTargetPathValidator {
             if (StringUtils.isNotBlank(groupId)) {
                 //Do not verify if the pom's groupid does not exist
                 String modelVersion = getModelVersion(model);
+                if (StringUtils.isBlank(modelVersion)) {
+                    String msg = String.format(
+                            "The Pom version of '%s' does not exists. Please verify your POM content for correctness",
+                            relPath);
+                    if (suppressPomConsistencyChecks) {
+                        log.error("{} POM consistency checks are suppressed. Broken artifacts might have been " +
+                                "stored in the repository - please resolve this manually.", msg);
+                        return;
+                    } else {
+                        throw new BadPomException(msg);
+                    }
+                }
 
                 //For snapshots with unique snapshot version, do not include the model version in the path
                 boolean snapshot = moduleInfo.isIntegration();

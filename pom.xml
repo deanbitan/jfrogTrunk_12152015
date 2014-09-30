@@ -15,14 +15,12 @@
   ~
   ~ You should have received a copy of the GNU Lesser General Public License
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
-  -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
+  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.x-SNAPSHOT</version>
+    <version>3.4.0</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -133,85 +131,85 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-common</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-common</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
                 <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-green-skin</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
@@ -1092,55 +1090,55 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>repomd</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-indexer</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-extractor</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-writer</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>gems-extractor</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>npm</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>deb</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>docker</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>pypi</artifactId>
-                <version>3.x-SNAPSHOT</version>
+                <version>3.2.0</version>
             </dependency>
 
             <dependency>
@@ -1157,22 +1155,6 @@
                     <exclusion>
                         <groupId>org.tukaani</groupId>
                         <artifactId>xz</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.xmlrpc</groupId>
-                <artifactId>xmlrpc-server</artifactId>
-                <version>3.1.3</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>xml-apis</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1220,12 +1202,12 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>${project.version}</version>
+                <version>3.4.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
@@ -1623,7 +1605,7 @@
                     <version>1.3</version>
                     <configuration>
                         <providerSelection>1.7</providerSelection>
-                        <source/>
+                        <source />
                     </configuration>
                     <executions>
                         <execution>

@@ -404,8 +404,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Set<FileInfo> getNonStrictBuildFileBeanInfo(String buildName, String buildNumber,
-            BuildFileBean bean) {
+    public Set<FileInfo> getNonStrictBuildFileBeanInfo(Build build, BuildFileBean bean) {
         return Sets.newHashSet();
     }
 
@@ -736,14 +735,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(String buildName, String buildNumber,
-            List<Artifact> artifacts) {
+    public List<ModuleArtifactActionableItem> getModuleArtifactActionableItems(Build build, List<Artifact> artifacts) {
         return Lists.newArrayList();
     }
 
     @Override
-    public List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(String buildName,
-            String buildNumber,
+    public List<ModuleDependencyActionableItem> populateModuleDependencyActionableItem(Build build,
             List<ModuleDependencyActionableItem> dependencies) {
         return Lists.newArrayList();
     }
@@ -1207,18 +1204,17 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         WebMarkupContainer section = new WebMarkupContainer("pypiSupportSection");
         section.add(new TitledBorderBehavior("fieldset-border", "PyPI"));
         section.add(new DisabledAddonBehavior(AddonType.PYPI));
-        StyledCheckbox enablePypiSupport = new StyledCheckbox("enablePypiSupport");
-        enablePypiSupport.setEnabled(false);
-        section.add(enablePypiSupport.setTitle("Enable PyPI Support").setOutputMarkupId(true));
+        section.add(new StyledCheckbox("enablePypiSupport").setTitle("Enable PyPI Support").setEnabled(false));
         section.add(new SchemaHelpBubble("enablePypiSupport.help"));
-        section.add(new Label("pypiRepoUrlLabel", "").setVisible(false));
         if (repo instanceof LocalRepoDescriptor) {
             section.add(new TitledAjaxSubmitLink("recalculateIndex", "Recalculate Index", form) {
                 @Override
                 protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
                 }
-            }).setEnabled(false);
+            }.setEnabled(false));
         }
+        section.add(new Label("pypiRepoUrlLabel", "").setVisible(false));
+        form.add(section);
     }
 
     @Override

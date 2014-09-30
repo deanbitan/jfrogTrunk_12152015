@@ -66,7 +66,7 @@ public interface SearchService {
      * @param searchControls Search controls
      * @return List of ItemSearchResults
      */
-    ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls);
+    ItemSearchResults<ArtifactSearchResult> getArtifactsByChecksumResults(ChecksumSearchControls searchControls);
 
     /**
      * Search for files with dates fields passed that are included in the date range provided.

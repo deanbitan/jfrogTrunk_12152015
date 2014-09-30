@@ -74,9 +74,8 @@ import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.type.TypeReference;
-import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
-import org.jfrog.build.api.Module;
+import org.jfrog.build.api.BuildFileBean;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,7 +162,7 @@ public class BintrayServiceImpl implements BintrayService {
         MultiStatusHolder status = new MultiStatusHolder();
         String buildNameAndNumber = build.getName() + ":" + build.getNumber();
         status.status("Starting pushing build '" + buildNameAndNumber + "' to Bintray.", log);
-        Set<FileInfo> artifactsToPush = collectArtifactsToPush(build, status);
+        Set<FileInfo> artifactsToPush = collectArtifactsToPush(build);
         if (artifactsToPush != null) {
             try (CloseableHttpClient client = createHTTPClient()) {
                 status.status("Found " + artifactsToPush.size() + " artifacts to push.", log);
@@ -316,29 +315,9 @@ public class BintrayServiceImpl implements BintrayService {
         repoService.setProperties(repoPath, properties);
     }
 
-    private Set<FileInfo> collectArtifactsToPush(Build build, MultiStatusHolder status) {
-        Set<FileInfo> fileInfoSet = Sets.newHashSet();
-
-        List<Module> modules = build.getModules();
-        if (modules != null) {
-            for (Module module : modules) {
-                List<Artifact> artifacts = module.getArtifacts();
-                if (artifacts != null) {
-                    for (Artifact artifact : artifacts) {
-                        Set<FileInfo> artifactInfos = buildService.getBuildFileBeanInfo(build.getName(),
-                                build.getNumber(), artifact, false);
-                        if (artifactInfos != null && !artifactInfos.isEmpty()) {
-                            fileInfoSet.add(artifactInfos.iterator().next());
-                        } else {
-                            status.error("Couldn't find matching file for artifact '" + artifact + "'", log);
-                            return null;
-                        }
-                    }
-                }
-            }
-        }
-
-        return fileInfoSet;
+    private Set<FileInfo> collectArtifactsToPush(Build build) {
+        Map<BuildFileBean, FileInfo> infos = buildService.getBuildBeansInfo(build, false, true);
+        return Sets.newHashSet(infos.values());
     }
 
     private void performPush(CloseableHttpClient client, FileInfo fileInfo, BintrayParams bintrayParams,

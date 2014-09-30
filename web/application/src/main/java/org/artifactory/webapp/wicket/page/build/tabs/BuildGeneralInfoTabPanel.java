@@ -48,7 +48,6 @@ import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
 import org.jfrog.build.api.Agent;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
-import org.jfrog.build.api.BuildType;
 import org.jfrog.build.api.IssueTracker;
 import org.jfrog.build.api.Issues;
 
@@ -98,13 +97,6 @@ public class BuildGeneralInfoTabPanel extends Panel {
         addLabeledValue(infoBorder, "name", "Name", build.getName(), true);
         addLabeledValue(infoBorder, "number", "Number", build.getNumber(), true);
 
-        BuildType buildType = build.getType();
-        String buildTypeName = null;
-        if (buildType != null) {
-            buildTypeName = buildType.getName();
-        }
-        addLabeledValue(infoBorder, "type", "Type", buildTypeName, true);
-
         Agent agent = build.getAgent();
         String agentName = null;
         if (agent != null) {
@@ -112,10 +104,7 @@ public class BuildGeneralInfoTabPanel extends Panel {
         }
         addLabeledValue(infoBorder, "agent", "Agent", agentName, true);
         BuildAgent buildAgent = build.getBuildAgent();
-        String buildAgentName = null;
-        if (buildAgent != null) {
-            buildAgentName = buildAgent.toString();
-        }
+        String buildAgentName = (buildAgent != null) ? buildAgent.toString() : null;
         addLabeledValue(infoBorder, "buildAgent", "Build Agent", buildAgentName, true);
         addLabeledValue(infoBorder, "started", "Started", build.getStarted(), true);
 

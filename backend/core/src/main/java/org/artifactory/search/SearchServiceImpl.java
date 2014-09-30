@@ -145,7 +145,7 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     @Override
-    public ItemSearchResults getArtifactsByChecksumResults(ChecksumSearchControls searchControls) {
+    public ItemSearchResults<ArtifactSearchResult> getArtifactsByChecksumResults(ChecksumSearchControls searchControls) {
         List<ArtifactSearchResult> resultList = Lists.newArrayList();
         ArtifactSearcher searcher = new ArtifactSearcher();
         Collection<ItemInfo> itemInfos = searcher.searchArtifactsByChecksum(searchControls);

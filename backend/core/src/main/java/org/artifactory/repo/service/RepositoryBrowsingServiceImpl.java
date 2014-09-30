@@ -128,7 +128,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             throw new IllegalArgumentException("No local or cache repo found: " + repoPath.getRepoKey());
         }
 
-        if (repo.isBlackedOut()) {
+        if (repo.isBlackedOut() || !repo.accepts(repoPath)) {
             return Lists.newArrayListWithCapacity(0);
         }
 
@@ -192,7 +192,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
 
         // include remote resources based on the flag and the offline mode
-        boolean includeRemoteResources = criteria.isIncludeRemoteResources() && repo.isListRemoteFolderItems();
+        boolean includeRemoteResources = criteria.isIncludeRemoteResources() && repo.isListRemoteFolderItems() && repo.accepts(repoPath);
 
         // first get all the cached items
         List<BaseBrowsableItem> children = Lists.newArrayList();
@@ -302,7 +302,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         List<LocalRepo> localRepositories = repo.getLocalRepositories();
 
         for (LocalRepo localRepo : localRepositories) {
-            RepoPath path = InternalRepoPathFactory.create(localRepo.getKey(), relativePath);
+            RepoPath path = InternalRepoPathFactory.create(localRepo.getKey(), relativePath, criteria.getRepoPath().isFolder());
             try {
                 BrowsableItemCriteria localCriteria = new BrowsableItemCriteria.Builder(criteria).repoPath(path).
                         build();
@@ -328,7 +328,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         // add children from all remote repos (and their caches)
         for (RemoteRepo remoteRepo : remoteRepositories) {
             RepoPath remoteRepoPath = InternalRepoPathFactory.create(remoteRepo.getKey(),
-                    criteria.getRepoPath().getPath());
+                    criteria.getRepoPath().getPath(), criteria.getRepoPath().isFolder());
             try {
                 BrowsableItemCriteria remoteCriteria = new BrowsableItemCriteria.Builder(criteria).
                         repoPath(remoteRepoPath).build();

@@ -72,6 +72,8 @@ rsync -r --exclude 'work' --exclude 'temp'  %{extracted_tomcat}/* "%{buildroot}%
 
 # Link the folders
 %__ln_s "%{target_artifactory_install}/webapps" "%{buildroot}%{target_artifactory_home}/webapps"
+%__ln_s "%{target_artifactory_home}/temp" "%{buildroot}%{target_tomcat_home}/temp"
+%__ln_s "%{target_artifactory_home}/work" "%{buildroot}%{target_tomcat_home}/work"
 %__ln_s "/etc/opt/jfrog/artifactory" "%{buildroot}/var/opt/jfrog/artifactory/etc"
 %__ln_s "%{target_artifactory_install}/misc" "%{buildroot}%{target_artifactory_home}/misc"
 %__ln_s "%{target_artifactory_install}/tomcat" "%{buildroot}%{target_artifactory_home}/tomcat"
@@ -280,6 +282,8 @@ exit 0
 %attr(775,root,root) %config %{target_tomcat_home}/conf
 %attr(775,root,root) %{target_tomcat_home}/lib
 %{target_tomcat_home}/logs
+%{target_tomcat_home}/temp
+%{target_tomcat_home}/work
 %attr(775,artifactory,artifactory) %{target_artifactory_home}
 %attr(775,artifactory,artifactory) %{target_tomcat_home}/webapps
 %attr(774,root,root) %{target_tomcat_home}/LICENSE

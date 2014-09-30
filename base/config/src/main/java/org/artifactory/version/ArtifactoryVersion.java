@@ -104,7 +104,7 @@ public enum ArtifactoryVersion {
     v322("3.2.2", 30097),
     v330("3.3.0", 30104),
     v3301("3.3.0.1", 30106),
-    v3302("3.3.0.2", 30113),    //TODO: [by YS] change after final release
+    v331("3.3.1", 30120),
     v340("3.4.0", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {

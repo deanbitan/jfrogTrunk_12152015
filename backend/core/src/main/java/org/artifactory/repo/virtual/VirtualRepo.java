@@ -271,15 +271,16 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
     }
 
     private RemoteRepo remoteRepositoryByRemoteOrCacheKey(String key) {
-        //Try to get cached repositories
-        int idx = key.lastIndexOf(RepoPath.REMOTE_CACHE_SUFFIX);
-        RemoteRepo remoteRepo;
-        //Get the cache either by <remote-repo-name> or by <remote-repo-name>-cache
-        if (idx > 1 && idx + RepoPath.REMOTE_CACHE_SUFFIX.length() == key.length()) {
-            remoteRepo = remoteRepositoryByKey(key.substring(0, idx));
-        } else {
-            remoteRepo = remoteRepositoryByKey(key);
+        RemoteRepo remoteRepo = remoteRepositoryByKey(key);
+        if (remoteRepo == null) {
+            //Try to get cached repositories
+            int idx = key.lastIndexOf(RepoPath.REMOTE_CACHE_SUFFIX);
+            //Get the cache either by <remote-repo-name> or by <remote-repo-name>-cache
+            if (idx > 1 && idx + RepoPath.REMOTE_CACHE_SUFFIX.length() == key.length()) {
+                remoteRepo = remoteRepositoryByKey(key.substring(0, idx));
+            }
         }
+
         return remoteRepo;
     }
 
@@ -370,7 +371,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     /**
      * @return Recursively resolved list of all the local non-cache repos of this virtual repo and nested virtual
-     *         repos.
+     * repos.
      */
     public Set<LocalRepo> getResolvedLocalRepos() {
         Set<LocalRepo> resolvedLocalRepos = Sets.newLinkedHashSet();
@@ -397,7 +398,7 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     /**
      * @return Recursively resolved list of all the local and cache repos of this virtual repo and nested virtual
-     *         repos.
+     * repos.
      */
     public Set<LocalRepo> getResolvedLocalAndCachedRepos() {
         Set<LocalRepo> localAndCahcedRepos = Sets.newLinkedHashSet();
