@@ -176,6 +176,11 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
         return ArtifactoryRunningMode.OSS;
     }
 
+    @Override
+    public boolean isPartnerLicense() {
+        return false;
+    }
+
 
     @Override
     public void interceptResponse(ArtifactoryResponse response) {

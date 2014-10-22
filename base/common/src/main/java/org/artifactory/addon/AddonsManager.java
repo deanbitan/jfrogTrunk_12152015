@@ -102,4 +102,6 @@ public interface AddonsManager {
     VerificationResult verifyAllArtifactoryServers();
 
     ArtifactoryRunningMode getArtifactoryRunningMode();
+
+    boolean isPartnerLicense();
 }

@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-distribution-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.4.0</version>
+        <version>3.4.1</version>
     </parent>
 
     <properties>

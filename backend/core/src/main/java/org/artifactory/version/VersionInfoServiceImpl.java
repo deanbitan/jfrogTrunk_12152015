@@ -44,7 +44,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -80,6 +79,7 @@ public class VersionInfoServiceImpl implements VersionInfoService {
     private static final String PARAM_JAVA_VERSION = "java.version";
     private static final String PARAM_OS_ARCH = "os.arch";
     private static final String PARAM_OS_NAME = "os.name";
+    private static final String PARAM_OEM = "oem";
     private static final String PARAM_HASH = "artifactory.hash";
 
     /**
@@ -141,14 +141,18 @@ public class VersionInfoServiceImpl implements VersionInfoService {
         CloseableHttpClient client = null;
         CloseableHttpResponse response = null;
         try {
-            URI versionQueryUrl = new URIBuilder(URL)
+            //URI versionQueryUrl = new URIBuilder(URL)
+            URIBuilder urlBuilder = new URIBuilder(URL)
                     .addParameter(artifactoryVersion.getPropertyName(), artifactoryVersion.getString())
                     .addParameter(PARAM_JAVA_VERSION, System.getProperty(PARAM_JAVA_VERSION))
                     .addParameter(PARAM_OS_ARCH, System.getProperty(PARAM_OS_ARCH))
                     .addParameter(PARAM_OS_NAME, System.getProperty(PARAM_OS_NAME))
-                    .addParameter(PARAM_HASH, addonsManager.getLicenseKeyHash()).build();
+                    .addParameter(PARAM_HASH, addonsManager.getLicenseKeyHash());
 
-            HttpGet getMethod = new HttpGet(versionQueryUrl);
+            if(addonsManager.isPartnerLicense()){
+                urlBuilder.addParameter(PARAM_OEM,"VMware");
+            }
+            HttpGet getMethod = new HttpGet(urlBuilder.build());
             //Append headers
             setHeader(getMethod, headersMap, HttpHeaders.USER_AGENT);
             setHeader(getMethod, headersMap, HttpHeaders.REFERER);

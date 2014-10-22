@@ -198,5 +198,10 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         public ArtifactoryRunningMode getArtifactoryRunningMode() {
             return ArtifactoryRunningMode.OSS;
         }
+
+        @Override
+        public boolean isPartnerLicense() {
+            return false;
+        }
     }
 }

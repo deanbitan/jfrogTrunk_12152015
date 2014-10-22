@@ -67,13 +67,28 @@ public class LicensePanel extends TitledPanel {
         super(id);
         add(new CssClass("general-settings-panel"));
 
-        add(new Label("licenseKeyLabel", "License Key"));
+        add(new Label("licenseKeyLabel", "License Key") {
+            @Override
+            public final boolean isVisible() {
+                return !addonsManager.isPartnerLicense();
+            }
+        });
         add(new HelpBubble("licenseKey.help",
                 "A license key that uniquely validates this Artifactory server instance.\n" +
-                        "The license key is required for using Artifactory Add-ons."));
-
+                        "The license key is required for using Artifactory Add-ons.") {
+            @Override
+            public final boolean isVisible() {
+                return !addonsManager.isPartnerLicense();
+            }
+        });
         licenseKey = addonsManager.getLicenseKey();
-        TextArea licenseKeyTextField = new TextArea("licenseKey", new PropertyModel(this, "licenseKey"));
+        TextArea<String> licenseKeyTextField = new TextArea<String>("licenseKey",
+                new PropertyModel<String>(this, "licenseKey")) {
+            @Override
+            public final boolean isVisible() {
+                return !addonsManager.isPartnerLicense();
+            }
+        };
         licenseKeyTextField.add(new LicenseKeyValidator());
         add(licenseKeyTextField);
 
