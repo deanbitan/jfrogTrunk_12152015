@@ -18,8 +18,8 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.repo.LocalRepo;
@@ -50,5 +50,5 @@ public interface LayoutsCoreAddon extends Addon {
     String translateArtifactPath(RepoLayout sourceRepoLayout, RepoLayout targetRepoLayout, String path);
 
     String translateArtifactPath(RepoLayout sourceRepoLayout, RepoLayout targetRepoLayout, String path,
-            @Nullable MultiStatusHolder multiStatusHolder);
+            @Nullable BasicStatusHolder multiStatusHolder);
 }

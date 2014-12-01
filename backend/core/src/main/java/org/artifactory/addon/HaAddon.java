@@ -21,9 +21,7 @@ package org.artifactory.addon;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.schedule.Task;
 import org.artifactory.storage.fs.lock.FsItemsVault;
-import org.artifactory.storage.fs.lock.provider.LockProvider;
-
-import java.util.concurrent.TimeUnit;
+import org.artifactory.storage.fs.lock.map.LockingMap;
 
 /**
  * @author mamo
@@ -36,11 +34,7 @@ public interface HaAddon extends HaCommonAddon {
 
     void propagateTaskToPrimary(Task task);
 
-    LockProvider getLockProvider();
-
-    boolean tryLockRemoteDownload(String path, long leaseTime, TimeUnit timeUnit) throws InterruptedException;
-
-    void unlockRemoteDownload(String path);
+    LockingMap getLockingMap();
 
     void init();
 

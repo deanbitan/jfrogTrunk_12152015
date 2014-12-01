@@ -28,7 +28,7 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.StatusEntry;
@@ -231,7 +231,7 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                     AjaxUtils.refreshFeedback(target);
                     return;
                 }
-                MultiStatusHolder status = securityService.testLdapConnection(entity, testUsername, testPassword);
+                BasicStatusHolder status = securityService.testLdapConnection(entity, testUsername, testPassword);
                 List<StatusEntry> infos = status.getEntries(StatusEntryLevel.INFO);
                 if (status.isError()) {
                     String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);

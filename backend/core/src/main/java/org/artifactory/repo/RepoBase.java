@@ -133,7 +133,17 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
         } else if (NamingUtils.isChecksum(path)) {
             toCheck = FilenameUtils.removeExtension(path);
         }
-        return StringUtils.isBlank(toCheck) || PathMatcher.matches(toCheck, includes, excludes, repoPath.isFolder());
+        return isPathPatternValid(repoPath, toCheck);
+    }
+
+    /**
+     * check if path pattern is valid according to include / exclude policy
+     * @param Repository path Object to validate
+     * @param file / folder path
+     * @return
+     */
+    public boolean isPathPatternValid(RepoPath repoPath, String path) {
+        return StringUtils.isBlank(path) || PathMatcher.matches(path, includes, excludes, repoPath.isFolder());
     }
 
     @Override

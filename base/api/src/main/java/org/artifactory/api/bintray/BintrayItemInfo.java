@@ -1,14 +1,15 @@
 package org.artifactory.api.bintray;
 
 
-import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.repo.RepoPath;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import java.io.Serializable;
 
 /**
  * Bintray single item info.
  */
-public class BintrayItemInfo extends BasicStatusHolder {
+public class BintrayItemInfo implements Serializable {
     @JsonProperty(value = "name")
     private String name;
     @JsonProperty(value = "package")

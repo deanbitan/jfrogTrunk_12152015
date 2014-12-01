@@ -19,7 +19,7 @@
 package org.artifactory.addon.replication;
 
 import org.artifactory.addon.Addon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.replication.ReplicationStatus;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
@@ -45,15 +45,15 @@ public interface ReplicationAddon extends Addon {
         never, force
     }
 
-    MultiStatusHolder performRemoteReplication(RemoteReplicationSettings settings) throws IOException;
+    BasicStatusHolder performRemoteReplication(RemoteReplicationSettings settings) throws IOException;
 
-    MultiStatusHolder performLocalReplication(LocalReplicationSettings settings) throws IOException;
+    BasicStatusHolder performLocalReplication(LocalReplicationSettings settings) throws IOException;
 
     void scheduleImmediateLocalReplicationTask(LocalReplicationDescriptor replicationDescriptor,
-            MultiStatusHolder statusHolder);
+            BasicStatusHolder statusHolder);
 
     void scheduleImmediateRemoteReplicationTask(RemoteReplicationDescriptor replicationDescriptor,
-            MultiStatusHolder statusHolder);
+            BasicStatusHolder statusHolder);
 
     ReplicationStatus getReplicationStatus(RepoPath repoPath);
 

@@ -22,7 +22,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.DeployService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
@@ -44,6 +44,7 @@ import org.artifactory.webapp.wicket.panel.upload.DefaultFileUploadForm;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Gives the user an interface for deployment of artifacts which are stored in an archive
@@ -135,7 +136,7 @@ public class DeployFromZipPanel extends TitledPanel implements UploadListener {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     public void onFileSaved(File file) {
         File uploadedFile = deployForm.getUploadedFile();
-        MultiStatusHolder statusHolder = new MultiStatusHolder();
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
         try {
             deployService.deployBundle(uploadedFile, targetRepo, statusHolder, false);
             List<StatusEntry> errors = statusHolder.getErrors();

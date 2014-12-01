@@ -89,4 +89,22 @@ public interface AclService {
     void updateAcl(MutableAclInfo acl);
 
     boolean permissionTargetExists(String key);
+
+    /**
+     * Converts cached repo keys contained in the list so that the '-cache' suffix is omitted.
+     * When provided with a remote or local repository key, it will stay unchanged.
+     *
+     * @param repoKeys
+     * @return repoKeys with all '-cache' suffixes omitted
+     */
+    List<String> convertCachedRepoKeysToRemote(List<String> repoKeys);
+
+    /**
+     * Converts cached repo keys contained in the acl's permission target so that the '-cache' suffix is omitted.
+     * When provided with a remote or local repository key, it will stay unchanged.
+     *
+     * @param acl
+     * @return a new MutableAclInfo with its permission target's repo keys modified to omit the '-cache' suffix
+     */
+    public MutableAclInfo convertNewAclCachedRepoKeysToRemote(MutableAclInfo acl);
 }

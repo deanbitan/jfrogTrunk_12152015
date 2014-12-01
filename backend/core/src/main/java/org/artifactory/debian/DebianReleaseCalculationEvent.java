@@ -124,7 +124,7 @@ public class DebianReleaseCalculationEvent extends DebianCalculationEvent {
             this.dept = level;
         }
 
-        public int getDept() {
+        public int getDepth() {
             return dept;
         }
     }

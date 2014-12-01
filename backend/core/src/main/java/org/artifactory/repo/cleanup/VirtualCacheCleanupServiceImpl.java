@@ -20,7 +20,7 @@ package org.artifactory.repo.cleanup;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
@@ -101,7 +101,7 @@ public class VirtualCacheCleanupServiceImpl implements InternalVirtualCacheClean
 
     @Nullable
     @Override
-    public String callVirtualCacheCleanup(MultiStatusHolder statusHolder) {
+    public String callVirtualCacheCleanup(BasicStatusHolder statusHolder) {
         taskService.checkCanStartManualTask(VirtualCacheCleanupJob.class, statusHolder);
         log.info("Virtual repositories cleanup was scheduled to run.");
         if (!statusHolder.isError()) {

@@ -24,12 +24,12 @@ import org.artifactory.storage.spring.StorageContextHelper;
 /**
  * @author freds
  */
-public abstract class AbstractPersistenceHandler<T, MT> implements MetadataPersistenceHandler<T, MT> {
+public abstract class AbstractPersistenceHandler<T, M> implements MetadataPersistenceHandler<T, M> {
 
     private AuthorizationService authService;
-    private final XmlMetadataProvider<T, MT> xmlProvider;
+    private final XmlMetadataProvider<T, M> xmlProvider;
 
-    protected AbstractPersistenceHandler(XmlMetadataProvider<T, MT> xmlProvider) {
+    protected AbstractPersistenceHandler(XmlMetadataProvider<T, M> xmlProvider) {
         this.xmlProvider = xmlProvider;
     }
 

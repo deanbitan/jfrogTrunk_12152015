@@ -18,7 +18,7 @@
 
 package org.artifactory.backup;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.BackupService;
 import org.artifactory.descriptor.backup.BackupDescriptor;
@@ -39,7 +39,7 @@ public interface InternalBackupService extends ReloadableBean, BackupService {
      * @param backup  Descriptor of backup to run
      * @return MultiStatusHolder containing messages
      */
-    MultiStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup);
+    BasicStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup);
 
     /**
      * Iterate (non-recursively) on all folders/files in the backup dir and delete them if they are older than "now"
@@ -58,7 +58,7 @@ public interface InternalBackupService extends ReloadableBean, BackupService {
      * @throws Exception
      */
     @Async
-    void sendBackupErrorNotification(String backupName, MultiStatusHolder statusHolder) throws Exception;
+    void sendBackupErrorNotification(String backupName, BasicStatusHolder statusHolder) throws Exception;
 
     BackupDescriptor getBackup(String backupKey);
 

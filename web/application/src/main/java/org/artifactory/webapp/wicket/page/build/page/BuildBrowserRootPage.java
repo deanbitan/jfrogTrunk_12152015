@@ -20,11 +20,13 @@ package org.artifactory.webapp.wicket.page.build.page;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.request.http.flow.AbortWithHttpErrorCodeException;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.build.BuildService;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildInfoUtils;
 import org.artifactory.build.BuildRun;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -35,6 +37,7 @@ import org.artifactory.webapp.wicket.page.build.panel.AllBuildsPanel;
 import org.artifactory.webapp.wicket.page.build.panel.BuildBreadCrumbsPanel;
 import org.artifactory.webapp.wicket.page.build.panel.BuildTabbedPanel;
 import org.artifactory.webapp.wicket.page.build.panel.BuildsForNamePanel;
+import org.artifactory.webapp.wicket.page.build.tabs.NoPermissionsTabPanel;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
@@ -59,6 +62,10 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
 
     @SpringBean
     private BuildService buildService;
+
+    @SpringBean
+    private AuthorizationService authorizationService;
+
     private PageParameters pageParameters;
 
     /**
@@ -73,6 +80,13 @@ public class BuildBrowserRootPage extends AuthenticatedPage {
         setOutputMarkupId(true);
 
         Panel panelToAdd = null;
+
+        //Anonymous build info access was disabled
+        if(authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+            add(new NoPermissionsTabPanel(CHILD_PANEL_ID));
+            add(new Label("buildBreadCrumbs",""));
+            return;
+        }
         try {
             if (!pageParameters.get(MODULE_ID).isEmpty()) {
                 panelToAdd = getModuleSpecificTabbedPanel(null);

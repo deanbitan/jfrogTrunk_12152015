@@ -25,8 +25,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.ImportExportStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
@@ -208,7 +208,7 @@ public class BackupServiceImpl implements InternalBackupService {
     }
 
     @Override
-    public void scheduleImmediateSystemBackup(BackupDescriptor backupDescriptor, MultiStatusHolder statusHolder) {
+    public void scheduleImmediateSystemBackup(BackupDescriptor backupDescriptor, BasicStatusHolder statusHolder) {
         TaskService taskService = InternalContextHelper.get().getTaskService();
         String backupKey = backupDescriptor.getKey();
         taskService.checkCanStartManualTask(BackupJob.class, statusHolder, backupKey);
@@ -227,7 +227,7 @@ public class BackupServiceImpl implements InternalBackupService {
     }
 
     @Override
-    public MultiStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup) {
+    public BasicStatusHolder backupSystem(InternalArtifactoryContext context, @Nonnull BackupDescriptor backup) {
         ImportExportStatusHolder status = new ImportExportStatusHolder();
         if (!backup.isEnabled()) {
             status.error("Backup: '" + backup.getKey() + "' is disabled. Backup was not performed.", log);
@@ -315,7 +315,7 @@ public class BackupServiceImpl implements InternalBackupService {
     }
 
     @Override
-    public void sendBackupErrorNotification(String backupName, MultiStatusHolder statusHolder) throws Exception {
+    public void sendBackupErrorNotification(String backupName, BasicStatusHolder statusHolder) throws Exception {
         InputStream stream = null;
         try {
             //Get message body from properties and substitute variables
@@ -415,7 +415,7 @@ public class BackupServiceImpl implements InternalBackupService {
      * @param statusHolder Status holder containing errors that should be included in the notification
      * @return HTML list block
      */
-    private String getErrorListBlock(MultiStatusHolder statusHolder) {
+    private String getErrorListBlock(BasicStatusHolder statusHolder) {
         StringBuilder builder = new StringBuilder();
         List<StatusEntry> errors = statusHolder.getErrors();
         if (errors.size() > 0) {

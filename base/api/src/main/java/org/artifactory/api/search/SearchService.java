@@ -89,9 +89,13 @@ public interface SearchService {
 
     ItemSearchResults<ArchiveSearchResult> searchArchiveContent(ArchiveSearchControls controls);
 
+    ItemSearchResults<ArchiveSearchResult> searchArchiveContentAql(ArchiveSearchControls controls);
+
     ItemSearchResults<GavcSearchResult> searchGavc(GavcSearchControls controls);
 
     ItemSearchResults<PropertySearchResult> searchProperty(PropertySearchControls controls);
+
+    ItemSearchResults<PropertySearchResult> searchPropertyAql(PropertySearchControls controls);
 
     Set<BuildRun> getLatestBuilds() throws RepositoryRuntimeException;
 

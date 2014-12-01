@@ -18,8 +18,10 @@
 
 package org.artifactory.storage.db.binstore.service;
 
+import com.google.common.collect.Sets;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageException;
@@ -41,6 +43,10 @@ import java.io.OutputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -64,6 +70,87 @@ class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBin
         providers[1] = new DynamicFileBinaryProviderImpl(
                 FileBinaryProviderBase.getDataFolder(rootDataDir, storageProperties,
                         StorageProperties.Key.binaryProviderFilesystemSecondDir, "second-filestore"), checkPeriod);
+    }
+
+    public void syncFilestores() {
+        log.info("Synchronizing Binary Stores");
+        for (int i = 0; i < 256; i++) {
+            String key = String.format("%02X", i & 0xFF).toLowerCase();
+            List<Set<String>> sets = new ArrayList<>(providers.length);
+            for (DynamicFileBinaryProviderImpl provider : providers) {
+                File folder = new File(provider.getBinariesDir(), key);
+                if (folder.exists()) {
+                    sets.add(Sets.newHashSet(folder.list()));
+                } else {
+                    sets.add(new HashSet<String>(0));
+                }
+            }
+            for (int j = 0; j < providers.length; j++) {
+                DynamicFileBinaryProviderImpl myProvider = providers[j];
+                // Copy the files that the other provider has that I do not have
+                Set<String> myFiles = sets.get(j);
+                for (int k = 0; k < providers.length; k++) {
+                    if (k != j) {
+                        DynamicFileBinaryProviderImpl otherProvider = providers[k];
+                        Set<String> otherFiles = sets.get(k);
+                        for (String sha1 : otherFiles) {
+                            if (!myFiles.contains(sha1)) {
+                                copyShaBetweenProviders(myProvider, otherProvider, sha1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void copyShaBetweenProviders(DynamicFileBinaryProviderImpl myProvider,
+            DynamicFileBinaryProviderImpl otherProvider, String sha1) {
+        log.info("Copying missing checksum file " + sha1 +
+                " from '" + otherProvider.getBinariesDir().getAbsolutePath() +
+                "' to '" + myProvider.getBinariesDir().getAbsolutePath() + "'");
+        File src = otherProvider.getFile(sha1);
+        File destFile = myProvider.getFile(sha1);
+        if (destFile.exists()) {
+            log.info("Checksum file '" + destFile.getAbsolutePath() + "' already exists");
+            return;
+        }
+        File tempBinFile = null;
+        try {
+            tempBinFile = myProvider.createTempBinFile();
+            FileUtils.copyFile(src, tempBinFile);
+            Path target = destFile.toPath();
+            if (!java.nio.file.Files.exists(target)) {
+                // move the file from the pre-filestore to the filestore
+                java.nio.file.Files.createDirectories(target.getParent());
+                try {
+                    log.trace("Moving {} to {}", tempBinFile.getAbsolutePath(), target);
+                    java.nio.file.Files.move(tempBinFile.toPath(), target, StandardCopyOption.ATOMIC_MOVE);
+                    log.trace("Moved  {} to {}", tempBinFile.getAbsolutePath(), target);
+                } catch (FileAlreadyExistsException ignore) {
+                    // May happen in heavy concurrency cases
+                    log.trace("Failed moving {} to {}. File already exist", tempBinFile.getAbsolutePath(),
+                            target);
+                }
+                tempBinFile = null;
+            } else {
+                log.trace("File {} already exist in the file store. Deleting temp file: {}",
+                        target, tempBinFile.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            String msg = "Error copying file " + src.getAbsolutePath() + " into " + destFile.getAbsolutePath();
+            if (log.isDebugEnabled()) {
+                log.warn(msg, e);
+            } else {
+                log.warn(msg + " due to: " + e.getMessage());
+            }
+        } finally {
+            if (tempBinFile != null && tempBinFile.exists()) {
+                if (!tempBinFile.delete()) {
+                    log.error("Could not delete temp file {}", tempBinFile.getAbsolutePath());
+                }
+            }
+        }
     }
 
     @Override
@@ -114,12 +201,24 @@ class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBin
     }
 
     @Override
-    public void prune(MultiStatusHolder statusHolder) {
+    public void prune(BasicStatusHolder statusHolder) {
         for (DynamicFileBinaryProviderImpl provider : providers) {
             if (provider.isActive()) {
                 provider.prune(statusHolder);
             }
         }
+    }
+
+    @Override
+    public boolean isAccessible() {
+        boolean oneActive = false;
+        for (DynamicFileBinaryProviderImpl provider : providers) {
+            provider.verifyState(provider.binariesDir);
+            if (provider.isActive()) {
+                oneActive = true;
+            }
+        }
+        return oneActive;
     }
 
     @Override
@@ -146,7 +245,7 @@ class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBin
                         return new FileInputStream(file);
                     } catch (FileNotFoundException e) {
                         log.info("Failed accessing existing file due to " + e.getMessage() + ".\n" +
-                                "Will mark provider inactive!");
+                                "Will mark provider " + provider.getBinariesDir().getAbsolutePath() + " inactive!");
                         provider.markInactive(e);
                         eNotFound = new BinaryNotFoundException("Couldn't access file '" + file.getAbsolutePath() + "'",
                                 e);
@@ -192,33 +291,61 @@ class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBin
             log.trace("Inserting {} in file binary provider", bd);
 
             String sha1 = bd.getSha1();
+            boolean oneGoodMove = false;
             for (ProviderAndTempFile providerAndTempFile : providerAndTempFiles) {
                 File tempFile = providerAndTempFile.tempFile;
                 if (tempFile != null && providerAndTempFile.somethingWrong == null) {
-                    long fileLength = tempFile.length();
-                    if (fileLength != checksumStream.getTotalBytesRead()) {
-                        throw new IOException("File length is " + fileLength + " while total bytes read on" +
-                                " stream is " + checksumStream.getTotalBytesRead());
-                    }
-                    File file = providerAndTempFile.provider.getFile(sha1);
-                    Path target = file.toPath();
-                    if (!java.nio.file.Files.exists(target)) {
-                        // move the file from the pre-filestore to the filestore
-                        java.nio.file.Files.createDirectories(target.getParent());
-                        try {
-                            log.trace("Moving {} to {}", tempFile.getAbsolutePath(), target);
-                            java.nio.file.Files.move(tempFile.toPath(), target, StandardCopyOption.ATOMIC_MOVE);
-                            log.trace("Moved  {} to {}", tempFile.getAbsolutePath(), target);
-                        } catch (FileAlreadyExistsException ignore) {
-                            // May happen in heavy concurrency cases
-                            log.trace("Failed moving {} to {}. File already exist", tempFile.getAbsolutePath(),
-                                    target);
+                    try {
+                        long fileLength = tempFile.length();
+                        if (fileLength != checksumStream.getTotalBytesRead()) {
+                            throw new IOException("File length is " + fileLength + " while total bytes read on" +
+                                    " stream is " + checksumStream.getTotalBytesRead());
                         }
-                        providerAndTempFile.tempFile = null;
-                    } else {
-                        log.trace("File {} already exist in the file store. Deleting temp file: {}",
-                                target, tempFile.getAbsolutePath());
+                        File file = providerAndTempFile.provider.getFile(sha1);
+                        Path target = file.toPath();
+                        if (!java.nio.file.Files.exists(target)) {
+                            // move the file from the pre-filestore to the filestore
+                            java.nio.file.Files.createDirectories(target.getParent());
+                            try {
+                                log.trace("Moving {} to {}", tempFile.getAbsolutePath(), target);
+                                java.nio.file.Files.move(tempFile.toPath(), target, StandardCopyOption.ATOMIC_MOVE);
+                                log.trace("Moved  {} to {}", tempFile.getAbsolutePath(), target);
+                            } catch (FileAlreadyExistsException ignore) {
+                                // May happen in heavy concurrency cases
+                                log.trace("Failed moving {} to {}. File already exist", tempFile.getAbsolutePath(),
+                                        target);
+                            }
+                            providerAndTempFile.tempFile = null;
+                            oneGoodMove = true;
+                        } else {
+                            log.trace("File {} already exist in the file store. Deleting temp file: {}",
+                                    target, tempFile.getAbsolutePath());
+                        }
+                    } catch (IOException e) {
+                        providerAndTempFile.somethingWrong = e;
+                        providerAndTempFile.provider.markInactive(e);
                     }
+                }
+            }
+            if (!oneGoodMove) {
+                StringBuilder msg = new StringBuilder("Could not move checksum file ")
+                        .append(sha1).append(" to any filestore:\n");
+                IOException oneEx = null;
+                for (ProviderAndTempFile providerAndTempFile : providerAndTempFiles) {
+                    DynamicFileBinaryProviderImpl provider = providerAndTempFile.provider;
+                    msg.append("\t'").append(provider.getBinariesDir().getAbsolutePath())
+                            .append("' actif=").append(provider.isActive())
+                            .append("\n");
+                    if (providerAndTempFile.somethingWrong != null) {
+                        oneEx = providerAndTempFile.somethingWrong;
+                        msg.append("\t\tWith Exception:").append(providerAndTempFile.somethingWrong.getMessage());
+                    }
+                    msg.append("\n");
+                }
+                if (oneEx != null) {
+                    throw new IOException(msg.toString(), oneEx);
+                } else {
+                    throw new IOException(msg.toString());
                 }
             }
             return bd;
@@ -479,7 +606,9 @@ class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBin
         @Override
         public void close() throws IOException {
             for (FileOutputStreamWithQueue outputStream : outputStreams) {
-                outputStream.close();
+                if (outputStream != null) {
+                    outputStream.close();
+                }
             }
         }
     }

@@ -18,7 +18,8 @@
 
 package org.artifactory.api.repo.cleanup;
 
-import org.artifactory.api.common.MultiStatusHolder;
+
+import org.artifactory.api.common.BasicStatusHolder;
 
 import javax.annotation.Nullable;
 
@@ -36,5 +37,5 @@ public interface VirtualCacheCleanupService {
      * @return task ID of the clean up task or null if failed to start.
      */
     @Nullable
-    String callVirtualCacheCleanup(MultiStatusHolder multiStatusHolder);
+    String callVirtualCacheCleanup(BasicStatusHolder multiStatusHolder);
 }

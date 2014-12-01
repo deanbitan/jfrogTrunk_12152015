@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.binstore.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
@@ -48,6 +48,12 @@ class DynamicFileBinaryProviderImpl extends FileBinaryProviderBase implements Fi
     public DynamicFileBinaryProviderImpl(File binariesDir, long checkPeriod) {
         super(binariesDir);
         this.checkPeriod = checkPeriod;
+    }
+
+    @Override
+    public boolean isAccessible() {
+        verifyState(binariesDir);
+        return isActive();
     }
 
     @Override
@@ -87,7 +93,7 @@ class DynamicFileBinaryProviderImpl extends FileBinaryProviderBase implements Fi
     }
 
     @Override
-    protected void pruneFiles(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {
+    protected void pruneFiles(BasicStatusHolder statusHolder, MovedCounter movedCounter, File first) {
         statusHolder.status("Starting checking if files in " + first.getAbsolutePath() + " are in DB!", log);
         //Set<DataIdentifier> identifiersSet = getIdentifiersSet();
         File[] files = first.listFiles();

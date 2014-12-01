@@ -22,7 +22,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.Request;
-import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
@@ -41,7 +40,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class RepoPathMover {
-    private final static Logger log = LoggerFactory.getLogger(RepoPathMover.class);
+    private static final Logger log = LoggerFactory.getLogger(RepoPathMover.class);
 
     @Autowired
     private AddonsManager addonsManager;
@@ -65,15 +64,8 @@ public class RepoPathMover {
         }
 
         RepoPath targetLocalRepoPath = moverConfig.getTargetLocalRepoPath();
-        if (targetLocalRepoPath == null) {
-            // when using repo key, we move to the target repository to the same hierarchy, in such a case the
-            // target repo path is the parent of the source path (think of it as regular file system copy/move)
-            String targetRepoKey = moverConfig.getTargetLocalRepoKey();
-            targetLocalRepoPath = InternalRepoPathFactory.create(targetRepoKey, fromRepoPath.getPath());
-        }
-
         if (fromRepoPath.equals(targetLocalRepoPath)) {
-            status.status(String.format("Skipping move\\copy %s: Destination and source are the same",
+            status.error(String.format("Skipping move\\copy %s: Destination and source are the same",
                     fromRepoPath), log);
             return;
         }

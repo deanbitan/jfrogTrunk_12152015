@@ -26,7 +26,6 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.index.MavenIndexerService;
@@ -98,7 +97,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
         TitledAjaxLink runLink = new TitledAjaxLink("run", "Run Indexing Now") {
             @Override
             public void onClick(AjaxRequestTarget target) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 try {
                     BasicStatusHolder status = new BasicStatusHolder();
                     mavenIndexer.scheduleImmediateIndexing(status);

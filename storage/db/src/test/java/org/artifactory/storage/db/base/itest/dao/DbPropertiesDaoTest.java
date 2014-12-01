@@ -65,9 +65,10 @@ public class DbPropertiesDaoTest extends DbBaseTest {
     }
 
     @Test(dependsOnMethods = {"createNewDevModeProps"})
-    public void createNewLatestReleaseProps() throws SQLException {
+    public void createNewLatestReleaseProps() throws SQLException, InterruptedException {
         long now = System.currentTimeMillis();
         ArtifactoryVersion current = ArtifactoryVersion.getCurrent();
+        Thread.sleep(100);
         DbProperties fromVersion = VersionPropertiesUtils.createDbPropertiesFromVersion(new CompoundVersionDetails(
                 current, current.getValue(), "" + current.getRevision(), now - 1000000L));
         dbPropertiesDao.createProperties(fromVersion);

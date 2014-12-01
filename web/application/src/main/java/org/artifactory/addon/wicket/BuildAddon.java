@@ -21,7 +21,7 @@ package org.artifactory.addon.wicket;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.AddonType;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.build.diff.BuildsDiff;
 import org.artifactory.fs.FileInfo;
@@ -172,7 +172,7 @@ public interface BuildAddon extends Addon {
      * @param multiStatusHolder Status holder
      */
     @Lock
-    void discardOldBuildsByDate(String buildName, BuildRetention buildRetention, MultiStatusHolder multiStatusHolder);
+    void discardOldBuildsByDate(String buildName, BuildRetention buildRetention, BasicStatusHolder multiStatusHolder);
 
     /**
      * Discard old builds according to the maximum amount of builds that should be retained. if {@code count} is larger
@@ -183,7 +183,7 @@ public interface BuildAddon extends Addon {
      * @param multiStatusHolder Status holder
      */
     @Lock
-    void discardOldBuildsByCount(String buildName, BuildRetention discard, MultiStatusHolder multiStatusHolder);
+    void discardOldBuildsByCount(String buildName, BuildRetention discard, BasicStatusHolder multiStatusHolder);
 
     /**
      * Returns the built artifacts matching the request

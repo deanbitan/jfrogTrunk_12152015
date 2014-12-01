@@ -18,11 +18,8 @@
 
 package org.artifactory.engine;
 
-import org.artifactory.api.repo.Async;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.spring.ReloadableBean;
-
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author freds
@@ -30,12 +27,4 @@ import java.util.concurrent.CountDownLatch;
  */
 public interface InternalDownloadService extends DownloadService, ReloadableBean {
 
-    /**
-     * Will cause the provided latch to unlock notifying download waiters on a remote repo. We do this after transaction
-     * so that new download thread will not override the yet-to-be-committed vfs file.
-     *
-     * @param latch The latch to release
-     */
-    @Async(delayUntilAfterCommit = true)
-    void releaseDownloadWaiters(CountDownLatch latch);
 }

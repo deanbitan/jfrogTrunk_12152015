@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddonsImpl;
 import org.artifactory.addon.LdapGroupAddon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.security.ldap.LdapService;
 import org.artifactory.api.security.ldap.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -55,8 +55,8 @@ public class LdapServiceImpl extends AbstractLdapService implements LdapService 
     private static final Logger log = LoggerFactory.getLogger(LdapServiceImpl.class);
 
     @Override
-    public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
-        MultiStatusHolder status = new MultiStatusHolder();
+    public BasicStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
+        BasicStatusHolder status = new BasicStatusHolder();
         try {
             LdapContextSource securityContext =
                     ArtifactoryLdapAuthenticator.createSecurityContext(ldapSetting);

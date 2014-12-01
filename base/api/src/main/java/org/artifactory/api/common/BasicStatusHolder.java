@@ -18,6 +18,7 @@
 
 package org.artifactory.api.common;
 
+import com.google.common.collect.Lists;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.MutableStatusHolder;
@@ -28,32 +29,38 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
- * NOTE: WHEN CHANGING THE NAME OR THE PACKAGE OF THIS CLASS, MAKE SURE TO UPDATE TEST AND PRODUCTION LOGBACK
- * CONFIGURATION FILES WITH THE CHANGES AND CREATE A CONVERTER IF NEEDED. SOME APPENDERS DEPEND ON THIS.
- *
  * @author Yoav Landman
  */
 @XStreamAlias("status")
 public class BasicStatusHolder implements MutableStatusHolder {
     private static final Logger log = LoggerFactory.getLogger(BasicStatusHolder.class);
 
-    protected static final String MSG_IDLE = "Idle.";
+    private static final String MSG_IDLE = "Idle.";
+    // save up to 500 messages. if exhausted, we manually drop the oldest element
+    private final ArrayBlockingQueue<StatusEntry> statusEntries = new ArrayBlockingQueue<>(500);
+    // save up to 2000 errors messages. if exhausted, we manually drop the oldest element
+    private final ArrayBlockingQueue<StatusEntry> errorEntries = new ArrayBlockingQueue<>(2000);
+    // save up to 100 warning messages. if exhausted, we manually drop the oldest element
+    private final ArrayBlockingQueue<StatusEntry> warningEntries = new ArrayBlockingQueue<>(100);
+
     public static final int CODE_OK = 200;
     public static final int CODE_INTERNAL_ERROR = 500;
 
     protected boolean activateLogging;
     // the latest status
-    private StatusEntry statusEntry;
-    protected File outputFile;
-    private StatusEntry lastError = null;
     protected boolean fastFail = false;
     protected boolean verbose = false;
+    private StatusEntry lastStatusEntry;
+    private StatusEntry lastErrorStatusEntry;
+    private StatusEntry lastWarningStatusEntry;
 
     public BasicStatusHolder() {
-        statusEntry = new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, MSG_IDLE, null);
+        //addStatusEntry(new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, MSG_IDLE, null));
         activateLogging = true;
     }
 
@@ -67,8 +74,7 @@ public class BasicStatusHolder implements MutableStatusHolder {
         this.verbose = verbose;
     }
 
-    @Override
-    public boolean isFastFail() {
+    private boolean isFastFail() {
         return fastFail;
     }
 
@@ -78,17 +84,18 @@ public class BasicStatusHolder implements MutableStatusHolder {
     }
 
     @Override
-    public StatusEntry getStatusEntry() {
-        return statusEntry;
+    public StatusEntry getLastError() {
+        return lastErrorStatusEntry;
     }
 
     @Override
-    public StatusEntry getLastError() {
-        return lastError;
+    public StatusEntry getLastWarning() {
+        return lastWarningStatusEntry;
     }
 
-    public void setLastError(StatusEntry error) {
-        this.lastError = error;
+    @Override
+    public StatusEntry getLastStatusEntry() {
+       return lastStatusEntry;
     }
 
     @Override
@@ -168,10 +175,10 @@ public class BasicStatusHolder implements MutableStatusHolder {
          * If an external logger is given, it shall be the active one; unless verbose output is requested, then we need
          * to use that status holder logger for the debug level
          */
-        if (!isVerbose()) {
-            doLogEntry(entry, logger);
-        } else {
+        if (isVerbose()) {
             doLogEntry(entry, log);
+        } else {
+            doLogEntry(entry, logger);
         }
     }
 
@@ -204,25 +211,21 @@ public class BasicStatusHolder implements MutableStatusHolder {
 
     @Override
     public String getStatusMsg() {
+        StatusEntry lastError = getLastError();
         if (lastError != null) {
             return lastError.getMessage();
         }
-        return statusEntry.getMessage();
-    }
-
-    @Override
-    public File getOutputFile() {
-        return outputFile;
-    }
-
-    @Override
-    public void setOutputFile(File outputFile) {
-        this.outputFile = outputFile;
+        StatusEntry lastWarning = getLastWarning();
+        if (lastWarning != null) {
+            return lastWarning.getMessage();
+        }
+        StatusEntry statusEntry = getLastStatusEntry();
+        return statusEntry!=null?statusEntry.getMessage():null;
     }
 
     @Override
     public boolean isError() {
-        return lastError != null;
+        return getLastError()!=null;
     }
 
     @Override
@@ -230,8 +233,8 @@ public class BasicStatusHolder implements MutableStatusHolder {
         return getCancelException(null);
     }
 
-    @Override
     public CancelException getCancelException(StatusEntry previousToLastError) {
+        StatusEntry lastError = getLastError();
         if (lastError != null && !lastError.equals(previousToLastError)) {
             //We have a new error check if it is a cancellation one
             Throwable cause = lastError.getException();
@@ -244,18 +247,30 @@ public class BasicStatusHolder implements MutableStatusHolder {
 
     @Override
     public Throwable getException() {
+        StatusEntry lastError = getLastError();
         if (lastError != null) {
             return lastError.getException();
         }
-        return statusEntry.getException();
+        StatusEntry lastWarning = getLastWarning();
+        if (lastWarning != null) {
+            return lastWarning.getException();
+        }
+        StatusEntry statusEntry = getLastStatusEntry();
+        return statusEntry!=null?statusEntry.getException():null;
     }
 
     @Override
     public int getStatusCode() {
+        StatusEntry lastError = getLastError();
         if (lastError != null) {
             return lastError.getStatusCode();
         }
-        return statusEntry.getStatusCode();
+        StatusEntry lastWarning = getLastWarning();
+        if (lastWarning != null) {
+            return lastWarning.getStatusCode();
+        }
+        StatusEntry statusEntry = getLastStatusEntry();
+        return statusEntry!=null?statusEntry.getStatusCode():-1;
     }
 
     protected void logEntryAndAddEntry(@Nonnull StatusEntry entry, @Nonnull Logger logger) {
@@ -264,24 +279,36 @@ public class BasicStatusHolder implements MutableStatusHolder {
     }
 
     protected void addStatusEntry(StatusEntry entry) {
-        statusEntry = entry;
-        if (entry.isError() && StatusEntryLevel.ERROR == entry.getLevel()) {
-            lastError = entry;
+        // we don't really want to block if we reached the limit. remove the last element until offer is accepted
+        while (!statusEntries.offer(entry)) {
+            statusEntries.poll();
+        }
+        lastStatusEntry=entry;
+        if (entry.isError()) {
+            while (!errorEntries.offer(entry)) {
+                errorEntries.poll();
+            }
+            lastErrorStatusEntry=entry;
+        }
+        else if (entry.isWarning()) {
+            while (!warningEntries.offer(entry)) {
+                warningEntries.poll();
+            }
+            lastWarningStatusEntry=entry;
         }
     }
 
     /**
      * @return True if the status holder prints the messages to the logger.
      */
-    @Override
-    public boolean isActivateLogging() {
+    private boolean isActivateLogging() {
         return activateLogging;
     }
 
     /**
      * If set to false the status holder will not print the messages to the logger. It will only keep the statuses.
      *
-     * @param activateLogging Set to fasle to disable logging
+     * @param activateLogging Set to false to disable logging
      */
     @Override
     public void setActivateLogging(boolean activateLogging) {
@@ -290,18 +317,81 @@ public class BasicStatusHolder implements MutableStatusHolder {
 
     @Override
     public void reset() {
-        lastError = null;
-        statusEntry = new StatusEntry(CODE_OK, StatusEntryLevel.DEBUG, MSG_IDLE, null);
+        statusEntries.clear();
+        errorEntries.clear();
+        warningEntries.clear();
         activateLogging = true;
-        outputFile = null;
     }
 
     @Override
     public String toString() {
         return "StatusHolder{" +
                 "activateLogging=" + activateLogging +
-                ", statusMessage=" + statusEntry +
-                ", callback=" + outputFile +
-                '}';
+                ", statusMessage=" + statusEntries + '}'+
+                ", errorMessage=" + errorEntries + '}'+
+                ", warningMessage=" + warningEntries + '}';
+    }
+
+    /**
+     * Merge this and the input status. Will append entry from the input this one. If the status to merge has last error
+     * it will be used. This method is not thread safe, the two statuses are assumed to be inactive in the time of
+     * merging.
+     *
+     * @param toMerge The status to merge into this.
+     */
+    public void merge(BasicStatusHolder toMerge) {
+        for (StatusEntry statusEntry : toMerge.statusEntries) {
+            while (!statusEntries.offer(statusEntry)) {
+                statusEntries.poll();
+            }
+        }
+        lastStatusEntry=toMerge.statusEntries.peek();
+        for (StatusEntry statusEntry : toMerge.errorEntries) {
+            while (!errorEntries.offer(statusEntry)) {
+                errorEntries.poll();
+            }
+        }
+        lastErrorStatusEntry=toMerge.errorEntries.peek();
+        for (StatusEntry statusEntry : toMerge.warningEntries) {
+            while (!warningEntries.offer(statusEntry)) {
+                warningEntries.poll();
+            }
+
+        }
+        lastWarningStatusEntry=toMerge.warningEntries.peek();
+    }
+
+    public List<StatusEntry> getEntries() {
+        return Lists.newArrayList(statusEntries);
+    }
+
+    public List<StatusEntry> getEntries(StatusEntryLevel level) {
+        List<StatusEntry> result = new ArrayList<>();
+        if (level == StatusEntryLevel.ERROR) {
+            result.addAll(errorEntries);
+        } else {
+            for (StatusEntry entry : statusEntries) {
+                if (level.equals(entry.getLevel())) {
+                    result.add(entry);
+                }
+            }
+        }
+        return result;
+    }
+
+    public boolean hasWarnings() {
+        return warningEntries.size()>0;
+    }
+
+    public boolean hasErrors() {
+        return errorEntries.size()>0;
+    }
+
+    public List<StatusEntry> getErrors() {
+        return Lists.newArrayList(errorEntries);
+    }
+
+    public List<StatusEntry> getWarnings() {
+        return Lists.newArrayList(warningEntries);
     }
 }

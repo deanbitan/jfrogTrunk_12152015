@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.binstore.itest.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.StatusEntryLevel;
@@ -77,7 +77,7 @@ public class BinaryStoreImplCachedFSProviderTest extends BinaryStoreImplBaseTest
             totSize += ((Long) objects[3]).intValue();
         }
         // The final filestore as no prune
-        MultiStatusHolder statusHolder = testPrune(0, 0, 0);
+        BasicStatusHolder statusHolder = testPrune(0, 0, 0);
         List<StatusEntry> entries = statusHolder.getEntries(StatusEntryLevel.INFO);
         for (StatusEntry entry : entries) {
             // The first entry cache filestore as prune all

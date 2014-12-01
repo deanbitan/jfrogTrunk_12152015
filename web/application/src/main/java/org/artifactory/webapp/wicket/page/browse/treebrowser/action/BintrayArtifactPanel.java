@@ -24,7 +24,7 @@ import org.apache.wicket.markup.html.form.FormComponent;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
@@ -92,7 +92,7 @@ public class BintrayArtifactPanel extends BintrayBasePanel {
     protected void onPushClicked() {
         try {
             Map<String, String> headersMap = WicketUtils.getHeadersMap();
-            MultiStatusHolder statusHolder = bintrayService.pushArtifact(pathToPush, bintrayModel, headersMap);
+            BasicStatusHolder statusHolder = bintrayService.pushArtifact(pathToPush, bintrayModel, headersMap);
             if (statusHolder.hasErrors()) {
                 getPage().error(statusHolder.getLastError().getMessage());
             } else if (statusHolder.getWarnings().size() != 0) {

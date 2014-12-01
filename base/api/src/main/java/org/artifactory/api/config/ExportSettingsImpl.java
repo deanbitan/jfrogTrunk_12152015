@@ -57,6 +57,8 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
     @XStreamOmitField
     private SetMultimap<FileExportEvent, FileExportCallback> callbacks;
 
+    private File outputFile;
+
     public ExportSettingsImpl(File baseDir) {
         super(baseDir, new ImportExportStatusHolder());
         time = new Date();
@@ -181,5 +183,15 @@ public class ExportSettingsImpl extends ImportExportSettingsImpl implements Expo
     @Override
     public void setExcludeBuilds(boolean excludeBuilds) {
         this.excludeBuilds = excludeBuilds;
+    }
+
+    @Override
+    public File getOutputFile() {
+        return outputFile;
+    }
+
+    @Override
+    public void setOutputFile(File outputFile) {
+        this.outputFile = outputFile;
     }
 }

@@ -31,6 +31,7 @@ import org.artifactory.mime.MimeType;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.rest.common.exception.BadRequestException;
 import org.artifactory.rest.common.exception.NotFoundException;
+import org.artifactory.rest.resource.ci.BuildResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,6 +77,10 @@ public class ArchiveResource {
     @Path(ArchiveRestConstants.PATH_BUILD_ARTIFACTS)
     @Consumes({BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST, MediaType.APPLICATION_JSON})
     public Response getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) throws IOException {
+
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+            throw new AuthorizationRestException(BuildResource.anonAccessDisabledMsg);
+        }
         if (isBlank(buildArtifactsRequest.getBuildName())) {
             throw new BadRequestException("Cannot search without build name.");
         }

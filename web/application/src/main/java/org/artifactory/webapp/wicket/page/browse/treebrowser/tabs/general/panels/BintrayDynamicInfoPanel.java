@@ -28,7 +28,6 @@ import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.NamingUtils;
-import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.action.BintrayArtifactPanel;
 import org.artifactory.webapp.wicket.page.security.login.LoginPage;
 import org.artifactory.webapp.wicket.page.security.profile.ProfilePage;
@@ -247,10 +246,8 @@ public class BintrayDynamicInfoPanel extends Panel {
 
     private boolean isUserExists() {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-        addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         CoreAddons addons = addonsManager.addonByType(CoreAddons.class);
-        UserInfo userInfo = userGroupService.currentUser();
-        return !addons.isAolAdmin(userInfo) && !userInfo.isTransientUser();
+        return !addons.isAolAdmin() && !userGroupService.currentUser().isTransientUser();
     }
 
     private boolean isLocalRepo(RepoDescriptor repoDescriptor) {

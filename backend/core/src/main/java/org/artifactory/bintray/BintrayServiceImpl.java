@@ -41,7 +41,7 @@ import org.artifactory.api.bintray.BintrayUser;
 import org.artifactory.api.bintray.Repo;
 import org.artifactory.api.bintray.RepoPackage;
 import org.artifactory.api.bintray.exception.BintrayException;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.jackson.JacksonReader;
@@ -136,9 +136,9 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     @Override
-    public MultiStatusHolder pushArtifact(ItemInfo itemInfo, BintrayParams bintrayParams,
+    public BasicStatusHolder pushArtifact(ItemInfo itemInfo, BintrayParams bintrayParams,
             @Nullable Map<String, String> headersMap) throws IOException {
-        MultiStatusHolder status = new MultiStatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
 
         try (CloseableHttpClient client = createHTTPClient()) {
             if (itemInfo.isFolder()) {
@@ -157,9 +157,9 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     @Override
-    public MultiStatusHolder pushBuild(Build build, BintrayParams bintrayParams,
+    public BasicStatusHolder pushBuild(Build build, BintrayParams bintrayParams,
             @Nullable Map<String, String> headersMap) throws IOException {
-        MultiStatusHolder status = new MultiStatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
         String buildNameAndNumber = build.getName() + ":" + build.getNumber();
         status.status("Starting pushing build '" + buildNameAndNumber + "' to Bintray.", log);
         Set<FileInfo> artifactsToPush = collectArtifactsToPush(build);
@@ -219,7 +219,7 @@ public class BintrayServiceImpl implements BintrayService {
         }
     }
 
-    private void sendBuildPushNotification(MultiStatusHolder statusHolder, String buildNameAndNumber)
+    private void sendBuildPushNotification(BasicStatusHolder statusHolder, String buildNameAndNumber)
             throws IOException {
         log.info("Sending logs for push build '{}' by mail.", buildNameAndNumber);
         InputStream stream = null;
@@ -266,10 +266,10 @@ public class BintrayServiceImpl implements BintrayService {
      * @param statusHolder Status holder containing messages that should be included in the notification
      * @return HTML list block
      */
-    private String getLogBlock(MultiStatusHolder statusHolder) {
+    private String getLogBlock(BasicStatusHolder statusHolder) {
         StringBuilder builder = new StringBuilder();
 
-        for (StatusEntry entry : statusHolder.getAllEntries()) {
+        for (StatusEntry entry : statusHolder.getEntries()) {
 
             //Make one line per row
             String message = entry.getMessage();
@@ -316,12 +316,12 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     private Set<FileInfo> collectArtifactsToPush(Build build) {
-        Map<BuildFileBean, FileInfo> infos = buildService.getBuildBeansInfo(build, false, true);
+        Map<BuildFileBean, FileInfo> infos = buildService.getBuildBeansInfo(build, false, true, StringUtils.EMPTY);
         return Sets.newHashSet(infos.values());
     }
 
     private void performPush(CloseableHttpClient client, FileInfo fileInfo, BintrayParams bintrayParams,
-            MultiStatusHolder status, @Nullable Map<String, String> headersMap) throws IOException {
+            BasicStatusHolder status, @Nullable Map<String, String> headersMap) throws IOException {
         if (!bintrayParams.isValid()) {
             String message = String.format("Skipping push for '%s' since one of the Bintray properties is missing.",
                     fileInfo.getRelPath());

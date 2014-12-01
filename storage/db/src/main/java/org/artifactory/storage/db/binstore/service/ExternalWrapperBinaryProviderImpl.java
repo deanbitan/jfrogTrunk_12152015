@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.binstore.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
@@ -135,7 +135,7 @@ public class ExternalWrapperBinaryProviderImpl extends FileBinaryProviderReadOnl
     }
 
     @Override
-    public void prune(MultiStatusHolder statusHolder) {
+    public void prune(BasicStatusHolder statusHolder) {
         throw new UnsupportedOperationException("An wrapper binary provider cannot be pruned!");
     }
 

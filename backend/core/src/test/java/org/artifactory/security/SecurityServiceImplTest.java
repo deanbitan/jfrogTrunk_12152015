@@ -32,6 +32,7 @@ import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RemoteRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.storage.security.service.AclStoreService;
 import org.artifactory.storage.security.service.UserGroupStoreService;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
@@ -46,6 +47,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,6 +73,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
     private InternalRepositoryService repositoryServiceMock;
     private LocalRepo localRepoMock;
     private LocalRepo cacheRepoMock;
+    private VirtualRepo globalVirtualRepoMock;
     private InternalCentralConfigService centralConfigServiceMock;
     private UserGroupStoreService userGroupStoreService;
     private SecurityListener securityListenerMock;
@@ -79,7 +82,8 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
     public void initArtifactoryRoles() {
         testAcls = createTestAcls();
         aclStoreServiceMock = createMock(AclStoreService.class);
-        repositoryServiceMock = createMock(InternalRepositoryService.class);
+        globalVirtualRepoMock = createGlobalVirtualRepoMock();
+        repositoryServiceMock = createRepoServiceMock();
         centralConfigServiceMock = createMock(InternalCentralConfigService.class);
         userGroupStoreService = createMock(UserGroupStoreService.class);
         localRepoMock = createLocalRepoMock();
@@ -143,6 +147,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath securedPath = InternalRepoPathFactory.create("securedRepo", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(securedPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
 
         // cannot read the specified path
@@ -165,6 +170,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath allowedReadPath = InternalRepoPathFactory.create("testRepo1", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
 
         // can read the specified path
@@ -200,7 +206,8 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
 
         // can read the specified path
         expectGetAllAclsCall(authentication);
-        replay(aclStoreServiceMock);
+        expectGetGlocalVirtualRepositoryCall();
+        replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canRead = service.canRead(allowedReadPath);
         assertTrue(canRead, "User should have permissions for this path");
         verify(aclStoreServiceMock);
@@ -239,6 +246,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath allowedReadPath = InternalRepoPathFactory.create("testRepo1", "**");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
 
         // cannot deploy to the specified path
@@ -265,15 +273,18 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
 
         RepoPath testRepo1Path = InternalRepoPathFactory.create("testRepo1", "**");
         expectGetAllAclsCallWithAnyArray();
-        replay(aclStoreServiceMock);
+        expectGetGlocalVirtualRepositoryCall();
+        replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canRead = service.canRead(testRepo1Path);
         assertTrue(canRead, "User should have permissions for this path");
         verify(aclStoreServiceMock);
-        reset(aclStoreServiceMock);
+        reset(aclStoreServiceMock, repositoryServiceMock);
 
         RepoPath testRepo2Path = InternalRepoPathFactory.create("testRepo2", "**");
         expectGetAllAclsCallWithAnyArray();
-        replay(aclStoreServiceMock);
+        expectGetGlocalVirtualRepositoryCall();
+        expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2")).andReturn(localRepoMock).anyTimes();
+        replay(aclStoreServiceMock, repositoryServiceMock);
         canRead = service.canRead(testRepo2Path);
         assertTrue(canRead, "User belongs to a group with permissions to the path");
         verify(aclStoreServiceMock);
@@ -291,6 +302,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         expectGetAllAclsCallWithAnyArray();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1"))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canRead = service.canRead(testRepo1Path);
         assertFalse(canRead, "User should not have permissions for this path");
@@ -301,6 +313,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         expectGetAllAclsCallWithAnyArray();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2"))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(aclStoreServiceMock, repositoryServiceMock);
         canRead = service.canRead(testRepo2Path);
         assertTrue(canRead, "User belongs to a group with permissions to the path");
@@ -315,21 +328,24 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath testRepo1Path = InternalRepoPathFactory.create("testRepo1", "any/path");
 
         expectGetAllAclsCallWithAnyArray();
-        replay(aclStoreServiceMock);
+        expectGetGlocalVirtualRepositoryCall();
+        replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canRead = service.canRead(userInfo, testRepo1Path);
         assertTrue(canRead, "User should have permissions for this path");
         verify(aclStoreServiceMock);
-        reset(aclStoreServiceMock);
+        reset(aclStoreServiceMock, repositoryServiceMock);
 
         expectGetAllAclsCallWithAnyArray();
-        replay(aclStoreServiceMock);
+        expectGetGlocalVirtualRepositoryCall();
+        replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canDeploy = service.canDeploy(userInfo, testRepo1Path);
         assertTrue(canDeploy, "User should have permissions for this path");
         verify(aclStoreServiceMock);
-        reset(aclStoreServiceMock);
+        reset(aclStoreServiceMock, repositoryServiceMock);
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
+        expectGetGlocalVirtualRepositoryCall();
         replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canDelete = service.canDelete(userInfo, testRepo1Path);
         assertFalse(canDelete, "User should not have permissions for this path");
@@ -346,6 +362,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath testRepo2Path = InternalRepoPathFactory.create("testRepo2", "**");
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2")).andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         expectGetAllAclsCallWithAnyArray();
         replay(aclStoreServiceMock, repositoryServiceMock);
         canRead = service.canRead(userInfo, testRepo2Path);
@@ -384,6 +401,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("specific-repo")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
+        expectGetGlocalVirtualRepositoryCall();
         replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canRead = service.canRead(userInfo, testRepo1Path);
         assertTrue(canRead, "User should have read permissions for this path");
@@ -419,6 +437,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath testRepo1Path = InternalRepoPathFactory.create("testRepo1", "any/path");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo1"))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
 
         expectGetAllAclsCallWithAnyArray();
@@ -453,6 +472,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRepo2"))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
         expectGetAllAclsCallWithAnyArray();
         replay(aclStoreServiceMock);
@@ -466,6 +486,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath somePath = InternalRepoPathFactory.create("blabla", "some/path");
 
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("blabla")).andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         expectGetAllAclsCallWithAnyArray();
         replay(aclStoreServiceMock, repositoryServiceMock);
         canRead = service.canRead(anyRepoGroupRead, somePath);
@@ -486,6 +507,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi1")).andReturn(localRepoMock).anyTimes();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("multi2")).andReturn(localRepoMock).anyTimes();
         expectGetAllAclsCallWithAnyArray();
+        expectGetGlocalVirtualRepositoryCall();
         replay(aclStoreServiceMock, repositoryServiceMock);
         canRead = service.canRead(multiRepoGroupRead, multiPath);
         assertTrue(canRead, "Group should have permissions for this path");
@@ -572,6 +594,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
 
         expect(repositoryServiceMock.repositoryByKey("testRemote")).andReturn(createRemoteRepoMock()).anyTimes();
         expect(repositoryServiceMock.localOrCachedRepositoryByKey("testRemote-cache")).andReturn(null).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
 
         // cannot read the specified path
@@ -716,6 +739,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
     }
 
     private void verifyAnyRemoteOrAnyLocal(Authentication authentication, RepoPath securedPath) {
+        expectGetGlocalVirtualRepositoryCall();
         replay(aclStoreServiceMock, repositoryServiceMock);
         boolean canRead = service.canRead(securedPath);
         assertTrue(canRead, "User should have permissions for this path");
@@ -734,6 +758,7 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         RepoPath allowedReadPath = InternalRepoPathFactory.create("testRepo1", "blabla");
         expect(repositoryServiceMock.localOrCachedRepositoryByKey(allowedReadPath.getRepoKey()))
                 .andReturn(localRepoMock).anyTimes();
+        expectGetGlocalVirtualRepositoryCall();
         replay(repositoryServiceMock);
 
         // can read the specified path
@@ -778,6 +803,11 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
 
     private void expectGetAllAclsCallWithAnyArray() {
         expect(aclStoreServiceMock.getAllAcls()).andReturn(testAcls);
+    }
+
+
+    private void expectGetGlocalVirtualRepositoryCall() {
+        expect(repositoryServiceMock.getGlobalVirtualRepo()).andReturn(globalVirtualRepoMock).anyTimes();
     }
 
     private List<AclInfo> createTestAcls() {
@@ -916,5 +946,19 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         expect(remoteRepo.isReal()).andReturn(true).anyTimes();
         replay(remoteRepo);
         return remoteRepo;
+    }
+
+    private InternalRepositoryService createRepoServiceMock() {
+        InternalRepositoryService repositoryService = createMock(InternalRepositoryService.class);
+        expect(repositoryService.getGlobalVirtualRepo()).andReturn(globalVirtualRepoMock).anyTimes();
+        replay(repositoryService);
+        return repositoryService;
+    }
+
+    private VirtualRepo createGlobalVirtualRepoMock() {
+        VirtualRepo globalVirtualRepo= createMock(VirtualRepo.class);
+        expect(globalVirtualRepo.getRemoteRepositoriesMap()).andReturn(new HashMap<String, RemoteRepo>()).anyTimes();
+        replay(globalVirtualRepo);
+        return globalVirtualRepo;
     }
 }

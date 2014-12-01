@@ -20,6 +20,7 @@ package org.artifactory.webapp.wicket.page.config.security.general;
 
 import org.apache.commons.lang.WordUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.authroles.authorization.strategies.role.annotations.AuthorizeInstantiation;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.ChoiceRenderer;
@@ -68,6 +69,8 @@ public class SecurityGeneralConfigPage extends AuthenticatedPage {
     private MasterEncryptionService masterEncryptionService;
     private TitledBorder encryptBorder;
     private TitledBorder decryptBorder;
+    private StyledCheckbox anonAccess;
+    private StyledCheckbox anonBuildAccess;
 
     public SecurityGeneralConfigPage() {
         TitledBorder generalBorder = new TitledBorder("generalBorder");
@@ -81,6 +84,7 @@ public class SecurityGeneralConfigPage extends AuthenticatedPage {
 
         setOutputMarkupId(true);
         addAnonymousAccessField(form);
+        addAnonymousAccessToBuildInfosField(form);
         addHideUnauthorizedResourcesField(form);
         addEncryptionPolicyDropDown(form);
         createButtons(form);
@@ -89,10 +93,38 @@ public class SecurityGeneralConfigPage extends AuthenticatedPage {
     }
 
     private void addAnonymousAccessField(Form form) {
-        StyledCheckbox anonAccess = new StyledCheckbox("anonAccessEnabled");
+        anonAccess = new StyledCheckbox("anonAccessEnabled");
         anonAccess.setLabel(Model.of("Allow Anonymous Access"));
         form.add(anonAccess);
         form.add(new SchemaHelpBubble("anonAccessEnabled.help"));
+        anonAccess.add(new AjaxFormComponentUpdatingBehavior("onclick") {
+
+            @Override
+            protected void onUpdate(AjaxRequestTarget target) {
+                if (anonAccess.getModelObject()){
+                    anonBuildAccess.setEnabled(true);
+                }
+                else{
+                    anonBuildAccess.setModelObject(false);
+                    anonBuildAccess.setEnabled(false);
+                }
+                if (target != null) {
+                    target.add(anonBuildAccess);
+                }
+            }
+        });
+    }
+
+    private void addAnonymousAccessToBuildInfosField(Form form) {
+        anonBuildAccess = new StyledCheckbox("anonAccessToBuildInfosDisabled");
+        anonBuildAccess.setLabel(Model.of("Prevent Anonymous Access to Build Related Info"));
+        anonBuildAccess.setOutputMarkupId(true);
+        if(!anonAccess.getModelObject()) {
+            anonBuildAccess.setEnabled(false);
+        }
+
+        form.add(anonBuildAccess);
+        form.add(new SchemaHelpBubble("anonAccessToBuildInfosDisabled.help"));
     }
 
     private void addHideUnauthorizedResourcesField(Form form) {

@@ -39,13 +39,16 @@ import java.util.List;
 /**
  * @author Yossi Shaul
  */
-@XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "hideUnauthorizedResources", "passwordSettings",
+@XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "anonAccessToBuildInfosDisabled", "hideUnauthorizedResources", "passwordSettings",
         "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings", "debianSettings"},
         namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 
     @XmlElement(defaultValue = "true")
     private boolean anonAccessEnabled = true;
+
+    @XmlElement(defaultValue = "false")
+    private boolean anonAccessToBuildInfosDisabled = false;
 
     /**
      * This flag controls whether we reveal the cause when user requests a resource she is not authorize to view.
@@ -80,8 +83,16 @@ public class SecurityDescriptor implements Descriptor {
         return anonAccessEnabled;
     }
 
+    public boolean isAnonAccessToBuildInfosDisabled() {
+        return anonAccessToBuildInfosDisabled;
+    }
+
     public void setAnonAccessEnabled(boolean anonAccessEnabled) {
         this.anonAccessEnabled = anonAccessEnabled;
+    }
+
+    public void setAnonAccessToBuildInfosDisabled(boolean anonAccessToBuildInfosDisabled) {
+        this.anonAccessToBuildInfosDisabled = anonAccessToBuildInfosDisabled;
     }
 
     /**
@@ -311,6 +322,9 @@ public class SecurityDescriptor implements Descriptor {
         if (anonAccessEnabled != that.anonAccessEnabled) {
             return false;
         }
+        if (anonAccessToBuildInfosDisabled != that.anonAccessToBuildInfosDisabled) {
+            return false;
+        }
         if (hideUnauthorizedResources != that.hideUnauthorizedResources) {
             return false;
         }
@@ -343,6 +357,7 @@ public class SecurityDescriptor implements Descriptor {
     @Override
     public int hashCode() {
         int result = (anonAccessEnabled ? 1 : 0);
+        result = 31 * result + (anonAccessToBuildInfosDisabled ? 1 : 0);
         result = 31 * result + (hideUnauthorizedResources ? 1 : 0);
         result = 31 * result + (ldapSettings != null ? ldapSettings.hashCode() : 0);
         result = 31 * result + (ldapGroupSettings != null ? ldapGroupSettings.hashCode() : 0);

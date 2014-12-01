@@ -27,6 +27,7 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoRepoPath;
+import org.artifactory.repo.db.DbLocalRepo;
 import org.artifactory.sapi.fs.MutableVfsFolder;
 import org.artifactory.sapi.fs.VfsFolder;
 import org.artifactory.sapi.fs.VfsItem;
@@ -54,14 +55,19 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
 
     MoveMultiStatusHolder moveOrCopy(VfsItem sourceItem, RepoRepoPath<LocalRepo> targetRrp) {
 
-        // if the target is a directory and it exists we move/copy the source UNDER the target directory (ie, we don't
-        // replace it). We do it only if the target repo key is null and the target fs item is a directory.
-        VfsItem targetFsItem = targetRrp.getRepo().getMutableFsItem(targetRrp.getRepoPath());
-        if (targetFsItem != null && targetFsItem.isFolder() && targetLocalRepoKey == null) {
-            String adjustedPath = targetRrp.getRepoPath().getPath() + "/" + sourceItem.getName();
-            targetRrp = new RepoRepoPath<>(targetRrp.getRepo(),
-                    InternalRepoPathFactory.create(targetRrp.getRepoPath().getRepoKey(), adjustedPath));
+        // See org.artifactory.repo.service.mover.MoverConfig,
+        // copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, ...)
+        // move(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, ...)
+        if(unixStyleBehavior) {
 
+            // if the target is a directory and it exists we move/copy the source UNDER the target directory (ie, we
+            // don't replace it - this is the default unix filesystem behavior).
+            VfsItem targetFsItem = targetRrp.getRepo().getMutableFsItem(targetRrp.getRepoPath());
+            if (targetFsItem != null && targetFsItem.isFolder()) {
+                String adjustedPath = targetRrp.getRepoPath().getPath() + "/" + sourceItem.getName();
+                targetRrp = new RepoRepoPath<>(targetRrp.getRepo(),
+                        InternalRepoPathFactory.create(targetRrp.getRepoPath().getRepoKey(), adjustedPath));
+            }
         }
 
         // ok start moving
@@ -117,7 +123,6 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
                     "Skipping this path and all its children.", log);
             return;
         }
-
         List<VfsItem> children = source.getImmutableChildren();
         RepoPath originalRepoPath = targetRrp.getRepoPath();
         for (VfsItem child : children) {
@@ -127,15 +132,15 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
             // recursive call with the child
             moveCopyRecursive(child, targetRrp);
         }
-
         saveSession();  // save the session before checking if the folder is empty
+        String path = targetRepoPath.getPath();
+        DbLocalRepo targetRepo = (DbLocalRepo) targetRrp.getRepo();
         if (shouldRemoveSourceFolder(source)) {
             storageInterceptors.afterMove(source, targetFolder, status, properties);
             deleteAndReplicateEvent(source);
-        } else if (!dryRun && copy) {
+        } else if (!dryRun && copy && targetRepo.isPathPatternValid(targetRepoPath, path)) {
             storageInterceptors.afterCopy(source, targetFolder, status, properties);
         }
-
         //If not containing any children and items have been moved (children have actually been moved)
         if (!dryRun && targetFolder != null && !targetFolder.getRepoPath().isRoot() &&
                 !targetFolder.hasChildren() && children.size() != 0) {

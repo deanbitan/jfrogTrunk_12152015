@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.security.user;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.PropertyModel;
@@ -31,6 +32,7 @@ import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.security.GroupInfo;
 
 import java.util.List;
@@ -55,6 +57,9 @@ public class GroupManagementPanel extends FieldSetPanel {
         add(form);
 
         List<GroupInfo> groupInfos = userGroupService.getInternalGroups();
+        SortParam sortParam = new SortParam("groupName", true);
+        ListPropertySorter.sort(groupInfos, sortParam);
+
         // Drop-down choice of groups to add/remove users to/from
         DropDownChoice groupDdc = new UsersPanel.TargetGroupDropDownChoice("groupManagement",
                 new PropertyModel<GroupInfo>(this, "selectedGroup"), groupInfos);

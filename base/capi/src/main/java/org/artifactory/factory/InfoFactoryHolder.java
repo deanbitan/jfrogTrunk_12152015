@@ -25,7 +25,7 @@ package org.artifactory.factory;
  * @author Fred Simon
  */
 public abstract class InfoFactoryHolder {
-    private final static InfoFactory DEFAULT_FACTORY;
+    private static final InfoFactory DEFAULT_FACTORY;
 
     public static InfoFactory get() {
         return DEFAULT_FACTORY;

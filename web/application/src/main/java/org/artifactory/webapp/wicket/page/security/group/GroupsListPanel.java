@@ -29,7 +29,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.LdapGroupWebAddon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
@@ -97,7 +97,7 @@ public class GroupsListPanel extends ModalListPanel<GroupInfo> {
         });
         LdapGroupWebAddon ldapGroupWebAddon = addonsManager.addonByType(LdapGroupWebAddon.class);
         BooleanColumn<GroupInfo> externalGroupColumn = ldapGroupWebAddon.addExternalGroupIndicator(
-                new MultiStatusHolder());
+                new BasicStatusHolder());
         if (externalGroupColumn != null) {
             columns.add(externalGroupColumn);
         }

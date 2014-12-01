@@ -19,7 +19,7 @@
 package org.artifactory.storage.db.binstore.service;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
@@ -46,10 +46,15 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
     @Override
     protected void verifyState(File binariesDir) {
         super.verifyState(binariesDir);
-        // the pre folder should be writable also
-        if (!tempBinariesDir.canWrite()) {
+        // the main and pre folder should be writable also
+        if (!binariesDir.canWrite()) {
+            throw new StorageException("Filestore folder '" +
+                    binariesDir.getAbsolutePath() + "' is not writable!");
+        }
+        File tempDir = getNewTempBinariesFile(binariesDir);
+        if (!tempDir.canWrite()) {
             throw new StorageException("Temporary pre store folder '" +
-                    tempBinariesDir.getAbsolutePath() + "' is not writable!");
+                    tempDir.getAbsolutePath() + "' is not writable!");
         }
     }
 
@@ -92,7 +97,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
     }
 
     @Override
-    public void prune(MultiStatusHolder statusHolder) {
+    public void prune(BasicStatusHolder statusHolder) {
         File binariesFolder = getBinariesDir();
         statusHolder.status("Starting cleaning folder " + binariesFolder.getAbsolutePath(), log);
         long start = System.currentTimeMillis();
@@ -127,7 +132,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
         }
     }
 
-    protected void pruneIfNeeded(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {
+    protected void pruneIfNeeded(BasicStatusHolder statusHolder, MovedCounter movedCounter, File first) {
         File[] files = first.listFiles();
         if (files == null || files.length == 0) {
             if (!first.delete()) {
@@ -139,7 +144,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
         }
     }
 
-    protected abstract void pruneFiles(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first);
+    protected abstract void pruneFiles(BasicStatusHolder statusHolder, MovedCounter movedCounter, File first);
 
     static class MovedCounter {
         long foldersRemoved = 0;

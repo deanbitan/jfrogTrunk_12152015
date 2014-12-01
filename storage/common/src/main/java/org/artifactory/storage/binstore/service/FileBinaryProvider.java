@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.binstore.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -38,5 +38,12 @@ public interface FileBinaryProvider extends BinaryProvider {
     @Nonnull
     File getFile(String sha1);
 
-    void prune(MultiStatusHolder statusHolder);
+    void prune(BasicStatusHolder statusHolder);
+
+    /**
+     * Check for state of the filestore.
+     *
+     * @return true if all access and permissions to folders are valid, false otherwise
+     */
+    boolean isAccessible();
 }

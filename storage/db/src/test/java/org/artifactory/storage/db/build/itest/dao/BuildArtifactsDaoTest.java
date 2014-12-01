@@ -41,8 +41,8 @@ import static org.testng.Assert.assertEquals;
  */
 @Test
 public class BuildArtifactsDaoTest extends BuildsDaoBaseTest {
-    private final static String SHA1_SUFFIX = "cab88fc2a043c2479a6de676a2f8179e9ea2167";
-    private final static String MD5_SUFFIX = "02a360ecad98a34b59863c1e65bcf71";
+    private static final String SHA1_SUFFIX = "cab88fc2a043c2479a6de676a2f8179e9ea2167";
+    private static final String MD5_SUFFIX = "02a360ecad98a34b59863c1e65bcf71";
 
     @AfterClass
     public void testFullDelete() throws SQLException {

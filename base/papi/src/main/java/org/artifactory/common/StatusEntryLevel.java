@@ -26,7 +26,7 @@ public enum StatusEntryLevel {
     DEBUG, INFO, WARNING, ERROR;
 
     public boolean isError() {
-        return this == WARNING || this == ERROR;
+        return this == ERROR;
     }
 
     public boolean isDebug() {

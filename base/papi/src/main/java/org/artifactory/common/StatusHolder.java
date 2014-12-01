@@ -26,23 +26,20 @@ import java.io.Serializable;
  * @author Yoav Landman
  */
 public interface StatusHolder extends Serializable {
-    StatusEntry getStatusEntry();
 
     String getStatusMsg();
 
     boolean isError();
 
-    Throwable getException();
-
-    int getStatusCode();
-
-    boolean isFastFail();
-
     StatusEntry getLastError();
+    StatusEntry getLastWarning();
+    StatusEntry getLastStatusEntry();
 
-    boolean isActivateLogging();
+    Throwable getException();
 
     CancelException getCancelException();
 
-    CancelException getCancelException(StatusEntry previousToLastError);
+    int getStatusCode();
+
+    boolean isVerbose();
 }

@@ -50,7 +50,8 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * @param strictMatching When false, fallback to searching by checksums in case the bean wasn't found by build.name and build.number properties
      * @param artifacts      Whether to search for artifacts or dependencies
      */
-    Map<BuildFileBean, FileInfo> getBuildBeansInfo(Build build, boolean strictMatching, boolean artifacts);
+    Map<BuildFileBean, FileInfo> getBuildBeansInfo(Build build, boolean strictMatching, boolean artifacts,
+            String sourceRepository);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a

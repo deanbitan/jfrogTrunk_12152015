@@ -44,11 +44,9 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
-import org.artifactory.concurrent.ExpiringDelayed;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.engine.InternalDownloadService;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.SimpleResourceStreamHandle;
@@ -76,11 +74,11 @@ import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryStore;
+import org.artifactory.storage.fs.lock.map.LockingMap;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.ExceptionUtils;
-import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,8 +87,6 @@ import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -98,12 +94,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author yoavl
@@ -137,8 +128,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private final ChecksumPolicy checksumPolicy;
 
     private boolean globalOfflineMode;
-    private final HandleRefsTracker handleRefsTracker;
-    private final ConcurrentMap<String, DownloadEntry> downloadsInTransit;
+
+    private final LockingMap lockingMap;
+
     // List of interceptors for various download resolution points
     private Collection<RemoteRepoInterceptor> interceptors;
 
@@ -154,13 +146,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         if (oldRemoteRepo instanceof RemoteRepoBase) {
             this.oldRemoteRepo = (RemoteRepoBase) oldRemoteRepo;
             // Always keep the in transit download map
-            //noinspection unchecked
-            this.downloadsInTransit = this.oldRemoteRepo.downloadsInTransit;
-            this.handleRefsTracker = this.oldRemoteRepo.handleRefsTracker;
+            this.lockingMap = this.oldRemoteRepo.lockingMap;
         } else {
             this.oldRemoteRepo = null;
-            this.downloadsInTransit = new ConcurrentHashMap<>();
-            this.handleRefsTracker = new HandleRefsTracker();
+            HaAddon haAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaAddon.class);
+            this.lockingMap = haAddon.getLockingMap();
         }
     }
 
@@ -557,47 +547,41 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     .forceExpiryCheck(requestContext.isForceExpiryCheck()).build();
             getRepositoryService().assertValidDeployPath(validDeployPathContext);
 
-            //Check that the resource is not being downloaded in parallel
-            DownloadEntry completedConcurrentDownload = getCompletedConcurrentDownload(
-                    remoteResource.getRepoPath().getPath());
-            if (completedConcurrentDownload != null) {
-                RepoRequests.logToContext("Found completed concurrent download - using prepared handle");
-                //We will not see the stored result here yet since it is saved in its own tx - return a direct handle
-                ConcurrentLinkedQueue<ResourceStreamHandle> preparedHandles = completedConcurrentDownload.handles;
-                ResourceStreamHandle handle = preparedHandles.poll();
-                if (handle == null) {
-                    log.error("No concurrent download handle is available.");
-                    RepoRequests.logToContext("Unable find available concurrent download handle");
-                }
-                ChecksumsInfo checksumsInfo = localCacheRepo.getInfo(requestContext).getInfo().getChecksumsInfo();
-                remoteResource.getInfo().getChecksumsInfo().setChecksums(checksumsInfo.getChecksums());
-                return handle;
-            }
+            // Only 1 remote downloader is allowed
+            String pathToLock = cachedResource.getRepoPath().toPath();
 
-            HaAddon haAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaAddon.class);
-            if (haAddon.isHaEnabled()) {
-                String pathToLock = cachedResource.getRepoPath().toPath();
-                Pair<ResourceStreamHandle, Boolean> pair = performHaLockDownload(requestContext, cachedResource,
-                        haAddon, pathToLock);
+            boolean lockAcquired = false;
+            try {
                 try {
-                    ResourceStreamHandle handle = pair.getFirst();
-                    if (handle != null) {
-                        RepoRequests.logToContext(
-                                "Found cached handle downloaded by a different HA node server, notifying concurrent waiters");
-                        notifyConcurrentWaiters(requestContext, cachedResource, remoteRepoPath.getPath());
-                        return handle;
-                    }
-                    RepoRequests.logToContext("Found no cached resource - starting download");
-                    cachedResource = doDownloadAndSave(requestContext, cachedResource, remoteResource);
-                } finally {
-                    if (pair.getSecond()) {
-                        haAddon.unlockRemoteDownload(pathToLock);
-                    }
+                    lockAcquired = lockingMap.tryAddAndLock(pathToLock,
+                            ConstantValues.repoConcurrentDownloadSyncTimeoutSecs.getLong(), TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    log.info("Interrupted on concurrent download lock of '{}'", pathToLock);
+                    RepoRequests.logToContext("Interrupted on concurrent download lock of '" + pathToLock + "'");
                 }
-            } else {
-                //We need to download since no concurrent download of the same resource took place
-                RepoRequests.logToContext("Found no completed concurrent download - starting download");
-                cachedResource = doDownloadAndSave(requestContext, cachedResource, remoteResource);
+                if (lockAcquired) {
+                    try {
+                        if (!cachedResource.isExpired()) {
+                            String message = "Found completed concurrent download - using prepared handle";
+                            return getHandleFromCache(requestContext, remoteResource, cachedResource, message);
+                        }
+                    } catch (FileNotFoundException e) {
+                        String msg = "Unable to find cached resource stream handle, continuing with actual remote download.";
+                        log.debug(msg);
+                        RepoRequests.logToContext(msg);
+                    }
+                } else {
+                    //We exited because of a timeout, return timeout error
+                    log.info("Timed-out waiting on concurrent download of '{}' in '{}'.", pathToLock, this);
+                    RepoRequests.logToContext("Timed-out waiting on concurrent download.");
+                    return null;
+                }
+                RepoRequests.logToContext("Found no cached resource - starting download");
+                cachedResource = doDownloadAndSave(requestContext, remoteResource);
+            } finally {
+                if (lockAcquired) {
+                    lockingMap.removeAndUnlock(pathToLock);
+                }
             }
             notifyInterceptorsOnAfterRemoteDownload(remoteResource);
         }
@@ -613,6 +597,19 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         RepoRequests.logToContext("Returning the cached resource");
         //Return the cached result (the newly downloaded or already cached resource)
         return localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
+    }
+
+    private ResourceStreamHandle getHandleFromCache(InternalRequestContext requestContext, RepoResource remoteResource,
+            RepoResource cachedResource, String message) throws IOException, RepoRejectException {
+        ResourceStreamHandle cacheHandle = localCacheRepo.getResourceStreamHandle(requestContext, cachedResource);
+        if (cacheHandle != null) {
+            RepoRequests.logToContext(message);
+            ChecksumsInfo checksumsInfo = localCacheRepo.getInfo(requestContext).getInfo().getChecksumsInfo();
+            remoteResource.getInfo().getChecksumsInfo().setChecksums(checksumsInfo.getChecksums());
+            return cacheHandle;
+        }
+
+        return null;
     }
 
     private boolean isRemoteDownloadAllowed(RepoPath remoteRepoPath) {
@@ -644,8 +641,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     // this is the actual download of the resource
-    private RepoResource doDownloadAndSave(InternalRequestContext requestContext, RepoResource cachedResource,
-            RepoResource remoteResource) throws RepoRejectException, IOException {
+    private RepoResource doDownloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource)
+            throws RepoRejectException, IOException {
         RepoRequests.logToContext("Downloading and saving");
         RepoPath remoteRepoPath = remoteResource.getRepoPath();
         ResourceStreamHandle handle = null;
@@ -708,7 +705,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             RepoRequests.logToContext("Saving resource to " + localCacheRepo);
             SaveResourceContext saveResourceContext = new SaveResourceContext.Builder(remoteResource, handle)
                     .properties(properties).build();
-            cachedResource = getRepositoryService().saveResource(localCacheRepo, saveResourceContext);
+            RepoResource cachedResource = getRepositoryService().saveResource(localCacheRepo, saveResourceContext);
             if (remoteRequestStartTime > 0) {
                 // fire upload event only if the resource was downloaded from the remote repository
                 UploadEntry uploadEntry = new UploadEntry(remoteResource.getRepoPath().getId(),
@@ -721,44 +718,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             return cachedResource;
         } finally {
             Closeables.close(handle, false);
-            //Notify concurrent download waiters
-            notifyConcurrentWaiters(requestContext, cachedResource, remoteRepoPath.getPath());
         }
-    }
-
-    private Pair<ResourceStreamHandle, Boolean> performHaLockDownload(InternalRequestContext request,
-            RepoResource cachedResource, HaAddon haAddon, String pathToLock) throws IOException, RepoRejectException {
-        boolean success = false;
-        try {
-            success = haAddon.tryLockRemoteDownload(pathToLock,
-                    ConstantValues.repoConcurrentDownloadSyncTimeoutSecs.getLong(), TimeUnit.SECONDS);
-            if (success) {
-                try {
-                    if (!cachedResource.isExpired()) {
-                        ResourceStreamHandle cacheHandle = localCacheRepo.getResourceStreamHandle(request, cachedResource);
-                        if (cacheHandle != null) {
-                            return new Pair<>(cacheHandle, true);
-                        }
-                    }
-                } catch (FileNotFoundException e) {
-                    String msg = "Unable to find cached resource stream handle, continuing with actual remote download.";
-                    log.debug(msg);
-                    RepoRequests.logToContext(msg);
-                }
-            } else {
-                //We exited because of a timeout, continue to actual download
-                log.info(
-                        "Timed-out waiting on concurrent download of '{}' in '{}'. Allowing concurrent downloads to proceed.",
-                        pathToLock, this);
-                RepoRequests.logToContext(
-                        "Timed-out waiting on concurrent download. Allowing concurrent downloads to proceed.");
-            }
-        } catch (InterruptedException e) {
-            // Will move on to actual remote download
-            RepoRequests.logToContext("Interrupted while waiting on a concurrent download: %s", e.getMessage());
-        }
-
-        return new Pair<>(null, success);
     }
 
     private boolean shouldSearchForExistingResource(Request request) {
@@ -826,71 +786,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     private boolean notFoundAndNotExpired(RepoResource cachedResource) {
         return !cachedResource.isFound() && !cachedResource.isExpired();
-    }
-
-    private DownloadEntry getCompletedConcurrentDownload(String relPath) {
-        RepoRequests.logToContext("Trying to find completed concurrent download");
-        DownloadEntry existingDownload = downloadsInTransit.putIfAbsent(relPath, new DownloadEntry(relPath));
-        if (existingDownload == null) {
-            return null;
-        }
-
-        // someone else is downloading the same resource -> wait
-        try {
-            RepoRequests.logToContext("Found download in progress '%s'", existingDownload);
-            //Increment the resource handles count
-            int prevCount = existingDownload.handlesToPrepare.getAndIncrement();
-            if (prevCount < 0) {
-                //TODO: [by YS] what?
-                //Calculation already started
-                RepoRequests.logToContext("Not waiting on concurrent download %s since calculation already started",
-                        existingDownload);
-                return null;
-            }
-            log.info("Waiting on concurrent download of '{}' in '{}'.", relPath, this);
-            RepoRequests.logToContext("Waiting on concurrent download.");
-            boolean latchTriggered =
-                    existingDownload.latch.await(existingDownload.getDelay(TimeUnit.SECONDS), TimeUnit.SECONDS);
-            if (!latchTriggered) {
-                //We exited because of a timeout
-                log.info("Timed-out waiting on concurrent download of '{}' in '{}'. Allowing concurrent " +
-                        "downloads to proceed.", relPath, this);
-                RepoRequests.logToContext("Timed-out waiting on concurrent download. Allowing concurrent " +
-                        "downloads to proceed.");
-                existingDownload.handlesToPrepare.decrementAndGet();
-                return null;
-            } else {
-                return existingDownload;
-            }
-        } catch (InterruptedException e) {
-            RepoRequests.logToContext("Interrupted while waiting on a concurrent download: %s", e.getMessage());
-            return null;
-        }
-    }
-
-    private void notifyConcurrentWaiters(InternalRequestContext requestContext, RepoResource resource, String relPath)
-            throws IOException, RepoRejectException {
-        DownloadEntry currentDownload = downloadsInTransit.remove(relPath);
-        if (currentDownload != null) {
-            //Put it low enough in case it is incremented by multiple late waiters
-            int handlesCount = currentDownload.handlesToPrepare.getAndSet(-9999);
-            RepoRequests.logToContext("Finished concurrent download. Preparing %s download handles for waiters",
-                    handlesCount);
-            //Add a new handle entries since the new resource is visible to this tx only
-            for (int i = 0; i < handlesCount; i++) {
-                ResourceStreamHandle extHandle = localCacheRepo.getResourceStreamHandle(requestContext, resource);
-                currentDownload.handles.add(extHandle);
-                //if waiters do not pick up the handles prepared (timed out waiting, exception,
-                //interrupted...) so we keep track on their references
-                handleRefsTracker.add(extHandle);
-            }
-
-            //Notify the download waiters
-            RepoRequests.logToContext("Notifying waiters on: %s", currentDownload);
-            InternalDownloadService downloadService = InternalContextHelper.get().beanForType(
-                    InternalDownloadService.class);
-            downloadService.releaseDownloadWaiters(currentDownload.latch);
-        }
     }
 
     private Set<ChecksumInfo> getRemoteChecksums(String path) {
@@ -974,7 +869,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             RemoteRequestException remoteError =
                     (RemoteRequestException) ExceptionUtils.getCauseOfTypes(e, RemoteRequestException.class);
             if (remoteError == null || remoteError.getRemoteReturnCode() != HttpStatus.SC_NOT_FOUND) {
-                log.info("Error listing remote resources for {}: {}", directoryPath, e.getMessage());
+                log.info("Error listing remote resources {}: {}", fullDirectoryUrl, e.getMessage());
             }
         }
 
@@ -1086,6 +981,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @throws IOException If remote checksum is not found or there was a problem retrieving it
      */
     private String getRemoteChecksum(String path) throws IOException {
+        if (StringUtils.contains(getUrl(), "registry.npmjs.org")) {
+            return null;
+        }
+
         try (ResourceStreamHandle handle = downloadResource(path)) {
             InputStream is = handle.getInputStream();
             return Checksum.checksumStringFromStream(is);
@@ -1206,54 +1105,6 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     private RepoResource getMissedResource(String path) {
         return missedRetrievalsCache.get(path);
-    }
-
-    private static class DownloadEntry extends ExpiringDelayed {
-        private final String path;
-        private final CountDownLatch latch;
-        private final AtomicInteger handlesToPrepare = new AtomicInteger();
-        private final ConcurrentLinkedQueue<ResourceStreamHandle> handles = new ConcurrentLinkedQueue<>();
-
-        DownloadEntry(String path) {
-            super(System.currentTimeMillis() + (ConstantValues.repoConcurrentDownloadSyncTimeoutSecs.getLong() * 1000));
-            this.path = path;
-            this.latch = new CountDownLatch(1);
-        }
-
-        @Override
-        public String getSubject() {
-            return path;
-        }
-    }
-
-    private static class HandleRefsTracker {
-
-        @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-        private ConcurrentLinkedQueue<WeakReference<ResourceStreamHandle>> handles =
-                new ConcurrentLinkedQueue<>();
-        private final ReferenceQueue<ResourceStreamHandle> handlesRefQueue = new ReferenceQueue<>();
-
-        @SuppressWarnings({"unchecked"})
-        public void add(ResourceStreamHandle handle) {
-            WeakReference<ResourceStreamHandle> ref = new WeakReference<>(handle, handlesRefQueue);
-            handles.add(ref);
-            //Clean up weakly referenced handles that were not picked-up by waiters before
-            WeakReference<ResourceStreamHandle> defunctRef;
-            while ((defunctRef = (WeakReference<ResourceStreamHandle>) handlesRefQueue.poll()) != null) {
-                try {
-                    log.trace("Cleaning up defunct download handle in '{}'.", this);
-                    ResourceStreamHandle defunctHandle = defunctRef.get();
-                    IOUtils.closeQuietly(defunctHandle);
-                } catch (Exception e) {
-                    if (log.isDebugEnabled()) {
-                        log.warn("Could not cleanup handle reference.", e);
-                    } else {
-                        log.warn("Could not cleanup handle reference: {}", e.getMessage());
-                    }
-                }
-                handles.remove(defunctRef);
-            }
-        }
     }
 
     /**

@@ -84,7 +84,7 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         if (ConstantValues.responseDisableContentDispositionFilename.getBoolean() || StringUtils.isBlank(filename)) {
             response.setHeader("Content-Disposition", "attachment");
         } else {
-            response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
         }
     }
 

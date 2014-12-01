@@ -62,11 +62,13 @@ import org.artifactory.sapi.search.VfsQueryRow;
 import org.artifactory.sapi.search.VfsQueryService;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.search.archive.ArchiveSearcher;
+import org.artifactory.search.archive.ArchiveSearcherAql;
 import org.artifactory.search.build.BuildSearcher;
 import org.artifactory.search.deployable.VersionUnitSearcher;
 import org.artifactory.search.fields.FieldNameConverter;
 import org.artifactory.search.gavc.GavcSearcher;
 import org.artifactory.search.property.PropertySearcher;
+import org.artifactory.search.property.PropertySearcherAql;
 import org.artifactory.search.stats.LastDownloadedSearcher;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.Reloadable;
@@ -166,6 +168,16 @@ public class SearchServiceImpl implements InternalSearchService {
     }
 
     @Override
+    public ItemSearchResults<ArchiveSearchResult> searchArchiveContentAql(ArchiveSearchControls controls) {
+        if (shouldReturnEmptyResults(controls)) {
+            return new ItemSearchResults<>(Lists.<ArchiveSearchResult>newArrayList());
+        }
+        ArchiveSearcherAql searcher = new ArchiveSearcherAql();
+        ItemSearchResults<ArchiveSearchResult> results = searcher.search(controls);
+        return results;
+    }
+
+    @Override
     public ItemSearchResults<StatsSearchResult> searchArtifactsNotDownloadedSince(StatsSearchControls controls) {
         if (shouldReturnEmptyResults(controls)) {
             return new ItemSearchResults<>(Lists.<StatsSearchResult>newArrayList());
@@ -192,6 +204,18 @@ public class SearchServiceImpl implements InternalSearchService {
         }
 
         PropertySearcher searcher = new PropertySearcher();
+        ItemSearchResults<PropertySearchResult> results = searcher.search(controls);
+
+        return results;
+    }
+
+    @Override
+    public ItemSearchResults<PropertySearchResult> searchPropertyAql(PropertySearchControls controls) {
+        if (shouldReturnEmptyResults(controls)) {
+            return new ItemSearchResults<>(Lists.<PropertySearchResult>newArrayList());
+        }
+
+        PropertySearcherAql searcher = new PropertySearcherAql();
         ItemSearchResults<PropertySearchResult> results = searcher.search(controls);
 
         return results;

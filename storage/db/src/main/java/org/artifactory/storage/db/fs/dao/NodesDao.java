@@ -28,12 +28,10 @@ import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.fs.entity.Node;
 import org.artifactory.storage.db.fs.entity.NodePath;
 import org.artifactory.storage.db.fs.util.NodeUtils;
-import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.storage.fs.repo.RepoStorageSummary;
-import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -398,22 +396,6 @@ public class NodesDao extends BaseDao {
                     "WHERE n.node_type = 1 and repo = ?  " +
                     "AND p.prop_key = ? and p.prop_value = ?",
                     repo, propKey, propValue);
-            while (resultSet.next()) {
-                results.add(nodeFromResultSet(resultSet));
-            }
-        } finally {
-            DbUtils.close(resultSet);
-        }
-        return results;
-    }
-
-    public List<Node> searchFilesByProperty(PropertiesFilterQueryBuilder propertyFilter) throws SQLException {
-        ResultSet resultSet = null;
-        List<Node> results = new ArrayList<>();
-        try {
-            Pair<String, List<String>> nodeQuery = propertyFilter.createNodeQuery();
-            String[] strings = nodeQuery.getSecond().toArray(new String[nodeQuery.getSecond().size()]);
-            resultSet = jdbcHelper.executeSelect(nodeQuery.getFirst(), strings);
             while (resultSet.next()) {
                 results.add(nodeFromResultSet(resultSet));
             }

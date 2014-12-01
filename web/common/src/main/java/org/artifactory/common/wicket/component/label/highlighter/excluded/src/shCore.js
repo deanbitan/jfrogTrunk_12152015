@@ -412,7 +412,6 @@ var sh = {
 								return sh.utils.unindent(code);
 							
 						case 'ok':
-							sh.utils.alert(sh.config.strings.copyToClipboardConfirmation);
 							break;
 							
 						case 'error':

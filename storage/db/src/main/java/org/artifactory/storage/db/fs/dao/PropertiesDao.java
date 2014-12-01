@@ -21,11 +21,9 @@ package org.artifactory.storage.db.fs.dao;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.storage.db.fs.entity.NodeProperty;
-import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
-import org.artifactory.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,23 +70,6 @@ public class PropertiesDao extends BaseDao {
             resultSet = jdbcHelper.executeSelect("SELECT * FROM node_props WHERE node_id = ?", nodeId);
             while (resultSet.next()) {
                 results.add(propertyFromResultSet(resultSet));
-            }
-            return results;
-        } finally {
-            DbUtils.close(resultSet);
-        }
-    }
-
-    public List<String> getPropertiesByPropKey(PropertiesFilterQueryBuilder propertyFilter) throws SQLException {
-        ResultSet resultSet = null;
-        List<String> results = Lists.newArrayList();
-        try {
-            // the child path must be the path+name of the parent
-            Pair<String, List<String>> query = propertyFilter.createDistinctVersionQuery();
-            String[] strings = query.getSecond().toArray(new String[query.getSecond().size()]);
-            resultSet = jdbcHelper.executeSelect(query.getFirst(), strings);
-            while (resultSet.next()) {
-                results.add(resultSet.getString(1));
             }
             return results;
         } finally {

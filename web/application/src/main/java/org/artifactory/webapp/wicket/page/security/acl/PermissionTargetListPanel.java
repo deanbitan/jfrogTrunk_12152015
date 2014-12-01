@@ -22,7 +22,9 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.SortOrder;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.IColumn;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.model.util.ListModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
@@ -68,10 +70,17 @@ public class PermissionTargetListPanel extends ModalListPanel<PermissionTargetIn
 
     @Override
     protected void addColumns(List<? super IColumn<PermissionTargetInfo>> columns) {
-        columns.add(
-                new PropertyColumn<PermissionTargetInfo>(Model.of("Permission Target Name"), "name", "name"));
-        columns.add(
-                new PropertyColumn<PermissionTargetInfo>(Model.of("Repositories"), "repoKeys"));
+        columns.add(new PropertyColumn<PermissionTargetInfo>(Model.of("Permission Target Name"), "name", "name"));
+        columns.add(new PropertyColumn<PermissionTargetInfo>(Model.of("Repositories"), "repoKeys") {
+            // TODO: [by dan] RTFACT-6906 display cached repositories as remote until security is corrected
+            @Override
+            protected IModel<List<String>> createLabelModel(IModel<PermissionTargetInfo> rowModel) {
+                List<String> repoKeys = rowModel.getObject().getRepoKeys();
+                ListModel repoKeysModel =
+                        new ListModel<>(security.convertCachedRepoKeysToRemote(repoKeys));
+                return repoKeysModel;
+            }
+        });
     }
 
     @Override

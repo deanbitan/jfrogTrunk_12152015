@@ -34,7 +34,6 @@ import org.artifactory.common.wicket.component.dnd.select.DragDropSelection;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.contributor.ResourcePackage;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.webapp.wicket.components.SortedRepoDragDropSelection;
 import org.artifactory.webapp.wicket.page.security.acl.CommonPathPattern;
@@ -49,7 +48,7 @@ import java.util.List;
  * @author Yoav Aharoni
  */
 public class RepositoriesTabPanel extends BasePermissionTabPanel {
-    private DragDropSelection<LocalRepoDescriptor> repoKeysSelection;
+    private DragDropSelection<RealRepoDescriptor> repoKeysSelection;
 
     private PermissionTargetCreateUpdatePanel parent;
 
@@ -80,9 +79,9 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
 
 
     private void addRepositoriesSelections() {
-        List<LocalRepoDescriptor> repos = new ArrayList<>();
+        List<RealRepoDescriptor> repos = new ArrayList<>();
         repos.addAll(parent.getLocalRepositoryDescriptors());
-        repos.addAll(parent.getCachedRepositoryDescriptors());
+        repos.addAll(parent.getRemoteRepositoryDescriptors());
         PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData = parent.getRepoKeysData();
         repoKeysSelection = new RepoDragDropSelection("repoKeys", repoKeysData, repos);
 
@@ -118,12 +117,12 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
             }
         });
 
-        final StyledCheckbox anyCachedRepositoryCheckbox = new StyledCheckbox("anyCachedRepository",
-                new PropertyModel<Boolean>(parent.getRepoKeysData(), "anyCachedRepository"));
-        anyCachedRepositoryCheckbox.setEnabled(isSystemAdmin());
-        add(anyCachedRepositoryCheckbox);
+        final StyledCheckbox anyRemoteRepositoryCheckbox = new StyledCheckbox("anyRemoteRepository",
+                new PropertyModel<Boolean>(parent.getRepoKeysData(), "anyRemoteRepository"));
+        anyRemoteRepositoryCheckbox.setEnabled(isSystemAdmin());
+        add(anyRemoteRepositoryCheckbox);
 
-        anyCachedRepositoryCheckbox.add(new AjaxFormSubmitBehavior("onclick") {
+        anyRemoteRepositoryCheckbox.add(new AjaxFormSubmitBehavior("onclick") {
             @Override
             protected void onError(AjaxRequestTarget target) {
                 AjaxUtils.refreshFeedback(target);
@@ -132,10 +131,10 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target) {
                 PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData = parent.getRepoKeysData();
-                if (repoKeysData.isAnyCachedRepository()) {
-                    repoKeysData.addRepoDescriptors(parent.getCachedRepositoryDescriptors());
+                if (repoKeysData.isAnyRemoteRepository()) {
+                    repoKeysData.addRepoDescriptors(parent.getRemoteRepositoryDescriptors());
                 } else {
-                    repoKeysData.removeRepoDescriptors(parent.getCachedRepositoryDescriptors());
+                    repoKeysData.removeRepoDescriptors(parent.getRemoteRepositoryDescriptors());
                 }
                 target.add(RepositoriesTabPanel.this.get("repoKeys"));
                 target.appendJavaScript("PermissionTabPanel.resize();");
@@ -213,10 +212,10 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         }
     }
 
-    private class RepoDragDropSelection extends SortedRepoDragDropSelection<LocalRepoDescriptor> {
+    private class RepoDragDropSelection extends SortedRepoDragDropSelection<RealRepoDescriptor> {
         private RepoDragDropSelection(String id, PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData,
-                List<LocalRepoDescriptor> repos) {
-            super(id, new PropertyModel<LocalRepoDescriptor>(repoKeysData, "repoDescriptors"), repos);
+                List<RealRepoDescriptor> repos) {
+            super(id, new PropertyModel<RealRepoDescriptor>(repoKeysData, "repoDescriptors"), repos);
         }
 
         @Override
@@ -228,12 +227,12 @@ public class RepositoriesTabPanel extends BasePermissionTabPanel {
         protected String getDndValue(ListItem item) {
             PermissionTargetCreateUpdatePanel.RepoKeysData repoKeysData = parent.getRepoKeysData();
             boolean anyLocal = repoKeysData.isAnyLocalRepository();
-            boolean anyCache = repoKeysData.isAnyCachedRepository();
+            boolean anyRemote = repoKeysData.isAnyRemoteRepository();
 
-            RealRepoDescriptor repo = (LocalRepoDescriptor) item.getDefaultModelObject();
-            boolean local = anyLocal && !repo.isCache();
-            boolean cache = anyCache && repo.isCache();
-            if (local || cache) {
+            RealRepoDescriptor repo = (RealRepoDescriptor) item.getDefaultModelObject();
+            boolean local = anyLocal && repo.isLocal();
+            boolean remote = anyRemote && !repo.isLocal();
+            if (local || remote) {
                 item.add(new CssClass("disabled"));
                 return getMarkupId() + "-targetOnly";
             }

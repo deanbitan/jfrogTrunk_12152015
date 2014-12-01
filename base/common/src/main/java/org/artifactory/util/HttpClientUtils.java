@@ -23,6 +23,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.springframework.util.ReflectionUtils;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 
 /**
@@ -44,7 +45,7 @@ public abstract class HttpClientUtils {
      * @param request The request for the custom config
      * @return Request configuration builder based on the client defaults ot the already existing request config.
      */
-    public static RequestConfig.Builder copyOrCreateConfig(HttpClient client, HttpRequestBase request) {
+    public static RequestConfig.Builder copyOrCreateConfig(@Nonnull HttpClient client, HttpRequestBase request) {
         if (request.getConfig() != null) {
             // request already has custom config -> copy from it
             return RequestConfig.copy(request.getConfig());

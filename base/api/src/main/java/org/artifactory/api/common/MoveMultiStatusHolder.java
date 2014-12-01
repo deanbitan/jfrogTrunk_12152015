@@ -29,7 +29,7 @@ import java.util.Set;
  *
  * @author Noam Tenne
  */
-public class MoveMultiStatusHolder extends MultiStatusHolder {
+public class MoveMultiStatusHolder extends BasicStatusHolder {
 
     /**
      * Represents the number of artifacts that have been moved
@@ -71,7 +71,7 @@ public class MoveMultiStatusHolder extends MultiStatusHolder {
     }
 
     @Override
-    public void merge(MultiStatusHolder toMerge) {
+    public void merge(BasicStatusHolder toMerge) {
         super.merge(toMerge);
         if (toMerge instanceof MoveMultiStatusHolder) {
             //Merge moved items counter

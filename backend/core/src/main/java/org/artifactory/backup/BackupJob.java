@@ -19,7 +19,7 @@
 package org.artifactory.backup;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.maven.index.MavenIndexerJob;
 import org.artifactory.maven.index.MavenIndexerServiceImpl;
@@ -64,7 +64,7 @@ public class BackupJob extends QuartzCommand {
 
         Object manualBackupDescriptor = jobContext.getJobDetail().getJobDataMap().get(MANUAL_BACKUP);
         String backupKey = jobContext.getJobDetail().getJobDataMap().getString(BACKUP_KEY);
-        MultiStatusHolder jobStatus = new MultiStatusHolder();
+        BasicStatusHolder jobStatus = new BasicStatusHolder();
         if (manualBackupDescriptor instanceof BackupDescriptor) {
             runBackup(context, getBackupService(), jobStatus, ((BackupDescriptor) manualBackupDescriptor));
         } else {
@@ -78,7 +78,7 @@ public class BackupJob extends QuartzCommand {
     }
 
     private void runAutomaticBackup(InternalArtifactoryContext context,
-            MultiStatusHolder jobStatus, String backupKey) {
+            BasicStatusHolder jobStatus, String backupKey) {
         InternalBackupService backupService = getBackupService();
         BackupDescriptor backup = backupService.getBackup(backupKey);
         if (backup == null) {
@@ -110,9 +110,9 @@ public class BackupJob extends QuartzCommand {
     }
 
     private void runBackup(InternalArtifactoryContext context, InternalBackupService backupService,
-            MultiStatusHolder jobStatus, BackupDescriptor backup) {
+            BasicStatusHolder jobStatus, BackupDescriptor backup) {
         try {
-            MultiStatusHolder backupStatus = backupService.backupSystem(context, backup);
+            BasicStatusHolder backupStatus = backupService.backupSystem(context, backup);
             jobStatus.merge(backupStatus);
         } catch (Exception e) {
             jobStatus.error("An error occurred while performing a backup", e, log);

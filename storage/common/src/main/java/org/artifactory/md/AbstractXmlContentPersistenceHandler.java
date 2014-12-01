@@ -18,16 +18,12 @@
 
 package org.artifactory.md;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author freds
  */
-public abstract class AbstractXmlContentPersistenceHandler<T, MT> extends AbstractMetadataPersistenceHandler<T, MT> {
-    private static final Logger log = LoggerFactory.getLogger(AbstractXmlContentPersistenceHandler.class);
+public abstract class AbstractXmlContentPersistenceHandler<T, M> extends AbstractMetadataPersistenceHandler<T, M> {
 
-    protected AbstractXmlContentPersistenceHandler(XmlMetadataProvider<T, MT> xmlProvider) {
+    protected AbstractXmlContentPersistenceHandler(XmlMetadataProvider<T, M> xmlProvider) {
         super(xmlProvider);
     }
 

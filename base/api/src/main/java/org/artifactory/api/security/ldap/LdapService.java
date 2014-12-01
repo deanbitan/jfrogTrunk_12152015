@@ -18,7 +18,7 @@
 
 package org.artifactory.api.security.ldap;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 
 /**
@@ -41,7 +41,7 @@ public interface LdapService {
      * @param password    The password that will be used to test the connection
      * @return StatusHolder with the connection attempt results.
      */
-    MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password);
+    BasicStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password);
 
     /**
      * Given the username, bring back the LDAP user with the DN.

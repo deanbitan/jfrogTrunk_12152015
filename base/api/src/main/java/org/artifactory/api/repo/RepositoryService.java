@@ -28,7 +28,9 @@ import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SavedSearchResults;
+import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.StatusHolder;
@@ -198,20 +200,6 @@ public interface RepositoryService extends ImportableExportable {
     StatusHolder undeployVersionUnits(Set<VersionUnit> versionUnits);
 
     /**
-     * Moves repository path (pointing to a folder) to another local repository. The move will only move paths the user
-     * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
-     * for both the source and target folders.
-     *
-     * @param repoPath           Repository path to move. This path must represent a folder in a local repository.
-     * @param targetLocalRepoKey Key of the target local non-cached repository to move the path to.
-     * @param dryRun             If true the method will just report the expected result but will not move any file
-     * @return MoveMultiStatusHolder holding the errors and warnings
-     */
-    @Lock
-    MoveMultiStatusHolder move(RepoPath repoPath, String targetLocalRepoKey, boolean dryRun);
-
-
-    /**
      * Moves repository path (pointing to a folder) to another absolute target. The move will only move paths the user
      * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
      * for both the source and target folders.
@@ -234,6 +222,10 @@ public interface RepositoryService extends ImportableExportable {
      * <p/>
      * Maven metadata will be recalculated for both the source and target folders after all items has been moved. If a
      * path already belongs to the target repository it will be skipped.
+     * <p/>
+     * This move method does not use Unix-style handling of existing nested folders, meaning that folder content might
+     * be overwritten (i.e. when moving source path org/jfrog/1 to target path org/jfrog/1 the contents of source 1/
+     * are moved into target 1/  - unlike normal unix behavior where such an operation will create org/jfrog/1/1)
      *
      * @param pathsToMove   Paths to move, each pointing to file or folder.
      * @param targetRepoKey Key of the target local non-cached repository to move the path to.
@@ -245,19 +237,6 @@ public interface RepositoryService extends ImportableExportable {
     @Lock
     MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetRepoKey, Properties properties,
             boolean dryRun, boolean failFast);
-
-    /**
-     * Copies repository path (pointing to a folder) to another local repository. The copy will only move paths the user
-     * has permissions to move and paths that are accepted by the target repository. Maven metadata will be recalculated
-     * for both the source and target folders.
-     *
-     * @param fromRepoPath       Repository path to copy. This path must represent a folder in a local repository.
-     * @param targetLocalRepoKey Key of the target local non-cached repository to copy the path to.
-     * @param dryRun             If true the method will just report the expected result but will not copy any file
-     * @return MoveMultiStatusHolder holding the errors and warnings
-     */
-    @Lock
-    MoveMultiStatusHolder copy(RepoPath fromRepoPath, String targetLocalRepoKey, boolean dryRun);
 
     /**
      * Copies repository path to another absolute path. The copy will only copy paths the user has permissions to read
@@ -283,6 +262,10 @@ public interface RepositoryService extends ImportableExportable {
      * <p/>
      * Maven metadata will be recalculated for both the source and target folders after all items has been copied. If a
      * path already belongs to the target repository it will be skipped.
+     * <p/>
+     * This copy method does not use Unix-style handling of existing nested folders, meaning that folder content might
+     * be overwritten (i.e. when copying source path org/jfrog/1 to target path org/jfrog/1 the contents of source 1/
+     * are copied into target 1/  - unlike normal unix behavior where such an operation will create org/jfrog/1/1)
      *
      * @param pathsToCopy        Paths to copy, each pointing to file or folder.
      * @param targetLocalRepoKey Key of the target local non-cached repository to move the path to.
@@ -351,9 +334,9 @@ public interface RepositoryService extends ImportableExportable {
      * Returns all the version units under a certain path.
      *
      * @param repoPath The repository path (might be repository root with no sub-path)
-     * @return version units under a certain path
+     * @return ItemSearchResults containing version units under a certain path
      */
-    List<VersionUnit> getVersionUnitsUnder(RepoPath repoPath);
+    ItemSearchResults<VersionUnitSearchResult> getVersionUnitsUnder(RepoPath repoPath);
 
     /**
      * @return the number of artifacts currently being served, including virtual repo cached files

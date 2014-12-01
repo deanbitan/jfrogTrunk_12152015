@@ -19,6 +19,7 @@
 package org.artifactory.webapp.wicket.page.security.user;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
@@ -31,6 +32,7 @@ import org.artifactory.common.wicket.behavior.filteringselect.FilteringSelectBeh
 import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
 import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
+import org.artifactory.common.wicket.util.ListPropertySorter;
 import org.artifactory.security.GroupInfo;
 
 import java.util.List;
@@ -68,6 +70,8 @@ public class UsersFilterPanel extends FieldSetPanel {
         form.add(filterButton);
         form.add(new DefaultButtonBehavior(filterButton));
         final List<GroupInfo> groupInfos = userGroupService.getAllGroups();
+        SortParam sortParam = new SortParam("groupName", true);
+        ListPropertySorter.sort(groupInfos, sortParam);
 
         // Drop-down choice of groups to filter by
         DropDownChoice groupDdc = new UsersPanel.FilterGroupDropDownChoice("groupFilter",

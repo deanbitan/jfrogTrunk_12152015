@@ -19,7 +19,7 @@
 package org.artifactory.addon.layouts.translate;
 
 import com.google.common.collect.Lists;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.descriptor.repo.RepoLayout;
@@ -43,7 +43,7 @@ public class PathTranslationHelper {
             new MetadataTranslatorFilter()};
 
     public String translatePath(RepoLayout sourceRepoLayout, RepoLayout targetRepoLayout, String path,
-            MultiStatusHolder multiStatusHolder) {
+            BasicStatusHolder multiStatusHolder) {
 
         LinkedList<Pair<String, TranslatorFilter>> filters = Lists.newLinkedList();
 

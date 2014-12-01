@@ -21,56 +21,36 @@ package org.artifactory.common;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 
 /**
  * @author Yoav Landman
  */
 public interface MutableStatusHolder extends StatusHolder {
-    @Override
-    StatusEntry getStatusEntry();
 
-    @Override
-    String getStatusMsg();
-
-    @Override
-    boolean isError();
-
-    @Override
-    Throwable getException();
-
-    @Override
-    int getStatusCode();
-
+    //TODO: [by YS] this should only be in the importexport status holder
     void setFastFail(boolean failFast);
 
     void setVerbose(boolean verbose);
 
-    void debug(String statusMsg, @Nonnull Logger logger);
+    void debug(String message, @Nonnull Logger logger);
 
-    void status(String statusMsg, @Nonnull Logger logger);
+    void status(String message, @Nonnull Logger logger);
 
-    void status(String statusMsg, int statusCode, @Nonnull Logger logger);
+    void status(String message, int statusCode, @Nonnull Logger logger);
 
-    void warn(String statusMsg, @Nonnull Logger logger);
+    void warn(String message, @Nonnull Logger logger);
 
-    void warn(String statusMsg, Throwable throwable, @Nonnull Logger logger);
+    void warn(String message, Throwable throwable, @Nonnull Logger logger);
 
-    void error(String statusMsg, @Nonnull Logger logger);
+    void error(String message, @Nonnull Logger logger);
 
-    void error(String statusMsg, int statusCode, @Nonnull Logger logger);
+    void error(String message, int statusCode, @Nonnull Logger logger);
 
-    void error(String status, Throwable throwable, @Nonnull Logger logger);
+    void error(String message, Throwable throwable, @Nonnull Logger logger);
 
-    void error(String statusMsg, int statusCode, Throwable throwable, @Nonnull Logger logger);
+    void error(String message, int statusCode, Throwable throwable, @Nonnull Logger logger);
 
     void setActivateLogging(boolean activateLogging);
 
     void reset();
-
-    boolean isVerbose();
-
-    File getOutputFile();
-
-    void setOutputFile(File absoluteFile);
 }

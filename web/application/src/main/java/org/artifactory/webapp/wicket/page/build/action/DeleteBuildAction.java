@@ -23,7 +23,7 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.StatusEntry;
@@ -96,7 +96,7 @@ public class DeleteBuildAction extends ItemAction {
         String buildName = buildRun.getName();
         String buildNumber = buildRun.getNumber();
 
-        MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
+        BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
         try {
             buildService.deleteBuild(buildRun, false, multiStatusHolder);
             multiStatusHolder.status(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),

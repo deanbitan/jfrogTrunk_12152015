@@ -21,7 +21,7 @@ package org.artifactory.addon.wicket;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.artifactory.addon.Addon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
@@ -60,7 +60,7 @@ public interface LdapGroupWebAddon extends Addon {
      * @param statusHolder Status holder
      * @return Indicator whether a group is external.
      */
-    BooleanColumn<GroupInfo> addExternalGroupIndicator(MultiStatusHolder statusHolder);
+    BooleanColumn<GroupInfo> addExternalGroupIndicator(BasicStatusHolder statusHolder);
 
     /**
      * Get the Ldap Group configuration Panel when addon is activated.
@@ -87,7 +87,8 @@ public interface LdapGroupWebAddon extends Addon {
      * @param statusHolder     status holder
      * @return A list of LDAP groups.
      */
-    Set refreshLdapGroupList(String userName, LdapGroupSetting ldapGroupSetting, MultiStatusHolder statusHolder);
+    Set refreshLdapGroupList(String userName, LdapGroupSetting ldapGroupSetting, BasicStatusHolder
+            statusHolder);
 
     /**
      * Get a warning label if there is at least one LDAP group synchronization active indicating that some permissions

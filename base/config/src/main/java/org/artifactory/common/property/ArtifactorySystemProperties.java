@@ -52,7 +52,7 @@ public class ArtifactorySystemProperties {
      */
     private Map<String, String> substituteRepoKeys = new HashMap<>();
 
-    private final static ImmutableMap<String, PropertyMapper> DEPRECATED =
+    private static final ImmutableMap<String, PropertyMapper> DEPRECATED =
             ImmutableMap.<String, PropertyMapper>builder()
                     .put("artifactory.authenticationCacheIdleTimeSecs",
                             new SamePropertyMapper("artifactory.authentication.cache.idleTimeSecs"))

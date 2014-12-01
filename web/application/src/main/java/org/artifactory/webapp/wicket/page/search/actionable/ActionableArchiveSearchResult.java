@@ -61,16 +61,6 @@ public class ActionableArchiveSearchResult extends ActionableSearchResult<Archiv
     }
 
     /**
-     * @return The repo path to the resource inside the archive file
-     */
-    @Override
-    public RepoPath getRepoPath() {
-        //TODO: [by YS] implement to support navigation to zip resource
-        //return InternalRepoPathFactory.create(super.getRepoPath(), RepoPath.ARCHIVE_SEP + getSearchResult().getEntryPath());
-        return super.getRepoPath();
-    }
-
-    /**
      * @return The repo path of the archive containing this entry
      */
     public RepoPath getArchiveRepoPath() {

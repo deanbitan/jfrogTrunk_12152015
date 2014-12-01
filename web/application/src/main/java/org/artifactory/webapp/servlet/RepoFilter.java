@@ -106,20 +106,14 @@ public class RepoFilter extends DelayedFilterBase {
             //Handle upload and download requests
             ArtifactoryResponse artifactoryResponse = new HttpArtifactoryResponse(response);
 
-            if ("get".equals(method) && artifactoryRequest.isDirectoryRequest()) {
+            if (artifactoryRequest.isDirectoryRequest() && isGetOrHeadRequest(method)) {
                 //Check that this is not a recursive call
                 if (artifactoryRequest.isRecursive()) {
                     String msg = "Recursive call detected for '" + request + "'. Returning nothing.";
                     artifactoryResponse.sendError(HttpStatus.SC_NOT_FOUND, msg, log);
                     return;
                 }
-                // TODO: [by fsi] all the servlet path analysis was already done in the ArtifactoryRequest object
-                // TODO: Needs to be reused here!
                 log.debug("Serving a directory get request.");
-                if (RequestUtils.isWebdavRequest(request)) {
-                    doWebDavDirectory(response, artifactoryRequest);
-                    return;
-                }
                 if (servletPath.startsWith("/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH)) {
                     doSimpleRepoBrowse(request, response, artifactoryRequest);
                 } else {
@@ -130,7 +124,7 @@ public class RepoFilter extends DelayedFilterBase {
 
             try {
                 initRequestContext(method, artifactoryRequest, artifactoryResponse);
-                if ("get".equals(method) || "head".equals(method)) {
+                if (isGetOrHeadRequest(method)) {
 
                     /**
                      * Do not check for this parameter when not performing a get/head request so that the container
@@ -182,6 +176,10 @@ public class RepoFilter extends DelayedFilterBase {
         if (log.isDebugEnabled()) {
             log.debug("Exiting request " + requestDebugString(request));
         }
+    }
+
+    private boolean isGetOrHeadRequest(String method) {
+        return "get".equals(method) || "head".equals(method);
     }
 
     private void initRequestContext(String method, ArtifactoryRequest artifactoryRequest,
@@ -260,10 +258,6 @@ public class RepoFilter extends DelayedFilterBase {
         log.debug("Forwarding internally to a directory browsing request.");
         //Expose the artifactory repository path as a request attribute
         final RepoPath repoPath = artifactoryRequest.getRepoPath();
-        //TODO: [by ys] the virtual repo should throw and exception if no item doesn't exist
-        //if (checkForInvalidPath(response, repoPath)) {
-        //    return;
-        //}
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, repoPath);
         request.setAttribute(ATTR_ARTIFACTORY_REQUEST_PROPERTIES, artifactoryRequest.getProperties());
 
@@ -284,26 +278,12 @@ public class RepoFilter extends DelayedFilterBase {
             response.sendRedirect(HttpUtils.getServletContextUrl(request) + servletPath + "/");
             return;
         }
-        /*
-        if (checkForInvalidPath(response, repoPath)) {
-            return;
-        }
-        */
         request.setAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH, artifactoryRequest.getRepoPath());
         request.setAttribute(ATTR_ARTIFACTORY_REQUEST_PROPERTIES, artifactoryRequest.getProperties());
 
         RequestDispatcher dispatcher =
                 request.getRequestDispatcher("/" + HttpUtils.WEBAPP_URL_PATH_PREFIX + "/" + ArtifactListPage.PATH);
         dispatcher.forward(request, response);
-    }
-
-    private boolean doWebDavDirectory(HttpServletResponse response, ArtifactoryRequest artifactoryRequest)
-            throws IOException {
-        log.debug("Serving a webdav directory request.");
-        //Return a webdav folder get response
-        String name = artifactoryRequest.getName();
-        response.getWriter().write(name);
-        return true;
     }
 
     private ArtifactoryContext getContext() {

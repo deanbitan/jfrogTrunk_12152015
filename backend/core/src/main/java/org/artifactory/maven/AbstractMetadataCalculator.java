@@ -19,7 +19,7 @@
 package org.artifactory.maven;
 
 import org.apache.maven.artifact.repository.metadata.Metadata;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
@@ -35,12 +35,12 @@ import org.slf4j.LoggerFactory;
 public class AbstractMetadataCalculator {
     private static final Logger log = LoggerFactory.getLogger(AbstractMetadataCalculator.class);
 
-    protected final MultiStatusHolder status;
+    protected final BasicStatusHolder status;
 
     private InternalRepositoryService repositoryService;
 
     public AbstractMetadataCalculator() {
-        status = new MultiStatusHolder();
+        status = new BasicStatusHolder();
     }
 
     protected InternalRepositoryService getRepositoryService() {
@@ -54,7 +54,6 @@ public class AbstractMetadataCalculator {
         String metadataStr;
         try {
             metadataStr = MavenModelUtils.mavenMetadataToString(metadata);
-            //getRepositoryService().setXmlMetadata(repoPath, MavenNaming.MAVEN_METADATA_NAME, metadataStr);
             RepoPathImpl mavenMetadataRepoPath = new RepoPathImpl(repoPath, MavenNaming.MAVEN_METADATA_NAME);
             getRepositoryService().saveFileInternal(mavenMetadataRepoPath, new StringInputStream(metadataStr));
         } catch (Exception e) {

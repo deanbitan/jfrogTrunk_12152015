@@ -137,7 +137,7 @@
                 <exclude>lib/catalina-ant.jar</exclude>
                 <exclude>lib/catalina-ha.jar</exclude>
                 <exclude>lib/catalina-tribes.jar</exclude>
-                <exclude>lib/ecj-4.2.1.jar</exclude>
+                <exclude>lib/ecj-*.jar</exclude>
                 <exclude>lib/jasper-el.jar</exclude>
                 <exclude>lib/jasper.jar</exclude>
                 <exclude>lib/jsp-api.jar</exclude>
@@ -146,6 +146,9 @@
                 <exclude>lib/tomcat-i18n-fr.jar</exclude>
                 <exclude>lib/tomcat-i18n-ja.jar</exclude>
                 <exclude>lib/tomcat-jdbc.jar</exclude>
+                <exclude>lib/jsp-api.jar</exclude>
+                <exclude>lib/tomcat7-websocket.jar</exclude>
+                <exclude>lib/websocket-api.jar</exclude>
             </excludes>
             <directoryMode>755</directoryMode>
         </fileSet>

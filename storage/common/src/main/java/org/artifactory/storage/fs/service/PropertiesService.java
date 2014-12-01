@@ -18,12 +18,10 @@
 
 package org.artifactory.storage.fs.service;
 
-import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 
 /**
  * A business service to interact with the node properties table.
@@ -36,8 +34,6 @@ public interface PropertiesService {
 
     @Nonnull
     Properties getProperties(RepoPath repoPath);
-
-    List<String> getValuesForPropertyFilter(PropertiesFilter propertiesFilter);
 
     @Nonnull
     Properties loadProperties(long nodeId);

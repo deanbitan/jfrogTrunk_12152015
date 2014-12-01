@@ -178,7 +178,7 @@ public class AclServiceImpl implements AclStoreService {
             }
             return aclsDao.userHasAce(userId);
         } catch (SQLException e) {
-            throw new StorageException("Cannot check if user " + username + " has permissions!");
+            throw new StorageException("Cannot check if user " + username + " has permissions!", e);
         }
     }
 

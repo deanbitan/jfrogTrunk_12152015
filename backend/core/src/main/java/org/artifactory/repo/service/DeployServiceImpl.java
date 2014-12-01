@@ -184,9 +184,6 @@ public class DeployServiceImpl implements DeployService {
         try {
             extractFolder = extractArchive(status, bundle);
         } catch (Exception e) {
-            if (!status.isVerbose()) {
-                status.setVerbose(true);
-            }
             status.error(e.getLocalizedMessage(), e, log);
             return;
         }

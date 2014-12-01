@@ -49,6 +49,8 @@ import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -164,6 +166,10 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             }
             if (user == null) {
                 if (authenticationException != null) {
+                    UserInfo userInfo = userGroupService.findUser(userName);
+                    if (userInfo != null) {
+                        removeUserLdapRelatedGroups(userInfo);
+                    }
                     throw authenticationException;
                 }
                 throw new AuthenticationServiceException(ArtifactoryLdapAuthenticator.LDAP_SERVICE_MISCONFIGURED);
@@ -182,9 +188,8 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
                 String email = user.getStringAttribute(emailAttribute);
                 if (StringUtils.isNotBlank(email)) {
                     log.debug("User '{}' has email address '{}'", userName, email);
-                    if (StringUtils.isBlank(userInfo.getEmail()) && !userInfo.isTransientUser()) {
+                    if (StringUtils.isBlank(userInfo.getEmail())) {
                         userInfo.setEmail(email);
-                        userGroupService.updateUser(userInfo, false);
                     }
                 }
             }
@@ -192,7 +197,9 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             log.debug("Loading LDAP groups");
             ldapGroupAddon.populateGroups(user, userInfo);
             log.debug("Finished Loading LDAP groups");
-
+            if (!userInfo.isTransientUser()) {
+                userGroupService.updateUser(userInfo, false);
+            }
             SimpleUser simpleUser = new SimpleUser(userInfo);
             // create new authentication response containing the user and it's authorities
             return new LdapRealmAwareAuthentication(simpleUser, authentication.getCredentials(),
@@ -221,6 +228,29 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             throw new AuthenticationServiceException(message, e);
         } finally {
             LdapUtils.closeContext(user);
+        }
+    }
+
+    /**
+     * remove user ldap related group as user no longer exist in ldap
+     *
+     * @param userInfo Artifactory User Data
+     * @param userName user name
+     */
+    private void removeUserLdapRelatedGroups(UserInfo userInfo) {
+        MutableUserInfo mutableUserInfo = InfoFactoryHolder.get()
+                .copyUser(userInfo);
+        Set<UserGroupInfo> updateUserGroup = new HashSet<>();
+        Set<UserGroupInfo> userGroupInfos = new HashSet<>(mutableUserInfo.getGroups());
+        for (Iterator<UserGroupInfo> userGroupInfoIterator = userGroupInfos.iterator(); userGroupInfoIterator.hasNext(); ) {
+            UserGroupInfo userGroupInfo = userGroupInfoIterator.next();
+            if (!LdapService.REALM.equals(userGroupInfo.getRealm())) {
+                updateUserGroup.add(userGroupInfo);
+            }
+        }
+        mutableUserInfo.setGroups(updateUserGroup);
+        if (!userInfo.isTransientUser()) {
+            userGroupService.updateUser(mutableUserInfo, false);
         }
     }
 

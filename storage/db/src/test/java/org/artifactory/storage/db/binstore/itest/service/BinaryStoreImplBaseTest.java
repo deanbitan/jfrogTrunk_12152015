@@ -22,7 +22,7 @@ import com.beust.jcommander.internal.Maps;
 import com.beust.jcommander.internal.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.common.ArtifactoryHome;
@@ -193,7 +193,7 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
         }
     }
 
-    private void checkSha1OnEmpty(String sha1) throws IOException {
+    protected void checkSha1OnEmpty(String sha1) throws IOException {
         assertNull(binaryStore.findBinary(sha1));
         File file = binaryStore.getFileBinaryProvider().getFile(sha1);
         assertFalse(file.exists());
@@ -328,9 +328,17 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
 
     protected void checkBinariesDirAfterLoad(Map<String, Object[]> subFolders) {
         File filestoreDir = binaryStore.getBinariesDir();
+        checkFilestoreDirIsFull(subFolders, filestoreDir);
+    }
+
+    protected void checkFilestoreDirIsFull(Map<String, Object[]> subFolders, File filestoreDir) {
         File[] files = filestoreDir.listFiles();
         assertNotNull(files);
         assertEquals(files.length, 5);
+        checkFilesAreValid(subFolders, files);
+    }
+
+    protected void checkFilesAreValid(Map<String, Object[]> subFolders, File[] files) {
         for (File file : files) {
             assertTrue(file.isDirectory(), "File " + file.getAbsolutePath() + " should be a folder");
             String fileName = file.getName();
@@ -352,8 +360,8 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
 
     protected abstract void testPruneAfterLoad();
 
-    protected MultiStatusHolder testPrune(int folders, int files, int bytes) {
-        MultiStatusHolder statusHolder = new MultiStatusHolder();
+    protected BasicStatusHolder testPrune(int folders, int files, int bytes) {
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
         binaryStore.prune(statusHolder);
         String statusMsg = statusHolder.getStatusMsg();
         assertFalse(statusHolder.isError(), "Error during empty pruning: " + statusMsg);

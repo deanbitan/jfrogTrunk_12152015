@@ -41,7 +41,7 @@ import java.util.List;
  */
 public abstract class Interceptors<T extends Interceptor> implements Iterable<T>, Serializable, ReloadableBean,
         BeanNameAware, ApplicationContextAware {
-    private final static Logger log = LoggerFactory.getLogger(Interceptors.class);
+    private static final Logger log = LoggerFactory.getLogger(Interceptors.class);
 
     private final List<T> interceptors = new LinkedList<>();
     private Class<T> interceptorInterface;

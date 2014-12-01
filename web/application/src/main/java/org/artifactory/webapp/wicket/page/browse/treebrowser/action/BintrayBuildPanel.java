@@ -23,7 +23,7 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.artifactory.api.bintray.BintrayParams;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.common.wicket.component.checkbox.styled.StyledCheckbox;
 import org.artifactory.common.wicket.component.help.HelpBubble;
@@ -110,7 +110,7 @@ public class BintrayBuildPanel extends BintrayBasePanel {
     protected void onPushClicked() {
         try {
             Map<String, String> headersMap = WicketUtils.getHeadersMap();
-            MultiStatusHolder statusHolder = bintrayService.pushBuild(build, bintrayModel, headersMap);
+            BasicStatusHolder statusHolder = bintrayService.pushBuild(build, bintrayModel, headersMap);
             if (statusHolder.hasErrors()) {
                 getPage().error(statusHolder.getLastError().getMessage());
             } else if (statusHolder.hasWarnings()) {

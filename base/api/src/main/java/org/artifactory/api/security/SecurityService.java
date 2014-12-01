@@ -18,7 +18,7 @@
 
 package org.artifactory.api.security;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.repo.Async;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -53,7 +53,7 @@ public interface SecurityService extends ImportableExportable {
     /**
      * @see org.artifactory.security.ldap.LdapConnectionTester#testLdapConnection
      */
-    MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password);
+    BasicStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password);
 
     /**
      * @return True if password encryption is enabled (supported or required).

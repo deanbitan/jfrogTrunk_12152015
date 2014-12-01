@@ -179,7 +179,7 @@ public class UploadServiceImpl implements InternalUploadService {
             repoService.assertValidDeployPath(new ValidDeployPathContext.Builder(targetRepository, repoPath)
                     .contentLength(contentLength).requestSha1(requestSha1).build());
         } catch (RepoRejectException e) {
-            handleInvalidDeployPathError(response, e);
+            handleInvalidDeployPathError(request, response, e);
             return;
         }
 
@@ -237,14 +237,20 @@ public class UploadServiceImpl implements InternalUploadService {
         commitResponseIfDelayed(response);
     }
 
-    private void handleInvalidDeployPathError(ArtifactoryResponse response, RepoRejectException rejectionException)
+    private void handleInvalidDeployPathError(ArtifactoryRequest request, ArtifactoryResponse response,
+            RepoRejectException rejectionException)
             throws IOException {
         if (rejectionSignifiesRequiredAuthorization(rejectionException)) {
+            consumeRequestBody(request);
             String realmName = authenticationEntryPoint.getRealmName();
             response.sendAuthorizationRequired(rejectionException.getMessage(), realmName);
         } else {
             response.sendError(rejectionException.getErrorCode(), rejectionException.getMessage(), log);
         }
+    }
+
+    private void consumeRequestBody(ArtifactoryRequest request) throws IOException {
+        IOUtils.copy(request.getInputStream(), new NullOutputStream());
     }
 
     private boolean rejectionSignifiesRequiredAuthorization(RepoRejectException rejectionException) {
@@ -356,7 +362,7 @@ public class UploadServiceImpl implements InternalUploadService {
 
     private void consumeContentAndRespondWithSuccess(ArtifactoryRequest request, ArtifactoryResponse response)
             throws IOException {
-        IOUtils.copy(request.getInputStream(), new NullOutputStream());
+        consumeRequestBody(request);
         response.sendSuccess();
     }
 
@@ -507,7 +513,7 @@ public class UploadServiceImpl implements InternalUploadService {
     private void consumeContentAndRespondAccepted(ArtifactoryRequest request, ArtifactoryResponse response)
             throws IOException {
         log.trace("Skipping deployment of maven metadata file {}", request.getPath());
-        IOUtils.copy(request.getInputStream(), new NullOutputStream());
+        consumeRequestBody(request);
         response.setStatus(HttpStatus.SC_ACCEPTED);
     }
 

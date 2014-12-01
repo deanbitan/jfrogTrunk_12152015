@@ -18,6 +18,7 @@
 
 package org.artifactory.sapi.common;
 
+import java.io.File;
 import java.util.Date;
 
 /**
@@ -56,4 +57,15 @@ public interface ExportSettings extends BaseSettings {
     boolean isExcludeBuilds();
 
     void setExcludeBuilds(boolean excludeBuilds);
+
+
+    /**
+     * @return The location of the backup. This can be a folder or a file in case of an archive backup.
+     */
+    public File getOutputFile();
+
+    /**
+     * Sets the location of the backup. This can be a folder or a file in case of an archive backup.
+     */
+    public void setOutputFile(File outputFile);
 }

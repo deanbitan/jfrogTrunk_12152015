@@ -20,7 +20,7 @@ package org.artifactory.storage.db;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.tomcat.jdbc.pool.jmx.ConnectionPool;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -130,7 +130,7 @@ public class DbServiceImpl implements DbService {
     }
 
     @Override
-    public void compressDerbyDb(MultiStatusHolder statusHolder) {
+    public void compressDerbyDb(BasicStatusHolder statusHolder) {
         DerbyUtils.compress(statusHolder);
     }
 

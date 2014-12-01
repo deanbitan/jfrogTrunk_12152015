@@ -37,7 +37,7 @@ import javax.annotation.Nullable;
 public class ResponsePageSupport extends AbstractRequestCycleListener {
     private static final Logger log = LoggerFactory.getLogger(ResponsePageSupport.class);
 
-    private final static ThreadLocal<Page> PAGE_HOLDER = new ThreadLocal<>();
+    private static final ThreadLocal<Page> PAGE_HOLDER = new ThreadLocal<>();
 
     @Override
     public void onRequestHandlerResolved(RequestCycle cycle, IRequestHandler handler) {
@@ -54,8 +54,8 @@ public class ResponsePageSupport extends AbstractRequestCycleListener {
     private void fetchPageFromHandler(IRequestHandler handler) {
         try {
             if (handler instanceof IComponentRequestHandler) {
-                    IRequestablePage page = ((IComponentRequestHandler) handler).getComponent().getPage();
-                    PAGE_HOLDER.set((Page) page);
+                IRequestablePage page = ((IComponentRequestHandler) handler).getComponent().getPage();
+                PAGE_HOLDER.set((Page) page);
             } else if (handler instanceof IPageRequestHandler) {
                 IRequestablePage page = ((IPageRequestHandler) handler).getPage().getPage();
                 PAGE_HOLDER.set((Page) page);

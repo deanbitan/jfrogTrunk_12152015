@@ -33,7 +33,7 @@ import java.util.Map;
  */
 public class SimpleArtifactPackagingMapper implements ArtifactPackagingMapper {
 
-    private final static Map<String, String> defaults;
+    private static final Map<String, String> defaults;
 
     static {
         defaults = new HashMap<>();

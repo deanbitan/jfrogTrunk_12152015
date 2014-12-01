@@ -86,7 +86,7 @@ public class NpmMetadataInterceptor extends StorageInterceptorAdapter implements
     private boolean shouldTakeAction(VfsItem item) {
         if (item.isFile()) {
             RepoPath repoPath = item.getRepoPath();
-            if (repoPath.getPath().matches(".+/-/.+\\.tgz")) {
+            if (repoPath.getPath().endsWith(".tgz")) {
                 String repoKey = repoPath.getRepoKey();
                 RepoDescriptor repoDescriptor = repositoryService.localRepoDescriptorByKey(repoKey);
                 return ((repoDescriptor != null) && repoDescriptor.isEnableNpmSupport());

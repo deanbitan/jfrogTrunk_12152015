@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.NuGetAddon;
 import org.artifactory.addon.nuget.NuGetProperties;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
@@ -97,7 +97,7 @@ public class NuGetCalculationInterceptorTest {
         nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), isA(MutableStatusHolder.class), eq(true));
         expectLastCall();
         replay(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
-        nuGetCalculationInterceptor.afterCreate(vfsItemMock, new MultiStatusHolder());
+        nuGetCalculationInterceptor.afterCreate(vfsItemMock, new BasicStatusHolder());
         verify(vfsItemMock, repoServiceMock, nuGetCalculationInterceptor.addonsManager, nuGetAddon);
     }
 
@@ -137,7 +137,7 @@ public class NuGetCalculationInterceptorTest {
         expect(targetVfsFile.getInfo()).andReturn(fileInfoMock).anyTimes();
         setVfsFileMockProperties(targetVfsFile, null);
 
-        MultiStatusHolder statusHolder = new MultiStatusHolder();
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
         nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), eq(statusHolder), eq(true));
         expectLastCall();
 
@@ -153,7 +153,7 @@ public class NuGetCalculationInterceptorTest {
         FileInfo fileInfoMock = createAndGetFileInfoMock(itemRepoPath);
         VfsFile vfsItemMock = createAndGetFsItemMock(itemRepoPath);
         expect(vfsItemMock.getInfo()).andReturn(fileInfoMock).anyTimes();
-        MultiStatusHolder statusHolder = new MultiStatusHolder();
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
 
         nuGetAddon.extractNuPkgInfo(eq(fileInfoMock), eq(statusHolder), eq(true));
         expectLastCall();

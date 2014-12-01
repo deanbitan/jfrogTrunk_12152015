@@ -170,6 +170,30 @@ stop() {
     [ $RETVAL=0 ] && rm -f "$CATALINA_LOCK_FILE" "$ARTIFACTORY_PID"
 }
 
+start_and_wait() {
+    start
+    if [ -e $ARTIFACTORY_PID ]; then
+	PID=$(cat $ARTIFACTORY_PID)
+	while [ ! -e ~artifactory/logs/artifactory.log ]; do
+	    sleep 10
+	done
+	tail -f ~artifactory/logs/artifactory.log &
+	terminating() {
+	    echo received stop
+	    stop
+	    while [ -e $ARTIFACTORY_PID ] || [ ps $PID >/dev/null 2>&1 ]; do
+		sleep 1
+	    done
+	    exit 0
+	}
+	trap terminating SIGINT SIGTERM
+	while :; do
+	    sleep 5
+	done
+    fi
+    echo Something went wrong $PID $?
+}
+
 status() {
     findShutdownPort
     if [ $SHUTDOWN_PORT -eq 0 ]; then
@@ -234,6 +258,9 @@ case "$1" in
   start)
         start
         ;;
+  wait)
+	    start_and_wait
+	    ;;
   stop)
         stop
         ;;

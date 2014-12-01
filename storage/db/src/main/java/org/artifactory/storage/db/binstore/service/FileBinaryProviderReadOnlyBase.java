@@ -50,18 +50,33 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
         // Main filestore directory
         this.binariesDir = binariesDir;
         // folder for temporary binaries before moving to the permanent location
-        this.tempBinariesDir = new File(binariesDir, "_pre");
+        this.tempBinariesDir = getNewTempBinariesFile(binariesDir);
         verifyState(binariesDir);
         this.random = new SecureRandom(tempBinariesDir.getAbsolutePath().getBytes());
     }
 
+    protected File getNewTempBinariesFile(File binariesDir) {
+        return new File(binariesDir, "_pre");
+    }
+
+    @Override
+    public boolean isAccessible() {
+        try {
+            verifyState(binariesDir);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     protected void verifyState(File binariesDir) {
-        if (!this.binariesDir.exists() && !this.binariesDir.mkdirs()) {
+        if (!binariesDir.exists() && !binariesDir.mkdirs()) {
             throw new StorageException("Could not create file store folder '" + binariesDir.getAbsolutePath() + "'");
         }
-        if (!tempBinariesDir.exists() && !tempBinariesDir.mkdirs()) {
+        File tempDir = getNewTempBinariesFile(binariesDir);
+        if (!tempDir.exists() && !tempDir.mkdirs()) {
             throw new StorageException("Could not create temporary pre store folder '" +
-                    tempBinariesDir.getAbsolutePath() + "'");
+                    tempDir.getAbsolutePath() + "'");
         }
     }
 

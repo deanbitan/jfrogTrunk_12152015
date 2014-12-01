@@ -19,22 +19,12 @@
 package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.StatusEntry;
-import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
-import org.artifactory.common.wicket.component.modal.ModalHandler;
-import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
-import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
-
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Displays a list of repositories that are available to the user as a copy target
@@ -42,9 +32,7 @@ import java.util.List;
  * @author Noam Y. Tenne
  */
 public class CopyPathPanel extends MoveAndCopyBasePanel {
-
-    @SpringBean
-    private AuthorizationService authorizationService;
+    private static final Logger log = LoggerFactory.getLogger(CopyPathPanel.class);
 
     @SpringBean
     private RepositoryService repoService;
@@ -59,53 +47,28 @@ public class CopyPathPanel extends MoveAndCopyBasePanel {
     }
 
     @Override
-    protected TitledAjaxSubmitLink createSubmitButton(Form form, String wicketId) {
-        return new TitledAjaxSubmitLink(wicketId, "Copy", form) {
-            @Override
-            protected void onSubmit(AjaxRequestTarget target, Form form) {
-                String targetRepoKey = getSelectedTargetRepository();
+    protected void refreshPage(AjaxRequestTarget target, boolean isError) {
 
-                MoveMultiStatusHolder status = repoService.copy(sourceRepoPath, targetRepoKey, false);
-
-                if (!status.isError() && !status.hasWarnings()) {
-                    getPage().info("Successfully copied '" + sourceRepoPath + "'." + " to '" + targetRepoKey + "'");
-                } else {
-                    if (status.hasWarnings()) {
-                        List<StatusEntry> warnings = status.getWarnings();
-                        String logs;
-                        if (authorizationService.isAdmin()) {
-                            String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                            logs = "<a href=\"" + systemLogsPage + "\">log</a>";
-                        } else {
-                            logs = "log";
-                        }
-                        getPage().warn(new UnescapedFeedbackMessage(
-                                warnings.size() + " warnings have been produced during the copy. Please " +
-                                        "review the " + logs + " for further information."));
-                    }
-                    if (status.isError()) {
-                        String message = status.getStatusMsg();
-                        Throwable exception = status.getException();
-                        if (exception != null) {
-                            message = exception.getMessage();
-                        }
-                        getPage().error("Failed to copy '" + sourceRepoPath + "': " + message);
-                    }
-                }
-
-                AjaxUtils.refreshFeedback(target);
-                ModalHandler.closeCurrent(target);
-            }
-        };
     }
 
     @Override
-    protected List<LocalRepoDescriptor> getDeployableLocalRepoKeys() {
-        return getDeployableLocalRepoKeysExcludingSource(sourceRepoPath.getRepoKey());
+    protected MoveMultiStatusHolder executeDryRun() {
+        return moveOrCopy(true, false);
     }
 
     @Override
-    protected MoveMultiStatusHolder executeDryRun(String targetRepoKey) {
-        return repoService.copy(sourceRepoPath, targetRepoKey, true);
+    protected MoveMultiStatusHolder moveOrCopy(boolean dryRun, boolean failFast) {
+        MoveMultiStatusHolder status = new MoveMultiStatusHolder();
+        try {
+            return repoService.copy(sourceRepoPath, getTargetRepoPath(), dryRun, getSuppressLayout(), failFast);
+        } catch(IllegalArgumentException iae) {
+            status.error(String.format("Invalid path given: %s ", getTargetPath()), iae, log);
+        }
+        return status;
+    }
+
+    @Override
+    protected OperationType getOperationType() {
+        return OperationType.COPY_OPERATION;
     }
 }

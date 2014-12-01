@@ -85,7 +85,6 @@ import java.io.InterruptedIOException;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @author Yoav Landman
@@ -228,11 +227,6 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 }
             }
         }
-    }
-
-    @Override
-    public void releaseDownloadWaiters(CountDownLatch latch) {
-        latch.countDown();
     }
 
     private boolean responseWasIntercepted(ArtifactoryResponse response) {
@@ -501,11 +495,11 @@ public class DownloadServiceImpl implements InternalDownloadService {
         String message = responseCtx.getMessage();
         RepoRequests.logToContext("Alternative response status is set to %s and message to '%s'", status, message);
         if (status != ResponseCtx.UNSET_STATUS) {
-            Map<String, String> header = responseCtx.getHeaders();
-            if (header != null) {
-                RepoRequests.logToContext("Found non-null alternative response header");
-                for (String key : header.keySet()) {
-                    response.setHeader(key, header.get(key));
+            Map<String, String> headers = responseCtx.getHeaders();
+            if (headers != null) {
+                RepoRequests.logToContext("Found non-null alternative response headers");
+                for (Map.Entry<String, String> headerEntry : headers.entrySet()) {
+                    response.setHeader(headerEntry.getKey(), headerEntry.getValue());
                 }
             }
             if (HttpUtils.isSuccessfulResponseCode(status) || HttpUtils.isRedirectionResponseCode(status)) {

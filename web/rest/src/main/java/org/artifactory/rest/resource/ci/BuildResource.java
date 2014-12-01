@@ -26,9 +26,9 @@ import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
-import org.artifactory.api.build.BuildNumberComparator;
+import org.artifactory.api.build.BuildRunComparators;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.build.BuildInfo;
@@ -78,6 +78,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.text.ParseException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -95,28 +96,23 @@ import static org.artifactory.rest.util.RestUtils.getServletContextUrl;
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class BuildResource {
 
+    private static final Logger log = LoggerFactory.getLogger(BuildResource.class);
     @Autowired
     private AddonsManager addonsManager;
-
     @Autowired
     private BuildService buildService;
-
     @Autowired
     private AuthorizationService authorizationService;
-
     @Autowired
     private SearchService searchService;
-
     @Context
     private HttpServletRequest request;
-
     @Context
     private HttpServletResponse response;
-
     @Context
     private ExtendedUriInfo uriInfo;
 
-    private static final Logger log = LoggerFactory.getLogger(BuildResource.class);
+    public static final String anonAccessDisabledMsg = "Anonymous access to build info is disabled";
 
     /**
      * Assemble all, last created, available builds with the last
@@ -126,6 +122,9 @@ public class BuildResource {
     @GET
     @Produces({BuildRestConstants.MT_BUILDS, MediaType.APPLICATION_JSON})
     public Builds getAllBuilds() throws IOException {
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         Set<BuildRun> latestBuildsByName = searchService.getLatestBuilds();
         if (!latestBuildsByName.isEmpty()) {
             //Add our builds to the list of build resources
@@ -152,6 +151,9 @@ public class BuildResource {
     @Path("/{buildName: .+}")
     @Produces({BuildRestConstants.MT_BUILDS_BY_NAME, MediaType.APPLICATION_JSON})
     public BuildsByName getAllSpecificBuilds(@PathParam("buildName") String buildName) throws IOException {
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         Set<BuildRun> buildsByName;
         try {
             buildsByName = buildService.searchBuildsByName(buildName);
@@ -185,6 +187,9 @@ public class BuildResource {
             @QueryParam("started") String buildStarted,
             @QueryParam("diff") String diffNumber) throws IOException {
 
+        if(authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         if (!authorizationService.canDeployToLocalRepository()) {
             throw new AuthorizationRestException();
         }
@@ -215,7 +220,7 @@ public class BuildResource {
             BuildRun buildRun = buildService.getBuildRun(build.getName(), build.getNumber(), build.getStarted());
             BuildRun secondBuildRun = buildService.getBuildRun(secondBuild.getName(), secondBuild.getNumber(),
                     secondBuild.getStarted());
-            BuildNumberComparator comparator = new BuildNumberComparator();
+            Comparator<BuildRun> comparator = BuildRunComparators.getBuildStartDateComparator();
             if (comparator.compare(buildRun, secondBuildRun) < 0) {
                 throw new BadRequestException(
                         "Build number should be greater than the build number to compare against.");
@@ -253,6 +258,10 @@ public class BuildResource {
     @Produces({BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_RESULT, MediaType.APPLICATION_JSON})
     public List<BuildPatternArtifacts> getBuildPatternArtifacts(
             final List<BuildPatternArtifactsRequest> buildPatternArtifactsRequests) {
+
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         final RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         final String contextUrl = getServletContextUrl(request);
         return transform(buildPatternArtifactsRequests,
@@ -275,6 +284,9 @@ public class BuildResource {
     @Consumes({BuildRestConstants.MT_BUILD_INFO, RestConstants.MT_LEGACY_ARTIFACTORY_APP, MediaType.APPLICATION_JSON})
     public void addBuild(Build build) throws Exception {
         log.info("Adding build '{} #{}'", build.getName(), build.getNumber());
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         if (!authorizationService.canDeployToLocalRepository()) {
             throw new AuthorizationRestException();
         }
@@ -292,7 +304,7 @@ public class BuildResource {
         BuildRetention retention = build.getBuildRetention();
         if (retention != null) {
             RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-            MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
+            BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
             restAddon.discardOldBuilds(build.getName(), retention, multiStatusHolder);
             if (multiStatusHolder.hasErrors()) {
                 throw new RestException("Errors have occurred while maintaining " +
@@ -319,6 +331,10 @@ public class BuildResource {
     public Response promote(
             @PathParam("buildName") String buildName,
             @PathParam("buildNumber") String buildNumber, Promotion promotion) throws IOException {
+
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
             if (RestUtils.shouldDecodeParams(request)) {
@@ -347,6 +363,10 @@ public class BuildResource {
     public String renameBuild(
             @PathParam("buildName") String buildName,
             @QueryParam("to") String to) throws IOException {
+
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
         try {
             String from;

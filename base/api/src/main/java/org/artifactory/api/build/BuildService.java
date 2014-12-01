@@ -18,7 +18,7 @@
 
 package org.artifactory.api.build;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.build.BuildRun;
@@ -72,7 +72,7 @@ public interface BuildService extends ImportableExportable {
      * @param multiStatusHolder Status holder
      */
     @Lock
-    void deleteBuild(String buildName, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
+    void deleteBuild(String buildName, boolean deleteArtifacts, BasicStatusHolder multiStatusHolder);
 
     /**
      * Removes the build of the given details
@@ -82,7 +82,7 @@ public interface BuildService extends ImportableExportable {
      * @param multiStatusHolder Status holder
      */
     @Lock
-    void deleteBuild(BuildRun buildRun, boolean deleteArtifacts, MultiStatusHolder multiStatusHolder);
+    void deleteBuild(BuildRun buildRun, boolean deleteArtifacts, BasicStatusHolder multiStatusHolder);
 
     /**
      * Returns the build of the given details

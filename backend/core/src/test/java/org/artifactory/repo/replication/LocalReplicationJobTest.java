@@ -22,7 +22,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.LocalReplicationSettingsBuilder;
 import org.artifactory.addon.replication.ReplicationAddon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
@@ -136,7 +136,7 @@ public class LocalReplicationJobTest extends ReplicationJobTestBase {
         expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
         expect(replicationAddon.performLocalReplication(replicationSettings))
-                .andReturn(new MultiStatusHolder());
+                .andReturn(new BasicStatusHolder());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();
@@ -157,7 +157,7 @@ public class LocalReplicationJobTest extends ReplicationJobTestBase {
         expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
         expect(replicationAddon.performLocalReplication(replicationSettings))
-                .andReturn(new MultiStatusHolder());
+                .andReturn(new BasicStatusHolder());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();

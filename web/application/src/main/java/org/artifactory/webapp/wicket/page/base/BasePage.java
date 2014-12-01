@@ -367,7 +367,7 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
         }
 
         private String getNodeId() {
-            if (authorizationService.isAnonymous() || !addons.addonByType(HaCommonAddon.class).isHaEnabled()) {
+            if (!authorizationService.isAdmin() || !addons.addonByType(HaCommonAddon.class).isHaEnabled()) {
                 return "";
             }
             ArtifactoryServer currentMember = serversService.getCurrentMember();

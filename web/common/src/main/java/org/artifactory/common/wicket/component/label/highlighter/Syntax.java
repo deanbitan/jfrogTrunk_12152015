@@ -13,6 +13,7 @@ import static java.lang.String.format;
 public enum Syntax {
     actionscript3("shBrushAS3.js"),
     shell("shBrushBash.js"),
+    shellForDistManagement("shBrushBashForDistManagement.js"),
     coldfusion("shBrushColdFusion.js"),
     csharp("shBrushCSharp.js"),
     cpp("shBrushCpp.js"),

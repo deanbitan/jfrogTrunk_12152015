@@ -20,6 +20,7 @@ package org.artifactory.repo;
 
 import org.apache.http.client.HttpClient;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
@@ -44,9 +45,11 @@ public class HttpRepoTest extends ArtifactoryHomeBoundTest {
         internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
         AddonsManager addonsManager = EasyMock.createMock(AddonsManager.class);
         LayoutsCoreAddon layoutsCoreAddon = EasyMock.createMock(LayoutsCoreAddon.class);
+        HaAddon haAddon = EasyMock.createMock(HaAddon.class);
         EasyMock.expect(addonsManager.addonByType(LayoutsCoreAddon.class)).andReturn(layoutsCoreAddon);
+        EasyMock.expect(addonsManager.addonByType(HaAddon.class)).andReturn(haAddon);
         ArtifactoryContext contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
-        EasyMock.expect(contextMock.beanForType(AddonsManager.class)).andReturn(addonsManager);
+        EasyMock.expect(contextMock.beanForType(AddonsManager.class)).andReturn(addonsManager).times(2);
         ArtifactoryContextThreadBinder.bind(contextMock);
         EasyMock.replay(contextMock, addonsManager);
     }

@@ -31,7 +31,6 @@ public interface NpmAddon extends Addon {
     @Async(delayUntilAfterCommit = true)
     void handleAddAfterCommit(FileInfo info);
 
-    @Async(delayUntilAfterCommit = true)
     void removeNpmPackage(FileInfo info);
 
     @Async

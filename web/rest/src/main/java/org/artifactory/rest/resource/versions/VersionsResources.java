@@ -23,6 +23,8 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -47,6 +49,7 @@ import java.util.Map;
 @Path(VersionsResources.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_USER, AuthorizationService.ROLE_ADMIN})
 public class VersionsResources {
+    private static final Logger log = LoggerFactory.getLogger(VersionsResources.class);
     public static final String PATH_ROOT = "versions";
 
     @Context

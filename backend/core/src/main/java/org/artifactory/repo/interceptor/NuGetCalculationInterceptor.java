@@ -21,7 +21,7 @@ package org.artifactory.repo.interceptor;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.NuGetAddon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -57,7 +57,7 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
 
     @Override
     public void afterCreate(VfsItem fsItem, MutableStatusHolder statusHolder) {
-        extractNuPkgInfoIfNeeded(fsItem, new MultiStatusHolder());
+        extractNuPkgInfoIfNeeded(fsItem, new BasicStatusHolder());
     }
 
     @Override

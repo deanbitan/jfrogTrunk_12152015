@@ -27,7 +27,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.BackupService;
 import org.artifactory.api.repo.RepositoryService;
@@ -270,7 +270,7 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
 
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 try {
                     backupService.scheduleImmediateSystemBackup(entity, statusHolder);
                     if (statusHolder.isError()) {

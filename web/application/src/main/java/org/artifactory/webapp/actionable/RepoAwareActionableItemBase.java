@@ -143,8 +143,9 @@ public abstract class RepoAwareActionableItemBase extends ActionableItemBase
             tabs.add(watchersTab);
         }
 
-
-        if (!itemInfo.isFolder() && itemInfo instanceof MutableFileInfo) {
+        //Hide from anonymous users if anonymous access to build info is disabled
+        if (!itemInfo.isFolder() && itemInfo instanceof MutableFileInfo
+                && !authService.isAnonUserAndAnonBuildInfoAccessDisabled()){
             BuildAddon buildAddon = getAddonsProvider().addonByType(BuildAddon.class);
             tabs.add(buildAddon.getBuildsTab(item));
         }

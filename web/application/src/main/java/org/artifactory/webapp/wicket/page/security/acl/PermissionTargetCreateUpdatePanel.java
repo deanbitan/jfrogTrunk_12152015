@@ -61,6 +61,8 @@ import org.artifactory.common.wicket.component.table.SortableTable;
 import org.artifactory.common.wicket.component.table.columns.checkbox.AjaxCheckboxColumn;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.GroupInfo;
@@ -201,7 +203,7 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                     return;
                 }
 
-                boolean anySelected = repoKeysData.isAnyCachedRepository() && repoKeysData.isAnyLocalRepository();
+                boolean anySelected = repoKeysData.isAnyRemoteRepository() && repoKeysData.isAnyLocalRepository();
                 repoKeysData.setAnyRepository(anySelected);
 
                 entity.setRepoKeys(repoKeysData.getSelectedKeysList());
@@ -254,12 +256,8 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
         return repositoryService.getLocalRepoDescriptors();
     }
 
-    public List<? extends LocalRepoDescriptor> getCachedRepositoryDescriptors() {
-        return repositoryService.getCachedRepoDescriptors();
-    }
-
-    void enableFields() {
-        throw new UnsupportedOperationException("");
+    public List<? extends RemoteRepoDescriptor> getRemoteRepositoryDescriptors() {
+        return repositoryService.getRemoteRepoDescriptors();
     }
 
     @Override
@@ -469,38 +467,36 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
     public class RepoKeysData implements Serializable {
         private boolean anyRepository;
         private boolean anyLocalRepository;
-        private boolean anyCachedRepository;
-        private final Boolean CACHE_REPO = Boolean.TRUE;
-        private Multimap<Boolean, LocalRepoDescriptor> repoKeyMap = HashMultimap.create();
+        private boolean anyRemoteRepository;
+        private final Boolean REMOTE_REPO = Boolean.TRUE;
+        private Multimap<Boolean, RealRepoDescriptor> repoKeyMap = HashMultimap.create();
 
         private RepoKeysData(PermissionTargetInfo info) {
-            List<String> repoKeys = info.getRepoKeys();
-            List<LocalRepoDescriptor> repoDescriptorList = getRepoDescriptors(repoKeys);
+            List<String> repoKeys = aclService.convertCachedRepoKeysToRemote(info.getRepoKeys());
+            List<RealRepoDescriptor> repoDescriptorList = getRepoDescriptors(repoKeys);
             anyRepository = repoKeys.contains(PermissionTargetInfo.ANY_REPO);
             if (anyRepository) {
                 anyLocalRepository = true;
-                anyCachedRepository = true;
+                anyRemoteRepository = true;
             } else {
                 anyLocalRepository = repoKeys.contains(PermissionTargetInfo.ANY_LOCAL_REPO);
-                anyCachedRepository = repoKeys.contains(PermissionTargetInfo.ANY_REMOTE_REPO);
+                anyRemoteRepository = repoKeys.contains(PermissionTargetInfo.ANY_REMOTE_REPO);
             }
 
             if (anyLocalRepository) {
-                // add all local to selection
-                repoKeyMap.putAll(!CACHE_REPO, getLocalRepositoryDescriptors());
+                repoKeyMap.putAll(!REMOTE_REPO, getLocalRepositoryDescriptors());
             }
 
-            if (anyCachedRepository) {
-                // add all remote caches to selection
-                repoKeyMap.putAll(CACHE_REPO, getCachedRepositoryDescriptors());
+            if (anyRemoteRepository){
+                repoKeyMap.putAll(REMOTE_REPO, getRemoteRepositoryDescriptors());
             }
 
             if (!anyRepository) {
-                for (LocalRepoDescriptor repoDescriptor : repoDescriptorList) {
-                    if (repoDescriptor.isCache()) {
-                        repoKeyMap.put(CACHE_REPO, repoDescriptor);
+                for (RealRepoDescriptor repoDescriptor : repoDescriptorList) {
+                    if (repoDescriptor.isLocal()) {
+                        repoKeyMap.put(!REMOTE_REPO, repoDescriptor);
                     } else {
-                        repoKeyMap.put(!CACHE_REPO, repoDescriptor);
+                        repoKeyMap.put(REMOTE_REPO, repoDescriptor);
                     }
                 }
             }
@@ -514,19 +510,19 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                 if (anyLocalRepository) {
                     repoKeys.add(PermissionTargetInfo.ANY_LOCAL_REPO);
                 } else {
-                    Collection<LocalRepoDescriptor> collection = repoKeyMap.get(!CACHE_REPO);
+                    Collection<RealRepoDescriptor> collection = repoKeyMap.get(!REMOTE_REPO);
                     if (collection != null) {
-                        for (LocalRepoDescriptor repoDescriptor : collection) {
+                        for (RealRepoDescriptor repoDescriptor : collection) {
                             repoKeys.add(repoDescriptor.getKey());
                         }
                     }
                 }
-                if (anyCachedRepository) {
+                if (anyRemoteRepository) {
                     repoKeys.add(PermissionTargetInfo.ANY_REMOTE_REPO);
                 } else {
-                    Collection<LocalRepoDescriptor> collection = repoKeyMap.get(CACHE_REPO);
+                    Collection<RealRepoDescriptor> collection = repoKeyMap.get(REMOTE_REPO);
                     if (collection != null) {
-                        for (LocalRepoDescriptor localRepoDescriptor : collection) {
+                        for (RealRepoDescriptor localRepoDescriptor : collection) {
                             repoKeys.add(localRepoDescriptor.getKey());
                         }
                     }
@@ -535,27 +531,27 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
             return repoKeys;
         }
 
-        public List<LocalRepoDescriptor> getRepoDescriptors() {
+        public List<RealRepoDescriptor> getRepoDescriptors() {
             return new ArrayList<>(repoKeyMap.values());
         }
 
-        public void setRepoDescriptors(List<? extends LocalRepoDescriptor> repoDescriptors) {
+        public void setRepoDescriptors(List<? extends RealRepoDescriptor> repoDescriptors) {
             repoKeyMap.clear();
             addRepoDescriptors(repoDescriptors);
         }
 
-        public void addRepoDescriptors(List<? extends LocalRepoDescriptor> repoDescriptors) {
-            for (LocalRepoDescriptor repoDescriptor : repoDescriptors) {
+        public void addRepoDescriptors(List<? extends RealRepoDescriptor> repoDescriptors) {
+            for (RealRepoDescriptor repoDescriptor : repoDescriptors) {
                 if (!repoKeyMap.containsValue(repoDescriptor)) {
-                    repoKeyMap.put(repoDescriptor.isCache(), repoDescriptor);
+                    repoKeyMap.put(!repoDescriptor.isLocal(), repoDescriptor);
                 }
             }
         }
 
-        public void removeRepoDescriptors(List<? extends LocalRepoDescriptor> repoDescriptors) {
-            for (LocalRepoDescriptor repoDescriptor : repoDescriptors) {
+        public void removeRepoDescriptors(List<? extends RealRepoDescriptor> repoDescriptors) {
+            for (RealRepoDescriptor repoDescriptor : repoDescriptors) {
                 if (repoKeyMap.containsValue(repoDescriptor)) {
-                    repoKeyMap.remove(repoDescriptor.isCache(), repoDescriptor);
+                    repoKeyMap.remove(!repoDescriptor.isLocal(), repoDescriptor);
                 }
             }
         }
@@ -576,20 +572,24 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
             this.anyLocalRepository = anyLocalRepository;
         }
 
-        public boolean isAnyCachedRepository() {
-            return anyCachedRepository;
+        public boolean isAnyRemoteRepository() {
+            return anyRemoteRepository;
         }
 
-        public void setAnyCachedRepository(boolean anyCachedRepository) {
-            this.anyCachedRepository = anyCachedRepository;
+        public void setAnyRemoteRepository(boolean anyRemoteRepository) {
+            this.anyRemoteRepository = anyRemoteRepository;
         }
 
-        private List<LocalRepoDescriptor> getRepoDescriptors(List<String> repoKeys) {
-            List<LocalRepoDescriptor> descriptorList = new ArrayList<>();
+        private List<RealRepoDescriptor> getRepoDescriptors(List<String> repoKeys) {
+            List<RealRepoDescriptor> descriptorList = new ArrayList<>();
             for (String repoKey : repoKeys) {
-                LocalRepoDescriptor repoDescriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoKey);
-                if (repoDescriptor != null) {
-                    descriptorList.add(repoDescriptor);
+                RealRepoDescriptor localRepoDescriptor = repositoryService.localRepoDescriptorByKey(repoKey);
+                RealRepoDescriptor remoteRepoDescriptor = repositoryService.remoteRepoDescriptorByKey(repoKey);
+                if (localRepoDescriptor != null) {
+                    descriptorList.add(localRepoDescriptor);
+                }
+                else if (remoteRepoDescriptor != null) {
+                    descriptorList.add(remoteRepoDescriptor);
                 }
             }
             return descriptorList;

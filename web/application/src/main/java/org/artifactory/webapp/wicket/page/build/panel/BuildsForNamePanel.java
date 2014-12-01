@@ -115,6 +115,14 @@ public class BuildsForNamePanel extends TitledPanel {
         add(new SortableTable<>("builds", columns, dataProvider, 200));
     }
 
+    private void drillDown(BuildActionableItem build) {
+        PageParameters pageParameters = new PageParameters();
+        pageParameters.set(BUILD_NAME, buildName);
+        pageParameters.set(BUILD_NUMBER, build.getBuildNumber());
+        pageParameters.set(BUILD_STARTED, build.getStarted());
+        setResponsePage(BuildBrowserRootPage.class, pageParameters);
+    }
+
     /**
      * The build table data provider
      */
@@ -126,7 +134,7 @@ public class BuildsForNamePanel extends TitledPanel {
          * @param buildsByName Builds to display
          */
         public BuildsDataProvider(Set<BuildRun> buildsByName) {
-            setSort("number", SortOrder.DESCENDING);
+            setSort("startedDate", SortOrder.DESCENDING);
             this.buildList = Lists.newArrayList(buildsByName);
         }
 
@@ -162,14 +170,6 @@ public class BuildsForNamePanel extends TitledPanel {
 
             return actionableItems;
         }
-    }
-
-    private void drillDown(BuildActionableItem build) {
-        PageParameters pageParameters = new PageParameters();
-        pageParameters.set(BUILD_NAME, buildName);
-        pageParameters.set(BUILD_NUMBER, build.getBuildNumber());
-        pageParameters.set(BUILD_STARTED, build.getStarted());
-        setResponsePage(BuildBrowserRootPage.class, pageParameters);
     }
 
     private class BuildNumberColumn extends UnStyledLinkColumn {

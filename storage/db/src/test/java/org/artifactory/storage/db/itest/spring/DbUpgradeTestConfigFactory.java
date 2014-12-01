@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.itest.spring;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.DbType;
@@ -61,7 +61,7 @@ class DummyDbService implements DbService {
     }
 
     @Override
-    public void compressDerbyDb(MultiStatusHolder statusHolder) {
+    public void compressDerbyDb(BasicStatusHolder statusHolder) {
         // Nothing
     }
 

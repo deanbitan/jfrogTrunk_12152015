@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.binstore.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
@@ -94,7 +94,7 @@ public interface InternalBinaryStore extends BinaryStore {
      *
      * @param statusHolder A status holder of the process messages
      */
-    void prune(MultiStatusHolder statusHolder);
+    void prune(BasicStatusHolder statusHolder);
 
     /**
      * The actual local directory where checksum binary files will be stored.
@@ -132,7 +132,7 @@ public interface InternalBinaryStore extends BinaryStore {
      * @param statusHolder   A collection of messages about the status of the disconnection
      */
     void disconnectExternalFilestore(File externalDir, ProviderConnectMode disconnectMode,
-            MultiStatusHolder statusHolder);
+            BasicStatusHolder statusHolder);
 
     Collection<BinaryInfo> findAllBinaries();
 

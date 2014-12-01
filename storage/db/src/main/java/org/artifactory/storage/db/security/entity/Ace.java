@@ -19,9 +19,6 @@
 package org.artifactory.storage.db.security.entity;
 
 /**
- * Date: 9/3/12
- * Time: 1:47 PM
- *
  * @author freds
  */
 public class Ace {
@@ -73,14 +70,14 @@ public class Ace {
     /**
      * @return True if this ace belongs to a user
      */
-    public boolean isOnUser() {
+    public final boolean isOnUser() {
         return userId > 0;
     }
 
     /**
      * @return True if this ace belongs to a group
      */
-    public boolean isOnGroup() {
+    public final boolean isOnGroup() {
         return groupId > 0;
     }
 

@@ -22,7 +22,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettingsBuilder;
 import org.artifactory.addon.replication.ReplicationAddon;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.descriptor.config.CentralConfigDescriptorImpl;
@@ -130,7 +130,7 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         expectLastCall();
         expect(artifactoryContext.beanForType(AddonsManager.class)).andReturn(addonsManager);
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
-        expect(replicationAddon.performRemoteReplication(replicationSettings)).andReturn(new MultiStatusHolder());
+        expect(replicationAddon.performRemoteReplication(replicationSettings)).andReturn(new BasicStatusHolder());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();
@@ -152,7 +152,7 @@ public class RemoteReplicationJobTest extends ReplicationJobTestBase {
         expect(addonsManager.addonByType(ReplicationAddon.class)).andReturn(replicationAddon);
         expect(artifactoryContext.getRepositoryService()).andReturn(repositoryService);
         expect(repositoryService.remoteRepoDescriptorByKey("key")).andReturn(repoDescriptor);
-        expect(replicationAddon.performRemoteReplication(replicationSettings)).andReturn(new MultiStatusHolder());
+        expect(replicationAddon.performRemoteReplication(replicationSettings)).andReturn(new BasicStatusHolder());
         securityService.nullifyContext();
         expectLastCall();
         replayMocks();

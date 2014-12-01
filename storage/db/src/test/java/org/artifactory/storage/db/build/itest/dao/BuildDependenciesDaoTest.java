@@ -29,9 +29,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 /**
  * Date: 10/31/12
@@ -43,8 +41,8 @@ import static org.testng.Assert.fail;
  */
 @Test
 public class BuildDependenciesDaoTest extends BuildsDaoBaseTest {
-    private final static String SHA1_SUFFIX = "dab88fc2a043c2479a6de676a2f8179e9ea2167";
-    private final static String MD5_SUFFIX = "d2a360ecad98a34b59863c1e65bcf71";
+    private static final String SHA1_SUFFIX = "dab88fc2a043c2479a6de676a2f8179e9ea2167";
+    private static final String MD5_SUFFIX = "d2a360ecad98a34b59863c1e65bcf71";
 
     //@Test(dependsOnMethods = "test*")
     @AfterClass
@@ -78,10 +76,12 @@ public class BuildDependenciesDaoTest extends BuildsDaoBaseTest {
     public void testCreateMultipleDependencies() throws SQLException, UnsupportedEncodingException {
         long build12 = createAndInsertModules12();
         ArrayList<BuildDependency> bds = new ArrayList<BuildDependency>(4);
-        bds.add(new BuildDependency(2001L, 201L, "apache:log4j:1.0", (String)null, "dll", "a" + SHA1_SUFFIX, "a" + MD5_SUFFIX));
-        bds.add(new BuildDependency(2002L, 201L, "jfrog:bi:2.2.0", (String)null, "zip", "b" + SHA1_SUFFIX, "b" + MD5_SUFFIX));
-        bds.add(new BuildDependency(2021L, 202L, "g:a:v", (String)null, "jar", "b" + SHA1_SUFFIX, "b" + MD5_SUFFIX));
-        bds.add(new BuildDependency(2022L, 202L, "d:b:6", (String)null, "pom", "c" + SHA1_SUFFIX, "c" + MD5_SUFFIX));
+        bds.add(new BuildDependency(2001L, 201L, "apache:log4j:1.0", (String) null, "dll", "a" + SHA1_SUFFIX,
+                "a" + MD5_SUFFIX));
+        bds.add(new BuildDependency(2002L, 201L, "jfrog:bi:2.2.0", (String) null, "zip", "b" + SHA1_SUFFIX,
+                "b" + MD5_SUFFIX));
+        bds.add(new BuildDependency(2021L, 202L, "g:a:v", (String) null, "jar", "b" + SHA1_SUFFIX, "b" + MD5_SUFFIX));
+        bds.add(new BuildDependency(2022L, 202L, "d:b:6", (String) null, "pom", "c" + SHA1_SUFFIX, "c" + MD5_SUFFIX));
         Assert.assertEquals(buildDependenciesDao.createBuildDependencies(bds), 4);
         List<BuildDependency> dependencies = buildDependenciesDao.findDependenciesForModules(
                 buildModulesDao.findModuleIdsForBuild(build12));
@@ -93,7 +93,7 @@ public class BuildDependenciesDaoTest extends BuildsDaoBaseTest {
         long build14 = createAndInsertModules14();
         ArrayList<BuildDependency> bds = new ArrayList<BuildDependency>(2);
         bds.add(new BuildDependency(4001L, 401L, "apache:log4j:1.1", (String) null, "dll", null, "e" + MD5_SUFFIX));
-        bds.add(new BuildDependency(4021L, 402L, "jfrog:bi:2.2.1", (String)null, null, "f" + SHA1_SUFFIX, null));
+        bds.add(new BuildDependency(4021L, 402L, "jfrog:bi:2.2.1", (String) null, null, "f" + SHA1_SUFFIX, null));
         bds.add(new BuildDependency(4022L, 402L, "jfrog:bi:2.2.1", (String) null, null, null, null));
         Assert.assertEquals(buildDependenciesDao.createBuildDependencies(bds), 3);
         List<BuildDependency> dependencies = buildDependenciesDao.findDependenciesForModules(

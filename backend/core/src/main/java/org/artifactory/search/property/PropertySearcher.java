@@ -32,7 +32,6 @@ import org.artifactory.sapi.search.VfsQueryRow;
 import org.artifactory.search.SearcherBase;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -93,17 +92,11 @@ public class PropertySearcher extends SearcherBase<PropertySearchControls, Prope
         if (closedPropertyKeys.isEmpty()) {
             return 0;
         }
-        VfsQuery repoQuery = createQuery(controls)
-                .expectedResult(VfsQueryResultType.ANY_ITEM);
-
+        VfsQuery repoQuery = createQuery(controls).expectedResult(VfsQueryResultType.ANY_ITEM);
         // TODO: Should support any boolean
-        Iterator<String> keyIterator = closedPropertyKeys.iterator();
-        while (keyIterator.hasNext()) {
-            String key = keyIterator.next();
-            Iterator<String> valueIterator = controls.get(key).iterator();
-
-            while (valueIterator.hasNext()) {
-                String value = valueIterator.next();
+        for (String key : closedPropertyKeys) {
+            Set<String> values = controls.get(key);
+            for (String value : values) {
                 repoQuery.prop(key).comp(VfsComparatorType.EQUAL).val(value);
             }
         }

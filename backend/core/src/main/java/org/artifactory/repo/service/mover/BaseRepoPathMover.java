@@ -73,8 +73,8 @@ public abstract class BaseRepoPathMover {
     protected final boolean dryRun;
     protected final boolean executeMavenMetadataCalculation;
     protected final boolean failFast;
+    protected final boolean unixStyleBehavior;
     protected final Properties properties;
-    protected final String targetLocalRepoKey;
 
     private final boolean pruneEmptyFolders;
     protected final MoveMultiStatusHolder status;
@@ -92,9 +92,9 @@ public abstract class BaseRepoPathMover {
         dryRun = moverConfig.isDryRun();
         executeMavenMetadataCalculation = moverConfig.isExecuteMavenMetadataCalculation();
         failFast = moverConfig.isFailFast();
+        unixStyleBehavior = moverConfig.isUnixStyleBehavior();
         pruneEmptyFolders = moverConfig.isPruneEmptyFolders();
         properties = initProperties(moverConfig);
-        targetLocalRepoKey = moverConfig.getTargetLocalRepoKey();
 
         // don't output to the logger if executing in dry run
         this.status.setActivateLogging(!dryRun);

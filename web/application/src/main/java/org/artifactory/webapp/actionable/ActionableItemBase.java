@@ -35,7 +35,7 @@ import java.util.Set;
  */
 public abstract class ActionableItemBase extends AbstractReadOnlyModel implements ActionableItem {
 
-    private LinkedHashSet<ItemAction> actions = new LinkedHashSet<>();
+    private Set<ItemAction> actions = new LinkedHashSet<>();
     private final List<ItemActionListener> listeners;
     private ItemEventTargetComponents eventTargetComponents;
 

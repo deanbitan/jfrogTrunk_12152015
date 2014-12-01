@@ -26,8 +26,8 @@ import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.ImportExportStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.ImportSettingsImpl;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.StatusEntry;
@@ -169,7 +169,7 @@ public abstract class BasicImportPanel extends TitledPanel {
                 refreshImportPanel(form, target);
             }
 
-            private void errorImportFeedback(MultiStatusHolder status) {
+            private void errorImportFeedback(BasicStatusHolder status) {
                 String error = status.getStatusMsg();
                 Throwable exception = status.getException();
                 if (exception != null) {

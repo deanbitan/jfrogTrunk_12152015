@@ -511,33 +511,32 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
         File baseDir = settings.getBaseDir();
 
-        //Only create a temp dir when not doing in-place backup (time == null), otherwise do
-        //in-place and make sure all exports except repositories delete their target or write to temp before exporting
-        File tmpExportDir;
+        //Only create a temp dir when not performing incremental backup
+        File workingExportDir;
         if (incremental) {
             //Will always be baseDir/CURRENT_TIME_EXPORT_DIR_NAME
-            tmpExportDir = new File(baseDir, timestamp);
+            workingExportDir = new File(baseDir, timestamp);
         } else {
-            tmpExportDir = new File(baseDir, timestamp + ".tmp");
+            workingExportDir = new File(baseDir, timestamp + ".tmp");
             //Make sure the directory does not already exist
             try {
-                FileUtils.deleteDirectory(tmpExportDir);
+                FileUtils.deleteDirectory(workingExportDir);
             } catch (IOException e) {
-                status.error("Failed to delete old temp export directory: " + tmpExportDir.getAbsolutePath(), e,
+                status.error("Failed to delete old temp export directory: " + workingExportDir.getAbsolutePath(), e,
                         log);
                 return;
             }
         }
-        status.status("Creating temp export directory: " + tmpExportDir.getAbsolutePath(), log);
+        status.status("Creating temp export directory: " + workingExportDir.getAbsolutePath(), log);
         try {
-            FileUtils.forceMkdir(tmpExportDir);
+            FileUtils.forceMkdir(workingExportDir);
         } catch (IOException e) {
-            status.error("Failed to create backup dir: " + tmpExportDir.getAbsolutePath(), e, log);
+            status.error("Failed to create backup dir: " + workingExportDir.getAbsolutePath(), e, log);
             return;
         }
-        status.status("Using backup directory: '" + tmpExportDir.getAbsolutePath() + "'.", log);
+        status.status("Using backup directory: '" + workingExportDir.getAbsolutePath() + "'.", log);
 
-        ExportSettingsImpl exportSettings = new ExportSettingsImpl(tmpExportDir, settings);
+        ExportSettingsImpl exportSettings = new ExportSettingsImpl(workingExportDir, settings);
 
         List<String> stoppedTasks = Lists.newArrayList();
         try {
@@ -603,12 +602,12 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             if (!incremental) {
                 //Create an archive if necessary
                 if (settings.isCreateArchive()) {
-                    createArchive(status, timestamp, baseDir, tmpExportDir);
+                    createArchive(settings, status, timestamp, workingExportDir);
                 } else {
-                    moveTmpToBackupDir(status, timestamp, baseDir, tmpExportDir);
+                    moveTmpToBackupDir(settings, status, timestamp, workingExportDir);
                 }
             } else {
-                status.setOutputFile(tmpExportDir);
+                settings.setOutputFile(workingExportDir);
             }
 
             settings.cleanCallbacks();
@@ -621,10 +620,10 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
     }
 
-    private void moveTmpToBackupDir(MutableStatusHolder status, String timestamp, File baseDir,
-            File tmpExportDir) {
+    private void moveTmpToBackupDir(ExportSettings settings, MutableStatusHolder status, String timestamp,
+            File workingExportDir) {
         //Delete any exiting final export dir
-        File exportDir = new File(baseDir, timestamp);
+        File exportDir = new File(settings.getBaseDir(), timestamp);
         try {
             FileUtils.deleteDirectory(exportDir);
         } catch (IOException e) {
@@ -632,26 +631,27 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         }
         //Switch the directories
         try {
-            FileUtils.moveDirectory(tmpExportDir, exportDir);
+            FileUtils.moveDirectory(workingExportDir, exportDir);
         } catch (IOException e) {
-            log.error("Failed to move '{}' to '{}': {}", tmpExportDir, exportDir, e.getMessage());
+            log.error("Failed to move '{}' to '{}': {}", workingExportDir, exportDir, e.getMessage());
         } finally {
-            status.setOutputFile(exportDir);
+            settings.setOutputFile(exportDir);
         }
     }
 
-    private void createArchive(MutableStatusHolder status, String timestamp, File baseDir, File tmpExportDir) {
+    private void createArchive(ExportSettings settings, MutableStatusHolder status, String timestamp,
+            File workingExportDir) {
         status.status("Creating archive...", log);
 
-        File tempArchiveFile = new File(baseDir, timestamp + ".tmp.zip");
+        File tempArchiveFile = new File(settings.getBaseDir(), timestamp + ".tmp.zip");
         try {
-            ZipUtils.archive(tmpExportDir, tempArchiveFile, true);
+            ZipUtils.archive(workingExportDir, tempArchiveFile, true);
         } catch (IOException e) {
             throw new RuntimeException("Failed to create system export archive.", e);
         }
         //Delete the temp export dir
         try {
-            FileUtils.deleteDirectory(tmpExportDir);
+            FileUtils.deleteDirectory(workingExportDir);
         } catch (IOException e) {
             log.warn("Failed to delete temp export directory.", e);
         }
@@ -659,7 +659,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         // From now on use only java.io.File for the file actions!
 
         //Delete any exiting final archive
-        File archive = new File(baseDir, timestamp + ".zip");
+        File archive = new File(settings.getBaseDir(), timestamp + ".zip");
         if (archive.exists()) {
             boolean deleted = archive.delete();
             if (!deleted) {
@@ -673,7 +673,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             status.warn(String.format("Failed to move '%s' to '%s'.", tempArchiveFile.getAbsolutePath(),
                     archive.getAbsolutePath()), e, log);
         } finally {
-            status.setOutputFile(archive.getAbsoluteFile());
+            settings.setOutputFile(archive.getAbsoluteFile());
         }
     }
 

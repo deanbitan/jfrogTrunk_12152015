@@ -37,7 +37,6 @@ import org.artifactory.addon.WebstartAddon;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.config.ImportSettingsImpl;
@@ -126,7 +125,10 @@ import org.artifactory.schedule.TaskService;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.search.InternalSearchService;
 import org.artifactory.security.AccessLogger;
+import org.artifactory.security.AclInfo;
 import org.artifactory.security.ArtifactoryPermission;
+import org.artifactory.security.MutableAclInfo;
+import org.artifactory.security.MutablePermissionTargetInfo;
 import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -343,6 +345,21 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (storingRepo == null) {
             status.warn("Repo not found for deletion: " + repoKey, log);
             return status;
+        }
+
+        //Delete all acl references to the repository being deleted
+        List<AclInfo> acls = aclService.getAllAcls();
+        for(AclInfo aclInfo : acls) {
+            MutablePermissionTargetInfo permissionTarget = InfoFactoryHolder.get().copyPermissionTarget
+                    (aclInfo.getPermissionTarget());
+            String cachedRepoKey = repoKey.concat(LocalCacheRepoDescriptor.PATH_SUFFIX); //for remote repos
+            List<String> repoKeys = permissionTarget.getRepoKeys();
+            if (repoKeys.remove(repoKey) || repoKeys.remove(cachedRepoKey)){
+                MutableAclInfo mutableAclInfo = InfoFactoryHolder.get().copyAcl(aclInfo);
+                permissionTarget.setRepoKeys(repoKeys);
+                mutableAclInfo.setPermissionTarget(permissionTarget);
+                aclService.updateAcl(mutableAclInfo);
+            }
         }
 
         MutableVfsFolder rootFolder = storingRepo.getMutableFolder(storingRepo.getRepoPath(""));
@@ -1017,13 +1034,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public MoveMultiStatusHolder move(RepoPath from, String targetLocalRepoKey, boolean dryRun) {
-        MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, targetLocalRepoKey)
-                .copy(false).dryRun(dryRun).executeMavenMetadataCalculation(true);
-        return moveOrCopy(configBuilder.build());
-    }
-
-    @Override
     public MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast) {
         TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
@@ -1034,10 +1044,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         MoveMultiStatusHolder status = new MoveMultiStatusHolder();
         RepoPathMover mover = getRepoPathMover();
         for (RepoPath pathToMove : pathsToMoveIncludingParents) {
-            log.debug("Moving path: {} to {}", pathToMove, targetLocalRepoKey);
-            mover.moveOrCopy(status, new MoverConfigBuilder(pathToMove, targetLocalRepoKey).copy(false).dryRun(dryRun)
-                    .executeMavenMetadataCalculation(false).pruneEmptyFolders(true).properties(properties).
-                            failFast(failFast).build());
+            RepoPath targetRepoPath = InternalRepoPathFactory.create(targetLocalRepoKey, pathToMove.getPath());
+            log.debug("Moving path: {} to {}", pathToMove, targetRepoPath);
+            mover.moveOrCopy(status, new MoverConfigBuilder(pathToMove, targetRepoPath).copy(false).dryRun(dryRun)
+                    .executeMavenMetadataCalculation(false).pruneEmptyFolders(true).properties(properties)
+                    .unixStyleBehavior(false).failFast(failFast).build());
         }
         mavenMetadataService.calculateMavenMetadataAsyncNonRecursive(status.getCandidatesForMavenMetadataCalculation());
         return status;
@@ -1053,13 +1064,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public MoveMultiStatusHolder copy(RepoPath from, String targetLocalRepoKey, boolean dryRun) {
-        MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, targetLocalRepoKey)
-                .copy(true).dryRun(dryRun).executeMavenMetadataCalculation(true);
-        return moveOrCopy(configBuilder.build());
-    }
-
-    @Override
     public MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast) {
         TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
@@ -1070,10 +1074,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         MoveMultiStatusHolder status = new MoveMultiStatusHolder();
         RepoPathMover mover = getRepoPathMover();
         for (RepoPath pathToCopy : pathsToCopyIncludingParents) {
-            log.debug("Copying path: {} to {}", pathToCopy, targetLocalRepoKey);
-            mover.moveOrCopy(status, new MoverConfigBuilder(pathToCopy, targetLocalRepoKey).copy(true).dryRun(dryRun)
-                    .executeMavenMetadataCalculation(false).pruneEmptyFolders(false).properties(properties).
-                            failFast(failFast).build());
+            RepoPath targetRepoPath = InternalRepoPathFactory.create(targetLocalRepoKey, pathToCopy.getPath());
+            log.debug("Copying path: {} to {}", pathToCopy, targetRepoPath);
+            mover.moveOrCopy(status, new MoverConfigBuilder(pathToCopy, targetRepoPath).copy(true).dryRun(dryRun)
+                    .executeMavenMetadataCalculation(false).pruneEmptyFolders(false).properties(properties)
+                    .unixStyleBehavior(false).failFast(failFast).build());
         }
         mavenMetadataService.calculateMavenMetadataAsyncNonRecursive(status.getCandidatesForMavenMetadataCalculation());
 
@@ -1173,7 +1178,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public StatusHolder undeployVersionUnits(Set<VersionUnit> versionUnits) {
-        MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
+        BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
         InternalRepositoryService transactionalMe = getTransactionalMe();
 
         Set<RepoPath> pathsForMavenMetadataCalculation = Sets.newHashSet();
@@ -1538,14 +1543,10 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public List<VersionUnit> getVersionUnitsUnder(RepoPath repoPath) {
-        List<VersionUnit> versionUnits = Lists.newArrayList();
+    public ItemSearchResults<VersionUnitSearchResult> getVersionUnitsUnder(RepoPath repoPath) {
         VersionUnitSearchControls controls = new VersionUnitSearchControls(repoPath);
         ItemSearchResults<VersionUnitSearchResult> searchResults = searchService.searchVersionUnits(controls);
-        for (VersionUnitSearchResult result : searchResults.getResults()) {
-            versionUnits.add(result.getVersionUnit());
-        }
-        return versionUnits;
+        return searchResults;
     }
 
     @Override

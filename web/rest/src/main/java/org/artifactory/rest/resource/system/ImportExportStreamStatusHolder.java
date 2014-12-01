@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ImportExportStreamStatusHolder extends ImportExportStatusHolder {
     private static final Logger log = LoggerFactory.getLogger(ImportExportStreamStatusHolder.class);
-    private boolean verbose;
     private HttpServletResponse response;
     private PrintStream out;
     private boolean brokenPipe = false;
@@ -110,15 +109,4 @@ public class ImportExportStreamStatusHolder extends ImportExportStatusHolder {
         }
         return out;
     }
-
-    @Override
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
-    @Override
-    public boolean isVerbose() {
-        return verbose;
-    }
-
 }

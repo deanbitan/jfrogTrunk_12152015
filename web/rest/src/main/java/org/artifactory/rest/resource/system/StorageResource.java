@@ -20,7 +20,7 @@ package org.artifactory.rest.resource.system;
 
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.backup.InternalBackupService;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.backup.BackupDescriptor;
@@ -58,7 +58,7 @@ public class StorageResource {
     @POST
     @Path("compress")
     public Response compress() {
-        MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
+        BasicStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         storageService.compress(statusHolder);
         return response(statusHolder);
     }
@@ -109,7 +109,7 @@ public class StorageResource {
     @POST
     @Path("gc")
     public Response activateGc() {
-        MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
+        BasicStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         storageService.callManualGarbageCollect(statusHolder);
         return response(statusHolder);
     }
@@ -117,7 +117,7 @@ public class StorageResource {
     @POST
     @Path("prune")
     public Response activatePruneEmptyDirs() {
-        MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
+        BasicStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         binaryStore.prune(statusHolder);
         return response(statusHolder);
     }
@@ -125,7 +125,7 @@ public class StorageResource {
     @POST
     @Path("backup")
     public Response activateBackup(@QueryParam("key") String backupKey) {
-        final MultiStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
+        final BasicStatusHolder statusHolder = new ImportExportStreamStatusHolder(httpResponse);
         BackupDescriptor backupDescriptor = backupService.getBackup(backupKey);
         if (backupDescriptor != null) {
             if (backupDescriptor.isEnabled()) {
@@ -140,7 +140,7 @@ public class StorageResource {
         }
     }
 
-    private Response response(MultiStatusHolder statusHolder) {
+    private Response response(BasicStatusHolder statusHolder) {
         StatusEntry lastError = statusHolder.getLastError();
         return lastError == null ? Response.ok().build() :
                 Response.serverError().entity(lastError.getMessage()).build();

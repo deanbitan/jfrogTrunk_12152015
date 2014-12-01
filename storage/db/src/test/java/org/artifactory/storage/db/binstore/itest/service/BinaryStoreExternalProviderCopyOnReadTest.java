@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.binstore.itest.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
 import org.testng.annotations.Test;
 
@@ -71,7 +71,7 @@ public class BinaryStoreExternalProviderCopyOnReadTest extends BinaryStoreExtern
     protected void testPruneAfterLoad() {
         testPrune(0, 0, 0);
         // Test disconnection will do nothing
-        MultiStatusHolder statusHolder = new MultiStatusHolder();
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
         binaryStore.disconnectExternalFilestore(testExternal, ProviderConnectMode.COPY_FIRST, statusHolder);
         String statusMsg = statusHolder.getStatusMsg();
         assertFalse(statusHolder.isError(), "Error during disconnecting external provider: " + statusMsg);

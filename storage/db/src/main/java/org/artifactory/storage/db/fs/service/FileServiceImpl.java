@@ -21,7 +21,6 @@ package org.artifactory.storage.db.fs.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.checksum.ChecksumInfo;
@@ -42,7 +41,6 @@ import org.artifactory.storage.db.fs.entity.NodeBuilder;
 import org.artifactory.storage.db.fs.entity.NodePath;
 import org.artifactory.storage.db.fs.model.DbFsFile;
 import org.artifactory.storage.db.fs.model.DbFsFolder;
-import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.VfsItemNotFoundException;
 import org.artifactory.storage.fs.repo.RepoStorageSummary;
@@ -78,6 +76,7 @@ public class FileServiceImpl implements FileService {
         try {
             return nodesDao.exists(NodePath.fromRepoPath(repoPath));
         } catch (SQLException e) {
+            log.debug("Failed existence check of path '{}", repoPath, e);
             throw new VfsException("Failed existence check of path '" + repoPath + "'", e);
         }
     }
@@ -323,21 +322,6 @@ public class FileServiceImpl implements FileService {
     public List<FileInfo> searchFilesByProperty(String repo, String propKey, String propValue) {
         try {
             List<Node> childrenNode = nodesDao.searchFilesByProperty(repo, propKey, propValue);
-            List<FileInfo> children = Lists.newArrayList();
-            for (Node child : childrenNode) {
-                children.add(fileInfoFromNode(child));
-            }
-            return children;
-        } catch (SQLException e) {
-            throw new VfsException("Search by properties failed: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public List<FileInfo> searchFilesByProperty(PropertiesFilter propertiesFilter) {
-        try {
-            PropertiesFilterQueryBuilder queryBuilder = new PropertiesFilterQueryBuilder(propertiesFilter);
-            List<Node> childrenNode = nodesDao.searchFilesByProperty(queryBuilder);
             List<FileInfo> children = Lists.newArrayList();
             for (Node child : childrenNode) {
                 children.add(fileInfoFromNode(child));

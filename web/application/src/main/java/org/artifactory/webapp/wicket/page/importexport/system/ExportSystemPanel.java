@@ -47,6 +47,7 @@ import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +175,7 @@ public class ExportSystemPanel extends TitledPanel {
                 try {
                     Session.get().cleanupFeedbackMessages();
                     status.reset();
-                    ExportSettingsImpl settings = new ExportSettingsImpl(exportToPath, status);
+                    ExportSettings settings = new ExportSettingsImpl(exportToPath, status);
                     settings.setCreateArchive(createArchive);
                     settings.setFailFast(false);
                     settings.setVerbose(verbose);
@@ -202,7 +203,7 @@ public class ExportSystemPanel extends TitledPanel {
                         }
                         error("Failed to export system to '" + exportToPath + "': " + message);
                     } else {
-                        File exportFile = status.getOutputFile();
+                        File exportFile = settings.getOutputFile();
                         info("Successfully exported system to '" + exportFile.getPath() + "'.");
                     }
                 } catch (Exception e) {
@@ -223,7 +224,6 @@ public class ExportSystemPanel extends TitledPanel {
                 statusLabel.setDefaultModel(new PropertyModel(status, "status"));
             }
         });
-        //exportForm.add(statusLabel);
     }
 
     private List<String> getAllLocalRepoKeys() {

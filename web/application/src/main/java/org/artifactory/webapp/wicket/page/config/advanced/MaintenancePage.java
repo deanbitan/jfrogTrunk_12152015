@@ -29,7 +29,7 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.validation.validator.RangeValidator;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.cleanup.ArtifactCleanupService;
 import org.artifactory.api.repo.cleanup.VirtualCacheCleanupService;
@@ -140,7 +140,7 @@ public class MaintenancePage extends AuthenticatedPage {
         TitledAjaxLink compressLink = new TitledAjaxLink("compress", "Compress the Internal Database") {
             @Override
             public void onClick(AjaxRequestTarget target) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 try {
                     storageService.compress(statusHolder);
                 } catch (Exception e) {
@@ -169,7 +169,7 @@ public class MaintenancePage extends AuthenticatedPage {
         TitledAjaxLink pruneLink = new TitledAjaxLink("prune", "Prune Unreferenced Data") {
             @Override
             public void onClick(AjaxRequestTarget target) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 storageService.pruneUnreferencedFileInDataStore(statusHolder);
                 if (statusHolder.isError()) {
                     error("Pruning unreferenced data completed with an error:\n" +
@@ -237,7 +237,7 @@ public class MaintenancePage extends AuthenticatedPage {
         TitledAjaxLink collectLink = new TitledAjaxLink("collect", "Run Now") {
             @Override
             public void onClick(AjaxRequestTarget target) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 storageService.callManualGarbageCollect(statusHolder);
                 if (statusHolder.isError()) {
                     error("Could not run the garbage collector: " + statusHolder.getLastError().getMessage() + ".");
@@ -265,7 +265,7 @@ public class MaintenancePage extends AuthenticatedPage {
         TitledAjaxLink collectLink = new TitledAjaxLink("cleanup", "Run Unused Cached Artifacts Cleanup") {
             @Override
             public void onClick(AjaxRequestTarget target) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 artifactCleanupService.callManualArtifactCleanup(statusHolder);
                 if (statusHolder.isError()) {
                     error("Could not run the artifact cleanup: " + statusHolder.getLastError().getMessage() + ".");
@@ -293,7 +293,7 @@ public class MaintenancePage extends AuthenticatedPage {
         TitledAjaxLink collectLink = new TitledAjaxLink("virtualCleanup", "Clean Virtual Repositories Now") {
             @Override
             public void onClick(AjaxRequestTarget target) {
-                MultiStatusHolder statusHolder = new MultiStatusHolder();
+                BasicStatusHolder statusHolder = new BasicStatusHolder();
                 virtualCacheCleanupService.callVirtualCacheCleanup(statusHolder);
                 if (statusHolder.isError()) {
                     error("Could not run the virtual cache cleanup: " + statusHolder.getLastError().getMessage() + ".");

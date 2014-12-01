@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.StorageException;
@@ -147,7 +147,7 @@ class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements File
     }
 
     @Override
-    protected void pruneFiles(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {
+    protected void pruneFiles(BasicStatusHolder statusHolder, MovedCounter movedCounter, File first) {
         // For the cache just delete all non used files
         statusHolder.status("Starting deleting non used files in " + first.getAbsolutePath() + "!", log);
         File[] files = first.listFiles();

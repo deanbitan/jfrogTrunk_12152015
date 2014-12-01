@@ -27,9 +27,9 @@ import org.artifactory.repo.RepoPath;
  */
 public class LocalReplicationSettings extends ReplicationBaseSettings {
 
-    private final ProxyDescriptor proxyDescriptor;
     private final String username;
     private final String password;
+    private final ProxyDescriptor proxyDescriptor;
 
     public LocalReplicationSettings(LocalReplicationDescriptor descriptor) {
         this(descriptor.getRepoPath(), descriptor.getUrl(), descriptor.getProxy(), descriptor.getSocketTimeoutMillis(),
@@ -75,7 +75,7 @@ public class LocalReplicationSettings extends ReplicationBaseSettings {
 
         LocalReplicationSettings that = (LocalReplicationSettings) o;
 
-        if (!password.equals(that.password)) {
+        if (password != null ? !password.equals(that.password) : that.password != null) {
             return false;
         }
         if (proxyDescriptor != null ? !proxyDescriptor.equals(that.proxyDescriptor) : that.proxyDescriptor != null) {
@@ -91,9 +91,9 @@ public class LocalReplicationSettings extends ReplicationBaseSettings {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (proxyDescriptor != null ? proxyDescriptor.hashCode() : 0);
         result = 31 * result + username.hashCode();
-        result = 31 * result + password.hashCode();
+        result = 31 * result + (password != null ? password.hashCode() : 0);
+        result = 31 * result + (proxyDescriptor != null ? proxyDescriptor.hashCode() : 0);
         return result;
     }
 }

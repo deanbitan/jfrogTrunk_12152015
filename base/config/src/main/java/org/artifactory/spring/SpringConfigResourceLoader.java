@@ -50,7 +50,7 @@ import java.util.TreeMap;
  * @author Noam Tenne
  */
 public abstract class SpringConfigResourceLoader {
-    private final static Logger log = LoggerFactory.getLogger(SpringConfigResourceLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(SpringConfigResourceLoader.class);
 
     private static final String FORWARD_SLASH = "/";
     private static final String FILE_PREFIX = "file:";

@@ -24,7 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.storage.BinariesInfo;
 import org.artifactory.api.storage.StorageUnit;
@@ -131,7 +131,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 break;
             case fullDb:
                 if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {
-                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getHaAwareDataDir(),
+                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getDataDir(),
                             storageProperties);
                     binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
                 }
@@ -173,7 +173,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public void disconnectExternalFilestore(File externalDir, ProviderConnectMode disconnectMode,
-            MultiStatusHolder statusHolder) {
+            BasicStatusHolder statusHolder) {
         // First search for the external binary store to disconnect
         ExternalFileBinaryProviderImpl externalFilestore = null;
         BinaryProviderBase bp = getFirstBinaryProvider();
@@ -452,6 +452,14 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         } catch (SQLException e) {
             log.error("Could not list files due to " + e.getMessage());
         }
+
+        if (fileBinaryProvider != null && fileBinaryProvider instanceof DoubleFileBinaryProviderImpl) {
+            long start = System.currentTimeMillis();
+            log.info("Double filestore found. Activating Checksum synchronization.");
+            ((DoubleFileBinaryProviderImpl) fileBinaryProvider).syncFilestores();
+            log.info("Checksum synchronization took " + (System.currentTimeMillis() - start) + "ms");
+        }
+
         return result;
     }
 
@@ -619,9 +627,12 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public void ping() {
-        File binariesDir = getBinariesDir();
-        if (binariesDir != null && !binariesDir.canWrite()) {
-            throw new StorageException("Cannot write to " + binariesDir.getAbsolutePath());
+        FileBinaryProvider binaryProvider = getFileBinaryProvider();
+        if (binaryProvider != null) {
+            if (!binaryProvider.isAccessible()) {
+                throw new StorageException("Cannot access " +
+                        binaryProvider.getBinariesDir().getAbsolutePath());
+            }
         }
         try {
             if (binariesDao.exists("does not exists")) {
@@ -633,7 +644,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     }
 
     @Override
-    public void prune(MultiStatusHolder statusHolder) {
+    public void prune(BasicStatusHolder statusHolder) {
         if (fileBinaryProvider != null) {
             fileBinaryProvider.prune(statusHolder);
         } else {

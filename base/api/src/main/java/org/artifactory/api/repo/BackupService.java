@@ -18,7 +18,7 @@
 
 package org.artifactory.api.repo;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
@@ -35,5 +35,5 @@ public interface BackupService {
     void backupRepos(File backupDir, List<RealRepoDescriptor> excludeRepositories,
             ExportSettingsImpl exportSettings);
 
-    void scheduleImmediateSystemBackup(BackupDescriptor backupDescriptor, MultiStatusHolder statusHolder);
+    void scheduleImmediateSystemBackup(BackupDescriptor backupDescriptor, BasicStatusHolder statusHolder);
 }

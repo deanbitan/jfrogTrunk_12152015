@@ -29,7 +29,6 @@ import org.artifactory.repo.RepoPath;
  */
 public class MoverConfigBuilder implements Builder<MoverConfig> {
     private RepoPath fromRepoPath;
-    private String targetLocalRepoKey;
     private RepoPath targetLocalRepoPath;
     private boolean copy = false;
     private boolean dryRun = false;
@@ -38,15 +37,7 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     private Properties properties;
     private boolean suppressLayouts = false;
     private boolean failFast = false;
-
-    /**
-     * @param fromRepoPath       Source repo path
-     * @param targetLocalRepoKey Target repo key
-     */
-    public MoverConfigBuilder(RepoPath fromRepoPath, String targetLocalRepoKey) {
-        this.fromRepoPath = fromRepoPath;
-        this.targetLocalRepoKey = targetLocalRepoKey;
-    }
+    private boolean unixStyleBehavior = true;
 
     public MoverConfigBuilder(RepoPath fromRepoPath, RepoPath targetLocalRepoPath) {
         this.fromRepoPath = fromRepoPath;
@@ -76,9 +67,19 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
     }
 
     /**
-     * Indicate if the current run is a dry one (no items actually moved)
+     * Indicates if Unix-style behavior should be used when dealing with existing nested folders
+     * @see org.artifactory.repo.service.mover.MoverConfig
      *
-     * @param run True if run is dry, false if not
+     * @param unixStyleBehavior True if Unix-style behavior should be used
+     * @return MoverConfigBuilder
+     */
+    public MoverConfigBuilder unixStyleBehavior(boolean unixStyleBehavior) {
+        this.unixStyleBehavior = unixStyleBehavior;
+        return this;
+    }
+
+    /**
+     * @param properties
      * @return MoverConfigBuilder
      */
     public MoverConfigBuilder properties(Properties properties) {
@@ -137,7 +138,7 @@ public class MoverConfigBuilder implements Builder<MoverConfig> {
      */
     @Override
     public MoverConfig build() {
-        return new MoverConfig(fromRepoPath, targetLocalRepoPath, targetLocalRepoKey, copy, dryRun,
-                executeMavenMetadataCalculation, pruneEmptyFolders, properties, suppressLayouts, failFast);
+        return new MoverConfig(fromRepoPath, targetLocalRepoPath, copy, dryRun,executeMavenMetadataCalculation,
+                pruneEmptyFolders, properties, suppressLayouts, failFast, unixStyleBehavior);
     }
 }

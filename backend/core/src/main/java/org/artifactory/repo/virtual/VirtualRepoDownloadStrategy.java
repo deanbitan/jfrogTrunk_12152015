@@ -66,7 +66,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class VirtualRepoDownloadStrategy {
-    private final static Logger log = LoggerFactory.getLogger(VirtualRepoDownloadStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(VirtualRepoDownloadStrategy.class);
 
     private InternalRepositoryService repositoryService;
 
@@ -190,7 +190,7 @@ public class VirtualRepoDownloadStrategy {
             boolean isSnapshotPath = mavenSnapshotPath || path.contains("[INTEGRATION]");
             if (artifactModuleInfo.isIntegration() || (!artifactModuleInfo.isValid() && isSnapshotPath)) {
                 RepoRequests.logToContext("Processing request as a snapshot resource (Module info validity = %s, " +
-                        "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
+                                "Module info identified as integration = %s, Path identified as Maven snapshot = %s)",
                         artifactModuleInfo.isValid(), artifactModuleInfo.isIntegration(), mavenSnapshotPath
                 );
                 result = processSnapshot(context, repoPath, repositories);
@@ -380,7 +380,7 @@ public class VirtualRepoDownloadStrategy {
                         (res.getLastModified() > latestRes.getLastModified());
 
                 RepoRequests.logToContext("Current found resource is the first candidate = %s, is an exact match " +
-                        "query while the former candidate isn't = %s, has later modified time than former = %s",
+                                "query while the former candidate isn't = %s, has later modified time than former = %s",
                         firstFoundResource, currentResourceIsAnExactMatchAndLatterFoundIsNot,
                         currentResourceWasModifiedLater
                 );

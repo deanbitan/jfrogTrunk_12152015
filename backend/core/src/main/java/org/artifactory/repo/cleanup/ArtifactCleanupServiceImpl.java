@@ -20,7 +20,7 @@ package org.artifactory.repo.cleanup;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SearchService;
@@ -103,7 +103,7 @@ public class ArtifactCleanupServiceImpl implements InternalArtifactCleanupServic
     }
 
     @Override
-    public String callManualArtifactCleanup(MultiStatusHolder statusHolder) {
+    public String callManualArtifactCleanup(BasicStatusHolder statusHolder) {
         TaskService taskService = InternalContextHelper.get().getTaskService();
         taskService.checkCanStartManualTask(ArtifactCleanupJob.class, statusHolder);
         if (!statusHolder.isError()) {

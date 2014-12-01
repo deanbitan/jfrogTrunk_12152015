@@ -20,6 +20,7 @@ package org.artifactory.repo;
 
 import org.apache.commons.io.IOUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.api.security.AuthorizationService;
@@ -52,6 +53,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
     InternalArtifactoryContext context = EasyMock.createMock(InternalArtifactoryContext.class);
     AddonsManager addonsManager = EasyMock.createMock(AddonsManager.class);
     LayoutsCoreAddon layoutsCoreAddon = EasyMock.createMock(LayoutsCoreAddon.class);
+    HaAddon haAddon = EasyMock.createMock(HaAddon.class);
 
     HttpRepoDescriptor httpRepoDescriptor = new HttpRepoDescriptor();
     HttpRepo httpRepo;
@@ -62,6 +64,7 @@ public class RemoteRepoBaseTest extends ArtifactoryHomeBoundTest {
         EasyMock.expect(context.getAuthorizationService()).andReturn(authService).anyTimes();
         EasyMock.expect(context.beanForType(AddonsManager.class)).andReturn(addonsManager).anyTimes();
         EasyMock.expect(addonsManager.addonByType(LayoutsCoreAddon.class)).andReturn(layoutsCoreAddon).anyTimes();
+        EasyMock.expect(addonsManager.addonByType(HaAddon.class)).andReturn(haAddon).anyTimes();
         EasyMock.replay(authService, context, addonsManager);
         ArtifactoryContextThreadBinder.bind(context);
         httpRepoDescriptor.setRepoLayout(RepoLayoutUtils.MAVEN_2_DEFAULT);

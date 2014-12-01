@@ -18,10 +18,11 @@
 
 package org.artifactory.schedule;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.security.UserInfo;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -38,6 +39,11 @@ public class JobCommandTest extends TaskServiceTestBase {
     private static final String DUMMY_PAUSED_VALUE = "dummy-paused";
     private static final String DUMMY_MANUAL_PAUSED_VALUE = "dummy-manual-paused";
     private static final String DUMMY_MANUAL_RUNNING_VALUE = "dummy-manual-stopped";
+
+    @AfterMethod
+    public void afterMethod() throws Exception {
+        Thread.sleep(500);
+    }
 
     @Test
     public void testCommandToStop() throws Exception {
@@ -174,11 +180,11 @@ public class JobCommandTest extends TaskServiceTestBase {
         TaskBase dummyA = createRunAndPauseDummyA(1000);
         assertTrue(taskService.resumeTask(dummyA.getToken()));
         try {
-            taskService.checkCanStartManualTask(DummyQuartzCommandC.class, new MultiStatusHolder());
+            taskService.checkCanStartManualTask(DummyQuartzCommandC.class, new BasicStatusHolder());
             fail("Should get " + IllegalArgumentException.class + " since no key values provided for a command with keys");
         } catch (IllegalArgumentException e) {
         }
-        MultiStatusHolder statusHolder = new MultiStatusHolder();
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
         taskService.checkCanStartManualTask(DummyQuartzCommandC.class, statusHolder, NO_DUMMY_VALUE);
         assertTrue(statusHolder.isError(),
                 "Command " + DummyQuartzCommandC.class + " should be forbidden to run due to " + dummyA + " active");
@@ -186,7 +192,7 @@ public class JobCommandTest extends TaskServiceTestBase {
         ArtifactoryHomeTaskTestStub.TaskTestData dummyTaskData = homeStub.getTaskData(dummyA.getToken());
         taskService.stopTask(dummyA.getToken(), true);
         dummyTaskData.assertNbs(1, 1);
-        statusHolder = new MultiStatusHolder();
+        statusHolder = new BasicStatusHolder();
         taskService.checkCanStartManualTask(DummyQuartzCommandC.class, statusHolder, NO_DUMMY_VALUE);
         assertFalse(statusHolder.isError(),
                 "Command " + DummyQuartzCommandC.class + " should be allowed to run manually");
@@ -243,7 +249,7 @@ public class JobCommandTest extends TaskServiceTestBase {
 
     private void checkShouldFail(Class<? extends TaskCallback> typeToRun, String keyValue, boolean sameType)
             throws InterruptedException {
-        MultiStatusHolder statusHolder1 = new MultiStatusHolder();
+        BasicStatusHolder statusHolder1 = new BasicStatusHolder();
         taskService.checkCanStartManualTask(typeToRun, statusHolder1, keyValue);
         assertTrue(statusHolder1.isError(), "Command " + typeToRun + " should be forbidden to run");
 
@@ -279,7 +285,7 @@ public class JobCommandTest extends TaskServiceTestBase {
     }
 
     private void checkShouldStart(Class<? extends TaskCallback> typeToRun, String keyValue, boolean onlyManual) {
-        MultiStatusHolder statusHolder1 = new MultiStatusHolder();
+        BasicStatusHolder statusHolder1 = new BasicStatusHolder();
         taskService.checkCanStartManualTask(typeToRun, statusHolder1, keyValue);
         assertFalse(statusHolder1.isError(), "Command " + typeToRun + " should be allowed to run");
 

@@ -19,7 +19,7 @@
 package org.artifactory.webapp.wicket.page.build.panel.compare;
 
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
-import org.artifactory.api.build.BuildNumberComparator;
+import org.artifactory.api.build.BuildRunComparators;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.wicket.util.ListPropertySorter;
 
@@ -56,9 +56,8 @@ public class BuildForNameListSorter {
      * @param toSort    List to sort
      * @param ascending True if the order should be ascending
      */
-    @SuppressWarnings({"unchecked"})
-    public static void sortManual(List toSort, boolean ascending) {
-        Comparator comparator = new BuildNumberComparator();
+    public static void sortManual(List<BuildRun> toSort, boolean ascending) {
+        Comparator<BuildRun> comparator = BuildRunComparators.getComparatorFor(toSort);
         if (!ascending) {
             comparator = Collections.reverseOrder(comparator);
         }

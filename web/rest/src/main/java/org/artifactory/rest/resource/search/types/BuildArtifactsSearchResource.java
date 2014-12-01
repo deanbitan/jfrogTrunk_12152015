@@ -27,6 +27,7 @@ import org.artifactory.api.rest.search.result.DownloadRestSearchResult;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.rest.common.exception.NotFoundException;
+import org.artifactory.rest.resource.ci.BuildResource;
 import org.artifactory.rest.util.RestUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -63,6 +64,10 @@ public class BuildArtifactsSearchResource {
     @Consumes({BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST, MediaType.APPLICATION_JSON})
     @Produces({SearchRestConstants.MT_BUILD_ARTIFACTS_SEARCH_RESULT, MediaType.APPLICATION_JSON})
     public Response get(BuildArtifactsRequest buildArtifactsRequest) throws IOException {
+
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+            throw new AuthorizationRestException(BuildResource.anonAccessDisabledMsg);
+        }
         if (isBlank(buildArtifactsRequest.getBuildName())) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Cannot search without build name.").build();
         }

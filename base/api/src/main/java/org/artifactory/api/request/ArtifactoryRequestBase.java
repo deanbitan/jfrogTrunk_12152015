@@ -242,11 +242,12 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
         //Calculate matrix params on the path and return path without matrix params
         path = processMatrixParamsIfExist(path);
 
+        path = URLDecoder.decode(path.replace("+", "%2B"), "UTF-8").replace("%2B", "+");
+
         // calculate zip resource path and return path without the zip resource path
         path = processZipResourcePathIfExist(path);
 
-        path = URLDecoder.decode(path.replace("+", "%2B"), "UTF-8").replace("%2B", "+");
-        return InfoFactoryHolder.get().createRepoPath(repoKey, path,endsWithSlash);
+        return InfoFactoryHolder.get().createRepoPath(repoKey, path, endsWithSlash);
     }
 
     protected String processMatrixParamsIfExist(String fragment) {
@@ -267,7 +268,7 @@ public abstract class ArtifactoryRequestBase implements ArtifactoryRequest {
      *
      * @param path Valid path to resource in the repository
      * @return The path without the zip resource sub path. Same path if it's not a zip resource request (i.e., doesn't
-     *         contain '!' as part of the path).
+     * contain '!' as part of the path).
      */
     private String processZipResourcePathIfExist(String path) {
         String[] splitPath = PathUtils.splitZipResourcePathIfExist(path, false);

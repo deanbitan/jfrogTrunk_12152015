@@ -33,33 +33,33 @@ import static org.testng.Assert.*;
 @Test
 public class MultiStatusHolderTest {
     private static final Logger log = LoggerFactory.getLogger(MultiStatusHolderTest.class);
-    private MultiStatusHolder toMerge;
-    private MultiStatusHolder target;
+    private BasicStatusHolder toMerge;
+    private BasicStatusHolder target;
 
     @BeforeMethod
     void initStatusHolders() {
-        toMerge = new MultiStatusHolder();
+        toMerge = new BasicStatusHolder();
         toMerge.setActivateLogging(false);
-        target = new MultiStatusHolder();
+        target = new BasicStatusHolder();
         target.setActivateLogging(false);
     }
 
     public void mergeTwoStatusHolders() {
-        toMerge.warn("warninig", log);
+        toMerge.warn("warning", log);
         toMerge.status("ok", log);
 
         target.status("target1", log);
         target.status("target2", log);
 
         assertFalse(target.hasWarnings());
-        assertEquals(target.getAllEntries().size(), 2);
+        assertEquals(target.getEntries().size(), 2);
 
         // now merge
         target.merge(toMerge);
 
         assertTrue(target.hasWarnings());
         assertFalse(target.hasErrors());
-        assertEquals(target.getAllEntries().size(), 4);
+        assertEquals(target.getEntries().size(), 4);
     }
 
     public void mergeWithEmptyStatusHolder() {
@@ -71,7 +71,7 @@ public class MultiStatusHolderTest {
 
         assertFalse(target.hasWarnings());
         assertTrue(target.hasErrors());
-        assertEquals(target.getAllEntries().size(), 2);
+        assertEquals(target.getEntries().size(), 2);
     }
 
     public void mergeWithErrorOverride() {
@@ -93,14 +93,14 @@ public class MultiStatusHolderTest {
         target.status("target2", log);
 
         assertFalse(target.hasWarnings());
-        assertEquals(target.getAllEntries().size(), 2);
+        assertEquals(target.getEntries().size(), 2);
 
         // now merge
         target.merge(single);
 
         assertFalse(target.hasWarnings());
         assertTrue(target.hasErrors());
-        assertEquals(target.getAllEntries().size(), 3);
+        assertEquals(target.getEntries().size(), 3);
 
         single = new BasicStatusHolder();
         single.warn("warning", log);
@@ -110,7 +110,7 @@ public class MultiStatusHolderTest {
 
         assertTrue(target.hasWarnings());
         assertTrue(target.hasErrors());
-        assertEquals(target.getAllEntries().size(), 4);
+        assertEquals(target.getEntries().size(), 4);
     }
 
 }

@@ -48,6 +48,11 @@ public interface AuthorizationService {
     boolean isAnonAccessEnabled();
 
     /**
+     * @return True if user is anonymous and access to build infos is disabled
+     */
+    boolean isAnonUserAndAnonBuildInfoAccessDisabled();
+
+    /**
      * @return True if the current user can read the specified path.
      */
     boolean canRead(RepoPath path);

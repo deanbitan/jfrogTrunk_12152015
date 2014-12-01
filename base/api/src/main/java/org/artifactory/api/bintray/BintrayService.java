@@ -19,7 +19,7 @@
 package org.artifactory.api.bintray;
 
 import org.artifactory.api.bintray.exception.BintrayException;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.search.BintrayItemSearchResults;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -65,7 +65,7 @@ public interface BintrayService {
      * @return Multi status holder containing all the logs during the process
      * @throws IOException In case of connection errors with Bintray
      */
-    MultiStatusHolder pushArtifact(ItemInfo itemInfo, BintrayParams bintrayParams,
+    BasicStatusHolder pushArtifact(ItemInfo itemInfo, BintrayParams bintrayParams,
             @Nullable Map<String, String> headersMap) throws IOException;
 
     /**
@@ -77,7 +77,7 @@ public interface BintrayService {
      * @return Multi status holder containing all the logs during the process
      * @throws IOException In case of connection errors with Bintray
      */
-    MultiStatusHolder pushBuild(Build build, BintrayParams bintrayParams, @Nullable Map<String, String> headersMap)
+    BasicStatusHolder pushBuild(Build build, BintrayParams bintrayParams, @Nullable Map<String, String> headersMap)
             throws IOException;
 
     /**

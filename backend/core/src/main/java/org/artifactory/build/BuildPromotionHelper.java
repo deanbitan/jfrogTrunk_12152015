@@ -18,12 +18,14 @@
 
 package org.artifactory.build;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.md.Properties;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
@@ -55,49 +57,62 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
         PromotionResult promotionResult = new PromotionResult();
 
         String targetRepo = promotion.getTargetRepo();
+        BasicStatusHolder statusHolder = new BasicStatusHolder();
 
-        MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
-
+        Set<RepoPath> itemsToMove = null;
         if (StringUtils.isBlank(targetRepo)) {
-            multiStatusHolder.status("Skipping build item relocation: no target repository selected.", log);
+            statusHolder.status("Skipping build item relocation: no target repository selected.", log);
         } else {
             assertRepoExists(targetRepo);
-            Set<RepoPath> itemsToMove = collectItems(build, promotion.isArtifacts(), promotion.isDependencies(),
-                    promotion.getScopes(), promotion.isFailFast(), true, multiStatusHolder);
+            itemsToMove = collectItems(build, promotion, true, statusHolder);
 
-            if (!itemsToMove.isEmpty()) {
-                promoteBuildItems(promotion, multiStatusHolder, itemsToMove);
+            promoteBuildItems(promotion, statusHolder, itemsToMove);
+        }
+
+        /*
+        *  A list of properties to attach to the build's artifacts (regardless if "targetRepo" is used).
+        * */
+        Properties properties = (Properties) InfoFactoryHolder.get().createProperties();
+        Map<String, Collection<String>> promotionProperties = promotion.getProperties();
+        if ((promotionProperties != null) && !promotionProperties.isEmpty()) {
+            for (Map.Entry<String, Collection<String>> entry : promotionProperties.entrySet()) {
+                properties.putAll(entry.getKey(), entry.getValue());
+            }
+        }
+        if (!properties.isEmpty()) {
+            Set<RepoPath> modifiedItems = collectTheRightItems(promotion, build, targetRepo, statusHolder,
+                    itemsToMove);
+
+            if (!modifiedItems.isEmpty()) {
+                tagBuildItemsWithProperties(modifiedItems, properties, promotion.isFailFast(), promotion.isDryRun(),
+                        statusHolder);
             }
         }
 
-        if ((!multiStatusHolder.hasWarnings() && !multiStatusHolder.hasErrors()) || !promotion.isFailFast()) {
-            Properties properties = (Properties) InfoFactoryHolder.get().createProperties();
-            Map<String, Collection<String>> promotionProperties = promotion.getProperties();
-            if ((promotionProperties != null) && !promotionProperties.isEmpty()) {
-                for (Map.Entry<String, Collection<String>> entry : promotionProperties.entrySet()) {
-                    properties.putAll(entry.getKey(), entry.getValue());
-                }
-            }
-            if (!properties.isEmpty()) {
-                //Rescan after action might have been taken
-                Set<RepoPath> itemsToTag = collectItems(build, promotion.isArtifacts(),
-                        promotion.isDependencies(), promotion.getScopes(), promotion.isFailFast(), true,
-                        multiStatusHolder);
+        performPromotionIfNeeded(statusHolder, build, promotion);
+        appendMessages(promotionResult, statusHolder);
 
-                if (!itemsToTag.isEmpty()) {
-                    tagBuildItemsWithProperties(itemsToTag, properties, promotion.isFailFast(), promotion.isDryRun(),
-                            multiStatusHolder);
-                }
-            }
-        }
-
-        performPromotionIfNeeded(multiStatusHolder, build, promotion);
-
-        appendMessages(promotionResult, multiStatusHolder);
         return promotionResult;
     }
 
-    private void performPromotionIfNeeded(MultiStatusHolder statusHolder, Build build, Promotion promotion) {
+    private Set<RepoPath> collectTheRightItems(Promotion promotion, Build build, String targetRepo,
+            BasicStatusHolder statusHolder, Set<RepoPath> itemsToMove) {
+        //Collect artifacts only from the target repository
+        Set<RepoPath> modifiedItems = Sets.newHashSet();
+        if (!StringUtils.isBlank(targetRepo)) {
+            if (itemsToMove != null) {
+                for (RepoPath item : itemsToMove) {
+                    modifiedItems.add(new RepoPathImpl(targetRepo, item.getPath()));
+                }
+            }
+        } else {
+            //In case the target repository is not defined, collect the items form the source.
+            modifiedItems = collectItems(build, promotion, true, statusHolder);
+        }
+        return modifiedItems;
+    }
+
+    private void performPromotionIfNeeded(BasicStatusHolder statusHolder, Build build, Promotion promotion) {
         String status = promotion.getStatus();
 
         if (statusHolder.hasErrors() || statusHolder.hasWarnings()) {
@@ -139,27 +154,29 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
                 build.getName(), build.getNumber(), status);
     }
 
-    private void promoteBuildItems(Promotion promotion, MultiStatusHolder status, Set<RepoPath> itemsToMove) {
+    private void promoteBuildItems(Promotion promotion, BasicStatusHolder status, Set<RepoPath> itemsToMove) {
         String targetRepo = promotion.getTargetRepo();
         boolean dryRun = promotion.isDryRun();
-        if (promotion.isCopy()) {
-            try {
-                status.merge(copy(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-                status.error("Error occurred while copying: " + e.getMessage(), e, log);
-            }
-        } else {
-            try {
-                status.merge(move(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
-            } catch (Exception e) {
-                status.error("Error occurred while moving: " + e.getMessage(), e, log);
+        if (!itemsToMove.isEmpty()) {
+            if (promotion.isCopy()) {
+                try {
+                    status.merge(copy(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
+                } catch (Exception e) {
+                    log.error(e.getMessage(), e);
+                    status.error("Error occurred while copying: " + e.getMessage(), e, log);
+                }
+            } else {
+                try {
+                    status.merge(move(itemsToMove, targetRepo, dryRun, promotion.isFailFast()));
+                } catch (Exception e) {
+                    status.error("Error occurred while moving: " + e.getMessage(), e, log);
+                }
             }
         }
     }
 
-    private void appendMessages(PromotionResult promotionResult, MultiStatusHolder multiStatusHolder) {
-        for (StatusEntry statusEntry : multiStatusHolder.getAllEntries()) {
+    private void appendMessages(PromotionResult promotionResult, BasicStatusHolder statusHolder) {
+        for (StatusEntry statusEntry : statusHolder.getEntries()) {
             promotionResult.messages.add(new PromotionResult.PromotionResultMessages(statusEntry));
         }
     }

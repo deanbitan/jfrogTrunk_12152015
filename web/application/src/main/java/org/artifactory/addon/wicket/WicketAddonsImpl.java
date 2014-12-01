@@ -65,7 +65,7 @@ import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonMenuNode;
 import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
@@ -415,12 +415,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public void discardOldBuildsByDate(String buildName, BuildRetention buildRetention,
-            MultiStatusHolder multiStatusHolder) {
+            BasicStatusHolder multiStatusHolder) {
         // nop
     }
 
     @Override
-    public void discardOldBuildsByCount(String buildName, BuildRetention discard, MultiStatusHolder multiStatusHolder) {
+    public void discardOldBuildsByCount(String buildName, BuildRetention discard, BasicStatusHolder multiStatusHolder) {
         // nop
     }
 
@@ -676,7 +676,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public BooleanColumn<GroupInfo> addExternalGroupIndicator(MultiStatusHolder statusHolder) {
+    public BooleanColumn<GroupInfo> addExternalGroupIndicator(BasicStatusHolder statusHolder) {
         return null;
     }
 
@@ -692,7 +692,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public Set refreshLdapGroupList(String userName, LdapGroupSetting ldapGroupSetting,
-            MultiStatusHolder statusHolder) {
+            BasicStatusHolder statusHolder) {
         return Sets.newHashSet();
     }
 
@@ -851,7 +851,17 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
+    public boolean isAolAdmin() {
+        return false;
+    }
+
+    @Override
     public boolean isAolAdmin(UserInfo userInfo) {
+        return false;
+    }
+
+    @Override
+    public boolean isAolAdmin(String username) {
         return false;
     }
 

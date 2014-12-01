@@ -33,8 +33,8 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.ReplicationAddon;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.request.ArtifactoryResponse;
@@ -84,6 +84,8 @@ import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserGroupInfo;
 import org.artifactory.storage.fs.lock.FsItemsVault;
 import org.artifactory.storage.fs.lock.FsItemsVaultCacheImpl;
+import org.artifactory.storage.fs.lock.map.JVMLockingMap;
+import org.artifactory.storage.fs.lock.map.LockingMap;
 import org.artifactory.storage.fs.lock.provider.JVMLockProvider;
 import org.artifactory.storage.fs.lock.provider.LockProvider;
 import org.artifactory.util.HttpUtils;
@@ -108,7 +110,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Default implementation of the core-related addon factories.
@@ -312,7 +313,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public String translateArtifactPath(RepoLayout sourceRepoLayout, RepoLayout targetRepoLayout, String path,
-            @Nullable MultiStatusHolder multiStatusHolder) {
+            @Nullable BasicStatusHolder multiStatusHolder) {
         return path;
     }
 
@@ -337,25 +338,25 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public MultiStatusHolder performRemoteReplication(RemoteReplicationSettings settings) {
+    public BasicStatusHolder performRemoteReplication(RemoteReplicationSettings settings) {
         return getReplicationRequiredStatusHolder();
     }
 
     @Override
-    public MultiStatusHolder performLocalReplication(LocalReplicationSettings settings) {
+    public BasicStatusHolder performLocalReplication(LocalReplicationSettings settings) {
         return getReplicationRequiredStatusHolder();
     }
 
     @Override
     public void scheduleImmediateLocalReplicationTask(LocalReplicationDescriptor replicationDescriptor,
-            MultiStatusHolder statusHolder) {
+            BasicStatusHolder statusHolder) {
         statusHolder.error("Error: the replication addon is required for this operation.", HttpStatus.SC_BAD_REQUEST,
                 log);
     }
 
     @Override
     public void scheduleImmediateRemoteReplicationTask(RemoteReplicationDescriptor replicationDescriptor,
-            MultiStatusHolder statusHolder) {
+            BasicStatusHolder statusHolder) {
         statusHolder.error("Error: the replication addon is required for this operation.", HttpStatus.SC_BAD_REQUEST,
                 log);
     }
@@ -386,8 +387,8 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
             RealRepoDescriptor repoDescriptor) throws IOException {
     }
 
-    private MultiStatusHolder getReplicationRequiredStatusHolder() {
-        MultiStatusHolder multiStatusHolder = new MultiStatusHolder();
+    private BasicStatusHolder getReplicationRequiredStatusHolder() {
+        BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
         multiStatusHolder.error("Error: the replication addon is required for this operation.",
                 HttpStatus.SC_BAD_REQUEST, log);
         return multiStatusHolder;
@@ -542,17 +543,8 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public LockProvider getLockProvider() {
-        return new JVMLockProvider();
-    }
-
-    @Override
-    public boolean tryLockRemoteDownload(String path, long leaseTime, TimeUnit timeUnit) {
-        throw new UnsupportedOperationException("No locks for Non-High-Availability node");
-    }
-
-    @Override
-    public void unlockRemoteDownload(String path) {
+    public LockingMap getLockingMap() {
+        return new JVMLockingMap();
     }
 
     @Override

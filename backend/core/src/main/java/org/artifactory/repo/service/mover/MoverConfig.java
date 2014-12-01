@@ -34,7 +34,6 @@ import org.artifactory.repo.RepoPath;
 public class MoverConfig {
     private final RepoPath fromRepoPath;
     private final RepoPath targetLocalRepoPath;
-    private final String targetLocalRepoKey;
     private final boolean copy;
     private final boolean dryRun;
     private final boolean executeMavenMetadataCalculation;
@@ -42,12 +41,12 @@ public class MoverConfig {
     private final Properties properties;
     private final boolean suppressLayouts;
     private final boolean failFast;
+    private final boolean unixStyleBehavior;
 
     /**
      * Main constructor
      *
      * @param fromRepoPath       Source repo path
-     * @param targetLocalRepoKey Target repo key
      * @param copy               Is a copy being performed
      * @param dryRun             Is the current run a dry one (no items actually moved)
      * @param executeMavenMetadataCalculation
@@ -55,13 +54,13 @@ public class MoverConfig {
      * @param pruneEmptyFolders  If should prune empty folders after move
      * @param suppressLayouts    True if path translation across different layouts should be suppressed.
      * @param failFast           Flag to indicate whether the operation should fail upon encountering an error.
+     * @param unixStyleBehavior  Use Unix-style behavior when dealing with existing nested folders
      */
-    public MoverConfig(RepoPath fromRepoPath, RepoPath targetLocalRepoPath, String targetLocalRepoKey, boolean copy,
+    public MoverConfig(RepoPath fromRepoPath, RepoPath targetLocalRepoPath, boolean copy,
             boolean dryRun, boolean executeMavenMetadataCalculation, boolean pruneEmptyFolders, Properties properties,
-            boolean suppressLayouts, boolean failFast) {
+            boolean suppressLayouts, boolean failFast, boolean unixStyleBehavior) {
         this.fromRepoPath = fromRepoPath;
         this.targetLocalRepoPath = targetLocalRepoPath;
-        this.targetLocalRepoKey = targetLocalRepoKey;
         this.copy = copy;
         this.dryRun = dryRun;
         this.executeMavenMetadataCalculation = executeMavenMetadataCalculation;
@@ -69,6 +68,7 @@ public class MoverConfig {
         this.properties = properties;
         this.suppressLayouts = suppressLayouts;
         this.failFast = failFast;
+        this.unixStyleBehavior = unixStyleBehavior;
     }
 
     public Properties getProperties() {
@@ -89,13 +89,6 @@ public class MoverConfig {
      */
     public RepoPath getTargetLocalRepoPath() {
         return targetLocalRepoPath;
-    }
-
-    /**
-     * @return Returns the repo key of the target (if null, the target path should be in targetLocalRepoPath)
-     */
-    public String getTargetLocalRepoKey() {
-        return targetLocalRepoKey;
     }
 
     /**
@@ -150,5 +143,17 @@ public class MoverConfig {
      */
     public boolean isFailFast() {
         return failFast;
+    }
+
+    /**
+     * Indicates whether to deal with existing nested folders like unix when copying or moving:
+     * if a source folder being copied already exists in the target, another folder with the same name
+     * will be created under the target to avoid overwriting the target.
+     * i.e. when copying source path org/jfrog/1 to target path org/jfrog/1 , the result will be org/jfrog/1/1
+     *
+     * @return True if Unix-style behavior should be used when dealing with existing nested folders.
+     */
+    public boolean isUnixStyleBehavior() {
+        return unixStyleBehavior;
     }
 }

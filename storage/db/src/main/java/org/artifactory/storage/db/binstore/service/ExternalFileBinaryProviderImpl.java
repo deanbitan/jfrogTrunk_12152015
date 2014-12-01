@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db.binstore.service;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +55,7 @@ class ExternalFileBinaryProviderImpl extends FileBinaryProviderReadOnlyBase {
     }
 
     @Override
-    public void prune(MultiStatusHolder statusHolder) {
+    public void prune(BasicStatusHolder statusHolder) {
         throw new UnsupportedOperationException("An external binary provider cannot be pruned!");
     }
 }

@@ -18,11 +18,16 @@
 
 package org.artifactory.webapp.actionable.action;
 
+import com.google.common.collect.Lists;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.extensions.ajax.markup.html.modal.ModalWindow;
 import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
 import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.search.ItemSearchResults;
+import org.artifactory.api.search.deployable.VersionUnitSearchResult;
+import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.PanelNestingBorderedModal;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
@@ -48,7 +53,12 @@ public class DeleteVersionsAction extends RepoAwareItemAction {
         RepoAwareActionableItem source = event.getSource();
         org.artifactory.fs.ItemInfo info = source.getItemInfo();
         RepositoryService repositoryService = getRepoService();
-        List<VersionUnit> versionUnits = repositoryService.getVersionUnitsUnder(info.getRepoPath());
+        ItemSearchResults<VersionUnitSearchResult> results = repositoryService.getVersionUnitsUnder(info.getRepoPath());
+
+        List<VersionUnit> versionUnits = Lists.newArrayList();
+        for (VersionUnitSearchResult result : results.getResults()) {
+            versionUnits.add(result.getVersionUnit());
+        }
 
         ItemEventTargetComponents eventTargetComponents = event.getTargetComponents();
         ModalWindow modalWindow = eventTargetComponents.getModalWindow();
@@ -61,6 +71,28 @@ public class DeleteVersionsAction extends RepoAwareItemAction {
         modalPanel.setTitle("Delete Versions");
         modalWindow.setContent(modalPanel);
         AjaxRequestTarget target = event.getTarget();
+
+        //VfsQueryDb returns -1 if userQueryLimit was exceeded.
+        boolean exceededQueryLimit = results.getFullResultsCount() == -1;
+        String warnMessage = "";
+        String bubbleMessage = "";
+
+        if (exceededQueryLimit) {
+            modalWindow.setInitialWidth(700); //So that the warning text and the bubble are inline
+
+            warnMessage = "The results shown are limited. Try executing Delete Versions from a node lower in the " +
+                    "hierarchy.";
+
+            bubbleMessage = "The results shown are limited by the artifactory.search.userQueryLimit system property."
+                    + "\n You can modify it to get more results, but this can dramatically impact performance on large "
+                    + "repositories.";
+        }
+        Label label = new Label("largeQueryWarn", warnMessage);
+        HelpBubble bubble = new HelpBubble("largeQueryWarn.help", bubbleMessage);
+        panel.add(label);
+        panel.add(bubble);
+        label.setVisible(exceededQueryLimit);
+        bubble.setVisible(exceededQueryLimit);
         modalWindow.show(target);
     }
 }

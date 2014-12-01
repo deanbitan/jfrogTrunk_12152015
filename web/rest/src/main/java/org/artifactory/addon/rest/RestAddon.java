@@ -22,7 +22,7 @@ import com.sun.istack.internal.NotNull;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.rest.artifact.ItemPermissions;
@@ -32,6 +32,7 @@ import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
+import org.artifactory.aql.AqlException;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -50,7 +51,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -157,7 +161,7 @@ public interface RestAddon extends Addon {
      * @param discard           The discard object that holds a count or date.
      * @param multiStatusHolder Status holder
      */
-    void discardOldBuilds(String name, BuildRetention discard, MultiStatusHolder multiStatusHolder);
+    void discardOldBuilds(String name, BuildRetention discard, BasicStatusHolder multiStatusHolder);
 
     /**
      * Returns the latest modified item of the given file or folder (recursively)
@@ -368,5 +372,5 @@ public interface RestAddon extends Addon {
             int listFolders, int mdTimestamps, int includeRootPath) throws IOException, BlackedOutException;
 
     Response getLatestVersionByProperties(String repoKey, String path, Map<String, String[]> parameterMap,
-            HttpServletRequest request);
+            HttpServletRequest request) throws AqlException;
 }

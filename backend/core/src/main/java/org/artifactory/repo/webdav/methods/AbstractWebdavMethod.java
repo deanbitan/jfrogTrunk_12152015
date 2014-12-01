@@ -70,7 +70,7 @@ public abstract class AbstractWebdavMethod implements WebdavMethod {
     }
 
     /**
-     * resourcetype Return JAXP document builder instance.
+     * resource type Return JAXP document builder instance.
      *
      * @return
      * @throws javax.servlet.ServletException
@@ -83,7 +83,7 @@ public abstract class AbstractWebdavMethod implements WebdavMethod {
             documentBuilderFactory.setNamespaceAware(true);
             documentBuilder = documentBuilderFactory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            throw new IOException("JAXP document builder creation failed");
+            throw new IOException("JAXP document builder creation failed", e);
         }
         return documentBuilder;
     }

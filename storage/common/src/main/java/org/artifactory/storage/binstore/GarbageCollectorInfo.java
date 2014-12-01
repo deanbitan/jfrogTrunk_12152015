@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.artifactory.util.NumberFormatter.formatLong;
+
 /**
  * Holds the garbage collection information
  *
@@ -57,16 +59,16 @@ public class GarbageCollectorInfo {
     public void printCollectionInfo(long dataStoreSize) {
         String duration = TimeUnitFormat.getTimeString((gcEndTime - gcStartTime), TimeUnit.MILLISECONDS);
         StringBuilder msg = new StringBuilder("Storage garbage collector report:\n").append(
-                "Number of binaries:      ").append(initialCount).append("\n").append(
+                "Number of binaries:      ").append(formatLong(initialCount)).append("\n").append(
                 "Total execution time:    ").append(duration).append("\n").append(
-                "Candidates for deletion: ").append(candidatesForDeletion).append("\n").append(
-                "Checksums deleted:       ").append(checksumsCleaned).append("\n").append(
-                "Binaries deleted:        ").append(binariesCleaned).append("\n").append(
+                "Candidates for deletion: ").append(formatLong(candidatesForDeletion)).append("\n").append(
+                "Checksums deleted:       ").append(formatLong(checksumsCleaned)).append("\n").append(
+                "Binaries deleted:        ").append(formatLong(binariesCleaned)).append("\n").append(
                 "Total size freed:        ").append(StorageUnit.toReadableString(totalSizeCleaned));
 
         if (log.isDebugEnabled()) {
-            msg.append("\n").append("Unique paths deleted:    ").append(archivePathsCleaned);
-            msg.append("\n").append("Unique names deleted:    ").append(archiveNamesCleaned);
+            msg.append("\n").append("Unique paths deleted:    ").append(formatLong(archivePathsCleaned));
+            msg.append("\n").append("Unique names deleted:    ").append(formatLong(archiveNamesCleaned));
         }
 
         if (dataStoreSize >= 0) {

@@ -37,12 +37,30 @@ public interface CoreAddons extends Addon {
     boolean isCreateDefaultAdminAccountAllowed();
 
     /**
-     * Check that an a certain user is the AOL administrator, by checking that via the AOL dashboard.
+     * Check if the current logged in user is the AOL administrator.
      *
-     * @param userInfo The user to check if its deletion is allowed.
      * @return True if the user is a pure Artifactory user, that is NOT allowed access to the AOL dashboard
      */
+    boolean isAolAdmin();
+
+    /**
+     * Check if a certain user is the AOL administrator, by checking that via the AOL dashboard.
+     *
+     * @param userInfo The user to check if its deletion is allowed.
+     * @return True if the user is the AOL admin user
+     */
     boolean isAolAdmin(UserInfo userInfo);
+
+    /**
+     * Check if a certain username is the AOL administrator of the current server, by checking that via the AOL
+     * dashboard.
+     * Use {@link org.artifactory.addon.CoreAddons#isAolAdmin(org.artifactory.security.UserInfo)} whenever possible to
+     * improve performance.
+     *
+     * @param username The user to check if its deletion is allowed.
+     * @return True if the user is the AOL admin user
+     */
+    boolean isAolAdmin(String username);
 
     /**
      * @return True if the AOL addon is activated

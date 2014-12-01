@@ -84,6 +84,7 @@ goto end
 :installed
 "%EXECUTABLE%" //US//%SERVICE_NAME% --JvmOptions "-Dcatalina.base=%CATALINA_BASE%;-Dcatalina.home=%CATALINA_HOME%;-Djava.endorsed.dirs=%CATALINA_HOME%\endorsed" --StartMode jvm --StopMode jvm
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Djava.io.tmpdir=%CATALINA_BASE%\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Djava.util.logging.config.file=%CATALINA_BASE%\conf\logging.properties"
+"%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Djruby.compile.invokedynamic=false"
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Dartifactory.home=%ARTIFACTORY_HOME%" --Startup %STARTUP_TYPE% --LogPrefix artifactory-service
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions %JOPTS%
 rem --JvmMs 128 --JvmMx 256

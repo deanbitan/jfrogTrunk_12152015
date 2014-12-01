@@ -45,6 +45,20 @@ public class DebianNaming {
         }
     }
 
+    public static boolean isExpirable(String fileName) {
+        fileName = fileName.toLowerCase();
+        switch (fileName) {
+            case "release.gpg":
+            case "inrelease":
+            case "release":
+            case "packages.gz":
+            case "packages.bz2":
+            case "packages":
+                return true;
+            default:
+                return false;
+        }
+    }
     public static boolean isReleaseIndex(String fileName) {
         fileName = fileName.toLowerCase();
         switch (fileName) {

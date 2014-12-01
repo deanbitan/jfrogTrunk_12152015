@@ -18,7 +18,6 @@
 
 package org.artifactory.storage.fs.service;
 
-import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
@@ -82,6 +81,7 @@ public interface FileService {
 
     /**
      * Returns the node ID if path exists and points to a file
+     *
      * @param repoPath
      * @return the nodeID
      */
@@ -98,8 +98,6 @@ public interface FileService {
     String getNodeSha1(RepoPath repoPath);
 
     List<FileInfo> searchFilesByProperty(String repo, String propKey, String propValue);
-
-    public List<FileInfo> searchFilesByProperty(PropertiesFilter propertiesFilter);
 
     /**
      * Search for all files with bad checksums of the given checksum type (SHA-1 or MD5)

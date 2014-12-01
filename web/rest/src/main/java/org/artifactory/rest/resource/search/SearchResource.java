@@ -162,7 +162,7 @@ public class SearchResource {
     @Path(SearchRestConstants.PATH_DEPENDENCY)
     public DependencySearchResource dependencySearch() {
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
-        return new DependencySearchResource(restAddon, request);
+        return new DependencySearchResource(restAddon, request, authorizationService);
     }
 
     @Path(SearchRestConstants.PATH_VERSIONS)

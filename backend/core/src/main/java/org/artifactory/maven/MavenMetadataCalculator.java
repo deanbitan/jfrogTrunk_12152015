@@ -28,7 +28,7 @@ import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.Snapshot;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.maven.MavenArtifactInfo;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
@@ -84,7 +84,7 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
      *
      * @return Status of the metadata calculation
      */
-    public MultiStatusHolder calculate() {
+    public BasicStatusHolder calculate() {
         log.debug("Calculating maven metadata recursively on '{}'", baseFolder);
 
         ItemTree itemTree = new ItemTree(baseFolder, new ItemNodeFilter() {

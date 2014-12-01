@@ -20,27 +20,16 @@ package org.artifactory.webapp.wicket.page.browse.treebrowser.action;
 
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.extensions.markup.html.tree.Tree;
-import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.tree.ITreeState;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.common.StatusEntry;
-import org.artifactory.common.wicket.ajax.ConfirmationAjaxCallDecorator;
-import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
-import org.artifactory.common.wicket.component.modal.ModalHandler;
-import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackMessage;
 import org.artifactory.common.wicket.util.AjaxUtils;
-import org.artifactory.common.wicket.util.WicketUtils;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.wicket.page.browse.treebrowser.TreeBrowsePanel;
-import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
-
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This panel displays a list of local repositories the user can select to move a path to.
@@ -48,9 +37,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 public class MovePathPanel extends MoveAndCopyBasePanel {
-
-    @SpringBean
-    private AuthorizationService authorizationService;
+    private static final Logger log = LoggerFactory.getLogger(MovePathPanel.class);
 
     @SpringBean
     private RepositoryService repoService;
@@ -67,70 +54,40 @@ public class MovePathPanel extends MoveAndCopyBasePanel {
     }
 
     @Override
-    protected TitledAjaxSubmitLink createSubmitButton(Form form, String wicketId) {
-        return new TitledAjaxSubmitLink(wicketId, "Move", form) {
-            @Override
-            protected void onSubmit(AjaxRequestTarget target, Form form) {
-                String targetRepoKey = getSelectedTargetRepository();
-
-                MoveMultiStatusHolder status = repoService.move(sourceRepoPath, targetRepoKey, false);
-
-                if (!status.isError() && !status.hasWarnings()) {
-                    getPage().info("Successfully moved '" + sourceRepoPath + "' to '" + targetRepoKey + "'.");
-                } else {
-                    if (status.hasWarnings()) {
-                        List<StatusEntry> warnings = status.getWarnings();
-                        String logs;
-                        if (authorizationService.isAdmin()) {
-                            String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                            logs = "<a href=\"" + systemLogsPage + "\">log</a>";
-                        } else {
-                            logs = "log";
-                        }
-                        getPage().warn(new UnescapedFeedbackMessage(
-                                warnings.size() + " warnings have been produced during the move. Please " +
-                                        "review the " + logs + " for further information."));
-                    }
-                    if (status.isError()) {
-                        String message = status.getStatusMsg();
-                        Throwable exception = status.getException();
-                        if (exception != null) {
-                            message = exception.getMessage();
-                        }
-                        getPage().error("Failed to move '" + sourceRepoPath + "': " + message);
-                    }
-                }
-
-                // colapse all tree nodes
-                if (componentToRefresh instanceof Tree) {
-                    // we collapse all since we don't know which path will eventually move
-                    Tree tree = (Tree) componentToRefresh;
-                    ITreeState treeState = tree.getTreeState();
-                    treeState.collapseAll();
-                }
-
-                browseRepoPanel.removeNodePanel(target);
-                target.add(componentToRefresh);
-                AjaxUtils.refreshFeedback(target);
-                ModalHandler.closeCurrent(target);
-            }
-
-            @Override
-            protected IAjaxCallDecorator getAjaxCallDecorator() {
-                // add confirmation dialog when clicked
-                String message = String.format("Are you sure you wish to move '%s'?", sourceRepoPath);
-                return new ConfirmationAjaxCallDecorator(message);
-            }
-        };
+    protected MoveMultiStatusHolder executeDryRun() {
+        return moveOrCopy(true, false);
     }
 
     @Override
-    protected MoveMultiStatusHolder executeDryRun(String targetRepoKey) {
-        return repoService.move(sourceRepoPath, targetRepoKey, true);
+    protected MoveMultiStatusHolder moveOrCopy(boolean dryRun, boolean failFast) {
+        MoveMultiStatusHolder status = new MoveMultiStatusHolder();
+        try {
+            status = repoService.move(sourceRepoPath, getTargetRepoPath(), dryRun, getSuppressLayout(), failFast);
+        } catch (IllegalArgumentException iae) {
+            status.error(String.format("Invalid path given: %s ", getTargetPath()), iae, log);
+        }
+
+        return status;
     }
 
     @Override
-    protected List<LocalRepoDescriptor> getDeployableLocalRepoKeys() {
-        return getDeployableLocalRepoKeysExcludingSource(sourceRepoPath.getRepoKey());
+    protected OperationType getOperationType() {
+        return OperationType.MOVE_OPERATION;
+    }
+
+    @Override
+    protected void refreshPage(AjaxRequestTarget target, boolean isError) {
+
+        // collapse all tree nodes
+        if (componentToRefresh instanceof Tree) {
+            // we collapse all since we don't know which path will eventually move
+            Tree tree = (Tree) componentToRefresh;
+            ITreeState treeState = tree.getTreeState();
+            treeState.collapseAll();
+        }
+
+        browseRepoPanel.removeNodePanel(target);
+        target.add(componentToRefresh);
+        AjaxUtils.refreshFeedback(target);
     }
 }

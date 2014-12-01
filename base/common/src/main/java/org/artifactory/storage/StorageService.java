@@ -18,7 +18,7 @@
 
 package org.artifactory.storage;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.storage.StorageQuotaInfo;
 
 /**
@@ -26,7 +26,7 @@ import org.artifactory.api.storage.StorageQuotaInfo;
  */
 public interface StorageService {
 
-    void compress(MultiStatusHolder statusHolder);
+    void compress(BasicStatusHolder statusHolder);
 
     boolean isDerbyUsed();
 
@@ -37,9 +37,9 @@ public interface StorageService {
      *
      * @param statusHolder
      */
-    void callManualGarbageCollect(MultiStatusHolder statusHolder);
+    void callManualGarbageCollect(BasicStatusHolder statusHolder);
 
-    void pruneUnreferencedFileInDataStore(MultiStatusHolder statusHolder);
+    void pruneUnreferencedFileInDataStore(BasicStatusHolder statusHolder);
 
     void ping();
 

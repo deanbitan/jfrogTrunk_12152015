@@ -20,7 +20,7 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageProperties;
@@ -121,7 +121,7 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
     }
 
     @Override
-    protected void pruneFiles(MultiStatusHolder statusHolder, MovedCounter movedCounter, File first) {
+    protected void pruneFiles(BasicStatusHolder statusHolder, MovedCounter movedCounter, File first) {
         statusHolder.status("Starting checking if files in " + first.getAbsolutePath() + " are in DB!", log);
         //Set<DataIdentifier> identifiersSet = getIdentifiersSet();
         File[] files = first.listFiles();

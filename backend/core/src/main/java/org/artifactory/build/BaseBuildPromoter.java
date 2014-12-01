@@ -18,12 +18,15 @@
 
 package org.artifactory.build;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.PropertiesAddon;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
-import org.artifactory.api.common.MultiStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -39,11 +42,12 @@ import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Dependency;
+import org.jfrog.build.api.release.Promotion;
+import org.jfrog.build.api.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,47 +84,51 @@ public class BaseBuildPromoter {
     /**
      * Collect items to move
      *
-     * @param build                 Build info to collect from
-     * @param artifacts             True if the build artifacts should be collected
-     * @param dependencies          True if the build dependencies should be collected
-     * @param scopes                Scopes of dependencies to collect
-     * @param failOnMissingArtifact
+     * @param build             Build info to collect from
+     * @param promotion
      * @param strictMatching
-     * @param multiStatusHolder     Status holder
+     * @param multiStatusHolder Status holder
      * @return Item repo paths
      */
-    protected Set<RepoPath> collectItems(Build build, boolean artifacts, boolean dependencies,
-            Collection<String> scopes, boolean failOnMissingArtifact, boolean strictMatching,
-            MultiStatusHolder multiStatusHolder) {
+    protected Set<RepoPath> collectItems(Build build, Promotion promotion, boolean strictMatching,
+            BasicStatusHolder multiStatusHolder) {
         Set<RepoPath> itemsToMove = Sets.newHashSet();
 
-        if (artifacts) {
-            Map<BuildFileBean, FileInfo> buildArtifactsInfo = buildService.getBuildBeansInfo(build, strictMatching,
-                    true);
-            if (buildArtifactsInfo.isEmpty()) {
-                String errorMessage = "Unable to find artifacts of build '" + build.getName() + "' #" + build.getNumber();
-                if (failOnMissingArtifact) {
+        if (noModules(build)) {
+            return itemsToMove;
+        }
+
+        //Artifacts should be collected
+        if (promotion.isArtifacts()) {
+            Map<BuildFileBean, FileInfo> buildArtifactsInfo = buildService.getBuildBeansInfo(build, true,
+                    true, promotion.getSourceRepo());
+            String errorMessage = "Unable to find artifacts of build '" + build.getName() + "' #" + build.getNumber();
+            validateFullPromote(build, multiStatusHolder, buildArtifactsInfo, true);
+
+            if (!multiStatusHolder.getErrors().isEmpty()) {
+                if (promotion.isFailFast()) {
                     throw new ItemNotFoundRuntimeException(errorMessage + ": aborting promotion.");
                 }
-                multiStatusHolder.error(errorMessage, log);
-                return Sets.newHashSet();
             }
-
             for (FileInfo fileInfo : buildArtifactsInfo.values()) {
                 itemsToMove.add(fileInfo.getRepoPath());
             }
         }
 
-        if (dependencies) {
-            Map<BuildFileBean, FileInfo> buildDependenciesInfo = buildService.getBuildBeansInfo(build, strictMatching,
-                    false);
+        //Build dependencies should be collected
+        if (promotion.isDependencies()) {
+            Map<BuildFileBean, FileInfo> buildDependenciesInfo = buildService.getBuildBeansInfo(build, false,
+                    false, promotion.getSourceRepo());
+            validateFullPromote(build, multiStatusHolder, buildDependenciesInfo, false);
             for (Map.Entry<BuildFileBean, FileInfo> entry : buildDependenciesInfo.entrySet()) {
                 BuildFileBean key = entry.getKey();
                 if (key instanceof Dependency) {
                     Dependency dependency = (Dependency) key;
                     List<String> dependencyScopes = dependency.getScopes();
-                    if (org.artifactory.util.CollectionUtils.isNullOrEmpty(scopes) || (dependencyScopes != null &&
-                            CollectionUtils.containsAny(dependencyScopes, scopes))) {
+                    //Scopes of dependencies to collect
+                    if (org.artifactory.util.CollectionUtils.isNullOrEmpty(
+                            promotion.getScopes()) || (dependencyScopes != null &&
+                            CollectionUtils.containsAny(dependencyScopes, promotion.getScopes()))) {
                         itemsToMove.add(entry.getValue().getRepoPath());
                     }
                 }
@@ -128,6 +136,55 @@ public class BaseBuildPromoter {
         }
 
         return itemsToMove;
+    }
+
+    private void validateFullPromote(Build build, BasicStatusHolder multiStatusHolder,
+            Map<BuildFileBean, FileInfo> buildArtifactsInfo,
+            boolean artifacts) {
+        List<BuildFileBean> buildBeans = Lists.newArrayList();
+        for (Module module : build.getModules()) {
+            if (artifacts) {
+                if (module.getArtifacts() != null) {
+                    buildBeans.addAll(module.getArtifacts());
+                }
+            } else {
+                if (module.getDependencies() != null) {
+                    buildBeans.addAll(module.getDependencies());
+                }
+            }
+        }
+
+        for (final BuildFileBean buildBean : buildBeans) {
+            Iterable<BuildFileBean> filter = Iterables.filter(buildArtifactsInfo.keySet(),
+                    new Predicate<BuildFileBean>() {
+                        @Override
+                        public boolean apply(BuildFileBean input) {
+                            return buildBean.getMd5().equals(input.getMd5()) &&
+                                    buildBean.getSha1().equals(input.getSha1());
+                        }
+                    });
+
+            if (Iterables.isEmpty(filter)) {
+                if (buildBean instanceof org.jfrog.build.api.Artifact) {
+                    multiStatusHolder.error(
+                            "Unable to find artifact '" + ((org.jfrog.build.api.Artifact) buildBean).getName() + "' of build '" +
+                                    build.getName() + "' #" + build.getNumber(), log);
+                }
+                if (buildBean instanceof org.jfrog.build.api.Dependency) {
+                    multiStatusHolder.error(
+                            "Unable to find dependency '" + ((org.jfrog.build.api.Dependency) buildBean).getId() + "' of build '" +
+                                    build.getName() + "' #" + build.getNumber(), log);
+                }
+            }
+        }
+    }
+
+    private boolean noModules(Build build) {
+        if (build == null) {
+            return true;
+        }
+
+        return build.getModules() == null;
     }
 
     /**
@@ -161,7 +218,7 @@ public class BaseBuildPromoter {
     }
 
     protected void tagBuildItemsWithProperties(Set<RepoPath> itemsToTag, Properties properties, boolean failFast,
-            boolean dryRun, MultiStatusHolder multiStatusHolder) {
+            boolean dryRun, BasicStatusHolder multiStatusHolder) {
         for (RepoPath itemToTag : itemsToTag) {
             if (!authorizationService.canAnnotate(itemToTag)) {
                 multiStatusHolder.warn("User doesn't have permissions to annotate '" + itemToTag + "'", log);

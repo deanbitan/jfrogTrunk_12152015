@@ -18,7 +18,6 @@
 
 package org.artifactory.storage.db.fs.service;
 
-import org.artifactory.api.properties.PropertiesFilter;
 import org.artifactory.md.Properties;
 import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.repo.RepoPath;
@@ -26,7 +25,6 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.fs.dao.PropertiesDao;
 import org.artifactory.storage.db.fs.entity.NodeProperty;
-import org.artifactory.storage.db.fs.util.PropertiesFilterQueryBuilder;
 import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.fs.service.PropertiesService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,16 +59,6 @@ public class PropertiesServiceImpl implements PropertiesService {
             return loadProperties(nodeId);
         } else {
             return new PropertiesImpl();
-        }
-    }
-
-    @Override
-    public List<String> getValuesForPropertyFilter(PropertiesFilter propertiesFilter) {
-        try {
-            PropertiesFilterQueryBuilder queryBuilder = new PropertiesFilterQueryBuilder(propertiesFilter);
-            return propertiesDao.getPropertiesByPropKey(queryBuilder);
-        } catch (SQLException e) {
-            throw new StorageException("Failed to load properties values by property filter : " + propertiesFilter, e);
         }
     }
 

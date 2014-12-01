@@ -28,7 +28,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -108,7 +108,7 @@ public class StorageServiceImpl implements InternalStorageService {
     private boolean derbyUsed;
 
     @Override
-    public void compress(MultiStatusHolder statusHolder) {
+    public void compress(BasicStatusHolder statusHolder) {
         if (!derbyUsed) {
             statusHolder.error("Compress command is not supported on current database type.", log);
             return;
@@ -209,7 +209,7 @@ public class StorageServiceImpl implements InternalStorageService {
     }
 
     @Override
-    public void callManualGarbageCollect(MultiStatusHolder statusHolder) {
+    public void callManualGarbageCollect(BasicStatusHolder statusHolder) {
         taskService.checkCanStartManualTask(BinaryStoreGarbageCollectorJob.class, statusHolder);
         if (!statusHolder.isError()) {
             try {
@@ -222,7 +222,7 @@ public class StorageServiceImpl implements InternalStorageService {
     }
 
     @Override
-    public void pruneUnreferencedFileInDataStore(MultiStatusHolder statusHolder) {
+    public void pruneUnreferencedFileInDataStore(BasicStatusHolder statusHolder) {
         binaryStore.prune(statusHolder);
     }
 

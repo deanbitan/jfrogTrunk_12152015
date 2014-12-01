@@ -19,6 +19,7 @@
 package org.artifactory.security;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.codec.binary.Base64;
@@ -28,7 +29,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.ha.message.HaMessageTopic;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ArtifactoryContext;
@@ -44,6 +45,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.config.ConfigurationException;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.sso.HttpSsoSettings;
@@ -278,6 +280,16 @@ public class SecurityServiceImpl implements InternalSecurityService {
         return security.isAnonAccessEnabled();
     }
 
+    private boolean isAnonBuildInfoAccessDisabled() {
+        SecurityDescriptor security = centralConfig.getDescriptor().getSecurity();
+        return  security.isAnonAccessToBuildInfosDisabled();
+    }
+
+    @Override
+    public boolean isAnonUserAndAnonBuildInfoAccessDisabled() {
+        return isAnonymous() && isAnonBuildInfoAccessDisabled();
+    }
+
     @Override
     public boolean isAuthenticated() {
         Authentication authentication = AuthenticationHelper.getAuthentication();
@@ -296,8 +308,10 @@ public class SecurityServiceImpl implements InternalSecurityService {
         if (StringUtils.isEmpty(aclInfo.getPermissionTarget().getName())) {
             throw new IllegalArgumentException("ACL name cannot be null");
         }
-        cleanupAclInfo(aclInfo);
-        AclInfo createdAcl = aclStoreService.createAcl(aclInfo);
+
+        MutableAclInfo compatibleAcl = makeNewAclRemoteRepoKeysAclCompatible(aclInfo);
+        cleanupAclInfo(compatibleAcl);
+        AclInfo createdAcl = aclStoreService.createAcl(compatibleAcl);
         interceptors.onPermissionsAdd();
         return createdAcl;
     }
@@ -310,9 +324,11 @@ public class SecurityServiceImpl implements InternalSecurityService {
             validateUnmodifiedPermissionTarget(acl.getPermissionTarget());
         }
 
+        MutableAclInfo compatibleAcl = makeNewAclRemoteRepoKeysAclCompatible(acl);
+
         // Removing empty Ace
-        cleanupAclInfo(acl);
-        aclStoreService.updateAcl(acl);
+        cleanupAclInfo(compatibleAcl);
+        aclStoreService.updateAcl(compatibleAcl);
         interceptors.onPermissionsUpdate();
         addons.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null);
     }
@@ -1128,10 +1144,12 @@ public class SecurityServiceImpl implements InternalSecurityService {
                 continue;
             }
             String repoKey = repoPath.getRepoKey();
+            String aclCompatibleRepoKey = makeRemoteRepoKeyAclCompatible(repoKey);  //acl compatible key for remotes
             String path = repoPath.getPath();
             boolean folder = repoPath.isFolder();
             PermissionTargetInfo aclPermissionTarget = acl.getPermissionTarget();
-            if (isPermissionTargetIncludesRepoKey(repoKey, aclPermissionTarget)) {
+            if (isPermissionTargetIncludesRepoKey(repoKey, aclPermissionTarget)
+                    || isPermissionTargetIncludesRepoKey(aclCompatibleRepoKey, aclPermissionTarget)) {
                 boolean checkPartialPath = (permission.getMask() & (ArtifactoryPermission.READ.getMask() | ArtifactoryPermission.DEPLOY.getMask())) != 0;
                 boolean behaveAsFolder = folder && checkPartialPath;
                 boolean match = matches(aclPermissionTarget, path, behaveAsFolder);
@@ -1359,7 +1377,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     @Override
-    public MultiStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
+    public BasicStatusHolder testLdapConnection(LdapSetting ldapSetting, String username, String password) {
         return ldapService.testLdapConnection(ldapSetting, username, password);
     }
 
@@ -1516,5 +1534,78 @@ public class SecurityServiceImpl implements InternalSecurityService {
      */
     private InternalSecurityService getAdvisedMe() {
         return context.beanForType(InternalSecurityService.class);
+    }
+
+    @Override
+    public List<String> convertCachedRepoKeysToRemote(List<String> repoKeys) {
+        List<String> altered = Lists.newArrayList();
+        for (String repoKey : repoKeys) {
+            String repoKeyCacheOmitted;
+
+            if(repoKey.contains(LocalCacheRepoDescriptor.PATH_SUFFIX)) {
+                repoKeyCacheOmitted = repoKey.substring(0,
+                        repoKey.lastIndexOf(LocalCacheRepoDescriptor.PATH_SUFFIX.charAt(0)));
+            }
+            else {
+                altered.add(repoKey);
+                continue;
+            }
+            VirtualRepo globalVirtualRepo = repositoryService.getGlobalVirtualRepo();
+            if ((globalVirtualRepo.getLocalCacheRepositoriesMap().containsKey(repoKey))
+                 || (globalVirtualRepo.getRemoteRepositoriesMap().containsKey(repoKeyCacheOmitted))) {
+                altered.add(repoKeyCacheOmitted);
+            }
+            else{
+                altered.add(repoKey); //Its Possible that someone named their local repo '*-cache'
+            }
+        }
+        return altered;
+    }
+
+    /**
+     * Converts remote repo keys contained in the list to have the '-cache' suffix as acls currently
+     * only support this notation.
+     *
+     * @param repoKeys
+     * @return repoKeys with all remote repository keys concatenated with '-cache' suffix
+     */
+    private List<String> makeRemoteRepoKeysAclCompatible(List<String> repoKeys) {
+        List<String> altered = Lists.newArrayList();
+        for (String repoKey : repoKeys) {
+            if (repositoryService.getGlobalVirtualRepo().getRemoteRepositoriesMap().containsKey(repoKey)) {
+                altered.add(repoKey.concat(LocalCacheRepoDescriptor.PATH_SUFFIX));
+            } else {
+                altered.add(repoKey);
+            }
+        }
+        return altered;
+    }
+
+    private String makeRemoteRepoKeyAclCompatible(String repoKey) {
+        List<String> repoKeyAsList = new ArrayList<>();
+        repoKeyAsList.add(repoKey);
+        return (makeRemoteRepoKeysAclCompatible(repoKeyAsList).get(0));
+    }
+
+    private MutableAclInfo makeNewAclRemoteRepoKeysAclCompatible(MutableAclInfo acl) {
+        //Make repository keys acl-compatible before update
+        MutablePermissionTargetInfo mutablePermissionTargetInfo = InfoFactoryHolder.get().copyPermissionTarget
+                (acl.getPermissionTarget());
+        List<String> compatibleRepoKeys = makeRemoteRepoKeysAclCompatible(mutablePermissionTargetInfo.getRepoKeys());
+        mutablePermissionTargetInfo.setRepoKeys(compatibleRepoKeys);
+        acl.setPermissionTarget(mutablePermissionTargetInfo);
+
+        return acl;
+    }
+
+    public MutableAclInfo convertNewAclCachedRepoKeysToRemote(MutableAclInfo acl) {
+        //Make repository keys acl-compatible before update
+        MutablePermissionTargetInfo mutablePermissionTargetInfo = InfoFactoryHolder.get().copyPermissionTarget
+                (acl.getPermissionTarget());
+        List<String> compatibleRepoKeys = convertCachedRepoKeysToRemote(mutablePermissionTargetInfo.getRepoKeys());
+        mutablePermissionTargetInfo.setRepoKeys(compatibleRepoKeys);
+        acl.setPermissionTarget(mutablePermissionTargetInfo);
+
+        return acl;
     }
 }

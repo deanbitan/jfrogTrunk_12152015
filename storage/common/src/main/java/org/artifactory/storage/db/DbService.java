@@ -18,7 +18,7 @@
 
 package org.artifactory.storage.db;
 
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.spring.ReloadableBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +51,7 @@ public interface DbService extends ReloadableBean {
      *
      * @param statusHolder
      */
-    void compressDerbyDb(MultiStatusHolder statusHolder);
+    void compressDerbyDb(BasicStatusHolder statusHolder);
 
     /**
      * Enforce a new separate transaction to execute the given callable statement.

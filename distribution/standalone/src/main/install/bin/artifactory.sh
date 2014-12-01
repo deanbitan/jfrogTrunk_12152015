@@ -110,7 +110,7 @@ echo finding
 }
 
 start() {
-    export CATALINA_OPTS="$JAVA_OPTIONS -Dartifactory.home=$ARTIFACTORY_HOME -Dfile.encoding=UTF8"
+    export CATALINA_OPTS="$JAVA_OPTIONS -Dartifactory.home=$ARTIFACTORY_HOME -Dfile.encoding=UTF8 -Djruby.compile.invokedynamic=false"
     export CATALINA_PID="$ARTIFACTORY_PID"
     [ -x $TOMCAT_HOME/bin/catalina.sh ] || chmod +x $TOMCAT_HOME/bin/*.sh
     if [ -z "$@" ];

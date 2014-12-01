@@ -40,6 +40,7 @@ import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
+import org.artifactory.addon.plugin.RemoteRequestCtx;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.storage.StorageUnit;
@@ -90,8 +91,13 @@ import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static org.apache.http.HttpHeaders.ACCEPT_ENCODING;
+import static org.artifactory.request.ArtifactoryRequest.ARTIFACTORY_ORIGINATED;
+import static org.artifactory.request.ArtifactoryRequest.ORIGIN_ARTIFACTORY;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
@@ -246,11 +252,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         final RepoPath repoPath = InternalRepoPathFactory.create(getKey(), pathForUrl);
         final Request requestForPlugins = requestContext.getRequest();
         RepoRequests.logToContext("Executing any BeforeRemoteDownload user plugins that may exist");
-        pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, null, requestForPlugins, repoPath);
-
+        RemoteRequestCtx remoteRequestCtx = new RemoteRequestCtx();
+        pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, remoteRequestCtx, requestForPlugins, repoPath);
         HttpGet method = new HttpGet(HttpUtils.encodeQuery(fullUrl));
         RepoRequests.logToContext("Executing GET request to %s", fullUrl);
-        final CloseableHttpResponse response = executeMethod(method);
+        final CloseableHttpResponse response = executeMethod(method,remoteRequestCtx.getHeaders());
 
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
@@ -343,20 +349,36 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     }
 
     /**
-     * Executes an HTTP method using the repository client and returns the http response. The caller to this class is
-     * responsible to close the response.
+     * Executes an HTTP method using the repository client and returns the http response.
+     * This method allows to override some of the default headers, note that the ARTIFACTORY_ORIGINATED, the
+     * ORIGIN_ARTIFACTORY and the ACCEPT_ENCODING can't be overridden
+     * The caller to this class is responsible to close the response.
+     *
+     * @param method Method to execute
+     * @param extraHeaders Extra headers to add to the remote server request
+     * @return The http response.
+     * @throws IOException If the repository is offline or if any error occurs during the execution
+     */
+    public CloseableHttpResponse executeMethod(HttpRequestBase method, Map<String, String> extraHeaders)
+            throws IOException {
+        return this.executeMethod(method, null, extraHeaders);
+    }
+
+    /**
+     * Executes an HTTP method using the repository client and returns the http response.
+     * The caller to this class is responsible to close the response.
      *
      * @param method Method to execute
      * @return The http response.
      * @throws IOException If the repository is offline or if any error occurs during the execution
      */
     public CloseableHttpResponse executeMethod(HttpRequestBase method) throws IOException {
-        return this.executeMethod(method, null);
+        return this.executeMethod(method, null, null);
     }
 
     /**
-     * Executes an HTTP method using the repository client and returns the http response. The caller to this class is
-     * responsible to close the response.
+     * Executes an HTTP method using the repository client and returns the http response.
+     * The caller to this class is responsible to close the response.
      *
      * @param method  Method to execute
      * @param context The request context for execution state
@@ -365,7 +387,25 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      */
     public CloseableHttpResponse executeMethod(HttpRequestBase method, @Nullable HttpContext context)
             throws IOException {
-        addDefaultHeadersAndQueryParams(method);
+        return this.executeMethod(method, context, null);
+    }
+
+    /**
+     * Executes an HTTP method using the repository client and returns the http response.
+     * This method allows to override some of the default headers, note that the ARTIFACTORY_ORIGINATED, the
+     * ORIGIN_ARTIFACTORY and the ACCEPT_ENCODING can't be overridden
+     * The caller to this class is responsible to close the response.
+     *
+     * @param method  Method to execute
+     * @param context The request context for execution state
+     * @param extraHeaders Extra headers to add to the remote server request
+     * @return The http response.
+     * @throws IOException If the repository is offline or if any error occurs during the execution
+     */
+    public CloseableHttpResponse executeMethod(HttpRequestBase method, @Nullable HttpContext context,
+            Map<String, String> extraHeaders)
+            throws IOException {
+        addDefaultHeadersAndQueryParams(method,extraHeaders);
         return getHttpClient().execute(method, context);
     }
 
@@ -552,26 +592,45 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return cachedResource;
     }
 
+    /**
+     * Adds default headers and extra headers to the HttpRequest method
+     * The extra headers are unique headers that should be added to the remote server request according to special
+     * requirement example : user adds extra headers through the User Plugin (BeforeRemoteDownloadAction)
+     * @param method Method to execute
+     * @param extraHeaders Extra headers to add to the remote server request
+     */
     @SuppressWarnings({"deprecation"})
-    private void addDefaultHeadersAndQueryParams(HttpRequestBase method) {
+    private void addDefaultHeadersAndQueryParams(HttpRequestBase method,Map<String, String> extraHeaders) {
         //Explicitly force keep alive
         method.setHeader(HttpHeaders.CONNECTION, "Keep-Alive");
 
         //Add the current requester host id
         Set<String> originatedHeaders = RepoRequests.getOriginatedHeaders();
         for (String originatedHeader : originatedHeaders) {
-            method.addHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, originatedHeader);
+            method.addHeader(ARTIFACTORY_ORIGINATED, originatedHeader);
         }
         String hostId = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
                 HaCommonAddon.class).getHostId();
-        method.addHeader(ArtifactoryRequest.ARTIFACTORY_ORIGINATED, hostId);
+        // Add the extra headers to the remote request
+        if (extraHeaders != null) {
+            for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
+                boolean isReservedKey=ARTIFACTORY_ORIGINATED.equals(entry.getKey())||
+                                      ORIGIN_ARTIFACTORY.equals(entry.getKey())||
+                                      ACCEPT_ENCODING.equals(entry.getKey());
+                if( ! isReservedKey ) {
+                    method.addHeader(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        // Add the default artifactory headers, those headers will always override the existing headers if they already exist
+        method.addHeader(ARTIFACTORY_ORIGINATED, hostId);
 
         //For backwards compatibility
-        method.setHeader(ArtifactoryRequest.ORIGIN_ARTIFACTORY, hostId);
+        method.setHeader(ORIGIN_ARTIFACTORY, hostId);
 
         //Set gzip encoding
         if (handleGzipResponse) {
-            method.addHeader(HttpHeaders.ACCEPT_ENCODING, "gzip");
+            method.addHeader(ACCEPT_ENCODING, "gzip");
         }
 
         // Set custom query params

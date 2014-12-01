@@ -20,7 +20,7 @@ package org.artifactory.addon.rest;
 
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
-import org.artifactory.api.common.MultiStatusHolder;
+import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
@@ -117,7 +117,7 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public void discardOldBuilds(String name, BuildRetention discard, MultiStatusHolder multiStatusHolder) {
+    public void discardOldBuilds(String name, BuildRetention discard, BasicStatusHolder multiStatusHolder) {
         // nop
     }
 

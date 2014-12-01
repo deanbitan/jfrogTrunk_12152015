@@ -119,7 +119,7 @@ import java.util.jar.JarInputStream;
 public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements StoringRepo<T> */ implements StoringRepo {
     private static final Logger log = LoggerFactory.getLogger(DbStoringRepoMixin.class);
 
-    private final static String CONTENT_TYPE_PROP_KEY = PropertySet.ARTIFACTORY_RESERVED_PROP_SET + "." +
+    private static final String CONTENT_TYPE_PROP_KEY = PropertySet.ARTIFACTORY_RESERVED_PROP_SET + "." +
             PropertiesService.CONTENT_TYPE_PROPERTY_NAME;
 
     private final T descriptor;
