@@ -20,6 +20,7 @@ package org.artifactory.layout;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.config.ConfigurationChangesInterceptor;
+import org.artifactory.descriptor.bintray.BintrayConfigDescriptor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.external.BlackDuckSettingsDescriptor;
@@ -44,18 +45,6 @@ import java.util.List;
  */
 @Component
 public class EncryptConfigurationInterceptor implements ConfigurationChangesInterceptor {
-
-    @Override
-    public void onBeforeSave(CentralConfigDescriptor newDescriptor) {
-        if (newDescriptor instanceof MutableCentralConfigDescriptor && CryptoHelper.hasMasterKey()) {
-            // Find all sensitive data and encrypt them
-            encrypt((MutableCentralConfigDescriptor) newDescriptor);
-        }
-    }
-
-    private void encrypt(MutableCentralConfigDescriptor descriptor) {
-        encryptOrDecrypt(descriptor, true);
-    }
 
     public static void decrypt(MutableCentralConfigDescriptor descriptor) {
         encryptOrDecrypt(descriptor, false);
@@ -127,6 +116,13 @@ public class EncryptConfigurationInterceptor implements ConfigurationChangesInte
                 }
             }
         }
+        BintrayConfigDescriptor bintraySettings = descriptor.getBintrayConfig();
+        if (bintraySettings != null) {
+            String newApiKey = getNewPassword(encrypt, bintraySettings.getApiKey());
+            if (StringUtils.isNotBlank(newApiKey)) {
+                bintraySettings.setApiKey(newApiKey);
+            }
+        }
     }
 
     private static String getNewPassword(boolean encrypt, String password) {
@@ -138,6 +134,18 @@ public class EncryptConfigurationInterceptor implements ConfigurationChangesInte
             }
         }
         return null;
+    }
+
+    @Override
+    public void onBeforeSave(CentralConfigDescriptor newDescriptor) {
+        if (newDescriptor instanceof MutableCentralConfigDescriptor && CryptoHelper.hasMasterKey()) {
+            // Find all sensitive data and encrypt them
+            encrypt((MutableCentralConfigDescriptor) newDescriptor);
+        }
+    }
+
+    private void encrypt(MutableCentralConfigDescriptor descriptor) {
+        encryptOrDecrypt(descriptor, true);
     }
 
 }

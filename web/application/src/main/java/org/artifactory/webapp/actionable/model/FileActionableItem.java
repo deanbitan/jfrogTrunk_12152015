@@ -42,7 +42,6 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.FileActionable;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.CopyAction;
-import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.MoveAction;
@@ -91,10 +90,12 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
         actions.add(copyAction);
         zapAction = new ZapAction();
         actions.add(zapAction);
-        deleteAction = new DeleteAction();
-        actions.add(deleteAction);
 
         AddonsManager addonsManager = getAddonsProvider();
+        DockerWebAddon dockerWebAddon = addonsManager.addonByType(DockerWebAddon.class);
+        deleteAction = dockerWebAddon.getDeleteAction(fileInfo);
+        actions.add(deleteAction);
+
         WatchAddon watchAddon = addonsManager.addonByType(WatchAddon.class);
         watchAction = watchAddon.getWatchAction(fileInfo.getRepoPath());
         actions.add(watchAction);

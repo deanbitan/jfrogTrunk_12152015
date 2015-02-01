@@ -24,13 +24,17 @@ import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.config.VersionInfo;
+import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationException;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
+import org.artifactory.converters.ConverterManager;
+import org.artifactory.converters.VersionProvider;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.reader.CentralConfigReader;
@@ -42,7 +46,10 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
+import org.artifactory.state.ArtifactoryServerState;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.servers.model.ArtifactoryServer;
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
 import org.artifactory.storage.fs.service.ConfigsService;
 import org.artifactory.util.Files;
 import org.artifactory.util.SerializablePair;
@@ -91,6 +98,9 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
 
     @Autowired
     private AddonsManager addonsManager;
+
+    @Autowired
+    private ArtifactoryServersCommonService serversService;
 
     public CentralConfigServiceImpl() {
     }
@@ -177,9 +187,9 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
     }
 
     @Override
-    public void setConfigXml(String xmlConfig) {
+    public void setConfigXml(String xmlConfig, boolean saveConfiguration) {
         CentralConfigDescriptor newDescriptor = new CentralConfigReader().read(xmlConfig);
-        reloadConfiguration(newDescriptor);
+        reloadConfiguration(newDescriptor, saveConfiguration);
         storeLatestConfigToFile(getConfigXml());
         addonsManager.addonByType(HaAddon.class).notify(CONFIG_CHANGE_TOPIC, null);
     }
@@ -225,15 +235,15 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         // will fail if not valid without affecting the current configuration
         // in any case we will use this newly loaded config as the descriptor
         String configXml = JaxbHelper.toXml(descriptor);
-        setConfigXml(configXml);
+        setConfigXml(configXml, true);
     }
 
     @Override
-    public boolean reloadConfiguration() {
+    public boolean reloadConfiguration(boolean saveConfiguration) {
         String currentConfigXml = loadConfigFromStorage();
         if (!StringUtils.isBlank(currentConfigXml)) {
             CentralConfigDescriptor newDescriptor = new CentralConfigReader().read(currentConfigXml);
-            reloadConfiguration(newDescriptor);
+            reloadConfiguration(newDescriptor, saveConfiguration);
             return true;
         } else {
             log.warn("Could not reload configuration.");
@@ -252,7 +262,7 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
             if (newConfigFile.exists()) {
                 status.status("Reloading configuration from " + newConfigFile, log);
                 String xmlConfig = Files.readFileToString(newConfigFile);
-                setConfigXml(xmlConfig);
+                setConfigXml(xmlConfig, true);
                 status.status("Configuration reloaded from " + newConfigFile, log);
             }
         } else if (settings.isFailIfEmpty()) {
@@ -269,10 +279,39 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         JaxbHelper.writeConfig(descriptor, destFile);
     }
 
+    private void reloadConfiguration(CentralConfigDescriptor newDescriptor, boolean saveConfiguration) {
+        //Reload only if all single artifactory or unique schema version in Artifactory HA cluster
+        log.info("Reloading configuration...");
+        try {
+            CentralConfigDescriptor oldDescriptor = getDescriptor();
+            if (oldDescriptor == null) {
+                throw new IllegalStateException("The system was not loaded, and a reload was called");
+            }
+
+            InternalArtifactoryContext ctx = InternalContextHelper.get();
+
+            //setDescriptor() will set the new date formatter and server name
+            setDescriptor(newDescriptor, saveConfiguration);
+
+            // TODO: [by FSI] If reload fails, we have the new descriptor in memory but not used
+            // Need to find ways to revert or be very robust on reload.
+            ctx.reload(oldDescriptor);
+            log.info("Configuration reloaded.");
+            AccessLogger.configurationChanged();
+            log.debug("Old configuration:\n{}", JaxbHelper.toXml(oldDescriptor));
+            log.debug("New configuration:\n{}", JaxbHelper.toXml(newDescriptor));
+        } catch (Exception e) {
+            String msg = "Failed to reload configuration: " + e.getMessage();
+            log.error(msg, e);
+            throw new RuntimeException(msg, e);
+        }
+    }
+
     private void setDescriptor(CentralConfigDescriptor descriptor, boolean save) {
         log.trace("Setting central config descriptor for config #{}.", System.identityHashCode(this));
 
         if (save) {
+            assertSaveDescriptorAllowd();
             // call the interceptors before saving the new descriptor
             interceptors.onBeforeSave(descriptor);
         }
@@ -301,30 +340,33 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
         }
     }
 
-    private void reloadConfiguration(CentralConfigDescriptor newDescriptor) {
-        log.info("Reloading configuration...");
-        try {
-            CentralConfigDescriptor oldDescriptor = getDescriptor();
-            if (oldDescriptor == null) {
-                throw new IllegalStateException("The system was not loaded, and a reload was called");
+    private void assertSaveDescriptorAllowd() {
+        // Approved if not HA
+        HaCommonAddon haAddon = addonsManager.addonByType(HaCommonAddon.class);
+        if (haAddon.isHaEnabled()) {
+            // Approved if primary and converting
+            ArtifactoryServer currentMember = serversService.getCurrentMember();
+            ArtifactoryServerState serverState =
+                    currentMember == null ? ArtifactoryServerState.STARTING : currentMember.getServerState();
+            // Get the context
+            ArtifactoryContext artifactoryContext = ContextHelper.get();
+            // Get the converter manager
+            ConverterManager converterManager = artifactoryContext.getConverterManager();
+
+            if (haAddon.isPrimary() && converterManager != null && converterManager.isConverting()) {
+                return;
             }
-
-            InternalArtifactoryContext ctx = InternalContextHelper.get();
-
-            //setDescriptor() will set the new date formatter and server name
-            setDescriptor(newDescriptor, true);
-
-            // TODO: [by FSI] If reload fails, we have the new descriptor in memory but not used
-            // Need to find ways to revert or be very robust on reload.
-            ctx.reload(oldDescriptor);
-            log.info("Configuration reloaded.");
-            AccessLogger.configurationChanged();
-            log.debug("Old configuration:\n{}", JaxbHelper.toXml(oldDescriptor));
-            log.debug("New configuration:\n{}", JaxbHelper.toXml(newDescriptor));
-        } catch (Exception e) {
-            String msg = "Failed to reload configuration: " + e.getMessage();
-            log.error(msg, e);
-            throw new RuntimeException(msg, e);
+            // Denied if found two nodes with different versions
+            List<ArtifactoryServer> otherRunningHaMembers = serversService.getOtherRunningHaMembers();
+            VersionProvider versionProvider = artifactoryContext.getVersionProvider();
+            CompoundVersionDetails runningVersion = versionProvider.getRunning();
+            for (ArtifactoryServer otherRunningHaMember : otherRunningHaMembers) {
+                String otherArtifactoryVersion = otherRunningHaMember.getArtifactoryVersion();
+                if (!runningVersion.getVersionName().equals(otherArtifactoryVersion)) {
+                    throw new RuntimeException(
+                            "unstable environment: Found one or more servers with different version Config Reload denied.");
+                }
+            }
         }
     }
 

@@ -20,6 +20,7 @@ package org.artifactory.schedule;
 
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.security.SecurityService;
+import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.security.UserInfo;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.AfterMethod;
@@ -237,7 +238,7 @@ public class JobCommandTest extends TaskServiceTestBase {
         assertNull(taskService.getInternalActiveTask(dummyCManualRunning.getToken(), false));
     }
 
-    private void checkCanRunManualMethod(Class<? extends TaskCallback> typeToRun, boolean sameType)
+    private void checkCanRunManualMethod(Class<? extends QuartzCommand> typeToRun, boolean sameType)
             throws InterruptedException {
         checkShouldFail(typeToRun, DUMMY_RUNNING_VALUE, sameType);
         checkShouldStart(typeToRun, NO_DUMMY_VALUE, false);
@@ -247,7 +248,7 @@ public class JobCommandTest extends TaskServiceTestBase {
         checkShouldFail(typeToRun, DUMMY_MANUAL_RUNNING_VALUE, sameType);
     }
 
-    private void checkShouldFail(Class<? extends TaskCallback> typeToRun, String keyValue, boolean sameType)
+    private void checkShouldFail(Class<? extends QuartzCommand> typeToRun, String keyValue, boolean sameType)
             throws InterruptedException {
         BasicStatusHolder statusHolder1 = new BasicStatusHolder();
         taskService.checkCanStartManualTask(typeToRun, statusHolder1, keyValue);
@@ -284,7 +285,7 @@ public class JobCommandTest extends TaskServiceTestBase {
         assertNull(taskService.getInternalActiveTask(repeatTask.getToken(), false));
     }
 
-    private void checkShouldStart(Class<? extends TaskCallback> typeToRun, String keyValue, boolean onlyManual) {
+    private void checkShouldStart(Class<? extends QuartzCommand> typeToRun, String keyValue, boolean onlyManual) {
         BasicStatusHolder statusHolder1 = new BasicStatusHolder();
         taskService.checkCanStartManualTask(typeToRun, statusHolder1, keyValue);
         assertFalse(statusHolder1.isError(), "Command " + typeToRun + " should be allowed to run");

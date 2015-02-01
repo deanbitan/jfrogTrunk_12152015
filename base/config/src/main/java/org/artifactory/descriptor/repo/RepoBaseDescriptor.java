@@ -28,8 +28,8 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
-        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport", "enableDebianSupport",
-        "enablePypiSupport", "enableDockerSupport"},
+        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport",
+        "enableDebianSupport", "enablePypiSupport", "enableDockerSupport"},
         namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 

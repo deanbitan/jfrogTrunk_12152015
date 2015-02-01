@@ -42,5 +42,5 @@ public interface BuildRestConstants {
 
     String MT_PROMOTION_REQUEST = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".PromotionRequest+json";
     String MT_PROMOTION_RESULT = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".PromotionResult+json";
-
+    String MT_BINTRAY_DESCRIPTOR_OVERRIDE = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".BintrayDescriptorOverrideParams+json";
 }

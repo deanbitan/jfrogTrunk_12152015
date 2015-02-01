@@ -27,6 +27,7 @@ public enum AqlTableFieldsEnum {
     download_count,
     prop_key,
     prop_value,
+    prop_id,
     artifact_name,
     artifact_type,
     dependency_name_id,

@@ -21,7 +21,6 @@ package org.artifactory.rest.resource.artifact;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -35,6 +34,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.PATH_COPY;
 
@@ -63,7 +63,7 @@ public class CopyResource {
     @POST
     @Path("{path: .+}")
     @Produces({ArtifactRestConstants.MT_COPY_MOVE_RESULT, MediaType.APPLICATION_JSON})
-    public MoveCopyResult copy(
+    public Response copy(
             // The path of the source item to be moved/copied
             @PathParam("path") String path,
             // The target repository to to move/copy the item.

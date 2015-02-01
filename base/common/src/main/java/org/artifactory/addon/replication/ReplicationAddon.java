@@ -68,4 +68,6 @@ public interface ReplicationAddon extends Addon {
     void validateTargetIsDifferentInstance(ReplicationBaseDescriptor descriptor, RealRepoDescriptor repoDescriptor)
             throws IOException;
 
+    boolean isRepoExistInCache(RepoPath repoPath);
+
 }

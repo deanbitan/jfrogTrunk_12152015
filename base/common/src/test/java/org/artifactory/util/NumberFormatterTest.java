@@ -45,7 +45,11 @@ public class NumberFormatterTest {
         assertEquals(NumberFormatter.formatPercentage(0.0), "0%");
         assertEquals(NumberFormatter.formatPercentage(1), "100%");
         assertEquals(NumberFormatter.formatPercentage(0.5555), "55.55%");
-        assertEquals(NumberFormatter.formatPercentage(0.55555), "55.56%");
+        if (System.getProperty("java.version").startsWith("1.8")) {
+            assertEquals(NumberFormatter.formatPercentage(0.55555), "55.55%");
+        } else {
+            assertEquals(NumberFormatter.formatPercentage(0.55555), "55.56%");
+        }
         assertEquals(NumberFormatter.formatPercentage(0.55558), "55.56%");
         assertEquals(NumberFormatter.formatPercentage(0.55554), "55.55%");
         assertEquals(NumberFormatter.formatPercentage(30.55554), "3055.55%");

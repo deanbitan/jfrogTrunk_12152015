@@ -24,6 +24,7 @@ import org.apache.wicket.extensions.markup.html.tabs.AbstractTab;
 import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
+import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.addon.wicket.PropertiesWebAddon;
 import org.artifactory.addon.wicket.ReplicationWebAddon;
 import org.artifactory.common.wicket.behavior.CssClass;
@@ -32,13 +33,14 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.security.crypto.CryptoHelper;
+import org.artifactory.md.Properties;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
 import org.artifactory.webapp.wicket.util.CronUtils;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Local repository configuration panel.
@@ -72,7 +74,7 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         tabList.add(propertiesWebAddon.getRepoConfigPropertySetsTab("Property Sets", entity, propertySets));
 
         MutableCentralConfigDescriptor mutableDescriptor = cachingDescriptorHelper.getModelMutableDescriptor();
-        replicationDescriptor = mutableDescriptor.getLocalReplication(entity.getKey());
+        replicationDescriptor = mutableDescriptor.getEnabledLocalReplication(entity.getKey());
         if (replicationDescriptor == null) {
             replicationDescriptor = new LocalReplicationDescriptor();
             replicationDescriptor.setRepoKey(entity.getKey());
@@ -105,6 +107,99 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
         helper.syncAndSaveLocalRepositories();
     }
 
+    /**
+     * update repo replication related property following to repo data update or deletion
+     */
+    @Override
+    public void updateRepositoryProperties(){
+        Set<String> propsKeys = getRepoReplicationPropsKeysFromDB();
+        List<String> localRepoList = getLocalReplicationPropertiesKeysList();
+        List<String> propsToBeRemoved = getUnusedPropsToDeleteList(localRepoList, propsKeys);
+        deleteUnusedPropertiesFromDB(propsToBeRemoved);
+    }
+
+    /** check if licensed for HA then return appropriate key properties
+     *
+     * @return if HA License return unique key with url , else none multi push basic key
+     */
+    private List<String> getLocalReplicationPropertiesKeysList() {
+        List<String> localRepoList;
+        if(addons.isHaLicensed()) {
+            localRepoList = getUniqueMultiPushKeyProperties();
+        }else localRepoList = getNoneMultiPushUniqueList();
+        return localRepoList;
+    }
+
+    /**
+     * return the basic non Multi Push Unique Key properties name For Replication
+     * @return list of non Multi Push Key properties name
+     */
+    private List<String> getNoneMultiPushUniqueList() {
+        List<String> noneMultiPushUniqueKeyList = new ArrayList<>();
+        noneMultiPushUniqueKeyList.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+                + ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX);
+        noneMultiPushUniqueKeyList.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+                +ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX);
+        noneMultiPushUniqueKeyList.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+                +ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX);
+        return noneMultiPushUniqueKeyList;
+    }
+
+    /**
+     *
+     * @return Unique Multi Push Replication Keys (with url)
+     */
+    private List<String> getUniqueMultiPushKeyProperties() {
+        return cachingDescriptorHelper.getModelMutableDescriptor().
+                getLocalReplicationsUniqueKeyForProperty(replicationDescriptor.getRepoKey());
+    }
+
+    /**
+     *
+     * @return props key of specific repo from DB
+     */
+    private Set<String> getRepoReplicationPropsKeysFromDB() {
+        Properties propsServiceProperties = propsService.getProperties(replicationDescriptor.getRepoPath());
+        return propsServiceProperties.keySet();
+    }
+
+    /**
+     * remove unused replication properties due to repo replication updated (delete / url change)
+     * @param propsToBeRemoved
+     */
+    private void deleteUnusedPropertiesFromDB(List<String> propsToBeRemoved) {
+        for (String propToDelete : propsToBeRemoved){
+            propsService.deleteProperty(replicationDescriptor.getRepoPath(),propToDelete);
+        }
+    }
+
+    /**
+     * compare replication property based updated descriptor replication list
+     * and return list if property to be removed f not needed
+     * @param localRepoList - update descriptor replication list after update
+     * @param propsKeys property Set from DB
+     * @return list of unused property to be removed
+     */
+    private List<String> getUnusedPropsToDeleteList(List<String> localRepoList, Set<String> propsKeys) {
+        List<String> propsToBeRemoved = new ArrayList<>();
+        for (String propKey : propsKeys){
+            String propsPartialKey = propKey.replace("artifactory.replication."+replicationDescriptor.getRepoKey(),"")
+                    .replace(ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX, "")
+                    .replace(ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX, "")
+                    .replace(ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX, "");
+
+            if (!localRepoList.contains(propsPartialKey) && !propsToBeRemoved.contains(propKey)){
+                propsToBeRemoved.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+                        +propsPartialKey+ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX);
+                propsToBeRemoved.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+                        +propsPartialKey+ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX);
+                propsToBeRemoved.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+                        +propsPartialKey+ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX);
+            }
+       }
+        return propsToBeRemoved;
+    }
+
     @Override
     public void saveEditDescriptor(LocalRepoDescriptor repoDescriptor) {
         CachingDescriptorHelper helper = getCachingDescriptorHelper();
@@ -118,38 +213,36 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
             if (StringUtils.isBlank(replicationDescriptor.getRepoKey())) {
                 replicationDescriptor.setRepoKey(repoDescriptor.getKey());
             }
-            mccd.addLocalReplication(replicationDescriptor);
         }
         helper.syncAndSaveLocalRepositories();
     }
 
     @Override
     protected boolean validate(LocalRepoDescriptor repoDescriptor) {
-        if (replicationDescriptor != null && replicationDescriptor.isEnabled()) {
-            if (StringUtils.isBlank(replicationDescriptor.getUrl())) {
-                error("Field 'Url' is required.");
-                return false;
-            }
-
-            if (StringUtils.isBlank(replicationDescriptor.getUsername())) {
-                error("Username is required.");
-                return false;
-            }
-
-            if (replicationDescriptor.getSocketTimeoutMillis() < 0) {
-                error("Socket Timeout must be positive or zero.");
-                return false;
-            }
-
-            String cronExp = replicationDescriptor.getCronExp();
-            if (StringUtils.isBlank(cronExp) || !CronUtils.isValid(cronExp)) {
-                error("Invalid cron expression");
-                return false;
-            }
-
-            replicationDescriptor.setPassword(CryptoHelper.encryptIfNeeded(replicationDescriptor.getPassword()));
+        if (!isCronExpValid(cachingDescriptorHelper)) {
+            error("Invalid cron expression");
+            return false;
         }
+        return true;
+    }
 
+    /**
+     * validate cron exp for replication validation
+     *
+     * @return
+     */
+    private boolean isCronExpValid(CachingDescriptorHelper cachingDescriptorHelper) {
+        List<LocalReplicationDescriptor> localReplicationDescriptors = cachingDescriptorHelper.getModelMutableDescriptor().getLocalReplications();
+        if (localReplicationDescriptors != null && localReplicationDescriptors.size() != 0 && replicationDescriptor.getRepoKey() != null) {
+            for (LocalReplicationDescriptor localReplicationDescriptor : localReplicationDescriptors) {
+                if ((replicationDescriptor.getRepoKey()).equals(localReplicationDescriptor.getRepoKey())) {
+                    String cronExp = localReplicationDescriptor.getCronExp();
+                    if (StringUtils.isBlank(cronExp) || !CronUtils.isValid(cronExp)) {
+                        return false;
+                    }
+                }
+            }
+        }
         return true;
     }
 }

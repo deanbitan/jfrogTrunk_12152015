@@ -2,7 +2,8 @@ package org.artifactory.aql;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
-import org.artifactory.aql.result.rows.AqlArtifact;
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.aql.result.rows.AqlItem;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.factory.InfoFactoryHolder;
@@ -19,10 +20,16 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public abstract class AqlConverts {
-    public static final Function<AqlArtifact, FileInfo> toFileInfo = new Function<AqlArtifact, FileInfo>() {
+    public static final Function<AqlItem, FileInfo> toFileInfo = new Function<AqlItem, FileInfo>() {
         @Override
-        public FileInfo apply(AqlArtifact input) {
-            RepoPath repoPath = RepoPathFactory.create(input.getRepo(), input.getPath() + "/" + input.getName());
+        public FileInfo apply(AqlItem input) {
+            String path = input.getPath();
+            RepoPath repoPath;
+            if (StringUtils.equals(path, ".")) {
+                repoPath = RepoPathFactory.create(input.getRepo(), input.getName());
+            } else {
+                repoPath = RepoPathFactory.create(input.getRepo(), path + "/" + input.getName());
+            }
             MutableFileInfo fileInfo = InfoFactoryHolder.get().createFileInfo(repoPath);
             fileInfo.setSize(input.getSize());
             fileInfo.setCreated(input.getCreated().getTime());

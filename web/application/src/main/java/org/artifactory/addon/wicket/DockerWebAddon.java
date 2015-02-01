@@ -23,6 +23,8 @@ import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.webapp.actionable.action.DeleteAction;
 
 /**
  * Webapp Docker functionality interface
@@ -42,4 +44,6 @@ public interface DockerWebAddon extends Addon {
     ITab getDockerInfoTab(String tabTitle, FileInfo fileInfo);
 
     ITab getDockerAncestryTab(String s, FileInfo fileInfo);
+
+    DeleteAction getDeleteAction(ItemInfo itemInfo);
 }

@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -38,9 +39,9 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.addon.plugin.RemoteRequestCtx;
 import org.artifactory.addon.plugin.download.AfterRemoteDownloadAction;
 import org.artifactory.addon.plugin.download.BeforeRemoteDownloadAction;
-import org.artifactory.addon.plugin.RemoteRequestCtx;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.storage.StorageUnit;
@@ -73,6 +74,7 @@ import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.spring.InternalContextHelper;
+import org.artifactory.traffic.TrafficService;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
@@ -101,11 +103,10 @@ import static org.artifactory.request.ArtifactoryRequest.ORIGIN_ARTIFACTORY;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
-
+    protected RemoteRepositoryBrowser remoteBrowser;
     @Nullable
     private CloseableHttpClient client;
     private boolean handleGzipResponse;
-    protected RemoteRepositoryBrowser remoteBrowser;
     private LayoutsCoreAddon layoutsCoreAddon;
 
     @GuardedBy("offlineCheckerSync")
@@ -117,6 +118,48 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         super(descriptor, repositoryService, globalOfflineMode, oldRemoteRepo);
         AddonsManager addonsManager = InternalContextHelper.get().beanForType(AddonsManager.class);
         layoutsCoreAddon = addonsManager.addonByType(LayoutsCoreAddon.class);
+    }
+
+    private static long getLastModified(HttpResponse response) {
+        Header lastModifiedHeader = response.getFirstHeader(HttpHeaders.LAST_MODIFIED);
+        if (lastModifiedHeader == null) {
+            return -1;
+        }
+        String lastModifiedString = lastModifiedHeader.getValue();
+        //try {
+        Date lastModifiedDate = DateUtils.parseDate(lastModifiedString);
+        if (lastModifiedDate != null) {
+            return lastModifiedDate.getTime();
+        } else {
+            log.warn("Unable to parse Last-Modified header : " + lastModifiedString);
+            return System.currentTimeMillis();
+        }
+    }
+
+    private static Set<ChecksumInfo> getChecksums(HttpResponse response) {
+        Set<ChecksumInfo> remoteChecksums = Sets.newHashSet();
+
+        ChecksumInfo md5ChecksumInfo = getChecksumInfoObject(ChecksumType.md5,
+                response.getFirstHeader(ArtifactoryRequest.CHECKSUM_MD5));
+        if (md5ChecksumInfo != null) {
+            remoteChecksums.add(md5ChecksumInfo);
+        }
+
+        ChecksumInfo sha1ChecksumInfo = getChecksumInfoObject(ChecksumType.sha1,
+                response.getFirstHeader(ArtifactoryRequest.CHECKSUM_SHA1));
+        if (sha1ChecksumInfo != null) {
+            remoteChecksums.add(sha1ChecksumInfo);
+        }
+
+        return remoteChecksums;
+    }
+
+    private static ChecksumInfo getChecksumInfoObject(ChecksumType type, Header checksumHeader) {
+        if (checksumHeader == null) {
+            return null;
+        }
+
+        return new ChecksumInfo(type, checksumHeader.getValue(), null);
     }
 
     @Override
@@ -255,8 +298,11 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         RemoteRequestCtx remoteRequestCtx = new RemoteRequestCtx();
         pluginAddon.execPluginActions(BeforeRemoteDownloadAction.class, remoteRequestCtx, requestForPlugins, repoPath);
         HttpGet method = new HttpGet(HttpUtils.encodeQuery(fullUrl));
+        Map<String, String> headers = Maps.newHashMap();
+        headers.putAll(remoteRequestCtx.getHeaders());
+        notifyInterceptorsOnBeforeRemoteHttpMethodExecution(method, headers);
         RepoRequests.logToContext("Executing GET request to %s", fullUrl);
-        final CloseableHttpResponse response = executeMethod(method,remoteRequestCtx.getHeaders());
+        final CloseableHttpResponse response = executeMethod(method, headers);
 
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
@@ -277,42 +323,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
         final InputStream is = response.getEntity().getContent();
         verifyContentEncoding(response);
-        return new RemoteResourceStreamHandle() {
-            private final BandwidthMonitorInputStream bmis = new BandwidthMonitorInputStream(is);
-
-            @Override
-            public InputStream getInputStream() {
-                return bmis;
-            }
-
-            @Override
-            public long getSize() {
-                return -1;
-            }
-
-            @Override
-            public void close() {
-                IOUtils.closeQuietly(bmis);
-                IOUtils.closeQuietly(response);
-                StatusLine statusLine = response.getStatusLine();
-
-                Throwable throwable = getThrowable();
-                if (throwable != null) {
-                    log.error("{}: Failed to download '{}'. Received status code {} and caught exception: {}",
-                            HttpRepo.this, fullUrl, statusLine != null ? statusLine.getStatusCode() : "unknown",
-                            throwable.getMessage());
-                    log.debug("Failed to download '" + fullUrl + "'", throwable);
-                    RepoRequests.logToContext("Failed to download: %s", throwable.getMessage());
-                } else {
-                    int status = statusLine != null ? statusLine.getStatusCode() : 0;
-                    logDownloaded(fullUrl, status, bmis);
-                    RepoRequests.logToContext("Downloaded content");
-                }
-                RepoRequests.logToContext("Executing any AfterRemoteDownload user plugins that may exist");
-                pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, requestForPlugins, repoPath);
-                RepoRequests.logToContext("Executed all AfterRemoteDownload user plugins");
-            }
-        };
+        return new MyRemoteResourceStreamHandle(response, fullUrl, requestForPlugins, pluginAddon, repoPath, is);
     }
 
     private void verifyContentEncoding(HttpResponse response) throws IOException {
@@ -415,15 +426,32 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         RepoPath repoPath = InternalRepoPathFactory.create(this.getKey(), path, folder);
 
         String fullUrl = assembleRetrieveInfoUrl(path, context);
-        HttpHead method = new HttpHead(HttpUtils.encodeQuery(fullUrl));
-        RepoRequests.logToContext("Executing HEAD request to %s", fullUrl);
+        Map<String, String> headers = Maps.newHashMap();
+        HttpRequestBase method;
+        boolean replaceHeadWithGet = false;
+        String methodType = "HEAD";
+        if (context != null && StringUtils.isNotBlank(context.getRequest().getParameter(
+                ArtifactoryRequest.PARAM_REPLACE_HEAD_IN_RETRIEVE_INFO_WITH_GET))) {
+            replaceHeadWithGet = Boolean.valueOf(context.getRequest().getParameter(
+                    ArtifactoryRequest.PARAM_REPLACE_HEAD_IN_RETRIEVE_INFO_WITH_GET));
+        }
+        if (replaceHeadWithGet) {
+            log.debug("Param " + ArtifactoryRequest.PARAM_REPLACE_HEAD_IN_RETRIEVE_INFO_WITH_GET + " found in request" +
+                    " context, switching HEAD with GET request");
+            methodType = "GET";
+            method = new HttpGet(HttpUtils.encodeQuery(fullUrl));
+        } else {
+            method = new HttpHead(HttpUtils.encodeQuery(fullUrl));
+        }
+        RepoRequests.logToContext("Executing %s request to %s", methodType, fullUrl);
         CloseableHttpResponse response = null;
         try {
             HttpClientContext httpClientContext = new HttpClientContext();
-            response = executeMethod(method, httpClientContext);
+            notifyInterceptorsOnBeforeRemoteHttpMethodExecution(method, headers);
+            response = executeMethod(method, httpClientContext, headers);
             return handleGetInfoResponse(repoPath, method, response, httpClientContext, context);
         } catch (IOException e) {
-            RepoRequests.logToContext("Failed to execute HEAD request: %s", e.getMessage());
+            RepoRequests.logToContext("Failed to execute %s request: %s", methodType, e.getMessage());
             StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
                     append(": ");
             if (e instanceof UnknownHostException) {
@@ -570,7 +598,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
-    CloseableHttpClient createHttpClient() {
+    protected CloseableHttpClient createHttpClient() {
         return new HttpClientConfigurator()
                 .hostFromUrl(getUrl())
                 .defaultMaxConnectionsPerHost(50)
@@ -647,22 +675,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
     }
 
-    private static long getLastModified(HttpResponse response) {
-        Header lastModifiedHeader = response.getFirstHeader(HttpHeaders.LAST_MODIFIED);
-        if (lastModifiedHeader == null) {
-            return -1;
-        }
-        String lastModifiedString = lastModifiedHeader.getValue();
-        //try {
-        Date lastModifiedDate = DateUtils.parseDate(lastModifiedString);
-        if (lastModifiedDate != null) {
-            return lastModifiedDate.getTime();
-        } else {
-            log.warn("Unable to parse Last-Modified header : " + lastModifiedString);
-            return System.currentTimeMillis();
-        }
-    }
-
     private String getFilename(HttpRequestBase method, String originalPath) {
         // Skip filename parsing if we are not dealing with latest maven non-unique snapshot request
         if (!isRequestForLatestMavenSnapshot(originalPath)) {
@@ -700,32 +712,6 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         return true;
-    }
-
-    private static Set<ChecksumInfo> getChecksums(HttpResponse response) {
-        Set<ChecksumInfo> remoteChecksums = Sets.newHashSet();
-
-        ChecksumInfo md5ChecksumInfo = getChecksumInfoObject(ChecksumType.md5,
-                response.getFirstHeader(ArtifactoryRequest.CHECKSUM_MD5));
-        if (md5ChecksumInfo != null) {
-            remoteChecksums.add(md5ChecksumInfo);
-        }
-
-        ChecksumInfo sha1ChecksumInfo = getChecksumInfoObject(ChecksumType.sha1,
-                response.getFirstHeader(ArtifactoryRequest.CHECKSUM_SHA1));
-        if (sha1ChecksumInfo != null) {
-            remoteChecksums.add(sha1ChecksumInfo);
-        }
-
-        return remoteChecksums;
-    }
-
-    private static ChecksumInfo getChecksumInfoObject(ChecksumType type, Header checksumHeader) {
-        if (checksumHeader == null) {
-            return null;
-        }
-
-        return new ChecksumInfo(type, checksumHeader.getValue(), null);
     }
 
     @Override
@@ -880,6 +866,70 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 log.debug("Online monitor http method failed: {}: {}", e.getClass().getName(), e.getMessage());
             }
             return false;
+        }
+    }
+
+    public class MyRemoteResourceStreamHandle extends RemoteResourceStreamHandle {
+        private final BandwidthMonitorInputStream bmis;
+        private final String remoteIp;
+        private CloseableHttpResponse response;
+        private String fullUrl;
+        private Request requestForPlugins;
+        private PluginsAddon pluginAddon;
+        private RepoPath repoPath;
+
+        public MyRemoteResourceStreamHandle(
+                CloseableHttpResponse response, String fullUrl, Request requestForPlugins, PluginsAddon pluginAddon,
+                RepoPath repoPath, InputStream is) {
+            this.response = response;
+            this.fullUrl = fullUrl;
+            this.requestForPlugins = requestForPlugins;
+            this.pluginAddon = pluginAddon;
+            this.repoPath = repoPath;
+            this.bmis = new BandwidthMonitorInputStream(is);
+            TrafficService trafficService = ContextHelper.get().beanForType(TrafficService.class);
+            if (trafficService.isActive()) {
+                this.remoteIp = HttpUtils.resolveResponseRemoteAddress(response);
+            } else {
+                this.remoteIp = StringUtils.EMPTY;
+            }
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return bmis;
+        }
+
+        @Override
+        public long getSize() {
+            return -1;
+        }
+
+        @Override
+        public void close() {
+            IOUtils.closeQuietly(bmis);
+            IOUtils.closeQuietly(response);
+            StatusLine statusLine = response.getStatusLine();
+
+            Throwable throwable = getThrowable();
+            if (throwable != null) {
+                log.error("{}: Failed to download '{}'. Received status code {} and caught exception: {}",
+                        HttpRepo.this, fullUrl, statusLine != null ? statusLine.getStatusCode() : "unknown",
+                        throwable.getMessage());
+                log.debug("Failed to download '" + fullUrl + "'", throwable);
+                RepoRequests.logToContext("Failed to download: %s", throwable.getMessage());
+            } else {
+                int status = statusLine != null ? statusLine.getStatusCode() : 0;
+                logDownloaded(fullUrl, status, bmis);
+                RepoRequests.logToContext("Downloaded content");
+            }
+            RepoRequests.logToContext("Executing any AfterRemoteDownload user plugins that may exist");
+            pluginAddon.execPluginActions(AfterRemoteDownloadAction.class, null, requestForPlugins, repoPath);
+            RepoRequests.logToContext("Executed all AfterRemoteDownload user plugins");
+        }
+
+        public String getRemoteIp() {
+            return remoteIp;
         }
     }
 }

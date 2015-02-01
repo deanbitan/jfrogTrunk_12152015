@@ -12,16 +12,12 @@ import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
  */
 public interface ParserElement {
 
-    /**
-     * @return True if this is required for the query building
-     */
-    boolean isVisibleInResult();
 
     /**
      * Returns possible matches between the queryRemainder to this parserElement.
      *
-     * @param queryRemainder    The left over for other parser elements to parse
-     * @param context   Path resolution context
+     * @param queryRemainder The left over for other parser elements to parse
+     * @param context        Path resolution context
      * @return Possible parsing paths
      */
     ParserElementResultContainer[] peelOff(String queryRemainder, AqlParserContext context);

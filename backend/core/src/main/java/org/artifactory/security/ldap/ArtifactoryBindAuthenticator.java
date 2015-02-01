@@ -28,25 +28,27 @@ import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.ldap.NamingException;
-import org.springframework.ldap.core.ContextSource;
+import org.springframework.ldap.core.DirContextAdapter;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.DistinguishedName;
+import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.ldap.support.LdapUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.ldap.SpringSecurityLdapTemplate;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
+import org.springframework.security.ldap.ppolicy.PasswordPolicyControl;
+import org.springframework.security.ldap.ppolicy.PasswordPolicyControlExtractor;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
-import java.text.MessageFormat;
 import java.util.List;
 
 /**
@@ -60,11 +62,6 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
      * The spring context connected to LDAP server
      */
     private LdapContextSource contextSource;
-
-    /**
-     * The pattern for direct finding/authenticating a user. Usually used for OpenLDAP, never used with AD.
-     */
-    private MessageFormat userDnPattern;
 
     /**
      * A list of user search that can be used to search and authenticate the user. Used with AD.
@@ -86,7 +83,7 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
                 "An Authentication pattern should provide a userDnPattern or a searchFilter (or both)");
 
         if (hasDnPattern) {
-            this.userDnPattern = new MessageFormat(ldapSetting.getUserDnPattern());
+            setUserDnPatterns(new String[]{ldapSetting.getUserDnPattern()});
         }
 
         if (hasSearch) {
@@ -116,10 +113,9 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
 
     @Override
     public DirContextOperations authenticate(Authentication authentication) {
+        DirContextOperations user = null;
         Assert.isInstanceOf(UsernamePasswordAuthenticationToken.class, authentication,
                 "Can only process UsernamePasswordAuthenticationToken objects");
-
-        DirContextOperations user = null;
 
         String username = authentication.getName();
         String password = (String) authentication.getCredentials();
@@ -128,23 +124,22 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
             throw new BadCredentialsException("Empty password used.");
         }
 
-        if (userDnPattern != null) {
-            // If DN patterns are configured, try authenticating with them directly
-            user = bindWithDn(userDnPattern.format(new Object[]{username}), username, password);
+        // If DN patterns are configured, try authenticating with them directly
+        for (String dn : getUserDns(username)) {
+            user = bindWithDn(dn, username, password);
+
             if (user != null) {
-                return user;
+                break;
             }
         }
 
-        if (userSearches != null && !userSearches.isEmpty()) {
+        if (user == null && (userSearches != null && !userSearches.isEmpty())) {
             for (FilterBasedLdapUserSearch userSearch : userSearches) {
                 try {
-                    // Otherwise use the configured locator to find the user
-                    // and authenticate with the returned DN.
                     DirContextOperations userFromSearch = userSearch.searchForUser(username);
                     user = bindWithDn(userFromSearch.getDn().toString(), username, password);
                     if (user != null) {
-                        return user;
+                        break;
                     }
                 } catch (UsernameNotFoundException e) {
                     log.debug("Searching for user {} failed for {}: {}",
@@ -155,52 +150,55 @@ public class ArtifactoryBindAuthenticator extends BindAuthenticator {
             }
         }
 
-        throw new BadCredentialsException(
-                messages.getMessage("BindAuthenticator.badCredentials", "Bad credentials"));
+        if (user == null) {
+            throw new BadCredentialsException(
+                    messages.getMessage("BindAuthenticator.badCredentials", "Bad credentials"));
+        }
+
+        return user;
     }
 
-    private DirContextOperations bindWithDn(String userDn, String username, String password) {
-        SpringSecurityLdapTemplate template = new SpringSecurityLdapTemplate(
-                new BindWithSpecificDnContextSource(getContextSource(), userDn, password));
-        template.setIgnorePartialResultException(true);
-        try {
-            return template.retrieveEntry(userDn, getUserAttributes());
+    private DirContextOperations bindWithDn(String userDnStr, String username, String password) {
+        BaseLdapPathContextSource ctxSource = getContextSource();
+        DistinguishedName userDn = new DistinguishedName(userDnStr);
+        DistinguishedName fullDn = new DistinguishedName(userDn);
+        fullDn.prepend(ctxSource.getBaseLdapPath());
 
-        } catch (BadCredentialsException e) {
+        log.debug("Attempting to bind as " + fullDn);
+
+        DirContext ctx = null;
+        try {
+            ctx = getContextSource().getContext(fullDn.toString(), password);
+            // Check for password policy control
+            PasswordPolicyControl ppolicy = PasswordPolicyControlExtractor.extractControl(ctx);
+
+            log.debug("Retrieving attributes...");
+
+            Attributes attrs = ctx.getAttributes(userDn, getUserAttributes());
+
+            DirContextAdapter result = new DirContextAdapter(attrs, userDn, ctxSource.getBaseLdapPath());
+
+            if (ppolicy != null) {
+                result.setAttributeValue(ppolicy.getID(), ppolicy);
+            }
+
+            return result;
+        } catch (NamingException e) {
             // This will be thrown if an invalid user name is used and the method may
             // be called multiple times to try different names, so we trap the exception
             // unless a subclass wishes to implement more specialized behaviour.
-            handleBindException(userDn, username, e.getCause());
+            if ((e instanceof org.springframework.ldap.AuthenticationException)
+                    || (e instanceof org.springframework.ldap.OperationNotSupportedException)) {
+                handleBindException(userDnStr, username, e);
+            } else {
+                throw e;
+            }
+        } catch (javax.naming.NamingException e) {
+            throw LdapUtils.convertLdapException(e);
+        } finally {
+            LdapUtils.closeContext(ctx);
         }
 
         return null;
-    }
-
-    private static class BindWithSpecificDnContextSource implements ContextSource {
-        private LdapContextSource ctxFactory;
-        private DistinguishedName userDn;
-        private String password;
-
-        public BindWithSpecificDnContextSource(LdapContextSource ctxFactory, String userDn, String password) {
-            this.ctxFactory = ctxFactory;
-            this.userDn = new DistinguishedName(userDn);
-            this.userDn.prepend(ctxFactory.getBaseLdapPath());
-            this.password = password;
-        }
-
-        @Override
-        public DirContext getReadOnlyContext() throws DataAccessException {
-            return ctxFactory.getContext(userDn.toString(), password);
-        }
-
-        @Override
-        public DirContext getReadWriteContext() throws DataAccessException {
-            return getReadOnlyContext();
-        }
-
-        @Override
-        public DirContext getContext(String s, String s1) throws NamingException {
-            return ctxFactory.getContext(s, s1);
-        }
     }
 }

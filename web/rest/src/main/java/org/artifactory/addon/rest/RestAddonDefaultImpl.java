@@ -22,12 +22,12 @@ import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.artifact.ItemPermissions;
-import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
+import org.artifactory.aql.result.AqlRestResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
@@ -68,13 +68,13 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts, int failFast)
+    public Response copy(String path, String target, int dryRun, int suppressLayouts, int failFast)
             throws Exception {
         throw new MissingRestAddonException();
     }
 
     @Override
-    public MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts, int failFast)
+    public Response move(String path, String target, int dryRun, int suppressLayouts, int failFast)
             throws Exception {
         throw new MissingRestAddonException();
     }
@@ -286,6 +286,11 @@ public class RestAddonDefaultImpl implements RestAddon {
     @Override
     public Response getLatestVersionByProperties(String repoKey, String path, Map<String, String[]> parameterMap,
             HttpServletRequest request) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public AqlRestResult executeQuery(String query, HttpServletRequest request) {
         throw new MissingRestAddonException();
     }
 }

@@ -18,6 +18,7 @@
 
 package org.artifactory.webapp.wicket.page.home.settings.ivy.gradle;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.markup.html.form.Form;
@@ -27,6 +28,7 @@ import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavio
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
 import org.artifactory.common.wicket.component.label.highlighter.Syntax;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.webapp.wicket.page.home.settings.BaseSettingsGeneratorPanel;
@@ -54,6 +56,7 @@ public class GradleBuildScriptPanel extends BaseSettingsGeneratorPanel {
     private GradleBuildScriptRepoSelectorPanel libsResolverPanel;
     private GradleBuildScriptRepoSelectorPanel libsPublisherPanel;
     private final String servletContextUrl;
+    private final String JCENTER_DUMMY_REPO_KEY = "Bintray -> jcenter";
 
     /**
      * Main constructor
@@ -114,7 +117,14 @@ public class GradleBuildScriptPanel extends BaseSettingsGeneratorPanel {
         };
         form.add(new DefaultButtonBehavior(downloadPropsLink));
 
-        pluginsResolverPanel = new GradleBuildScriptRepoSelectorPanel("pluginsResolverPanel", virtualRepoDescriptors,
+        //Add a dummy repo descriptor for jcenter
+        List<RepoDescriptor> pluginResolverRepos = Lists.newArrayList();
+        LocalRepoDescriptor jcenter = new LocalRepoDescriptor();
+        jcenter.setKey(JCENTER_DUMMY_REPO_KEY);
+        pluginResolverRepos.add(jcenter);
+        pluginResolverRepos.addAll(virtualRepoDescriptors);
+
+        pluginsResolverPanel = new GradleBuildScriptRepoSelectorPanel("pluginsResolverPanel", pluginResolverRepos,
                 servletContextUrl, GradleBuildScriptRepoSelectorPanel.RepoType.PLUGINS_RESOLVER, true);
         form.add(pluginsResolverPanel);
 
@@ -180,22 +190,27 @@ public class GradleBuildScriptPanel extends BaseSettingsGeneratorPanel {
         repoDetailsProperties.setProperty("gradle.build.3tabs", "            ");
         repoDetailsProperties.setProperty("gradle.build.4tabs", "                ");
 
-        // Plugins
-        repoDetailsProperties.setProperty("plugins.repository.url", pluginsResolverPanel.getFullRepositoryUrl());
-        if (pluginsResolverPanel.isUseMaven()) {
-            repoDetailsProperties.setProperty("maven.repo",
-                    replaceValuesAndGetTemplateValue("/build.gradle.maven.repo.template", repoDetailsProperties));
-        } else {
-            repoDetailsProperties.setProperty("maven.repo", "");
-        }
-
-        if (pluginsResolverPanel.isUseIvy()) {
-            repoDetailsProperties.setProperty("ivy.repo",
-                    replaceValuesAndGetTemplateValue("/build.gradle.ivy.repo.template", repoDetailsProperties));
-        } else {
+        //jcenter overrides both maven and ivy
+        if(pluginsResolverPanel.getSelectedRepositoryKey().equals(JCENTER_DUMMY_REPO_KEY)) {
+            repoDetailsProperties.setProperty("maven.repo", "jcenter()");
             repoDetailsProperties.setProperty("ivy.repo", "");
-        }
+        // Plugins
+        } else {
+            repoDetailsProperties.setProperty("plugins.repository.url", pluginsResolverPanel.getFullRepositoryUrl());
+            if (pluginsResolverPanel.isUseMaven()) {
+                repoDetailsProperties.setProperty("maven.repo",
+                        replaceValuesAndGetTemplateValue("/build.gradle.maven.repo.template", repoDetailsProperties));
+            } else {
+                repoDetailsProperties.setProperty("maven.repo", "");
+            }
 
+            if (pluginsResolverPanel.isUseIvy()) {
+                repoDetailsProperties.setProperty("ivy.repo",
+                        replaceValuesAndGetTemplateValue("/build.gradle.ivy.repo.template", repoDetailsProperties));
+            } else {
+                repoDetailsProperties.setProperty("ivy.repo", "");
+            }
+        }
         // Publisher
         if (libsPublisherPanel.isUseIvy()) {
             repoDetailsProperties.setProperty("ivy.publisher",

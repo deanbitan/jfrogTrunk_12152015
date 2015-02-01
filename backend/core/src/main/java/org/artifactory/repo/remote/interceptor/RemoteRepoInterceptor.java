@@ -18,9 +18,12 @@
 
 package org.artifactory.repo.remote.interceptor;
 
+import org.apache.http.client.methods.HttpRequestBase;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.repo.RepoPath;
+
+import java.util.Map;
 
 /**
  * @author Gidi Shabat
@@ -51,4 +54,14 @@ public interface RemoteRepoInterceptor {
      * Called at the end of a successful remote download
      */
     void afterRemoteDownload(RepoResource remoteResource);
+
+    /**
+     * Provides a chance to modify a remote request and it's headers before the execution in
+     * {@link org.artifactory.repo.HttpRepo.retrieveInfo} and
+     * {@link org.artifactory.repo.HttpRepo.downloadResource}
+     *
+     * @param request The request about to be executed
+     * @param headers The request headers
+     */
+    void beforeRemoteHttpMethodExecution(HttpRequestBase request, Map<String, String> headers);
 }

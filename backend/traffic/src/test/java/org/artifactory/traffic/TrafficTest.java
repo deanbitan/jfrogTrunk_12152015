@@ -60,6 +60,6 @@ public class TrafficTest {
     @Test
     public void testTrafficLog() {
         TrafficLogger.logTransferEntry(new DownloadEntry(
-                InfoFactoryHolder.get().createRepoPath("moo", "moo").getId(), 1L, 0L));
+                InfoFactoryHolder.get().createRepoPath("moo", "moo").getId(), 1L, 0L, "127.0.0.1"));
     }
 }

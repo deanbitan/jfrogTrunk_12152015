@@ -47,6 +47,8 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     private String servletContextUrl = "";
 
+    private Boolean replaceHeadRequestWithGet;
+
     public InternalArtifactoryRequest(RepoPath repoPath) {
         String repoKey = processMatrixParamsIfExist(repoPath.getRepoKey());
         String path = processMatrixParamsIfExist(repoPath.getPath());
@@ -171,6 +173,10 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         this.disableFolderRedirectAssertion = disableFolderRedirectAssertion;
     }
 
+    public void setReplaceHeadRequestWithGet(Boolean replaceHeadRequestWithGet) {
+        this.replaceHeadRequestWithGet = replaceHeadRequestWithGet;
+    }
+
     @Override
     public void setZipResourcePath(String zipResourcePath) {
         super.setZipResourcePath(zipResourcePath);
@@ -196,6 +202,9 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
         }
         if (PARAM_FOLDER_REDIRECT_ASSERTION.equals(name)) {
             return String.valueOf(disableFolderRedirectAssertion);
+        }
+        if (PARAM_REPLACE_HEAD_IN_RETRIEVE_INFO_WITH_GET.equals(name)) {
+            return String.valueOf(replaceHeadRequestWithGet);
         }
         return null;
     }

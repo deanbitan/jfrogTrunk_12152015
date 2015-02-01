@@ -68,13 +68,16 @@ import java.util.Map;
 public class RepoIndexer extends DefaultIndexer implements ArtifactScanningListener {
     private static final Logger log = LoggerFactory.getLogger(RepoIndexer.class);
 
-    private StoringRepo repo;
+    private final StoringRepo repo;
     private IndexingContext context;
     private IndexPacker packer;
     private final DefaultIndexerEngine defaultIndexerEngine;
     private final ArtifactoryContentScanner scanner;
 
     public RepoIndexer(StoringRepo repo) {
+        if (repo == null) {
+            throw new IllegalArgumentException("Repo cannot be null");
+        }
         this.repo = repo;
         //Unplexus
         defaultIndexerEngine = new DefaultIndexerEngine();
@@ -95,7 +98,6 @@ public class RepoIndexer extends DefaultIndexer implements ArtifactScanningListe
 
         ArtifactoryArtifactContextProducer artifactContextProducer = new ArtifactoryArtifactContextProducer();
         scanner = new ArtifactoryContentScanner(artifactContextProducer);
-
     }
 
     @Override

@@ -19,6 +19,7 @@
 package org.artifactory.repo.service.mover;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.MoveMultiStatusHolder;
@@ -62,23 +63,19 @@ import java.io.InputStream;
  */
 public abstract class BaseRepoPathMover {
     private static final Logger log = LoggerFactory.getLogger(BaseRepoPathMover.class);
-
-    private InternalRepositoryService repositoryService;
-    private MavenMetadataService mavenMetadataService;
-
-    protected AuthorizationService authorizationService;
-    protected StorageInterceptors storageInterceptors;
-
     protected final boolean copy;
     protected final boolean dryRun;
     protected final boolean executeMavenMetadataCalculation;
     protected final boolean failFast;
     protected final boolean unixStyleBehavior;
     protected final Properties properties;
-
-    private final boolean pruneEmptyFolders;
     protected final MoveMultiStatusHolder status;
+    private final boolean pruneEmptyFolders;
+    protected AuthorizationService authorizationService;
+    protected StorageInterceptors storageInterceptors;
     protected ArtifactoryContext artifactoryContext;
+    private InternalRepositoryService repositoryService;
+    private MavenMetadataService mavenMetadataService;
 
     protected BaseRepoPathMover(MoveMultiStatusHolder status, MoverConfig moverConfig) {
         this.status = status;
@@ -138,28 +135,28 @@ public abstract class BaseRepoPathMover {
 
         // snapshot/release policy is enforced only on files since it only has a meaning on files
         if (source.isFile() && !targetRepo.handlesReleaseSnapshot(targetPath)) {
-            status.warn("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
-                    + "' due to its snapshot/release handling policy.", log);
+            status.error("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
+                    + "' due to its snapshot/release handling policy.", HttpStatus.SC_BAD_REQUEST, log);
             return false;
         }
 
         if (!targetRepo.accepts(targetRepoPath)) {
-            status.warn("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
-                    + "' due to its include/exclude patterns.", log);
+            status.error("The repository '" + targetRepo.getKey() + "' rejected the path '" + targetPath
+                    + "' due to its include/exclude patterns.", HttpStatus.SC_FORBIDDEN, log);
             return false;
         }
 
         // permission checks
         if (!copy && !authorizationService.canDelete(sourceRepoPath)) {
-            status.warn("User doesn't have permissions to move '" + sourceRepoPath + "'. " +
-                    "Needs delete permissions.", log);
+            status.error("User doesn't have permissions to move '" + sourceRepoPath + "'. " +
+                    "Needs delete permissions.", HttpStatus.SC_FORBIDDEN, log);
             return false;
         }
 
         if (contains(targetRrp)) {
             if (!authorizationService.canDelete(targetRepoPath)) {
-                status.warn("User doesn't have permissions to override '" + targetRepoPath + "'. " +
-                        "Needs delete permissions.", log);
+                status.error("User doesn't have permissions to override '" + targetRepoPath + "'. " +
+                        "Needs delete permissions.", HttpStatus.SC_UNAUTHORIZED, log);
                 return false;
             }
 
@@ -167,13 +164,13 @@ public abstract class BaseRepoPathMover {
             if (source.isFolder()) {
                 VfsItem targetFsItem = targetRepo.getMutableFsItem(targetRepoPath);
                 if (targetFsItem != null && targetFsItem.isFile()) {
-                    status.warn("Can't move folder under file '" + targetRepoPath + "'. ", log);
+                    status.error("Can't move folder under file '" + targetRepoPath + "'. ", HttpStatus.SC_BAD_REQUEST, log);
                     return false;
                 }
             }
         } else if (!authorizationService.canDeploy(targetRepoPath)) {
-            status.warn("User doesn't have permissions to create '" + targetRepoPath + "'. " +
-                    "Needs write permissions.", log);
+            status.error("User doesn't have permissions to create '" + targetRepoPath + "'. " +
+                    "Needs write permissions.", HttpStatus.SC_FORBIDDEN, log);
             return false;
         }
 
@@ -185,7 +182,7 @@ public abstract class BaseRepoPathMover {
                 resourceStream = ((VfsFile) source).getStream();
                 new PomTargetPathValidator(targetPath, moduleInfo).validate(resourceStream, false);
             } catch (Exception e) {
-                status.warn("Failed to validate target path of pom: " + targetPath, e, log);
+                status.error("Failed to validate target path of pom: " + targetPath, HttpStatus.SC_BAD_REQUEST, e, log);
                 return false;
             } finally {
                 IOUtils.closeQuietly(resourceStream);

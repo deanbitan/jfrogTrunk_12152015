@@ -46,10 +46,10 @@ public class ConcurrentIdGeneratorTest extends IdGeneratorBaseTest {
     private static final Logger log = LoggerFactory.getLogger(ConcurrentIdGeneratorTest.class);
 
     // Use only prime numbers to make sure things don't overlaps
-    public static final int POOL_SIZE = 113;
+    public static final int POOL_SIZE = 2;
     public static final int COUNT = 3 * POOL_SIZE;
-    public static final int STEP = 83;
-    public static final int BLOCKS_INC = 1361;
+    public static final int STEP = 2;
+    public static final int BLOCKS_INC = 2;
 
     static {
         System.setProperty(ConstantValues.dbIdGeneratorFetchAmount.getPropertyName(), String.valueOf(STEP));
@@ -129,14 +129,29 @@ public class ConcurrentIdGeneratorTest extends IdGeneratorBaseTest {
             return skipDiffs;
         }
 
+        /**
+         * Let ACTUAL be the total number of ids, provided by the database
+         * Let BOTTOM be the total number of ids, requested by the test.
+         * Let STEP be the size of single block (of idis), provided by the database
+         * The test ensure that ACTUAL minus BOTTOM is less than STEP.
+         * <p/>
+         * Note that the skipDiffs is the number of ids, requested by Artifactory during the test, those requests are
+         * included in the ACTUAL but not in the BOTTOM therefore we should consider the in the skipDiffs calculation:
+         * <p/>
+         * idis provided by the database and the
+         *
+         * @param currentInTableId
+         * @param acceptDelta
+         */
         public void checkIncrementDelta(Long currentInTableId, int acceptDelta) {
-            //check increment by count
-            long actual = currentInTableId - startId - 1L;
-            long bottom = (long) COUNT * (long) BLOCKS_INC - startId;
+            // calculate the idis provided by the database during the test
+            long actual = currentInTableId - startId;
+            // calculate the number of idis requested by the test
+            long bottom = (long) COUNT * (long) BLOCKS_INC;
             long delta = actual - bottom;
             String msg = "Actual=" + actual + " bottom=" + bottom + " delta=" + delta + " acceptDelta=" + acceptDelta + " skips=" + skipDiffs;
             log.info(msg);
-            assertTrue(delta > 0L && delta < (acceptDelta + skipDiffs),
+            assertTrue(delta >= 0L && delta < (acceptDelta + skipDiffs),
                     "Index should have been incremented. Got " + msg);
         }
     }
@@ -165,6 +180,7 @@ public class ConcurrentIdGeneratorTest extends IdGeneratorBaseTest {
                     if (nextId % 100_000 == 0) {
                         log.info("nextId = " + nextId);
                     }
+
                     result.put(nextId, nextId);
                 }
             } finally {

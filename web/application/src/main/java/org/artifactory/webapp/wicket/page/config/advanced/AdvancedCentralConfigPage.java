@@ -77,7 +77,7 @@ public class AdvancedCentralConfigPage extends AuthenticatedPage {
                     error("Cannot save config descriptor during offline state.");
                 } else {
                     try {
-                        centralConfigService.setConfigXml(editorValue);
+                        centralConfigService.setConfigXml(editorValue,true);
                         AccessLogger.configurationChanged();
                         info("Central configuration successfully saved.");
                     } catch (Exception e) {

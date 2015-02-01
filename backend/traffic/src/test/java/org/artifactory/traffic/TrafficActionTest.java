@@ -50,7 +50,7 @@ public class TrafficActionTest {
      * Construct a download entry with an expression using the TrafficAction
      */
     public void testDownloadAction() {
-        String entry = "20090319110249|10|DOWNLOAD|repo1:antlr/antlr/2.7.6/antlr-2.7.6.jar|443432";
+        String entry = "20090319110249|10|DOWNLOAD|127.0.0.1|repo1:antlr/antlr/2.7.6/antlr-2.7.6.jar|443432";
         TrafficEntry trafficEntry = TokenizedTrafficEntryFactory.newTrafficEntry(entry);
         Assert.assertNotNull(trafficEntry);
         Assert.assertEquals(trafficEntry.getAction(), TrafficAction.DOWNLOAD);
@@ -61,7 +61,7 @@ public class TrafficActionTest {
      * Construct an upload entry with an expression using the TrafficAction
      */
     public void testUploadAction() {
-        String entry = "20090319110249|10|UPLOAD|repo1-cache:antlr/antlr/2.7.6/antlr-2.7.6.jar|443432";
+        String entry = "20090319110249|10|UPLOAD|127.0.0.1|repo1-cache:antlr/antlr/2.7.6/antlr-2.7.6.jar|443432";
         TrafficEntry trafficEntry = TokenizedTrafficEntryFactory.newTrafficEntry(entry);
         Assert.assertNotNull(trafficEntry);
         Assert.assertEquals(trafficEntry.getAction(), TrafficAction.UPLOAD);

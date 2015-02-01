@@ -26,7 +26,6 @@ import org.artifactory.backup.BackupJob;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.maven.index.MavenIndexerJob;
-import org.artifactory.maven.index.MavenIndexerServiceImpl;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.cleanup.ArtifactCleanupJob;
@@ -78,10 +77,6 @@ import static org.artifactory.schedule.StopStrategy.STOP;
                 @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = ExportJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = BackupJob.class, strategy = StopStrategy.IMPOSSIBLE),
-                @StopCommand(command = MavenIndexerServiceImpl.FindOrCreateMavenIndexJob.class,
-                        strategy = StopStrategy.STOP),
-                @StopCommand(command = MavenIndexerServiceImpl.SaveMavenIndexFileJob.class,
-                        strategy = StopStrategy.STOP),
                 @StopCommand(command = MavenIndexerJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = ArtifactCleanupJob.class, strategy = StopStrategy.STOP),
                 @StopCommand(command = IntegrationCleanupJob.class, strategy = StopStrategy.STOP),

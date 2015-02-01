@@ -19,15 +19,20 @@
 package org.artifactory.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HeaderElement;
+import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -36,6 +41,9 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.impl.conn.DefaultSchemePortResolver;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeaderElementIterator;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -80,6 +88,57 @@ public class HttpClientConfigurator {
             builder.setDefaultCredentialsProvider(credsProvider);
         }
         return builder.setDefaultRequestConfig(config.build()).build();
+    }
+
+    public HttpClientConfigurator keepAliveStrategy() {
+        ConnectionKeepAliveStrategy keepAliveStrategy = getConnectionKeepAliveStrategy();
+        builder.setKeepAliveStrategy(keepAliveStrategy);
+        return this;
+    }
+
+    /**
+     * provide a custom keep-alive strategy
+     *
+     * @return keep-alive strategy to be used for connection pool
+     */
+    private ConnectionKeepAliveStrategy getConnectionKeepAliveStrategy() {
+        return new ConnectionKeepAliveStrategy() {
+            @Override
+            public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
+                // Honor 'keep-alive' header
+                HeaderElementIterator it = new BasicHeaderElementIterator(
+                        response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+                while (it.hasNext()) {
+                    HeaderElement he = it.nextElement();
+                    String param = he.getName();
+                    String value = he.getValue();
+                    if (value != null && param.equalsIgnoreCase("timeout")) {
+                        try {
+                            return Long.parseLong(value) * 1000;
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                }
+                HttpHost target = (HttpHost) context.getAttribute(
+                        HttpClientContext.HTTP_TARGET_HOST);
+                if ("www.naughty-server.com".equalsIgnoreCase(target.getHostName())) {
+                    return 5 * 1000;
+                } else {
+                    return 30 * 1000;
+                }
+            }
+        };
+    }
+
+    /**
+     * set customized Pooling Http Client Connection Manager
+     *
+     * @param connectionManager -  custom PoolingHttpClientConnectionManager
+     * @return Http Client Configurator
+     */
+    public HttpClientConfigurator connectionMgr(PoolingHttpClientConnectionManager connectionManager) {
+        builder.setConnectionManager(connectionManager);
+        return this;
     }
 
     /**

@@ -24,9 +24,11 @@ import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.IAjaxCallDecorator;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.model.CompoundPropertyModel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
@@ -49,7 +51,7 @@ import java.util.Map;
 /**
  * @author Shay Yaakov
  */
-public class BintrayProfilePanel extends TitledPanel {
+public class BintrayProfilePanel<T> extends TitledPanel {
 
     @SpringBean
     private BintrayService bintrayService;
@@ -59,27 +61,27 @@ public class BintrayProfilePanel extends TitledPanel {
 
     private static final String HIDDEN_PASSWORD = "************";
 
-    private final TextField<String> bintrayUsername;
-    private final TextField<String> bintrayApiKey;
-    private final TitledAjaxSubmitLink testButton;
+    protected final TextField<String> bintrayUsername;
+    protected final PasswordTextField bintrayApiKey;
+    protected final TitledAjaxSubmitLink testButton;
 
-    public BintrayProfilePanel(String id, final ProfileModel profile) {
+    public BintrayProfilePanel(String id, final T model, boolean enableFields) {
         super(id);
         setOutputMarkupId(true);
-        setDefaultModel(new CompoundPropertyModel<>(profile));
+        setDefaultModel(getModel(model));
         add(new CssClass("display:block"));
         bintrayUsername = new TextField<>("bintrayUsername", new Model<>(HIDDEN_PASSWORD));
-        bintrayUsername.setEnabled(false);
+        bintrayUsername.setEnabled(enableFields);
+        bintrayUsername.setRequired(false);
         add(bintrayUsername);
-        add(new HelpBubble("bintrayUsername.help", new ResourceModel("bintrayUsername.help")));
-
-        bintrayApiKey = new TextField<>("bintrayApiKey", new Model<>(HIDDEN_PASSWORD));
-        bintrayApiKey.setEnabled(false);
+        bintrayApiKey = new PasswordTextField("bintrayApiKey", new PropertyModel<String>(model, "bintrayApiKey"));
+        bintrayApiKey.setResetPassword(false);
+        bintrayApiKey.setEnabled(enableFields);
+        bintrayApiKey.setRequired(false);
         add(bintrayApiKey);
-        add(new HelpBubble("bintrayApiKey.help", new ResourceModel("bintrayApiKey.help")));
-
+        addHelpBubbles();
         Component bintrayLink;
-        if (StringUtils.isBlank(profile.getBintrayAuth())) {
+        if (StringUtils.isBlank(getBintrayAuth())) {
             bintrayLink = new ExternalLink("bintrayLink", bintrayService.getBintrayRegistrationUrl(),
                     "Register to Bintray...");
             bintrayLink.add(new CssClass("bintray-link"));
@@ -94,8 +96,8 @@ public class BintrayProfilePanel extends TitledPanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 try {
                     Map<String, String> headersMap = WicketUtils.getHeadersMap();
-                    BintrayUser bintrayUser = bintrayService.getBintrayUser(profile.getBintrayUsername(),
-                            profile.getBintrayApiKey(), headersMap);
+                    BintrayUser bintrayUser = bintrayService.getBintrayUser(getBintrayUser(),
+                            getBintrayApiKey(), headersMap);
                     info("Successfully authenticated '" + bintrayUser.getFullName() + "' with Bintray.");
                 } catch (IOException e) {
                     error("Connection failed with exception: " + e.getMessage());
@@ -121,6 +123,27 @@ public class BintrayProfilePanel extends TitledPanel {
         return "Bintray Settings";
     }
 
+    protected String getBintrayAuth() {
+        return ((ProfileModel) getDefaultModelObject()).getBintrayAuth();
+    }
+
+    protected String getBintrayUser() {
+        return ((ProfileModel) getDefaultModelObject()).getBintrayUsername();
+    }
+
+    protected String getBintrayApiKey() {
+        return ((ProfileModel) getDefaultModelObject()).getBintrayApiKey();
+    }
+
+    protected IModel getModel(Object model) {
+        return new CompoundPropertyModel<>((ProfileModel) model);
+    }
+
+    protected void addHelpBubbles() {
+        add(new HelpBubble("bintrayUsername.help", new ResourceModel("bintrayUsername.help")));
+        add(new HelpBubble("bintrayApiKey.help", new ResourceModel("bintrayApiKey.help")));
+    }
+
     @Override
     protected Component newToolbar(String id) {
         return new HelpBubble(id, new ResourceModel("bintray.help"));
@@ -130,9 +153,7 @@ public class BintrayProfilePanel extends TitledPanel {
         bintrayUsername.setDefaultModel(new PropertyModel<String>(profileModel, "bintrayUsername"));
         bintrayUsername.setEnabled(enableFields);
 
-        bintrayApiKey.setDefaultModel(new PropertyModel<String>(profileModel, "bintrayApiKey"));
         bintrayApiKey.setEnabled(enableFields);
-
         testButton.setEnabled(enableFields);
     }
 }

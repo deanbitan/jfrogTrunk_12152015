@@ -18,6 +18,7 @@
 
 package org.artifactory.repo.service;
 
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
@@ -134,6 +135,8 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     @Override
     void exportTo(ExportSettings settings);
 
+    boolean isRepoExistInCache(RepoPath repoPath);
+
     /**
      * Returns a local or local cache repository. Throws an exception if not found
      *
@@ -184,4 +187,11 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     @Lock
     MoveMultiStatusHolder moveWithoutMavenMetadata(RepoPath from, RepoPath to, boolean dryRun, boolean suppressLayouts,
             boolean failFast);
+
+    /**
+     * register Pooling Http Client Connection Manager in order to monitor the connection pool and clean idle or expire connection
+     *
+     * @param connectionManager - remote repository Pooling Http Client Connection Manager
+     */
+    void registerConnectionPoolMgr(PoolingHttpClientConnectionManager connectionManager);
 }

@@ -64,6 +64,10 @@ public class ArtifactorySystemProperties {
                     .put("artifactory.lockTimeoutSecs", new SamePropertyMapper("artifactory.locks.timeoutSecs"))
                     .put("artifactory.xmlAdditionalMimeTypeExtensions", new NullPropertyMapper())
                     .put("repo.cleanup.intervalHours", new NullPropertyMapper())
+                    .put("bintray.system.user", new MovedToConfigPropertyMapper
+                            ("The bintray config section in the admin page"))
+                    .put("bintray.system.api.key", new MovedToConfigPropertyMapper
+                            ("The bintray config section in the admin page"))
                     .build();
 
     public String getProperty(String key, @Nullable String defaultValue) {

@@ -100,20 +100,7 @@ public class UsersTable extends ModalListPanel<UserModel> {
     }
 
     private SelectAllCheckboxColumn<UserModel> createSelectedColumn() {
-        return new SelectAllCheckboxColumn<UserModel>("", "selected", null) {
-
-            @Override
-            protected boolean isEnabled(UserModel userModel) {
-                //Enable the user's individual checkbox only if it's not anonymous
-                return !userModel.isAnonymous();
-            }
-
-            @Override
-            protected boolean canChangeItemSelectionState(UserModel userModel) {
-                //Make the user's selection state affected by the select all checkbox only if it's not anonymous
-                return !userModel.isAnonymous();
-            }
-        };
+        return new SelectAllCheckboxColumn<>("", "selected", null);
     }
 
     private PropertyColumn<UserModel> createRealmColumn() {

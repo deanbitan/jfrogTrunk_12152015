@@ -90,6 +90,17 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
     void addBuild(@Nonnull DetailedBuildRun detailedBuildRun);
 
     /**
+     * Adds the given build to the DB, with a flag that indicates if the call is internal or not - for cases
+     * where the call is made from the papi, this is to avoid accidental endless loops of plugin actions calling
+     * one another indefinitely.
+     *
+     * @param build                     Build to add
+     * @param activatePluginCallbacks   flag that indicates if the call is internal
+     */
+    @Lock
+    void addBuild(Build build, boolean activatePluginCallbacks);
+
+    /**
      * Persists the changes made to the given existing build configuration
      *
      * @param detailedBuildRun Existing build configuration

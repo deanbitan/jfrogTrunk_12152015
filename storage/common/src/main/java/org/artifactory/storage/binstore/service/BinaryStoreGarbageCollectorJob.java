@@ -24,6 +24,8 @@ import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.storage.spring.StorageContextHelper;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Date: 11/26/12
@@ -31,15 +33,18 @@ import org.quartz.JobExecutionException;
  *
  * @author freds
  */
-@JobCommand(singleton = true,
-        schedulerUser = TaskUser.SYSTEM,
-        manualUser = TaskUser.SYSTEM
-        //, commandsToStop = {@StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)}
-)
+@JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM)
 public class BinaryStoreGarbageCollectorJob extends QuartzCommand {
+    private static final Logger log = LoggerFactory.getLogger(BinaryStoreGarbageCollectorJob.class);
 
     @Override
     protected void onExecute(JobExecutionContext callbackContext) throws JobExecutionException {
-        StorageContextHelper.get().beanForType(InternalBinaryStore.class).garbageCollect();
+        try {
+            log.debug("Triggered BinaryStoreGarbageCollectorJob started");
+            StorageContextHelper.get().beanForType(InternalBinaryStore.class).garbageCollect();
+            log.debug("Triggered BinaryStoreGarbageCollectorJob finished");
+        } catch (Exception e) {
+            throw new JobExecutionException(e);
+        }
     }
 }

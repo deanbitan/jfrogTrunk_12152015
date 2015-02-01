@@ -28,7 +28,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Properties;
 
 /**
@@ -37,14 +39,13 @@ import java.util.Properties;
  * @author Yossi Shaul
  */
 public class StorageProperties {
-    private static final Logger log = LoggerFactory.getLogger(StorageProperties.class);
-
     protected static final int DEFAULT_MAX_ACTIVE_CONNECTIONS = 100;
     protected static final int DEFAULT_MAX_IDLE_CONNECTIONS = 10;
+    private static final Logger log = LoggerFactory.getLogger(StorageProperties.class);
     private static final String DEFAULT_MAX_CACHE_SIZE = "5GB";
 
-    private final Properties props;
-    private final DbType dbType;
+    private Properties props = null;
+    private DbType dbType = null;
 
     public StorageProperties(File storagePropsFile) throws IOException {
         props = new Properties();
@@ -61,12 +62,52 @@ public class StorageProperties {
         log.debug("Loaded storage properties for supported database type: {}", getDbType());
     }
 
+    public StorageProperties(File storagePropsFile, boolean useLinkedProperties) throws IOException {
+        if (useLinkedProperties) {
+            props = new LinkedProperties();
+        } else {
+            props = new Properties();
+        }
+        try (FileInputStream pis = new FileInputStream(storagePropsFile)) {
+            props.load(pis);
+        }
+        assertMandatoryProperties();
+
+        // cache commonly used properties
+        dbType = DbType.parse(getProperty(Key.type));
+
+        // verify that the database is supported (will throw an exception if not found)
+        log.debug("Loaded storage properties for supported database type: {}", getDbType());
+    }
+
+
+    /**
+     * update storage properties file;
+     * @param updateStoragePropFile
+     * @throws IOException
+     */
+    public void updateStoragePropertiesFile(File updateStoragePropFile) throws IOException {
+        if (props != null) {
+                OutputStream outputStream = new FileOutputStream(updateStoragePropFile);
+                props.store(outputStream, "");
+        }
+    }
+
     public DbType getDbType() {
         return dbType;
     }
 
     public String getConnectionUrl() {
         return getProperty(Key.url);
+    }
+
+    /**
+     * Update the connection URL property (should only be called for derby when the url contains place holders)
+     *
+     * @param connectionUrl The new connection URL
+     */
+    public void setConnectionUrl(String connectionUrl) {
+        props.setProperty(Key.url.key, connectionUrl);
     }
 
     public String getDriverClass() {
@@ -81,6 +122,10 @@ public class StorageProperties {
         String password = getProperty(Key.password);
         password = CryptoHelper.decryptIfNeeded(password);
         return password;
+    }
+
+    public void setPassword(String updatedPassword) {
+        props.setProperty(Key.password.key, updatedPassword);
     }
 
     public int getMaxActiveConnections() {
@@ -113,21 +158,12 @@ public class StorageProperties {
         return StorageUnit.fromReadableString(getProperty(Key.binaryProviderCacheMaxSize, DEFAULT_MAX_CACHE_SIZE));
     }
 
-    /**
-     * Update the connection URL property (should only be called for derby when the url contains place holders)
-     *
-     * @param connectionUrl The new connection URL
-     */
-    public void setConnectionUrl(String connectionUrl) {
-        props.setProperty(Key.url.key, connectionUrl);
-    }
-
     public String getProperty(Key property) {
         return props.getProperty(property.key);
     }
 
     public String getProperty(Key property, String defaultValue) {
-        return props.getProperty(property.key, defaultValue);
+        return  props.getProperty(property.key, defaultValue);
     }
 
     public String getProperty(String key, String defaultValue) {

@@ -169,7 +169,8 @@ public class BuildStoreServiceImpl implements BuildStoreService {
             for (Map.Entry<Object, Object> entry : properties.entrySet()) {
                 buildProperties.add(
                         new BuildProperty(dbService.nextId(), buildId, entry.getKey().toString(),
-                                entry.getValue().toString()));
+                                entry.getValue().toString())
+                );
             }
         } else {
             buildProperties = new HashSet<>(1);
@@ -193,7 +194,8 @@ public class BuildStoreServiceImpl implements BuildStoreService {
                     moduleProperties.add(
                             new ModuleProperty(dbService.nextId(), dbModule.getModuleId(),
                                     entry.getKey().toString(),
-                                    entry.getValue().toString()));
+                                    entry.getValue().toString())
+                    );
                 }
             } else {
                 moduleProperties = Sets.newHashSetWithExpectedSize(1);
@@ -336,7 +338,8 @@ public class BuildStoreServiceImpl implements BuildStoreService {
         } catch (SQLException e) {
             throw new StorageException("Could not find build JSON for latest build" +
                     " name='" + buildName + "' number='" + buildNumber + "' latest date found='" + fullBuildDate + "'",
-                    e);
+                    e
+            );
         }
         return null;
     }
@@ -426,8 +429,7 @@ public class BuildStoreServiceImpl implements BuildStoreService {
     }
 
     @Override
-    public Set<BuildRun> findBuildsForChecksum(BuildSearchCriteria criteria,
-            ChecksumType type, String checksum) {
+    public Set<BuildRun> findBuildsForChecksum(BuildSearchCriteria criteria, ChecksumType type, String checksum) {
         if (!type.isValid(checksum)) {
             log.info("Looking for invalid checksum " + type.name() + " '" + checksum + "'");
         }

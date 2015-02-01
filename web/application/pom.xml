@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.4.2</version>
+        <version>3.5.0</version>
     </parent>
 
     <build>
@@ -104,9 +104,8 @@
         </dependency>
 
         <!-- for cron expressions validation -->
-
         <dependency>
-            <groupId>opensymphony</groupId>
+            <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
         </dependency>
 

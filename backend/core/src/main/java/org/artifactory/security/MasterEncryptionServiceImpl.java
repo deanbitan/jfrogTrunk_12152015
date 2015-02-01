@@ -23,6 +23,7 @@ import org.artifactory.api.security.MasterEncryptionService;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.layout.EncryptConfigurationInterceptor;
 import org.artifactory.security.crypto.CryptoHelper;
+import org.artifactory.security.interceptor.StoragePropertiesEncryptInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +45,8 @@ public class MasterEncryptionServiceImpl implements MasterEncryptionService {
         if (!CryptoHelper.hasMasterKey()) {
             CryptoHelper.createMasterKeyFile();
         }
+        StoragePropertiesEncryptInterceptor storagePropertiesEncryptInterceptor = new StoragePropertiesEncryptInterceptor();
+        storagePropertiesEncryptInterceptor.encryptOrDecryptStoragePropertiesFile(true);
         // config interceptor will encrypt the config before it is saved to the database
         MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
         centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
@@ -56,6 +59,8 @@ public class MasterEncryptionServiceImpl implements MasterEncryptionService {
         }
         AccessLogger.approved("Decrypting with master encryption key");
         MutableCentralConfigDescriptor mutableDescriptor = centralConfigService.getMutableDescriptor();
+        StoragePropertiesEncryptInterceptor storagePropertiesEncryptInterceptor = new StoragePropertiesEncryptInterceptor();
+        storagePropertiesEncryptInterceptor.encryptOrDecryptStoragePropertiesFile(false);
         EncryptConfigurationInterceptor.decrypt(mutableDescriptor);
         CryptoHelper.removeMasterKeyFile();
         centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);

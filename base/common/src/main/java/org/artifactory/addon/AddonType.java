@@ -44,7 +44,7 @@ public enum AddonType {
     WEBSTART("webstart", "WebStart & Jar Signing", 1600),
     BLACKDUCK("blackduck", "Black Duck Integration", 250),
     GEMS("gems", "RubyGems", 1100),
-    NPM("npm", "NPM", 870),
+    NPM("npm", "NPM", 860),
     DEBIAN("debian", "Debian", 900),
     PYPI("pypi", "PyPI", 970),
     DOCKER("docker", "Docker", 910),

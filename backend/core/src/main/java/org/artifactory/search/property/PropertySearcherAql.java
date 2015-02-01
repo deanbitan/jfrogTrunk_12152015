@@ -26,18 +26,17 @@ import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.aql.AqlConverts;
 import org.artifactory.aql.AqlService;
-import org.artifactory.aql.api.AqlApi;
-import org.artifactory.aql.api.AqlArtifactApi;
-import org.artifactory.aql.model.AqlComparatorEnum;
-import org.artifactory.aql.result.AqlQueryResultIfc;
-import org.artifactory.aql.result.rows.AqlArtifact;
+import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
+import org.artifactory.aql.api.internal.AqlBase;
+import org.artifactory.aql.result.AqlEagerResult;
+import org.artifactory.aql.result.rows.AqlItem;
 import org.artifactory.search.SearcherBase;
 import org.artifactory.storage.spring.StorageContextHelper;
 
 import java.util.List;
 import java.util.Set;
 
-import static org.artifactory.aql.api.AqlApi.*;
+import static org.artifactory.aql.api.internal.AqlBase.*;
 import static org.artifactory.aql.model.AqlComparatorEnum.equals;
 
 /**
@@ -50,13 +49,17 @@ public class PropertySearcherAql extends SearcherBase<PropertySearchControls, Pr
     public ItemSearchResults<PropertySearchResult> doSearch(PropertySearchControls controls) {
         Multimap<String, String> properties = controls.getProperties();
 
-        AqlApi.AndClause and = and();
+        AqlBase.AndClause<AqlApiItem> and = and();
+        // Find files and folders
+        and.append(AqlApiItem.type().equal("any"));
         // The artifact should exists in one of the repositories therefore the relation between the repos is OR
         List<String> selectedRepoForSearch = controls.getSelectedRepoForSearch();
-        AqlApi.OrClause or = or();
+        AqlBase.OrClause<AqlApiItem> or = or();
         if (selectedRepoForSearch != null) {
             for (String repoKey : selectedRepoForSearch) {
-                or.append(AqlApi.artifactRepo(equals, repoKey));
+                or.append(
+                        AqlApiItem.repo().equal(repoKey)
+                );
             }
         }
         and.append(or);
@@ -64,10 +67,18 @@ public class PropertySearcherAql extends SearcherBase<PropertySearchControls, Pr
         for (String key : openness) {
             for (String value : properties.get(key)) {
                 if (value == null || "*".equals(value.trim())) {
-                    and.append(propertyKey(AqlComparatorEnum.matches, key));
+                    and.append(
+                            AqlApiItem.property().key().matches(key)
+                    );
                 } else {
-                    and.append(AqlApi.freezeJoin(and(propertyKey(AqlComparatorEnum.matches, key),
-                            propertyValue(AqlComparatorEnum.matches, value))));
+                    and.append(
+                            freezeJoin(
+                                    and(
+                                            AqlApiItem.property().key().matches(key),
+                                            AqlApiItem.property().value().matches(value)
+                                    )
+                            )
+                    );
                 }
             }
         }
@@ -75,20 +86,24 @@ public class PropertySearcherAql extends SearcherBase<PropertySearchControls, Pr
         for (String key : closeness) {
             for (String value : properties.get(key)) {
                 if (value == null) {
-                    and.append(propertyKey(AqlComparatorEnum.equals, key));
+                    and.append(
+                            AqlApiItem.property().key().equal(key)
+                    );
                 } else {
-                    and.append(property(key, AqlComparatorEnum.equals, value));
+                    and.append(
+                            AqlApiItem.property().property(key, equals, value)
+                    );
                 }
             }
         }
-        AqlArtifactApi aqlQuery = AqlApi.findArtifacts().filter(and).limit(getLimit(controls));
+        AqlApiItem aqlQuery = AqlApiItem.create().filter(and).limit(getLimit(controls));
         AqlService aqlService = StorageContextHelper.get().beanForType(AqlService.class);
-        AqlQueryResultIfc<AqlArtifact> result = aqlService.executeQueryEager(aqlQuery);
+        AqlEagerResult<AqlItem> result = aqlService.executeQueryEager(aqlQuery);
         //Return global results list
         long totalResultCount = result.getSize();
         Set<PropertySearchResult> globalResults = Sets.newLinkedHashSet();
-        for (AqlArtifact aqlArtifact : result.getResults()) {
-            globalResults.add(new PropertySearchResult(AqlConverts.toFileInfo.apply(aqlArtifact)));
+        for (AqlItem aqlItem : result.getResults()) {
+            globalResults.add(new PropertySearchResult(AqlConverts.toFileInfo.apply(aqlItem)));
         }
 
         return new ItemSearchResults<>(Lists.newArrayList(globalResults), totalResultCount);

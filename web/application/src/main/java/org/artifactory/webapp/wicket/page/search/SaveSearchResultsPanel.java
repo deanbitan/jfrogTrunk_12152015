@@ -45,7 +45,11 @@ import org.artifactory.common.wicket.component.panel.fieldset.FieldSetPanel;
 import org.artifactory.common.wicket.panel.defaultsubmit.DefaultSubmit;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.util.HtmlUtils;
 
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -57,6 +61,8 @@ import java.util.Set;
  * @author Yossi Shaul
  */
 public class SaveSearchResultsPanel extends FieldSetPanel {
+    private static final Logger log = LoggerFactory.getLogger(SaveSearchResultsPanel.class);
+
     @SpringBean
     protected AuthorizationService authorizationService;
 
@@ -80,6 +86,21 @@ public class SaveSearchResultsPanel extends FieldSetPanel {
     public void init() {
         addSaveResultsForm();
         updateState();
+    }
+
+    /**
+     * result name is encoded to prevent security issue with xss injection
+     */
+    protected void encodeResultName() {
+        try {
+            String tempResult = HtmlUtils.htmlEscape(resultName, "UTF-8");
+            if (!tempResult.equals(resultName)) {
+                resultName = URLEncoder.encode(resultName, "UTF-8");
+            }
+
+        } catch (Exception e) {
+            log.debug("error with encoding search result name", e);
+        }
     }
 
     private void addSaveResultsForm() {

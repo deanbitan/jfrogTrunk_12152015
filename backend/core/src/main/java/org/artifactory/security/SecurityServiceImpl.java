@@ -149,6 +149,42 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     private TreeSet<SecurityListener> securityListeners = new TreeSet<>();
 
+    /**
+     * @param user The authentication token.
+     * @return An array of sids of the current user and all it's groups.
+     */
+    private static Set<ArtifactorySid> getUserEffectiveSids(SimpleUser user) {
+        Set<ArtifactorySid> sids = new HashSet<>(2);
+        Set<UserGroupInfo> groups = user.getDescriptor().getGroups();
+        // add the current user
+        sids.add(new ArtifactorySid(user.getUsername(), false));
+        // add all the groups the user is a member of
+        for (UserGroupInfo group : groups) {
+            sids.add(new ArtifactorySid(group.getGroupName(), true));
+        }
+        return sids;
+    }
+
+    private static boolean isAdmin(Authentication authentication) {
+        return isAuthenticated(authentication) && getSimpleUser(authentication).isAdmin();
+    }
+
+    private static boolean isAuthenticated(Authentication authentication) {
+        return authentication != null && authentication.isAuthenticated();
+    }
+
+    private static SimpleUser getSimpleUser(Authentication authentication) {
+        return (SimpleUser) authentication.getPrincipal();
+    }
+
+    private static boolean matches(PermissionTargetInfo aclPermissionTarget, String path, boolean folder) {
+        return PathMatcher.matches(path, aclPermissionTarget.getIncludes(), aclPermissionTarget.getExcludes(), folder);
+    }
+
+    private static XStream getXstream() {
+        return InfoFactoryHolder.get().getSecurityXStream();
+    }
+
     @Autowired
     private void setApplicationContext(ApplicationContext context) throws BeansException {
         this.context = (InternalArtifactoryContext) context;
@@ -313,6 +349,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         cleanupAclInfo(compatibleAcl);
         AclInfo createdAcl = aclStoreService.createAcl(compatibleAcl);
         interceptors.onPermissionsAdd();
+        addons.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null);
         return createdAcl;
     }
 
@@ -337,6 +374,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     public void deleteAcl(PermissionTargetInfo target) {
         aclStoreService.deleteAcl(target.getName());
         interceptors.onPermissionsDelete();
+        addons.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null);
     }
 
     @Override
@@ -1279,22 +1317,6 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
-    /**
-     * @param user The authentication token.
-     * @return An array of sids of the current user and all it's groups.
-     */
-    private static Set<ArtifactorySid> getUserEffectiveSids(SimpleUser user) {
-        Set<ArtifactorySid> sids = new HashSet<>(2);
-        Set<UserGroupInfo> groups = user.getDescriptor().getGroups();
-        // add the current user
-        sids.add(new ArtifactorySid(user.getUsername(), false));
-        // add all the groups the user is a member of
-        for (UserGroupInfo group : groups) {
-            sids.add(new ArtifactorySid(group.getGroupName(), true));
-        }
-        return sids;
-    }
-
     @Override
     public void importSecurityData(String securityXml) {
         importSecurityData(new SecurityInfoReader().read(securityXml));
@@ -1403,26 +1425,6 @@ public class SecurityServiceImpl implements InternalSecurityService {
         for (SecurityListener listener : securityListeners) {
             listener.onClearSecurity();
         }
-    }
-
-    private static boolean isAdmin(Authentication authentication) {
-        return isAuthenticated(authentication) && getSimpleUser(authentication).isAdmin();
-    }
-
-    private static boolean isAuthenticated(Authentication authentication) {
-        return authentication != null && authentication.isAuthenticated();
-    }
-
-    private static SimpleUser getSimpleUser(Authentication authentication) {
-        return (SimpleUser) authentication.getPrincipal();
-    }
-
-    private static boolean matches(PermissionTargetInfo aclPermissionTarget, String path, boolean folder) {
-        return PathMatcher.matches(path, aclPermissionTarget.getIncludes(), aclPermissionTarget.getExcludes(), folder);
-    }
-
-    private static XStream getXstream() {
-        return InfoFactoryHolder.get().getSecurityXStream();
     }
 
     private void assertAdmin() {

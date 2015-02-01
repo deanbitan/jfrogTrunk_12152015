@@ -1,9 +1,10 @@
 package org.artifactory.storage.db.aql.dao;
 
 import org.artifactory.aql.AqlException;
+import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQuery;
-import org.artifactory.storage.db.aql.sql.result.AqlQueryResult;
-import org.artifactory.storage.db.aql.sql.result.AqlQueryStreamResult;
+import org.artifactory.storage.db.aql.sql.result.AqlEagerResultImpl;
+import org.artifactory.storage.db.aql.sql.result.AqlLazyResultImpl;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
@@ -27,11 +28,11 @@ public class AqlDao extends BaseDao {
      * Execute the AQL query ant fetch the results eagerly
      * Note that it is recommended to use the executeQueryLazy which consumes less memory and allow minimal waiting time.
      */
-    public AqlQueryResult executeQueryEager(SqlQuery sqlQuery) {
+    public AqlEagerResultImpl executeQueryEager(SqlQuery sqlQuery) {
         ResultSet resultSet = null;
         try {
             resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
-            AqlQueryResult aqlQueryResult = new AqlQueryResult(resultSet, sqlQuery);
+            AqlEagerResultImpl aqlQueryResult = new AqlEagerResultImpl(resultSet, sqlQuery);
             return aqlQueryResult;
         } catch (Exception e) {
             throw new AqlException("Failed to execute the following sql query" + sqlQuery, e);
@@ -46,14 +47,14 @@ public class AqlDao extends BaseDao {
      * The lazy mode dynamically fills the result into stream, actually the AqlQueryStreamResult role is is kind of
      * broker between the database and the client
      */
-    public AqlQueryStreamResult executeQueryLazy(SqlQuery sqlQuery) {
+    public AqlLazyResult executeQueryLazy(SqlQuery sqlQuery) {
         ResultSet resultSet;
         try {
             resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
         } catch (SQLException e) {
             throw new AqlException("Failed to execute the following sql query" + sqlQuery, e);
         }
-        AqlQueryStreamResult aqlQueryResult = new AqlQueryStreamResult(resultSet, sqlQuery);
+        AqlLazyResult aqlQueryResult = new AqlLazyResultImpl(resultSet, sqlQuery);
         return aqlQueryResult;
     }
 }

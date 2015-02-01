@@ -387,6 +387,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
             RealRepoDescriptor repoDescriptor) throws IOException {
     }
 
+    @Override
+    public boolean isRepoExistInCache(RepoPath repoPath) {
+        return false;
+    }
+
     private BasicStatusHolder getReplicationRequiredStatusHolder() {
         BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
         multiStatusHolder.error("Error: the replication addon is required for this operation.",

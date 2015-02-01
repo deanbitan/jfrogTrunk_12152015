@@ -384,7 +384,9 @@ public class ArtifactResource {
         }
         if (!itemProperties.properties.isEmpty()) {
             itemProperties.slf = getRequestStorageUri();
-            return okResponse(itemProperties, MT_ITEM_PROPERTIES);
+            return Response.ok(itemProperties, MT_ITEM_PROPERTIES)
+                    .header(org.apache.http.HttpHeaders.CACHE_CONTROL, "no-store")
+                    .build();
         }
         throw new NotFoundException("No properties could be found.");
     }

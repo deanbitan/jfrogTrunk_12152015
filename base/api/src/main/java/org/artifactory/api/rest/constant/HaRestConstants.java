@@ -29,6 +29,7 @@ public interface HaRestConstants {
     String PATH_PREFIX = "/" + PATH_API + "/" + PATH_ROOT + "/";
     String PROPAGATE_TASK = "propagateTask";
     String CLUSTER_DUMP = "clusterDump";
+    String ACTION = "action";
 
     String ROLE_HA = "ha";
 

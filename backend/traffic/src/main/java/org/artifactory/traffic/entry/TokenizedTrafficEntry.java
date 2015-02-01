@@ -19,6 +19,7 @@
 package org.artifactory.traffic.entry;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.traffic.TrafficAction;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
@@ -102,10 +103,11 @@ public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
 
         tokens = StringUtils.split(entry, COLUMN_SEPARATOR);
 
+
         if (tokens.length == 0) {
             throw new IllegalArgumentException("No tokens found in entry");
         }
-        if (getColumnsCount() != tokens.length) {
+        if (!isColumnCountValid()) {
             throw new IllegalArgumentException(
                     "Number of entry columns does not match the entry specification." +
                             "Expected: " + getColumnsCount() + " got: " + tokens.length + " tokens: " +
@@ -121,6 +123,15 @@ public abstract class TokenizedTrafficEntry extends TrafficEntryBase {
             duration = Long.parseLong(durationToken);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid duration token: " + durationToken);
+        }
+    }
+
+    private boolean isColumnCountValid(){
+        TrafficAction action = getAction();
+        if(TrafficAction.REQUEST.equals(action)){
+            return (tokens.length == getColumnsCount());
+        }else{
+            return ((tokens.length == getColumnsCount()) || ((getColumnsCount() - 1) == tokens.length));
         }
     }
 }

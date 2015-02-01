@@ -102,7 +102,9 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
             RepoRequests.logToContext("Download denied (%s) - returning unfound resource", statusHolder.getStatusMsg());
             return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg(), statusHolder.getStatusCode());
         }
-        return mixin.getInfo(context);
+        RepoResource res = mixin.getInfo(context);
+        markExpirableResource(res);
+        return res;
     }
 
     @Override

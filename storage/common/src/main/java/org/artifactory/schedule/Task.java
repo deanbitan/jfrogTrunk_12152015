@@ -32,6 +32,7 @@ public interface Task extends StateAware {
     String TASK_AUTHENTICATION = "TASK_AUTHENTICATION";
     String TASK_RUN_ONLY_ON_PRIMARY = "TASK_RUN_ONLY_ON_PRIMARY";
     String REPO_KEY = "repoKey";
+    String PUSH_REPLICATION_URL = "repoUrl";
 
     boolean DEFAULT_TASK_RUN_ONLY_ON_PRIMARY = true; //default is run only on master
 

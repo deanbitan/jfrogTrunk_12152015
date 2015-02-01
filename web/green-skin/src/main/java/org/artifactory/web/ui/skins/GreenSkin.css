@@ -3480,6 +3480,10 @@ button.styled-checkbox-disabled-checked, button.styled-checkbox-disabled-uncheck
     display: block;
 }
 
+.remove-rep {
+    background: url("images/icons/close.jpg") center top no-repeat;
+    background-size: 18px 18px;
+}
 .dnd-selection button.add-link {
     background: url("images/drag-drop/BTN-add.png") no-repeat;
 }
@@ -6256,6 +6260,15 @@ td.warn span {
     position: relative;
 }
 
+#repoTableDiv {
+    height: 245px;
+    overflow: auto;
+    position: relative;
+}
+
+#makeCenter {
+
+}
 div.styled-tab-panel div.tab-row .wide-tab span {
     min-width: 120px;
 }

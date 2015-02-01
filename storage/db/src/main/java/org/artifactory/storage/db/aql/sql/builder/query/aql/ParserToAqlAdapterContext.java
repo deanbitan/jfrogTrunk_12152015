@@ -18,9 +18,6 @@ public class ParserToAqlAdapterContext extends AdapterContext {
         index = elements.size() - 1;
     }
 
-    public ParserToAqlAdapterContext() {
-    }
-
     public Pair<ParserElement, String> getElement() {
         return elements.get(index);
     }
@@ -31,5 +28,13 @@ public class ParserToAqlAdapterContext extends AdapterContext {
 
     public int getIndex() {
         return index;
+    }
+
+    public void resetIndex() {
+        index = elements.size() - 1;
+    }
+
+    public boolean hasNext() {
+        return index >= 0;
     }
 }

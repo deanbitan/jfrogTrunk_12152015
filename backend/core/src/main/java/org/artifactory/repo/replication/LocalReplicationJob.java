@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * @author Noam Y. Tenne
  */
 @JobCommand(schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.CURRENT,
-        keyAttributes = {Task.REPO_KEY},
+        keyAttributes = {Task.REPO_KEY, Task.PUSH_REPLICATION_URL},
         commandsToStop = {
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)
         }
@@ -94,7 +94,8 @@ public class LocalReplicationJob extends QuartzCommand {
         } else {
             CentralConfigService centralConfig = context.getCentralConfig();
             CentralConfigDescriptor centralConfigDescriptor = centralConfig.getDescriptor();
-            return centralConfigDescriptor.getLocalReplication(jobDataMap.getString(Task.REPO_KEY));
+            return centralConfigDescriptor.getLocalReplication(jobDataMap.getString(Task.REPO_KEY),
+                    jobDataMap.getString(Task.PUSH_REPLICATION_URL));
         }
     }
 }

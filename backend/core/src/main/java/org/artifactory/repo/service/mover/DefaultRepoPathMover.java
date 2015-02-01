@@ -119,7 +119,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
                 targetRrp.getRepo().getImmutableFsItem(targetRrp.getRepoPath()).isFile()) {
             // target repo doesn't accept this path and it doesn't already contain it OR the target is a file
             // so there is no point to continue to the children
-            status.warn("Cannot create/override the path '" + targetRrp.getRepoPath() + "'. " +
+            status.error("Cannot create/override the path '" + targetRrp.getRepoPath() + "'. " +
                     "Skipping this path and all its children.", log);
             return;
         }

@@ -38,7 +38,6 @@ import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.security.MutableUserInfo;
-import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserInfo;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.application.ArtifactoryWebSession;
@@ -102,7 +101,7 @@ public class ProfilePage extends AuthenticatedPage {
         profilePanel = new ProfilePanel("updatePanel", form, profile);
         form.add(profilePanel);
 
-        bintrayProfilePanel = new BintrayProfilePanel("bintrayProfilePanel", profile);
+        bintrayProfilePanel = new BintrayProfilePanel<>("bintrayProfilePanel", profile, false);
         form.add(bintrayProfilePanel);
 
         ProfileLockPanel profileLockPanel = new ProfileLockPanel(profilePanel, bintrayProfilePanel, this, profile,
@@ -120,12 +119,7 @@ public class ProfilePage extends AuthenticatedPage {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 ProfileModel profile = getUserProfile();
                 UserInfo userInfo = loadUserInfo();
-                SaltedPassword userInputHashPassword = securityService.generateSaltedPassword(
-                        profile.getCurrentPassword(), userInfo.getSalt());
-                if (!authorizationService.isDisableInternalPassword() && !userInputHashPassword.getPassword().equals(
-                        userInfo.getPassword())) {
-                    error("The specified current password is incorrect.");
-                } else if (!StringUtils.hasText(profile.getEmail())) {
+                if (!StringUtils.hasText(profile.getEmail())) {
                     error("Field 'Email address' is required.");
                 } else if (StringUtils.hasText(profile.getBintrayUsername()) &&
                         !StringUtils.hasText(profile.getBintrayApiKey())) {

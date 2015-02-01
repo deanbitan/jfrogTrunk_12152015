@@ -26,15 +26,18 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.OnKeyUpUpdatingBehavior;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
 import org.artifactory.common.wicket.component.CreateUpdateAction;
 import org.artifactory.common.wicket.component.CreateUpdatePanel;
 import org.artifactory.common.wicket.component.border.titled.TitledBorder;
+import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.component.links.TitledAjaxSubmitLink;
-import org.artifactory.common.wicket.component.modal.links.ModalCloseLink;
+import org.artifactory.common.wicket.component.modal.ModalHandler;
 import org.artifactory.common.wicket.util.AjaxUtils;
+import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.search.BaseSearchPage;
@@ -54,13 +57,13 @@ import java.util.List;
  */
 public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> extends CreateUpdatePanel<E> {
 
+    protected final CachingDescriptorHelper cachingDescriptorHelper;
     @SpringBean
     protected AddonsManager addons;
-
     @SpringBean
     protected CentralConfigService centralConfigService;
-
-    protected final CachingDescriptorHelper cachingDescriptorHelper;
+    @SpringBean
+    protected PropertiesService propsService;
 
     protected RepoConfigCreateUpdatePanel(CreateUpdateAction action, final E repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
@@ -118,8 +121,35 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
 
     protected abstract List<ITab> getConfigurationTabs();
 
-    protected ModalCloseLink getCloseLink() {
-        return new ModalCloseLink("cancel");
+    protected TitledAjaxLink getCloseLink() {
+
+        TitledAjaxLink titledAjaxLink = new TitledAjaxLink("cancel", "Cancel") {
+            @Override
+            public void onClick(AjaxRequestTarget target) {
+                syncSaveAndCurrentLocalReplicationData();
+                ModalHandler.closeCurrent(target);
+            }
+        };
+        return titledAjaxLink;
+    }
+
+    /**
+     * update repo related property in db in case repo data (replication and etc)
+     * has been changed or deleted
+     */
+    public void updateRepositoryProperties(){
+
+    }
+    /**
+     * sync local with saved replication data  after removing replication data without saving it
+     */
+    private void syncSaveAndCurrentLocalReplicationData() {
+        List<LocalReplicationDescriptor> savedLocalReplicationDescriptorList = cachingDescriptorHelper.getSavedMutableDescriptor().getLocalReplications();
+        List<LocalReplicationDescriptor> localReplicationDescriptorList = cachingDescriptorHelper.getModelMutableDescriptor().getLocalReplications();
+        if (localReplicationDescriptorList.size() != savedLocalReplicationDescriptorList.size()) {
+            cachingDescriptorHelper.getModelMutableDescriptor().setLocalReplications(
+                    savedLocalReplicationDescriptorList);
+        }
     }
 
     public abstract void addAndSaveDescriptor(E repoDescriptor);
@@ -152,6 +182,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
                 } else {
                     saveEditDescriptor(repoDescriptor);
                     getPage().info("Repository '" + repoDescriptor.getKey() + "' successfully updated.");
+                    updateRepositoryProperties();
                 }
 
                 cachingDescriptorHelper.reset();

@@ -49,7 +49,7 @@ public class PluginCommand extends QuartzCommand {
         JobDetail jobDetail = callbackContext.getJobDetail();
         JobDataMap jobDataMap = jobDetail.getJobDataMap();
         ExecuteAction action = (ExecuteAction) jobDataMap.get(ACTION_CLOSURE);
-        String jobName = jobDetail.getName();
+        String jobName = jobDetail.getKey().toString();
         log.debug("Executing plugin command '{}'...", jobName);
         action.execute();
         log.debug("Plugin command '{}'executed.", jobName);

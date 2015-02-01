@@ -1,5 +1,7 @@
 package org.artifactory.aql.result.rows;
 
+import org.artifactory.aql.model.AqlItemTypeEnum;
+
 import java.util.Date;
 
 /**
@@ -22,7 +24,7 @@ public interface FullRow {
 
     String getDownloadedBy();
 
-    int getType();
+    AqlItemTypeEnum getType();
 
     String getRepo();
 

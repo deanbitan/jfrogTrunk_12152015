@@ -223,7 +223,7 @@ public class DeployServiceImpl implements DeployService {
                     } catch (Exception e) {
                         String msg = "The pom: " + file.getName() +
                                 " could not be validated, and thus was not deployed.";
-                        status.warn(msg, e, log);
+                        status.error(msg, e, log);
                         if (failFast) {
                             return;
                         }
@@ -235,7 +235,7 @@ public class DeployServiceImpl implements DeployService {
                     getTransactionalMe().deploy(targetRepo, new ArtifactInfo(relPath), file, null, false, true,
                             properties);
                 } catch (IllegalArgumentException iae) {
-                    status.warn(iae.getMessage(), iae, log);
+                    status.error(iae.getMessage(), iae, log);
                     if (failFast) {
                         return;
                     }

@@ -189,7 +189,6 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
         metadataInfo.setSize(metadataContent.length());
         MetadataResource wrappedResource = new MetadataResource(metadataInfo);
         ResolvedResource resolvedResource = new ResolvedResource(wrappedResource, metadataContent);
-        resolvedResource.expirable();
         return resolvedResource;
     }
 }

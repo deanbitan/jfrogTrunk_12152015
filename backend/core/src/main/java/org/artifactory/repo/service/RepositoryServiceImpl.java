@@ -30,6 +30,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.GemsAddon;
 import org.artifactory.addon.NuGetAddon;
@@ -228,13 +229,23 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     private Map<String, VirtualRepo> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
+    private List<PoolingHttpClientConnectionManager> remoteRepoHttpConnMgrList = Lists.newArrayList();
+
+    private IdleConnectionMonitorThread idleConnectionMonitorThread = null;
+
     // a cache of all the repository keys
     private Set<String> allRepoKeysCache;
+
+    private static InternalRepositoryService getTransactionalMe() {
+        return InternalContextHelper.get().beanForType(InternalRepositoryService.class);
+    }
 
     @Override
     public void init() {
         rebuildRepositories(null);
         HttpUtils.resetArtifactoryUserAgent();
+        initIdleConnectionMonitorThread();
+
         try {
             //Dump info to the log
             InfoWriter.writeInfo();
@@ -249,11 +260,34 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         taskService.startTask(statsFlushTask, false);
     }
 
+    /**
+     * restart InitIdleConnectionMonitorThread Object after reload if it not running anymore
+     */
+    private void closeConnectionMonitorThread() {
+        if (idleConnectionMonitorThread != null) {
+            idleConnectionMonitorThread.shutdown();
+            remoteRepoHttpConnMgrList.clear();
+        }
+    }
+
+    /**
+     * create InitIdleConnectionMonitorThread Object and start the monitor
+     */
+    private void initIdleConnectionMonitorThread() {
+        if (!remoteRepoHttpConnMgrList.isEmpty()) {
+            idleConnectionMonitorThread = new IdleConnectionMonitorThread(remoteRepoHttpConnMgrList);
+            idleConnectionMonitorThread.setName("Idle Connection Monitor");
+            idleConnectionMonitorThread.start();
+        }
+    }
+
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         HttpUtils.resetArtifactoryUserAgent();
         deleteOrphanRepos(oldDescriptor);
+        closeConnectionMonitorThread();
         rebuildRepositories(oldDescriptor);
+        initIdleConnectionMonitorThread();
         checkAndCleanChangedVirtualPomCleanupPolicy(oldDescriptor);
     }
 
@@ -1023,6 +1057,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to).copy(false).dryRun(dryRun).
                 executeMavenMetadataCalculation(false).suppressLayouts(suppressLayouts).failFast(failFast);
         return moveOrCopy(configBuilder.build());
+    }
+
+    @Override
+    public void registerConnectionPoolMgr(PoolingHttpClientConnectionManager connectionManager) {
+        if (connectionManager != null) {
+            remoteRepoHttpConnMgrList.add(connectionManager);
+        }
     }
 
     @Override
@@ -1813,10 +1854,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return null;
     }
 
-    private static InternalRepositoryService getTransactionalMe() {
-        return InternalContextHelper.get().beanForType(InternalRepositoryService.class);
-    }
-
     private void assertDelete(PathDeletionContext pathDeletionContext) {
         StoringRepo repo = pathDeletionContext.getRepo();
         String path = pathDeletionContext.getPath();
@@ -1891,6 +1928,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return globalVirtualRepo.localOrCachedRepositoryByKey(repoPath.getRepoKey());
     }
 
+    /**
+     * check if repo exist already in case a new repo is created
+     * @param repoPath
+     * @return true if exist in cache
+     */
+    @Override
+    public boolean isRepoExistInCache(RepoPath repoPath){
+        return getLocalOrCachedRepository(repoPath) != null;
+    }
     /**
      * Returns an instance of the Repo Path Mover
      *
@@ -2064,6 +2110,52 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         for (LocalRepoDescriptor descriptor : getLocalAndCachedRepoDescriptors()) {
             registrationService.register(new ManagedRepository(descriptor), REPOSITORIES_MBEAN_TYPE,
                     descriptor.getKey());
+        }
+    }
+
+    /**
+     * thread to monitor expired and idle connection , if found clear it and return it back to pool
+     */
+    private static class IdleConnectionMonitorThread extends Thread {
+
+        private final List<PoolingHttpClientConnectionManager> connMgrList;
+        private volatile boolean shutdown;
+
+        public IdleConnectionMonitorThread(List<PoolingHttpClientConnectionManager> connMgrList) {
+            super();
+            this.connMgrList = connMgrList;
+        }
+
+        @Override
+        public void run() {
+            try {
+                log.debug("Starting Gems Idle Connection Monitor Thread ");
+                while (!shutdown) {
+                    synchronized (this) {
+                        wait(10000);
+                        if (!connMgrList.isEmpty()) {
+                            for (PoolingHttpClientConnectionManager connPollMgr : connMgrList) {
+                                connPollMgr.closeExpiredConnections();
+                            }
+                        }
+                    }
+                }
+            } catch (InterruptedException ex) {
+                log.debug("Terminating Gems Idle Connection Monitor Thread ");
+            }
+        }
+
+        public void shutdown() {
+            if (!connMgrList.isEmpty()) {
+                for (PoolingHttpClientConnectionManager connPollMgr : connMgrList) {
+                    IOUtils.closeQuietly(connPollMgr);
+                }
+            }
+            shutdown = true;
+            synchronized (this) {
+                notifyAll();
+                log.debug("shutdown Gems Idle Connection Monitor Thread ");
+            }
         }
     }
 }

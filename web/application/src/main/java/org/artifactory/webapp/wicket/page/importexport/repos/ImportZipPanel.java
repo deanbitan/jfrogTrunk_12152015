@@ -34,6 +34,7 @@ import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.page.logs.SystemLogsPage;
 import org.artifactory.webapp.wicket.panel.upload.DefaultFileUploadForm;
 import org.slf4j.Logger;
@@ -189,7 +190,8 @@ public class ImportZipPanel extends BasicImportPanel implements UploadListener {
         //Report the uploaded file to the traffic logger
         if ((uploadedFile != null) && (uploadedFile.exists())) {
             RepoPath repoPath = InternalRepoPathFactory.create(getTargetRepoKey(), "");
-            UploadEntry uploadEntry = new UploadEntry(repoPath.getId(), uploadedFile.length(), 0);
+            String remoteAddress = HttpUtils.getRemoteClientAddress();
+            UploadEntry uploadEntry = new UploadEntry(repoPath.getId(), uploadedFile.length(), 0, remoteAddress);
             trafficService.handleTrafficEntry(uploadEntry);
         }
     }

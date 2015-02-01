@@ -21,16 +21,15 @@ package org.artifactory.schedule.quartz;
 import com.google.common.collect.ImmutableMap;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.schedule.TaskBase;
+import org.artifactory.schedule.TaskCallback;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.quartz.JobDetailAwareTrigger;
-
-import java.util.Date;
 
 /**
  * @author yoavl
@@ -42,39 +41,15 @@ public class QuartzTask extends TaskBase {
     private final Trigger trigger;
     private final JobDetail jobDetail;
 
-    @SuppressWarnings({"unchecked"})
-    public static TaskBase createQuartzTask(JobDetailAwareTrigger trigger) {
-        return new QuartzTask(trigger.getJobDetail().getJobClass(), (Trigger) trigger, trigger.getJobDetail());
+    public static TaskBase createQuartzTask(Class<? extends TaskCallback> command, Trigger trigger,
+            JobDetail jobDetail) {
+        return new QuartzTask(command, trigger, jobDetail);
     }
 
-    /**
-     * Creates a new task.
-     *
-     * @param command      The command to schedule
-     * @param triggerName  Trigger name
-     * @param interval     Interval in milliseconds between executions. 0 means execute only once
-     * @param initialDelay Delay in milliseconds before starting the task for the first time starting from now
-     */
-    @SuppressWarnings({"unchecked"})
-    public static TaskBase createQuartzTask(Class<? extends QuartzCommand> command, long interval, long initialDelay) {
-        return new QuartzTask(command, new SimpleTrigger(
-                command.getName(), null,
-                new Date(System.currentTimeMillis() + initialDelay), null,
-                (interval <= 0) ? 0 : SimpleTrigger.REPEAT_INDEFINITELY, interval),
-                new JobDetail(command.getName(), ARTIFACTORY_GROUP, command));
-    }
-
-    private QuartzTask(Class<? extends QuartzCommand> command, Trigger trigger, JobDetail jobDetail) {
+    private QuartzTask(Class<? extends TaskCallback> command, Trigger trigger, JobDetail jobDetail) {
         super(command);
         this.trigger = trigger;
-        //Make sure the trigger is unique
-        String uniqueName = getToken();
-        this.trigger.setName(uniqueName);
-        this.trigger.setJobName(uniqueName);
-        this.trigger.setJobGroup(ARTIFACTORY_GROUP);
         this.jobDetail = jobDetail;
-        this.jobDetail.setName(uniqueName);
-        this.jobDetail.setGroup(ARTIFACTORY_GROUP);
     }
 
     @Override
@@ -108,7 +83,7 @@ public class QuartzTask extends TaskBase {
         try {
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
-            throw new RuntimeException("Error in scheduling job: " + trigger.getName(), e);
+            throw new RuntimeException("Error in scheduling job: " + trigger.getKey(), e);
         }
     }
 
@@ -119,13 +94,18 @@ public class QuartzTask extends TaskBase {
     protected void cancelTask() {
         Scheduler scheduler = getScheduler();
         try {
-            String jobName = jobDetail.getName();
-            if (!scheduler.deleteJob(jobName, ARTIFACTORY_GROUP)) {
-                log.info("Task " + jobName + " already deleted from scheduler");
+            JobKey jobKey = jobDetail.getKey();
+            if (!scheduler.deleteJob(jobKey)) {
+                log.info("Task " + jobKey + " already deleted from scheduler");
             }
         } catch (SchedulerException e) {
-            throw new RuntimeException("Failed to unschedule previous job: " + trigger.getName(), e);
+            throw new RuntimeException("Failed to unschedule previous job: " + trigger.getKey(), e);
         }
+    }
+
+    @Override
+    public String getToken() {
+        return jobDetail.getKey().toString();
     }
 
     private static Scheduler getScheduler() {

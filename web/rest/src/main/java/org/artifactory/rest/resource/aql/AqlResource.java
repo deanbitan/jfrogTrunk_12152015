@@ -1,10 +1,12 @@
 package org.artifactory.rest.resource.aql;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.aql.AqlParserException;
-import org.artifactory.aql.AqlService;
-import org.artifactory.aql.result.AqlQueryStreamResultIfc;
+import org.artifactory.aql.AqlException;
+import org.artifactory.aql.result.AqlRestResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +37,14 @@ import java.net.URLDecoder;
 @RolesAllowed({AuthorizationService.ROLE_ADMIN})
 public class AqlResource {
     private static final Logger log = LoggerFactory.getLogger(AqlResource.class);
-    public static final String PATH_ROOT = "aql";
+    public static final String PATH_ROOT = "search/aql";
     @Context
     private HttpServletRequest request;
     @Autowired
-    private AqlService aqlService;
+    AddonsManager addonsManager;
 
     @POST
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
     public Response getLatestVersionByPath(String contentQuery) {
         //Try to load the query from URL params or attached file
         String query = getQuery(contentQuery);
@@ -52,27 +54,33 @@ public class AqlResource {
         }
         // Try to execute the query
         try {
-            final AqlQueryStreamResultIfc aqlQueryStreamResult = aqlService.executeQueryLazy(query);
+            final AqlRestResult aqlResult = addonsManager.addonByType(RestAddon.class).executeQuery(query, request);
             // After success query execution prepare the result in stream.
             StreamingOutput stream = new StreamingOutput() {
                 @Override
                 public void write(OutputStream os) throws IOException, WebApplicationException {
-                    byte value = (byte) aqlQueryStreamResult.read();
-                    while (value >= 0) {
-                        os.write(value);
-                        value = (byte) aqlQueryStreamResult.read();
+                    byte[] array = aqlResult.read();
+                    try {
+                        while (array != null) {
+                            os.write(array);
+                            array = aqlResult.read();
+                        }
+                        os.flush();
+                    } finally {
+                        IOUtils.closeQuietly(aqlResult);
                     }
-                    aqlQueryStreamResult.close();
                     //TODO How to ensure that we close the AQL Result
                 }
             };
             return Response.ok(stream).build();
-        } catch (AqlParserException e) {
-            log.error("Fail to parse query: {}: ", query, e);
+        } catch (AqlException e) {
+            log.error("Fail to parse query: {}: ", query, e.getMessage());
+            log.debug("Fail to parse query: {}: ", query, e);
             if (e.getCause() == null) {
                 return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
             } else {
-                return Response.status(Response.Status.BAD_REQUEST).entity(e.getCause().getMessage()).build();
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                        e.getMessage() + "\ncause: " + e.getCause().getMessage()).build();
             }
         } catch (Exception e) {
             log.error("Fail to execute the following AqlApi, reason: ", e);

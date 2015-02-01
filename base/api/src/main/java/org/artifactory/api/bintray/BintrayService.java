@@ -23,6 +23,7 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.search.BintrayItemSearchResults;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
@@ -79,6 +80,29 @@ public interface BintrayService {
      */
     BasicStatusHolder pushBuild(Build build, BintrayParams bintrayParams, @Nullable Map<String, String> headersMap)
             throws IOException;
+
+    /**
+     * * Pushes a promoted build to Bintray according to the info supplied in the json spec file.
+     * expects to find the json spec file as one of the build's artifacts.
+     *
+     * @param build           The build to push
+     * @param gpgPassphrase   The key that is used with the subject's Bintray-stored gpg key to sign the version
+     * @param gpgSignOverride if set to true, overrides the gpgSign in the descriptor(if exists) or causes the version
+     *                        to be signed without a passphrase if no descriptor
+     * @param override        Overrides the descriptor with minimal parameters for version creation
+     * @return MultiStatusHolder containing results of the push operation
+     */
+    BasicStatusHolder pushPromotedBuild(Build build, String gpgPassphrase, Boolean gpgSignOverride, BintrayUploadInfoOverride override);
+
+    /**
+     * Pushes a version to Bintray according to the file paths that are specified in the JSON file, if no paths are
+     * specified pushes the entire directory tree that resides under the folder containing the json file
+     *
+     * @param jsonFile The json file
+     * @param gpgPassphrase  The key that is used with the subject's Bintray-stored gpg key to sign the version
+     * @return MultiStatusHolder containing results of the push operation
+     */
+    BasicStatusHolder pushVersionFilesAccordingToSpec(FileInfo jsonFile, Boolean gpgSignOverride, String gpgPassphrase);
 
     /**
      * Pushing asynchronously all build artifacts to Bintray

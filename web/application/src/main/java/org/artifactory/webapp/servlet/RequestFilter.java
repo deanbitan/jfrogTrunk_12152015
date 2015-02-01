@@ -20,6 +20,8 @@ package org.artifactory.webapp.servlet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
+import org.artifactory.request.RequestThreadLocal;
+import org.artifactory.request.RequestWrapper;
 import org.artifactory.security.HttpAuthenticationDetails;
 import org.artifactory.traffic.RequestLogger;
 import org.artifactory.util.HttpUtils;
@@ -59,36 +61,42 @@ public class RequestFilter extends DelayedFilterBase {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) resp;
         CapturingHttpServletResponseWrapper responseWrapper = new CapturingHttpServletResponseWrapper(response);
-        chain.doFilter(req, responseWrapper);
-        String servletPath = RequestUtils.getServletPathFromRequest(request);
-        String method = request.getMethod();
-        long contentLength = 0;
-        if ("get".equalsIgnoreCase(method)) {
-            contentLength = responseWrapper.getContentLength();
+        try {
+            RequestWrapper requestWrapper = new RequestWrapper(request);
+            RequestThreadLocal.set(requestWrapper);
+            chain.doFilter(req, responseWrapper);
+            String servletPath = RequestUtils.getServletPathFromRequest(request);
+            String method = request.getMethod();
+            long contentLength = 0;
+            if ("get".equalsIgnoreCase(method)) {
+                contentLength = responseWrapper.getContentLength();
+            }
+            if (("put".equalsIgnoreCase(method)) || ("post".equalsIgnoreCase(method))) {
+                contentLength = HttpUtils.getContentLength(request);
+            }
+            String username = "non_authenticated_user";
+            // First try to get the authentication from the session.
+            Authentication authentication = RequestUtils.getAuthentication((HttpServletRequest) req);
+            if (authentication != null) {
+                username = authentication.getPrincipal().toString();
+            } else if (RequestUtils.isAuthHeaderPresent(request)) {
+                // since we do not have an authentication here, and a session was not opened since this
+                // is a non UI request, we are forced to extract it out of the authentication header.
+                username = RequestUtils.extractUsernameFromRequest(request);
+            }
+            String remoteAddress = new HttpAuthenticationDetails(request).getRemoteAddress();
+            //check that path is not "dummy" path for simple or list browsing if is do not log event
+            if (StringUtils.endsWith(servletPath, SimpleRepoBrowserPage.PATH)) {
+                return;
+            }
+            if (StringUtils.endsWith(servletPath, ArtifactListPage.PATH)) {
+                return;
+            }
+            RequestLogger.request(remoteAddress, username, method, servletPath, request.getProtocol(),
+                    responseWrapper.getStatus(), contentLength, System.currentTimeMillis() - start);
+        } finally {
+            RequestThreadLocal.destroy();
         }
-        if (("put".equalsIgnoreCase(method)) || ("post".equalsIgnoreCase(method))) {
-            contentLength = HttpUtils.getContentLength(request);
-        }
-        String username = "non_authenticated_user";
-        // First try to get the authentication from the session.
-        Authentication authentication = RequestUtils.getAuthentication((HttpServletRequest) req);
-        if (authentication != null) {
-            username = authentication.getPrincipal().toString();
-        } else if (RequestUtils.isAuthHeaderPresent(request)) {
-            // since we do not have an authentication here, and a session was not opened since this
-            // is a non UI request, we are forced to extract it out of the authentication header.
-            username = RequestUtils.extractUsernameFromRequest(request);
-        }
-        String remoteAddress = new HttpAuthenticationDetails(request).getRemoteAddress();
-        //check that path is not "dummy" path for simple or list browsing if is do not log event
-        if (StringUtils.endsWith(servletPath, SimpleRepoBrowserPage.PATH)) {
-            return;
-        }
-        if (StringUtils.endsWith(servletPath, ArtifactListPage.PATH)) {
-            return;
-        }
-        RequestLogger.request(remoteAddress, username, method, servletPath, request.getProtocol(),
-                responseWrapper.getStatus(), contentLength, System.currentTimeMillis() - start);
     }
 
     @Override

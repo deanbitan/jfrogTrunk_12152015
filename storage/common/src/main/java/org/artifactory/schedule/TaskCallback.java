@@ -141,7 +141,6 @@ public abstract class TaskCallback<C extends JobExecutionContext> {
     }
 
     protected static TaskService getTaskService() {
-        TaskService taskService = StorageContextHelper.get().getTaskService();
-        return taskService;
+        return StorageContextHelper.get().getTaskService();
     }
 }

@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.7"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.7"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.8"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.8"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -72,6 +72,13 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         Mail server-related configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="bintrayConfig" type="BintrayConfigType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Default (globally used) Bintray credentials configuration.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1210,6 +1217,41 @@
                     <xs:documentation source="description">
                         The Artifactory URL to use in all outgoing mails to denote links to Artifactory. Can be left
                         blank.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="BintrayConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                The default Bintray Credentials that will be used by Artifactory in cases where an Artifactory
+                user doesn't have Bintray credentials defined.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="userName" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The default Bintray user name that will be used by Artifactory in cases where an Artifactory
+                        user doesn't have Bintray credentials defined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="apiKey" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The default Bintray API Key that will be used by Artifactory in cases where an Artifactory
+                        user doesn't have Bintray credentials defined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fileUploadLimit" type="xs:int" default="200" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The maximum number of files that a user is allowed to push to Bintray in a single operation.
+                        Set to '0' for unlimited.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

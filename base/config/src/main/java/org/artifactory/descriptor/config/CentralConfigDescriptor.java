@@ -21,6 +21,7 @@ package org.artifactory.descriptor.config;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.bintray.BintrayConfigDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
@@ -100,7 +101,13 @@ public interface CentralConfigDescriptor extends Descriptor {
 
     RemoteReplicationDescriptor getRemoteReplication(String replicatedRepoKey);
 
+    LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey, String replicateRepoUrl);
+
     LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey);
+
+    LocalReplicationDescriptor getEnabledLocalReplication(String replicatedRepoKey);
+
+    int getTotalNumOfActiveLocalReplication(String replicatedRepoKey);
 
     GcConfigDescriptor getGcConfig();
 
@@ -120,5 +127,13 @@ public interface CentralConfigDescriptor extends Descriptor {
 
     Map<String, LocalReplicationDescriptor> getLocalReplicationsMap();
 
+    Map<String, LocalReplicationDescriptor> getSingleReplicationPerRepoMap();
+
+    Map<String, LocalReplicationDescriptor> getLocalReplicationsPerRepoMap(String repoName);
+
+    List<String> getLocalReplicationsUniqueKeyForProperty(String repoName);
+
     ExternalProvidersDescriptor getExternalProvidersDescriptor();
+
+    BintrayConfigDescriptor getBintrayConfig();
 }

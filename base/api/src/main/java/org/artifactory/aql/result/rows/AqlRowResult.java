@@ -1,10 +1,10 @@
 package org.artifactory.aql.result.rows;
 
-import static org.artifactory.aql.model.AqlDomainEnum.artifacts;
+import static org.artifactory.aql.model.AqlDomainEnum.items;
 
 /**
  * @author Gidi Shabat
  */
-@QueryTypes(artifacts)
+@QueryTypes(items)
 public interface AqlRowResult {
 }

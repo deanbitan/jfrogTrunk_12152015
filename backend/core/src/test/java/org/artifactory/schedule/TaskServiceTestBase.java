@@ -32,15 +32,15 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.schedule.quartz.QuartzTask;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.TestUtils;
 import org.artifactory.test.mock.MockUtils;
 import org.easymock.EasyMock;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.testng.Assert;
+import org.quartz.impl.matchers.GroupMatcher;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -48,6 +48,7 @@ import org.testng.annotations.Test;
 import javax.annotation.Nullable;
 import java.util.List;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -146,7 +147,6 @@ public class TaskServiceTestBase extends ArtifactoryHomeBoundTest {
         });
         assertTrue(activeTasks.isEmpty(), "Active tasks after test method finished: " + activeTasks);
         Scheduler scheduler = ContextHelper.get().beanForType(Scheduler.class);
-        Assert.assertEquals(scheduler.getJobNames(QuartzTask.ARTIFACTORY_GROUP).length, 0);
-        Assert.assertEquals(scheduler.getJobNames(null).length, 0);
+        assertEquals(scheduler.getJobKeys(GroupMatcher.<JobKey>anyGroup()).size(), 0);
     }
 }

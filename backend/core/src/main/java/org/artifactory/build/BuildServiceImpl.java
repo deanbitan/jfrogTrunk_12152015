@@ -151,11 +151,16 @@ public class BuildServiceImpl implements InternalBuildService {
 
     @Override
     public void addBuild(@Nonnull DetailedBuildRun detailedBuildRun) {
-        getTransactionalMe().addBuild(((DetailedBuildRunImpl) detailedBuildRun).build);
+        getTransactionalMe().addBuild(((DetailedBuildRunImpl) detailedBuildRun).build, false);
     }
 
     @Override
     public void addBuild(final Build build) {
+        getTransactionalMe().addBuild(build, true);
+    }
+
+    @Override
+    public void addBuild(final Build build, boolean activateCallbacks) {
         String buildName = build.getName();
         String buildNumber = build.getNumber();
         String buildStarted = build.getStarted();
@@ -182,7 +187,10 @@ public class BuildServiceImpl implements InternalBuildService {
         BlackDuckAddon blackDuckAddon = addonsManager.addonByType(BlackDuckAddon.class);
         blackDuckAddon.performBlackDuckOnBuildArtifacts(build);
 
-        pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, detailedBuildRun);
+        //Abort calling plugin actions if called from papi to avoid accidental endless loops
+        if (activateCallbacks) {
+            pluginsAddon.execPluginActions(AfterBuildSaveAction.class, builds, detailedBuildRun);
+        }
     }
 
     /**
@@ -443,7 +451,8 @@ public class BuildServiceImpl implements InternalBuildService {
             filterFileInfo(sourceRepository, foundResults, buildFileBean, checksumFiltered);
 
         }
-
+        //Remove already found artifacts with build details and checksum
+        Iterables.removeAll(unmatchedBuildBeans, foundResults.keySet());
         return foundResults;
     }
 
@@ -741,8 +750,26 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
+    //Deletes the existing build (which has the same name, number and started) and adds the new one instead.
     public void updateBuild(@Nonnull DetailedBuildRun detailedBuildRun) {
-        getTransactionalMe().updateBuild(((DetailedBuildRunImpl) detailedBuildRun).build, true);
+        //getTransactionalMe().updateBuild(((DetailedBuildRunImpl) detailedBuildRun).build, true);
+        BasicStatusHolder status = new BasicStatusHolder();
+
+        //Reaching update implies the same build (name, number and started) already exists
+        log.info("Updating build {} Number {} that started at {}", detailedBuildRun.getName(),
+                detailedBuildRun.getNumber(), detailedBuildRun.getStarted(), log);
+        log.debug("Deleting build {} : {} : {}", detailedBuildRun.getName(), detailedBuildRun.getNumber(),
+                detailedBuildRun.getStarted(), log);
+        getTransactionalMe().deleteBuild(detailedBuildRun, false, status);
+        if(status.hasErrors()) {
+            log.error(status.getLastError().toString() ,log);
+        }
+        log.debug("Adding new build {} : {} : {}", detailedBuildRun.getName(), detailedBuildRun.getNumber(),
+                detailedBuildRun.getStarted(), log);
+        getTransactionalMe().addBuild(detailedBuildRun);
+
+        log.info("Update of build {} Number {} that started at {} completed successfully", detailedBuildRun.getName(),
+                detailedBuildRun.getNumber(), detailedBuildRun.getStarted(), log);
     }
 
     @Override

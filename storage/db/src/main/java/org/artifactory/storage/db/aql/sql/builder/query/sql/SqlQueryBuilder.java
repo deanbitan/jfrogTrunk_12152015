@@ -26,15 +26,14 @@ public class SqlQueryBuilder {
 
     public SqlQueryBuilder() {
         sqlGeneratorMap = Maps.newHashMap();
-        sqlGeneratorMap.put(AqlDomainEnum.artifacts, new ArtifactsSqlGenerator());
-        sqlGeneratorMap.put(AqlDomainEnum.full_artifacts, new ArtifactsSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.items, new ArtifactsSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.properties, new PropertiesSqlGenerator());
-        sqlGeneratorMap.put(AqlDomainEnum.archive, new ArchiveSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.archives, new ArchiveSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.statistics, new StatisticsSqlGenerator());
-        sqlGeneratorMap.put(AqlDomainEnum.build_artifacts, new BuildArtifactSqlGenerator());
-        sqlGeneratorMap.put(AqlDomainEnum.build_dependencies, new BuildDependenciesSqlGenerator());
-        sqlGeneratorMap.put(AqlDomainEnum.build_module, new BuildModuleSqlGenerator());
-        sqlGeneratorMap.put(AqlDomainEnum.build_props, new BuildPropertySqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.artifacts, new BuildArtifactSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.dependencies, new BuildDependenciesSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.modules, new BuildModuleSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.buildProperties, new BuildPropertySqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.builds, new BuildSqlGenerator());
     }
 

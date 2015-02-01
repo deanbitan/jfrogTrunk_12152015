@@ -39,7 +39,7 @@ public interface CentralConfigService extends DescriptorAware<CentralConfigDescr
      *
      * @return {@code true} if succeeded reloading
      */
-    boolean reloadConfiguration();
+    boolean reloadConfiguration(boolean saveConfiguration);
 
     String getServerName();
 
@@ -60,7 +60,7 @@ public interface CentralConfigService extends DescriptorAware<CentralConfigDescr
 
     String getConfigXml();
 
-    void setConfigXml(String xmlConfig);
+    void setConfigXml(String xmlConfig,boolean saveConfiguration);
 
     void setLogo(File logo) throws IOException;
 

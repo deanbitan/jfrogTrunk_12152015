@@ -34,7 +34,7 @@ public class TrafficEntryBuilderTest {
      * Create an entry with an expression using the entry builder
      */
     public void testValidEntry() {
-        String entry = "20050318162747|10|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|456";
+        String entry = "20050318162747|10|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|456";
         TrafficEntry trafficEntry = TokenizedTrafficEntryFactory.newTrafficEntry(entry);
         Assert.assertNotNull(trafficEntry, "Entry should not be null");
         Assert.assertEquals(trafficEntry.getAction(), TrafficAction.UPLOAD, "Entry action should be - upload");

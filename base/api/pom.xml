@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-base-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.4.2</version>
+        <version>3.5.0</version>
     </parent>
 
     <dependencies>
@@ -87,6 +87,10 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jfrog.bintray.client</groupId>
+            <artifactId>bintray-client-java-service</artifactId>
         </dependency>
     </dependencies>
 

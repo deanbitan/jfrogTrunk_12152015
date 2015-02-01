@@ -19,28 +19,19 @@
 package org.artifactory.maven.index;
 
 import org.artifactory.api.repo.index.MavenIndexerService;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.repo.RealRepo;
-import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
 /**
+ * Internal service for Maven indexing.
+ *
  * @author yoavl
  */
 public interface InternalMavenIndexerService extends MavenIndexerService, ReloadableBean {
-
-    @Lock
-    void saveIndexFiles(MavenIndexManager mavenIndexManager);
-
-    @Lock
-    void fetchOrCreateIndex(MavenIndexManager mavenIndexManager, Date fireTime, boolean forceRemoteDownload);
-
-    @Lock
-    void mergeVirtualRepoIndexes(Set<? extends RepoDescriptor> excludedRepositories, List<RealRepo> repos);
-
+    /**
+     * Start the Maven indexer using the attached settings.
+     * This method is intended to run from withing a job.
+     *
+     * @param indexerSettings The Maven indexer settings to use.
+     */
     void index(MavenIndexerRunSettings indexerSettings);
 }

@@ -18,20 +18,25 @@
 
 package org.artifactory.traffic.entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.traffic.TrafficAction;
 
 /**
  * Base entry for data transfer traffic entries.
  * <p/>
- * Example: 20090318162747|110|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632
+ * Example:
+ * <pre>
+ * 20090318162747|110|UPLOAD|10.0.0.10|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632
  * 20090319110249|7|UPLOAD|repo1-cache:antlr/antlr/2.7.6/antlr-2.7.6.jar|443432
+ * </pre>
  *
  * @author Yossi Shaul
  */
 public abstract class TransferEntry extends TokenizedTrafficEntry {
-    static final int COLUMNS_COUNT_SPEC = 5;
+    static final int COLUMNS_COUNT_SPEC = 6;
 
     private String repoPath;
+    private String userAddress;
     private long contentLength;
 
     /**
@@ -41,8 +46,18 @@ public abstract class TransferEntry extends TokenizedTrafficEntry {
      */
     public TransferEntry(String entry) {
         super(entry);
-        repoPath = tokens[3];
-        contentLength = Long.parseLong(tokens[4]);
+        int entryLength = StringUtils.split(entry, COLUMN_SEPARATOR).length;
+        if (entryLength == COLUMNS_COUNT_SPEC) {
+            userAddress = tokens[3];
+            repoPath = tokens[4];
+            contentLength = Long.parseLong(tokens[5]);
+        } else {
+            // TODO: this is to support old log format that contained no ip address. Can remove it in future version
+            userAddress = "";
+            repoPath = tokens[3];
+            contentLength = Long.parseLong(tokens[4]);
+        }
+
     }
 
     /**
@@ -51,8 +66,9 @@ public abstract class TransferEntry extends TokenizedTrafficEntry {
      * @param repoPath      Requested artifact repo path
      * @param contentLength Requested artifact size
      */
-    public TransferEntry(String repoPath, long contentLength, long duration) {
+    public TransferEntry(String repoPath, long contentLength, long duration, String userAddress) {
         super(duration);
+        this.userAddress = userAddress;
         this.repoPath = repoPath;
         this.contentLength = contentLength;
     }
@@ -60,8 +76,9 @@ public abstract class TransferEntry extends TokenizedTrafficEntry {
     @Override
     protected void initTokens() {
         super.initTokens();
-        tokens[3] = repoPath;
-        tokens[4] = contentLength + "";
+        tokens[3] = userAddress + "";
+        tokens[4] = repoPath;
+        tokens[5] = contentLength + "";
     }
 
     @Override
@@ -90,5 +107,14 @@ public abstract class TransferEntry extends TokenizedTrafficEntry {
      */
     public long getContentLength() {
         return contentLength;
+    }
+
+    /**
+     * Returns the address of the client's machine
+     *
+     * @return String - Address of client machine
+     */
+    public String getUserAddress() {
+        return userAddress;
     }
 }

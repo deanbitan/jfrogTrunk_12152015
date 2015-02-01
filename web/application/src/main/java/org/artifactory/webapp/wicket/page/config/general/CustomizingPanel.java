@@ -35,6 +35,7 @@ import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.links.TitledAjaxLink;
 import org.artifactory.common.wicket.panel.logo.BaseLogoPanel;
+import org.artifactory.common.wicket.panel.upload.LogoFileUploadForm;
 import org.artifactory.common.wicket.panel.upload.UploadListener;
 import org.artifactory.common.wicket.util.AjaxUtils;
 import org.artifactory.common.wicket.util.WicketUtils;
@@ -42,11 +43,20 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.wicket.application.ArtifactoryApplication;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
-import org.artifactory.webapp.wicket.panel.upload.DefaultFileUploadForm;
 import org.artifactory.webapp.wicket.resource.ImageFileResource;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Iterator;
 
 /**
  * @author Tomer Cohen
@@ -57,15 +67,15 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
     @SpringBean
     private AddonsManager addonsManager;
 
-    private DefaultFileUploadForm fileUploadLogo;
-
+    private LogoFileUploadForm fileUploadLogo;
     private boolean deleteLogo = false;
+    private boolean isFakeLogo = false;
 
     public CustomizingPanel(String id, IModel model) {
         super(id, model);
         add(new CssClass("general-settings-panel"));
 
-        fileUploadLogo = new DefaultFileUploadForm("logoPath", this);
+        fileUploadLogo = new LogoFileUploadForm("logoPath", this);
         add(fileUploadLogo);
 
         TextField<String> urlLogo = new TextField<>("logo");
@@ -138,26 +148,6 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         return (MutableCentralConfigDescriptor) getDefaultModelObject();
     }
 
-    private class ResetLink extends TitledAjaxLink {
-        private DefaultFileUploadForm form;
-
-        public ResetLink(String id, DefaultFileUploadForm form) {
-            super(id, "Clear");
-            this.form = form;
-        }
-
-        @Override
-        public void onClick(AjaxRequestTarget target) {
-            deleteLogo = true;
-            cleanup();
-            getDescriptor().setLogo(null);
-            target.add(form);
-
-            info("Custom logo has been reset. Please remember to save your changes.");
-            AjaxUtils.refreshFeedback(target);
-        }
-    }
-
     private static class PreviewLogoPanel extends BaseLogoPanel {
         @SpringBean
         private AddonsManager addonsManager;
@@ -175,26 +165,39 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         @Override
         protected String getLogoUrl() {
             CustomizingPanel parent = findParent(CustomizingPanel.class);
-            String logo = parent.getDescriptor().getLogo();
-            if (logo != null) {
-                return logo;
+            MutableCentralConfigDescriptor descriptor;
+            if (parent != null) {
+                descriptor = parent.getDescriptor();
+                String logo = descriptor.getLogo();
+                if (logo != null) {
+                    return getImageLogoUrlIfImageIsValid(logo, parent);
+                }
             }
-
-            if (parent.deleteLogo) {
-                return null;
+            if (parent != null) {
+                if (parent.deleteLogo) {
+                    return null;
+                }
+                if (parent.getUploadedFile() != null) {
+                    return parent.urlFor(IResourceListener.INTERFACE) + "&" + System.currentTimeMillis();
+                }
             }
-
-            if (parent.getUploadedFile() != null) {
-                return parent.urlFor(IResourceListener.INTERFACE) + "&" + System.currentTimeMillis();
-            }
-
             final ArtifactoryApplication application = ArtifactoryApplication.get();
             if (application.isLogoExists()) {
                 return HttpUtils.getWebappContextUrl(
                         WicketUtils.getHttpServletRequest()) + "logo?" + application.getLogoModifyTime();
             }
-
             return null;
+        }
+
+        private String getImageLogoUrlIfImageIsValid(String logoUrl, CustomizingPanel parent) {
+            String currentLogoUrl;
+            if (parent.isFakeLogo) {
+                parent.getUploadedFile();
+                currentLogoUrl = null;
+            } else {
+                currentLogoUrl = logoUrl;
+            }
+            return currentLogoUrl;
         }
     }
 
@@ -212,6 +215,86 @@ public class CustomizingPanel extends BaseCustomizingPanel implements UploadList
         protected void onUpdate(AjaxRequestTarget target) {
             final Component logoPreview = getComponent().getParent().get("logoPreview");
             target.add(logoPreview);
+            CustomizingPanel parent = getFormComponent().getParent().findParent(CustomizingPanel.class);
+            if (parent != null) {
+                parent.isFakeLogo = false;
+                MutableCentralConfigDescriptor descriptor = parent.getDescriptor();
+                String logoUrl = descriptor.getLogo();
+                if (isImageFake(logoUrl, parent)) {
+                    parent.error("The File URL Contain a Non Valid Image Format");
+                } else {
+                    parent.info("Logo Uploaded Successfully. Please remember to save your changes.");
+                }
+                AjaxUtils.refreshFeedback(target);
+            }
+        }
+
+        private boolean isImageFake(String logoUrl, CustomizingPanel parent) {
+            boolean isFakeImage = false;
+            ImageInputStream imageInputStream;
+            if (logoUrl != null) {
+                try {
+                    byte[] imageByte = downloadImageFromURL(logoUrl);
+                    if (imageByte != null) {
+                        imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(imageByte));
+                        Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+                        if (!iter.hasNext()) {
+                            isFakeImage = true;
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (isFakeImage) {
+                    isFakeImage = true;
+                    parent.isFakeLogo = true;
+                }
+            }
+            return isFakeImage;
+        }
+
+        /**
+         * download image from specific url
+         *
+         * @param strUrl - download image url link
+         * @return byte [] of image
+         */
+        protected byte[] downloadImageFromURL(final String strUrl) {
+            InputStream in;
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try {
+                URL url = new URL(strUrl);
+                in = new BufferedInputStream(url.openStream());
+                byte[] buf = new byte[2048];
+                int n;
+                while (-1 != (n = in.read(buf))) {
+                    out.write(buf, 0, n);
+                }
+                out.close();
+                in.close();
+            } catch (IOException e) {
+                return null;
+            }
+            return out.toByteArray();
+        }
+    }
+
+    private class ResetLink extends TitledAjaxLink {
+        private LogoFileUploadForm form;
+
+        public ResetLink(String id, LogoFileUploadForm form) {
+            super(id, "Clear");
+            this.form = form;
+        }
+
+        @Override
+        public void onClick(AjaxRequestTarget target) {
+            deleteLogo = true;
+            cleanup();
+            info("Custom logo has been reset. Please remember to save your changes.");
+            getDescriptor().setLogo(null);
+            target.add(form);
+            AjaxUtils.refreshFeedback(target);
         }
     }
 }

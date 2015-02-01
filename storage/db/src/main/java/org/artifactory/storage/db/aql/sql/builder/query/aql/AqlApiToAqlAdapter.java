@@ -1,140 +1,111 @@
 package org.artifactory.storage.db.aql.sql.builder.query.aql;
 
-import org.artifactory.aql.FieldResolver;
-import org.artifactory.aql.api.Aql;
-import org.artifactory.aql.api.AqlApi;
+import org.artifactory.aql.AqlFieldResolver;
 import org.artifactory.aql.api.AqlApiElement;
-import org.artifactory.aql.model.AqlComparatorEnum;
+import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.model.AqlDomainEnum;
-import org.artifactory.aql.model.AqlField;
-import org.artifactory.aql.model.AqlOperatorEnum;
-import org.artifactory.aql.model.Field;
-import org.artifactory.aql.model.Value;
-import org.artifactory.aql.model.Variable;
-import org.artifactory.storage.db.aql.sql.builder.links.TableLink;
+import org.artifactory.aql.model.AqlFieldEnum;
+import org.artifactory.aql.model.AqlVariable;
+import org.artifactory.aql.model.AqlVariableTypeEnum;
+import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlTable;
-import org.artifactory.storage.db.aql.sql.model.AqlFieldExtensionEnum;
 import org.artifactory.util.Pair;
 
 import java.util.List;
-import java.util.Map;
-
-import static org.artifactory.storage.db.aql.sql.builder.query.sql.type.AqlTableGraph.tablesLinksMap;
 
 /**
- * Transform the AqlApi element into AqlQuery.
- *
  * @author Gidi Shabat
  */
 public class AqlApiToAqlAdapter extends AqlAdapter {
 
-    private final OpenParenthesisAqlElement open = new OpenParenthesisAqlElement();
-    private final CloseParenthesisAqlElement close = new CloseParenthesisAqlElement();
-    private final OperatorQueryElement and = new OperatorQueryElement(AqlOperatorEnum.and);
-    private final OperatorQueryElement or = new OperatorQueryElement(AqlOperatorEnum.or);
-
     /**
      * Converts Aql (Api) into SqlQuery
      *
-     * @param aqlApi
+     * @param AqlBase
      * @return
      */
-    public AqlQuery toAqlModel(Aql aqlApi) {
+    public AqlQuery toAqlModel(AqlBase AqlBase) {
         // Initialize the context
         AdapterContext context = new AdapterContext();
         // Set the default operator that is being used if no other operator has been declared.
         context.push(and);
-        // Recursively visit the AqlApi elements anf fill the AqlQuery
-        visitElements(aqlApi, context);
+        // Recursively visit the AqlBase elements anf fill the AqlQuery
+        visitElements(AqlBase, context);
+        // Add default filters
+        injectDefaultValues(context);
         return context.getAqlQuery();
     }
 
     /**
-     * Recursively visit the AqlApi parser elements and transform them into AqlQuery Object.
+     * Recursively visit the AqlBase parser elements and transform them into AqlQuery Object.
      */
     private void visitElements(AqlApiElement rootElement, AdapterContext context) {
         List<AqlApiElement> list = rootElement.get();
         for (AqlApiElement element : list) {
-            if (element instanceof AqlApi.SortApiElement) {
-                handleSort((AqlApi.SortApiElement) element, context);
+            if (element instanceof AqlBase.SortApiElement) {
+                handleSort((AqlBase.SortApiElement) element, context);
             }
-            if (element instanceof AqlApi.DomainApiElement) {
-                handleDomain((AqlApi.DomainApiElement) element, context);
+            if (element instanceof AqlBase.DomainApiElement) {
+                handleDomain((AqlBase.DomainApiElement) element, context);
             }
-            if (element instanceof AqlApi.AndClause) {
-                handleAnd((AqlApi.AndClause) element, context);
+            if (element instanceof AqlBase.AndClause) {
+                handleAnd((AqlBase.AndClause) element, context);
             }
-            if (element instanceof AqlApi.OrClause) {
-                handleOr((AqlApi.OrClause) element, context);
+            if (element instanceof AqlBase.OrClause) {
+                handleOr((AqlBase.OrClause) element, context);
             }
-            if (element instanceof AqlApi.FreezeJoin) {
-                handleFreezeJoin((AqlApi.FreezeJoin) element, context);
+            if (element instanceof AqlBase.FreezeJoin) {
+                handleFreezeJoin((AqlBase.FreezeJoin) element, context);
             }
-            if (element instanceof AqlApi.PropertyCriteriaClause) {
-                handlePropertyCriteria((AqlApi.PropertyCriteriaClause) element, context);
+            if (element instanceof AqlBase.FlatClause) {
+                handleFlat((AqlBase.FlatClause) element, context);
             }
-            if (element instanceof AqlApi.CriteriaClause) {
-                handleCriteria((AqlApi.CriteriaClause) element, context);
+            if (element instanceof AqlBase.PropertyCriteriaClause) {
+                handlePropertyCriteria((AqlBase.PropertyCriteriaClause) element, context);
             }
-            if (element instanceof AqlApi.LimitApiElement) {
-                handleLimit((AqlApi.LimitApiElement) element, context);
+            if (element instanceof AqlBase.CriteriaClause) {
+                handleCriteria((AqlBase.CriteriaClause) element, context);
             }
-            if (element instanceof AqlApi.FilterApiElement) {
-                handleFilter((AqlApi.FilterApiElement) element, context);
+            if (element instanceof AqlBase.LimitApiElement) {
+                handleLimit((AqlBase.LimitApiElement) element, context);
+            }
+            if (element instanceof AqlBase.FilterApiElement) {
                 visitElements(element, context);
             }
         }
     }
 
-    private void handleLimit(AqlApi.LimitApiElement element, AdapterContext context) {
-        //Read the limit value from the AqlApi LimitApiElement and put it in the context (AqlQuery)
+    private void handleLimit(AqlBase.LimitApiElement element, AdapterContext context) {
+        //Read the limit value from the AqlBase LimitApiElement and put it in the context (AqlQuery)
         context.setLimit(element.getLimit());
     }
 
-    private void handleFilter(AqlApi.FilterApiElement element, AdapterContext context) {
-        // The AqlApi FilterApiElement contains the "RESULT" filter which is being used to filter specific properties
-        // and not all the Artifact properties
-        // For each entry in the map create criteria binding the criteria to the result field tables
-        Map<AqlField, Object> filterMap = element.getResultFilter();
-        for (AqlField fieldEnum : filterMap.keySet()) {
-            Variable variable1 = FieldResolver.resolve(fieldEnum.signature);
-            Variable variable2 = FieldResolver.resolve(filterMap.get(fieldEnum).toString());
-            if (variable1 instanceof Field && variable2 instanceof Value) {
-                AqlField field = ((Field) variable1).getFieldEnum();
-                AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(field);
-                TableLink tableLink = tablesLinksMap.get(extension.table);
-                Pair<SqlTable, SqlTable> tables = new Pair<>(tableLink.getTable(), null);
-                Criteria criteria = new SimpleCriteria(variable1, tables.getFirst(), AqlComparatorEnum.equals.signature,
-                        variable2, tables.getSecond());
-                addCriteria(context, criteria);
-            }
-        }
-    }
-
-    private void handlePropertyCriteria(AqlApi.PropertyCriteriaClause element, AdapterContext context) {
-        // Converts AqlApi propertyCriteriaClause into real PropertyCriteria
-        Pair<Variable, Variable> pair = FieldResolver.resolve(element.getString1(), element.getString2());
-        Variable variable1 = pair.getFirst();
-        Variable variable2 = pair.getSecond();
+    private void handlePropertyCriteria(AqlBase.PropertyCriteriaClause element, AdapterContext context) {
+        // Converts AqlBase propertyCriteriaClause into real PropertyCriteria
+        AqlVariable variable1 = AqlFieldResolver.resolve(element.getString1(), AqlVariableTypeEnum.string);
+        AqlVariable variable2 = AqlFieldResolver.resolve(element.getString2(), AqlVariableTypeEnum.string);
         Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(context);
-        Criteria criteria = new PropertyCriteria(variable1, tables.getFirst(), element.getComparator().signature,
+        List<AqlDomainEnum> subDomains = element.getSubDomains();
+        Criteria criteria = new PropertyCriteria(subDomains, variable1, tables.getFirst(),
+                element.getComparator().signature,
                 variable2, tables.getSecond());
         addCriteria(context, criteria);
     }
 
-    private void handleCriteria(AqlApi.CriteriaClause element, AdapterContext context) {
-        // Converts AqlApi CriteriaClause into real criteria
-        Pair<Variable, Variable> pair = FieldResolver.resolve(element.getString1(), element.getString2());
-        Variable criteriaField = pair.getFirst();
-        Variable criteriaValue = pair.getSecond();
+    private void handleCriteria(AqlBase.CriteriaClause element, AdapterContext context) {
+        // Converts AqlBase CriteriaClause into real criteria
+        AqlVariable criteriaField = AqlFieldResolver.resolve(element.getFieldEnum());
+        AqlVariable criteriaValue = AqlFieldResolver.resolve(element.getValue(), element.getFieldEnum().type);
         Pair<SqlTable, SqlTable> tables = resolveTableForSimpleCriteria(
                 new Pair<>(criteriaField, criteriaValue), context);
-        Criteria criteria = new SimpleCriteria(criteriaField, tables.getFirst(), element.getComparator().signature,
+        List<AqlDomainEnum> subDomains = element.getSubDomains();
+        Criteria criteria = new SimpleCriteria(subDomains, criteriaField, tables.getFirst(),
+                element.getComparator().signature,
                 criteriaValue, tables.getSecond());
         addCriteria(context, criteria);
     }
 
-    private void handleFreezeJoin(AqlApi.FreezeJoin freezeJoin, AdapterContext context) {
+    private void handleFreezeJoin(AqlBase.FreezeJoin freezeJoin, AdapterContext context) {
         if (freezeJoin.isEmpty()) {
             return;
         }
@@ -151,14 +122,31 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         context.pop();
     }
 
-    private void handleOr(AqlApi.OrClause or, AdapterContext context) {
+    private void handleFlat(AqlBase.FlatClause flat, AdapterContext context) {
+        if (flat.isEmpty()) {
+            return;
+        }
+        // Add operator if needed
+        addOperatorToAqlQueryElements(context);
+        // Push Join element that contains table index, this index will be used by in all the property tables that are
+        // being used inside this function
+        context.push(new FlatAqlElement());
+        context.addAqlQueryElements(open);
+        // Recursively visit the internal elements
+        visitElements(flat, context);
+        context.addAqlQueryElements(close);
+        // Pop the JoinAqlElement, we are getting out from the function
+        context.pop();
+    }
+
+    private void handleOr(AqlBase.OrClause or, AdapterContext context) {
         if (or.isEmpty()) {
             return;
         }
         // Add operator if needed
         addOperatorToAqlQueryElements(context);
         // Push the or operator
-        context.push(this.or);
+        context.push(AqlAdapter.or);
         context.addAqlQueryElements(open);
         // Recursively visit the internal elements
         visitElements(or, context);
@@ -167,14 +155,14 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         context.pop();
     }
 
-    private void handleAnd(AqlApi.AndClause and, AdapterContext context) {
+    private void handleAnd(AqlBase.AndClause and, AdapterContext context) {
         if (and.isEmpty()) {
             return;
         }
         // Add operator if needed
         addOperatorToAqlQueryElements(context);
         // Push the and operator
-        context.push(this.and);
+        context.push(AqlAdapter.and);
         context.addAqlQueryElements(open);
         // Recursively visit the internal elements
         visitElements(and, context);
@@ -183,30 +171,24 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         context.pop();
     }
 
-    private void handleSort(AqlApi.SortApiElement sort, AdapterContext context) {
-        // Get the Sort info from the AqlApi SortApiElement and set the info inside the new SortDetails object
+    private void handleSort(AqlBase.SortApiElement sort, AdapterContext context) {
+        // Get the Sort info from the AqlBase SortApiElement and set the info inside the new SortDetails object
         SortDetails sortDetails = new SortDetails();
         if (sort != null && !sort.isEmpty()) {
             sortDetails.setSortType(sort.getSortType());
-            for (AqlField aqlField : sort.getFields()) {
+            for (AqlFieldEnum aqlField : sort.getFields()) {
                 sortDetails.addField(aqlField);
             }
         }
         context.setSort(sortDetails);
     }
 
-    private void handleDomain(AqlApi.DomainApiElement domain, AdapterContext context) {
-        // Get the Domain info from the AqlApi DomainApiElement and set in the AqlQuery
-        for (AqlDomainEnum queryType : domain.getDomains()) {
-            for (AqlField field : queryType.fields) {
-                context.addField(field);
-            }
+    private void handleDomain(AqlBase.DomainApiElement domain, AdapterContext context) {
+        // Get the Domain info from the AqlBase DomainApiElement and set in the AqlQuery
+        for (DomainSensitiveField field : domain.getFields()) {
+            context.addField(field);
         }
-        // Get the Domain extra fields info from the AqlApi DomainApiElement and set it in the AqlQuery
-        for (AqlField fieldsExtentionEnum : domain.getExtraFields()) {
-            context.addField(fieldsExtentionEnum);
-        }
-        // Get the Main domain info from the AqlApi DomainApiElement and set it in the AqlQuery
-        context.setDomain(domain.getDomains()[0]);
+        // Get the Main domain info from the AqlBase DomainApiElement and set it in the AqlQuery
+        context.setDomain(domain.getDomain());
     }
 }

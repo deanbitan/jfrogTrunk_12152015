@@ -24,10 +24,12 @@ import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
 import org.artifactory.schedule.StopStrategy;
 import org.artifactory.schedule.TaskUser;
-import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
+import org.artifactory.schedule.quartz.QuartzCommand;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author yoavl
@@ -37,18 +39,22 @@ import org.quartz.JobExecutionException;
         schedulerUser = TaskUser.SYSTEM,
         manualUser = TaskUser.SYSTEM,
         commandsToStop = {
-                @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = StopStrategy.IMPOSSIBLE),
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)
         }
 )
-public class MavenIndexerJob extends AbstractMavenIndexerJobs {
+public class MavenIndexerJob extends QuartzCommand {
+    private static final Logger log = LoggerFactory.getLogger(MavenIndexerJob.class);
+
+    public static final String SETTINGS = "settings";
 
     @Override
     protected void onExecute(JobExecutionContext context) throws JobExecutionException {
+        log.debug("Triggered MavenIndexerJob started");
         InternalMavenIndexerService indexer = ContextHelper.get().beanForType(InternalMavenIndexerService.class);
         JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
         MavenIndexerRunSettings settings = (MavenIndexerRunSettings) jobDataMap.get(SETTINGS);
         settings.setFireTime(context.getFireTime());
         indexer.index(settings);
+        log.debug("Triggered MavenIndexerJob finished");
     }
 }

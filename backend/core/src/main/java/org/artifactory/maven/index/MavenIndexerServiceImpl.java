@@ -26,6 +26,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
@@ -41,12 +42,9 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.schedule.BaseTaskServiceDescriptorHandler;
-import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskBase;
-import org.artifactory.schedule.TaskInterruptedException;
 import org.artifactory.schedule.TaskService;
-import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
@@ -54,7 +52,6 @@ import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.Files;
 import org.artifactory.util.Pair;
 import org.artifactory.version.CompoundVersionDetails;
-import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +61,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.net.SocketTimeoutException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author Yoav Landman
@@ -147,7 +152,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
             return new Predicate<Task>() {
                 @Override
                 public boolean apply(Task input) {
-                    return AbstractMavenIndexerJobs.class.isAssignableFrom(input.getType());
+                    return MavenIndexerJob.class.isAssignableFrom(input.getType());
                 }
             };
         }
@@ -220,6 +225,7 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
 
     @Override
     public void index(MavenIndexerRunSettings settings) {
+        log.info("Starting Maven indexing");
         IndexerDescriptor descriptor = getAndCheckDescriptor();
         if (!settings.isForceRemoteDownload() && !descriptor.isEnabled() && !settings.isManualRun()) {
             log.debug("Indexer is disabled - doing nothing.");
@@ -247,15 +253,15 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
             }
             MavenIndexManager mavenIndexManager = new MavenIndexManager(indexedRepo);
             try {
-                //Execute separate tasks in order to have shorter transactions - can be done in a more elegant way...
-                findOrCreateRepositoryIndex(settings.getFireTime(), settings.isForceRemoteDownload(),
-                        mavenIndexManager);
+                boolean remoteIndexExists = mavenIndexManager.fetchRemoteIndex(settings.isForceRemoteDownload());
+                mavenIndexManager.createLocalIndex(settings.getFireTime(), remoteIndexExists);
+
                 //Check again if we need to stop/suspend
                 if (taskService.pauseOrBreak()) {
                     log.info("Stopped indexing on demand");
                     return;
                 }
-                saveIndex(mavenIndexManager);
+                mavenIndexManager.saveIndexFiles();
             } catch (Exception e) {
                 //If we failed to index because of a socket timeout, issue a terse warning instead of a complete stack
                 //trace
@@ -268,8 +274,8 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
                 }
             }
         }
-        getTransactionalMe().mergeVirtualRepoIndexes(excludedRepositories, indexedRepos);
-        log.info("Finished repositories indexing...");
+        mergeVirtualRepoIndexes(excludedRepositories, indexedRepos);
+        log.info("Finished Maven indexing...");
     }
 
     private Set<? extends RepoDescriptor> calcSpecificRepoForIndexing(@Nullable final List<String> repoKeys) {
@@ -290,24 +296,6 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
         }
 
         return excludedRepos;
-    }
-
-    private void findOrCreateRepositoryIndex(Date fireTime, boolean forceRemoteDownload,
-            MavenIndexManager mavenIndexManager) {
-        TaskBase taskFindOrCreateIndex = TaskUtils.createManualTask(FindOrCreateMavenIndexJob.class, 0L);
-        taskFindOrCreateIndex.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
-        taskFindOrCreateIndex.addAttribute(Date.class.getName(), fireTime);
-        taskFindOrCreateIndex.addAttribute(AbstractMavenIndexerJobs.FORCE_REMOTE, forceRemoteDownload);
-        taskService.startTask(taskFindOrCreateIndex, true);
-        taskService.waitForTaskCompletion(taskFindOrCreateIndex.getToken());
-    }
-
-    private void saveIndex(MavenIndexManager mavenIndexManager) {
-        TaskBase saveIndexFileTask = TaskUtils.createManualTask(SaveMavenIndexFileJob.class, 0L);
-        saveIndexFileTask.addAttribute(MavenIndexManager.class.getName(), mavenIndexManager);
-        taskService.startTask(saveIndexFileTask, true);
-        //No real need to wait, but since other task are waiting for indexer completion, leaving it
-        taskService.waitForTaskCompletion(saveIndexFileTask.getToken());
     }
 
     private List<RealRepo> getNonVirtualRepositoriesToIndex(
@@ -332,7 +320,6 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
         return indexedRepos;
     }
 
-    @Override
     public void mergeVirtualRepoIndexes(Set<? extends RepoDescriptor> excludedRepositories,
             List<RealRepo> indexedRepos) {
         List<VirtualRepo> virtualRepos = filterExcludedVirtualRepos(excludedRepositories);
@@ -382,9 +369,8 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
                     }
                     //Store the index into the virtual repo
                     //Get the last gz and props and store them - we need to return them or create them from the dir
-                    Pair<TempFileStreamHandle, TempFileStreamHandle> tempFileStreamHandlesPair = indexer.createIndex(
-                            dir,
-                            false);
+                    Pair<TempFileStreamHandle, TempFileStreamHandle> tempFileStreamHandlesPair =
+                            indexer.createIndex(dir, false);
                     ResourceStreamHandle indexHandle = tempFileStreamHandlesPair.getFirst();
                     ResourceStreamHandle properties = tempFileStreamHandlesPair.getSecond();
                     MavenIndexManager mavenIndexManager =
@@ -421,6 +407,10 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
             for (VirtualRepo virtualRepository : virtualRepositories) {
                 if (excludedKey.equals(virtualRepository.getKey())) {
                     virtualRepositoriesCopy.remove(virtualRepository);
+                } else if (VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(virtualRepository.getKey())
+                        && ConstantValues.disableGlobalRepoAccess.getBoolean()) {
+                    // remove global repo if it is disabled
+                    virtualRepositoriesCopy.remove(virtualRepository);
                 }
             }
         }
@@ -439,59 +429,5 @@ public class MavenIndexerServiceImpl implements InternalMavenIndexerService {
         dummyGlobal.setKey(VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY);
         virtualRepositoriesCopy.remove(dummyGlobal);
         return virtualRepositoriesCopy;
-    }
-
-    private static InternalMavenIndexerService getTransactionalMe() {
-        return InternalContextHelper.get().beanForType(InternalMavenIndexerService.class);
-    }
-
-    @JobCommand(manualUser = TaskUser.CURRENT)
-    public static class FindOrCreateMavenIndexJob extends AbstractMavenIndexerJobs {
-        @Override
-        protected void onExecute(JobExecutionContext callbackContext) {
-            try {
-                MavenIndexManager mavenIndexManager =
-                        (MavenIndexManager) callbackContext.getMergedJobDataMap().get(
-                                MavenIndexManager.class.getName());
-                Date fireTime = (Date) callbackContext.getMergedJobDataMap().get(Date.class.getName());
-                boolean forceRemoteDownload = (Boolean) callbackContext.getMergedJobDataMap().get(
-                        AbstractMavenIndexerJobs.FORCE_REMOTE);
-                InternalMavenIndexerService indexer = InternalContextHelper.get().beanForType(
-                        InternalMavenIndexerService.class);
-                indexer.fetchOrCreateIndex(mavenIndexManager, fireTime, forceRemoteDownload);
-            } catch (Exception e) {
-                log.error("Indexing failed: {}", e.getMessage());
-                log.debug("Indexing failed.", e);
-            }
-        }
-    }
-
-    @JobCommand(manualUser = TaskUser.CURRENT)
-    public static class SaveMavenIndexFileJob extends AbstractMavenIndexerJobs {
-        @Override
-        protected void onExecute(JobExecutionContext callbackContext) {
-            try {
-                MavenIndexManager mavenIndexManager =
-                        (MavenIndexManager) callbackContext.getMergedJobDataMap().get(
-                                MavenIndexManager.class.getName());
-                InternalMavenIndexerService indexer = getTransactionalMe();
-                indexer.saveIndexFiles(mavenIndexManager);
-            } catch (TaskInterruptedException e) {
-                log.warn(e.getMessage());
-            } catch (Exception e) {
-                log.error("Saving index files failed.", e);
-            }
-        }
-    }
-
-    @Override
-    public void fetchOrCreateIndex(MavenIndexManager mavenIndexManager, Date fireTime, boolean forceRemoteDownload) {
-        boolean remoteIndexExists = mavenIndexManager.fetchRemoteIndex(forceRemoteDownload);
-        mavenIndexManager.createLocalIndex(fireTime, remoteIndexExists);
-    }
-
-    @Override
-    public void saveIndexFiles(MavenIndexManager mavenIndexManager) {
-        mavenIndexManager.saveIndexFiles();
     }
 }

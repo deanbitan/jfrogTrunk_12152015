@@ -98,11 +98,12 @@ public class LocalReplicationJobTest extends ReplicationJobTestBase {
         expect(executionContext.getJobDetail()).andReturn(jobDetail);
         expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
         expect(jobDataMap.getString(Task.REPO_KEY)).andReturn("key");
+        expect(jobDataMap.getString(Task.PUSH_REPLICATION_URL)).andReturn("http://momo.com");
         expect(jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR)).andReturn(null);
 
         CentralConfigDescriptorImpl centralConfig = new CentralConfigDescriptorImpl();
         centralConfig.addLocalReplication(replicationDescriptor);
-        expect(configService.getDescriptor()).andReturn(centralConfig);
+         expect(configService.getDescriptor()).andReturn(centralConfig);
         expect(artifactoryContext.getCentralConfig()).andReturn(configService);
         expect(artifactoryContext.beanForType(SecurityService.class)).andReturn(securityService);
         securityService.authenticateAsSystem();
@@ -124,6 +125,7 @@ public class LocalReplicationJobTest extends ReplicationJobTestBase {
         expect(executionContext.getJobDetail()).andReturn(jobDetail);
         expect(jobDetail.getJobDataMap()).andReturn(jobDataMap);
         expect(jobDataMap.getString(Task.REPO_KEY)).andReturn("key");
+        expect(jobDataMap.getString(Task.PUSH_REPLICATION_URL)).andReturn("http://momo.com");
         expect(jobDataMap.get(ReplicationAddon.TASK_MANUAL_DESCRIPTOR)).andReturn(null);
 
         CentralConfigDescriptorImpl centralConfig = new CentralConfigDescriptorImpl();

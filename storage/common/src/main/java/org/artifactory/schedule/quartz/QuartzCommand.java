@@ -20,9 +20,11 @@ package org.artifactory.schedule.quartz;
 
 import org.artifactory.schedule.Task;
 import org.artifactory.schedule.TaskCallback;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -30,7 +32,9 @@ import org.springframework.security.core.Authentication;
 /**
  * @author yoavl
  */
-public abstract class QuartzCommand extends TaskCallback<JobExecutionContext> implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public abstract class QuartzCommand extends TaskCallback<JobExecutionContext> implements Job {
     private static final Logger log = LoggerFactory.getLogger(QuartzCommand.class);
 
     @Override

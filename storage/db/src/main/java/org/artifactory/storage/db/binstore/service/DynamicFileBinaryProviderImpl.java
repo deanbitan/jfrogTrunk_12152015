@@ -127,7 +127,7 @@ class DynamicFileBinaryProviderImpl extends FileBinaryProviderBase implements Fi
 
     public boolean isActive() {
         long l = lastCheck.longValue();
-        if (l + checkPeriod > System.currentTimeMillis()) {
+        if (System.currentTimeMillis() - l > checkPeriod) {
             if (lastCheck.compareAndSet(l, System.currentTimeMillis())) {
                 verifyState(binariesDir);
             }

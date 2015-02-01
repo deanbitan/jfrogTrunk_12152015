@@ -57,6 +57,11 @@ public interface ArtifactoryRequest extends Request {
     String PARAM_FOLDER_REDIRECT_ASSERTION = "artifactory.disableFolderRedirectAssertion";
 
     /**
+     * Will replace the HEAD request in RetrieveInfo with a GET request
+     */
+    String PARAM_REPLACE_HEAD_IN_RETRIEVE_INFO_WITH_GET = "artifactory.replaceHeadInRetrieveInfoWithGet";
+
+    /**
      * The path prefix name for list browsing.
      */
     String LIST_BROWSING_PATH = "list";

@@ -2,8 +2,8 @@ package org.artifactory.storage.db.aql.parser;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.aql.AqlParserException;
-import org.artifactory.storage.db.aql.parser.elements.initable.*;
-import org.artifactory.storage.db.aql.parser.elements.internal.InternalEmptyElement;
+import org.artifactory.storage.db.aql.parser.elements.high.level.basic.language.*;
+import org.artifactory.storage.db.aql.parser.elements.low.level.InternalEmptyElement;
 
 /**
  * Parse the Aql string query into parser result which is a list of parser elements
@@ -14,26 +14,15 @@ import org.artifactory.storage.db.aql.parser.elements.internal.InternalEmptyElem
 public class AqlParser {
     public static final String[] DELIMITERS = {"<=", ">=", "!=", " ", "<", ">", "(", ")", "[", "]", "{", "}", "=", "'", ".", ":", "\"", ":"};
     public static final String[] USED_KEYS = {"$mt", "$lt", "$eq", "and", "not", "or", "artifacts"};
-    public static final CriteriaEqualsElement criteriaEquals = new CriteriaEqualsElement();
-    public static final CriteriaMatchElement criteriaMatch = new CriteriaMatchElement();
-    public static final CriteriaEqualsPropertyElement criteriaEqualsProperty = new CriteriaEqualsPropertyElement();
-    public static final CriteriaMatchPropertyElement criteriaMatchProperty = new CriteriaMatchPropertyElement();
-    public static final ComplexTailElement filterComplexTail = new ComplexTailElement();
-    public static final FunctionExtensionElement functionExtentionElement = new FunctionExtensionElement();
-    public static final FunctionElement functionElement = new FunctionElement();
+    public static final DotElement dot = new DotElement();
     public static final CommaElement comma = new CommaElement();
-    public static final FilterComplex filterComplex = new FilterComplex();
-    public static final FilterTailElement filterTail = new FilterTailElement();
-    public static final FilterElement filter = new FilterElement();
-    public static final QuotedComperator quotedComperator = new QuotedComperator();
-    public static final ComparatorElement comperator = new ComparatorElement();
+    public static final QuotedComparator quotedComparator = new QuotedComparator();
+    public static final ComparatorElement comparator = new ComparatorElement();
     public static final QuotesElement quotes = new QuotesElement();
     public static final ColonElement colon = new ColonElement();
     public static final ValueNumberElement valueOrNumber = new ValueNumberElement();
     public static final ValueElement value = new ValueElement();
     public static final NumberElement number = new NumberElement();
-    public static final ValueTrailElement valueTrail = new ValueTrailElement();
-    public static final FieldTrailElement fieldTrail = new FieldTrailElement();
     public static final FieldElement field = new FieldElement();
     public static final OpenParenthesisElement openParenthesis = new OpenParenthesisElement();
     public static final CloseParenthesisElement closeParenthesis = new CloseParenthesisElement();
@@ -42,16 +31,41 @@ public class AqlParser {
     public static final OpenBracketsElement openBrackets = new OpenBracketsElement();
     public static final CloseBracketsElement closeBrackets = new CloseBracketsElement();
     public static final InternalEmptyElement empty = new InternalEmptyElement();
-    public static final DomainValues domainValues = new DomainValues();
-    public static final DomainElement domain = new DomainElement();
-    public static final DomainExtentoinElement domainExtention = new DomainExtentoinElement();
-    public static final DotElement dot = new DotElement();
     public static final SortTypeElement sortType = new SortTypeElement();
-    public static final SortExtensionElement sortExtension = new SortExtensionElement();
     public static final LimitValueElement limitValue = new LimitValueElement();
+
+    public static final StatisticsDomainsElement statisticsDomains = new StatisticsDomainsElement();
+    public static final BuildDomainsElement buildDomains = new BuildDomainsElement();
+    public static final BuildPropertyDomainsElement buildPropertiesDomains = new BuildPropertyDomainsElement();
+    public static final BuildModuleDomainsElement buildModuleDomains = new BuildModuleDomainsElement();
+    public static final BuildDependenciesDomainsElement buildDependenciesDomains = new BuildDependenciesDomainsElement();
+    public static final BuildArtifactDomainsElement buildArtifactDomains = new BuildArtifactDomainsElement();
+    public static final PropertyDomainsElement propertiesDomains = new PropertyDomainsElement();
+    public static final ArchiveDomainsElement archiveDomains = new ArchiveDomainsElement();
+    public static final ItemDomainsElement itemDomains = new ItemDomainsElement();
+
+
+    public static final StatisticsValuesElement statisticsValues = new StatisticsValuesElement();
+    public static final BuildValuesElement buildValues = new BuildValuesElement();
+    public static final BuildPropertyValuesElement buildPropertiesValues = new BuildPropertyValuesElement();
+    public static final BuildModuleValuesElement buildModuleValues = new BuildModuleValuesElement();
+    public static final BuildDependenciesValuesElement buildDependenciesValues = new BuildDependenciesValuesElement();
+    public static final BuildArtifactValuesElement buildArtifactValues = new BuildArtifactValuesElement();
+    public static final PropertyValuesElement propertiesValues = new PropertyValuesElement();
+    public static final ArchiveValuesElement archiveValues = new ArchiveValuesElement();
+    public static final ItemValuesElement itemValues = new ItemValuesElement();
+
+    public static final StatisticsFieldsElement statisticsFields = new StatisticsFieldsElement();
+    public static final BuildFieldsElement buildFields = new BuildFieldsElement();
+    public static final BuildPropertyFieldsElement buildPropertiesFields = new BuildPropertyFieldsElement();
+    public static final BuildModuleFieldsElement buildModuleFields = new BuildModuleFieldsElement();
+    public static final BuildDependenciesFieldsElement buildDependenciesFields = new BuildDependenciesFieldsElement();
+    public static final BuildArtifactFieldsElement buildArtifactFields = new BuildArtifactFieldsElement();
+    public static final PropertyFieldsElement propertiesFields = new PropertyFieldsElement();
+    public static final ArchiveFieldsElement archiveFields = new ArchiveFieldsElement();
+    public static final ItemFieldsElement itemFields = new ItemFieldsElement();
+
     public static final LimitElement limit = new LimitElement();
-    public static final DomainValueTypeElement domainValueType = new DomainValueTypeElement();
-    public static final FindElement find = new FindElement();
     public static final RootElement root = new RootElement();
 
     /**

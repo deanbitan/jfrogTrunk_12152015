@@ -630,9 +630,10 @@ public class UploadServiceImpl implements InternalUploadService {
 
     private void fireUploadTrafficEvent(RepoResource resource, long remoteUploadStartTime) {
         if (remoteUploadStartTime > 0) {
+            String remoteAddress = HttpUtils.getRemoteClientAddress();
             // fire upload event only if the resource is really uploaded from the remote client
             UploadEntry uploadEntry = new UploadEntry(resource.getRepoPath().getId(),
-                    resource.getSize(), System.currentTimeMillis() - remoteUploadStartTime);
+                    resource.getSize(), System.currentTimeMillis() - remoteUploadStartTime, remoteAddress);
             trafficService.handleTrafficEntry(uploadEntry);
         }
     }

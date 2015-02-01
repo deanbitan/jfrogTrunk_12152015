@@ -128,6 +128,7 @@ import org.artifactory.security.UserInfo;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
+import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.event.ItemEvent;
 import org.artifactory.webapp.servlet.RequestUtils;
@@ -153,6 +154,7 @@ import org.artifactory.webapp.wicket.page.config.advanced.AdvancedSecurityConfig
 import org.artifactory.webapp.wicket.page.config.advanced.MaintenancePage;
 import org.artifactory.webapp.wicket.page.config.advanced.SystemInfoPage;
 import org.artifactory.webapp.wicket.page.config.advanced.storage.StorageSummaryPage;
+import org.artifactory.webapp.wicket.page.config.bintray.BintrayConfigPage;
 import org.artifactory.webapp.wicket.page.config.general.BaseCustomizingPanel;
 import org.artifactory.webapp.wicket.page.config.general.CustomizingPanel;
 import org.artifactory.webapp.wicket.page.config.general.GeneralConfigPage;
@@ -185,6 +187,7 @@ import org.artifactory.webapp.wicket.panel.export.ExportResultsPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.jfrog.build.api.Artifact;
+import org.jfrog.build.api.BaseBuildFileBean;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildRetention;
@@ -221,9 +224,18 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
         P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
-        PypiWebAddon,
-        DockerWebAddon {
+        PypiWebAddon, DockerWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
+
+    private static String buildLatestVersionLabel(VersionHolder latestVersion) {
+        return String.format("(latest release is <a href=\"%s\" target=\"_blank\">%s</a>)",
+                latestVersion.getDownloadUrl(), latestVersion.getVersion());
+    }
+
+    private static void disableAll(MarkupContainer container) {
+        container.setEnabled(false);
+        container.visitChildren(new SetEnableVisitor(false));
+    }
 
     @Override
     public String getPageTitle(BasePage page) {
@@ -265,6 +277,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         adminConfiguration.addChild(new MenuNode("Mail", MailConfigPage.class));
         HaWebAddon haWebAddon = addonsManager.addonByType(HaWebAddon.class);
         adminConfiguration.addChild(haWebAddon.getHaConfigPage("High Availability"));
+        if (!ConstantValues.bintrayUIHideUploads.getBoolean()) {
+            adminConfiguration.addChild(new MenuNode("Bintray", BintrayConfigPage.class));
+        }
         if (!(addonsManager instanceof OssAddonsManager)) {
             adminConfiguration.addChild(new MenuNode("Register Pro", LicensePage.class));
         }
@@ -307,7 +322,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public boolean isAutoRedirectToSamlIdentityProvider() {
         return false;
     }
-
 
     @Override
     public boolean isSamlEnabled() {
@@ -442,6 +456,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public BuildsDiff getBuildsDiff(Build firstBuild, Build secondBuild, String baseStorageInfoUri) {
+        return null;
+    }
+
+    @Override
+    public FileInfo getFileBeanInfo(BaseBuildFileBean artifact, Build build) {
         return null;
     }
 
@@ -1210,6 +1229,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
+    public DeleteAction getDeleteAction(ItemInfo itemInfo) {
+        return new DeleteAction();
+    }
+
+    @Override
     public void createAndAddPypiConfigSection(Form form, RepoDescriptor repo, boolean isCreate) {
         WebMarkupContainer section = new WebMarkupContainer("pypiSupportSection");
         section.add(new TitledBorderBehavior("fieldset-border", "PyPI"));
@@ -1370,16 +1394,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         protected List<BuildDependencyActionableItem> getDependencyActionableItems(BuildRun run) {
             return Lists.newArrayList();
         }
-    }
-
-    private static String buildLatestVersionLabel(VersionHolder latestVersion) {
-        return String.format("(latest release is <a href=\"%s\" target=\"_blank\">%s</a>)",
-                latestVersion.getDownloadUrl(), latestVersion.getVersion());
-    }
-
-    private static void disableAll(MarkupContainer container) {
-        container.setEnabled(false);
-        container.visitChildren(new SetEnableVisitor(false));
     }
 
     private static class DisabledPropertiesPanel extends PropertiesPanel {

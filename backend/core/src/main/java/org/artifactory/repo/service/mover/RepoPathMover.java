@@ -64,17 +64,17 @@ public class RepoPathMover {
         }
 
         RepoPath targetLocalRepoPath = moverConfig.getTargetLocalRepoPath();
+        String opType = (moverConfig.isCopy()) ? "copy" : "move";
         if (fromRepoPath.equals(targetLocalRepoPath)) {
-            status.error(String.format("Skipping move\\copy %s: Destination and source are the same",
-                    fromRepoPath), log);
+            status.error(String.format("Skipping %s %s: Destination and source are the same", opType, fromRepoPath), log);
             return;
         }
 
         RepoRepoPath<LocalRepo> targetRrp = repositoryService.getRepoRepoPath(targetLocalRepoPath);
         if (targetRrp.getRepo().isCache()) {
             throw new IllegalArgumentException(
-                    "Target repository " + targetLocalRepoPath.getRepoKey() + " is a cache " +
-                            "repository. Moving\\copying to cache repositories is not allowed.");
+                    String.format("Target repository %s is a cache repository. %s to cache repositories is not allowed.",
+                            targetLocalRepoPath.getRepoKey(), opType));
         }
 
         LayoutsCoreAddon layoutsCoreAddon = addonsManager.addonByType(LayoutsCoreAddon.class);

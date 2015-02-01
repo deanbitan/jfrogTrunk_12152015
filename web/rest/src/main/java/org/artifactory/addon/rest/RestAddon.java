@@ -26,13 +26,13 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.rest.artifact.ItemPermissions;
-import org.artifactory.api.rest.artifact.MoveCopyResult;
 import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.aql.AqlException;
+import org.artifactory.aql.result.AqlRestResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -80,7 +80,7 @@ public interface RestAddon extends Addon {
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    MoveCopyResult copy(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
+    Response copy(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
 
     /**
      * Move an artifact from one path to another.
@@ -94,7 +94,7 @@ public interface RestAddon extends Addon {
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    MoveCopyResult move(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
+    Response move(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
 
     /**
      * @deprecated use {@link RestAddon#replicate(org.artifactory.repo.RepoPath, org.artifactory.api.rest.replication.ReplicationRequest)} instead
@@ -373,4 +373,6 @@ public interface RestAddon extends Addon {
 
     Response getLatestVersionByProperties(String repoKey, String path, Map<String, String[]> parameterMap,
             HttpServletRequest request) throws AqlException;
+
+    AqlRestResult executeQuery(String query, HttpServletRequest request);
 }

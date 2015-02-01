@@ -2,7 +2,7 @@ package org.artifactory.storage.db.aql.sql.builder.query.aql;
 
 import com.google.common.collect.Lists;
 import org.artifactory.aql.model.AqlDomainEnum;
-import org.artifactory.aql.model.AqlField;
+import org.artifactory.aql.model.DomainSensitiveField;
 
 import java.util.List;
 
@@ -12,13 +12,13 @@ import java.util.List;
  * @author Gidi Shabat
  */
 public class AqlQuery {
-    private List<AqlField> resultFields = Lists.newArrayList();
+    private List<DomainSensitiveField> resultFields = Lists.newArrayList();
     private SortDetails sort;
     private List<AqlQueryElement> aqlElements = Lists.newArrayList();
     private AqlDomainEnum domain;
     private int limit = Integer.MAX_VALUE;
 
-    public List<AqlField> getResultFields() {
+    public List<DomainSensitiveField> getResultFields() {
         return resultFields;
     }
 

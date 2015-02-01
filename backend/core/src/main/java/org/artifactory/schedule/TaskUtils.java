@@ -25,8 +25,12 @@ import org.artifactory.security.AnonymousAuthenticationToken;
 import org.artifactory.security.SystemAuthenticationToken;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
-import org.springframework.scheduling.quartz.CronTriggerBean;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -34,7 +38,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.ParseException;
+import java.util.Date;
+import java.util.UUID;
 
 /**
  * User: freds
@@ -43,50 +48,56 @@ import java.text.ParseException;
  */
 public abstract class TaskUtils {
 
-    @SuppressWarnings({"unchecked"})
-    public static TaskBase createManualTask(
-            @Nonnull Class<? extends TaskCallback> commandClass,
-            long initialDelay
-    ) {
+    public static TaskBase createManualTask(@Nonnull Class<? extends TaskCallback> commandClass, long initialDelay) {
         checkCommandClass(commandClass, true);
-        return fillProperties(
-                QuartzTask.createQuartzTask((Class<? extends QuartzCommand>) commandClass,
-                        0L, initialDelay), true);
+
+        Class<QuartzCommand> quartzCommand = (Class<QuartzCommand>) commandClass;
+        JobDetail jobDetail = JobBuilder.newJob(quartzCommand).withIdentity(generateUniqueName(quartzCommand),
+                QuartzTask.ARTIFACTORY_GROUP).build();
+
+        Trigger trigger = TriggerBuilder.newTrigger().forJob(jobDetail)
+                .withIdentity(generateUniqueName(quartzCommand))
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule())
+                .startAt(new Date(System.currentTimeMillis() + initialDelay)).build();
+
+        return fillProperties(QuartzTask.createQuartzTask(commandClass, trigger, jobDetail), true);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public static TaskBase createRepeatingTask(
-            @Nonnull Class<? extends TaskCallback> commandClass,
-            long interval,
-            long initialDelay
-    ) {
+    @SuppressWarnings("unchecked")
+    public static TaskBase createRepeatingTask(@Nonnull Class<? extends TaskCallback> commandClass,
+            long interval, long initialDelay) {
         checkCommandClass(commandClass, false);
-        return fillProperties(
-                QuartzTask.createQuartzTask((Class<? extends QuartzCommand>) commandClass,
-                        interval, initialDelay), false);
+
+        Class<QuartzCommand> quartzCommand = (Class<QuartzCommand>) commandClass;
+        JobDetail jobDetail = JobBuilder.newJob(quartzCommand).withIdentity(generateUniqueName(quartzCommand),
+                QuartzTask.ARTIFACTORY_GROUP).build();
+
+        SimpleScheduleBuilder schedulerBuilder = SimpleScheduleBuilder.simpleSchedule();
+        if (interval > 0) {
+            schedulerBuilder.repeatForever().withIntervalInMilliseconds(interval);
+        }
+        Trigger trigger = TriggerBuilder.newTrigger().forJob(jobDetail)
+                .withIdentity(generateUniqueName(quartzCommand))
+                .withSchedule(schedulerBuilder).startAt(new Date(System.currentTimeMillis() + initialDelay)).build();
+
+        return fillProperties(QuartzTask.createQuartzTask(commandClass, trigger, jobDetail), false);
     }
 
-    @SuppressWarnings({"unchecked"})
-    public static TaskBase createCronTask(
-            @Nonnull Class<? extends TaskCallback> commandClass,
-            @Nonnull String cronExpression
-    ) {
+    @SuppressWarnings("unchecked")
+    public static TaskBase createCronTask(@Nonnull Class<? extends TaskCallback> commandClass,
+            @Nonnull String cronExpression) {
         checkCommandClass(commandClass, false);
-        CronTriggerBean trigger = new CronTriggerBean();
-        trigger.setName(commandClass.getName());
-        JobDetail jobDetail = new JobDetail(commandClass.getName(), "artifactory", commandClass);
-        trigger.setJobDetail(jobDetail);
-        try {
-            trigger.setCronExpression(cronExpression);
-        } catch (ParseException e) {
-            throw new RuntimeException("Invalid cron exp '" + cronExpression + "'.", e);
-        }
-        try {
-            trigger.afterPropertiesSet();
-            return fillProperties(QuartzTask.createQuartzTask(trigger), false);
-        } catch (Exception e) {
-            throw new RuntimeException("Error in scheduling the cron job '" + commandClass.getName() + "'.", e);
-        }
+
+        Class<QuartzCommand> quartzCommand = (Class<QuartzCommand>) commandClass;
+        JobDetail jobDetail = JobBuilder.newJob(quartzCommand).withIdentity(generateUniqueName(quartzCommand),
+                QuartzTask.ARTIFACTORY_GROUP).build();
+
+        Trigger trigger = TriggerBuilder.newTrigger().forJob(jobDetail)
+                .withIdentity(generateUniqueName(quartzCommand))
+                .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
+                .build();
+
+        return fillProperties(QuartzTask.createQuartzTask(commandClass, trigger, jobDetail), false);
     }
 
     private static TaskBase fillProperties(TaskBase task, boolean manual) {
@@ -115,7 +126,8 @@ public abstract class TaskUtils {
             case INVALID:
                 throw new IllegalArgumentException(
                         "Quartz command " + task.getType() + " did not set a task user for " +
-                                (manual ? "manual" : "scheduled") + " activation!");
+                                (manual ? "manual" : "scheduled") + " activation!"
+                );
             case SYSTEM:
                 authentication = new SystemAuthenticationToken();
                 break;
@@ -174,6 +186,10 @@ public abstract class TaskUtils {
             }
         }
         return count;
+    }
+
+    private static String generateUniqueName(Class<? extends QuartzCommand> commandClass) {
+        return commandClass.getName() + "#" + UUID.randomUUID().toString();
     }
 
     public static Predicate<Task> createPredicateForType(final Class<? extends TaskCallback> callbackType) {

@@ -1,7 +1,7 @@
 package org.artifactory.storage.db.aql.sql.builder.query.sql;
 
 import com.google.common.collect.Lists;
-import org.artifactory.aql.model.AqlField;
+import org.artifactory.aql.model.DomainSensitiveField;
 
 import java.util.List;
 
@@ -19,8 +19,8 @@ public class SqlQuery {
     private static final String SELECT_DISTINCT = "select distinct";
     private static final String QUERY_TEMPLATE = SELECT_DISTINCT + FIELDS + "from" + TABLES + WHERE + FILTERS + SORT;
     private String query = QUERY_TEMPLATE;
-    List<Object> params = Lists.newArrayList();
-    private List<AqlField> resultFields;
+    private List<Object> params = Lists.newArrayList();
+    private List<DomainSensitiveField> resultFields;
     private int limit;
 
     public void updateResultFields(String results) {
@@ -45,7 +45,7 @@ public class SqlQuery {
     }
 
     public void updateOracleLimit(int limit) {
-        query = "select * from (" + query + ") where ROWNUM <= " + limit;
+        // unsupported, Using the limit in the UI;
     }
 
     public void updateMySqlLimit(int limit) {
@@ -62,7 +62,7 @@ public class SqlQuery {
     }
 
     public void updateMsSqlLimit(int limit) {
-        query=query.replaceFirst(SELECT_DISTINCT, "select distinct top " + limit);
+        query = query.replaceFirst(SELECT_DISTINCT, "select distinct top " + limit);
     }
 
     public Object[] getQueryParams() {
@@ -82,11 +82,11 @@ public class SqlQuery {
                 '}';
     }
 
-    public List<AqlField> getResultFields() {
+    public List<DomainSensitiveField> getResultFields() {
         return resultFields;
     }
 
-    public void setResultFields(List<AqlField> resultFields) {
+    public void setResultFields(List<DomainSensitiveField> resultFields) {
         this.resultFields = resultFields;
     }
 

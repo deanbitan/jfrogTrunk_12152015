@@ -26,11 +26,15 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ManagedHttpClientConnection;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.request.RequestThreadLocal;
 import org.artifactory.rest.ErrorResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -44,8 +48,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.rmi.dgc.VMID;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -349,5 +356,43 @@ public abstract class HttpUtils {
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         ErrorResponse errorResponse = new ErrorResponse(statusCode, message);
         response.getWriter().write(mapper.writeValueAsString(errorResponse));
+    }
+
+    public static boolean isAbsolute(String url) {
+        try {
+            URI uri = new URIBuilder(url).build();
+            return uri.isAbsolute();
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    public static String getRemoteClientAddress() {
+        if (ConstantValues.test.getBoolean()) {
+            return "127.0.0.1";
+        }
+        String remoteClientAddress = RequestThreadLocal.getClientAddress();
+        if (remoteClientAddress == null ) {
+            return "";
+        } else {
+            return remoteClientAddress;
+        }
+    }
+
+    public static String resolveResponseRemoteAddress(CloseableHttpResponse response) {
+        try {
+            Field connHolderField = response.getClass().getDeclaredField("connHolder");
+            connHolderField.setAccessible(true);
+            Object connHolder = connHolderField.get(response);
+
+            Field managedConnField = connHolder.getClass().getDeclaredField("managedConn");
+            managedConnField.setAccessible(true);
+            ManagedHttpClientConnection managedConn = (ManagedHttpClientConnection) managedConnField.get(
+                    connHolder);
+            String hostAddress = managedConn.getSocket().getInetAddress().getHostAddress();
+            return hostAddress == null ? StringUtils.EMPTY : hostAddress;
+        } catch (Throwable throwable) {
+            return StringUtils.EMPTY;
+        }
     }
 }

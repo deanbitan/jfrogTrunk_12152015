@@ -95,9 +95,16 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
 
     @Override
     public VirtualBrowsableItem getVirtualRepoBrowsableItem(RepoPath repoPath) {
+        log.debug("getting new Virtual Repo '{}' Browsable Item", repoPath.getRepoKey());
+
         VirtualRepoItem virtualRepoItem = getVirtualRepoItem(repoPath);
         if (virtualRepoItem != null) {
             ItemInfo itemInfo = virtualRepoItem.getItemInfo();
+
+            log.debug("new Virtual Repo Browsable Item ,name:'{}',created:'{}',lastModified:'{}',size:'{}', ",
+                    itemInfo.getName(), itemInfo.getCreated(),
+                    itemInfo.getLastModified(), itemInfo.isFolder() ? -1 : ((FileInfo) itemInfo).getSize());
+
             return new VirtualBrowsableItem(itemInfo.getName(), itemInfo.isFolder(), itemInfo.getCreated(),
                     itemInfo.getLastModified(), itemInfo.isFolder() ? -1 : ((FileInfo) itemInfo).getSize(),
                     repoPath, virtualRepoItem.getRepoKeys());
@@ -109,6 +116,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     private ItemInfo getItemInfo(RepoPath repoPath) {
         LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         if (repo == null) {
+            log.trace("No local or cache repo found:'{}'", repoPath.getRepoKey());
             throw new IllegalArgumentException("No local or cache repo found: " + repoPath.getRepoKey());
         }
 
@@ -125,6 +133,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         RepoPath repoPath = criteria.getRepoPath();
         LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         if (repo == null) {
+            log.trace("No local or cache repo found:'{}'", repoPath.getRepoKey());
             throw new IllegalArgumentException("No local or cache repo found: " + repoPath.getRepoKey());
         }
 
@@ -136,9 +145,11 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 .applyRepoIncludeExclude().applySecurity().cacheChildren(false).build());
         ItemNode rootNode = tree.getRootNode();
         if (rootNode == null) {
+            log.trace("No local or cache repo found:'{}'", repoPath.getRepoKey());
             throw new ItemNotFoundRuntimeException(repoPath);
         }
         if (!rootNode.isFolder()) {
+            log.trace("repo '{}' root node is not folder", repoPath.getRepoKey());
             throw new FolderExpectedException(repoPath);
         }
 
@@ -188,9 +199,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         String relativePath = repoPath.getPath();
         RemoteRepo repo = repoService.remoteRepositoryByKey(repoKey);
         if (repo == null) {
+            log.trace("Remote repo not found:'{}'", repoKey);
             throw new IllegalArgumentException("Remote repo not found: " + repoKey);
         }
-
+        log.debug("getting Remote Repo '{}' Browsable Children", repoKey);
         // include remote resources based on the flag and the offline mode
         boolean includeRemoteResources = criteria.isIncludeRemoteResources() && repo.isListRemoteFolderItems() && repo.accepts(repoPath);
 
@@ -209,6 +221,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 if (!includeRemoteResources) {
                     throw e;
                 }
+                log.trace("Local Repository Item Not Found", e);
             }
         }
         if (includeRemoteResources) {
@@ -225,8 +238,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         // probably remote not found - return 404 only if current folder doesn't exist in the cache
         if (remoteItems.isEmpty() && !pathExistsInCache) {
             // no cache and remote failed - signal 404
+            log.trace("Couldn't find item:'{}'", repoPath);
             throw new ItemNotFoundRuntimeException("Couldn't find item: " + repoPath);
         }
+        log.debug("Listing Remote Repo '{}' Browsable Items", repoPath.getRepoKey());
 
         // filter already existing local items
         remoteItems = Lists.newArrayList(
@@ -240,6 +255,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             if (canRead(repo, cacheRepoPath)) {
                 RemoteBrowsableItem browsableItem = new RemoteBrowsableItem(remoteItem, remoteRepoPath);
                 if (remoteItem.getEffectiveUrl() != null) {
+                    log.debug("Remote Browsable item effective URL", remoteItem.getEffectiveUrl());
                     browsableItem.setEffectiveUrl(remoteItem.getEffectiveUrl());
                 }
                 children.add(browsableItem);
@@ -254,9 +270,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         String virtualRepoKey = repoPath.getRepoKey();
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(virtualRepoKey);
         if (virtualRepo == null) {
+            log.trace("No virtual repo found:'{}'", virtualRepoKey);
             throw new IllegalArgumentException("No virtual repo found: " + virtualRepoKey);
         }
-
+        log.debug("getting Virtual Repo '{}' Browsable Item ", virtualRepoKey);
         List<BaseBrowsableItem> candidateChildren = Lists.newArrayList();
         List<VirtualRepo> searchableRepos = getSearchableRepos(virtualRepo, repoPath);
         Multimap<String, VirtualRepo> pathToVirtualRepos = HashMultimap.create();
@@ -270,6 +287,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         for (BaseBrowsableItem child : candidateChildren) {
             String childRelativePath = child.getRelativePath();
             if (virtualRepoAccepts(virtualRepo, child.getRepoPath())) {
+                log.debug("Virtual Repo '{}' accepts child repo path '{}' ", virtualRepoKey, child.getRepoPath());
                 VirtualBrowsableItem virtualItem;
                 if (childrenToReturn.containsKey(childRelativePath)) {
                     virtualItem = (VirtualBrowsableItem) childrenToReturn.get(childRelativePath);
@@ -277,15 +295,26 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                         virtualItem.setCreated(child.getCreated());
                         virtualItem.setLastModified(child.getLastModified());
                         virtualItem.setSize(child.getSize());
+                        log.debug("Updating virtual Item '{}' created '{}' ,lastModified '{}' and size '{}'",
+                                virtualItem.getName(),
+                                child.getCreated(),
+                                child.getLastModified(),
+                                child.getSize());
                     }
                 } else {
                     // New
                     Collection<VirtualRepo> virtualRepos = pathToVirtualRepos.get(childRelativePath);
                     virtualItem = new VirtualBrowsableItem(child.getName(), child.isFolder(), child.getCreated(),
                             child.getLastModified(), child.getSize(), InternalRepoPathFactory.create(virtualRepoKey,
-                            childRelativePath),
+                            childRelativePath, child.isFolder()),
                             Lists.newArrayList(getSearchableRepoKeys(virtualRepos))
                     );
+                    log.debug("New virtual Item '{}' created '{}' ,lastModified '{}' and size '{}'",
+                            virtualItem.getName(),
+                            child.getCreated(),
+                            child.getLastModified(),
+                            child.getSize());
+
                     virtualItem.setRemote(true);    // default to true
                     childrenToReturn.put(childRelativePath, virtualItem);
                 }
@@ -300,18 +329,22 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos) {
         String relativePath = criteria.getRepoPath().getPath();
         List<LocalRepo> localRepositories = repo.getLocalRepositories();
-
+        log.debug("adding  Virtual Browsable Items From Local to virtual Repo:'{}'", repo);
         for (LocalRepo localRepo : localRepositories) {
             RepoPath path = InternalRepoPathFactory.create(localRepo.getKey(), relativePath, criteria.getRepoPath().isFolder());
             try {
                 BrowsableItemCriteria localCriteria = new BrowsableItemCriteria.Builder(criteria).repoPath(path).
                         build();
+                log.trace("Iterating Browsable childrens of Local Repo :'{}' and check Virtual Repo Accepts it",
+                        localRepo.getKey());
                 List<BaseBrowsableItem> localRepoBrowsableChildren = getLocalRepoBrowsableChildren(localCriteria);
                 // go over all local repo browsable children, these have already been filtered according
                 // to each local repo's rules, now all that is left is to check that the virtual repo that
                 // the local repo belongs to accepts as well.
                 for (BaseBrowsableItem localRepoBrowsableChild : localRepoBrowsableChildren) {
                     if (virtualRepoAccepts(repo, localRepoBrowsableChild.getRepoPath())) {
+                        log.debug("virtual repo accept Local Repo browsable child '{}':'{}'", localRepo.getKey(),
+                                localRepoBrowsableChild.getName());
                         pathToVirtualRepos.put(localRepoBrowsableChild.getRelativePath(), repo);
                         candidateChildren.add(localRepoBrowsableChild);
                     }
@@ -326,6 +359,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos) {
         List<RemoteRepo> remoteRepositories = repo.getRemoteRepositories();
         // add children from all remote repos (and their caches)
+        log.debug("adding  Virtual Browsable Items From Remote to virtual Repo:'{}'", repo);
         for (RemoteRepo remoteRepo : remoteRepositories) {
             RepoPath remoteRepoPath = InternalRepoPathFactory.create(remoteRepo.getKey(),
                     criteria.getRepoPath().getPath(), criteria.getRepoPath().isFolder());
@@ -334,8 +368,12 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                         repoPath(remoteRepoPath).build();
                 List<BaseBrowsableItem> remoteRepoBrowsableChildren =
                         getRemoteRepoBrowsableChildren(remoteCriteria);
+                log.trace("Iterating Browsable childrens of Remote Repo :'{}' and check Virtual Repo Accepts it",
+                        remoteRepo.getKey());
                 for (BaseBrowsableItem remoteRepoBrowsableChild : remoteRepoBrowsableChildren) {
                     if (virtualRepoAccepts(repo, remoteRepoBrowsableChild.getRepoPath())) {
+                        log.debug("virtual repo accept Remote Repo browsable child '{}':'{}'", remoteRepo.getKey(),
+                                remoteRepoBrowsableChild.getName());
                         pathToVirtualRepos.put(remoteRepoBrowsableChild.getRelativePath(), repo);
                         candidateChildren.add(remoteRepoBrowsableChild);
                     }
@@ -348,10 +386,12 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     }
 
     private List<VirtualRepo> getSearchableRepos(VirtualRepo virtualRepo, RepoPath pathToCheck) {
+        log.debug("getting searchable repositories of virtual repo '{}'", virtualRepo.getKey());
         List<VirtualRepo> repos = Lists.newArrayList();
         List<VirtualRepo> allVirtualRepos = virtualRepo.getResolvedVirtualRepos();
         for (VirtualRepo repo : allVirtualRepos) {
             if (repo.accepts(pathToCheck)) {
+                log.debug("repo '{}' accepts path '{}'", repo.getKey(), pathToCheck.getPath());
                 repos.add(repo);
             }
         }
@@ -359,9 +399,11 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     }
 
     private Collection<String> getSearchableRepoKeys(Collection<VirtualRepo> virtualRepos) {
+        log.debug("getting searchable repositories of virtual repo keys ");
         return Collections2.transform(virtualRepos, new Function<VirtualRepo, String>() {
             @Override
             public String apply(@Nonnull VirtualRepo input) {
+                log.trace("searchable repo key '{}'", input.getKey());
                 return input.getKey();
             }
         });
@@ -380,6 +422,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
 
         if (path.contains(MavenNaming.NEXUS_INDEX_DIR) || MavenNaming.isIndex(path)) {
+            log.debug("Path '{}' is not an index", path);
             return false;
         }
         return true;
@@ -389,8 +432,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     public VirtualRepoItem getVirtualRepoItem(RepoPath repoPath) {
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(repoPath.getRepoKey());
         if (virtualRepo == null) {
+            log.trace("Repository '{}' does not exists!", repoPath.getRepoKey());
             throw new IllegalArgumentException("Repository " + repoPath.getRepoKey() + " does not exists!");
         }
+        log.debug("getting virtual Repo '{}' item", repoPath.getRepoKey());
         VirtualRepoItem repoItem = virtualRepo.getVirtualRepoItem(repoPath);
         if (repoItem == null) {
             return null;
@@ -403,6 +448,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             RepoPath realRepoPath = InternalRepoPathFactory.create(realRepoKey, repoPath.getPath());
             boolean canRead = authService.canRead(realRepoPath);
             if (!canRead) {
+                log.trace("removing repo '{}' item, not have read access permission", realRepoKey);
                 //Don't bother with stuff that we do not have read access to
                 repoKeysIterator.remove();
             }
@@ -410,6 +456,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
 
         // return null if user doesn't have permissions for any of the real repo paths
         if (repoItem.getRepoKeys().isEmpty()) {
+            log.trace("user doesn't have permissions for any of the real repo paths");
             return null;
         } else {
             return repoItem;
@@ -418,8 +465,10 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
 
     @Override
     public List<VirtualRepoItem> getVirtualRepoItems(RepoPath folderPath) {
+        log.debug("getting Virtual Repo Items '{}'", folderPath.getRepoKey());
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(folderPath.getRepoKey());
         if (virtualRepo == null) {
+            log.trace("Repository '{}' does not exists!", folderPath.getRepoKey());
             throw new RepositoryRuntimeException(
                     "Repository " + folderPath.getRepoKey() + " does not exists!");
         }
@@ -430,11 +479,43 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             //Do not add or check hidden items
             RepoPath childPath = InternalRepoPathFactory.create(folderPath, childName);
             VirtualRepoItem virtualRepoItem = getVirtualRepoItem(childPath);
+            log.debug("getting Virtual Repo Item for folder path '{}' and child '{}'", folderPath.getRepoKey(),
+                    childName);
             if (virtualRepoItem != null) {
                 result.add(virtualRepoItem);
             }
         }
         return result;
+    }
+
+    /**
+     * Returns local-repo browsable items of checksums for the given browsable item
+     *
+     * @param repo          Browsed repo
+     * @param checksumsInfo Item's checksum info
+     * @param browsableItem Browsable item to create checksum items for    @return Checksum browsable items
+     */
+    private List<BrowsableItem> getBrowsableItemChecksumItems(LocalRepo repo,
+            ChecksumsInfo checksumsInfo, BrowsableItem browsableItem) {
+        log.debug("getting Local repo Browsable Checksum Items for LocalRepo '{}'", repo.getKey());
+        List<BrowsableItem> browsableChecksumItems = Lists.newArrayList();
+        Set<ChecksumInfo> checksums = checksumsInfo.getChecksums();
+        for (ChecksumType checksumType : ChecksumType.BASE_CHECKSUM_TYPES) {
+            String checksumValue = repo.getChecksumPolicy().getChecksum(checksumType, checksums);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(checksumValue)) {
+                BrowsableItem checksumItem = BrowsableItem.getChecksumItem(browsableItem, checksumType,
+                        checksumValue.getBytes(Charsets.UTF_8).length);
+                log.debug("getting Local repo Browsable Checksum Item '{}':'{}'", repo.getKey(),
+                        checksumItem.getName());
+
+                RepoPath checksumItemRepoPath = checksumItem.getRepoPath();
+                if (authService.canRead(checksumItemRepoPath) && repo.accepts(checksumItemRepoPath)) {
+                    browsableChecksumItems.add(checksumItem);
+                }
+            }
+        }
+
+        return browsableChecksumItems;
     }
 
     /**
@@ -456,32 +537,5 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             }
             return true;
         }
-    }
-
-    /**
-     * Returns local-repo browsable items of checksums for the given browsable item
-     *
-     * @param repo          Browsed repo
-     * @param checksumsInfo Item's checksum info
-     * @param browsableItem Browsable item to create checksum items for    @return Checksum browsable items
-     */
-    private List<BrowsableItem> getBrowsableItemChecksumItems(LocalRepo repo,
-            ChecksumsInfo checksumsInfo, BrowsableItem browsableItem) {
-        List<BrowsableItem> browsableChecksumItems = Lists.newArrayList();
-        Set<ChecksumInfo> checksums = checksumsInfo.getChecksums();
-        for (ChecksumType checksumType : ChecksumType.BASE_CHECKSUM_TYPES) {
-            String checksumValue = repo.getChecksumPolicy().getChecksum(checksumType, checksums);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(checksumValue)) {
-                BrowsableItem checksumItem = BrowsableItem.getChecksumItem(browsableItem, checksumType,
-                        checksumValue.getBytes(Charsets.UTF_8).length);
-
-                RepoPath checksumItemRepoPath = checksumItem.getRepoPath();
-                if (authService.canRead(checksumItemRepoPath) && repo.accepts(checksumItemRepoPath)) {
-                    browsableChecksumItems.add(checksumItem);
-                }
-            }
-        }
-
-        return browsableChecksumItems;
     }
 }

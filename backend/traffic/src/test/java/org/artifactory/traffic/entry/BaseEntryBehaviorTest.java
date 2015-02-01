@@ -57,7 +57,7 @@ public class BaseEntryBehaviorTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testShortDownloadEntry() {
-        new DownloadEntry("20090318162747|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom");
+        new DownloadEntry("20090318162747|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom");
     }
 
     /**
@@ -65,7 +65,7 @@ public class BaseEntryBehaviorTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testLongUploadEntry() {
-        new UploadEntry("20090318162747|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632|MOO");
+        new UploadEntry("20090318162747|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632|MOO");
     }
 
     /**
@@ -73,7 +73,7 @@ public class BaseEntryBehaviorTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidRequestEntryDate() {
-        new RequestEntry("200903a816l747|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632");
+        new RequestEntry("200903a816l747|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632");
     }
 
     /**
@@ -81,6 +81,6 @@ public class BaseEntryBehaviorTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidDownloadEntryDateFormat() {
-        new DownloadEntry("2-00---78|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632");
+        new DownloadEntry("2-00---78|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632");
     }
 }

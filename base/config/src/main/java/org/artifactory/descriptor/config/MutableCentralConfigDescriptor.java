@@ -20,6 +20,7 @@ package org.artifactory.descriptor.config;
 
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.bintray.BintrayConfigDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
@@ -245,4 +246,6 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setQuotaConfig(QuotaConfigDescriptor descriptor);
 
     void setExternalProvidersDescriptor(ExternalProvidersDescriptor externalProvidersDescriptor);
+
+    void setBintrayConfig(BintrayConfigDescriptor bintrayConfigDescriptor);
 }

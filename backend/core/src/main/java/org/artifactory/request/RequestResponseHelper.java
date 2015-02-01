@@ -35,6 +35,7 @@ import org.artifactory.resource.ZipEntryResource;
 import org.artifactory.security.AccessLogger;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.webapp.servlet.HttpArtifactoryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +102,9 @@ public final class RequestResponseHelper {
     private void fireDownloadTrafficEvent(ArtifactoryResponse response, RepoPath repoPath, long size,
             long start) {
         if (!(response instanceof InternalArtifactoryResponse)) {
+            String remoteAddress = HttpUtils.getRemoteClientAddress();
             DownloadEntry downloadEntry = new DownloadEntry(
-                    repoPath.getId(), size, System.currentTimeMillis() - start);
+                    repoPath.getId(), size, System.currentTimeMillis() - start, remoteAddress);
             trafficService.handleTrafficEntry(downloadEntry);
         }
     }

@@ -40,4 +40,14 @@ public interface TrafficService {
      * @param entry
      */
     void handleTrafficEntry(TrafficEntry entry);
+
+    /**
+     * Get transfer usage for the specified time window (edges inclusive) filtered by ips
+     */
+    TransferUsage getUsageWithFilter(Calendar from, Calendar to, List<String> ipToFilter);
+
+    /**
+     * return true if The traffic service is active (if the traffic is collected for AOL)
+     */
+    boolean isActive();
 }

@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
+import org.artifactory.descriptor.bintray.BintrayConfigDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
 import org.artifactory.descriptor.external.BlackDuckSettingsDescriptor;
 import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
@@ -65,13 +66,14 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @XmlRootElement(name = "config")
 @XmlType(name = "CentralConfigType",
         propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
-                "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
+                "bintrayConfig", "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
                 "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "virtualCacheCleanupConfig",
                 "quotaConfig", "externalProviders"},
@@ -167,6 +169,9 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private ExternalProvidersDescriptor externalProviders;
+
+    @XmlElement
+    private BintrayConfigDescriptor bintrayConfig;
 
     private QuotaConfigDescriptor quotaConfig;
 
@@ -276,6 +281,14 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public void setSecurity(SecurityDescriptor security) {
+        if (security == null) {
+            security = new SecurityDescriptor();
+        }
+        this.security = security;
+    }
+
+    @Override
     public AddonSettings getAddons() {
         return addons;
     }
@@ -288,14 +301,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public MailServerDescriptor getMailServer() {
         return mailServer;
-    }
-
-    @Override
-    public void setSecurity(SecurityDescriptor security) {
-        if (security == null) {
-            security = new SecurityDescriptor();
-        }
-        this.security = security;
     }
 
     @Override
@@ -615,13 +620,13 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
-    public void setOfflineMode(boolean offlineMode) {
-        this.offlineMode = offlineMode;
+    public boolean isOfflineMode() {
+        return offlineMode;
     }
 
     @Override
-    public boolean isOfflineMode() {
-        return offlineMode;
+    public void setOfflineMode(boolean offlineMode) {
+        this.offlineMode = offlineMode;
     }
 
     @Override
@@ -683,6 +688,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public void setRepoLayouts(List<RepoLayout> repoLayouts) {
+        this.repoLayouts = repoLayouts;
+    }
+
+    @Override
     public boolean isRepoLayoutExists(String repoLayoutName) {
         for (RepoLayout repoLayout : repoLayouts) {
             if (repoLayout.getName().equals(repoLayoutName)) {
@@ -740,11 +750,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
-    public void setRepoLayouts(List<RepoLayout> repoLayouts) {
-        this.repoLayouts = repoLayouts;
-    }
-
-    @Override
     public RepoLayout getRepoLayout(String repoLayoutName) {
         for (RepoLayout repoLayout : repoLayouts) {
             if (repoLayout.getName().equals(repoLayoutName)) {
@@ -771,8 +776,18 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public void setRemoteReplications(List<RemoteReplicationDescriptor> replicationDescriptors) {
+        remoteReplications = replicationDescriptors;
+    }
+
+    @Override
     public List<LocalReplicationDescriptor> getLocalReplications() {
         return localReplications;
+    }
+
+    @Override
+    public void setLocalReplications(List<LocalReplicationDescriptor> localReplications) {
+        this.localReplications = localReplications;
     }
 
     @Override
@@ -787,13 +802,28 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public LocalReplicationDescriptor getEnabledLocalReplication(String replicatedRepoKey) {
+        return get1stEnableLocalReplication(replicatedRepoKey, localReplications);
+    }
+
+    @Override
+    public int getTotalNumOfActiveLocalReplication(String replicatedRepoKey) {
+        return getNumOfActiveLocalReplication(replicatedRepoKey, localReplications);
+    }
+
+    @Override
+    public LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey, String replicateRepoUrl) {
+        return getSpecificLocalReplication(replicatedRepoKey, replicateRepoUrl, localReplications);
+    }
+
+    @Override
     public void addRemoteReplication(RemoteReplicationDescriptor replicationDescriptor) {
         addReplication(replicationDescriptor, remoteReplications);
     }
 
     @Override
     public void addLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
-        addReplication(replicationDescriptor, localReplications);
+        addLocalReplication(replicationDescriptor, localReplications);
     }
 
     @Override
@@ -804,16 +834,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void removeLocalReplication(LocalReplicationDescriptor replicationDescriptor) {
         removeReplication(replicationDescriptor, localReplications);
-    }
-
-    @Override
-    public void setRemoteReplications(List<RemoteReplicationDescriptor> replicationDescriptors) {
-        remoteReplications = replicationDescriptors;
-    }
-
-    @Override
-    public void setLocalReplications(List<LocalReplicationDescriptor> localReplications) {
-        this.localReplications = localReplications;
     }
 
     @Override
@@ -853,8 +873,18 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor) {
+        this.cleanupConfig = cleanupConfigDescriptor;
+    }
+
+    @Override
     public QuotaConfigDescriptor getQuotaConfig() {
         return quotaConfig;
+    }
+
+    @Override
+    public void setQuotaConfig(QuotaConfigDescriptor descriptor) {
+        this.quotaConfig = descriptor;
     }
 
     @Override
@@ -868,8 +898,35 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
-    public void setCleanupConfig(CleanupConfigDescriptor cleanupConfigDescriptor) {
-        this.cleanupConfig = cleanupConfigDescriptor;
+    public Map<String, LocalReplicationDescriptor> getSingleReplicationPerRepoMap() {
+        Map<String, LocalReplicationDescriptor> localReplicationsMap = Maps.newHashMap();
+        for (LocalReplicationDescriptor localReplication : localReplications) {
+                localReplicationsMap.put(localReplication.getRepoKey(), localReplication);
+        }
+        return localReplicationsMap;
+    }
+
+    @Override
+    public Map<String, LocalReplicationDescriptor> getLocalReplicationsPerRepoMap(String repoName) {
+        Map<String, LocalReplicationDescriptor> localReplicationsMap = new HashMap();
+        for (LocalReplicationDescriptor localReplication : localReplications) {
+            if (localReplication.getRepoKey().equals(repoName)) {
+                localReplicationsMap.put(localReplication.getUrl(), localReplication);
+            }
+        }
+        return localReplicationsMap;
+    }
+
+    @Override
+    public List<String> getLocalReplicationsUniqueKeyForProperty(String repoName) {
+        List<String> localReplicationsList = new ArrayList<>();
+        for (LocalReplicationDescriptor localReplication : localReplications) {
+            if (localReplication.getRepoKey().equals(repoName)) {
+                String uniqueKey = localReplication.getUrl().replaceAll("^(http|https)://", "_").replaceAll("/|:", "_");
+                localReplicationsList.add(uniqueKey);
+            }
+        }
+        return localReplicationsList;
     }
 
     @Override
@@ -882,16 +939,26 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         this.virtualCacheCleanupConfig = virtualCacheCleanupConfig;
     }
 
-    @Override
-    public void setQuotaConfig(QuotaConfigDescriptor descriptor) {
-        this.quotaConfig = descriptor;
-    }
-
     private <T extends ReplicationBaseDescriptor> void addReplication(T replicationDescriptor,
             List<T> replications) {
         if (replications.contains(replicationDescriptor)) {
             throw new AlreadyExistsException("Replication for '" + replicationDescriptor.getRepoKey() +
                     "' already exists");
+        }
+        replications.add(replicationDescriptor);
+    }
+
+    /**
+     * update if exist / add (new) local replication descriptor
+     *
+     * @param replicationDescriptor - new or update local replication descriptor
+     * @param replications          - all replication descriptors
+     * @param <T>
+     */
+    private <T extends ReplicationBaseDescriptor> void addLocalReplication(T replicationDescriptor,
+            List<T> replications) {
+        if (replications.contains(replicationDescriptor)) {
+            replications.remove(replicationDescriptor);
         }
         replications.add(replicationDescriptor);
     }
@@ -909,6 +976,67 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
+    /**
+     * get specific Local Replication based on replicate repo key and repo url
+     *
+     * @param replicatedRepoKey - repository key
+     * @param replicateRepoUrl  - repository url
+     * @param replications      - all replication in artifactory
+     * @param <T>
+     * @return
+     */
+    private <T extends ReplicationBaseDescriptor> T getSpecificLocalReplication(String replicatedRepoKey,
+            String replicateRepoUrl, List<T> replications) {
+        if (StringUtils.isNotBlank(replicatedRepoKey)) {
+            for (T replication : replications) {
+
+                if (replicatedRepoKey.equals(replication.getRepoKey()) && replicateRepoUrl.equals(
+                        ((LocalReplicationDescriptor) replication).getUrl())) {
+                    return replication;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * get specific Local Replication based on replicate repo key and repo url
+     *
+     * @param replicatedRepoKey - repository key
+     * @param replications      - all replication in artifactory
+     * @return
+     */
+    private <T extends ReplicationBaseDescriptor> T get1stEnableLocalReplication(String replicatedRepoKey,
+            List<T> replications) {
+        if (StringUtils.isNotBlank(replicatedRepoKey)) {
+            for (T replication : replications) {
+                if (replicatedRepoKey.equals(replication.getRepoKey()) && replication.isEnabled()) {
+                    return replication;
+                }
+            }
+        }
+        return null;
+    }
+    /**
+     * get specific Local Replication based on replicate repo key and repo url
+     *
+     * @param replicatedRepoKey - repository key
+     * @param replications      - all replication in artifactory
+     * @return
+     */
+    private <T extends ReplicationBaseDescriptor> int getNumOfActiveLocalReplication(String replicatedRepoKey,
+            List<T> replications) {
+        int replicationCounter = 0;
+        if (StringUtils.isNotBlank(replicatedRepoKey)) {
+            for (T replication : replications) {
+                if (replicatedRepoKey.equals(replication.getRepoKey()) && replication.isEnabled()) {
+                    replicationCounter++;
+                }
+            }
+        }
+        return replicationCounter;
+    }
     private <T extends ReplicationBaseDescriptor> void removeReplication(T replicationDescriptor,
             List<T> replications) {
         replications.remove(replicationDescriptor);
@@ -922,5 +1050,15 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void setExternalProvidersDescriptor(ExternalProvidersDescriptor externalProvidersDescriptor) {
         this.externalProviders = externalProvidersDescriptor;
+    }
+
+    @Override
+    public BintrayConfigDescriptor getBintrayConfig() {
+        return bintrayConfig;
+    }
+
+    @Override
+    public void setBintrayConfig(BintrayConfigDescriptor bintrayConfigDescriptor) {
+        this.bintrayConfig = bintrayConfigDescriptor;
     }
 }

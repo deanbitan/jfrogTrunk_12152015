@@ -15,16 +15,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-
 package org.artifactory.repo.service
 
 import com.google.common.io.Files
 import org.artifactory.api.config.RepositoryImportSettingsImpl
 import org.artifactory.repo.db.importexport.DbRepoImportHandler
 import org.quartz.JobDataMap
-import org.quartz.JobDetail
 import org.quartz.JobExecutionContext
+import org.quartz.impl.JobDetailImpl
 import org.springframework.core.task.AsyncTaskExecutor
 import spock.lang.Specification
 
@@ -65,7 +63,7 @@ class ImportJobSpec extends Specification {
         internalDataMap.put(RepositoryImportSettingsImpl.class.getName(), importSettings)
         def jobDataMap = new JobDataMap(internalDataMap)
 
-        def jobDetail = new JobDetail()
+        def jobDetail = new JobDetailImpl()
         jobDetail.setJobDataMap(jobDataMap)
 
         def jobExecutionContext = Mock(JobExecutionContext)

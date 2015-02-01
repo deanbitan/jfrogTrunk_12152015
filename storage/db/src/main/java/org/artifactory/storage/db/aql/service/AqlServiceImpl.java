@@ -1,20 +1,20 @@
 package org.artifactory.storage.db.aql.service;
 
 import org.artifactory.aql.AqlService;
-import org.artifactory.aql.api.Aql;
-import org.artifactory.aql.result.AqlQueryResultIfc;
-import org.artifactory.aql.result.AqlQueryStreamResultIfc;
+import org.artifactory.aql.api.internal.AqlBase;
+import org.artifactory.aql.result.AqlEagerResult;
+import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.aql.result.rows.AqlRowResult;
 import org.artifactory.storage.db.aql.dao.AqlDao;
 import org.artifactory.storage.db.aql.parser.AqlParser;
 import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlApiToAqlAdapter;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQuery;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQueryOptimizer;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.ParserToAqlAdapter;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQuery;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQueryBuilder;
-import org.artifactory.storage.db.aql.sql.result.AqlQueryResult;
-import org.artifactory.storage.db.aql.sql.result.AqlQueryStreamResult;
+import org.artifactory.storage.db.aql.sql.result.AqlEagerResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +39,9 @@ public class AqlServiceImpl implements AqlService {
 
     private AqlParser parser;
     private ParserToAqlAdapter parserToAqlAdapter;
-    private AqlApiToAqlAdapter apiToAqlAdapter;
+    private AqlApiToAqlAdapter aqlApiToAqlAdapter;
     private SqlQueryBuilder sqlQueryBuilder;
+    private AqlQueryOptimizer optimizer;
 
     @PostConstruct
     private void initDb() throws Exception {
@@ -49,15 +50,16 @@ public class AqlServiceImpl implements AqlService {
         // TODO init the parser eagerly here not lazy
         parser = new AqlParser();
         parserToAqlAdapter = new ParserToAqlAdapter();
-        apiToAqlAdapter = new AqlApiToAqlAdapter();
         sqlQueryBuilder = new SqlQueryBuilder();
+        aqlApiToAqlAdapter = new AqlApiToAqlAdapter();
+        optimizer = new AqlQueryOptimizer();
     }
 
     /**
      * Converts the Json query into SQL query and executes the query eagerly
      */
     @Override
-    public AqlQueryResultIfc executeQueryEager(String query) {
+    public AqlEagerResult executeQueryEager(String query) {
         log.debug("Processing textual AqlApi query: {}", query);
         ParserElementResultContainer parserResult = parser.parse(query);
         return executeQueryEager(parserResult);
@@ -67,7 +69,7 @@ public class AqlServiceImpl implements AqlService {
      * Converts the Json query into SQL query and executes the query lazy
      */
     @Override
-    public AqlQueryStreamResultIfc executeQueryLazy(String query) {
+    public AqlLazyResult executeQueryLazy(String query) {
         log.debug("Processing textual AqlApi query: {}", query);
         ParserElementResultContainer parserResult = parser.parse(query);
         return executeQueryLazy(parserResult);
@@ -77,36 +79,39 @@ public class AqlServiceImpl implements AqlService {
      * Converts the API's AqlApi query into SQL query and executes the query eagerly
      */
     @Override
-    public <T extends AqlRowResult> AqlQueryResultIfc<T> executeQueryEager(Aql aql) {
+    public <T extends AqlRowResult> AqlEagerResult<T> executeQueryEager(AqlBase<? extends AqlBase, T> aql) {
         log.debug("Processing API AqlApi query");
-        AqlQuery aqlQuery = apiToAqlAdapter.toAqlModel(aql);
-        return (AqlQueryResult<T>) getAqlQueryResult(aqlQuery);
+        AqlQuery aqlQuery = aqlApiToAqlAdapter.toAqlModel(aql);
+        optimizer.optimize(aqlQuery);
+        return (AqlEagerResultImpl<T>) getAqlQueryResult(aqlQuery);
     }
 
     @Override
-    public AqlQueryStreamResultIfc executeQueryLazy(Aql aql) {
+    public AqlLazyResult executeQueryLazy(AqlBase aql) {
         log.debug("Processing API AqlApi query");
-        AqlQuery aqlQuery = apiToAqlAdapter.toAqlModel(aql);
+        AqlQuery aqlQuery = aqlApiToAqlAdapter.toAqlModel(aql);
         return getAqlQueryStreamResult(aqlQuery);
     }
 
     /**
      * Converts the parser elements into AqlApi query, convert the AqlApi query to sql and executes the query eagerly
      */
-    private AqlQueryResultIfc executeQueryEager(ParserElementResultContainer parserResult) {
+    private AqlEagerResult executeQueryEager(ParserElementResultContainer parserResult) {
         log.trace("Converting the parser result into AqlApi query");
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
+        optimizer.optimize(aqlQuery);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
-        AqlQueryResultIfc aqlQueryResult = getAqlQueryResult(aqlQuery);
+        AqlEagerResult aqlQueryResult = getAqlQueryResult(aqlQuery);
         return aqlQueryResult;
     }
 
     /**
      * Converts the parser elements into AqlApi query and executes the query lazy
      */
-    private AqlQueryStreamResultIfc executeQueryLazy(ParserElementResultContainer parserResult) {
+    private AqlLazyResult executeQueryLazy(ParserElementResultContainer parserResult) {
         log.trace("Converting the parser result into AqlApi query");
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
+        optimizer.optimize(aqlQuery);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
         return getAqlQueryStreamResult(aqlQuery);
     }
@@ -114,22 +119,22 @@ public class AqlServiceImpl implements AqlService {
     /**
      * Converts the AqlApi query into SQL query and executes the query eagerly
      */
-    private AqlQueryResultIfc getAqlQueryResult(AqlQuery aqlQuery) {
+    private AqlEagerResult getAqlQueryResult(AqlQuery aqlQuery) {
         log.trace("Converting the AqlApi query into SQL query: {}", aqlQuery);
         SqlQuery sqlQuery = sqlQueryBuilder.buildQuery(aqlQuery);
         log.trace("Successfully finished to convert the parser result into the following SQL query '{}'", sqlQuery);
         log.debug("processing the following SQL query: {}", sqlQuery);
-        AqlQueryResult aqlQueryResult = aqlDao.executeQueryEager(sqlQuery);
+        AqlEagerResultImpl aqlQueryResult = aqlDao.executeQueryEager(sqlQuery);
         log.debug("Successfully finished to process SQL query with the following size: {}", aqlQueryResult.getSize());
         return aqlQueryResult;
     }
 
-    private AqlQueryStreamResultIfc getAqlQueryStreamResult(AqlQuery aqlQuery) {
+    private AqlLazyResult getAqlQueryStreamResult(AqlQuery aqlQuery) {
         log.trace("Converting the AqlApi query into SQL qury: {}", aqlQuery);
         SqlQuery sqlQuery = sqlQueryBuilder.buildQuery(aqlQuery);
         log.trace("Successfully finished to convert the parser result into the following SQL query '{}'", sqlQuery);
         log.debug("processing the following SQL query: {}", sqlQuery);
-        AqlQueryStreamResult aqlQueryStreamResult = aqlDao.executeQueryLazy(sqlQuery);
+        AqlLazyResult aqlQueryStreamResult = aqlDao.executeQueryLazy(sqlQuery);
         log.debug("Successfully finished to process SQL query (lazy)");
         return aqlQueryStreamResult;
     }

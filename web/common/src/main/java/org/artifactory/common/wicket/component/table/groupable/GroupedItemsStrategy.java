@@ -18,6 +18,7 @@
 
 package org.artifactory.common.wicket.component.table.groupable;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortParam;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.repeater.IItemFactory;
@@ -34,7 +35,6 @@ import java.util.Iterator;
  */
 public class GroupedItemsStrategy implements IItemReuseStrategy {
     private GroupableTable table;
-
     GroupedItemsStrategy(GroupableTable table) {
         this.table = table;
     }
@@ -70,8 +70,6 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
                 }
 
                 IModel<T> model = newModels.next();
-
-                // check if grouped
                 GroupableDataProvider provider = table.getGroupableDataProvider();
                 SortParam groupParam = provider.getGroupParam();
                 if (groupParam != null && model != null) {
@@ -82,15 +80,14 @@ public class GroupedItemsStrategy implements IItemReuseStrategy {
                     if (!value.equals(lastGroupValue)) {
                         lastGroupValue = value;
                         lastGroupModel = model;
-
-                        lastGroupItem = table.newGroupRowItem("group" + index, index, model);
-                        Item cellItem = table.newGroupCellItem("cells", 0, model);
+                        GroupableTable modificationTable = (GroupableTable) SerializationUtils.clone(table);
+                        lastGroupItem = modificationTable.newGroupRowItem("group" + index, index, model);
+                        Item cellItem = modificationTable.newGroupCellItem("cells", 0, model);
                         lastGroupItem.add(cellItem);
-                        table.populateGroupItem(cellItem, "cell", property, model);
+                        modificationTable.populateGroupItem(cellItem, "cell", property, model);
                         return lastGroupItem;
                     }
                 }
-
                 return newRowItem(model);
             }
 

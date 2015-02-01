@@ -2,7 +2,7 @@ package org.artifactory.aql.result.rows;
 
 
 import org.artifactory.aql.model.AqlDomainEnum;
-import org.artifactory.aql.model.AqlField;
+import org.artifactory.aql.model.AqlFieldEnum;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface QueryTypes {
-    AqlDomainEnum[] value();
+    AqlDomainEnum value();
 
-    AqlField[] fields() default {};
+    AqlFieldEnum[] fields() default {};
 }

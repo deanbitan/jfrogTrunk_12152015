@@ -70,7 +70,7 @@ public class ConfigResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String setConfig(String xmlContent) {
         log.debug("Received new configuration data.");
-        centralConfigService.setConfigXml(xmlContent);
+        centralConfigService.setConfigXml(xmlContent,true);
         CentralConfigDescriptor descriptor = centralConfigService.getDescriptor();
         int x = descriptor.getLocalRepositoriesMap().size();
         int y = descriptor.getRemoteRepositoriesMap().size();

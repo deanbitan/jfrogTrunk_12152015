@@ -42,8 +42,8 @@ public class UploadEntry extends TransferEntry {
      * @param repoPath      Requested artifact repo path
      * @param contentLength Requested artifact size
      */
-    public UploadEntry(String repoPath, long contentLength, long duration) {
-        super(repoPath, contentLength, duration);
+    public UploadEntry(String repoPath, long contentLength, long duration, String userAddress) {
+        super(repoPath, contentLength, duration, userAddress);
     }
 
     @Override

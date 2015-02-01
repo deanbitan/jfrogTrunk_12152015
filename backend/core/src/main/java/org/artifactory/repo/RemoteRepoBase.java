@@ -24,6 +24,7 @@ import com.google.common.io.Closeables;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.RestCoreAddon;
@@ -79,6 +80,7 @@ import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.ExceptionUtils;
+import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -296,6 +298,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     "un-expiring if still exists");
             res = getRepositoryService().unexpireIfExists(localCacheRepo, path);
         }
+        markExpirableResource(res);
         return res;
     }
 
@@ -640,6 +643,13 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
+    protected void notifyInterceptorsOnBeforeRemoteHttpMethodExecution(HttpRequestBase request,
+            Map<String, String> headers) {
+        for (RemoteRepoInterceptor interceptor : interceptors) {
+            interceptor.beforeRemoteHttpMethodExecution(request, headers);
+        }
+    }
+
     // this is the actual download of the resource
     private RepoResource doDownloadAndSave(InternalRequestContext requestContext, RepoResource remoteResource)
             throws RepoRejectException, IOException {
@@ -707,9 +717,15 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     .properties(properties).build();
             RepoResource cachedResource = getRepositoryService().saveResource(localCacheRepo, saveResourceContext);
             if (remoteRequestStartTime > 0) {
+                String remoteAddress;
+                if(handle instanceof HttpRepo.MyRemoteResourceStreamHandle){
+                    remoteAddress = ((HttpRepo.MyRemoteResourceStreamHandle) handle).getRemoteIp();
+                }else{
+                    remoteAddress = StringUtils.EMPTY;
+                }
                 // fire upload event only if the resource was downloaded from the remote repository
                 UploadEntry uploadEntry = new UploadEntry(remoteResource.getRepoPath().getId(),
-                        cachedResource.getSize(), System.currentTimeMillis() - remoteRequestStartTime);
+                        cachedResource.getSize(), System.currentTimeMillis() - remoteRequestStartTime, remoteAddress);
                 TrafficService trafficService = ContextHelper.get().beanForType(TrafficService.class);
                 trafficService.handleTrafficEntry(uploadEntry);
             }
@@ -882,6 +898,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     protected String appendAndGetUrl(String pathToAppend) {
+        if (HttpUtils.isAbsolute(pathToAppend)) {
+            return pathToAppend;
+        }
+
         String remoteUrl = getUrl();
         StringBuilder baseUrlBuilder = new StringBuilder(remoteUrl);
         if (!remoteUrl.endsWith("/")) {

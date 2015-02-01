@@ -1,7 +1,7 @@
 package org.artifactory.storage.db.aql.sql.builder.query.aql;
 
 import org.artifactory.aql.model.AqlDomainEnum;
-import org.artifactory.aql.model.AqlField;
+import org.artifactory.aql.model.DomainSensitiveField;
 
 import java.util.List;
 import java.util.Stack;
@@ -51,8 +51,10 @@ public class AdapterContext {
         return aqlQuery.getAqlElements();
     }
 
-    public void addField(AqlField field) {
-        aqlQuery.getResultFields().add(field);
+    public void addField(DomainSensitiveField field) {
+        if (!aqlQuery.getResultFields().contains(field)) {
+            aqlQuery.getResultFields().add(field);
+        }
     }
 
 
@@ -64,7 +66,7 @@ public class AdapterContext {
         return aqlQuery;
     }
 
-    public List<AqlField> getResultFields() {
+    public List<DomainSensitiveField> getResultFields() {
         return aqlQuery.getResultFields();
     }
 

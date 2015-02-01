@@ -53,6 +53,7 @@ import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.schedule.TaskCallback;
 import org.artifactory.schedule.TaskService;
 import org.artifactory.security.crypto.CryptoHelper;
+import org.artifactory.security.interceptor.StoragePropertiesEncryptInterceptor;
 import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.update.utils.BackupUtils;
@@ -473,6 +474,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             importResourcesFromEtcDirectory(settings);
             AddonsManager addonsManager = beanForType(AddonsManager.class);
 
+            encryptStorageProperties();
             // import central configuration
             getCentralConfig().importFrom(settings);
             // import security settings
@@ -495,6 +497,14 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         } finally {
             resumeTasks(stoppedTasks);
         }
+    }
+
+    /**
+     * encrypt Storage Properties if master key exist
+     */
+    private void encryptStorageProperties() {
+        StoragePropertiesEncryptInterceptor storagePropertiesEncryptInterceptor = new StoragePropertiesEncryptInterceptor();
+        storagePropertiesEncryptInterceptor.encryptOrDecryptStoragePropertiesFile(true);
     }
 
     @Override
@@ -670,7 +680,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         try {
             FileUtils.moveFile(tempArchiveFile, archive);
         } catch (IOException e) {
-            status.warn(String.format("Failed to move '%s' to '%s'.", tempArchiveFile.getAbsolutePath(),
+            status.error(String.format("Failed to move '%s' to '%s'.", tempArchiveFile.getAbsolutePath(),
                     archive.getAbsolutePath()), e, log);
         } finally {
             settings.setOutputFile(archive.getAbsoluteFile());

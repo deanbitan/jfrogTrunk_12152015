@@ -1,5 +1,6 @@
 package org.artifactory.storage.db.aql.sql.model;
 
+
 /**
  * @author Gidi Shabat
  */

@@ -42,13 +42,12 @@ import org.artifactory.descriptor.config.CentralConfigDescriptor;
  * @author Yoav Aharoni
  */
 public class ArtifactoryUpdatesPanel extends Panel {
-    @SpringBean
-    private ArtifactoryUpdatesService artifactoryUpdatesService;
-
-    @SpringBean
-    private CentralConfigService centralConfigService;
     private static final String READ_COOKIE_NAME = "new-r";
     private static final String HIDE_COOKIE_NAME = "new-h";
+    @SpringBean
+    private ArtifactoryUpdatesService artifactoryUpdatesService;
+    @SpringBean
+    private CentralConfigService centralConfigService;
 
     public ArtifactoryUpdatesPanel(String id) {
         super(id);
@@ -114,7 +113,7 @@ public class ArtifactoryUpdatesPanel extends Panel {
         template.setVisible(true);
         template.add(new ResourcePackage(ArtifactoryUpdatesPanel.class).addJavaScript());
 
-        template.add(new CssClass("news-close"));
+        template.add(new CssClass("news-open"));
 
         final boolean read = message.getId().equals(CookieUtils.getCookie(READ_COOKIE_NAME));
         if (!read) {

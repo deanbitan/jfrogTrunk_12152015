@@ -4,12 +4,13 @@ buildscript {
         ${ivy.repo}
     }
     dependencies {
-        classpath(group: 'org.jfrog.buildinfo', name: 'build-info-extractor-gradle', version: '2.0.9')
+        //Check for the latest version here: http://plugins.gradle.org/plugin/com.jfrog.artifactory
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3"
     }
 }
 
 allprojects {
-    apply plugin: 'artifactory'
+    apply plugin: "com.jfrog.artifactory"
 }
 
 artifactory {

@@ -66,7 +66,7 @@ public class StatusEntry implements Serializable {
     }
 
     public boolean isError() {
-        return level.isError() || exception != null;
+        return level.isError();
     }
 
     public boolean isDebug() {

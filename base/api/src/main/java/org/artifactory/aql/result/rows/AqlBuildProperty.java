@@ -1,11 +1,11 @@
 package org.artifactory.aql.result.rows;
 
-import static org.artifactory.aql.model.AqlDomainEnum.build_props;
+import static org.artifactory.aql.model.AqlDomainEnum.buildProperties;
 
 /**
  * @author Gidi Shabat
  */
-@QueryTypes({build_props})
+@QueryTypes(buildProperties)
 public interface AqlBuildProperty extends AqlRowResult {
     String getBuildPropKey();
 

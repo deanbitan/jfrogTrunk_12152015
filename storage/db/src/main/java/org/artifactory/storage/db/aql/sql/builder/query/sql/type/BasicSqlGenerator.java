@@ -7,9 +7,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.artifactory.aql.AqlException;
-import org.artifactory.aql.model.AqlField;
+import org.artifactory.aql.model.AqlDomainEnum;
+import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlOperatorEnum;
 import org.artifactory.aql.model.AqlTableFieldsEnum;
+import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.storage.db.aql.sql.builder.links.TableLink;
 import org.artifactory.storage.db.aql.sql.builder.links.TableLinkBrowser;
 import org.artifactory.storage.db.aql.sql.builder.links.TableLinkRelation;
@@ -35,9 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.artifactory.aql.model.AqlTableFieldsEnum.node_id;
 import static org.artifactory.storage.db.aql.sql.builder.query.sql.type.AqlTableGraph.tablesLinksMap;
-import static org.artifactory.storage.db.aql.sql.model.SqlTableEnum.nodes;
+import static org.artifactory.storage.db.aql.sql.model.AqlFieldExtensionEnum.getExtensionFor;
 
 /**
  * This is actually the class that contains all the code that converts the AqlQuery to sqlQuery.
@@ -72,10 +73,11 @@ public abstract class BasicSqlGenerator {
     public String results(AqlQuery aqlQuery) {
         StringBuilder result = new StringBuilder();
         result.append(" ");
-        Iterator<AqlField> iterator = aqlQuery.getResultFields().iterator();
+        Iterator<DomainSensitiveField> iterator = aqlQuery.getResultFields().iterator();
         while (iterator.hasNext()) {
-            AqlField nextField = iterator.next();
-            AqlFieldExtensionEnum next = AqlFieldExtensionEnum.getExtensionFor(nextField);
+            DomainSensitiveField nextField = iterator.next();
+            AqlFieldEnum fieldEnum = nextField.getField();
+            AqlFieldExtensionEnum next = getExtensionFor(fieldEnum);
             SqlTable table = tablesLinksMap.get(next.table).getTable();
             result.append(table.getAlias()).append(next.tableField);
             if (iterator.hasNext()) {
@@ -87,88 +89,69 @@ public abstract class BasicSqlGenerator {
         return result.toString();
     }
 
+    /**
+     * This is one of the most important and complicates parts in the Aql mechanism
+     * Its task is to create the tables declaration part in the SQL query
+     * the method does this with the help "sub domains" : Each field in the result fields and in the criteria
+     * contains a list of domain that represent the route to the main domain, so basically, in order to bind one field
+     * to the other we can trace the sub domains and bind each field to the "Main Table"
+     * The problem with tracing the sub domain is that there is no injective match match between the tables and the domains
+     * therefore we use the tablesLinksMap that contain the shortest route between to tabales and help us to ensures
+     * that in "threaded form" we will bind all the tables needed from the
+     * "Field table" to the "Main table"
+     *
+     * @param aqlQuery
+     * @return
+     */
     public String tables(AqlQuery aqlQuery) {
         Set<SqlTable> usedTables = Sets.newHashSet();
         StringBuilder join = new StringBuilder();
         join.append(" ");
-        Iterable<SqlTable> tables1 = Iterables.transform(aqlQuery.getResultFields(), toTables);
+        // Get all Result tables
+        Iterable<DomainSensitiveTable> resultTables = Iterables.transform(aqlQuery.getResultFields(), toTables);
+        // Find all the criterias
         Iterable<AqlQueryElement> filter = Iterables.filter(aqlQuery.getAqlElements(), criteriasOnly);
-        Iterable<SqlTable> tables2 = Iterables.transform(filter, firstTableFromCriteria);
-        Iterable<SqlTable> tables3 = Iterables.transform(filter, secondTableFromCriteria);
-        Iterable<SqlTable> allTables = Iterables.concat(tables1, tables2, tables3);
+        // Get the tables from the criterias
+        Iterable<DomainSensitiveTable> criteriasTables = Iterables.transform(filter, firstTableFromCriteria);
+        // Concatenate the resultTables and the criteriasTables
+        Iterable<DomainSensitiveTable> allTables = Iterables.concat(resultTables, criteriasTables);
+        // Resolve  Join type (inner join or left outer join) for better performance
         AqlJoinTypeEnum joinTypeEnum = resolveJoinType(allTables);
-        Iterable<SqlTable> propertiesTables = Iterables.filter(allTables, properties);
-        Iterable<SqlTable> nonePropertiesTables = Iterables.filter(allTables, this.noneProperties);
-        nonePropertiesTables = Iterables.filter(nonePropertiesTables, notNull);
+        // Clean null tables if exists
+        allTables = Iterables.filter(allTables, notNull);
         SqlTable mainTable = tablesLinksMap.get(getMainTable()).getTable();
-        // Join the main table
+        // Join the main table as first table (not join)
         joinTable(mainTable, null, null, null, usedTables, join, true, joinTypeEnum);
-        // Join the none properties tables
-        for (SqlTable table : nonePropertiesTables) {
-            TableLink from = tablesLinksMap.get(getMainTable());
-            TableLink to = tablesLinksMap.get(table.getTable());
+        for (DomainSensitiveTable table : allTables) {
+            TableLink to;
+            // Resolve the first table : which is always the "Main Table"
+            SqlTableEnum fromTableEnum = table.getTables().get(0);
+            // Find the route to the target ("to") table and add a join for each table in the route
+            TableLink from = tablesLinksMap.get(fromTableEnum);
+            for (int i = 1; i < table.getTables().size(); i++) {
+                SqlTableEnum toTableEnum = table.getTables().get(i);
+                to = tablesLinksMap.get(toTableEnum);
+                List<TableLinkRelation> relations = tableRouteMap.get(from.getTableEnum()).get(to.getTableEnum());
+                generateJoinTables(relations, usedTables, join, joinTypeEnum);
+                from = to;
+            }
+            // Finally add a join to the field table
+            to = tablesLinksMap.get(table.getTable().getTable());
             List<TableLinkRelation> relations = tableRouteMap.get(from.getTableEnum()).get(to.getTableEnum());
-            generateJoinTables(relations, usedTables, join, joinTypeEnum);
-        }
-        // If need to find properties then ensure that the nodes table is joined
-        if (propertiesTables.iterator().hasNext()) {
-            TableLink from = tablesLinksMap.get(getMainTable());
-            TableLink to = tablesLinksMap.get(nodes);
-            List<TableLinkRelation> relations = tableRouteMap.get(from.getTableEnum()).get(to.getTableEnum());
-            generateJoinTables(relations, usedTables, join, joinTypeEnum);
-        }
-        // Join properties (provide table for each exist criteria
-        for (SqlTable propertiesTable : propertiesTables) {
-            SqlTable nodes = tablesLinksMap.get(SqlTableEnum.nodes).getTable();
-            joinTable(propertiesTable, node_id, nodes, node_id, usedTables, join, false, joinTypeEnum);
+            generateJoinTables(relations, usedTables, join, joinTypeEnum, table.getTable());
         }
         return join.toString();
     }
 
-    private List<TableLinkRelation> findShortestPathBetween(TableLink from,
-            TableLink to) {
-        List<TableLinkRelation> relations = TableLinkBrowser.create().findPathTo(from, to, null, getExclude());
-        if (relations == null) {
-            ArrayList<TableLink> excludes = Lists.newArrayList();
-            relations = TableLinkBrowser.create().findPathTo(from, to, null, excludes);
-        }
-        return relations;
-    }
-
-    protected abstract List<TableLink> getExclude();
-
-    protected void generateJoinTables(List<TableLinkRelation> relations, Set<SqlTable> usedTables, StringBuilder join,
-            AqlJoinTypeEnum joinTypeEnum) {
-        if (relations == null) {
-            return;
-        }
-        for (TableLinkRelation relation : relations) {
-            AqlTableFieldsEnum fromField = relation.getFromField();
-            SqlTable fromTable = relation.getFromTable().getTable();
-            AqlTableFieldsEnum toFiled = relation.getToFiled();
-            SqlTable toTable = relation.getToTable().getTable();
-            joinTable(toTable, toFiled, fromTable, fromField, usedTables, join, false, joinTypeEnum);
-        }
-    }
-
-    protected boolean joinTable(SqlTable table, AqlTableFieldsEnum tableJoinField, SqlTable onTable, AqlTableFieldsEnum onJoinFiled,
-            Set<SqlTable> declaredTables, StringBuilder join, boolean first, AqlJoinTypeEnum joinTypeEnum) {
-
-        if (!declaredTables.contains(table)) {
-            if (first) {
-                join.append(table.getTableName()).append(" ").append(table.getAliasDeclaration());
-                first = false;
-            } else {
-                join.append(" ").append(joinTypeEnum.signature).append(" ").append(table.getTableName()).append(" ").append(
-                        table.getAliasDeclaration());
-                join.append(" on ").append(table.getAlias()).append(tableJoinField).
-                        append(" = ").append(onTable.getAlias()).append(onJoinFiled);
-            }
-        }
-        declaredTables.add(table);
-        return first;
-    }
-
+    /**
+     * The method create the where part of the SQL query.
+     * It actually scan all the criterias and Parenthesis elements in the AQL Query
+     * and transform does elements into SQL syntax.
+     *
+     * @param aqlQuery
+     * @return
+     * @throws AqlException
+     */
     public Pair<String, List<Object>> conditions(AqlQuery aqlQuery)
             throws AqlException {
         StringBuilder condition = new StringBuilder();
@@ -192,6 +175,69 @@ public abstract class BasicSqlGenerator {
         return new Pair(condition.toString(), params);
     }
 
+    private List<TableLinkRelation> findShortestPathBetween(TableLink from, TableLink to) {
+        List<TableLinkRelation> relations = TableLinkBrowser.create().findPathTo(from, to, getExclude());
+        if (relations == null) {
+            ArrayList<TableLink> excludes = Lists.newArrayList();
+            relations = TableLinkBrowser.create().findPathTo(from, to, excludes);
+        }
+        relations = overrideRoute(relations);
+        return relations;
+    }
+
+    protected abstract List<TableLink> getExclude();
+
+    protected List<TableLinkRelation> overrideRoute(List<TableLinkRelation> route) {
+        return route;
+    }
+
+    protected void generateJoinTables(List<TableLinkRelation> relations, Set<SqlTable> usedTables, StringBuilder join,
+            AqlJoinTypeEnum joinTypeEnum) {
+        if (relations == null) {
+            return;
+        }
+        for (TableLinkRelation relation : relations) {
+            AqlTableFieldsEnum fromField = relation.getFromField();
+            SqlTable fromTable = relation.getFromTable().getTable();
+            AqlTableFieldsEnum toFiled = relation.getToFiled();
+            SqlTable toTable = relation.getToTable().getTable();
+            joinTable(toTable, toFiled, fromTable, fromField, usedTables, join, false, joinTypeEnum);
+        }
+    }
+
+    protected void generateJoinTables(List<TableLinkRelation> relations, Set<SqlTable> usedTables, StringBuilder join,
+            AqlJoinTypeEnum joinTypeEnum, SqlTable sqlTable) {
+        if (relations == null) {
+            return;
+        }
+        for (TableLinkRelation relation : relations) {
+            AqlTableFieldsEnum fromField = relation.getFromField();
+            SqlTable fromTable = relation.getFromTable().getTable();
+            AqlTableFieldsEnum toFiled = relation.getToFiled();
+            SqlTable toTable = relation.getToTable().getTable();
+            toTable = toTable.getTable() == sqlTable.getTable() ? sqlTable : toTable;
+            joinTable(toTable, toFiled, fromTable, fromField, usedTables, join, false, joinTypeEnum);
+        }
+    }
+
+    protected void joinTable(SqlTable table, AqlTableFieldsEnum tableJoinField, SqlTable onTable,
+            AqlTableFieldsEnum onJoinFiled,
+            Set<SqlTable> declaredTables, StringBuilder join, boolean first, AqlJoinTypeEnum joinTypeEnum) {
+
+        if (!declaredTables.contains(table)) {
+            if (first) {
+                join.append(table.getTableName()).append(" ").append(table.getAliasDeclaration());
+            } else {
+                join.append(" ").append(joinTypeEnum.signature).append(" ").append(table.getTableName()).append(
+                        " ").append(
+                        table.getAliasDeclaration());
+                join.append(" on ").append(table.getAlias()).append(tableJoinField).
+                        append(" = ").append(onTable.getAlias()).append(onJoinFiled);
+            }
+        }
+        declaredTables.add(table);
+    }
+
     public String sort(AqlQuery aqlQuery) {
         SortDetails sortDetails = aqlQuery.getSort();
         if (sortDetails == null || sortDetails.getFields().size() == 0) {
@@ -199,18 +245,18 @@ public abstract class BasicSqlGenerator {
         }
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(" ORDER BY ");
-        List<AqlField> fields = sortDetails.getFields();
-        Iterator<AqlField> iterator = fields.iterator();
+        List<AqlFieldEnum> fields = sortDetails.getFields();
+        Iterator<AqlFieldEnum> iterator = fields.iterator();
         while (iterator.hasNext()) {
-            AqlField sortField = iterator.next();
-            AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(sortField);
+            AqlFieldEnum sortField = iterator.next();
+            AqlFieldExtensionEnum extension = getExtensionFor(sortField);
             SqlTable table = tablesLinksMap.get(extension.table).getTable();
             stringBuilder.append(table.getAlias()).append(extension.tableField);
+            stringBuilder.append(" ").append(sortDetails.getSortType().getSqlName());
             if (iterator.hasNext()) {
                 stringBuilder.append(",");
             }
         }
-        stringBuilder.append(" ").append(sortDetails.getSortType().getSqlName());
         return stringBuilder.toString();
     }
 
@@ -218,10 +264,11 @@ public abstract class BasicSqlGenerator {
      * Query performance optimisation:
      * In case of single table join such as multiple properties table join
      * without the usage of any other table we can use inner join for better performance.
+     *
      * @param allTables
      * @return
      */
-    private AqlJoinTypeEnum resolveJoinType(Iterable<SqlTable> allTables) {
+    private AqlJoinTypeEnum resolveJoinType(Iterable<DomainSensitiveTable> allTables) {
         Iterable<SqlTableEnum> tables = Iterables.transform(allTables, toTableEnum);
         HashSet<SqlTableEnum> tableEnums = Sets.newHashSet();
         for (SqlTableEnum table : tables) {
@@ -238,43 +285,71 @@ public abstract class BasicSqlGenerator {
 
     protected abstract SqlTableEnum getMainTable();
 
-    Function<AqlField, SqlTable> toTables = new Function<AqlField, SqlTable>() {
+    Function<DomainSensitiveField, DomainSensitiveTable> toTables = new Function<DomainSensitiveField, DomainSensitiveTable>() {
         @Nullable
         @Override
-        public SqlTable apply(@Nullable AqlField input) {
-            AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(input);
-            return tablesLinksMap.get(input != null ? extension.table : null).getTable();
+        public DomainSensitiveTable apply(@Nullable DomainSensitiveField input) {
+            if (input == null) {
+                return null;
+            }
+            AqlFieldExtensionEnum extension = getExtensionFor(input.getField());
+            List<SqlTableEnum> tables = generateTableListFromSubDomainAndField(input.getSubDomains());
+            SqlTable table = tablesLinksMap.get(extension.table).getTable();
+            return new DomainSensitiveTable(table, tables);
         }
     };
-    Function<AqlQueryElement, SqlTable> firstTableFromCriteria = new Function<AqlQueryElement, SqlTable>() {
+    Function<AqlQueryElement, DomainSensitiveTable> firstTableFromCriteria = new Function<AqlQueryElement, DomainSensitiveTable>() {
         @Nullable
         @Override
-        public SqlTable apply(@Nullable AqlQueryElement input) {
-            return input != null ? ((Criteria) input).getTable1() : null;
+        public DomainSensitiveTable apply(@Nullable AqlQueryElement input) {
+            SqlTable table = input != null ? ((Criteria) input).getTable1() : null;
+            if (table != null) {
+                List<SqlTableEnum> tables = generateTableListFromSubDomainAndField(((Criteria) input).getSubDomains());
+                return new DomainSensitiveTable(table, tables);
+            }
+            return null;
         }
     };
-    Function<AqlQueryElement, SqlTable> secondTableFromCriteria = new Function<AqlQueryElement, SqlTable>() {
-        @Nullable
-        @Override
-        public SqlTable apply(@Nullable AqlQueryElement input) {
-            return input != null ? ((Criteria) input).getTable2() : null;
+
+    private List<SqlTableEnum> generateTableListFromSubDomainAndField(List<AqlDomainEnum> subDomains) {
+        List<SqlTableEnum> result = Lists.newArrayList();
+        if (subDomains.size() > 1) {
+            for (int i = 0; i < subDomains.size() - 1; i++) {
+                result.add(domainToTable(subDomains.get(i)));
+            }
+        } else {
+            result.add(domainToTable(subDomains.get(0)));
         }
-    };
-    Predicate<SqlTable> noneProperties = new Predicate<SqlTable>() {
-        @Override
-        public boolean apply(@Nullable SqlTable input) {
-            return SqlTableEnum.node_props != (input != null ? input.getTable() : null);
+        return result;
+    }
+
+    private SqlTableEnum domainToTable(AqlDomainEnum domainEnum) {
+        switch (domainEnum) {
+            case archives:
+                return SqlTableEnum.archive_names;
+            case items:
+                return SqlTableEnum.nodes;
+            case properties:
+                return SqlTableEnum.node_props;
+            case statistics:
+                return SqlTableEnum.stats;
+            case builds:
+                return SqlTableEnum.builds;
+            case buildProperties:
+                return SqlTableEnum.build_props;
+            case artifacts:
+                return SqlTableEnum.build_artifacts;
+            case dependencies:
+                return SqlTableEnum.build_dependencies;
+            case modules:
+                return SqlTableEnum.build_modules;
         }
-    };
-    Predicate<SqlTable> properties = new Predicate<SqlTable>() {
+        return null;
+    }
+
+    Predicate<DomainSensitiveTable> notNull = new Predicate<DomainSensitiveTable>() {
         @Override
-        public boolean apply(@Nullable SqlTable input) {
-            return SqlTableEnum.node_props == (input != null ? input.getTable() : null);
-        }
-    };
-    Predicate<SqlTable> notNull = new Predicate<SqlTable>() {
-        @Override
-        public boolean apply(@Nullable SqlTable input) {
+        public boolean apply(@Nullable DomainSensitiveTable input) {
             return input != null;
         }
     };
@@ -286,11 +361,11 @@ public abstract class BasicSqlGenerator {
             return input instanceof Criteria;
         }
     };
-    Function<SqlTable, SqlTableEnum> toTableEnum = new Function<SqlTable, SqlTableEnum>() {
+    Function<DomainSensitiveTable, SqlTableEnum> toTableEnum = new Function<DomainSensitiveTable, SqlTableEnum>() {
         @Nullable
         @Override
-        public SqlTableEnum apply(@Nullable SqlTable input) {
-            return input != null ? input.getTable() : null;
+        public SqlTableEnum apply(@Nullable DomainSensitiveTable input) {
+            return input != null ? input.getTable().getTable() : null;
         }
     };
 }

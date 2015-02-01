@@ -32,6 +32,7 @@ import org.artifactory.webapp.wicket.page.build.actionable.ModuleArtifactActiona
 import org.artifactory.webapp.wicket.page.build.actionable.ModuleDependencyActionableItem;
 import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.jfrog.build.api.Artifact;
+import org.jfrog.build.api.BaseBuildFileBean;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildRetention;
@@ -222,4 +223,14 @@ public interface BuildAddon extends Addon {
      * @param baseStorageInfoUri Base storage uri
      */
     BuildsDiff getBuildsDiff(Build firstBuild, Build secondBuild, String baseStorageInfoUri);
+
+    /**
+     * return artifact or dependency file info (in order to get repo path)
+     *
+     * @param artifact - artifact or dependency  (to get file info for)
+     * @param build    - build data
+     * @return file info instance of artifact or dependency
+     */
+    FileInfo getFileBeanInfo(BaseBuildFileBean artifact, Build build);
+
 }

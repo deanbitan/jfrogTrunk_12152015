@@ -1,8 +1,8 @@
 package org.artifactory.aql;
 
-import org.artifactory.aql.api.Aql;
-import org.artifactory.aql.result.AqlQueryResultIfc;
-import org.artifactory.aql.result.AqlQueryStreamResultIfc;
+import org.artifactory.aql.api.internal.AqlBase;
+import org.artifactory.aql.result.AqlEagerResult;
+import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.aql.result.rows.AqlRowResult;
 
 /**
@@ -16,7 +16,7 @@ public interface AqlService {
      * convert the Aql query to sql query
      * and finally execute the query lazy
      */
-    AqlQueryStreamResultIfc executeQueryLazy(String query);
+    AqlLazyResult executeQueryLazy(String query);
 
     /**
      * Parse the AQL query,
@@ -24,15 +24,16 @@ public interface AqlService {
      * convert the AqlApi query to sql query
      * and finally execute the query eagerly
      */
-    AqlQueryResultIfc executeQueryEager(String query);
+    AqlEagerResult executeQueryEager(String query);
 
     /**
      * Converts the AQL API QUERY into aqlApi query,
      * then convert the aqlApi query into SQL query,
      * and finally execute the query eagerly
      */
-    <T extends AqlRowResult> AqlQueryResultIfc<T> executeQueryEager(Aql query);
 
-    AqlQueryStreamResultIfc executeQueryLazy(Aql query);
+    <T extends AqlRowResult> AqlEagerResult<T> executeQueryEager(AqlBase<? extends AqlBase, T> aqlBase);
+
+    AqlLazyResult executeQueryLazy(AqlBase query);
 
 }

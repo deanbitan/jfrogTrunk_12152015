@@ -18,8 +18,11 @@
 
 package org.artifactory.storage.db.fs.itest.service;
 
+import ch.qos.logback.classic.Level;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
@@ -27,10 +30,14 @@ import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.model.xstream.fs.FolderInfoImpl;
 import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.fs.service.FileServiceImpl;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.artifactory.storage.fs.VfsException;
 import org.artifactory.storage.fs.VfsItemNotFoundException;
 import org.artifactory.storage.fs.service.FileService;
+import org.artifactory.test.TestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -74,6 +81,7 @@ public class FileServiceImplTest extends DbBaseTest {
         assertEquals(count, 0, "Dummy repo name");
     }
 
+    @Test(dependsOnMethods = "deleteFolderById")
     public void countFolderAndFilesUnderRepo() throws VfsException {
         int count = fileService.getNodesCount(new RepoPathImpl("repo1", ""));
         assertEquals(count, 7);

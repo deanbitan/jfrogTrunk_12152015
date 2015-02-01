@@ -7,7 +7,7 @@ import static org.artifactory.aql.model.AqlDomainEnum.statistics;
 /**
  * @author Gidi Shabat
  */
-@QueryTypes({statistics})
+@QueryTypes(statistics)
 public interface AqlStatistics extends AqlRowResult {
     Date getDownloaded();
 

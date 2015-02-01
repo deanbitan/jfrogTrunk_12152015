@@ -150,4 +150,7 @@
     <logger name="org.apache.cxf">
         <level value="error"/>
     </logger>
+    <logger name="com.jfrog.bintray">
+        <level value="info"/>
+    </logger>
 </configuration>

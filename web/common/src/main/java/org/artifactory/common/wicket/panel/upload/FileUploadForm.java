@@ -35,9 +35,9 @@ import static org.artifactory.util.Files.removeFile;
 
 public class FileUploadForm extends SecureForm {
     protected FileUploadField fileUploadField;
-    private File uploadedFile;
-    private UploadListener listener;
-    private File tempUploadsDir;
+    protected File uploadedFile;
+    protected UploadListener listener;
+    protected File tempUploadsDir;
 
     /**
      * @param id            The wicket component id

@@ -30,7 +30,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -52,7 +51,7 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase 
         // folder for temporary binaries before moving to the permanent location
         this.tempBinariesDir = getNewTempBinariesFile(binariesDir);
         verifyState(binariesDir);
-        this.random = new SecureRandom(tempBinariesDir.getAbsolutePath().getBytes());
+        this.random = new Random();
     }
 
     protected File getNewTempBinariesFile(File binariesDir) {

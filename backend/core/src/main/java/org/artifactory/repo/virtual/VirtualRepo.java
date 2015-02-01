@@ -509,7 +509,9 @@ public class VirtualRepo extends RepoBase<VirtualRepoDescriptor> implements Stor
 
     @Override
     public RepoResource getInfo(InternalRequestContext context) throws FileExpectedException {
-        return downloadStrategy.getInfo(context);
+        RepoResource res = downloadStrategy.getInfo(context);
+        markExpirableResource(res);
+        return res;
     }
 
     @Override

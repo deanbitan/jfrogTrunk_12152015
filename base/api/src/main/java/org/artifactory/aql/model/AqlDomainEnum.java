@@ -1,35 +1,48 @@
 package org.artifactory.aql.model;
 
-import static org.artifactory.aql.model.AqlField.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import static org.artifactory.aql.model.AqlFieldEnum.*;
 
 /**
  * @author Gidi Shabat
  */
 public enum AqlDomainEnum {
-    artifacts(artifactRepo, artifactPath, artifactName, artifactType),
-    full_artifacts(artifactNodeId, artifactType, artifactRepo, artifactPath, artifactName, artifactDepth,
-            artifactCreated,
-            artifactCreatedBy,
-            artifactModified, artifactModifiedBy,
-            artifactUpdated, artifactSize, artifactActualSha1, artifactOriginalSha1, artifactActualMd5,
-            artifactOriginalMd5),
-    properties(propertyKey, propertyValue),
-    statistics(artifactRepo, artifactPath, artifactName, artifactDownloaded, artifactDownloadedBy),
 
-    archive(archiveEntryPath, archiveEntryName),
 
-    builds(buildNumber, buildName),
-    build_artifacts(artifactRepo, artifactPath, artifactName, artifactType, buildArtifactName, buildArtifactType),
-    build_dependencies(artifactRepo, artifactPath, artifactName, artifactType, buildDependencyName,
-            buildDependencyScope,
-            buildDependencyType),
-    build_module(buildModuleName),
-    build_props(buildPropertyKey, buildPropertyValue);
+    items("item", new String[]{"items"}, itemRepo, itemPath, itemName, itemType, itemSize, itemCreated, itemCreatedBy,
+            itemModified, itemModifiedBy, itemUpdated),
+    properties("property", new String[]{"properties"}, propertyKey, propertyValue),
+    statistics("stat", new String[]{"stats"}, statDownloads, statDownloaded,
+            statDownloadedBy),
+    archives("archive", new String[]{"archives"}, archiveEntryPath, archiveEntryName),
+    builds("build", new String[]{"builds"}, buildNumber, buildName, buildUrl, buildCreated, buildCreatedBy,
+            buildModified, buildModifiedBy),
+    artifacts("artifact", new String[]{"artifacts"}, buildArtifactName, buildArtifactType),
+    dependencies("dependency", new String[]{"dependencies"}, buildDependencyName,
+            buildDependencyType,
+            buildDependencyScope),
+    modules("module", new String[]{"modules"}, buildModuleName),
+    buildProperties("property", new String[]{"build", "properties"}, buildPropertyKey, buildPropertyValue);
 
-    public AqlField[] fields;
+    public String signatue;
+    public String[] subDomains;
+    public AqlFieldEnum[] fields;
 
-    AqlDomainEnum(AqlField... fields) {
+    AqlDomainEnum(String signature, String[] domainPath, AqlFieldEnum... fields) {
+        this.signatue = signature;
+        this.subDomains = domainPath;
         this.fields = fields;
     }
 
+    public static AqlDomainEnum valueFromSubDomains(ArrayList<String> subDomains) {
+        String[] externalSubDomain = subDomains.toArray(new String[subDomains.size()]);
+        for (AqlDomainEnum aqlDomainEnum : values()) {
+            if (Arrays.equals(aqlDomainEnum.subDomains, externalSubDomain)) {
+                return aqlDomainEnum;
+            }
+        }
+        return null;
+    }
 }

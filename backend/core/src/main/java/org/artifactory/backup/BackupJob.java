@@ -22,7 +22,6 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.maven.index.MavenIndexerJob;
-import org.artifactory.maven.index.MavenIndexerServiceImpl;
 import org.artifactory.repo.service.ImportJob;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.StopCommand;
@@ -42,10 +41,6 @@ import org.slf4j.LoggerFactory;
 @JobCommand(schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.CURRENT,
         keyAttributes = {BackupJob.BACKUP_KEY},
         commandsToStop = {
-                @StopCommand(command = MavenIndexerServiceImpl.FindOrCreateMavenIndexJob.class,
-                        strategy = StopStrategy.PAUSE),
-                @StopCommand(command = MavenIndexerServiceImpl.SaveMavenIndexFileJob.class,
-                        strategy = StopStrategy.PAUSE),
                 @StopCommand(command = MavenIndexerJob.class, strategy = StopStrategy.PAUSE),
                 @StopCommand(command = ImportJob.class, strategy = StopStrategy.IMPOSSIBLE)})
 public class BackupJob extends QuartzCommand {

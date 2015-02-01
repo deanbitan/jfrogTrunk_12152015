@@ -44,6 +44,8 @@ public class AqlTableGraph {
         buildsModules.addLink(module_id, buildsDependencies, module_id);
         buildsModules.addLink(build_id, buildsTable, build_id);
         buildsTable.addLink(build_id, buildsProps, build_id);
+        nodesProps.addLink(node_id, nodesProps, node_id);
+        buildsProps.addLink(build_id, buildsProps, build_id);
         //Fill the tables map
         Map<SqlTableEnum, TableLink> map = Maps.newHashMap();
         map.put(indexed_archives, indexedArchives);

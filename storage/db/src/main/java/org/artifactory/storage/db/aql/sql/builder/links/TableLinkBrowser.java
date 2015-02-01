@@ -18,29 +18,35 @@ public class TableLinkBrowser {
 
     /**
      * Find the shortest route between two tables
+     *
      * @param from
      * @param to
-     * @param inRelation
      * @param exclude
      * @return
      */
-    public List<TableLinkRelation> findPathTo(TableLink from, TableLink to,TableLinkRelation inRelation,List<TableLink> exclude) {
+    public List<TableLinkRelation> findPathTo(TableLink from, TableLink to, List<TableLink> exclude) {
         if (tableLinkSet.contains(from) || exclude.contains(from)) {
             return null;
         }
-        if(to==from){
-                return Lists.newArrayList();
+        if (to == from) {
+            List<TableLinkRelation> relations = from.getRelations();
+            for (TableLinkRelation relation : relations) {
+                if (relation.getToTable().getTable().getTable() == to.getTable().getTable()) {
+                    return Lists.newArrayList(relation);
+                }
+            }
+            return Lists.newArrayList();
         }
         tableLinkSet.add(from);
         List<TableLinkRelation> relations = from.getRelations();
         List<TableLinkRelation> list = null;
         for (TableLinkRelation relation : relations) {
             List<TableLinkRelation> results;
-            results = findPathTo(relation.getToTable(),to,relation,exclude);
-            if (results!=null) {
+            results = findPathTo(relation.getToTable(), to, exclude);
+            if (results != null) {
                 results.add(0, relation);
             }
-            if (results!=null&&(list==null||list.size() == 0 || results.size()>0&&list.size() > results.size())) {
+            if (results != null && (list == null || list.size() == 0 || results.size() > 0 && list.size() > results.size())) {
                 list = results;
             }
         }

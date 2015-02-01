@@ -26,7 +26,6 @@
             <cronExp>0 0 /12 * * ?</cronExp>
             <retentionPeriodHours>0</retentionPeriodHours>
             <excludedRepositories>
-                <repositoryRef>apache</repositoryRef>
                 <repositoryRef>remote-repo</repositoryRef>
             </excludedRepositories>
         </backup>
@@ -78,15 +77,6 @@
 
     <remoteRepositories>
         <remoteRepository>
-            <key>apache</key>
-            <description>Developer local apache server for fast resolutions</description>
-            <repoLayoutRef>maven-2-default</repoLayoutRef>
-            <blackedOut>true</blackedOut>
-            <handleReleases>true</handleReleases>
-            <handleSnapshots>true</handleSnapshots>
-            <url>http://localhost/repo</url>
-        </remoteRepository>
-        <remoteRepository>
             <key>jcenter</key>
             <description>Bintray Central Java repository</description>
             <repoLayoutRef>maven-2-default</repoLayoutRef>
@@ -108,7 +98,6 @@
             <key>remote-repos</key>
             <artifactoryRequestsCanRetrieveRemoteArtifacts>true</artifactoryRequestsCanRetrieveRemoteArtifacts>
             <repositories>
-                <repositoryRef>apache</repositoryRef>
                 <repositoryRef>jcenter</repositoryRef>
                 <repositoryRef>remote-repo</repositoryRef>
             </repositories>

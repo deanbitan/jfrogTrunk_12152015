@@ -41,15 +41,17 @@ public class TransferEntryTest {
         RepoPath repoPath = InfoFactoryHolder.get()
                 .createRepoPathFromId("libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom");
         int contentLength = 632;
-        UploadEntry uploadEntry = new UploadEntry(repoPath.getId(), contentLength, 10);
+        String clientRemoteAddress = "127.0.0.1";
+        UploadEntry uploadEntry = new UploadEntry(repoPath.getId(), contentLength, 10, clientRemoteAddress);
 
         assertEquals(uploadEntry.getDuration(), 10, "Duration should be equal");
         assertEquals(uploadEntry.getAction(), TrafficAction.UPLOAD, "Entry action should be equal");
         assertEquals(uploadEntry.getRepoPath(), repoPath.getId(), "Entry repo paths should be equal");
         assertEquals(uploadEntry.getContentLength(), contentLength, "Entry content lengths should be equal");
+        assertEquals(uploadEntry.getUserAddress(), clientRemoteAddress, "Entry remote address should be equal");
 
         String expected = uploadEntry.getFormattedDate()
-                + "|10|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632";
+                + "|10|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|632";
 
         assertEquals(uploadEntry.toString(), expected, "Entry expressions should be equal");
     }
@@ -58,7 +60,7 @@ public class TransferEntryTest {
      * Creates a new entry using an entry expression, and validates it
      */
     public void stringToUploadEntry() {
-        String entry = "20050318162747|10|UPLOAD|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|456";
+        String entry = "20050318162747|10|UPLOAD|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|456";
         UploadEntry uploadEntry = new UploadEntry(entry);
 
         assertEquals(entry, uploadEntry.toString(), "Upload entry should be equal to the expression that created it");
@@ -70,6 +72,7 @@ public class TransferEntryTest {
                         .createRepoPath("libs-releases-local", "antlr/antlr/2.7.7/antlr-2.7.7.pom").getId(),
                 "Entry repo paths should be equal");
         assertEquals(uploadEntry.getContentLength(), 456, "Entry content lengths should be equal");
+        assertEquals(uploadEntry.getUserAddress(), "127.0.0.1", "Entry content lengths should be equal");
     }
 
     /**
@@ -77,6 +80,6 @@ public class TransferEntryTest {
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidUploadEntryContentLength() {
-        new UploadEntry("20090318162747|10|MOO|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|63a2");
+        new UploadEntry("20090318162747|10|MOO|127.0.0.1|libs-releases-local:antlr/antlr/2.7.7/antlr-2.7.7.pom|63a2");
     }
 }

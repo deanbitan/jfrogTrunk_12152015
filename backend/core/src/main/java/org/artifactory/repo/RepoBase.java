@@ -20,6 +20,9 @@ package org.artifactory.repo;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.FilteredResourcesAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.module.ModuleInfoUtils;
 import org.artifactory.api.security.AuthorizationService;
@@ -27,6 +30,7 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.mime.MavenNaming;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalContextHelper;
@@ -186,5 +190,35 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
 
     protected final AuthorizationService getAuthorizationService() {
         return InternalContextHelper.get().getAuthorizationService();
+    }
+
+    /**
+     * Checks if the resource should not be cached by the requesting end, and marks it expirable if so.
+     *
+     * @param res resource to be checked
+     */
+    protected void markExpirableResource(RepoResource res) {
+        boolean markAsExpired = false;
+
+        //Maven metadata
+        if (res.isFound() && MavenNaming.isMavenMetadata(res.getRepoPath().getPath())) {
+            markAsExpired = true;
+        }
+
+        //Layout based snapshot detection
+        if (res.isFound() && repositoryService.getItemModuleInfo(res.getRepoPath()).isIntegration()) {
+            markAsExpired = true;
+        }
+
+        //Filtered Resource
+        FilteredResourcesAddon filteredResourcesAddon = ContextHelper.get().beanForType(AddonsManager.class)
+                .addonByType(FilteredResourcesAddon.class);
+        if (res.isFound() && filteredResourcesAddon.isFilteredResourceFile(res.getRepoPath())) {
+            markAsExpired = true;
+        }
+
+        if (markAsExpired) {
+            res.expirable();
+        }
     }
 }

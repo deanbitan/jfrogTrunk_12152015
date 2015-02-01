@@ -58,11 +58,11 @@ import java.util.Date;
 public class MavenIndexManager {
     private static final Logger log = LoggerFactory.getLogger(MavenIndexManager.class);
 
-    final RealRepo indexedRepo;
-    StoringRepo indexStorageRepo;
-    ResourceStreamHandle indexHandle;
-    ResourceStreamHandle propertiesHandle;
-    IndexStatus indexStatus = IndexStatus.NOT_CREATED;
+    private final RealRepo indexedRepo;
+    private StoringRepo indexStorageRepo;
+    private ResourceStreamHandle indexHandle;
+    private ResourceStreamHandle propertiesHandle;
+    private IndexStatus indexStatus = IndexStatus.NOT_CREATED;
 
     private enum IndexStatus {
         NOT_CREATED, NEEDS_SAVING, SKIP, ABORTED
@@ -73,6 +73,9 @@ public class MavenIndexManager {
             throw new IllegalArgumentException("Repository for indexing cannot be null.");
         }
         this.indexedRepo = indexedRepo;
+        if (indexedRepo.isLocal()) {
+            indexStorageRepo = (LocalRepo) indexedRepo;
+        }
         indexStatus = IndexStatus.NOT_CREATED;
     }
 
@@ -90,7 +93,6 @@ public class MavenIndexManager {
 
     boolean fetchRemoteIndex(boolean forceRemoteDownload) {
         if (indexedRepo.isLocal()) {
-            indexStorageRepo = (LocalRepo) indexedRepo;
             return false;
         } else {
             //For remote repositories, try to download the remote cache. If fails - index locally
@@ -108,14 +110,6 @@ public class MavenIndexManager {
                 unExpireIndexIfExists(remoteRepo);
                 return false;
             }
-
-            /*DefaultIndexUpdater indexUpdater = new DefaultIndexUpdater();
-            Maven maven = InternalContextHelper.get().beanForType(Maven.class);
-            WagonManager wagonManager = maven.getWagonManager();
-            FieldUtils.setProtectedFieldValue("wagonManager", indexUpdater, wagonManager);*/
-            //ProxyInfo proxyInfo = new ProxyInfo();
-            //Update the proxy info
-            //indexUpdater.fetchIndexProperties(ic, tl, proxyInfo);
 
             File tempIndex = null;
             File tempProperties = null;
@@ -224,12 +218,15 @@ public class MavenIndexManager {
         //For remote repositories, only index locally if not already fetched remotely before and if has local
         //storage
         if (!indexedRepo.isLocal() && remoteIndexExists) {
-            if (!((RemoteRepo) indexedRepo).isStoreArtifactsLocally()) {
-                log.debug("Skipping local index creation for remote repo '{}': repo does not store artifacts locally",
-                        indexedRepo.getKey());
-            }
             return;
         }
+
+        if (!indexedRepo.isLocal() && !((RemoteRepo) indexedRepo).isStoreArtifactsLocally()) {
+            log.debug("Skipping local index creation for remote repo '{}': repo does not store artifacts locally",
+                    indexedRepo.getKey());
+            return;
+        }
+
         log.debug("Creating index files for {}", indexedRepo);
         RepoIndexer repoIndexer = new RepoIndexer(indexStorageRepo);
         try {

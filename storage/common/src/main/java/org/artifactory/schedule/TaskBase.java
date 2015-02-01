@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,8 +54,6 @@ public abstract class TaskBase implements Task {
     private int resumeBarriersCount;
     private final Class<? extends TaskCallback> callbackType;
 
-    private final String token;
-
     @SuppressWarnings({"unchecked"})
     protected TaskBase(Class<? extends TaskCallback> callbackType) {
         state = TaskState.VIRGIN;
@@ -66,7 +63,6 @@ public abstract class TaskBase implements Task {
         executed = false;
         resumeBarriersCount = 0;
         this.callbackType = callbackType;
-        this.token = callbackType.getName() + "#" + UUID.randomUUID().toString();
     }
 
     @Override
@@ -243,10 +239,7 @@ public abstract class TaskBase implements Task {
         return callbackType;
     }
 
-    @Override
-    public String getToken() {
-        return token;
-    }
+    public abstract String getToken();
 
     /**
      * Starts or schedules the task
@@ -302,8 +295,8 @@ public abstract class TaskBase implements Task {
     }
 
     /**
-     * Weather the task with this callback type should be unique on the tast service. I.e. not other tasks with the same
-     * type should ever be running.
+     * Weather the task with this callback type should be unique on the task service.
+     * i.e., not other task with the same type should ever be running.
      *
      * @return True if this task should be unique
      */
@@ -445,7 +438,8 @@ public abstract class TaskBase implements Task {
                 if (!success) {
                     throw new LockingException(
                             "Timeout after " + timeout + " seconds when trying to wait for next state in '" + oldState +
-                                    "'.");
+                                    "'."
+                    );
                 }
                 newState = state;
                 log.trace("Exiting wait for next step from {} to {} on {}", oldState, newState, this);
@@ -461,7 +455,7 @@ public abstract class TaskBase implements Task {
         if (!validNewState) {
             throw new IllegalArgumentException("Cannot transition from " + this.state + " to " + newState + ".");
         }
-        log.trace("Changing state: {}-->{}", this.state, newState);
+        log.trace("Changing state: {}: {}-->{}", this.toString(), this.state, newState);
         state = newState;
         if (state == TaskState.RUNNING) {
             executed = true;
@@ -518,17 +512,17 @@ public abstract class TaskBase implements Task {
             return false;
         }
         TaskBase base = (TaskBase) o;
-        return token.equals(base.token);
+        return getToken().equals(base.getToken());
     }
 
     @Override
     public int hashCode() {
-        return token.hashCode();
+        return getToken().hashCode();
     }
 
     @Override
     public String toString() {
-        return token;
+        return getToken();
     }
 
     public abstract void addAttribute(String key, Object value);
@@ -542,7 +536,12 @@ public abstract class TaskBase implements Task {
                     "Received " + Arrays.toString(keyValues) + " and expected values for " + Arrays.toString(keys));
         }
         for (int i = 0; i < keys.length; i++) {
-            if (!getAttribute(keys[i]).equals(keyValues[i])) {
+            Object attribute = getAttribute(keys[i]);
+            if (attribute == null) {
+                log.warn("Task attribute is NULL: {}, given keyValues: {}", keys[i], keyValues);
+                return false;
+            }
+            if (!attribute.equals(keyValues[i])) {
                 return false;
             }
         }
@@ -558,7 +557,8 @@ public abstract class TaskBase implements Task {
         if (!Arrays.equals(myKeys, otherKeys)) {
             throw new IllegalArgumentException(
                     "Cannot compare key values between task " + this + " and task " + task + "\n" +
-                            "Keys " + Arrays.toString(myKeys) + " not equals to " + Arrays.toString(otherKeys));
+                            "Keys " + Arrays.toString(myKeys) + " not equals to " + Arrays.toString(otherKeys)
+            );
         }
         for (String key : myKeys) {
             if (!getAttribute(key).equals(task.getAttribute(key))) {

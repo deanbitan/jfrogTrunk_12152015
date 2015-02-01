@@ -2,7 +2,8 @@ package org.artifactory.storage.db.aql.sql.builder.query.aql;
 
 import org.artifactory.aql.AqlException;
 import org.artifactory.aql.model.AqlComparatorEnum;
-import org.artifactory.aql.model.Variable;
+import org.artifactory.aql.model.AqlDomainEnum;
+import org.artifactory.aql.model.AqlVariable;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlTable;
 
 import java.util.List;
@@ -15,13 +16,14 @@ import java.util.List;
  */
 public class SimpleCriteria extends Criteria {
 
-    public SimpleCriteria(Variable variable1, SqlTable table1, String comparatorName, Variable variable2,
-            SqlTable table2) {
-        super(variable1, table1, comparatorName, variable2, table2);
+    public SimpleCriteria(List<AqlDomainEnum> subDomains, AqlVariable variable1, SqlTable table1, String comparatorName,
+            AqlVariable variable2, SqlTable table2) {
+        super(subDomains, variable1, table1, comparatorName, variable2, table2);
     }
 
     /**
      * Convert simpleCriteria to sql criteria
+     *
      * @param params
      * @return
      * @throws AqlException
@@ -29,8 +31,8 @@ public class SimpleCriteria extends Criteria {
     @Override
     public String toSql(List<Object> params) throws AqlException {
         // Get both variable which are Field and Value (this is simple criteria)
-        Variable variable1 = getVariable1();
-        Variable variable2 = getVariable2();
+        AqlVariable variable1 = getVariable1();
+        AqlVariable variable2 = getVariable2();
         // Get both tables which are same and equals to the Field table
         SqlTable table1 = getTable1();
         SqlTable table2 = getTable2();

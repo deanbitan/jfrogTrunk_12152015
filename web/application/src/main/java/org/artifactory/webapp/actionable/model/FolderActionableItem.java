@@ -20,6 +20,7 @@ package org.artifactory.webapp.actionable.model;
 
 import com.google.common.collect.Lists;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.DockerWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
@@ -31,7 +32,6 @@ import org.artifactory.webapp.actionable.ActionableItem;
 import org.artifactory.webapp.actionable.CannonicalEnabledActionableFolder;
 import org.artifactory.webapp.actionable.RefreshableActionableItem;
 import org.artifactory.webapp.actionable.action.CopyAction;
-import org.artifactory.webapp.actionable.action.DeleteAction;
 import org.artifactory.webapp.actionable.action.DeleteVersionsAction;
 import org.artifactory.webapp.actionable.action.ItemAction;
 import org.artifactory.webapp.actionable.action.MoveAction;
@@ -115,14 +115,16 @@ public class FolderActionableItem extends CachedItemActionableItem
         actions.add(moveAction);
         copyAction = new CopyAction();
         actions.add(copyAction);
-        deleteAction = new DeleteAction();
-        actions.add(deleteAction);
         zapAction = new ZapAction();
         actions.add(zapAction);
         delVersions = new DeleteVersionsAction();
         actions.add(delVersions);
 
         AddonsManager addonsManager = getAddonsProvider();
+        DockerWebAddon dockerWebAddon = addonsManager.addonByType(DockerWebAddon.class);
+        deleteAction = dockerWebAddon.getDeleteAction(folderInfo);
+        actions.add(deleteAction);
+
         WatchAddon watchAddon = addonsManager.addonByType(WatchAddon.class);
         watchAction = watchAddon.getWatchAction(folderInfo.getRepoPath());
         actions.add(watchAction);

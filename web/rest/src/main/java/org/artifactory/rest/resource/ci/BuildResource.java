@@ -20,12 +20,15 @@ package org.artifactory.rest.resource.ci;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
+import com.sun.istack.internal.Nullable;
 import com.sun.jersey.api.core.ExtendedUriInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
+import org.artifactory.api.bintray.BintrayService;
+import org.artifactory.api.bintray.BintrayUploadInfoOverride;
 import org.artifactory.api.build.BuildRunComparators;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.BasicStatusHolder;
@@ -34,6 +37,7 @@ import org.artifactory.api.rest.artifact.PromotionResult;
 import org.artifactory.api.rest.build.BuildInfo;
 import org.artifactory.api.rest.build.Builds;
 import org.artifactory.api.rest.build.BuildsByName;
+import org.artifactory.api.rest.constant.BintrayRestConstants;
 import org.artifactory.api.rest.constant.BuildRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
@@ -44,6 +48,7 @@ import org.artifactory.rest.common.exception.BadRequestException;
 import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.exception.RestException;
 import org.artifactory.rest.common.list.StringList;
+import org.artifactory.rest.resource.bintray.BintrayRestHelper;
 import org.artifactory.rest.util.RestUtils;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.DoesNotExistException;
@@ -105,6 +110,8 @@ public class BuildResource {
     private AuthorizationService authorizationService;
     @Autowired
     private SearchService searchService;
+    @Autowired
+    private BintrayService bintrayService;
     @Context
     private HttpServletRequest request;
     @Context
@@ -412,6 +419,46 @@ public class BuildResource {
             throw new NotFoundException(dnne.getMessage());
         }
         response.flushBuffer();
+    }
+
+    /**
+     * Pushes a build to Bintray, expects to find the bintrayBuildInfo.json as one of the build's artifacts
+     *
+     * @param buildName      Name of build to promote
+     * @param buildNumber    Number of build to promote
+     * @param gpgPassphrase  (optional) the Passphrase to use in conjunction with the key stored in Bintray to
+     *                       sign the version
+     * @return result of the operation
+     */
+    @POST
+    @Path("/pushToBintray/{buildName: .+}/{buildNumber: .+}")
+    @Consumes({BuildRestConstants.MT_BINTRAY_DESCRIPTOR_OVERRIDE, MediaType.APPLICATION_JSON})
+    @Produces({BintrayRestConstants.MT_BINTRAY_PUSH_RESPONSE, MediaType.APPLICATION_JSON})
+    public Response pushToBintray(@PathParam("buildName") String buildName, @PathParam("buildNumber") String buildNumber,
+            @QueryParam("gpgPassphrase") @Nullable String gpgPassphrase,
+            @QueryParam("gpgSign") @Nullable Boolean gpgSignOverride,
+            @Nullable BintrayUploadInfoOverride override) throws IOException {
+
+        if(!BintrayRestHelper.isPushToBintrayAllowed()) {
+            throw new AuthorizationRestException();
+        }
+        BuildRun buildRun;
+        BasicStatusHolder status;
+        try {
+            if (RestUtils.shouldDecodeParams(request)) {
+                buildName = URLDecoder.decode(buildName, "UTF-8");
+                buildNumber = URLDecoder.decode(buildNumber, "UTF-8");
+                gpgPassphrase = URLDecoder.decode(gpgPassphrase, "UTF-8");
+            }
+            buildRun = BuildResourceHelper.validateParamsAndGetBuildInfo(buildName, buildNumber, null);
+            Build build = buildService.getBuild(buildRun);
+            status = bintrayService.pushPromotedBuild(build, gpgPassphrase, gpgSignOverride, override);
+            return BintrayRestHelper.bintrayOpAggregatedStatusResponse(status, true);
+        } catch (IllegalArgumentException | ParseException iae) {
+            throw new BadRequestException(iae.getMessage());
+        } catch (DoesNotExistException | ItemNotFoundRuntimeException nee) {
+            throw new NotFoundException(nee.getMessage());
+        }
     }
 
     private boolean queryParamsContainKey(String key) {

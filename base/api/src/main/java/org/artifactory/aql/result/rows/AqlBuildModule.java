@@ -1,11 +1,11 @@
 package org.artifactory.aql.result.rows;
 
-import static org.artifactory.aql.model.AqlDomainEnum.build_module;
+import static org.artifactory.aql.model.AqlDomainEnum.modules;
 
 /**
  * @author Gidi Shabat
  */
-@QueryTypes({build_module})
+@QueryTypes(modules)
 public interface AqlBuildModule extends AqlRowResult {
     String getBuildModuleName();
 }

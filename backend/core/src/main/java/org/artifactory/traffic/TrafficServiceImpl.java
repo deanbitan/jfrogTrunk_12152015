@@ -18,6 +18,7 @@
 
 package org.artifactory.traffic;
 
+import com.google.common.collect.Lists;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -110,5 +111,79 @@ public class TrafficServiceImpl implements InternalTrafficService, ReloadableBea
         TrafficReader trafficReader = new TrafficReader(logDir);
         List<TrafficEntry> logFileEntries = trafficReader.getEntries(from, to);
         return logFileEntries;
+    }
+
+    /**
+     * Returns transfer usage
+     *
+     * @param from Traffic start time
+     * @param to   Traffic end time
+     * @param ipToFilter   filter the traffic by list of ip
+     * @return TransferUsage taken from the traffic log files or the database
+     */
+    @Override
+    public TransferUsage getUsageWithFilter(Calendar from, Calendar to,
+            List<String> ipToFilter) {
+        List<TrafficEntry> allTrafficEntry = getEntryList(from, to);
+        TransferUsage transferUsage = orderEntriesByFilter(allTrafficEntry, ipToFilter);
+        return transferUsage;
+    }
+
+    @Override
+    public boolean isActive(){
+        return active;
+    }
+
+    private TransferUsage orderEntriesByFilter(List<TrafficEntry> allTrafficEntry,
+            List<String> ipToFilter) {
+        TransferUsage transferUsage = new TransferUsage();
+        List<TrafficEntry> trafficEntriesExcludedUsage = Lists.newArrayList();
+        List<TrafficEntry> trafficEntriesUsage = Lists.newArrayList();
+        if (ipToFilter == null || ipToFilter.isEmpty()) {
+            trafficEntriesUsage.addAll(allTrafficEntry);
+        } else {
+            for (TrafficEntry trafficEntry : allTrafficEntry) {
+                if (isExcludedTraffic(trafficEntry, ipToFilter)) {
+                    trafficEntriesExcludedUsage.add(trafficEntry);
+                } else {
+                    trafficEntriesUsage.add(trafficEntry);
+                }
+            }
+
+        }
+        fillUsage(trafficEntriesExcludedUsage, transferUsage, true);
+        fillUsage(trafficEntriesUsage, transferUsage, false);
+        return transferUsage;
+    }
+
+    private void fillUsage(List<TrafficEntry> trafficEntriesUsage, TransferUsage transferUsage, boolean isExcludedUsage) {
+        long uploadTransferUsage = 0;
+        long downloadTransferUsage = 0;
+
+        for (TrafficEntry trafficEntry : trafficEntriesUsage) {
+            long contentLength = ((TransferEntry) trafficEntry).getContentLength();
+            if (trafficEntry.getAction() == TrafficAction.UPLOAD) {
+                uploadTransferUsage += contentLength;
+            } else {
+                downloadTransferUsage += contentLength;
+            }
+        }
+        if(isExcludedUsage) {
+            transferUsage.setExcludedUpload(uploadTransferUsage);
+            transferUsage.setExcludedDownload(downloadTransferUsage);
+        }else{
+            transferUsage.setUpload(uploadTransferUsage);
+            transferUsage.setDownload(downloadTransferUsage);
+        }
+    }
+
+    private boolean isExcludedTraffic(TrafficEntry trafficEntry, List<String> ipToFilter) {
+        TransferEntry transferEntry = ((TransferEntry) trafficEntry);
+        for (String ipAddress : ipToFilter) {
+            if (transferEntry.getUserAddress().equals(ipAddress)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
