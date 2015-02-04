@@ -72,6 +72,8 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private boolean listRemoteFolderItems = true;
     private boolean rejectInvalidJars = false;
     private boolean p2Support = false;
+    private boolean allowAnyHostAuth;
+    private boolean enableCookieManagement;
 
     public HttpRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -93,6 +95,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         if (StringUtils.isNotBlank(password)) {
             setPassword(password);
         }
+        setAllowAnyHostAuth(repoDescriptor.isAllowAnyHostAuth());
         ProxyDescriptor proxy = repoDescriptor.getProxy();
         if (proxy != null) {
             setProxy(proxy.getKey());
@@ -111,6 +114,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         if (StringUtils.isNotBlank(localAddress)) {
             setLocalAddress(localAddress);
         }
+        setEnableCookieManagement(repoDescriptor.isEnableCookieManagement());
         setBlackedOut(repoDescriptor.isBlackedOut());
         setHandleReleases(repoDescriptor.isHandleReleases());
         setHandleSnapshots(repoDescriptor.isHandleSnapshots());
@@ -404,5 +408,23 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
 
     public void setP2Support(boolean p2Support) {
         this.p2Support = p2Support;
+    }
+
+    @Override
+    public boolean isAllowAnyHostAuth() {
+        return allowAnyHostAuth;
+    }
+
+    public void setAllowAnyHostAuth(boolean allowAnyHostAuth) {
+        this.allowAnyHostAuth = allowAnyHostAuth;
+    }
+
+    @Override
+    public boolean isEnableCookieManagement() {
+        return enableCookieManagement;
+    }
+
+    public void setEnableCookieManagement(boolean enableCookieManagement) {
+        this.enableCookieManagement = enableCookieManagement;
     }
 }

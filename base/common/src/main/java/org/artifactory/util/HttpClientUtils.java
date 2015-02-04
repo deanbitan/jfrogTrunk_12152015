@@ -18,6 +18,8 @@
 
 package org.artifactory.util;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -25,6 +27,7 @@ import org.springframework.util.ReflectionUtils;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
+import java.net.UnknownHostException;
 
 /**
  * Set of utils for easier configuration of apache http client.
@@ -58,6 +61,29 @@ public abstract class HttpClientUtils {
         } else {
             return RequestConfig.custom();
         }
+    }
+
+    /**
+     * @param e The throwable to inspect for the error message
+     * @return Most fitting error message for the given throwable. Tries to prevent empty exception messages.
+     */
+    public static String getErrorMessage(Throwable e) {
+        if (e == null) {
+            return null;
+        }
+        String message = e.getMessage(); // default message
+        if (e instanceof UnknownHostException) {
+            message = "Unknown host - " + e.getMessage();
+        } else if (e instanceof ClientProtocolException) {
+            // ClientProtocolException doesn't return a message but holds the cause with the message
+            if (e.getCause() != null) {
+                message = e.getCause().getMessage();
+            }
+        }
+        if (StringUtils.isBlank(message)) {
+            message = e.getClass().toString();
+        }
+        return message;
     }
 
     private static RequestConfig getDefaultConfig(HttpClient client) {

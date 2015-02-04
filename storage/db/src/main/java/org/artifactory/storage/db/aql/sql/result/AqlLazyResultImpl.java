@@ -1,6 +1,7 @@
 package org.artifactory.storage.db.aql.sql.result;
 
 import com.google.common.collect.Maps;
+import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.aql.result.AqlLazyResult;
@@ -19,12 +20,14 @@ public class AqlLazyResultImpl implements AqlLazyResult {
     private final List<DomainSensitiveField> fields;
     private ResultSet resultSet;
     private Map<AqlFieldEnum, String> dbFieldNames;
+    private AqlDomainEnum domain;
 
     public AqlLazyResultImpl(ResultSet resultSet, SqlQuery sqlQuery) {
         limit = sqlQuery.getLimit();
         fields = sqlQuery.getResultFields();
         this.resultSet = resultSet;
         dbFieldNames = Maps.newHashMap();
+        this.domain=sqlQuery.getDomain();
         for (DomainSensitiveField field : fields) {
             AqlFieldEnum fieldEnum = field.getField();
             dbFieldNames.put(fieldEnum, AqlFieldExtensionEnum.getExtensionFor(fieldEnum).tableField.name());
@@ -49,5 +52,10 @@ public class AqlLazyResultImpl implements AqlLazyResult {
     @Override
     public Map<AqlFieldEnum, String> getDbFieldNames() {
         return dbFieldNames;
+    }
+
+    @Override
+    public AqlDomainEnum getDomain() {
+        return domain;
     }
 }

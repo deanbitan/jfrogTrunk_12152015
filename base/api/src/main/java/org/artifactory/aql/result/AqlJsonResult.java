@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
+import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.common.ConstantValues;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -24,9 +25,9 @@ import java.util.Map;
 
 /**
  * @author Gidi Shabat
- * The class converts the AqlLazyResult to in-memory Aql Json result
- * The Max number of rows allowed by this result is the actually artifactory searchUserQueryLimit:
- * (ConstantValues.searchUserQueryLimit)
+ *         The class converts the AqlLazyResult to in-memory Aql Json result
+ *         The Max number of rows allowed by this result is the actually artifactory searchUserQueryLimit:
+ *         (ConstantValues.searchUserQueryLimit)
  */
 public class AqlJsonResult extends AqlRestResult implements Cloneable {
     private static final Logger log = LoggerFactory.getLogger(AqlJsonResult.class);
@@ -35,13 +36,16 @@ public class AqlJsonResult extends AqlRestResult implements Cloneable {
     private final Map<AqlFieldEnum, String> dbFieldNames;
     private final ResultHolder resultHolder;
     private final long realLimit;
+    private final AqlDomainEnum domain;
     private byte[] out;
 
-    public AqlJsonResult(AqlLazyResult lazyResult) {
+    public AqlJsonResult(AqlLazyResult lazyResult, AqlPermissionProvider permissionProvider) {
+        super(permissionProvider);
         this.resultSet = lazyResult.getResultSet();
         this.fields = lazyResult.getFields();
         this.dbFieldNames = lazyResult.getDbFieldNames();
         this.resultHolder = new ResultHolder();
+        this.domain = lazyResult.getDomain();
         this.realLimit = Math.min(lazyResult.getLimit(), ConstantValues.searchUserQueryLimit.getLong());
         inflate();
     }
@@ -151,11 +155,13 @@ public class AqlJsonResult extends AqlRestResult implements Cloneable {
             String key = newRow.getKey();
             Row targetRow = map.get(key);
             if (targetRow == null) {
-                // Add the row to the map
+                // Add the row to the map only if map size is less than the limit and user have read authorization
                 if (map.size() < realLimit) {
-                    targetRow = newRow;
-                    map.put(key, targetRow);
-                    updateProperties(propertyKey, propertyValue, targetRow);
+                    if (canRead(domain, newRow.itemRepo, newRow.itemPath, newRow.itemName)) {
+                        targetRow = newRow;
+                        map.put(key, targetRow);
+                        updateProperties(propertyKey, propertyValue, targetRow);
+                    }
                 }
             } else {
                 // Merge properties in existing row.

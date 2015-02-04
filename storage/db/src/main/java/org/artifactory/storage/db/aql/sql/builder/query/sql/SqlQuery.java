@@ -1,6 +1,7 @@
 package org.artifactory.storage.db.aql.sql.builder.query.sql;
 
 import com.google.common.collect.Lists;
+import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.DomainSensitiveField;
 
 import java.util.List;
@@ -22,6 +23,11 @@ public class SqlQuery {
     private List<Object> params = Lists.newArrayList();
     private List<DomainSensitiveField> resultFields;
     private int limit;
+    private AqlDomainEnum domain;
+
+    public SqlQuery(AqlDomainEnum domain) {
+        this.domain = domain;
+    }
 
     public void updateResultFields(String results) {
         query = query.replace(FIELDS, results);
@@ -96,5 +102,9 @@ public class SqlQuery {
 
     public void setLimit(int limit) {
         this.limit = limit;
+    }
+
+    public AqlDomainEnum getDomain() {
+        return domain;
     }
 }

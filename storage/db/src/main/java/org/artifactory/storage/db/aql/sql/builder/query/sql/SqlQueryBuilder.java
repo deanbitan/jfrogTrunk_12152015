@@ -38,7 +38,7 @@ public class SqlQueryBuilder {
     }
 
     public SqlQuery buildQuery(AqlQuery aqlQuery) throws AqlException {
-        SqlQuery sqlQuery = new SqlQuery();
+        SqlQuery sqlQuery = new SqlQuery(aqlQuery.getDomain());
         AqlDomainEnum domainEnum = aqlQuery.getDomain();
         BasicSqlGenerator generator = sqlGeneratorMap.get(domainEnum);
         generateSqlQuery(aqlQuery, generator, sqlQuery);

@@ -183,6 +183,14 @@ public class HttpRepoAdvancedPanel extends Panel {
         networkBorder.add(new TextField<>("socketTimeoutMillis", Integer.class).setRequired(true));
         networkBorder.add(new SchemaHelpBubble("socketTimeoutMillis.help"));
 
+        // allow passing authentication to redirected hosts
+        networkBorder.add(new StyledCheckbox("allowAnyHostAuth"));
+        networkBorder.add(new SchemaHelpBubble("allowAnyHostAuth.help"));
+
+        // enable cookies
+        networkBorder.add(new StyledCheckbox("enableCookieManagement"));
+        networkBorder.add(new SchemaHelpBubble("enableCookieManagement.help"));
+
         // username
         networkBorder.add(new TextField("username"));
         networkBorder.add(new SchemaHelpBubble("username.help"));

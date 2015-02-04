@@ -1,4 +1,4 @@
-package org.artifactory.storage.db.aql.sql.builder.query.aql;
+package org.artifactory.storage.db.aql.service;
 
 import com.google.common.collect.Lists;
 import org.artifactory.aql.AqlFieldResolver;
@@ -11,6 +11,13 @@ import org.artifactory.aql.model.AqlValue;
 import org.artifactory.aql.model.AqlVariable;
 import org.artifactory.aql.model.AqlVariableTypeEnum;
 import org.artifactory.storage.db.aql.sql.builder.links.TableLink;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlAdapter;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQuery;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQueryElement;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.CloseParenthesisAqlElement;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.OpenParenthesisAqlElement;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.OperatorQueryElement;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.SimpleCriteria;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlTable;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.type.AqlTableGraph;
 import org.artifactory.storage.db.aql.sql.model.SqlTableEnum;

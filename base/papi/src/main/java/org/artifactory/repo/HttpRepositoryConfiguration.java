@@ -83,4 +83,8 @@ public interface HttpRepositoryConfiguration extends RepositoryConfiguration {
     boolean isRejectInvalidJars();
 
     boolean isP2Support();
+
+    public boolean isAllowAnyHostAuth();
+
+    public boolean isEnableCookieManagement();
 }

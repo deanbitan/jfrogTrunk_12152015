@@ -1,5 +1,6 @@
 package org.artifactory.aql.result;
 
+import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.DomainSensitiveField;
 
@@ -19,4 +20,6 @@ public interface AqlLazyResult {
     int getLimit();
 
     Map<AqlFieldEnum, String> getDbFieldNames();
+
+    AqlDomainEnum getDomain();
 }

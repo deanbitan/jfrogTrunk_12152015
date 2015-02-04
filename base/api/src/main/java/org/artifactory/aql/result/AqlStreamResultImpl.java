@@ -1,8 +1,10 @@
 package org.artifactory.aql.result;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
+import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.model.DomainSensitiveField;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
@@ -30,6 +32,7 @@ public class AqlStreamResultImpl extends AqlRestResult implements Cloneable {
     private static final String QUERY_POSTFIX = " ],\n\"range\" : " + NUMBER_OF_ROWS + "\n}\n";
     private final int limit;
     private final Map<AqlFieldEnum, String> dbFieldNames;
+    private final AqlDomainEnum domain;
     private int rowsCount;
     private Buffer buffer = new Buffer();
     private boolean firstRow = true;
@@ -37,10 +40,12 @@ public class AqlStreamResultImpl extends AqlRestResult implements Cloneable {
     private ResultSet resultSet;
     private List<DomainSensitiveField> resultFields;
 
-    public AqlStreamResultImpl(AqlLazyResult lazyResult) {
+    public AqlStreamResultImpl(AqlLazyResult lazyResult, AqlPermissionProvider permissionProvider) {
+        super(permissionProvider);
         this.resultSet = lazyResult.getResultSet();
         this.resultFields = lazyResult.getFields();
         this.limit = lazyResult.getLimit();
+        this.domain = lazyResult.getDomain();
         dbFieldNames = lazyResult.getDbFieldNames();
         buffer.push(QUERY_PREFIX.getBytes());
     }
@@ -93,7 +98,13 @@ public class AqlStreamResultImpl extends AqlRestResult implements Cloneable {
     private boolean getNewRowFromDb() {
         try {
             if (rowsCount < limit) {
-                return resultSet.next();
+                boolean next = resultSet.next();
+                while (next) {
+                    if (canRead(domain, resultSet)) {
+                        return true;
+                    }
+                    next = resultSet.next();
+                }
             }
             return false;
         } catch (SQLException e) {

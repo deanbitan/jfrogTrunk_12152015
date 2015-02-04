@@ -2,6 +2,8 @@ package org.artifactory.storage.db.aql.service;
 
 import org.artifactory.aql.AqlService;
 import org.artifactory.aql.api.internal.AqlBase;
+import org.artifactory.aql.model.AqlPermissionProvider;
+import org.artifactory.aql.model.AqlPermissionProviderImpl;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.aql.result.rows.AqlRowResult;
@@ -10,7 +12,6 @@ import org.artifactory.storage.db.aql.parser.AqlParser;
 import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlApiToAqlAdapter;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQuery;
-import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQueryOptimizer;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.ParserToAqlAdapter;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQuery;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQueryBuilder;
@@ -36,15 +37,16 @@ public class AqlServiceImpl implements AqlService {
 
     @Autowired
     private AqlDao aqlDao;
-
     private AqlParser parser;
     private ParserToAqlAdapter parserToAqlAdapter;
     private AqlApiToAqlAdapter aqlApiToAqlAdapter;
     private SqlQueryBuilder sqlQueryBuilder;
     private AqlQueryOptimizer optimizer;
+    private AqlQueryValidator validator;
+    private AqlPermissionProvider permissionProvider=new AqlPermissionProviderImpl();
 
     @PostConstruct
-    private void initDb() throws Exception {
+    private void initDb(){
         // The parser is constructed by many internal elements therefore we create it once and then reuse it.
         // Please note that it doesn't really have state therefore we can use it simultaneously
         // TODO init the parser eagerly here not lazy
@@ -53,6 +55,7 @@ public class AqlServiceImpl implements AqlService {
         sqlQueryBuilder = new SqlQueryBuilder();
         aqlApiToAqlAdapter = new AqlApiToAqlAdapter();
         optimizer = new AqlQueryOptimizer();
+        validator = new AqlQueryValidator();
     }
 
     /**
@@ -83,6 +86,7 @@ public class AqlServiceImpl implements AqlService {
         log.debug("Processing API AqlApi query");
         AqlQuery aqlQuery = aqlApiToAqlAdapter.toAqlModel(aql);
         optimizer.optimize(aqlQuery);
+        validator.validate(aqlQuery,permissionProvider);
         return (AqlEagerResultImpl<T>) getAqlQueryResult(aqlQuery);
     }
 
@@ -100,6 +104,7 @@ public class AqlServiceImpl implements AqlService {
         log.trace("Converting the parser result into AqlApi query");
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
         optimizer.optimize(aqlQuery);
+        validator.validate(aqlQuery,permissionProvider);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
         AqlEagerResult aqlQueryResult = getAqlQueryResult(aqlQuery);
         return aqlQueryResult;
@@ -112,6 +117,7 @@ public class AqlServiceImpl implements AqlService {
         log.trace("Converting the parser result into AqlApi query");
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
         optimizer.optimize(aqlQuery);
+        validator.validate(aqlQuery,permissionProvider);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
         return getAqlQueryStreamResult(aqlQuery);
     }

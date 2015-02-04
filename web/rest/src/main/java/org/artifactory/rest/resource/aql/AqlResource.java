@@ -3,6 +3,7 @@ package org.artifactory.rest.resource.aql;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.aql.AqlException;
@@ -34,7 +35,7 @@ import java.net.URLDecoder;
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @Path(AqlResource.PATH_ROOT)
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
+@RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class AqlResource {
     private static final Logger log = LoggerFactory.getLogger(AqlResource.class);
     public static final String PATH_ROOT = "search/aql";
@@ -42,10 +43,16 @@ public class AqlResource {
     private HttpServletRequest request;
     @Autowired
     AddonsManager addonsManager;
+    @Autowired
+    AuthorizationService authorizationService;
 
     @POST
     @Produces({MediaType.APPLICATION_JSON})
     public Response getLatestVersionByPath(String contentQuery) {
+        // Only none anonymous users can access AQL
+        if (authorizationService.isAnonymous()) {
+            throw new AuthorizationRestException("Only non-anonymous users are allowed to access AQL queries\n");
+        }
         //Try to load the query from URL params or attached file
         String query = getQuery(contentQuery);
         if (StringUtils.isBlank(query)) {

@@ -26,7 +26,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RemoteRepoType",
-        propOrder = {"username", "password", "socketTimeoutMillis", "localAddress", "proxy", "queryParams"},
+        propOrder = {"username", "password", "allowAnyHostAuth", "socketTimeoutMillis", "enableCookieManagement", "localAddress", "proxy", "queryParams"},
         namespace = Descriptor.NS)
 public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
@@ -34,8 +34,12 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     private String password;
 
+    private boolean allowAnyHostAuth;
+
     @XmlElement(defaultValue = "15000", required = false)
     private int socketTimeoutMillis = 15000;//Default socket timeout
+
+    private boolean enableCookieManagement;
 
     private String localAddress;
 
@@ -59,6 +63,15 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+
+    public boolean isAllowAnyHostAuth() {
+        return allowAnyHostAuth;
+    }
+
+    public void setAllowAnyHostAuth(boolean allowAnyHostAuth) {
+        this.allowAnyHostAuth = allowAnyHostAuth;
     }
 
     public int getSocketTimeoutMillis() {
@@ -91,5 +104,13 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     public void setQueryParams(String queryParams) {
         this.queryParams = queryParams;
+    }
+
+    public boolean isEnableCookieManagement() {
+        return enableCookieManagement;
+    }
+
+    public void setEnableCookieManagement(boolean enableCookieManagement) {
+        this.enableCookieManagement = enableCookieManagement;
     }
 }

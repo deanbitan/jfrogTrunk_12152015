@@ -30,6 +30,7 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
@@ -71,19 +72,22 @@ public class HttpClientConfigurator {
     private RequestConfig.Builder config = RequestConfig.custom();
     private String host;
     private BasicCredentialsProvider credsProvider;
+    boolean explicitCookieSupport;
 
     public HttpClientConfigurator() {
         builder.setUserAgent(HttpUtils.getArtifactoryUserAgent());
         credsProvider = new BasicCredentialsProvider();
-        if (!ConstantValues.enableCookieManagement.getBoolean()) {
-            builder.disableCookieManagement();
-        }
         if (!ConstantValues.httpAcceptEncodingGzip.getBoolean()) {
             builder.disableContentCompression();
         }
+        config.setMaxRedirects(20);
+        config.setCircularRedirectsAllowed(true);
     }
 
     public CloseableHttpClient getClient() {
+        if (!explicitCookieSupport && !ConstantValues.enableCookieManagement.getBoolean()) {
+            builder.disableCookieManagement();
+        }
         if (hasCredentials()) {
             builder.setDefaultCredentialsProvider(credsProvider);
         }
@@ -243,20 +247,42 @@ public class HttpClientConfigurator {
     }
 
     /**
-     * Ignores blank username input
+     * Configures preemptive authentication on this client. Ignores blank username input.
      */
     public HttpClientConfigurator authentication(String username, String password) {
+        return authentication(username, password, false);
+    }
+
+    /**
+     * Configures preemptive authentication on this client. Ignores blank username input.
+     */
+    public HttpClientConfigurator authentication(String username, String password, boolean allowAnyHost) {
         if (StringUtils.isNotBlank(username)) {
             if (StringUtils.isBlank(host)) {
                 throw new IllegalStateException("Cannot configure authentication when host is not set.");
             }
 
+            AuthScope authscope = allowAnyHost ?
+                    new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM) :
+                    new AuthScope(host, AuthScope.ANY_PORT, AuthScope.ANY_REALM);
             credsProvider.setCredentials(
-                    new AuthScope(host, AuthScope.ANY_PORT, AuthScope.ANY_REALM),
-                    new UsernamePasswordCredentials(username, password));
+                    authscope, new UsernamePasswordCredentials(username, password));
 
             builder.addInterceptorFirst(new PreemptiveAuthInterceptor());
         }
+        return this;
+    }
+
+    /**
+     * Enable cookie management for this client.
+     */
+    public HttpClientConfigurator enableCookieManagement(boolean enableCookieManagement) {
+        if (enableCookieManagement) {
+            config.setCookieSpec(CookieSpecs.BROWSER_COMPATIBILITY);
+        } else {
+            config.setCookieSpec(null);
+        }
+        explicitCookieSupport = enableCookieManagement;
         return this;
     }
 

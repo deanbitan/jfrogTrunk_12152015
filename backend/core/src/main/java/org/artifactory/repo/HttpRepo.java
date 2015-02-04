@@ -77,6 +77,7 @@ import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.HttpClientConfigurator;
+import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.iostreams.streams.in.BandwidthMonitorInputStream;
@@ -90,7 +91,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -210,6 +210,14 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
     public String getPassword() {
         return getDescriptor().getPassword();
+    }
+
+    public boolean isAllowAnyHostAuth() {
+        return getDescriptor().isAllowAnyHostAuth();
+    }
+
+    public boolean isEnableCookieManagement() {
+        return getDescriptor().isEnableCookieManagement();
     }
 
     public int getSocketTimeoutMillis() {
@@ -451,14 +459,9 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
             response = executeMethod(method, httpClientContext, headers);
             return handleGetInfoResponse(repoPath, method, response, httpClientContext, context);
         } catch (IOException e) {
-            RepoRequests.logToContext("Failed to execute %s request: %s", methodType, e.getMessage());
-            StringBuilder messageBuilder = new StringBuilder("Failed retrieving resource from ").append(fullUrl).
-                    append(": ");
-            if (e instanceof UnknownHostException) {
-                messageBuilder.append("Unknown host - ");
-            }
-            messageBuilder.append(e.getMessage());
-            throw new RuntimeException(messageBuilder.toString(), e);
+            String exceptionMessage = HttpClientUtils.getErrorMessage(e);
+            RepoRequests.logToContext("Failed to execute %s request: %s", methodType, exceptionMessage);
+            throw new RuntimeException("Failed retrieving resource from " + fullUrl + ": " + exceptionMessage, e);
         } finally {
             IOUtils.closeQuietly(response);
         }
@@ -609,7 +612,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 .retry(1, false)
                 .localAddress(getLocalAddress())
                 .proxy(getProxy())
-                .authentication(getUsername(), CryptoHelper.decryptIfNeeded(getPassword()))
+                .authentication(getUsername(), CryptoHelper.decryptIfNeeded(getPassword()), isAllowAnyHostAuth())
+                .enableCookieManagement(isEnableCookieManagement())
                 .getClient();
     }
 
@@ -913,11 +917,12 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
             Throwable throwable = getThrowable();
             if (throwable != null) {
+                String exceptionMessage = HttpClientUtils.getErrorMessage(throwable);
                 log.error("{}: Failed to download '{}'. Received status code {} and caught exception: {}",
                         HttpRepo.this, fullUrl, statusLine != null ? statusLine.getStatusCode() : "unknown",
-                        throwable.getMessage());
+                        exceptionMessage);
                 log.debug("Failed to download '" + fullUrl + "'", throwable);
-                RepoRequests.logToContext("Failed to download: %s", throwable.getMessage());
+                RepoRequests.logToContext("Failed to download: %s", exceptionMessage);
             } else {
                 int status = statusLine != null ? statusLine.getStatusCode() : 0;
                 logDownloaded(fullUrl, status, bmis);

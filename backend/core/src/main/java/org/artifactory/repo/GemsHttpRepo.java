@@ -46,7 +46,8 @@ public class GemsHttpRepo extends HttpRepo {
                 .retry(1, false)
                 .localAddress(getLocalAddress())
                 .proxy(getProxy())
-                .authentication(getUsername(), CryptoHelper.decryptIfNeeded(getPassword()))
+                .authentication(getUsername(), CryptoHelper.decryptIfNeeded(getPassword()), isAllowAnyHostAuth())
+                .enableCookieManagement(isEnableCookieManagement())
                 .connectionMgr(connectionMgr)
                 .keepAliveStrategy()
                 .getClient();

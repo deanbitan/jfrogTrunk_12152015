@@ -24,6 +24,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
+import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -50,7 +51,7 @@ public class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
             Credentials creds = credsProvider.getCredentials(
                     new AuthScope(targetHost.getHostName(), targetHost.getPort()));
             if (creds == null) {
-                throw new HttpException("No credentials for preemptive authentication");
+                throw new AuthenticationException("No credentials found for host " + targetHost);
             }
             authState.update(new BasicScheme(), creds);
         }

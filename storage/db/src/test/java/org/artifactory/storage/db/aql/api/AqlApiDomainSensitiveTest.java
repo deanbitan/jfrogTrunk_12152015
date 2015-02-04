@@ -22,10 +22,12 @@ import org.artifactory.aql.result.rows.AqlBuildProperty;
 import org.artifactory.aql.result.rows.AqlItem;
 import org.artifactory.aql.result.rows.AqlProperty;
 import org.artifactory.aql.result.rows.AqlStatistics;
+import org.artifactory.storage.db.aql.service.AqlAbstractServiceTest.AdminPermissions;
 import org.artifactory.storage.db.aql.service.AqlServiceImpl;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -50,6 +52,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
     @BeforeClass
     public void setup() {
         importSql("/sql/aql_test.sql");
+        ReflectionTestUtils.setField(aqlService, "permissionProvider", new AdminPermissions());
     }
 
     /*Artifacts search*/
@@ -273,7 +276,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         );
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlJsonResult aqlJsonResult = new AqlJsonResult(aqlLazyResult);
+        AqlJsonResult aqlJsonResult = new AqlJsonResult(aqlLazyResult,new AdminPermissions());
 
         String string = new String(aqlJsonResult.read());
         Assert.assertTrue(string.contains("\"size\" : 43434"));
@@ -297,7 +300,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         );
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult,new AdminPermissions());
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -330,7 +333,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         ).limit(2);
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult,new AdminPermissions());
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();

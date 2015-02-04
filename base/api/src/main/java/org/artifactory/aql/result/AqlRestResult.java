@@ -1,6 +1,10 @@
 package org.artifactory.aql.result;
 
+import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
+import org.artifactory.aql.model.AqlPermissionProvider;
+import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.RepoPathFactory;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -10,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
 import java.util.List;
 
 /**
@@ -17,6 +22,46 @@ import java.util.List;
  */
 public abstract class AqlRestResult implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(AqlRestResult.class);
+    private AqlPermissionProvider permissionProvider;
+
+    public AqlRestResult(AqlPermissionProvider permissionProvider) {
+        this.permissionProvider = permissionProvider;
+    }
+
+    protected boolean canRead(AqlDomainEnum domain, final ResultSet resultSet) {
+        if (permissionProvider.isAdmin()) {
+            return true;
+        } else {
+            if (AqlDomainEnum.items == domain) {
+                try {
+                    String itemRepo = resultSet.getString("repo");
+                    String itemPath = resultSet.getString("node_path");
+                    String itemName = resultSet.getString("node_name");
+                    RepoPath repoPath = RepoPathFactory.fromAql(itemRepo, itemPath, itemName);
+                    return permissionProvider.canRead(repoPath);
+                } catch (Exception e) {
+                    log.error("AQL minimal field expectation error: repo, path and name");
+                }
+            }
+            return false;
+        }
+    }
+
+    protected boolean canRead(AqlDomainEnum domain, final String repo, final String path, final String name) {
+        if (permissionProvider.isAdmin()) {
+            return true;
+        } else {
+            if (AqlDomainEnum.items == domain) {
+                try {
+                    RepoPath repoPath = RepoPathFactory.fromAql(repo, path, name);
+                    return permissionProvider.canRead(repoPath);
+                } catch (Exception e) {
+                    log.error("AQL minimal field expectation error: repo, path and name");
+                }
+            }
+            return false;
+        }
+    }
 
     public abstract byte[] read() throws IOException;
 
@@ -172,6 +217,7 @@ public abstract class AqlRestResult implements Closeable {
             this.total = total;
             this.limited = Integer.MAX_VALUE == limited ? null : limited;
         }
+
         @JsonProperty("start_pos")
         protected Long start;
         @JsonProperty("end_pos")

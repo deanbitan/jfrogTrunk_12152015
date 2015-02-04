@@ -367,16 +367,11 @@ public class ParserToAqlAdapter extends AqlAdapter {
         Pair<ParserElement, String> currentElement = context.getElement();
         // Get all the sort elements from the following parser elements
         while (!(currentElement.getFirst() instanceof CloseParenthesisElement)) {
-            // Get the field sub domains
-            List<AqlDomainEnum> subDomain = resolveSubDomains(context);
+            // Resolve the sub domains just to increment the pointer to the field position
+            resolveSubDomains(context);
             AqlFieldEnum field = resolveField(context);
             // Remove element from parser result elements
             context.decrementIndex(1);
-            DomainSensitiveField domainSensitiveField = new DomainSensitiveField(field, subDomain);
-            if (!context.getResultFields().contains(domainSensitiveField)) {
-                throw new AqlToSqlQueryBuilderException(
-                        "Only the result fields are allowed to use in the sort section.");
-            }
             sortDetails.addField(field);
             // Get the current element;
             currentElement = context.getElement();

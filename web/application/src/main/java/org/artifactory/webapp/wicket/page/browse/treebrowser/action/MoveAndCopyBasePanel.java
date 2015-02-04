@@ -145,8 +145,12 @@ public abstract class MoveAndCopyBasePanel extends Panel {
             protected void onUpdate(AjaxRequestTarget target) {
                 targetPathPanel.setVisible(enableCustomTargetPathCheckBox.getModelObject());
                 List newChoices = targetRepos.getChoices();
-                if(enableCustomTargetPathCheckBox.getModelObject()) {
-                    newChoices.add(repoService.localRepoDescriptorByKey(sourceRepoPath.getRepoKey()));
+
+                //Add source repo to custom path list but only if its not a cache repo
+                LocalRepoDescriptor sourceRepoDescriptor = repoService.localRepoDescriptorByKey(
+                        sourceRepoPath.getRepoKey());
+                if (enableCustomTargetPathCheckBox.getModelObject() && sourceRepoDescriptor != null) {
+                    newChoices.add(sourceRepoDescriptor);
                 }
                 else {
                     newChoices.remove(repoService.localRepoDescriptorByKey(sourceRepoPath.getRepoKey()));

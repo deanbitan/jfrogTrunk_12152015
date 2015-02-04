@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,5 +84,13 @@ public class RepoPathFactory {
             path = PathUtils.formatRelativePath(rpp.substring(idx + 1));
         }
         return create(repoKey, path);
+    }
+
+    public static RepoPath fromAql(String repo, String path, String name) {
+        if (StringUtils.equals(path, ".")) {
+            return create(repo, name);
+        } else {
+            return create(repo, path + "/" + name);
+        }
     }
 }

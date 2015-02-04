@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.8"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.8"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.9"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.9"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -512,6 +512,14 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="allowAnyHostAuth" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Allow credentials of this repository to be used on requests redirected to any other
+                                host.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                     <xs:element name="socketTimeoutMillis" type="xs:int" default="15000"
                                 minOccurs="0">
                         <xs:annotation>
@@ -520,6 +528,13 @@
                                 establishment and for unanswered requests.
                                 Timing out on a network operation is considered as a retrieval
                                 failure.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="enableCookieManagement" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Enable cookie management if the remote repo uses cookies to manage client state.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>

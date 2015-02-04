@@ -1,7 +1,6 @@
 package org.artifactory.storage.db.aql.sql.builder.query.aql;
 
 import com.google.common.collect.Lists;
-import org.artifactory.aql.AqlException;
 import org.artifactory.aql.AqlFieldResolver;
 import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.model.AqlDomainEnum;
@@ -82,11 +81,10 @@ public abstract class AqlAdapter {
      * @param comparatorEnum
      * @param tableReference
      * @return
-     * @throws AqlException
      */
     public static Criteria createPropertyCriteria(List<AqlDomainEnum> subDomains, String name1, String name2,
             AqlComparatorEnum comparatorEnum,
-            AdapterContext tableReference) throws AqlException {
+            AdapterContext tableReference) {
         AqlVariable variable1 = AqlFieldResolver.resolve(name1, AqlVariableTypeEnum.string);
         AqlVariable variable2 = AqlFieldResolver.resolve(name2, AqlVariableTypeEnum.string);
         Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(tableReference);
@@ -104,10 +102,9 @@ public abstract class AqlAdapter {
      * @param comparatorEnum
      * @param context
      * @return
-     * @throws AqlException
      */
     public static Criteria createSimpleCriteria(List<AqlDomainEnum> subDomains, AqlFieldEnum aqlField, String name2,
-            AqlComparatorEnum comparatorEnum, AdapterContext context) throws AqlException {
+            AqlComparatorEnum comparatorEnum, AdapterContext context) {
         Pair<AqlVariable, AqlVariable> variables = new Pair(new AqlField(aqlField), new AqlValue(aqlField.type, name2));
         Pair<SqlTable, SqlTable> tables = resolveTableForSimpleCriteria(variables, context);
         return new SimpleCriteria(subDomains, variables.getFirst(), tables.getFirst(), comparatorEnum.signature,

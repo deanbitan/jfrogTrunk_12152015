@@ -2,6 +2,7 @@ package org.artifactory.storage.db.aql.service;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.aql.model.AqlItemTypeEnum;
+import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlArchiveItem;
 import org.artifactory.aql.result.rows.AqlBaseItem;
@@ -10,8 +11,10 @@ import org.artifactory.aql.result.rows.AqlBuildArtifact;
 import org.artifactory.aql.result.rows.AqlBuildDependency;
 import org.artifactory.aql.result.rows.AqlProperty;
 import org.artifactory.aql.result.rows.AqlStatisticItem;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 
@@ -25,6 +28,7 @@ public class AqlAbstractServiceTest extends DbBaseTest {
     @BeforeClass
     public void setup() {
         importSql("/sql/aql_test.sql");
+        ReflectionTestUtils.setField(aqlService, "permissionProvider", new AdminPermissions());
     }
 
     protected void assertItem(AqlEagerResult queryResult, String repo, String path, String name, AqlItemTypeEnum type) {
@@ -115,5 +119,18 @@ public class AqlAbstractServiceTest extends DbBaseTest {
 
     protected void assertSize(AqlEagerResult queryResult, int i) {
         Assert.assertEquals(queryResult.getSize(), i);
+    }
+
+    public static class AdminPermissions implements AqlPermissionProvider {
+
+        @Override
+        public boolean canRead(RepoPath repoPath) {
+            return true;
+        }
+
+        @Override
+        public boolean isAdmin() {
+            return true;
+        }
     }
 }

@@ -48,6 +48,7 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.util.HttpClientConfigurator;
+import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
@@ -58,9 +59,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
@@ -240,17 +238,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
                     } else {
                         info("Successfully connected to server");
                     }
-                } catch (UnknownHostException e) {
-                    error("Unknown host: " + e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
-                } catch (ConnectException e) {
-                    error(e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
-                } catch (IOException e) {
-                    error("Connection failed with exception: " + e.getMessage());
-                    log.debug("Test connection to '" + url + "' failed with exception", e);
                 } catch (Exception e) {
-                    error("Connection failed with general exception: " + e.getMessage());
+                    error("Connection failed with exception: " + HttpClientUtils.getErrorMessage(e));
                     log.debug("Test connection to '" + url + "' failed with exception", e);
                 } finally {
                     IOUtils.closeQuietly(response);
@@ -281,15 +270,15 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
     protected CloseableHttpClient getRemoteRepoTestHttpClient(HttpRepoDescriptor repo, String url) {
         return new HttpClientConfigurator()
                 .hostFromUrl(url)
-                        //.defaultMaxConnectionsPerHost(5)
-                        //.maxTotalConnections(5)
                 .connectionTimeout(repo.getSocketTimeoutMillis())
                 .soTimeout(repo.getSocketTimeoutMillis())
                 .staleCheckingEnabled(true)
                 .retry(1, false)
                 .localAddress(repo.getLocalAddress())
                 .proxy(repo.getProxy())
-                .authentication(repo.getUsername(), CryptoHelper.decryptIfNeeded(repo.getPassword()))
+                .authentication(repo.getUsername(), CryptoHelper.decryptIfNeeded(repo.getPassword()),
+                        repo.isAllowAnyHostAuth())
+                .enableCookieManagement(repo.isEnableCookieManagement())
                 .getClient();
     }
 
