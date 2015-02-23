@@ -32,7 +32,7 @@ public abstract class DebianCalculationEvent implements Comparable<DebianCalcula
         this.distribution = distribution;
         this.repoKey = repoKey;
         this.repoType = repoType;
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = System.nanoTime();
     }
 
     public void setPassphrase(String password) {
@@ -51,8 +51,6 @@ public abstract class DebianCalculationEvent implements Comparable<DebianCalcula
         return repoKey;
     }
 
-    public abstract DebianCalculationEvent duplicateForRepo(String key, RepoType type);
-
     @Override
     public String toString() {
         return (repoKey != null ? "repoKey=" + repoKey + " " : "") +
@@ -64,10 +62,6 @@ public abstract class DebianCalculationEvent implements Comparable<DebianCalcula
     }
 
     public enum RepoType {
-        local, remote, virtual;
-    }
-
-    int repositoryType(DebianCalculationEvent event) {
-        return event.repoType.ordinal();
+        local, remote, virtual
     }
 }

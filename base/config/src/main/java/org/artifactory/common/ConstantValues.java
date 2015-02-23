@@ -103,6 +103,7 @@ public enum ConstantValues {
     s3backupAccountSecretKey("backup.s3.accountSecretKey"),
     httpAcceptEncodingGzip("http.acceptEncoding.gzip", true),
     httpUseExpectContinue("http.useExpectContinue", false),
+    httpForceForbiddenResponse("http.forceForbiddenResponse", FALSE),
     enableCookieManagement("http.enableCookieManagement", false),
     filteringResourceSizeKb("filtering.resourceSizeKb", 64),
     searchForExistingResourceOnRemoteRequest("repo.remote.checkForExistingResourceOnRequest", TRUE),
@@ -168,7 +169,7 @@ public enum ConstantValues {
     debianIndexCycleSecs("debian.index.cycleSecs", 2),
     debianDefaultArchitectures("debian.default.architectures", "i386,amd64"),
     pypiIndexQuietPeriodSecs("pypi.index.quietPeriodSecs", 60),
-    pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60);
+    pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60), ;
     public static final String SYS_PROP_PREFIX = "artifactory.";
 
     private final String propertyName;

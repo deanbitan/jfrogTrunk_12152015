@@ -81,6 +81,13 @@ public interface AddonsManager {
      */
     String getLicenseKeyHash();
 
+    /**
+     * check if license key hash is HA based on last Digit
+     * @param licenseKeyHash - license key hash
+     * @return if true key hash is HA license
+     */
+    boolean isLicenseKeyHashHAType(String licenseKeyHash);
+
     boolean lockdown();
 
     boolean isInstantiationAuthorized(Class componentClass);
@@ -91,6 +98,14 @@ public interface AddonsManager {
      * @param response Response to intercept
      */
     void interceptResponse(ArtifactoryResponse response) throws IOException;
+
+    /**
+     * Sends a "forbidden" response to the rest request if no valid license is installed
+     *
+     * @param response Response to intercept
+     * @param path
+     */
+    void interceptRestResponse(ArtifactoryResponse response, String path) throws IOException;
 
     String[] getLicenseDetails();
 

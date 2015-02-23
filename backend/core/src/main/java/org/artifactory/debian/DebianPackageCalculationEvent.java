@@ -38,19 +38,30 @@ public class DebianPackageCalculationEvent extends DebianCalculationEvent {
 
     @Override
     public int compareTo(DebianCalculationEvent o) {
-        if (!(o instanceof DebianPackageCalculationEvent)) {
-            return 1;
-        }
-        if (repositoryType(this) != repositoryType(o)) {
-            // local first
-            return repositoryType(o) - repositoryType(this);
-        }
-
         DebianPackageCalculationEvent oPackage = (DebianPackageCalculationEvent) o;
-
-        String thisAll = repoKey + distribution + component + architecture;
-        String otherAll = oPackage.repoKey + oPackage.distribution + oPackage.component + oPackage.architecture;
-        return thisAll.compareTo(otherAll);
+        int i = repoKey.compareTo(oPackage.repoKey);
+        if (i != 0) {
+            return i;
+        }
+        if (distribution != null) {
+            i = distribution.compareTo(oPackage.distribution);
+            if (i != 0) {
+                return i;
+            }
+        }
+        if (component != null) {
+            i = component.compareTo(oPackage.component);
+            if (i != 0) {
+                return i;
+            }
+        }
+        if (architecture != null) {
+            i = architecture.compareTo(oPackage.architecture);
+            if (i != 0) {
+                return i;
+            }
+        }
+        return i;
     }
 
     @Override
@@ -93,11 +104,6 @@ public class DebianPackageCalculationEvent extends DebianCalculationEvent {
         result = 31 * result + (repoKey != null ? repoKey.hashCode() : 0);
         result = 31 * result + (distribution != null ? distribution.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public DebianCalculationEvent duplicateForRepo(String key, RepoType type) {
-        return new DebianPackageCalculationEvent(distribution, component, packageType, architecture, key, type);
     }
 
     public String getComponent() {

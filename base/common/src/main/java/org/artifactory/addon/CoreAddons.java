@@ -74,4 +74,6 @@ public interface CoreAddons extends Addon {
     List<String> getUsersForBackupNotifications();
 
     void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash, List<String> addons);
+
+    void validateMultiPushReplicationSupportedForTargetLicense(String targetLicenseKey,boolean isMultiPushConfigureForThisRepo,String targetUrl);
 }

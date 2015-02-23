@@ -298,7 +298,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                     "un-expiring if still exists");
             res = getRepositoryService().unexpireIfExists(localCacheRepo, path);
         }
-        markExpirableResource(res);
+        checkAndMarkExpirableResource(res);
         return res;
     }
 

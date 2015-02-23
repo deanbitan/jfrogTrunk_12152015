@@ -392,6 +392,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         return false;
     }
 
+    @Override
+    public void validateTargetLicense(ReplicationBaseDescriptor descriptor, RealRepoDescriptor repoDescriptor,
+            int numOfReplicationConfigured) {
+     }
+
     private BasicStatusHolder getReplicationRequiredStatusHolder() {
         BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
         multiStatusHolder.error("Error: the replication addon is required for this operation.",

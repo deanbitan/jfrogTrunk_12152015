@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -45,10 +46,9 @@ import static org.artifactory.addon.license.VerificationResult.valid;
 public class OssAddonsManager implements AddonsManager, AddonsWebManager {
 
     public static final String OSS_LICENSE_KEY_HASH = "Artifactory OSS";
-
+    protected ArtifactoryContext context;
     @Autowired
     private ArtifactoryServersCommonService serversService;
-    protected ArtifactoryContext context;
 
     @Autowired
     private void setApplicationContext(ApplicationContext context) throws BeansException {
@@ -136,6 +136,11 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
+    public boolean isLicenseKeyHashHAType(String licenseKeyHash) {
+        return false;
+    }
+
+    @Override
     public boolean lockdown() {
         return false;
     }
@@ -184,5 +189,9 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
 
     @Override
     public void interceptResponse(ArtifactoryResponse response) {
+    }
+
+    @Override
+    public void interceptRestResponse(ArtifactoryResponse response, String path) throws IOException {
     }
 }

@@ -433,6 +433,9 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         result.stopScanTimestamp = System.currentTimeMillis();
         result.candidatesForDeletion = binsToDelete.size();
+        if (result.candidatesForDeletion > 0) {
+            log.info("Found {} candidates for deletion", result.candidatesForDeletion);
+        }
         for (BinaryData bd : binsToDelete) {
             log.trace("Candidate for deletion: {}", bd);
             dbService.invokeInTransaction(new BinaryCleaner(bd, result));

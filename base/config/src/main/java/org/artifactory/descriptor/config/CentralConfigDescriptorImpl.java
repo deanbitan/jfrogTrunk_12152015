@@ -812,6 +812,12 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public boolean isMultiPushConfigureForThisRepo(String repoKey){
+        return getNumOfActiveLocalReplication(repoKey, localReplications) > 1;
+    }
+
+
+    @Override
     public LocalReplicationDescriptor getLocalReplication(String replicatedRepoKey, String replicateRepoUrl) {
         return getSpecificLocalReplication(replicatedRepoKey, replicateRepoUrl, localReplications);
     }

@@ -75,6 +75,10 @@ public class ArtifactoryRestServlet extends ServletContainer implements DelayedI
             String filters = (String) rc.getProperties().get(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS);
             rc.getProperties().put(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS,
                     filters + ",org.artifactory.rest.filter.OfflineRestFilter");
+            //Register the lICENSERestFilter
+            filters = (String) rc.getProperties().get(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS);
+            rc.getProperties().put(ResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS,
+                    filters + ",org.artifactory.rest.filter.LicenseRestFilter");
             //Register spring as component provider
             ArtifactoryContext artifactoryContext = (ArtifactoryContext) getServletContext().getAttribute(
                     ArtifactoryContext.APPLICATION_CONTEXT_KEY);

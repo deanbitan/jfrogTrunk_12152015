@@ -125,7 +125,8 @@ public class BinariesDao extends BaseDao {
         try {
             resultSet = jdbcHelper.executeSelect("SELECT b.sha1, b.md5, b.bin_length FROM binaries b" +
                     " WHERE b.sha1 NOT LIKE '" + TEMP_SHA1_PREFIX + "%'" +
-                    " AND NOT EXISTS (SELECT n.node_id FROM nodes n WHERE n.sha1_actual = b.sha1)");
+                    " AND NOT EXISTS (SELECT n.node_id FROM nodes n WHERE n.sha1_actual = b.sha1)" +
+                    " ORDER BY b.bin_length DESC");
             while (resultSet.next()) {
                 results.add(binaryFromResultSet(resultSet));
             }

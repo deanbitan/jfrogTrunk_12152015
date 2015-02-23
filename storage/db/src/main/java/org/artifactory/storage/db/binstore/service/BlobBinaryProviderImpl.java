@@ -72,7 +72,7 @@ public class BlobBinaryProviderImpl extends BinaryProviderBase {
                 lengthFound = jdbcHelper.executeSelectLong(
                         "SELECT LENGTH(data) FROM binary_blobs where sha1 = ?", sha1);
             } else {    // mssql use len() function
-                lengthFound = jdbcHelper.executeSelectLong("SELECT LEN(data) FROM binary_blobs where sha1 = ?", sha1);
+                lengthFound = jdbcHelper.executeSelectLong("SELECT DATALENGTH(data) FROM binary_blobs where sha1 = ?", sha1);
             }
             if (lengthFound != DbService.NO_DB_ID) {
                 log.trace("Found sha1 {} with length {}", sha1, length);

@@ -103,7 +103,7 @@ public class DbLocalRepo<T extends LocalRepoDescriptor> extends RealRepoBase<T> 
             return new UnfoundRepoResource(repoPath, statusHolder.getStatusMsg(), statusHolder.getStatusCode());
         }
         RepoResource res = mixin.getInfo(context);
-        markExpirableResource(res);
+        checkAndMarkExpirableResource(res);
         return res;
     }
 

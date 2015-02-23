@@ -33,19 +33,6 @@ public class DebianReleaseCalculationEvent extends DebianCalculationEvent {
         architectures = new String[]{};
     }
 
-    private DebianReleaseCalculationEvent(String distribution, String[] components, String[] architectures,
-            String repoKey, RepoType repoType) {
-        super(distribution, repoKey, repoType);
-        this.components = components;
-        this.architectures = architectures;
-    }
-
-    @Override
-    public DebianCalculationEvent duplicateForRepo(String key, RepoType type) {
-        return new DebianReleaseCalculationEvent(distribution, components, architectures, key, type);
-    }
-
-
     public String[] getArchitectures() {
         return architectures;
     }
@@ -64,20 +51,19 @@ public class DebianReleaseCalculationEvent extends DebianCalculationEvent {
 
     @Override
     public int compareTo(DebianCalculationEvent o) {
-        if (!(o instanceof DebianReleaseCalculationEvent)) {
-            return -1;
-        }
-        if (repositoryType(this) != repositoryType(o)) {
-            // local first
-            return repositoryType(o) - repositoryType(this);
+        DebianReleaseCalculationEvent oPackage = (DebianReleaseCalculationEvent) o;
+        int i = repoKey.compareTo(oPackage.repoKey);
+        if (i != 0) {
+            return i;
         }
 
-        DebianReleaseCalculationEvent oPackage = (DebianReleaseCalculationEvent) o;
-        String thisAll = repoKey + (distribution == null ? "" :
-                distribution) + Arrays.toString(components) + Arrays.toString(architectures);
-        String otherAll = oPackage.repoKey + (oPackage.distribution == null ? "" :
-                oPackage.distribution) + Arrays.toString(oPackage.components) + Arrays.toString(oPackage.architectures);
-        return thisAll.compareTo(otherAll);
+        if (distribution != null) {
+            i = distribution.compareTo(oPackage.distribution);
+            if (i != 0) {
+                return i;
+            }
+        }
+        return i;
     }
 
     @Override
@@ -114,19 +100,6 @@ public class DebianReleaseCalculationEvent extends DebianCalculationEvent {
         result = 31 * result + (repoKey != null ? repoKey.hashCode() : 0);
         result = 31 * result + (distribution != null ? distribution.hashCode() : 0);
         return result;
-    }
-
-    private enum ReleaseDeptLevel {
-        packageDept(2), distributionDept(1);
-        private int dept;
-
-        ReleaseDeptLevel(int level) {
-            this.dept = level;
-        }
-
-        public int getDepth() {
-            return dept;
-        }
     }
 }
 

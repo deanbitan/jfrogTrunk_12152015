@@ -111,6 +111,8 @@ public interface CentralConfigDescriptor extends Descriptor {
 
     GcConfigDescriptor getGcConfig();
 
+    boolean isMultiPushConfigureForThisRepo(String repoKey);
+
     /**
      * Normalizes the Artifactory's server URL set in the mail server config; falls back to the server URL set in the
      * general config if none is defined under the mail settings. For use within the contents of e-mails

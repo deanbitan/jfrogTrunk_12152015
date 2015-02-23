@@ -141,10 +141,9 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
     }
 
     /**
-     * check if path pattern is valid according to include / exclude policy
-     * @param Repository path Object to validate
-     * @param file / folder path
-     * @return
+     * @param repoPath repo path to validate
+     * @param path       folder path
+     * @return True if the path pattern is valid according to include / exclude policy
      */
     public boolean isPathPatternValid(RepoPath repoPath, String path) {
         return StringUtils.isBlank(path) || PathMatcher.matches(path, includes, excludes, repoPath.isFolder());
@@ -197,28 +196,27 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
      *
      * @param res resource to be checked
      */
-    protected void markExpirableResource(RepoResource res) {
+    protected void checkAndMarkExpirableResource(RepoResource res) {
         boolean markAsExpired = false;
+        if (res.isFound() && !res.isExpirable()) {
+            //Maven metadata
+            if (MavenNaming.isMavenMetadata(res.getRepoPath().getPath())) {
+                markAsExpired = true;
+            }
+            //Maven unique snapshot are expirable
+            if (MavenNaming.isNonUniqueSnapshot(res.getRepoPath().getPath())) {
+                markAsExpired = true;
+            }
+            //Filtered Resource
+            FilteredResourcesAddon filteredResourcesAddon = ContextHelper.get().beanForType(AddonsManager.class)
+                    .addonByType(FilteredResourcesAddon.class);
+            if (filteredResourcesAddon.isFilteredResourceFile(res.getRepoPath())) {
+                markAsExpired = true;
+            }
 
-        //Maven metadata
-        if (res.isFound() && MavenNaming.isMavenMetadata(res.getRepoPath().getPath())) {
-            markAsExpired = true;
-        }
-
-        //Layout based snapshot detection
-        if (res.isFound() && repositoryService.getItemModuleInfo(res.getRepoPath()).isIntegration()) {
-            markAsExpired = true;
-        }
-
-        //Filtered Resource
-        FilteredResourcesAddon filteredResourcesAddon = ContextHelper.get().beanForType(AddonsManager.class)
-                .addonByType(FilteredResourcesAddon.class);
-        if (res.isFound() && filteredResourcesAddon.isFilteredResourceFile(res.getRepoPath())) {
-            markAsExpired = true;
-        }
-
-        if (markAsExpired) {
-            res.expirable();
+            if (markAsExpired) {
+                res.expirable();
+            }
         }
     }
 }

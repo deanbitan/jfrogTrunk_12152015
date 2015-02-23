@@ -110,9 +110,25 @@ public class BinariesDaoTest extends DbBaseTest {
                 return input == null ? "" : input.getSha1();
             }
         }));
-        assertTrue(nodes.contains("74239116da1def240fe1d366eb535513efc1c40b"));
         assertTrue(nodes.contains("356a192b7913b04c54574d18c28d46e6395428ab"));
+        assertTrue(nodes.contains("74239116da1def240fe1d366eb535513efc1c40b"));
         assertTrue(nodes.contains("da39a3ee5e6b4b0d3255bfef95601890afd80709"));
+    }
+
+    public void AssertPotentialDeletionOrder() throws SQLException {
+        Collection<BinaryData> potentialDeletion = binariesDao.findPotentialDeletion();
+        assertEquals(potentialDeletion.size(), 3);
+        List<String> nodes = Lists.newArrayList(
+                Iterables.transform(potentialDeletion, new Function<BinaryData, String>() {
+                    @Override
+                    public String apply(@Nullable BinaryData input) {
+                        return input == null ? "" : input.getSha1();
+                    }
+                }));
+        // verify candidates are ordered by size
+        assertEquals(nodes.get(0), "74239116da1def240fe1d366eb535513efc1c40b");
+        assertEquals(nodes.get(1), "356a192b7913b04c54574d18c28d46e6395428ab");
+        assertEquals(nodes.get(2), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
     }
 
     @Test(dependsOnMethods = "createBinary")

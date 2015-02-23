@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.servlet;
 
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationEntryPoint;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -26,6 +28,7 @@ import org.testng.annotations.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -38,7 +41,10 @@ import static org.easymock.EasyMock.*;
 public class AccessFilterTest {
 
     public void testAuthenticationChallenge() throws IOException, ServletException {
-        ArtifactoryBasicAuthenticationEntryPoint authenticationEntryPoint = new ArtifactoryBasicAuthenticationEntryPoint();
+        ArtifactoryHome.bind(new ArtifactoryHome(new File("./test")));
+        ArtifactoryHome.get().getArtifactoryProperties().setProperty(ConstantValues.locksTimeoutSecs.getPropertyName(),
+                "10");
+         ArtifactoryBasicAuthenticationEntryPoint authenticationEntryPoint = new ArtifactoryBasicAuthenticationEntryPoint();
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
         HttpServletResponse response = createMock(HttpServletResponse.class);

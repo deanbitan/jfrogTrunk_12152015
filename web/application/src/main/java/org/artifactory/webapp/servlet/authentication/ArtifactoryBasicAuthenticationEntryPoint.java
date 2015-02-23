@@ -18,7 +18,9 @@
 
 package org.artifactory.webapp.servlet.authentication;
 
+import org.artifactory.common.ConstantValues;
 import org.artifactory.util.HttpUtils;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
@@ -46,13 +48,53 @@ public class ArtifactoryBasicAuthenticationEntryPoint extends BasicAuthenticatio
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
+        sendErrorResponseToClient(request, response, authException);
+    }
 
+    /**
+     * if ivy request send error response with 403 error code else send 401
+     * @param request http request
+     * @param response http response
+     * @param authException - authentication exception
+     * @throws IOException
+     */
+    private void sendErrorResponseToClient(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException authException) throws IOException {
+        if (isIvyRequest(request,authException)){
+            sendErrorResponse(response, authException,HttpServletResponse.SC_FORBIDDEN);
+        }
+        else {
+            sendErrorResponse(response, authException,HttpServletResponse.SC_UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * send error response to client
+     * @param response - http response
+     * @param authException authentication exception
+     * @param responseStatusCode - http response status code
+     * @throws IOException
+     */
+    private void sendErrorResponse(HttpServletResponse response, AuthenticationException authException,int responseStatusCode)
+            throws IOException {
         response.addHeader("WWW-Authenticate", "Basic realm=\"" + getRealmName() + "\"");
-        HttpUtils.sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
+        HttpUtils.sendErrorResponse(response,responseStatusCode, authException.getMessage());
     }
 
     @Override
     public String getRealmName() {
         return REALM;
     }
+
+    /**
+     * @param request http request
+     * @param authException auth exception
+     * @return true if httpForceForbiddenResponse system properties is configure and ivy request
+     */
+    private boolean isIvyRequest(HttpServletRequest request,AuthenticationException authException){
+        return ConstantValues.httpForceForbiddenResponse.getBoolean() && authException instanceof BadCredentialsException &&
+                request.getHeader("User-Agent").toLowerCase().indexOf("Ivy".toLowerCase()) != -1;
+    }
+
+
 }

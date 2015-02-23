@@ -928,6 +928,16 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
     }
 
+    @Override
+    public void validateMultiPushReplicationSupportedForTargetLicense(String targetLicenseKey,
+            boolean isMultiPushConfigure,String targetUrl) {
+        AddonsManager addonsManager = getAddonsManager();
+        if (!addonsManager.isLicenseKeyHashHAType(targetLicenseKey) && isMultiPushConfigure){
+            log.info("Multi Push Replication is not supported for target :"+targetUrl);
+            throw new IllegalArgumentException("Multi Push Replication is supported for targets with an enterprise license only");
+        }
+    }
+
     private boolean isTrial(AddonsManager addonsManager) {
         return addonsManager.isLicenseInstalled() && "Trial".equalsIgnoreCase(addonsManager.getLicenseDetails()[2]);
     }

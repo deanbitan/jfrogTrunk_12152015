@@ -41,10 +41,6 @@ public interface ReplicationAddon extends Addon {
     String PROP_REPLICATION_RESULT_SUFFIX = ".result";
     String TASK_MANUAL_DESCRIPTOR = "task_manual_settings";
 
-    public enum Overwrite {
-        never, force
-    }
-
     BasicStatusHolder performRemoteReplication(RemoteReplicationSettings settings) throws IOException;
 
     BasicStatusHolder performLocalReplication(LocalReplicationSettings settings) throws IOException;
@@ -69,5 +65,12 @@ public interface ReplicationAddon extends Addon {
             throws IOException;
 
     boolean isRepoExistInCache(RepoPath repoPath);
+
+    void validateTargetLicense(ReplicationBaseDescriptor descriptor,RealRepoDescriptor repoDescriptor,int numOfReplicationConfigured)
+            throws IOException;
+
+    public enum Overwrite {
+        never, force
+    }
 
 }
