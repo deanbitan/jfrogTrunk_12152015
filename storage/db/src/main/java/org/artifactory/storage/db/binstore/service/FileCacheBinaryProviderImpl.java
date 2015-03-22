@@ -27,7 +27,6 @@ import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

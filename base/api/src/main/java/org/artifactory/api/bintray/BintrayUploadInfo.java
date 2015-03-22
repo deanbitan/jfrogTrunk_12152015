@@ -5,6 +5,7 @@ import com.jfrog.bintray.client.api.details.VersionDetails;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.jfrog.build.api.release.BintrayUploadInfoOverride;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -25,14 +26,16 @@ public class BintrayUploadInfo implements Serializable {
     PackageDetails packageDetails;
     @JsonProperty("version")
     VersionDetails versionDetails;
+    @JsonProperty(value = "applyToRepoFiles")
+    private List<String> artifactRelativePaths;                 //Relative paths in same repo
     @JsonProperty(value = "applyToFiles")
-    private List<String> artifactPaths;
+    private List<String> artifactPaths;                         //Fully qualified paths, from any repo
     @JsonProperty(value = "applyToProps")
-    private Set<Map<String, Collection<String>>> filterProps;
+    private Set<Map<String, Collection<String>>> filterProps;   //Properties to filter artifacts by
     @JsonProperty(value = "publish")
     private Boolean publish;
 
-    public BintrayUploadInfo(){
+    public BintrayUploadInfo() {
 
     }
 
@@ -43,6 +46,7 @@ public class BintrayUploadInfo implements Serializable {
         this.packageDetails.setRepo(override.repoName);
         this.packageDetails.setLicenses(override.licenses);
         this.versionDetails = new VersionDetails(override.versionName);
+        this.packageDetails.setVcsUrl(override.vcsUrl);
     }
 
     public PackageDetails getPackageDetails() {
@@ -59,6 +63,14 @@ public class BintrayUploadInfo implements Serializable {
 
     public void setVersionDetails(VersionDetails versionDetails) {
         this.versionDetails = versionDetails;
+    }
+
+    public List<String> getArtifactRelativePaths() {
+        return artifactRelativePaths;
+    }
+
+    public void setArtifactRelativePaths(List<String> artifactRelativePaths) {
+        this.artifactRelativePaths = artifactRelativePaths;
     }
 
     public List<String> getArtifactPaths() {

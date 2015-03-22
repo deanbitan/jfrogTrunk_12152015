@@ -32,7 +32,6 @@ import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
 import org.artifactory.aql.AqlException;
-import org.artifactory.aql.result.AqlRestResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -179,7 +178,7 @@ public interface RestAddon extends Addon {
      * @param servletContextUrl The contextUrl of the server.
      * @return The search results.
      */
-    LicensesSearchResult findLicensesInRepos(LicenseStatus status, StringList repos, String servletContextUrl);
+    LicensesSearchResult findLicensesInRepos(LicenseStatus status, Set<String> repos, String servletContextUrl);
 
     /**
      * Delete a repository via REST.
@@ -203,7 +202,7 @@ public interface RestAddon extends Addon {
      *
      * @param repoKey
      * @param repositoryConfig Map of attributes.
-     * @param mediaTypes       The mediatypes of which are applicable. {@link org.artifactory.api.rest.constant.RepositoriesRestConstants}
+     * @param mediaType        The mediatypes of which are applicable. {@link org.artifactory.api.rest.constant.RepositoriesRestConstants}
      * @param position         The position in the map that the newly created repository will be placed
      */
     Response createOrReplaceRepository(String repoKey, Map repositoryConfig, MediaType mediaType, int position);
@@ -374,5 +373,4 @@ public interface RestAddon extends Addon {
     Response getLatestVersionByProperties(String repoKey, String path, Map<String, String[]> parameterMap,
             HttpServletRequest request) throws AqlException;
 
-    AqlRestResult executeQuery(String query, HttpServletRequest request);
 }

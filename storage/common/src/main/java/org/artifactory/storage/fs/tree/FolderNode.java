@@ -21,10 +21,12 @@ package org.artifactory.storage.fs.tree;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.repo.RootNodesFilterResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.storage.fs.service.FileService;
+import org.artifactory.storage.fs.tree.file.NodeItemFilterHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,11 +39,10 @@ import java.util.List;
  *
  * @author Yossi Shaul
  */
-public class FolderNode extends ItemNode {
+public class FolderNode extends ItemNode{
     private static final Logger log = LoggerFactory.getLogger(FolderNode.class);
-
-    private List<ItemNode> cachedChildrenNodes;
     private final TreeBrowsingCriteria criteria;
+    private List<ItemNode> cachedChildrenNodes;
 
     public FolderNode(FolderInfo itemInfo, TreeBrowsingCriteria criteria) {
         super(itemInfo);
@@ -50,29 +51,95 @@ public class FolderNode extends ItemNode {
 
     @Override
     public List<ItemNode> getChildren() {
+      return getChildrenItemNode(false,null);
+    }
+
+    @Override
+    public List<ItemNode> getChildren(boolean updateRootNodesFilterFlag,RootNodesFilterResult rootNodesFilterResult) {
+        return getChildrenItemNode(updateRootNodesFilterFlag,rootNodesFilterResult);
+    }
+
+    /**
+     * if nodes accepted by filters (include/exclude , canRead and etc) , node is added to list
+     * @param updateRootNodesFilterFlag - if true , filter acceptance flag will be monitored
+     * @param rootNodesFilterResult - hold canRead flag in case list is empty due to permission issue
+     * @return list of child nodes
+     */
+    private List<ItemNode> getChildrenItemNode(boolean updateRootNodesFilterFlag,RootNodesFilterResult rootNodesFilterResult) {
         if (cachedChildrenNodes != null) {
             return cachedChildrenNodes;
         }
         List<ItemInfo> children = getFileService().loadChildren(itemInfo.getRepoPath());
         List<ItemNode> childrenNodes = Lists.newArrayListWithCapacity(children.size());
-
         sort(children);
-
+        boolean localAcceptanceFlag = true;
         for (ItemInfo child : children) {
-            if (accepts(child)) {
-                if (child.isFolder()) {
-                    childrenNodes.add(new FolderNode((FolderInfo) child, criteria));
-                } else {
-                    childrenNodes.add(new FileNode((FileInfo) child));
-                }
+            NodeItemFilterHolder nodeItemFilterHolder = accepts(child);
+            boolean isChildAccepted = nodeItemFilterHolder.isAccepted();
+            if (isChildAccepted) {
+                addChildToList(childrenNodes, child);
+            }
+            else{
+                localAcceptanceFlag = updateAcceptedLocalFlag(localAcceptanceFlag,nodeItemFilterHolder);
             }
         }
+        updateCachedChildrenNodes(childrenNodes);
 
+        updateBrowsableItemAcceptedHolderCanReadFlag(updateRootNodesFilterFlag, rootNodesFilterResult,
+                childrenNodes, localAcceptanceFlag);
+        return childrenNodes;
+    }
+
+    /**
+     * update child cache and browsableItemAccept can read flag when list is empty duw to file access permission
+     * @param updateRootNodesFilterFlag - if true update the browsableItemAccept canRead flag
+     * @param rootNodesFilterResult - object hold the empty list canRead flag
+     * @param childrenNodes  - list of child nodes
+     * @param localAcceptanceFlag - local can read flag , if false child node read permission isn't accepted
+     */
+    private void updateBrowsableItemAcceptedHolderCanReadFlag(boolean updateRootNodesFilterFlag,
+            RootNodesFilterResult rootNodesFilterResult, List<ItemNode> childrenNodes,
+            boolean localAcceptanceFlag) {
+         if(childrenNodes.isEmpty() && updateRootNodesFilterFlag && !localAcceptanceFlag){
+             rootNodesFilterResult.setAllItemNodesCanRead(false);
+        }
+    }
+
+    /**
+     * update cache children nodes
+     * @param childrenNodes - list of children nodes
+     */
+    private void updateCachedChildrenNodes(List<ItemNode> childrenNodes) {
         if (criteria.isCacheChildren()) {
             cachedChildrenNodes = childrenNodes;
         }
+    }
 
-        return childrenNodes;
+    /**
+     * update the local can read flag , if flag is false meaning , at least one node has read permission issue
+     * @param localAcceptanceFlag accepted local flag
+     * @param acceptedChild - filter instance which hold the acceptance result
+     * @return it false , meaning one of the note items didn't passed the canRead filter
+     */
+    private boolean updateAcceptedLocalFlag(boolean localAcceptanceFlag, NodeItemFilterHolder nodeItemFilterHolder) {
+        ItemNodeFilter acceptedFilter = nodeItemFilterHolder.getItemNodeFilter();
+        if (localAcceptanceFlag && acceptedFilter instanceof FilterAccepted){
+            localAcceptanceFlag = ((FilterAccepted)acceptedFilter).isNodeAcceptCanRead();
+        }
+        return localAcceptanceFlag;
+    }
+
+    /**
+     * add child nodes to list if accepted
+     * @param childrenNodes - child node list
+     * @param child - node that has been accepted
+     */
+    private void addChildToList(List<ItemNode> childrenNodes, ItemInfo child) {
+        if (child.isFolder()) {
+            childrenNodes.add(new FolderNode((FolderInfo) child, criteria));
+        } else {
+            childrenNodes.add(new FileNode((FileInfo) child));
+        }
     }
 
     @Override
@@ -86,18 +153,22 @@ public class FolderNode extends ItemNode {
         });
     }
 
-    public boolean accepts(ItemInfo child) {
+    public NodeItemFilterHolder accepts(ItemInfo child) {
+        NodeItemFilterHolder itemNodeFilterAccepted;
         if (criteria.getFilters() == null) {
-            return true;
+            itemNodeFilterAccepted = new NodeItemFilterHolder(true);
+            return itemNodeFilterAccepted;
         }
         for (ItemNodeFilter filter : criteria.getFilters()) {
             if (!filter.accepts(child)) {
                 log.debug("Filter {} rejected {}", filter, child);
-                return false;
+                itemNodeFilterAccepted = new NodeItemFilterHolder(false,filter);
+                return  itemNodeFilterAccepted;
             }
         }
         // all filters accepted the item
-        return true;
+        itemNodeFilterAccepted = new NodeItemFilterHolder(true);
+        return itemNodeFilterAccepted;
     }
 
     private void sort(List<ItemInfo> children) {

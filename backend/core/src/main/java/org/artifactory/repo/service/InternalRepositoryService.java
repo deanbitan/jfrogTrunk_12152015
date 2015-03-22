@@ -22,6 +22,8 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.checksum.ChecksumInfo;
+import org.artifactory.checksum.ChecksumType;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.fs.RepoResource;
@@ -128,8 +130,25 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
     ResourceStreamHandle getResourceStreamHandle(InternalRequestContext requestContext, Repo repo, RepoResource res)
             throws IOException, RepoRejectException;
 
-    @Lock
+    /**
+     * Saves the given resource in the input repository.
+     *
+     * @param repo        The repo to save the resource in. Must be a storage repo (local/local cache/virtual cache)
+     * @param saveContext Resource details
+     * @return Repository resource with details of the saved resource
+     * @throws IOException         On any IO related exception
+     * @throws RepoRejectException If the target repository rejected the resource
+     */
     RepoResource saveResource(StoringRepo repo, SaveResourceContext saveContext)
+            throws IOException, RepoRejectException;
+
+    /**
+     * Internal, transactional method to save a resource. Don't use directly.
+     *
+     * @see InternalRepositoryService#saveResource(org.artifactory.repo.StoringRepo, org.artifactory.repo.SaveResourceContext)
+     */
+    @Lock
+    RepoResource saveResourceInTransaction(StoringRepo repo, SaveResourceContext saveContext)
             throws IOException, RepoRejectException;
 
     @Override
@@ -162,9 +181,7 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @param is           The input stream to store. Will be closed before returning from this method
      * @see InternalRepositoryService#saveResource(org.artifactory.repo.StoringRepo, org.artifactory.repo.SaveResourceContext)
      */
-    @Lock
-    void saveFileInternal(RepoPath fileRepoPath, InputStream is)
-            throws RepoRejectException, IOException;
+    void saveFileInternal(RepoPath fileRepoPath, InputStream is) throws RepoRejectException, IOException;
 
     /**
      * @param repoPath The repo path of an item.
@@ -194,4 +211,17 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
      * @param connectionManager - remote repository Pooling Http Client Connection Manager
      */
     void registerConnectionPoolMgr(PoolingHttpClientConnectionManager connectionManager);
+
+    /**
+     * Sets the client checksum on the target file. Fails if the target doesn't exist or not a file.
+     *
+     * @param repo               The repository holding the file
+     * @param checksumType       The {@link org.artifactory.checksum.ChecksumType}
+     * @param targetFileRepoPath Target file
+     * @param checksum           Checksum value
+     * @return Checksum info for the given type
+     */
+    @Lock
+    ChecksumInfo setClientChecksum(LocalRepo repo, ChecksumType checksumType, RepoPath targetFileRepoPath,
+            String checksum);
 }

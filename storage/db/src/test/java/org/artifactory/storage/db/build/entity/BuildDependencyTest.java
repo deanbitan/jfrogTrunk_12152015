@@ -20,7 +20,7 @@ package org.artifactory.storage.db.build.entity;
 
 import org.testng.annotations.Test;
 
-import java.util.List;
+import java.util.Set;
 
 import static org.testng.Assert.*;
 
@@ -69,7 +69,7 @@ public class BuildDependencyTest {
     }
 
     public void mostlyNullBuildDependencyTest3() {
-        BuildDependency b = new BuildDependency(1L, 2L, "b", (List<String>) null, null, null, null);
+        BuildDependency b = new BuildDependency(1L, 2L, "b", (Set<String>) null, null, null, null);
         assertEquals(b.getDependencyId(), 1L);
         assertEquals(b.getModuleId(), 2L);
         assertEquals(b.getDependencyNameId(), "b");

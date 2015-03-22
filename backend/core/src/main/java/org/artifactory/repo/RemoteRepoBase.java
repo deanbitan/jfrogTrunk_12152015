@@ -50,6 +50,7 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.io.RemoteResourceStreamHandle;
 import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.io.checksum.Checksum;
 import org.artifactory.io.checksum.policy.ChecksumPolicy;
@@ -365,14 +366,21 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             );
             EagerResourcesDownloader eagerResourcesDownloader = InternalContextHelper.get().beanForType(
                     EagerResourcesDownloader.class);
-            eagerResourcesDownloader.downloadNow(repoPath, new InternalArtifactoryRequest(repoPath));
+            InternalArtifactoryRequest internalRequest = new InternalArtifactoryRequest(repoPath);
+            String alternativeDownloadUrl = context.getRequest().getParameter(
+                    ArtifactoryRequest.PARAM_ALTERNATIVE_REMOTE_DOWNLOAD_URL);
+            if (StringUtils.isNotBlank(alternativeDownloadUrl)) {
+                internalRequest.setAlternativeRemoteDownloadUrl(alternativeDownloadUrl);
+            }
+            eagerResourcesDownloader.downloadNow(repoPath, internalRequest);
             RepoResource cachedResource = localCacheRepo.getInfo(context);
             if (cachedResource != null && cachedResource.isFound()) {
                 RepoRequests.logToContext(
                         "Found resource after eager download in local cache - returning cached resource");
                 return returnCachedResource(repoPath, cachedResource);
             }
-            return new UnfoundRepoResource(repoPath, "Could not download main zip resource");
+            String zipResourcePath = context.getRequest().getZipResourcePath();
+            return new UnfoundRepoResource(repoPath, "Could not download '" + zipResourcePath + "' from main zip resource");
         } catch (Exception e) {
             RepoRequests.logToContext(
                     "Main ZIP resource exists remotely but could not be downloaded due to: {}", e.getMessage());
@@ -718,9 +726,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             RepoResource cachedResource = getRepositoryService().saveResource(localCacheRepo, saveResourceContext);
             if (remoteRequestStartTime > 0) {
                 String remoteAddress;
-                if(handle instanceof HttpRepo.MyRemoteResourceStreamHandle){
+                if (handle instanceof HttpRepo.MyRemoteResourceStreamHandle) {
                     remoteAddress = ((HttpRepo.MyRemoteResourceStreamHandle) handle).getRemoteIp();
-                }else{
+                } else {
                     remoteAddress = StringUtils.EMPTY;
                 }
                 // fire upload event only if the resource was downloaded from the remote repository
@@ -732,8 +740,27 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
             unexpire(cachedResource);
             return cachedResource;
+        } catch (Exception e) {
+            // set exception here before the remote stream is closed to signal an error
+            Throwable ioCause = ExceptionUtils.getCauseOfTypes(e, IOException.class);
+            if (ioCause != null) {
+                log.error("IO error while trying to download resource {}'': {}: {}", remoteRepoPath,
+                        ioCause.getClass().getName(), ioCause.getMessage());
+                log.debug("IO error while trying to download resource {}'': {}",
+                        remoteResource.getRepoPath(), ioCause.getMessage(), ioCause);
+                setExceptionOnHandle(handle, e);
+                throw (IOException) ioCause;
+            }
+            setExceptionOnHandle(handle, e);
+            throw e;
         } finally {
             Closeables.close(handle, false);
+        }
+    }
+
+    private void setExceptionOnHandle(ResourceStreamHandle handle, Exception e) {
+        if (handle instanceof RemoteResourceStreamHandle) {
+            ((RemoteResourceStreamHandle) handle).setThrowable(e);
         }
     }
 
@@ -1002,6 +1029,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      */
     private String getRemoteChecksum(String path) throws IOException {
         if (StringUtils.contains(getUrl(), "registry.npmjs.org")) {
+            return null;
+        }
+        if (StringUtils.contains(getUrl(), "github.com")) {
             return null;
         }
 

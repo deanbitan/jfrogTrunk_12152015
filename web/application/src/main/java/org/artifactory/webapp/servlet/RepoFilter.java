@@ -27,6 +27,8 @@ import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
 import org.artifactory.api.webdav.WebdavService;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.exception.CancelException;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
@@ -95,6 +97,15 @@ public class RepoFilter extends DelayedFilterBase {
         if (repoRequest && servletPath.startsWith("/" + ArtifactoryRequest.LIST_BROWSING_PATH)
                 && servletPath.endsWith("/")) {
             ArtifactoryRequest artifactoryRequest = new HttpArtifactoryRequest(request);
+            String repoKey = artifactoryRequest.getRepoKey();
+            if (VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(repoKey)
+                    && ConstantValues.disableGlobalRepoAccess.getBoolean()) {
+                // The global /repo is disabled. Cannot be used here, returning 403!
+                String msg = "Accessing the global virtual repository /repo is disabled!";
+                log.warn(msg);
+                response.sendError(HttpStatus.SC_FORBIDDEN, msg);
+                return;
+            }
             doRepoListing(request, response, servletPath, artifactoryRequest);
             return;
         }
@@ -114,6 +125,15 @@ public class RepoFilter extends DelayedFilterBase {
                     return;
                 }
                 log.debug("Serving a directory get request.");
+                String repoKey = artifactoryRequest.getRepoKey();
+                if (VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(repoKey)
+                        && ConstantValues.disableGlobalRepoAccess.getBoolean()) {
+                    // The global /repo is disabled. Cannot be used here, returning 403!
+                    String msg = "Accessing the global virtual repository /repo is disabled!";
+                    log.warn(msg);
+                    response.sendError(HttpStatus.SC_FORBIDDEN, msg);
+                    return;
+                }
                 if (servletPath.startsWith("/" + ArtifactoryRequest.SIMPLE_BROWSING_PATH)) {
                     doSimpleRepoBrowse(request, response, artifactoryRequest);
                 } else {
@@ -247,8 +267,11 @@ public class RepoFilter extends DelayedFilterBase {
         } catch (Exception e) {
             RepoRequests.logToContext("Error handling request: %s - returning a %s response", e.getMessage(),
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            artifactoryResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Could not process download request: " + e.getMessage(), log);
+            if (!(e instanceof IOException) && !artifactoryResponse.isCommitted()) {
+                // io exception is handled by the download service
+                artifactoryResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        "Could not process download request: " + e.getMessage(), log);
+            }
             log.debug("Could not process download request: " + e.getMessage(), e);
         }
     }

@@ -28,7 +28,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.bintray.BintrayService;
-import org.artifactory.api.bintray.BintrayUploadInfoOverride;
 import org.artifactory.api.build.BuildRunComparators;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.BasicStatusHolder;
@@ -43,6 +42,8 @@ import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.api.search.SearchService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
+import org.artifactory.build.DetailedBuildRunImpl;
+import org.artifactory.build.InternalBuildService;
 import org.artifactory.exception.CancelException;
 import org.artifactory.rest.common.exception.BadRequestException;
 import org.artifactory.rest.common.exception.NotFoundException;
@@ -54,8 +55,10 @@ import org.artifactory.sapi.common.RepositoryRuntimeException;
 import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.Module;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
+import org.jfrog.build.api.release.BintrayUploadInfoOverride;
 import org.jfrog.build.api.release.Promotion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -129,7 +132,7 @@ public class BuildResource {
     @GET
     @Produces({BuildRestConstants.MT_BUILDS, MediaType.APPLICATION_JSON})
     public Builds getAllBuilds() throws IOException {
-        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
             throw new AuthorizationRestException(anonAccessDisabledMsg);
         }
         Set<BuildRun> latestBuildsByName = searchService.getLatestBuilds();
@@ -158,7 +161,7 @@ public class BuildResource {
     @Path("/{buildName: .+}")
     @Produces({BuildRestConstants.MT_BUILDS_BY_NAME, MediaType.APPLICATION_JSON})
     public BuildsByName getAllSpecificBuilds(@PathParam("buildName") String buildName) throws IOException {
-        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
             throw new AuthorizationRestException(anonAccessDisabledMsg);
         }
         Set<BuildRun> buildsByName;
@@ -194,7 +197,7 @@ public class BuildResource {
             @QueryParam("started") String buildStarted,
             @QueryParam("diff") String diffNumber) throws IOException {
 
-        if(authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
             throw new AuthorizationRestException(anonAccessDisabledMsg);
         }
         if (!authorizationService.canDeployToLocalRepository()) {
@@ -266,7 +269,7 @@ public class BuildResource {
     public List<BuildPatternArtifacts> getBuildPatternArtifacts(
             final List<BuildPatternArtifactsRequest> buildPatternArtifactsRequests) {
 
-        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
             throw new AuthorizationRestException(anonAccessDisabledMsg);
         }
         final RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
@@ -324,6 +327,55 @@ public class BuildResource {
     }
 
     /**
+     * Adds the given module information to an existing build
+     *
+     * @param buildName The name of the parent build that should receive the module
+     * @param buildNumber The number of the parent build that should receive the module
+     * @param module Module to add
+     */
+    @POST
+    @Path("/append/{buildName: .+}/{buildNumber: .+}")
+    @Consumes({BuildRestConstants.MT_BUILD_INFO_MODULE, RestConstants.MT_LEGACY_ARTIFACTORY_APP, MediaType.APPLICATION_JSON})
+    public void addModule(@PathParam("buildName") String buildName,
+            @PathParam("buildNumber") String buildNumber,
+            @QueryParam("started") String buildStarted,
+            List<Module> modules) throws Exception {
+        log.info("Adding module to build '{} #{}'", buildName, buildNumber);
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
+            throw new AuthorizationRestException(anonAccessDisabledMsg);
+        }
+        if (!authorizationService.canDeployToLocalRepository()) {
+            throw new AuthorizationRestException();
+        }
+
+        Build build = null;
+        if (StringUtils.isNotBlank(buildStarted)) {
+            BuildRun buildRun = buildService.getBuildRun(buildName, buildNumber, buildStarted);
+            if (buildRun != null) {
+                build = buildService.getBuild(buildRun);
+            }
+        } else {
+            build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
+        }
+
+        if (build == null) {
+            throw new NotFoundException("No builds were found");
+        }
+
+        build.getModules().addAll(modules);
+
+        try {
+            ((InternalBuildService) buildService).updateBuild(new DetailedBuildRunImpl(build));
+        } catch (CancelException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("An error occurred while adding a module to the build '" + build.getName() + " #" +
+                        build.getNumber() + "'.", e);
+            }
+            throw new RestException(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    /**
      * Promotes a build
      *
      * @param buildName   Name of build to promote
@@ -339,7 +391,7 @@ public class BuildResource {
             @PathParam("buildName") String buildName,
             @PathParam("buildNumber") String buildNumber, Promotion promotion) throws IOException {
 
-        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
             throw new AuthorizationRestException(anonAccessDisabledMsg);
         }
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
@@ -371,7 +423,7 @@ public class BuildResource {
             @PathParam("buildName") String buildName,
             @QueryParam("to") String to) throws IOException {
 
-        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()){
+        if (authorizationService.isAnonUserAndAnonBuildInfoAccessDisabled()) {
             throw new AuthorizationRestException(anonAccessDisabledMsg);
         }
         RestAddon restAddon = addonsManager.addonByType(RestAddon.class);
@@ -424,22 +476,23 @@ public class BuildResource {
     /**
      * Pushes a build to Bintray, expects to find the bintrayBuildInfo.json as one of the build's artifacts
      *
-     * @param buildName      Name of build to promote
-     * @param buildNumber    Number of build to promote
-     * @param gpgPassphrase  (optional) the Passphrase to use in conjunction with the key stored in Bintray to
-     *                       sign the version
+     * @param buildName     Name of build to promote
+     * @param buildNumber   Number of build to promote
+     * @param gpgPassphrase (optional) the Passphrase to use in conjunction with the key stored in Bintray to
+     *                      sign the version
      * @return result of the operation
      */
     @POST
     @Path("/pushToBintray/{buildName: .+}/{buildNumber: .+}")
     @Consumes({BuildRestConstants.MT_BINTRAY_DESCRIPTOR_OVERRIDE, MediaType.APPLICATION_JSON})
     @Produces({BintrayRestConstants.MT_BINTRAY_PUSH_RESPONSE, MediaType.APPLICATION_JSON})
-    public Response pushToBintray(@PathParam("buildName") String buildName, @PathParam("buildNumber") String buildNumber,
+    public Response pushToBintray(@PathParam("buildName") String buildName,
+            @PathParam("buildNumber") String buildNumber,
             @QueryParam("gpgPassphrase") @Nullable String gpgPassphrase,
             @QueryParam("gpgSign") @Nullable Boolean gpgSignOverride,
             @Nullable BintrayUploadInfoOverride override) throws IOException {
 
-        if(!BintrayRestHelper.isPushToBintrayAllowed()) {
+        if (!BintrayRestHelper.isPushToBintrayAllowed()) {
             throw new AuthorizationRestException();
         }
         BuildRun buildRun;
@@ -453,7 +506,7 @@ public class BuildResource {
             buildRun = BuildResourceHelper.validateParamsAndGetBuildInfo(buildName, buildNumber, null);
             Build build = buildService.getBuild(buildRun);
             status = bintrayService.pushPromotedBuild(build, gpgPassphrase, gpgSignOverride, override);
-            return BintrayRestHelper.bintrayOpAggregatedStatusResponse(status, true);
+            return BintrayRestHelper.createAggregatedResponse(status, buildName + " #" + buildNumber);
         } catch (IllegalArgumentException | ParseException iae) {
             throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException | ItemNotFoundRuntimeException nee) {

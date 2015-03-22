@@ -96,4 +96,42 @@ public interface RepositoryBrowsingService {
      */
     @Nullable
     VirtualBrowsableItem getVirtualRepoBrowsableItem(RepoPath repoPath);
-}
+
+    /**
+     * Creates a list of local and cached repo children items for all the simple browsers. <br> This method is not to be
+     * used by non-ui clients for simple child discovery. It is also intended to serve only local and cache
+     * repositories. Use {@link RepositoryService#getChildren(org.artifactory.repo.RepoPath)} instead.
+     * the browsableItemAccept is update with indication if browsable item list is empty because have no Read rights
+     * @param criteria Browsable item conditions
+     * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
+     */
+    @Nullable
+    public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag,RootNodesFilterResult rootNodesFilterResult);
+
+    /**
+     * Get external browsable children from a remote repo. Using {@link org.apache.ivy.util.url.ApacheURLLister#listAll}
+     * of Ivy in order to get a remote listing.
+     * the browsableItemAccept is update with indication if browsable item list is empty because have no Read rights
+     * @param criteria Browsable item conditions
+     * @return A list of all browsable items (local and remote)
+     */
+    @Nullable
+    public List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria,boolean
+            updateRootNodesFilterFlag , RootNodesFilterResult rootNodesFilterResult);
+
+
+    /**
+     * Creates a list of virtual repo children items for all the simple browsers.<br> This method is not to be used by
+     * non-ui clients for simple child discovery. Use {@link RepositoryService#getVirtualRepoItems(org.artifactory.repo.RepoPath)}
+     * instead.
+     * the browsableItemAccept is update with indication if browsable item list is empty because have no Read rights
+     * @param criteria Browsable item conditions
+     * @return Null if given a non-existent or non-folder repo path. Otherwise, the list of children
+     */
+    @Nullable
+    public List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag,RootNodesFilterResult rootNodesFilterResult);
+
+
+    }

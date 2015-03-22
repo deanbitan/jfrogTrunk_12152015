@@ -27,7 +27,6 @@ import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.replication.ReplicationRequest;
 import org.artifactory.api.rest.search.result.ArtifactVersionsResult;
 import org.artifactory.api.rest.search.result.LicensesSearchResult;
-import org.artifactory.aql.result.AqlRestResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
@@ -127,7 +126,7 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public LicensesSearchResult findLicensesInRepos(LicenseStatus status, StringList repos, String servletContextUrl) {
+    public LicensesSearchResult findLicensesInRepos(LicenseStatus status, Set<String> repos, String servletContextUrl) {
         throw new MissingRestAddonException();
     }
 
@@ -289,8 +288,4 @@ public class RestAddonDefaultImpl implements RestAddon {
         throw new MissingRestAddonException();
     }
 
-    @Override
-    public AqlRestResult executeQuery(String query, HttpServletRequest request) {
-        throw new MissingRestAddonException();
-    }
 }

@@ -921,7 +921,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 log.error("{}: Failed to download '{}'. Received status code {} and caught exception: {}",
                         HttpRepo.this, fullUrl, statusLine != null ? statusLine.getStatusCode() : "unknown",
                         exceptionMessage);
-                log.debug("Failed to download '" + fullUrl + "'", throwable);
+                String downLoadSummary =
+                        StorageUnit.toReadableString(bmis.getTotalBytesRead()) + " at " +
+                                StorageUnit.format(StorageUnit.KB.fromBytes(bmis.getBytesPerSec())) + " KB/sec";
+                log.debug("Failed to download '{}'. Download summary: {}", fullUrl, downLoadSummary, throwable);
                 RepoRequests.logToContext("Failed to download: %s", exceptionMessage);
             } else {
                 int status = statusLine != null ? statusLine.getStatusCode() : 0;

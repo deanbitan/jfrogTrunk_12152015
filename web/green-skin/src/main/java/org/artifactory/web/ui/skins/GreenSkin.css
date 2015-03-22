@@ -2083,8 +2083,8 @@ div.footer, .copywrites, .version {
     position: absolute;
     /*top: 85px;*/
     /*right: 20px;*/
-    width: 215px;
-    height: 55px;
+    width: 212px;
+    height: 38px;
     margin-top: 10px;
 }
 
@@ -3484,6 +3484,7 @@ button.styled-checkbox-disabled-checked, button.styled-checkbox-disabled-uncheck
     background: url("images/icons/close.jpg") center top no-repeat;
     background-size: 18px 18px;
 }
+
 .dnd-selection button.add-link {
     background: url("images/drag-drop/BTN-add.png") no-repeat;
 }
@@ -4039,6 +4040,15 @@ div.general-settings-panel input.text-file {
     color: blue;
 }
 
+.bold-blue-listed-label {
+    color: blue;
+    font-weight: bold;
+}
+
+.dark-blue-listed-label {
+    color: #000088;
+}
+
 .green-listed-label {
     color: green;
 }
@@ -4267,6 +4277,10 @@ div.general-settings-panel input.text-file {
 
 .deb {
     background-image: url("images/icons/ICN-deb.png");
+}
+
+.docker-folder {
+    background: url("images/addons/16docker.png");
 }
 
 .jcenterBintrayIcon {
@@ -6269,6 +6283,7 @@ td.warn span {
 #makeCenter {
 
 }
+
 div.styled-tab-panel div.tab-row .wide-tab span {
     min-width: 120px;
 }

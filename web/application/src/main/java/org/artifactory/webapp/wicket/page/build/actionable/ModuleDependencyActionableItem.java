@@ -22,13 +22,14 @@ import org.artifactory.api.build.diff.BuildsDiffStatus;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.CollectionUtils;
+import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.DownloadAction;
 import org.artifactory.webapp.actionable.action.ShowInTreeAction;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.jfrog.build.api.Dependency;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * The published module dependency actionable item
@@ -94,11 +95,10 @@ public class ModuleDependencyActionableItem extends RepoAwareActionableItemBase 
      * @return Dependency scope
      */
     public String getDependencyScope() {
-        List<String> scopes = dependency.getScopes();
+        Set<String> scopes = dependency.getScopes();
         if (CollectionUtils.isNullOrEmpty(scopes)) {
             return "";
         }
-
-        return scopes.get(0);
+        return PathUtils.collectionToDelimitedString(dependency.getScopes());
     }
 }

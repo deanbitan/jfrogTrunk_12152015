@@ -9,6 +9,7 @@ import org.artifactory.storage.db.aql.sql.model.SqlTableEnum;
  * @author Gidi Shabat
  */
 public class SqlTable {
+    public static final int MINIMAL_DYNAMIC_TABLE_ID = 100;
     private final SqlTableEnum table;
     private final int id;
 

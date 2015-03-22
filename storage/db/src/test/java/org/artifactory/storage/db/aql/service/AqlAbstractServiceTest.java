@@ -132,5 +132,10 @@ public class AqlAbstractServiceTest extends DbBaseTest {
         public boolean isAdmin() {
             return true;
         }
+
+        @Override
+        public boolean isOss() {
+            return false;
+        }
     }
 }

@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.fs.tree;
 
+import org.artifactory.api.repo.RootNodesFilterResult;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 
@@ -71,6 +72,8 @@ public abstract class ItemNode {
     }
 
     public abstract List<ItemNode> getChildren();
+
+    public abstract List<ItemNode> getChildren(boolean returnAcceptedNode,RootNodesFilterResult browsableItemAccept);
 
     public abstract List<ItemInfo> getChildrenInfo();
 

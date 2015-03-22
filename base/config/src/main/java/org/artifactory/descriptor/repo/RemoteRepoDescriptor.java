@@ -244,6 +244,14 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
         this.nuget = nuget;
     }
 
+    public PypiConfiguration getPypi() {
+        return pypi;
+    }
+
+    public void setPypi(PypiConfiguration pypi) {
+        this.pypi = pypi;
+    }
+
     @Override
     public boolean isLocal() {
         return false;
@@ -268,13 +276,5 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
             return false;
         }
         return true;
-    }
-
-    public PypiConfiguration getPypi() {
-        return pypi;
-    }
-
-    public void setPypi(PypiConfiguration pypi) {
-        this.pypi = pypi;
     }
 }

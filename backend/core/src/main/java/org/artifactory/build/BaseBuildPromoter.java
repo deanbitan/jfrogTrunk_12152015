@@ -42,8 +42,8 @@ import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Dependency;
-import org.jfrog.build.api.release.Promotion;
 import org.jfrog.build.api.Module;
+import org.jfrog.build.api.release.Promotion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
@@ -100,8 +100,8 @@ public class BaseBuildPromoter {
 
         //Artifacts should be collected
         if (promotion.isArtifacts()) {
-            Map<BuildFileBean, FileInfo> buildArtifactsInfo = buildService.getBuildBeansInfo(build, true,
-                    true, promotion.getSourceRepo());
+            Map<org.jfrog.build.api.Artifact, FileInfo> buildArtifactsInfo = buildService.getBuildArtifactsInfo(build,
+                    promotion.getSourceRepo());
             String errorMessage = "Unable to find artifacts of build '" + build.getName() + "' #" + build.getNumber();
             validateFullPromote(build, multiStatusHolder, buildArtifactsInfo, true);
 
@@ -117,14 +117,13 @@ public class BaseBuildPromoter {
 
         //Build dependencies should be collected
         if (promotion.isDependencies()) {
-            Map<BuildFileBean, FileInfo> buildDependenciesInfo = buildService.getBuildBeansInfo(build, false,
-                    false, promotion.getSourceRepo());
+            Map<Dependency, FileInfo> buildDependenciesInfo = buildService.getBuildDependenciesInfo(build,
+                    promotion.getSourceRepo());
             validateFullPromote(build, multiStatusHolder, buildDependenciesInfo, false);
-            for (Map.Entry<BuildFileBean, FileInfo> entry : buildDependenciesInfo.entrySet()) {
-                BuildFileBean key = entry.getKey();
-                if (key instanceof Dependency) {
-                    Dependency dependency = (Dependency) key;
-                    List<String> dependencyScopes = dependency.getScopes();
+            for (Map.Entry<Dependency, FileInfo> entry : buildDependenciesInfo.entrySet()) {
+                Dependency dependency = entry.getKey();
+                if (dependency != null) {
+                    Set<String> dependencyScopes = dependency.getScopes();
                     //Scopes of dependencies to collect
                     if (org.artifactory.util.CollectionUtils.isNullOrEmpty(
                             promotion.getScopes()) || (dependencyScopes != null &&
@@ -138,8 +137,8 @@ public class BaseBuildPromoter {
         return itemsToMove;
     }
 
-    private void validateFullPromote(Build build, BasicStatusHolder multiStatusHolder,
-            Map<BuildFileBean, FileInfo> buildArtifactsInfo,
+    private <T extends BuildFileBean> void validateFullPromote(Build build, BasicStatusHolder multiStatusHolder,
+            Map<T, FileInfo> buildArtifactsInfo,
             boolean artifacts) {
         List<BuildFileBean> buildBeans = Lists.newArrayList();
         for (Module module : build.getModules()) {
@@ -155,7 +154,7 @@ public class BaseBuildPromoter {
         }
 
         for (final BuildFileBean buildBean : buildBeans) {
-            Iterable<BuildFileBean> filter = Iterables.filter(buildArtifactsInfo.keySet(),
+            Iterable<T> filter = Iterables.filter(buildArtifactsInfo.keySet(),
                     new Predicate<BuildFileBean>() {
                         @Override
                         public boolean apply(BuildFileBean input) {

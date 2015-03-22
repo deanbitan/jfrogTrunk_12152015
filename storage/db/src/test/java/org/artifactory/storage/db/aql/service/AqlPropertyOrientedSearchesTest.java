@@ -5,6 +5,7 @@ import org.artifactory.aql.result.rows.AqlBaseItem;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.fest.assertions.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -25,8 +26,10 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
     @BeforeClass
     public void setup() {
         importSql("/sql/aql_properties.sql");
+        ReflectionTestUtils.setField(aqlService, "permissionProvider", new AqlAbstractServiceTest.AdminPermissions());
     }
 
+    @Test
     public void simpleProperty() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"@color\":{\"$eq\": \"red\"}})"
@@ -37,6 +40,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         assertEquals(items.get(0).getName(), "ant-1.5.jar");
     }
 
+    @Test
     public void noSuchPropertyKey() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"@nosuchkey\":{\"$match\": \"*\"}})"
@@ -45,6 +49,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         Assertions.assertThat(results.getResults()).isEmpty();
     }
 
+    @Test
     public void noSuchPropertyValue() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"@color\":{\"$match\": \"orange\"}})"
@@ -53,6 +58,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         Assertions.assertThat(results.getResults()).isEmpty();
     }
 
+    @Test
     public void propertyOnBothFolderAndFile() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"type\" : \"any\",\"@color\":{\"$eq\": \"green\"}})"
@@ -61,6 +67,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         assertEquals(results.getResults().size(), 2);
     }
 
+    @Test
     public void propertyOnBothFolderAndFileFilerForFileOnly() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"@color\":{\"$eq\": \"green\"}, \"type\": \"file\"})"
@@ -70,6 +77,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         assertEquals(items.size(), 1);
     }
 
+    @Test
     public void propertyOrConditionOnTheValue() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({" +
@@ -83,6 +91,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         assertEquals(items.size(), 2);
     }
 
+    @Test
     public void multiplePropertiesMatchesSameItem() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"type\" : \"any\"," +
@@ -97,6 +106,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         assertEquals(items.get(0).getName(), "org");
     }
 
+    @Test
     public void propertyExclusion() {
         // this will return all the items, including items without properties and items that have any other property
         // or any other value for the role property
@@ -107,6 +117,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         Assertions.assertThat(results.getResults()).hasSize(11);   // all items
     }
 
+    @Test
     public void propertyWithCertainKeyExists() {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"type\" : \"any\",\"property.key\":{\"$eq\": \"color\"}})"
@@ -115,6 +126,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         Assertions.assertThat(results.getResults()).hasSize(3);
     }
 
+    @Test
     public void propertyMatchOnTheSamePropertyRow() {
         // without $smp the result will include the item with the LGPL license because it has another property
         AqlEagerResult results = aqlService.executeQueryEager(
@@ -127,5 +139,16 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         List<AqlBaseItem> items = results.getResults();
         Assertions.assertThat(items).hasSize(1);
         Assertions.assertThat(("ant-1.5.jar").equals(items.get(0).getName()));
+    }
+
+    @Test
+    public void propertyMatchWithValueNull() {
+        // without $smp the result will include the item with the LGPL license because it has another property
+        AqlEagerResult results = aqlService.executeQueryEager(
+                "items.find({\"@license\":{\"$match\": null}})"
+        );
+
+        List<AqlBaseItem> items = results.getResults();
+        Assertions.assertThat(items).hasSize(0);
     }
 }

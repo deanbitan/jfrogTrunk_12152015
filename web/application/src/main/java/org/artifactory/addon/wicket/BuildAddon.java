@@ -34,8 +34,8 @@ import org.artifactory.webapp.wicket.page.search.SaveSearchResultsPanel;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.BaseBuildFileBean;
 import org.jfrog.build.api.Build;
-import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
@@ -106,7 +106,7 @@ public interface BuildAddon extends Addon {
      * @param build Build to extract artifacts from
      * @return Artifact file info list
      */
-    Set<FileInfo> getNonStrictArtifactFileInfo(Build build);
+    Set<FileInfo> getNonStrictArtifactFileInfos(Build build);
 
     /**
      * Returns a list of build-dependency file info objects, as well as their descriptor according to the layout if
@@ -116,7 +116,7 @@ public interface BuildAddon extends Addon {
      * @param scopes Scopes to add. null = add all dependencies.
      * @return Dependency file info list
      */
-    Set<FileInfo> getNonStrictDependencyFileInfo(Build build, Set<String> scopes);
+    Set<FileInfo> getNonStrictDependencyFileInfos(Build build, Set<String> scopes);
 
     /**
      * Returns a list of build-artifact actionable items
@@ -147,13 +147,20 @@ public interface BuildAddon extends Addon {
     SaveSearchResultsPanel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
 
     /**
-     * Returns a file info object for a build file bean
+     * Returns a file info of artifact object for a build file bean
      *
      * @param build The searched build
-     * @param bean  File bean to get info for
-     * @return file infos
+     * @return file beans and file infos
      */
-    Set<FileInfo> getNonStrictBuildFileBeanInfo(Build build, BuildFileBean bean);
+    Map<Artifact, FileInfo> getBuildArtifactsFileInfos(Build build);
+
+    /**
+     * Returns a file info of dependency object for a build file bean
+     *
+     * @param build The searched build
+     * @return file beans and file infos
+     */
+    Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build);
 
     /**
      * Searches for artifacts with build name properties that contain 'from' as a value and renames them to 'to'

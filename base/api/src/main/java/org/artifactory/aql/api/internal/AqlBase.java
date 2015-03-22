@@ -82,8 +82,8 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
     }
 
     @SafeVarargs
-    public static <T extends AqlBase> FlatClause<T> flat(AqlApiElement<T>... elements) {
-        return new FlatClause(elements);
+    public static <T extends AqlBase> PropertyResultFilterClause<T> propertyResultFilter(AqlApiElement<T>... elements) {
+        return new PropertyResultFilterClause(elements);
     }
 
     @SafeVarargs
@@ -199,7 +199,7 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
 
         @Override
         public boolean isEmpty() {
-            return sortType != null || fields == null || fields.length > 0;
+            return sortType == null || fields == null || fields.length == 0;
         }
 
         public void setSortType(AqlSortTypeEnum sortType) {
@@ -257,11 +257,11 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
         }
     }
 
-    public static class FlatClause<T extends AqlBase> implements AqlApiElement<T> {
+    public static class PropertyResultFilterClause<T extends AqlBase> implements AqlApiElement<T> {
 
         private final ArrayList<AqlApiElement<T>> flatElements;
 
-        public FlatClause(AqlApiElement<T>[] elements) {
+        public PropertyResultFilterClause(AqlApiElement<T>[] elements) {
             this.flatElements = Lists.newArrayList(elements);
         }
 

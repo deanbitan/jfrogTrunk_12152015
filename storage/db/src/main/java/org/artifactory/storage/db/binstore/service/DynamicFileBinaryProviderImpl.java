@@ -20,7 +20,6 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

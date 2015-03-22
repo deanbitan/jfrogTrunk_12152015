@@ -66,7 +66,7 @@ class DummyDbService implements DbService {
     }
 
     @Override
-    public <T> T invokeInTransaction(Callable<T> execute) {
+    public <T> T invokeInTransaction(String transactionName, Callable<T> execute) {
         return null;
     }
 

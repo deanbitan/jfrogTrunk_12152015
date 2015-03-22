@@ -179,6 +179,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
         assertItem(queryResult, "repo1", "ant/ant/1.5", "ant-1.5.jar", file);
     }
 
+    @Test
     public void findArtifactsByArtifactTypeFolder() {
         AqlEagerResult queryResult = aqlService.executeQueryEager("items.find({\"type\" :\"folder\"})");
         assertSize(queryResult, 15);
@@ -186,6 +187,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
         assertItem(queryResult, "repo1", "ant/ant", "1.5", folder);
     }
 
+    @Test
     public void findArtifactsByRepoEqualsAndArtifactTypeFile() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "items.find({\"repo\": \"repo1\" , \"type\" :\"file\"})");

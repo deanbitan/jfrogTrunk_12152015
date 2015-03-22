@@ -59,7 +59,7 @@ public final class RepoPathImpl implements RepoPath {
     public RepoPathImpl(String repoKey, String path, boolean folder) {
         this.repoKey = StringUtils.trimToNull(repoKey);
         if (this.repoKey == null) {
-            throw new IllegalArgumentException("Repo key cannot be empty. Path " + path);
+            throw new IllegalArgumentException("Repo key cannot be empty. Path: " + path);
         }
         this.path = PathUtils.trimSlashes(StringUtils.trimToEmpty(path)).toString();
         this.folder = folder;

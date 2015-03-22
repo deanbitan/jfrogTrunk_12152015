@@ -33,6 +33,7 @@ import org.artifactory.api.repo.BrowsableItem;
 import org.artifactory.api.repo.BrowsableItemCriteria;
 import org.artifactory.api.repo.RemoteBrowsableItem;
 import org.artifactory.api.repo.RepositoryBrowsingService;
+import org.artifactory.api.repo.RootNodesFilterResult;
 import org.artifactory.api.repo.VirtualBrowsableItem;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.FolderExpectedException;
@@ -63,6 +64,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -130,6 +132,18 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     @Override
     @Nonnull
     public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(BrowsableItemCriteria criteria) {
+        return getLocalRepoBrowsableChildrenData(criteria,false,null);
+    }
+
+    @Nullable
+    @Override
+    public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag, RootNodesFilterResult browsableItemAccept) {
+        return getLocalRepoBrowsableChildrenData(criteria, updateRootNodesFilterFlag,browsableItemAccept);
+    }
+
+    private List<BaseBrowsableItem> getLocalRepoBrowsableChildrenData(BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag,RootNodesFilterResult browsableItemAccept) {
         RepoPath repoPath = criteria.getRepoPath();
         LocalRepo repo = repoService.localOrCachedRepositoryByKey(repoPath.getRepoKey());
         if (repo == null) {
@@ -152,8 +166,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             log.trace("repo '{}' root node is not folder", repoPath.getRepoKey());
             throw new FolderExpectedException(repoPath);
         }
-
-        List<ItemNode> children = rootNode.getChildren();
+        List<ItemNode> children = getRootNodeChildren(updateRootNodesFilterFlag,browsableItemAccept,rootNode);
         if (children.isEmpty()) {
             return Lists.newArrayListWithCapacity(0);
         }
@@ -178,6 +191,27 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return repoPathChildren;
     }
 
+    /**
+     * call get children with monitor Filter Acceptance if flag is active or base get children
+     * @param updateRootNodesFilterFlag - if true keep flag from empty list due to
+     *                                      no access (canRead = false) return
+     * @param rootNodesFilterResult -
+     * @param rootNode
+     * @return children nodes List or empty list with updated browsableItemAccept canRead flag when
+     * updateRootNodesFilterFlag is active
+     */
+    private List<ItemNode> getRootNodeChildren(boolean updateRootNodesFilterFlag,
+            RootNodesFilterResult rootNodesFilterResult, ItemNode rootNode) {
+        List<ItemNode> children;
+        if (updateRootNodesFilterFlag) {
+           children = rootNode.getChildren(updateRootNodesFilterFlag,rootNodesFilterResult);
+        }
+        else{
+            children = rootNode.getChildren();
+        }
+        return children;
+    }
+
     private boolean canRead(RealRepo repo, RepoPath childRepoPath) {
         return authService.canRead(childRepoPath) && repo.accepts(childRepoPath);
     }
@@ -194,6 +228,18 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     @Override
     @Nonnull
     public List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(BrowsableItemCriteria criteria) {
+        return getRemoteRepoBrowsableChildrenData(criteria,false,null);
+    }
+
+    @Override
+    @Nonnull
+    public List<BaseBrowsableItem> getRemoteRepoBrowsableChildren(BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag, RootNodesFilterResult rootNodesFilterResult) {
+        return getRemoteRepoBrowsableChildrenData(criteria, updateRootNodesFilterFlag,rootNodesFilterResult);
+    }
+
+    private List<BaseBrowsableItem> getRemoteRepoBrowsableChildrenData(BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag, RootNodesFilterResult rootNodesFilterResult) {
         RepoPath repoPath = criteria.getRepoPath();
         String repoKey = repoPath.getRepoKey();
         String relativePath = repoPath.getPath();
@@ -204,7 +250,8 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
         log.debug("getting Remote Repo '{}' Browsable Children", repoKey);
         // include remote resources based on the flag and the offline mode
-        boolean includeRemoteResources = criteria.isIncludeRemoteResources() && repo.isListRemoteFolderItems() && repo.accepts(repoPath);
+        boolean includeRemoteResources = criteria.isIncludeRemoteResources() &&
+                repo.isListRemoteFolderItems() && repo.accepts(repoPath);
 
         // first get all the cached items
         List<BaseBrowsableItem> children = Lists.newArrayList();
@@ -214,7 +261,11 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 BrowsableItemCriteria cacheCriteria = new BrowsableItemCriteria.Builder(criteria).
                         repoPath(InternalRepoPathFactory.create(repo.getLocalCacheRepo().getKey(),
                                 relativePath)).build();
-                children = getLocalRepoBrowsableChildren(cacheCriteria);
+                if (updateRootNodesFilterFlag){
+                    children = getLocalRepoBrowsableChildren(cacheCriteria, updateRootNodesFilterFlag,rootNodesFilterResult);
+                }else {
+                    children = getLocalRepoBrowsableChildren(cacheCriteria);
+                }
                 pathExistsInCache = true;
             } catch (ItemNotFoundRuntimeException e) {
                 // this is legit only if we also want to add remote items
@@ -266,6 +317,19 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     @Override
     @Nonnull
     public List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(BrowsableItemCriteria criteria) {
+        return getVirtualRepoBrowsableChildrenData(criteria,false,null);
+    }
+
+    @Override
+    @Nonnull
+    public List<BaseBrowsableItem> getVirtualRepoBrowsableChildren(BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag,RootNodesFilterResult rootNodesFilterResult) {
+        return getVirtualRepoBrowsableChildrenData(criteria, updateRootNodesFilterFlag,rootNodesFilterResult);
+    }
+
+
+    private List<BaseBrowsableItem> getVirtualRepoBrowsableChildrenData(BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag,RootNodesFilterResult rootNodesFilterResult) {
         RepoPath repoPath = criteria.getRepoPath();
         String virtualRepoKey = repoPath.getRepoKey();
         VirtualRepo virtualRepo = repoService.virtualRepositoryByKey(virtualRepoKey);
@@ -278,10 +342,9 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         List<VirtualRepo> searchableRepos = getSearchableRepos(virtualRepo, repoPath);
         Multimap<String, VirtualRepo> pathToVirtualRepos = HashMultimap.create();
         // add children from all local repos
-        for (VirtualRepo repo : searchableRepos) {
-            addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos);
-            addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos);
-        }
+
+        getVirtualBrowsableItemFromLocalAndRemote(criteria, updateRootNodesFilterFlag,rootNodesFilterResult,
+                candidateChildren, searchableRepos, pathToVirtualRepos);
         // only add the candidate that this virtual repository accepts via its include/exclude rules
         Map<String, BaseBrowsableItem> childrenToReturn = Maps.newHashMap();
         for (BaseBrowsableItem child : candidateChildren) {
@@ -325,19 +388,71 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         return Lists.newArrayList(childrenToReturn.values());
     }
 
+    /**
+     * get browsable children items from local repository and remote repository , if list return is empty due to no
+     * permission to access nodes then BrowsableItemAccept will be update so a challenge could be send to UI
+     * @param criteria browsing criteria
+     * @param updateRootNodesFilterFlag - is require to update item list with permission to access flag
+     * @param rootNodesFilterResult - object that hold list permission to access flag
+     * @param candidateChildren - list of brows children
+     * @param searchableRepos - repose to search
+     * @param pathToVirtualRepos - path to virtual repo
+     */
+    private void getVirtualBrowsableItemFromLocalAndRemote(BrowsableItemCriteria criteria,
+            boolean updateRootNodesFilterFlag, RootNodesFilterResult rootNodesFilterResult,
+            List<BaseBrowsableItem> candidateChildren, List<VirtualRepo> searchableRepos,
+            Multimap<String, VirtualRepo> pathToVirtualRepos) {
+        if (updateRootNodesFilterFlag) {
+            boolean  atleastOneNodeCanRead = false;
+            for (VirtualRepo repo : searchableRepos) {
+                RootNodesFilterResult localBrowsableItemAccept = new RootNodesFilterResult();
+                RootNodesFilterResult remoteBrowsableItemAccept = new RootNodesFilterResult();
+                addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos,
+                        updateRootNodesFilterFlag,localBrowsableItemAccept);
+                addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos,
+                        updateRootNodesFilterFlag,remoteBrowsableItemAccept);
+                if (hasAtLeastOneItemWithReadPermission(localBrowsableItemAccept, remoteBrowsableItemAccept,
+                        candidateChildren)) {
+                    atleastOneNodeCanRead = true;
+                }
+            }
+            if (!atleastOneNodeCanRead){
+                rootNodesFilterResult.setAllItemNodesCanRead(false);
+            }
+        }else {
+            for (VirtualRepo repo : searchableRepos) {
+                RootNodesFilterResult localBrowsableItemAccept = new RootNodesFilterResult();
+                RootNodesFilterResult remoteBrowsableItemAccept = new RootNodesFilterResult();
+                addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos,
+                        updateRootNodesFilterFlag,localBrowsableItemAccept);
+                addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos,
+                        updateRootNodesFilterFlag,remoteBrowsableItemAccept);
+            }
+        }
+    }
+
+    private boolean hasAtLeastOneItemWithReadPermission(RootNodesFilterResult localBrowsableItemAccept,
+            RootNodesFilterResult remoteBrowsableItemAccept,List<BaseBrowsableItem> candidateChildren) {
+        return (localBrowsableItemAccept.isAllItemNodesCanRead() || remoteBrowsableItemAccept.isAllItemNodesCanRead())
+                && !candidateChildren.isEmpty();
+    }
+
     private void addVirtualBrowsableItemsFromLocal(BrowsableItemCriteria criteria, VirtualRepo repo,
-            List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos) {
+            List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos,
+            boolean updateRootNodesFilterFlag ,RootNodesFilterResult rootNodesFilterResult) {
         String relativePath = criteria.getRepoPath().getPath();
         List<LocalRepo> localRepositories = repo.getLocalRepositories();
         log.debug("adding  Virtual Browsable Items From Local to virtual Repo:'{}'", repo);
         for (LocalRepo localRepo : localRepositories) {
-            RepoPath path = InternalRepoPathFactory.create(localRepo.getKey(), relativePath, criteria.getRepoPath().isFolder());
+            RepoPath path = InternalRepoPathFactory.create(localRepo.getKey(),
+                            relativePath, criteria.getRepoPath().isFolder());
             try {
                 BrowsableItemCriteria localCriteria = new BrowsableItemCriteria.Builder(criteria).repoPath(path).
                         build();
                 log.trace("Iterating Browsable childrens of Local Repo :'{}' and check Virtual Repo Accepts it",
                         localRepo.getKey());
-                List<BaseBrowsableItem> localRepoBrowsableChildren = getLocalRepoBrowsableChildren(localCriteria);
+                List<BaseBrowsableItem> localRepoBrowsableChildren = getLocalBaseBrowsableItems(
+                        updateRootNodesFilterFlag, rootNodesFilterResult, localCriteria);
                 // go over all local repo browsable children, these have already been filtered according
                 // to each local repo's rules, now all that is left is to check that the virtual repo that
                 // the local repo belongs to accepts as well.
@@ -355,8 +470,29 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
     }
 
+    /**
+     * call getLocalRepoBrowsableChildren with monitor emptyList acceptance Flag if true or
+     * base getLocalRepoBrowsableChildren if not
+     * @param updateRootNodesFilterFlag - monitor BaseBrowsableItem empty list due to missing read permission to Node
+     * @param rootNodesFilterResult - Hold the missing read permission to Node flag if BaseBrowsableItem list is empty
+     * @param localCriteria - criteria to find nodes
+     * @return list of BaseBrowsableItem
+     */
+    private List<BaseBrowsableItem> getLocalBaseBrowsableItems(boolean updateRootNodesFilterFlag,
+            RootNodesFilterResult rootNodesFilterResult, BrowsableItemCriteria localCriteria) {
+        List<BaseBrowsableItem> localRepoBrowsableChildren;
+        if (updateRootNodesFilterFlag) {
+            localRepoBrowsableChildren = getLocalRepoBrowsableChildren(localCriteria,
+                    true, rootNodesFilterResult);
+        }else{
+            localRepoBrowsableChildren = getLocalRepoBrowsableChildren(localCriteria);
+        }
+        return localRepoBrowsableChildren;
+    }
+
     private void addVirtualBrowsableItemsFromRemote(BrowsableItemCriteria criteria, VirtualRepo repo,
-            List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos) {
+            List<BaseBrowsableItem> candidateChildren, Multimap<String, VirtualRepo> pathToVirtualRepos,
+            boolean isBrowsableItemsAccepted,RootNodesFilterResult browsableItemAccept) {
         List<RemoteRepo> remoteRepositories = repo.getRemoteRepositories();
         // add children from all remote repos (and their caches)
         log.debug("adding  Virtual Browsable Items From Remote to virtual Repo:'{}'", repo);
@@ -366,8 +502,14 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             try {
                 BrowsableItemCriteria remoteCriteria = new BrowsableItemCriteria.Builder(criteria).
                         repoPath(remoteRepoPath).build();
-                List<BaseBrowsableItem> remoteRepoBrowsableChildren =
-                        getRemoteRepoBrowsableChildren(remoteCriteria);
+                List<BaseBrowsableItem> remoteRepoBrowsableChildren;
+                if (isBrowsableItemsAccepted) {
+                     remoteRepoBrowsableChildren =
+                            getRemoteRepoBrowsableChildren(remoteCriteria,true,browsableItemAccept);
+                }else{
+                    remoteRepoBrowsableChildren =
+                            getRemoteRepoBrowsableChildren(remoteCriteria);
+                }
                 log.trace("Iterating Browsable childrens of Remote Repo :'{}' and check Virtual Repo Accepts it",
                         remoteRepo.getKey());
                 for (BaseBrowsableItem remoteRepoBrowsableChild : remoteRepoBrowsableChildren) {

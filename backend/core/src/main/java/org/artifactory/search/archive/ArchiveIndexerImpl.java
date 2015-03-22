@@ -281,7 +281,7 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer {
     }
 
     private void forceArchiveIndexerTaskDeletion(final RepoPath repoPath) {
-        dbService.invokeInTransaction(new Callable<Object>() {
+        dbService.invokeInTransaction("ArchiveIndexer.forceArchiveIndexerTaskDeletion", new Callable<Object>() {
             @Override
             public Object call() throws Exception {
                 try {

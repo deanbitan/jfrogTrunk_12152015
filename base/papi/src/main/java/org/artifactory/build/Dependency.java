@@ -25,7 +25,7 @@ import org.jfrog.build.api.builder.DependencyBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
+import java.util.Set;
 
 /**
  * A basic build run info holder
@@ -41,7 +41,7 @@ public final class Dependency extends BuildFile {
         this.dependency = dependency;
     }
 
-    public Dependency(@Nonnull String id, @Nonnull FileInfo fileInfo, @Nonnull List<String> scopes,
+    public Dependency(@Nonnull String id, @Nonnull FileInfo fileInfo, @Nonnull Set<String> scopes,
             @Nullable String type) {
         this(new DependencyBuilder().id(id).md5(fileInfo.getMd5()).sha1(fileInfo.getSha1()).scopes(scopes)
                 .type(StringUtils.isNotBlank(type) ? type : PathUtils.getExtension(fileInfo.getName())).build());
@@ -51,7 +51,7 @@ public final class Dependency extends BuildFile {
         return dependency.getId();
     }
 
-    public List<String> getScopes() {
+    public Set<String> getScopes() {
         return dependency.getScopes();
     }
 

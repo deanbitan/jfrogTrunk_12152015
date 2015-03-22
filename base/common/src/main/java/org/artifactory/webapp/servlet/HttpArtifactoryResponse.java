@@ -80,14 +80,17 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
      * We don't set the name here and let the browser decide based on download URL.
      * For more info read <a href="https://www.ietf.org/rfc/rfc2183.txt">RFC2183</a>
      */
+    @Override
     public void setContentDispositionAttachment(String filename) {
         if (ConstantValues.responseDisableContentDispositionFilename.getBoolean() || StringUtils.isBlank(filename)) {
             response.setHeader("Content-Disposition", "attachment");
         } else {
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"" +
+                    "; filename*=UTF-8''" + HttpUtils.encodeQuery(filename));
         }
     }
 
+    @Override
     public void setFilename(String filename) {
         if (StringUtils.isNotBlank(filename)) {
             response.setHeader(ArtifactoryRequest.FILE_NAME, HttpUtils.encodeQuery(filename));

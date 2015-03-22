@@ -33,7 +33,6 @@ import org.artifactory.spring.ContextReadinessListener;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.state.model.ArtifactoryStateManager;
 import org.artifactory.storage.db.DbService;
-import org.artifactory.util.LoggingUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -555,8 +554,7 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
         TaskBase task = activeTasksByToken.get(token);
         if (warnIfMissing && task == null) {
-            LoggingUtils.warnOrDebug(log,
-                    "Could not locate active task with token " + token + ". Task may have been canceled.");
+            log.warn("Could not locate active task with token {}. Task may have been canceled.", token);
         }
         return task;
     }

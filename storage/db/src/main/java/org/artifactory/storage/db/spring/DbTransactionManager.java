@@ -48,11 +48,13 @@ public class DbTransactionManager extends DataSourceTransactionManager {
     @Override
     protected void prepareSynchronization(DefaultTransactionStatus status, TransactionDefinition definition) {
         super.prepareSynchronization(status, definition);
-        if (status.isNewSynchronization()) {
+        if (status.isNewSynchronization() &&
+                definition.getPropagationBehavior() != TransactionDefinition.PROPAGATION_NOT_SUPPORTED) {
             log.trace("Registering new session synchronization");
             StorageSessionFactory sessionFactory = ContextHelper.get().beanForType(StorageSessionFactory.class);
             StorageSession session = sessionFactory.create();
-            TransactionSynchronizationManager.registerSynchronization(new SessionSynchronization(session));
+            TransactionSynchronizationManager.registerSynchronization(
+                    new SessionSynchronization(session, definition.getName()));
         }
     }
 }

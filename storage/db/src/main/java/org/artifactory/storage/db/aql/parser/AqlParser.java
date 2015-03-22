@@ -20,9 +20,10 @@ public class AqlParser {
     public static final ComparatorElement comparator = new ComparatorElement();
     public static final QuotesElement quotes = new QuotesElement();
     public static final ColonElement colon = new ColonElement();
-    public static final ValueNumberElement valueOrNumber = new ValueNumberElement();
+    public static final ValueNumberNullElement valueOrNumberOrNull = new ValueNumberNullElement();
     public static final ValueElement value = new ValueElement();
     public static final NumberElement number = new NumberElement();
+    public static final NullElement nullElement = new NullElement();
     public static final FieldElement field = new FieldElement();
     public static final OpenParenthesisElement openParenthesis = new OpenParenthesisElement();
     public static final CloseParenthesisElement closeParenthesis = new CloseParenthesisElement();

@@ -32,7 +32,6 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.ResourceModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
-import org.apache.wicket.validation.validator.EmailAddressValidator;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.api.security.UserGroupService;
@@ -44,6 +43,7 @@ import org.artifactory.common.wicket.component.panel.passwordstrength.PasswordSt
 import org.artifactory.common.wicket.component.panel.titled.TitledPanel;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.crypto.CryptoHelper;
+import org.artifactory.webapp.wicket.util.validation.EmailAddressValidator;
 import org.artifactory.webapp.wicket.util.validation.PasswordStrengthValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

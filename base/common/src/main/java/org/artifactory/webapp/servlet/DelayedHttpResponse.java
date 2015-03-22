@@ -38,7 +38,10 @@ import java.io.StringWriter;
  * be cached. So be aware not to use it when responding with a lot of data.
  *
  * @author Yossi Shaul
+ * @deprecated Usage of this class is not required anymore. The upload service now uses a more fine grained transactions
+ * so a successful response is sent by the upload service only after the DB transaction was successfully committed
  */
+@Deprecated
 public class DelayedHttpResponse extends ArtifactoryResponseBase {
     private static final Logger log = LoggerFactory.getLogger(DelayedHttpResponse.class);
 
@@ -85,6 +88,16 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
             out = new ByteArrayOutputStream();
         }
         return out;
+    }
+
+    @Override
+    public void setContentDispositionAttachment(String filename) {
+        response.setContentDispositionAttachment(filename);
+    }
+
+    @Override
+    public void setFilename(String filename) {
+        response.setFilename(filename);
     }
 
     @Override

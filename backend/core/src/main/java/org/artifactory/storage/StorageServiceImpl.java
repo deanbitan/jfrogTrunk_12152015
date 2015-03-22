@@ -160,6 +160,7 @@ public class StorageServiceImpl implements InternalStorageService {
     @Override
     public StorageSummaryInfo getStorageSummaryInfo() {
         Set<RepoStorageSummary> summaries = fileService.getRepositoriesStorageSummary();
+        filterGlobalRepoIfNeeded(summaries);
         List<RepoDescriptor> repos = Lists.newArrayList();
         repos.addAll(repositoryService.getLocalAndCachedRepoDescriptors());
         repos.addAll(repositoryService.getVirtualRepoDescriptors());
@@ -206,6 +207,17 @@ public class StorageServiceImpl implements InternalStorageService {
         BinariesInfo binariesInfo = binaryStore.getBinariesInfo();
 
         return new StorageSummaryInfo(Sets.newHashSet(infos), binariesInfo);
+    }
+
+    private void filterGlobalRepoIfNeeded(Set<RepoStorageSummary> summaries) {
+        if (ConstantValues.disableGlobalRepoAccess.getBoolean()) {
+            Iterables.removeIf(summaries, new Predicate<RepoStorageSummary>() {
+                @Override
+                public boolean apply(RepoStorageSummary summary) {
+                    return VirtualRepoDescriptor.GLOBAL_VIRTUAL_REPO_KEY.equals(summary.getRepoKey());
+                }
+            });
+        }
     }
 
     @Override

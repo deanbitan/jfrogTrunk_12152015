@@ -97,7 +97,7 @@ public class BintrayResource {
 
             FileInfo jsonFile = repositoryService.getFileInfo(InternalRepoPathFactory.create(descriptor));
             status = bintrayService.pushVersionFilesAccordingToSpec(jsonFile, gpgSignOverride, gpgPassphrase);
-            return BintrayRestHelper.bintrayOpAggregatedStatusResponse(status, false);
+            return BintrayRestHelper.createAggregatedResponse(status, " version according to spec at: " + descriptor);
         } catch (IllegalArgumentException | ItemNotFoundRuntimeException iae) {
             throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException dnee) {

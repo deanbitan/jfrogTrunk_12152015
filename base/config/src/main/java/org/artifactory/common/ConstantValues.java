@@ -92,6 +92,7 @@ public enum ConstantValues {
     uiSyntaxColoringMaxTextSizeBytes("ui.syntaxColoringMaxTextSizeBytes", 512000),
     pluginScriptsRefreshIntervalSecs("plugin.scripts.refreshIntervalSecs", 0),
     aolPluginSupport("plugin.aol.support", FALSE),
+    aolDedicatedServer("aol.dedicated.server", FALSE),
     uiChroot("ui.chroot"),
     artifactoryLicenseDir("licenseDir"),
     fileRollerMaxFilesToRetain("file.roller.maxFileToRetain", 10),

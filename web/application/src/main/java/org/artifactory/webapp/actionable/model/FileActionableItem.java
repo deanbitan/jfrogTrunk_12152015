@@ -189,6 +189,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
             tabs.add(new AbstractTab(Model.of("RubyGems")) {
                 //transient otherwise [ERROR] (o.a.w.s.j.JavaSerializer:94) ... java.io.NotSerializableException ...
                 final transient GemsWebAddon gemsWebAddon = getAddonsProvider().addonByType(GemsWebAddon.class);
+
                 @Override
                 public WebMarkupContainer getPanel(String panelId) {
                     return gemsWebAddon.buildInfoSection(panelId, getRepoPath());
@@ -290,21 +291,19 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isRpmFile() {
-        return getFileInfo().getName().endsWith(".rpm");
+        return NamingUtils.isRpmFile(getFileInfo().getName());
     }
 
     private boolean isNuPkgFile() {
-        MimeType mimeType = NamingUtils.getMimeType((getFileInfo().getName()));
-        return "application/x-nupkg".equalsIgnoreCase(mimeType.getType());
+        return NamingUtils.isNuPkgFile((getFileInfo().getName()));
     }
 
     private boolean isGemFile() {
-        MimeType mimeType = NamingUtils.getMimeType((getFileInfo().getName()));
-        return "application/x-rubygems".equalsIgnoreCase(mimeType.getType());
+        return NamingUtils.isGemFile((getFileInfo().getName()));
     }
 
     private boolean isNpmFile() {
-        return getFileInfo().getName().endsWith(".tgz");
+        return NamingUtils.isNpmFile(getFileInfo().getName());
     }
 
     private boolean isPypiFile() {

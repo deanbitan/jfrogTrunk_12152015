@@ -24,8 +24,9 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.spring.ReloadableBean;
+import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
-import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.Dependency;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -44,14 +45,30 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
     String BACKUP_BUILDS_FOLDER = "builds.previous";
 
     /**
-     * Returns a map of build artifact/dependency and it's matching FileInfo
+     * Returns a map of build artifact and it's matching FileInfo
+     * This method is strict - meaning only artifacts with build properties (name and number) are found
      *
-     * @param build          The searched build (searching within it's artifacts/dependencies)
-     * @param strictMatching When false, fallback to searching by checksums in case the bean wasn't found by build.name and build.number properties
-     * @param artifacts      Whether to search for artifacts or dependencies
+     * @param build            The searched build (searching within it's artifacts)
+     * @param sourceRepository filtering by source repository key, not mandatory
      */
-    Map<BuildFileBean, FileInfo> getBuildBeansInfo(Build build, boolean strictMatching, boolean artifacts,
-            String sourceRepository);
+    Map<Artifact, FileInfo> getBuildArtifactsInfo(Build build, String sourceRepository);
+
+    /**
+     * Returns a non strict map of build artifact and it's matching FileInfo.
+     * Non strict - artifacts that related to the build, but can be without the build properties
+     *
+     * @param build            The searched build (searching within it's artifacts)
+     * @param sourceRepository filtering by source repository key, not mandatory
+     */
+    Map<Artifact, FileInfo> getNonStrictBuildArtifactsInfo(Build build, String sourceRepository);
+
+    /**
+     * Returns a map of build dependency and it's matching FileInfo
+     *
+     * @param build            The searched build (searching within it's dependencies)
+     * @param sourceRepository filtering by source repository key, not mandatory
+     */
+    Map<Dependency, FileInfo> getBuildDependenciesInfo(Build build, String sourceRepository);
 
     /**
      * Imports an exportable build info into the database. This is an internal method and should be used to import a
@@ -94,8 +111,8 @@ public interface InternalBuildService extends ReloadableBean, BuildService {
      * where the call is made from the papi, this is to avoid accidental endless loops of plugin actions calling
      * one another indefinitely.
      *
-     * @param build                     Build to add
-     * @param activatePluginCallbacks   flag that indicates if the call is internal
+     * @param build                   Build to add
+     * @param activatePluginCallbacks flag that indicates if the call is internal
      */
     @Lock
     void addBuild(Build build, boolean activatePluginCallbacks);

@@ -3,6 +3,7 @@ package org.artifactory.storage.db.aql.sql.result;
 import com.google.common.collect.Maps;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
+import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQuery;
@@ -21,8 +22,10 @@ public class AqlLazyResultImpl implements AqlLazyResult {
     private ResultSet resultSet;
     private Map<AqlFieldEnum, String> dbFieldNames;
     private AqlDomainEnum domain;
+    private AqlPermissionProvider aqlPermissionProvider;
 
-    public AqlLazyResultImpl(ResultSet resultSet, SqlQuery sqlQuery) {
+    public AqlLazyResultImpl(ResultSet resultSet, SqlQuery sqlQuery, AqlPermissionProvider aqlPermissionProvider) {
+        this.aqlPermissionProvider = aqlPermissionProvider;
         limit = sqlQuery.getLimit();
         fields = sqlQuery.getResultFields();
         this.resultSet = resultSet;
@@ -32,6 +35,11 @@ public class AqlLazyResultImpl implements AqlLazyResult {
             AqlFieldEnum fieldEnum = field.getField();
             dbFieldNames.put(fieldEnum, AqlFieldExtensionEnum.getExtensionFor(fieldEnum).tableField.name());
         }
+    }
+
+    @Override
+    public AqlPermissionProvider getPermissionProvider() {
+        return aqlPermissionProvider;
     }
 
     @Override

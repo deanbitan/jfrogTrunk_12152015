@@ -21,7 +21,6 @@ package org.artifactory.storage.db.binstore.service;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
-import org.artifactory.storage.binstore.service.BinaryProvider;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

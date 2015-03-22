@@ -2,6 +2,7 @@ package org.artifactory.aql.result;
 
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
+import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.model.DomainSensitiveField;
 
 import java.sql.ResultSet;
@@ -13,6 +14,7 @@ import java.util.Map;
  */
 public interface AqlLazyResult {
 
+    AqlPermissionProvider getPermissionProvider();
     List<DomainSensitiveField> getFields();
 
     ResultSet getResultSet();

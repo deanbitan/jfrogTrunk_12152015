@@ -21,6 +21,7 @@ package org.artifactory.search.property;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.search.property.PropertySearchResult;
@@ -66,7 +67,7 @@ public class PropertySearcherAql extends SearcherBase<PropertySearchControls, Pr
         Set<String> openness = controls.getPropertyKeysByOpenness(true);
         for (String key : openness) {
             for (String value : properties.get(key)) {
-                if (value == null || "*".equals(value.trim())) {
+                if (value == null || "*".equals(value.trim()) || StringUtils.isEmpty(value)) {
                     and.append(
                             AqlApiItem.property().key().matches(key)
                     );

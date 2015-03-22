@@ -15,31 +15,47 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class represents a software license (e.g. apache, lgpl etc..) Each license is comprised of a name (which is a
- * must) a long name which describes it, the URL where to find the full license content, a {@link
- * java.util.regex.Pattern} which describes the license, and a boolean value whether this license is an approved one to
- * use.
+ * This class represents a software license (e.g. apache, lgpl etc..) Each license is comprised of a name
+ * (which is a must) a long name which describes it, the URL where to find the full license content, a
+ * {@link java.util.regex.Pattern} which describes the license, and a boolean value whether this license is an approved
+ * one to use.
  *
  * @author Tomer Cohen
+ * @author Dan Feldman
  */
 @XStreamAlias(LicenseInfo.ROOT)
 public class LicenseInfo implements Serializable {
 
-    public static final LicenseInfo NOT_FOUND = createEmpty("Not Found");
-    public static final LicenseInfo UNKNOWN = createEmpty("Unknown");
+    public static final String NOT_FOUND = "Not Found";
+    public static final String UNKNOWN = "Unknown";
     public static final String ROOT = "license";
+    private static final String NOT_SEARCHED = "Not Searched";
+    public static final LicenseInfo EMPTY_UNKNOWN_LICENSE = createUnknown("", "");
+    public static final LicenseInfo NOT_FOUND_LICENSE = createNotFound();
+    //Signifies no attempt was made to search for this license so it doesn't get tagged as a conflict. INTERNAL USE ONLY
+    public static final LicenseInfo NOT_SEARCHED_LICENSE = new LicenseInfo(NOT_SEARCHED, "", "");
     public static final Predicate<LicenseInfo> NOT_VALID_LICENSE_PREDICATE = new Predicate<LicenseInfo>() {
         @Override
         public boolean apply(@Nonnull LicenseInfo input) {
             return !input.isValidLicense();
         }
     };
-    private String name;
-    private String longName;
-    private String url;
-    private String regexp;
-    private String comments;
-    private boolean approved;
+    private String name = "";
+    private String longName = "";
+    private String url = "";
+    private String regexp = "";
+    private String comments = "";
+    private boolean approved = false;
+
+    public LicenseInfo(String name, String longName, String url) {
+        this.name = name;
+        this.longName = longName;
+        this.url = url;
+    }
+
+    public LicenseInfo() {
+
+    }
 
     public boolean isApproved() {
         return approved;
@@ -90,7 +106,7 @@ public class LicenseInfo implements Serializable {
     }
 
     public boolean isValidLicense() {
-        return !equals(UNKNOWN) && !equals(NOT_FOUND);
+        return !isUnknown() && isFound();
     }
 
     public boolean matchesLicense(String otherLicense) {
@@ -109,11 +125,46 @@ public class LicenseInfo implements Serializable {
         return false;
     }
 
-    private static LicenseInfo createEmpty(String name) {
-        LicenseInfo licenseInfo = new LicenseInfo();
-        licenseInfo.setName(name);
-        licenseInfo.setLongName(name);
-        return licenseInfo;
+    /**
+     * No license info available
+     */
+    public static LicenseInfo createNotFound() {
+        return new LicenseInfo(NOT_FOUND, "", "");
+    }
+
+    public boolean isNotFound() {
+        return name.equals(NOT_FOUND);
+    }
+
+    /**
+     * NOTE: this is not the opposite of notFound - in order to be found a license's name must both be not equal to
+     * NOT_FOUND AND NOT_SEARCHED (so this is a found license that was extracted)
+     */
+    public boolean isFound() {
+        return !isNotFound() && !isNotSearhced();
+    }
+
+    /**
+     * License info exists, but wasn't matched to any existing license
+     */
+    public static LicenseInfo createUnknown(String name, String url) {
+        return new LicenseInfo(UNKNOWN, name, url);
+    }
+
+    public boolean isUnknown() {
+        return name.equals(UNKNOWN);
+    }
+
+    public boolean isNotSearhced() {
+        return name.equals(NOT_SEARCHED);
+    }
+
+    public static boolean isUnknownLicenseName(String licenseName) {
+        return licenseName.equalsIgnoreCase(UNKNOWN);
+    }
+
+    public static boolean isNotFoundLicenseName(String licenseName) {
+        return licenseName.equalsIgnoreCase(NOT_FOUND);
     }
 
     @Override
@@ -126,17 +177,19 @@ public class LicenseInfo implements Serializable {
         }
 
         LicenseInfo that = (LicenseInfo) o;
-
-        if (name != null ? !name.equals(that.name) : that.name != null) {
-            return false;
+        if (this.isUnknown() && that.isUnknown()) {
+            return longName != null ? longName.equals(that.longName) : that.longName != null;
+        } else {
+            return name != null ? name.equals(that.name) : that.name != null;
         }
-
-        return true;
     }
 
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        int result = super.hashCode();
+        result = 31 * result + name.hashCode();
+        result = 31 * result + longName.hashCode();
+        return result;
     }
 
     @Override

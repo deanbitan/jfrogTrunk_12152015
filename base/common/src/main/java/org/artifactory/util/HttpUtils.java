@@ -18,11 +18,10 @@
 
 package org.artifactory.util;
 
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -36,6 +35,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.RequestThreadLocal;
 import org.artifactory.rest.ErrorResponse;
+import org.artifactory.util.encodeing.URIUtil;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
@@ -250,7 +250,7 @@ public abstract class HttpUtils {
     public static String encodeQuery(String unescaped) {
         try {
             return URIUtil.encodeQuery(unescaped, "UTF-8");
-        } catch (URIException e) {
+        } catch (HttpException e) {
             // Nothing to do here, we will return the un-escaped value.
             log.warn("Could not encode path '{}' with UTF-8 charset, returning the un-escaped value.", unescaped);
         }
@@ -260,7 +260,7 @@ public abstract class HttpUtils {
     public static String decodeUri(String encodedUri) {
         try {
             return URIUtil.decode(encodedUri, "UTF-8");
-        } catch (URIException e) {
+        } catch (HttpException e) {
             // Nothing to do here, we will return the un-escaped value.
             log.warn("Could not decode uri '{}' with UTF-8 charset, returning the encoded value.", encodedUri);
         }

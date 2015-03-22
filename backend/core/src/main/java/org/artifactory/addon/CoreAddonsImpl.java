@@ -205,7 +205,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public List findLicensesInRepos(List<String> repoKeys, LicenseStatus status) {
+    public List findLicensesInRepos(Set<String> repoKeys, LicenseStatus status) {
         return Lists.newArrayList();
     }
 
@@ -395,7 +395,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public void validateTargetLicense(ReplicationBaseDescriptor descriptor, RealRepoDescriptor repoDescriptor,
             int numOfReplicationConfigured) {
-     }
+    }
 
     private BasicStatusHolder getReplicationRequiredStatusHolder() {
         BasicStatusHolder multiStatusHolder = new BasicStatusHolder();

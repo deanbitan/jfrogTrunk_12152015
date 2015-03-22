@@ -20,7 +20,6 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

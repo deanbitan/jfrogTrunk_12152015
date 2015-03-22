@@ -27,6 +27,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
+import org.jfrog.build.api.release.BintrayUploadInfoOverride;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -92,14 +93,15 @@ public interface BintrayService {
      * @param override        Overrides the descriptor with minimal parameters for version creation
      * @return MultiStatusHolder containing results of the push operation
      */
-    BasicStatusHolder pushPromotedBuild(Build build, String gpgPassphrase, Boolean gpgSignOverride, BintrayUploadInfoOverride override);
+    BasicStatusHolder pushPromotedBuild(Build build, String gpgPassphrase, Boolean gpgSignOverride,
+            BintrayUploadInfoOverride override);
 
     /**
      * Pushes a version to Bintray according to the file paths that are specified in the JSON file, if no paths are
      * specified pushes the entire directory tree that resides under the folder containing the json file
      *
-     * @param jsonFile The json file
-     * @param gpgPassphrase  The key that is used with the subject's Bintray-stored gpg key to sign the version
+     * @param jsonFile      The json file
+     * @param gpgPassphrase The key that is used with the subject's Bintray-stored gpg key to sign the version
      * @return MultiStatusHolder containing results of the push operation
      */
     BasicStatusHolder pushVersionFilesAccordingToSpec(FileInfo jsonFile, Boolean gpgSignOverride, String gpgPassphrase);

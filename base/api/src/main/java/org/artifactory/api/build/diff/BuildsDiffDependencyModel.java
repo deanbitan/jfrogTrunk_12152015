@@ -21,7 +21,7 @@ package org.artifactory.api.build.diff;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Builds diff model object which wraps dependencies diff
@@ -33,7 +33,7 @@ public class BuildsDiffDependencyModel extends BuildsDiffBaseFileModel {
     @JsonIgnore
     private boolean internalDependency;
 
-    private List<String> scopes;
+    private Set<String> scopes;
 
     public boolean isInternalDependency() {
         return internalDependency;
@@ -43,11 +43,11 @@ public class BuildsDiffDependencyModel extends BuildsDiffBaseFileModel {
         this.internalDependency = internalDependency;
     }
 
-    public List<String> getScopes() {
+    public Set<String> getScopes() {
         return scopes;
     }
 
-    public void setScopes(List<String> scopes) {
+    public void setScopes(Set<String> scopes) {
         this.scopes = scopes;
     }
 

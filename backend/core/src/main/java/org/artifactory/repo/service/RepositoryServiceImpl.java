@@ -64,6 +64,7 @@ import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
+import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
@@ -134,6 +135,7 @@ import org.artifactory.security.PermissionTargetInfo;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.StorageService;
+import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.storage.fs.lock.LockingHelper;
 import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.fs.service.ItemMetaInfo;
@@ -156,7 +158,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -176,8 +177,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import static org.artifactory.storage.fs.repo.StoringRepo.MOVE_OR_COPY_TX_NAME;
 
 @Service
 @Reloadable(beanClass = InternalRepositoryService.class,
@@ -219,6 +218,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Autowired
     private FileService fileService;
+
+    @Autowired
+    private BinaryStore binaryStore;
 
     @Autowired
     private FolderPruningService pruneService;
@@ -383,12 +385,12 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
         //Delete all acl references to the repository being deleted
         List<AclInfo> acls = aclService.getAllAcls();
-        for(AclInfo aclInfo : acls) {
+        for (AclInfo aclInfo : acls) {
             MutablePermissionTargetInfo permissionTarget = InfoFactoryHolder.get().copyPermissionTarget
                     (aclInfo.getPermissionTarget());
             String cachedRepoKey = repoKey.concat(LocalCacheRepoDescriptor.PATH_SUFFIX); //for remote repos
             List<String> repoKeys = permissionTarget.getRepoKeys();
-            if (repoKeys.remove(repoKey) || repoKeys.remove(cachedRepoKey)){
+            if (repoKeys.remove(repoKey) || repoKeys.remove(cachedRepoKey)) {
                 MutableAclInfo mutableAclInfo = InfoFactoryHolder.get().copyAcl(aclInfo);
                 permissionTarget.setRepoKeys(repoKeys);
                 mutableAclInfo.setPermissionTarget(permissionTarget);
@@ -1067,6 +1069,31 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
+    public ChecksumInfo setClientChecksum(LocalRepo repo, ChecksumType checksumType, RepoPath targetFileRepoPath,
+            String checksum) {
+        MutableVfsItem fsItem = repo.getMutableFsItem(targetFileRepoPath);
+        if (fsItem == null) {
+            throw new ItemNotFoundRuntimeException(targetFileRepoPath);
+        }
+        if (!fsItem.isFile()) {
+            throw new FileExpectedException(targetFileRepoPath);
+        }
+
+        if (!checksumType.isValid(checksum)) {
+            log.warn("Uploading non valid original checksum for {}", fsItem.getRepoPath());
+        }
+        MutableVfsFile vfsFile = (MutableVfsFile) fsItem;
+        vfsFile.setClientChecksum(checksumType, checksum);
+
+        // fire replication event for the client checksum
+        RepoPath checksumRepoPath = InternalRepoPathFactory.create(targetFileRepoPath.getRepoKey(),
+                targetFileRepoPath.getPath() + checksumType.ext());
+        addonsManager.addonByType(ReplicationAddon.class).offerLocalReplicationDeploymentEvent(checksumRepoPath);
+
+        return vfsFile.getInfo().getChecksumsInfo().getChecksumInfo(checksumType);
+    }
+
+    @Override
     public MoveMultiStatusHolder move(RepoPath from, RepoPath to, boolean dryRun, boolean suppressLayouts,
             boolean failFast) {
         MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to).copy(false).dryRun(dryRun).
@@ -1077,7 +1104,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public MoveMultiStatusHolder move(Set<RepoPath> pathsToMove, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast) {
-        TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
         Set<RepoPath> pathsToMoveIncludingParents = aggregatePathsToMove(pathsToMove, targetLocalRepoKey, false);
 
         log.debug("The following paths will be moved: {}", pathsToMoveIncludingParents);
@@ -1107,7 +1133,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public MoveMultiStatusHolder copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey,
             Properties properties, boolean dryRun, boolean failFast) {
-        TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
         Set<RepoPath> pathsToCopyIncludingParents = aggregatePathsToMove(pathsToCopy, targetLocalRepoKey, true);
 
         log.debug("The following paths will be copied: {}", pathsToCopyIncludingParents);
@@ -1127,7 +1152,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     private MoveMultiStatusHolder moveOrCopy(MoverConfig config) {
-        TransactionSynchronizationManager.setCurrentTransactionName(MOVE_OR_COPY_TX_NAME);
         MoveMultiStatusHolder status = new MoveMultiStatusHolder();
         getRepoPathMover().moveOrCopy(status, config);
         return status;
@@ -1412,7 +1436,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public List<VirtualRepoDescriptor> getVirtualRepoDescriptors() {
         ArrayList<VirtualRepoDescriptor> list = new ArrayList<>();
-        list.add(globalVirtualRepo.getDescriptor());
+        if (!ConstantValues.disableGlobalRepoAccess.getBoolean()) {
+            list.add(globalVirtualRepo.getDescriptor());
+        }
         list.addAll(centralConfigService.getDescriptor().getVirtualRepositoriesMap().values());
         return list;
     }
@@ -1579,6 +1605,22 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public RepoResource saveResource(StoringRepo repo, SaveResourceContext saveContext)
+            throws IOException, RepoRejectException {
+        // save binary early without opening DB transaction (except in full db mode)
+        SaveResourceContext newSaveContext = null;
+        try {
+            BinaryInfo binaryInfo = binaryStore.addBinary(saveContext.getInputStream());
+            newSaveContext = new SaveResourceContext.Builder(saveContext)
+                    .binaryInfo(binaryInfo).build();
+        } catch (IOException e) {
+            saveContext.setException(e);    // signal error
+            throw e;
+        }
+        return getTransactionalMe().saveResourceInTransaction(repo, newSaveContext);
+    }
+
+    @Override
+    public RepoResource saveResourceInTransaction(StoringRepo repo, SaveResourceContext saveContext)
             throws IOException, RepoRejectException {
         return repo.saveResource(saveContext);
     }
@@ -1930,13 +1972,15 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     /**
      * check if repo exist already in case a new repo is created
+     *
      * @param repoPath
      * @return true if exist in cache
      */
     @Override
-    public boolean isRepoExistInCache(RepoPath repoPath){
+    public boolean isRepoExistInCache(RepoPath repoPath) {
         return getLocalOrCachedRepository(repoPath) != null;
     }
+
     /**
      * Returns an instance of the Repo Path Mover
      *

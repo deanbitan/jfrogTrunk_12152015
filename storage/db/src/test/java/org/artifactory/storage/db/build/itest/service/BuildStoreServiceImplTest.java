@@ -19,6 +19,7 @@
 package org.artifactory.storage.db.build.itest.service;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.artifactory.build.BuildRun;
 import org.artifactory.storage.build.service.BuildStoreService;
 import org.artifactory.storage.db.build.service.BuildStoreServiceImpl;
@@ -110,8 +111,8 @@ public class BuildStoreServiceImplTest extends DbBaseTest {
      * @return Build object
      */
     private Build getBuildObject(String buildName, String buildNumber, String startedBuild) {
-        Dependency dependency = new DependencyBuilder().id("moo").type("bob").scopes(Lists.newArrayList("mitzi")).
-                sha1("pop").md5("shmop").requiredBy(Lists.newArrayList("pitzi")).build();
+        Dependency dependency = new DependencyBuilder().id("moo").type("bob").scopes(Sets.newHashSet("mitzi")).sha1(
+                "pop").md5("shmop").requiredBy(Lists.newArrayList("pitzi")).build();
 
         Artifact artifact = new ArtifactBuilder("blob").type("glob").sha1("shlob").md5("mob").
                 properties(new Properties()).build();

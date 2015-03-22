@@ -19,7 +19,6 @@
 package org.artifactory.engine;
 
 import com.google.common.collect.Iterables;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
@@ -208,7 +207,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
             respond(requestContext, response, resource);
 
         } catch (IOException e) {
-            response.setException(e);
+            RepoRequests.logToContext("Request failed: %s", e.getMessage());
             //We can get here when sending a response while the client hangs up the connection.
             //In this case the response will be committed so there is no point in sending an error.
             if (!response.isCommitted()) {
@@ -218,13 +217,6 @@ public class DownloadServiceImpl implements InternalDownloadService {
         } finally {
             if (response.isSuccessful()) {
                 RepoRequests.logToContext("Request succeeded");
-            } else {
-                Exception exception = response.getException();
-                if (exception != null) {
-                    RepoRequests.logToContext("Request failed: %s", exception.getMessage());
-                } else {
-                    RepoRequests.logToContext("Request failed with no exception");
-                }
             }
         }
     }
@@ -401,7 +393,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
                     se.getMessage());
             sendError(requestContext, response, HttpStatus.SC_INTERNAL_SERVER_ERROR, se.getMessage(), log);
         } finally {
-            IOUtils.closeQuietly(handle);
+            response.close(handle);
         }
     }
 

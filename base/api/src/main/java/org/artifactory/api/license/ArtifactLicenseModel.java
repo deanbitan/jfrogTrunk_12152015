@@ -92,14 +92,14 @@ public class ArtifactLicenseModel implements Serializable {
         setApproved(!isApproved());
     }
 
+    /**
+     * Build a LicenseInfo Object from this model with State.FOUND - use this only when persisting License Info
+     */
     public LicenseInfo buildLicenseInfo() {
-        LicenseInfo info = new LicenseInfo();
+        LicenseInfo info = new LicenseInfo(name, longName, url);
         info.setApproved(approved);
-        info.setName(name);
-        info.setLongName(longName);
         info.setComments(comments);
         info.setRegexp(regexp);
-        info.setUrl(url);
         return info;
     }
 }

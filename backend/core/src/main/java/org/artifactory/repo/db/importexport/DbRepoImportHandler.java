@@ -60,7 +60,6 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.BinaryInsertRetryException;
 import org.artifactory.storage.StorageProperties;
-import org.artifactory.storage.fs.repo.StoringRepo;
 import org.artifactory.storage.spring.ArtifactoryStorageContext;
 import org.artifactory.storage.spring.StorageContextHelper;
 import org.artifactory.update.md.MetadataVersion;
@@ -625,7 +624,6 @@ public class DbRepoImportHandler extends DbRepoImportExportBase {
 
     private void startTransaction() {
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
-        def.setName(StoringRepo.IMPORT_TX_NAME);
         def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
         AbstractPlatformTransactionManager txManager = getTransactionManager();
         transactionStartTime = DateTime.now();

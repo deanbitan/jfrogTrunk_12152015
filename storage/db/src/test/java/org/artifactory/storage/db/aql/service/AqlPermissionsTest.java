@@ -26,7 +26,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         ReflectionTestUtils.setField(aqlService, "permissionProvider", permissionProvider);
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy("items.find()");
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult, permissionProvider);
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -50,7 +50,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         ReflectionTestUtils.setField(aqlService, "permissionProvider", permissionProvider);
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy("items.find()");
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult, permissionProvider);
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -73,7 +73,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         ReflectionTestUtils.setField(aqlService, "permissionProvider", permissionProvider);
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy("items.find({\"type\":\"any\"})");
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult, permissionProvider);
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -97,7 +97,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(
                 "items.find({\"type\":\"any\"}).include(\"property.*\")");
-        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult, permissionProvider);
+        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -121,7 +121,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(
                 "items.find({\"type\":\"any\"}).include(\"property.*\")");
-        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult, permissionProvider);
+        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -145,7 +145,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(
                 "items.find({\"type\":\"any\"}).include(\"property.*\")");
-        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult, permissionProvider);
+        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -188,6 +188,11 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         public boolean isAdmin() {
             return false;
         }
+
+        @Override
+        public boolean isOss() {
+            return false;
+        }
     }
 
     private class UserPermissions implements AqlPermissionProvider {
@@ -199,6 +204,11 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
 
         @Override
         public boolean isAdmin() {
+            return false;
+        }
+
+        @Override
+        public boolean isOss() {
             return false;
         }
     }

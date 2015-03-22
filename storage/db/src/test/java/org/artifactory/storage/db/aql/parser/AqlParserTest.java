@@ -69,6 +69,7 @@ public class AqlParserTest {
         assertValid(sm,
                 "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"archive.entry_name\").limit(10)");
         assertValid(sm, "items.find({\"@*\" : {\"$eq\" : \"1.1*\"}}).limit(10)");
+        assertValid(sm, "items.find({\"@*\" : {\"$eq\" : null}}).limit(10)");
 
 
     }

@@ -111,7 +111,9 @@ public enum ArtifactoryVersion {
     v342("3.4.2", 30140),
     v350("3.5.0", 30150),
     v351("3.5.1", 30152),
-    v352("3.5.2", Integer.MAX_VALUE);
+    v352("3.5.2", 30159),
+    v3521("3.5.2.1", 30160),
+    v353("3.5.3", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();

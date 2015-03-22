@@ -32,6 +32,11 @@ import static org.artifactory.aql.model.AqlFieldEnum.itemType;
  */
 public class AqlQueryOptimizer {
     public void optimize(AqlQuery aqlQuery) {
+        handleItemType(aqlQuery);
+        handleNullStat(aqlQuery);
+    }
+
+    public void handleNullStat(AqlQuery aqlQuery) {
         boolean change;
         do {
             // Remove Item type = all criterias
@@ -51,7 +56,28 @@ public class AqlQueryOptimizer {
             // Remove empty parenthesis
             change = change | removeEmptyParenthesis(aqlQuery);
         } while (change);
+    }
 
+    public void handleItemType(AqlQuery aqlQuery) {
+        boolean change;
+        do {
+            // Remove Item type = all criterias
+            change = removeUnnecessaryItemType(aqlQuery);
+            // Remove duplicates operators
+            change = change | removeDuplicateOperators(aqlQuery);
+            // Remove last operator
+            change = change | removeLastOperator(aqlQuery);
+            // Remove last operator
+            change = change | removeFirstOperator(aqlQuery);
+            // Remove operator before close parenthesis
+            change = change | removeOperatorBeforeCloseParenthesis(aqlQuery);
+            // Remove operator after open parenthesis
+            change = change | removeOperatorAfterOpenParenthesis(aqlQuery);
+            // Remove parenthesis with operators
+            change = change | removeEmptyParenthesisWithOperator(aqlQuery);
+            // Remove empty parenthesis
+            change = change | removeEmptyParenthesis(aqlQuery);
+        } while (change);
     }
 
     private boolean removeUnnecessaryItemType(AqlQuery aqlQuery) {

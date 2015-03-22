@@ -20,6 +20,7 @@ package org.artifactory.storage.db.spring;
 
 import org.artifactory.storage.fs.session.StorageSession;
 import org.artifactory.storage.fs.session.StorageSessionHolder;
+import org.artifactory.util.TimeUnitFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -35,19 +36,22 @@ public class SessionSynchronization extends TransactionSynchronizationAdapter {
     private static final Logger log = LoggerFactory.getLogger(SessionSynchronization.class);
 
     private final StorageSession session;
+    private final String sessionName;
+    private final long startTime = System.nanoTime();
 
     private boolean sessionActive = true;
 
-    public SessionSynchronization(StorageSession session) {
+    public SessionSynchronization(StorageSession session, String name) {
         this.session = session;
+        sessionName = name;
         StorageSessionHolder.setSession(session);
+        log.debug("Session started: '{}'", sessionName);
     }
 
     @Override
     public void suspend() {
         if (sessionActive) {
             StorageSessionHolder.removeSession();
-            //TransactionSynchronizationManager.unbindResource(this.session);
         }
         sessionActive = false;
     }
@@ -56,7 +60,6 @@ public class SessionSynchronization extends TransactionSynchronizationAdapter {
     public void resume() {
         if (sessionActive) {
             log.warn("TX-resume when session is already active: {}", session);
-            //TransactionSynchronizationManager.bindResource(this.session, this.session);
         }
         StorageSessionHolder.setSession(session);
         sessionActive = true;
@@ -85,6 +88,10 @@ public class SessionSynchronization extends TransactionSynchronizationAdapter {
                 session.releaseResources();
                 StorageSessionHolder.removeSession();
             }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Session completed: '{}' in {}",
+                    sessionName, TimeUnitFormat.getTimeString(System.nanoTime() - startTime));
         }
     }
 }

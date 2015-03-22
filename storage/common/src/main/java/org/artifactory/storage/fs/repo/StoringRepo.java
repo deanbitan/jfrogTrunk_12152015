@@ -33,9 +33,6 @@ import java.util.List;
  */
 public interface StoringRepo {
 
-    String IMPORT_TX_NAME = "ImportTx";
-    String MOVE_OR_COPY_TX_NAME = "MoveOrCopyTx";
-
     /**
      * @return The repository key
      */

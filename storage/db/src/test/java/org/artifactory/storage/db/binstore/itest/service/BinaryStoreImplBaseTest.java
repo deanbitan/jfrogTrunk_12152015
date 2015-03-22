@@ -206,7 +206,7 @@ public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
     public void testLoadResources(final String resName, final String sha1, final String md5,
             final long length, long nodeId)
             throws IOException, SQLException {
-        BinaryInfo binaryInfo = dbService.invokeInTransaction(new Callable<BinaryInfo>() {
+        BinaryInfo binaryInfo = dbService.invokeInTransaction("testLoadResources", new Callable<BinaryInfo>() {
             @Override
             public BinaryInfo call() throws Exception {
                 return addBinary(resName, sha1, md5, length);

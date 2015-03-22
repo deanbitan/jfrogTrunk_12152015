@@ -94,8 +94,9 @@ public class TreeBrowsingCriteriaBuilder {
         return this;
     }
 
-    private static class ItemNodeSecurityFilter implements ItemNodeFilter {
+    private static class ItemNodeSecurityFilter implements ItemNodeFilter,FilterAccepted {
         private final AuthorizationService authService;
+        private boolean canRead = true;
 
         public ItemNodeSecurityFilter(AuthorizationService authService) {
             this.authService = authService;
@@ -103,11 +104,17 @@ public class TreeBrowsingCriteriaBuilder {
 
         @Override
         public boolean accepts(@Nonnull ItemInfo itemInfo) {
-            return authService.canRead(itemInfo.getRepoPath());
+            canRead =  authService.canRead(itemInfo.getRepoPath());
+            return canRead;
+        }
+
+        @Override
+        public boolean isNodeAcceptCanRead() {
+            return canRead;
         }
     }
 
-    private static class ItemNodeRepoIncludeExcludeFilter implements ItemNodeFilter {
+    private static class ItemNodeRepoIncludeExcludeFilter implements ItemNodeFilter,FilterAccepted {
         private final RepositoryService repoService;
 
         public ItemNodeRepoIncludeExcludeFilter(RepositoryService repoService) {
@@ -118,6 +125,11 @@ public class TreeBrowsingCriteriaBuilder {
         public boolean accepts(@Nonnull ItemInfo itemInfo) {
             RepoPath repoPath = itemInfo.getRepoPath();
             return repoService.isRepoPathAccepted(repoPath);
+        }
+
+        @Override
+        public boolean isNodeAcceptCanRead() {
+            return true;
         }
     }
 }

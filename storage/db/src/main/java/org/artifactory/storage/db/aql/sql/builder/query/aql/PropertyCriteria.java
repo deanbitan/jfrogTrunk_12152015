@@ -36,23 +36,13 @@ public class PropertyCriteria extends Criteria {
         SqlTable table1 = getTable1();
         SqlTable table2 = getTable2();
         // update the Sql input param list
-        tryToAddParam(params, value1);
-        tryToAddParam(params, value2);
         // Get the ComparatorEnum
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());
         AqlVariable key = AqlFieldResolver.resolve(AqlFieldEnum.propertyKey.signature);
         AqlVariable value = AqlFieldResolver.resolve(AqlFieldEnum.propertyValue.signature);
-        boolean sign = AqlComparatorEnum.notEquals == comparatorEnum || AqlComparatorEnum.notMatches == comparatorEnum;
-        String relation = sign ? " or " : " and ";
-        AqlComparatorEnum equal = sign ? AqlComparatorEnum.notEquals : AqlComparatorEnum.equals;
-        if (sign) {
-            return "((" + createSqlCriteria(equal, key, table1, table2, value1) + " or" +
-                    createSqlCriteria(comparatorEnum, value, table1, table2, value2) + ")" + relation + "(" +
-                    a(key, table1, value1, table2, true) + " and " + a(value, table1, value2, table2,
-                    true) + "))";
-        } else {
-            return "(" + createSqlCriteria(equal, key, table1, table2, value1) + " and" +
-                    createSqlCriteria(comparatorEnum, value, table1, table2, value2) + ")";
-        }
+        boolean not = AqlComparatorEnum.notEquals == comparatorEnum || AqlComparatorEnum.notMatches == comparatorEnum;
+        String relation = not ? " or " : " and ";
+        return "(" + createSqlCriteria(comparatorEnum, key, table1, value1, params) + relation +
+                createSqlCriteria(comparatorEnum, value, table1, value2, params) + ")";
     }
 }

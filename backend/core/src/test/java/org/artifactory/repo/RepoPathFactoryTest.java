@@ -18,20 +18,51 @@
 
 package org.artifactory.repo;
 
-import org.testng.Assert;
+import org.artifactory.model.common.RepoPathImpl;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 /**
  * @author Yoav Landman
  */
+@Test
 public class RepoPathFactoryTest {
 
-    @Test
     public void testRepoPathFactory() {
         RepoPath repoPath = InternalRepoPathFactory.create("repox", "/a/b/c/");
-        Assert.assertEquals(repoPath, InternalRepoPathFactory.create("repox", "/a/b/c/"));
-        Assert.assertEquals(repoPath, InternalRepoPathFactory.create("repox", "a/b/c"));
-        Assert.assertEquals(repoPath, InternalRepoPathFactory.create("repox", "a/b/c/"));
-        Assert.assertEquals(repoPath, InternalRepoPathFactory.create("repox", "/a/b/c"));
+        assertEquals(repoPath, InternalRepoPathFactory.create("repox", "/a/b/c/"));
+        assertEquals(repoPath, InternalRepoPathFactory.create("repox", "a/b/c"));
+        assertEquals(repoPath, InternalRepoPathFactory.create("repox", "a/b/c/"));
+        assertEquals(repoPath, InternalRepoPathFactory.create("repox", "/a/b/c"));
+    }
+
+    public void pathWithLeadingSlash() {
+        assertEquals(RepoPathFactory.create("/a/b/c"), new RepoPathImpl("a", "b/c"));
+        assertEquals(RepoPathFactory.create("/a"), new RepoPathImpl("a", ""));
+    }
+
+    public void rootRepositoryPathSingleArgument() {
+        RepoPath repoPath = RepoPathFactory.create("myrepo");
+        assertEquals(repoPath.getRepoKey(), "myrepo");
+        assertEquals(repoPath.getPath(), "");
+        assertTrue(repoPath.isFolder());
+        assertTrue(repoPath.isRoot());
+    }
+
+    public void rootRepositoryPath() {
+        RepoPath repoPath = RepoPathFactory.create("myrepo", "");
+        assertEquals(repoPath.getRepoKey(), "myrepo");
+        assertEquals(repoPath.getPath(), "");
+        assertTrue(repoPath.isFolder());
+        assertTrue(repoPath.isRoot());
+    }
+
+    public void singleArgumentFactoryFolder() {
+        RepoPath repoPath = RepoPathFactory.create("myrepo/a/b/c/");
+        assertEquals(repoPath.getRepoKey(), "myrepo");
+        assertEquals(repoPath.getPath(), "a/b/c");
+        assertTrue(repoPath.isFolder());
     }
 }

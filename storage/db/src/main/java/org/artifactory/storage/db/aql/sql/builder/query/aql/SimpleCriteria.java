@@ -37,16 +37,8 @@ public class SimpleCriteria extends Criteria {
         SqlTable table1 = getTable1();
         SqlTable table2 = getTable2();
         // Add the variables to the input params if needed
-        tryToAddParam(params, variable2);
         // Convert criteria into Sql
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());
-        boolean sign = AqlComparatorEnum.notEquals == comparatorEnum || AqlComparatorEnum.notMatches == comparatorEnum;
-        String relation = sign ? " or" : " and";
-        if (sign) {
-            return "(" + createSqlCriteria(comparatorEnum, variable1, table1, table2, variable2)
-                    + relation + a(variable1, table1, variable2, table2, true) + ")";
-        } else {
-            return createSqlCriteria(comparatorEnum, variable1, table1, table2, variable2);
-        }
+        return createSqlCriteria(comparatorEnum, variable1, table1, variable2, params);
     }
 }

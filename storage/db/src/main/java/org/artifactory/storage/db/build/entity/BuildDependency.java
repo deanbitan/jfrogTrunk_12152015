@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.util.PathUtils;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 10/30/12
@@ -40,17 +41,14 @@ public class BuildDependency {
     private final String sha1;
     private final String md5;
 
-    public BuildDependency(long dependencyId, long moduleId, String dependencyNameId, List<String> dependencyScopes,
-            String dependencyType, String sha1,
-            String md5) {
+    public BuildDependency(long dependencyId, long moduleId, String dependencyNameId, Set<String> dependencyScopes,
+            String dependencyType, String sha1, String md5) {
         this(dependencyId, moduleId, dependencyNameId,
-                PathUtils.collectionToDelimitedString(dependencyScopes, DELIMITER),
-                dependencyType, sha1, md5);
+                PathUtils.collectionToDelimitedString(dependencyScopes, DELIMITER), dependencyType, sha1, md5);
     }
 
     public BuildDependency(long dependencyId, long moduleId, String dependencyNameId, String dependencyScopes,
-            String dependencyType, String sha1,
-            String md5) {
+            String dependencyType, String sha1, String md5) {
         if (dependencyId <= 0L || moduleId <= 0L) {
             throw new IllegalArgumentException("Dependency or Module id cannot be zero or negative!");
         }

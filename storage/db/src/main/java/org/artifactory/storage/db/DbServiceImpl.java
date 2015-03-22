@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
@@ -135,7 +136,10 @@ public class DbServiceImpl implements DbService {
     }
 
     @Override
-    public <T> T invokeInTransaction(Callable<T> execute) {
+    public <T> T invokeInTransaction(String transactionName, Callable<T> execute) {
+        if (StringUtils.isNotBlank(transactionName)) {
+            TransactionSynchronizationManager.setCurrentTransactionName(transactionName);
+        }
         try {
             return execute.call();
         } catch (Exception e) {

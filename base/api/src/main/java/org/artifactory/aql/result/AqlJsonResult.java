@@ -5,7 +5,6 @@ import com.google.common.collect.Maps;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
-import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.common.ConstantValues;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
@@ -39,8 +38,8 @@ public class AqlJsonResult extends AqlRestResult implements Cloneable {
     private final AqlDomainEnum domain;
     private byte[] out;
 
-    public AqlJsonResult(AqlLazyResult lazyResult, AqlPermissionProvider permissionProvider) {
-        super(permissionProvider);
+    public AqlJsonResult(AqlLazyResult lazyResult) {
+        super(lazyResult.getPermissionProvider());
         this.resultSet = lazyResult.getResultSet();
         this.fields = lazyResult.getFields();
         this.dbFieldNames = lazyResult.getDbFieldNames();

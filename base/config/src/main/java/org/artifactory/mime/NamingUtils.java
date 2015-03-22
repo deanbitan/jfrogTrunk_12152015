@@ -85,6 +85,24 @@ public abstract class NamingUtils {
         return "application/x-maven-pom+xml".equalsIgnoreCase(ct.getType());
     }
 
+    public static boolean isNuPkgFile(String fileName) {
+        MimeType mimeType = getMimeType(fileName);
+        return "application/x-nupkg".equalsIgnoreCase(mimeType.getType());
+    }
+
+    public static boolean isRpmFile(String fileName) {
+        return fileName.endsWith(".rpm");
+    }
+
+    public static boolean isGemFile(String fileNaem) {
+        MimeType mimeType = NamingUtils.getMimeType(fileNaem);
+        return "application/x-rubygems".equalsIgnoreCase(mimeType.getType());
+    }
+
+    public static boolean isNpmFile(String fileName) {
+        return fileName.endsWith(".tgz");
+    }
+
     /**
      * @param path Files path
      * @return True if the file syntax is xml
@@ -144,7 +162,7 @@ public abstract class NamingUtils {
     /**
      * @param path The path to check
      * @return True if the path represents a checksum for metadata (ie metadata path and ends with checksum file
-     *         extension)
+     * extension)
      */
     public static boolean isMetadataChecksum(String path) {
         if (isChecksum(path)) {

@@ -1,6 +1,7 @@
 package org.artifactory.storage.db.aql.dao;
 
 import org.artifactory.aql.AqlException;
+import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQuery;
 import org.artifactory.storage.db.aql.sql.result.AqlEagerResultImpl;
@@ -47,14 +48,14 @@ public class AqlDao extends BaseDao {
      * The lazy mode dynamically fills the result into stream, actually the AqlQueryStreamResult role is is kind of
      * broker between the database and the client
      */
-    public AqlLazyResult executeQueryLazy(SqlQuery sqlQuery) {
+    public AqlLazyResult executeQueryLazy(SqlQuery sqlQuery, AqlPermissionProvider aqlPermissionProvider) {
         ResultSet resultSet;
         try {
             resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
         } catch (SQLException e) {
             throw new AqlException("Failed to execute the following sql query" + sqlQuery, e);
         }
-        AqlLazyResult aqlQueryResult = new AqlLazyResultImpl(resultSet, sqlQuery);
+        AqlLazyResult aqlQueryResult = new AqlLazyResultImpl(resultSet, sqlQuery, aqlPermissionProvider);
         return aqlQueryResult;
     }
 }

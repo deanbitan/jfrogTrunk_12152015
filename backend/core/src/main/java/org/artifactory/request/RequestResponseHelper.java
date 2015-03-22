@@ -36,7 +36,6 @@ import org.artifactory.security.AccessLogger;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.DownloadEntry;
 import org.artifactory.util.HttpUtils;
-import org.artifactory.webapp.servlet.HttpArtifactoryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -171,7 +170,7 @@ public final class RequestResponseHelper {
     private void updateResponseFromRepoResource(ArtifactoryResponse response, RepoResource res) {
         String mimeType = res.getMimeType();
         response.setContentType(mimeType);
-        if (!response.isContentLengthSet()) {
+        if (!isContentLengthSet(response)) {
             //Only set the content length once
             response.setContentLength(res.getSize());
         }
@@ -179,6 +178,10 @@ public final class RequestResponseHelper {
         if (res.isExpirable()) {
             noCache(response);
         }
+    }
+
+    private boolean isContentLengthSet(ArtifactoryResponse response) {
+        return response.getContentLength() != -1;
     }
 
     private void setBasicHeaders(ArtifactoryResponse response, RepoResource res, boolean contentBrowsingDisabled) {
@@ -194,18 +197,18 @@ public final class RequestResponseHelper {
         String md5 = info.getMd5();
         response.setMd5(md5);
 
-        if (response instanceof HttpArtifactoryResponse) {
+        if (response instanceof ArtifactoryResponseBase) {
             String fileName = info.getName();
             if (!isNotZipResource(res)) {
                 // The filename is the zip entry inside the zip
                 ZipEntryResource zipEntryResource = (ZipEntryResource) res;
                 fileName = zipEntryResource.getEntryPath();
             }
-            ((HttpArtifactoryResponse) response).setFilename(fileName);
+            ((ArtifactoryResponseBase) response).setFilename(fileName);
 
             // content disposition is not set only for archive resources when archived browsing is enabled
             if (contentBrowsingDisabled) {
-                ((HttpArtifactoryResponse) response).setContentDispositionAttachment(fileName);
+                ((ArtifactoryResponseBase) response).setContentDispositionAttachment(fileName);
             }
         }
     }

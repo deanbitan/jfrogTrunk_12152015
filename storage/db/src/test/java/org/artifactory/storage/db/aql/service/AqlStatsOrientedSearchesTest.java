@@ -1,15 +1,12 @@
 package org.artifactory.storage.db.aql.service;
 
 import org.artifactory.aql.result.AqlEagerResult;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.annotations.Test;
 
 /**
  * @author Gidi Shabat
  */
 public class AqlStatsOrientedSearchesTest extends AqlAbstractServiceTest {
-    @Autowired
-    private AqlServiceImpl aqlService;
 
     ///*Statistics search*/
     @Test
@@ -19,5 +16,6 @@ public class AqlStatsOrientedSearchesTest extends AqlAbstractServiceTest {
         assertSize(queryResult, 2);
         assertStatistics(queryResult, 15, "yossis");
     }
+
 }
 

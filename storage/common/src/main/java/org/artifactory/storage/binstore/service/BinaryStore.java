@@ -42,7 +42,7 @@ public interface BinaryStore {
      *
      * @param sha1 the checksum key
      * @return the stream that should be closed by the user
-     * @throws BinaryNotFoundException If the checksum does not exists in this store
+     * @throws org.artifactory.storage.binstore.service.BinaryNotFoundException If the checksum does not exists in this store
      */
     @Nonnull
     InputStream getBinary(String sha1) throws BinaryNotFoundException;

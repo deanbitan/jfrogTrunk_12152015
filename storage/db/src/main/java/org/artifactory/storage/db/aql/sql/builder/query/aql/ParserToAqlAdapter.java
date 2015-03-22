@@ -11,11 +11,11 @@ import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
 import org.artifactory.storage.db.aql.parser.elements.ParserElement;
 import org.artifactory.storage.db.aql.parser.elements.high.level.basic.language.*;
-import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.CriteriaEqualsElement;
+import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.CriteriaDefaultPropertyElement;
 import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.CriteriaEqualsPropertyElement;
-import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.CriteriaMatchElement;
-import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.CriteriaMatchPropertyElement;
+import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.DefaultCriteriaElement;
 import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.DomainElement;
+import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.EqualsCriteriaElement;
 import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.FunctionElement;
 import org.artifactory.storage.db.aql.parser.elements.high.level.domain.sensitive.IncludeExtensionElement;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.AqlToSqlQueryBuilderException;
@@ -73,17 +73,17 @@ public class ParserToAqlAdapter extends AqlAdapter {
         context.resetIndex();
         while (context.hasNext()) {
             Pair<ParserElement, String> element = context.getElement();
-            if (element.getFirst() instanceof CriteriaEqualsElement) {
+            if (element.getFirst() instanceof EqualsCriteriaElement) {
                 handleCriteriaEquals(context);
             }
-            if (element.getFirst() instanceof CriteriaMatchElement) {
-                handleCriteriaMatch(context);
+            if (element.getFirst() instanceof DefaultCriteriaElement) {
+                handleDefaultCriteria(context);
             }
             if (element.getFirst() instanceof CriteriaEqualsPropertyElement) {
-                handleCriteriaEqualsProperty(context);
+                handleEqualsCriteriaProperty(context);
             }
-            if (element.getFirst() instanceof CriteriaMatchPropertyElement) {
-                handleCriteriaMatchProperty(context);
+            if (element.getFirst() instanceof CriteriaDefaultPropertyElement) {
+                handleDefaultCriteriaProperty(context);
             }
             if (element.getFirst() instanceof FunctionElement) {
                 handleFunction(context);
@@ -269,13 +269,13 @@ public class ParserToAqlAdapter extends AqlAdapter {
         // Remove element from parser result elements
         context.decrementIndex(1);
         // Get the criteria second variable
-        String name2 = context.getElement().getSecond();
+        String variable = resolveVariable(context);
         // Create equals criteria
-        Criteria criteria = createSimpleCriteria(subDomain, aqlField, name2, AqlComparatorEnum.equals, context);
+        Criteria criteria = createSimpleCriteria(subDomain, aqlField, variable, AqlComparatorEnum.equals, context);
         addCriteria(context, criteria);
     }
 
-    private void handleCriteriaMatch(ParserToAqlAdapterContext context) throws AqlException {
+    private void handleDefaultCriteria(ParserToAqlAdapterContext context) throws AqlException {
         // Remove element from parser result elements
         context.decrementIndex(1);
         // Get the field sub domains
@@ -289,13 +289,21 @@ public class ParserToAqlAdapter extends AqlAdapter {
         // Remove element from parser result elements
         context.decrementIndex(1);
         // Get the criteria second variable
-        String name2 = context.getElement().getSecond();
+        String name2 = resolveVariable(context);
         // Create criteria
         Criteria criteria = createSimpleCriteria(subDomains, aqlField, name2, comparatorEnum, context);
         addCriteria(context, criteria);
     }
 
-    private void handleCriteriaMatchProperty(ParserToAqlAdapterContext context)
+    private String resolveVariable(ParserToAqlAdapterContext context) {
+        String second = context.getElement().getSecond();
+        if ("null".equals(second.toLowerCase()) && context.getElement().getFirst() instanceof NullElement) {
+            second = null;
+        }
+        return second;
+    }
+
+    private void handleDefaultCriteriaProperty(ParserToAqlAdapterContext context)
             throws AqlException {
         // Remove element from parser result elements
         context.decrementIndex(1);
@@ -325,7 +333,7 @@ public class ParserToAqlAdapter extends AqlAdapter {
         }
     }
 
-    private void handleCriteriaEqualsProperty(ParserToAqlAdapterContext context)
+    private void handleEqualsCriteriaProperty(ParserToAqlAdapterContext context)
             throws AqlException {
 
         // Remove element from parser result elements

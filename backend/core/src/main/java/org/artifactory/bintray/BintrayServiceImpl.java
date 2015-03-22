@@ -43,6 +43,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.artifactory.addon.AddonsManager;
@@ -51,7 +52,6 @@ import org.artifactory.api.bintray.BintrayPackageInfo;
 import org.artifactory.api.bintray.BintrayParams;
 import org.artifactory.api.bintray.BintrayService;
 import org.artifactory.api.bintray.BintrayUploadInfo;
-import org.artifactory.api.bintray.BintrayUploadInfoOverride;
 import org.artifactory.api.bintray.BintrayUser;
 import org.artifactory.api.bintray.Repo;
 import org.artifactory.api.bintray.RepoPackage;
@@ -64,12 +64,12 @@ import org.artifactory.api.mail.MailService;
 import org.artifactory.api.search.BintrayItemSearchResults;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.aql.AqlSearchablePath;
 import org.artifactory.aql.AqlService;
 import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
 import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlItem;
+import org.artifactory.aql.util.AqlSearchablePath;
 import org.artifactory.build.InternalBuildService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusEntry;
@@ -94,6 +94,7 @@ import org.artifactory.sapi.search.VfsQueryService;
 import org.artifactory.schedule.CachedThreadPoolTaskExecutor;
 import org.artifactory.security.UserInfo;
 import org.artifactory.storage.binstore.service.BinaryStore;
+import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.EmailException;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
@@ -103,8 +104,9 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
-import org.jfrog.build.api.BuildFileBean;
+import org.jfrog.build.api.release.BintrayUploadInfoOverride;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,6 +117,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -337,8 +341,10 @@ public class BintrayServiceImpl implements BintrayService {
         return bintrayParams;
     }
 
-    //Sets file properties with the bintray details after push is successful
-    private void createParamsForPushedFilesAndUpdate(List<FileInfo> pushedFiles, BintrayUploadInfo uploadInfo,
+    /**
+     * Sets file properties with the bintray details after push is successful
+     */
+    private void createUpdatePropsForPushedArtifacts(List<FileInfo> pushedFiles, BintrayUploadInfo uploadInfo,
             BasicStatusHolder status) {
 
         boolean canAnnotateAll = true;
@@ -380,7 +386,7 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     private List<FileInfo> collectBuildArtifactsToPush(Build build) {
-        Map<BuildFileBean, FileInfo> infos = buildService.getBuildBeansInfo(build, false, true, StringUtils.EMPTY);
+        Map<Artifact, FileInfo> infos = buildService.getNonStrictBuildArtifactsInfo(build, StringUtils.EMPTY);
         return Lists.newArrayList(infos.values());
     }
 
@@ -437,11 +443,9 @@ public class BintrayServiceImpl implements BintrayService {
     public BasicStatusHolder pushPromotedBuild(Build build, String gpgPassphrase, Boolean gpgSignOverride,
             BintrayUploadInfoOverride override) {
         BasicStatusHolder status = new BasicStatusHolder();
-
         if (!validCredentialsExist(status)) {
             return status;
         }
-
         log.info("Gathering information for build: " + build.getName() + " Number: " + build.getNumber());
         BintrayUploadInfo uploadInfo = getUplaodInfoForBuild(build, override, status);
         if (status.hasErrors()) {
@@ -452,7 +456,7 @@ public class BintrayServiceImpl implements BintrayService {
         filterOutJsonFileFromArtifactsToPush(artifactsToPush, null, status);
 
         //No artifacts in build
-        if (artifactsToPush == null || artifactsToPush.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(artifactsToPush)) {
             status.error("No artifacts found to push to Bintray, aborting operation", HttpStatus.SC_NOT_FOUND, log);
             return status;
         }
@@ -473,7 +477,7 @@ public class BintrayServiceImpl implements BintrayService {
             String gpgPassphrase) {
         BasicStatusHolder status = new BasicStatusHolder();
 
-        if(!validCredentialsExist(status)) {
+        if (!validCredentialsExist(status)) {
             return status;
         }
         BintrayUploadInfo uploadInfo = validateUploadInfoFile(jsonFile, status);
@@ -481,8 +485,8 @@ public class BintrayServiceImpl implements BintrayService {
             return status;
         }
 
-       List<FileInfo> artifactsToPush = collectArtifactsToPushBasedOnDescriptor(jsonFile, uploadInfo, status);
-        if(status.hasErrors()) {
+        List<FileInfo> artifactsToPush = collectArtifactsToPushBasedOnDescriptor(jsonFile, uploadInfo, status);
+        if (status.hasErrors()) {
             return status;
         }
 
@@ -503,27 +507,123 @@ public class BintrayServiceImpl implements BintrayService {
             Boolean gpgSignOverride, String gpgPassphrase) {
 
         BasicStatusHolder status = new BasicStatusHolder();
+        String subject = uploadInfo.getPackageDetails().getSubject();
+        VersionHandle bintrayVersionHandle;
+
+        try (Bintray client = createBintrayClient(status)) {
+            validatePushRequestParams(subject, artifactsToPush, status);
+
+            String bintrayRepo = uploadInfo.getPackageDetails().getRepo();
+            RepositoryHandle bintrayRepoHandle = client.subject(subject).repository(bintrayRepo);
+            if (!bintrayRepoExists(status, subject, bintrayRepoHandle)) {
+                return status;
+            }
+
+            PackageHandle bintrayPackageHandle = createOrUpdatePackage(uploadInfo, bintrayRepoHandle, status);
+            bintrayVersionHandle = createOrUpdateVersion(uploadInfo, bintrayPackageHandle, status);
+
+            pushArtifactsToVersion(uploadInfo, artifactsToPush, status, bintrayVersionHandle);
+            signVersion(bintrayVersionHandle, uploadInfo.getVersionDetails().isGpgSign(), gpgSignOverride,
+                    gpgPassphrase, artifactsToPush.size(), status);
+
+            //Publish comes last so that gpg sign files will get published too
+            publishFiles(uploadInfo, status, bintrayVersionHandle);
+        } catch (Exception e) {
+            return status;
+        }
+        createUpdatePropsForPushedArtifacts(artifactsToPush, uploadInfo, status);
+        String end;
+        if (status.hasErrors()) {
+            end = "with errors";
+        } else if (status.hasWarnings()) {
+            end = "with warnings";
+        } else {
+            end = "successfully";
+        }
+        status.status(String.format("Push to bintray completed %s", end), log);
+        return status;
+    }
+
+    private void publishFiles(BintrayUploadInfo uploadInfo, BasicStatusHolder status,
+            VersionHandle bintrayVersionHandle) {
+        if (uploadInfo.getPublish() != null && uploadInfo.getPublish()) {
+            log.info("Publishing files...");
+            try {
+                bintrayVersionHandle.publish();
+            } catch (BintrayCallException bce) {
+                status.error(bce.toString(), bce.getStatusCode(), log);
+            }
+        }
+    }
+
+    private boolean bintrayRepoExists(BasicStatusHolder status, String subject, RepositoryHandle bintrayRepoHandle) {
+        try {
+            if (!bintrayRepoHandle.exists()) {  //Repo exists?
+                status.error("No such Repository " + bintrayRepoHandle.name() + " for subject " + subject,
+                        HttpStatus.SC_NOT_FOUND, log);
+                return false;
+            }
+        } catch (BintrayCallException bce) {
+            status.error(bce.toString(), bce.getStatusCode(), log);
+            return false;
+        }
+        return true;
+    }
+
+    private void pushArtifactsToVersion(BintrayUploadInfo uploadInfo, List<FileInfo> artifactsToPush,
+            BasicStatusHolder status, VersionHandle bintrayVersionHandle) throws MultipleBintrayCallException {
+        List<RepoPath> artifactPaths = Lists.newArrayList();
+        Map<String, InputStream> streamMap = Maps.newHashMap();
+        try {
+            for (FileInfo fileInfo : artifactsToPush) {
+                artifactPaths.add(fileInfo.getRepoPath());
+                ResourceStreamHandle handle = repoService.getResourceStreamHandle(fileInfo.getRepoPath());
+                streamMap.put(fileInfo.getRelPath(), new AutoCloseInputStream(handle.getInputStream()));
+            }
+            status.status("Starting to push the requested files to " + String.format("into %s/%s/%s/%s: ",
+                    uploadInfo.getPackageDetails().getSubject(), uploadInfo.getPackageDetails().getRepo(),
+                    uploadInfo.getPackageDetails().getName(), uploadInfo.getVersionDetails().getName()), log);
+
+            log.info("Pushing {} files...", streamMap.keySet().size());
+            log.debug("Pushing the following files into Bintray: {}", Arrays.toString(artifactPaths.toArray()));
+            bintrayVersionHandle.upload(streamMap);
+        } catch (MultipleBintrayCallException mbce) {
+            for (BintrayCallException bce : mbce.getExceptions()) {
+                status.error(bce.toString(), bce.getStatusCode(), log);
+            }
+            throw mbce;
+        } finally {
+            for (InputStream stream : streamMap.values()) {
+                IOUtils.closeQuietly(stream);
+            }
+        }
+    }
+
+    private void validatePushRequestParams(String subject, List<FileInfo> artifactsToPush, BasicStatusHolder status)
+            throws BintrayCallException {
 
         if (snapshotArtifactsExistInArtifactsToPush(artifactsToPush)) {
             status.error("Snapshot artifacts were detected in the build artifacts, Bintray does not accept snapshots" +
                     " - aborting", HttpStatus.SC_BAD_REQUEST, log);
+            throw new BintrayCallException(HttpStatus.SC_BAD_REQUEST, status.getLastError().getMessage(), "");
         }
         int fileUploadLimit = getFileUploadLimit();
         if (fileUploadLimit != 0 && artifactsToPush.size() > fileUploadLimit) { //0 is unlimited
             status.error(String.format("The amount of artifacts that are about to be pushed(%s) exceeds the maximum" +
                     " amount set by the administrator(%s), aborting operation", artifactsToPush.size(), fileUploadLimit)
                     , HttpStatus.SC_BAD_REQUEST, log);
+            throw new BintrayCallException(HttpStatus.SC_BAD_REQUEST, status.getLastError().getMessage(), "");
         }
 
         //Subject must be specified in json
-        String subject = uploadInfo.getPackageDetails().getSubject();
         if (StringUtils.isBlank(subject)) {
-            status.error("Bintray subject must be defined in the spec - aborting", HttpStatus.SC_BAD_REQUEST, log);
+            status.error("Bintray subject must be defined in the spec or given as an override param - aborting",
+                    HttpStatus.SC_BAD_REQUEST, log);
+            throw new BintrayCallException(HttpStatus.SC_BAD_REQUEST, status.getLastError().getMessage(), "");
         }
-        if (status.hasErrors()) {
-            return status;
-        }
+    }
 
+    private Bintray createBintrayClient(BasicStatusHolder status) {
         Bintray client;
         UsernamePasswordCredentials credsToUse;
         if (isUserHasBintrayAuth()) {
@@ -537,87 +637,7 @@ public class BintrayServiceImpl implements BintrayService {
         client = BintrayClient.create(httpClient, PathUtils.trimTrailingSlashes(getBaseBintrayApiUrl()),
                 ConstantValues.bintrayClientThreadPoolSize.getInt(),
                 ConstantValues.bintrayClientSignRequestTimeout.getInt());
-        String bintrayRepo = uploadInfo.getPackageDetails().getRepo();
-        RepositoryHandle bintrayRepoHandle = client.subject(subject).repository(bintrayRepo);
-        try {
-            if (!bintrayRepoHandle.exists()) {  //Repo exists?
-                status.error("No such Repository " + bintrayRepoHandle.name() + " for subject " + subject,
-                        HttpStatus.SC_NOT_FOUND, log);
-                IOUtils.closeQuietly(client);
-                return status;
-            }
-        } catch (BintrayCallException bce) {
-            status.error(bce.toString(), bce.getStatusCode(), log);
-            IOUtils.closeQuietly(client);
-            return status;
-        }
-        PackageHandle bintrayPackageHandle = createOrUpdatePackage(uploadInfo, bintrayRepoHandle, status);
-        if (status.hasErrors()) {
-            IOUtils.closeQuietly(client);
-            return status;
-        }
-        VersionHandle bintrayVersionHandle = createOrUpdateVersion(uploadInfo, bintrayPackageHandle, status);
-        if (status.hasErrors()) {
-            IOUtils.closeQuietly(client);
-            return status;
-        }
-
-        List<RepoPath> artifactPaths = Lists.newArrayList();
-        Map<String, InputStream> streamMap = Maps.newHashMap();
-        try {
-            for (FileInfo fileInfo : artifactsToPush) {
-                artifactPaths.add(fileInfo.getRepoPath());
-                ResourceStreamHandle handle = repoService.getResourceStreamHandle(fileInfo.getRepoPath());
-                streamMap.put(fileInfo.getRelPath(), new AutoCloseInputStream(handle.getInputStream()));
-            }
-            status.status("Starting to push the requested files to Bintray: " + String.format("into %s/%s/%s/%s: ",
-                    subject, uploadInfo.getPackageDetails().getRepo(), uploadInfo.getPackageDetails().getName(),
-                    uploadInfo.getVersionDetails().getName()), log);
-
-            log.info(String.format("Pushing %s files...", streamMap.keySet().size()));
-            log.debug("Pushing the following files into Bintray: {}", Arrays.toString(artifactPaths.toArray()));
-            bintrayVersionHandle.upload(streamMap);
-
-        } catch (MultipleBintrayCallException mbce) {
-            for (BintrayCallException bce : mbce.getExceptions()) {
-                status.error(bce.toString(), bce.getStatusCode(), log);
-            }
-            IOUtils.closeQuietly(client);
-            return status;
-        } finally {
-            for (InputStream stream : streamMap.values()) {
-                IOUtils.closeQuietly(stream);
-            }
-        }
-
-        //Update parameters on pushed files
-        createParamsForPushedFilesAndUpdate(artifactsToPush, uploadInfo, status);
-        //Sign version
-        signVersion(bintrayVersionHandle, uploadInfo.getVersionDetails().isGpgSign(), gpgSignOverride, gpgPassphrase,
-                artifactsToPush.size(), status);
-
-        //Publish comes last so that gpg sign files will get published too
-        if (uploadInfo.getPublish() != null && uploadInfo.getPublish()) {
-            log.info("Publishing files...");
-            try {
-                bintrayVersionHandle.publish();
-            } catch (BintrayCallException bce) {
-                status.error(bce.toString(), bce.getStatusCode(), log);
-            } finally {
-                IOUtils.closeQuietly(client); //final client close
-            }
-        }
-
-        String end;
-        if(status.hasErrors()) {
-            end = "with errors";
-        } else if(status.hasWarnings()) {
-            end = "with warnings";
-        } else {
-            end = "successfully";
-        }
-        status.status(String.format("Push to bintray completed %s", end), log);
-        return status;
+        return client;
     }
 
 
@@ -829,10 +849,18 @@ public class BintrayServiceImpl implements BintrayService {
 
     @Override
     public RemoteRepoDescriptor getJCenterRepo() {
-        String baseUrl = ConstantValues.jCenterUrl.getString();
+        String jcenterHost = "jcenter.bintray.com";
+        String url = ConstantValues.jCenterUrl.getString();
+        try {
+            URI uri = new URIBuilder(url).build();
+            jcenterHost = uri.getHost();
+        } catch (URISyntaxException e) {
+            log.warn("Unable to construct a valid URI from '{}': {}", url);
+        }
+
         List<RemoteRepoDescriptor> remoteRepoDescriptors = repoService.getRemoteRepoDescriptors();
         for (RemoteRepoDescriptor remoteRepoDescriptor : remoteRepoDescriptors) {
-            if (remoteRepoDescriptor.getUrl().startsWith(baseUrl)) {
+            if (remoteRepoDescriptor.getUrl().contains(jcenterHost)) {
                 return remoteRepoDescriptor;
             }
         }
@@ -1101,7 +1129,8 @@ public class BintrayServiceImpl implements BintrayService {
                         and(
                                 AqlApiItem.name().matches("*bintray-info*.json"),
                                 AqlApiItem.property().property("build.name", AqlComparatorEnum.equals, build.getName()),
-                                AqlApiItem.property().property("build.number", AqlComparatorEnum.equals, build.getNumber())
+                                AqlApiItem.property().property("build.number", AqlComparatorEnum.equals,
+                                        build.getNumber())
                         )
                 );
         AqlEagerResult<AqlItem> results = aqlService.executeQueryEager(aql);
@@ -1154,11 +1183,11 @@ public class BintrayServiceImpl implements BintrayService {
     private void filterBuildArtifactsByDescriptor(BintrayUploadInfo uploadInfo, List<FileInfo> artifactsToPush,
             BasicStatusHolder status) {
 
+        List<String> descriptorArtifactPaths = uploadInfo.getArtifactPaths();
         //null - applyToFiles field doesn't exist
-        if (uploadInfo.getArtifactPaths() != null && !uploadInfo.getArtifactPaths().isEmpty()) {
+        if (descriptorArtifactPaths != null && !descriptorArtifactPaths.isEmpty()) {
             //size == 1 && get(0) == "" --> field looks like "applyToFiles": ""  (jackson deserialization edge case)
-            if (!(uploadInfo.getArtifactPaths().size() == 1
-                    && StringUtils.isBlank(uploadInfo.getArtifactPaths().get(0)))) {
+            if (!(descriptorArtifactPaths.size() == 1 && StringUtils.isBlank(descriptorArtifactPaths.get(0)))) {
                 status.error("Json file contains paths to artifacts, this command pushes whole builds only, aborting " +
                         "operation", HttpStatus.SC_BAD_REQUEST, log);
                 return;
@@ -1176,7 +1205,7 @@ public class BintrayServiceImpl implements BintrayService {
         }
 
         //applyToProps filtered out all files
-        if (artifactsToPush == null || artifactsToPush.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(artifactsToPush)) {
             status.error("The 'applyToProps' field in the json descriptor contains one or more properties that " +
                     "caused all artifacts to be filtered out, aborting operation", HttpStatus.SC_BAD_REQUEST, log);
         }
@@ -1212,7 +1241,8 @@ public class BintrayServiceImpl implements BintrayService {
         //More than one json matched the pattern - but a specific upload info file was specified
         if (specifiedJsonPath != null) {
             if (uploadInfoFiles.size() > 1) {
-                status.warn("Found more than one descriptor, using the one specified by user: "+ specifiedJsonPath, log);
+                status.warn("Found more than one descriptor, using the one specified by user: " + specifiedJsonPath,
+                        log);
                 log.debug("Found bintray-info.json files: {}", Arrays.toString(uploadInfoFileNames.toArray()));
             }
             mostRecentJson = repoService.getFileInfo(specifiedJsonPath);
@@ -1241,9 +1271,10 @@ public class BintrayServiceImpl implements BintrayService {
      * @param repositoryHandle RepositoryHandle retrieved by the Bintray Java Client
      * @param status           status holder of entire operation
      * @return a PackageHandle pointing to the created/updated package
+     * @throws Exception on any error occurred
      */
     private PackageHandle createOrUpdatePackage(BintrayUploadInfo info, RepositoryHandle repositoryHandle,
-            BasicStatusHolder status) {
+            BasicStatusHolder status) throws Exception {
 
         PackageDetails pkgDetails = info.getPackageDetails();
         PackageHandle packageHandle;
@@ -1258,9 +1289,11 @@ public class BintrayServiceImpl implements BintrayService {
             log.debug("Package {} created", packageHandle.get().name());
         } catch (BintrayCallException bce) {
             status.error(bce.toString(), bce.getStatusCode(), bce, log);
+            throw bce;
         } catch (IOException ioe) {
             status.error(ioe.getMessage(), HttpStatus.SC_BAD_REQUEST, log);
             log.debug("{}", ioe);
+            throw ioe;
         }
         return packageHandle;
     }
@@ -1272,9 +1305,10 @@ public class BintrayServiceImpl implements BintrayService {
      * @param packageHandle PackageHandle retrieved by the Bintray Java Client or by {@link #createOrUpdatePackage}
      * @param status        status holder of entire operation
      * @return a VersionHandle pointing to the created/updated version
+     * @throws Exception on any error occurred
      */
     private VersionHandle createOrUpdateVersion(BintrayUploadInfo info, PackageHandle packageHandle,
-            BasicStatusHolder status) {
+            BasicStatusHolder status) throws Exception {
 
         VersionDetails versionDetails = info.getVersionDetails();
         VersionHandle versionHandle = packageHandle.version(versionDetails.getName());
@@ -1288,21 +1322,24 @@ public class BintrayServiceImpl implements BintrayService {
             log.debug("Version {} created", versionHandle.get().name());
         } catch (BintrayCallException bce) {
             status.error(bce.toString(), bce.getStatusCode(), bce, log);
+            throw bce;
         } catch (IOException ioe) {
             status.error(ioe.getMessage(), HttpStatus.SC_BAD_REQUEST, log);
             log.debug("{}", ioe);
+            throw ioe;
         }
         return versionHandle;
     }
 
     private Multimap<String, String> getMapFromUploadInfoMultiSet(Set<Map<String, Collection<String>>> elements) {
         Multimap<String, String> elementsMap = HashMultimap.create();
-        if (elements != null && !elements.isEmpty()) {
-            for (Map<String, Collection<String>> element : elements) {
-                String key = element.keySet().iterator().next();
-                Collection<String> values = element.get(key);
-                elementsMap.putAll(key, values);
-            }
+        if (CollectionUtils.isNullOrEmpty(elements)) {
+            return elementsMap;
+        }
+        for (Map<String, Collection<String>> element : elements) {
+            String key = element.keySet().iterator().next();
+            Collection<String> values = element.get(key);
+            elementsMap.putAll(key, values);
         }
         return elementsMap;
     }
@@ -1311,40 +1348,69 @@ public class BintrayServiceImpl implements BintrayService {
     private List<FileInfo> collectArtifactsToPushBasedOnDescriptor(FileInfo jsonFile, BintrayUploadInfo uploadInfo,
             BasicStatusHolder status) {
 
-        List<String> artifactPaths;
-        String noPathsNoProps = "The descriptor doesn't contain file paths and no properties to filter by were " +
-                "specified, pushing everything under " + jsonFile.getRepoPath().getParent();
-        String noPaths = "The descriptor doesn't contain file paths, pushing everything under "
-                + jsonFile.getRepoPath().getParent() + " , filtered by the properties specified.";
+        List<AqlSearchablePath> artifactPaths = Lists.newArrayList();
+        Multimap<String, String> propsToFilterBy = getMapFromUploadInfoMultiSet(uploadInfo.getFilterProps());
+        boolean descriptorHasPaths = CollectionUtils.notNullOrEmpty(uploadInfo.getArtifactPaths());
+        boolean descriptorHasRelPaths = CollectionUtils.notNullOrEmpty(uploadInfo.getArtifactRelativePaths());
 
-        if (uploadInfo.getArtifactPaths() == null || uploadInfo.getArtifactPaths().isEmpty()) {
-            if (uploadInfo.getFilterProps() == null || uploadInfo.getFilterProps().isEmpty()) {
-                status.status(noPathsNoProps, log);
+        if (!descriptorHasPaths && !descriptorHasRelPaths) {
+            if (propsToFilterBy.isEmpty()) {
+                status.status("The descriptor doesn't contain file paths and no properties to filter by were " +
+                        "specified , pushing everything under " + jsonFile.getRepoPath().getParent(), log);
             } else {
-                status.status(noPaths, log);
+                status.status("The descriptor doesn't contain file paths, pushing everything under "
+                        + jsonFile.getRepoPath().getParent() + " , filtered by the properties specified.", log);
             }
-            artifactPaths = Lists.newArrayList();
-
-            //all files in all subfolders of Directory containing the json file:
-            String jsonRoot = PathUtils.getParent(new AqlSearchablePath(jsonFile.getRepoPath()).toFullPath()) + "/*.*";
-            String jsonRootSubfolders = PathUtils.getParent(new AqlSearchablePath(jsonFile.getRepoPath()).toFullPath())
-                    + "/**/*.*";
-            artifactPaths.add(jsonRoot);
-            artifactPaths.add(jsonRootSubfolders);
+            artifactPaths = searchablePathsFromDescriptorLocaltion(jsonFile.getRepoPath());
         } else {
-            artifactPaths = uploadInfo.getArtifactPaths();
+            try {
+                if (descriptorHasPaths) {
+                    artifactPaths = AqlSearchablePath.fullPathToSearchablePathList(uploadInfo.getArtifactPaths());
+                }
+                if (descriptorHasRelPaths) {
+                    artifactPaths.addAll(AqlSearchablePath.relativePathToSearchablePathList(
+                            uploadInfo.getArtifactRelativePaths(), jsonFile.getRepoPath().getParent()));
+                }
+            } catch (IllegalArgumentException iae) {
+                status.error("Paths in the descriptor must point to a file or use a valid wildcard that denotes " +
+                        "several files (i.e. /*.*)", HttpStatus.SC_BAD_REQUEST, iae, log);
+                return null;
+            }
         }
-        List<FileInfo> artifactsToPush = collectArtifactItemInfos(
-                AqlSearchablePath.fullPathToSearchablePathList(artifactPaths),
-                getMapFromUploadInfoMultiSet(uploadInfo.getFilterProps()));
-
+        List<FileInfo> artifactsToPush = collectArtifactItemInfos(artifactPaths, propsToFilterBy);
         filterOutJsonFileFromArtifactsToPush(artifactsToPush, jsonFile.getRepoPath(), status);
 
         //aql search returned no artifacts for query
-        if (artifactsToPush == null || artifactsToPush.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(artifactsToPush)) {
             status.error("No artifacts found to push to Bintray, aborting operation", HttpStatus.SC_NOT_FOUND, log);
         }
         return artifactsToPush;
+    }
+
+    /**
+     * Returns a list of {@link org.artifactory.aql.util.AqlSearchablePath} pointing to all files contained in the
+     * parent folder of the descriptor as wll as all file under all subdirectories of that folder
+     *
+     * @param descriptorPath RepoPath of the descriptor file to construct the paths from
+     */
+    List<AqlSearchablePath> searchablePathsFromDescriptorLocaltion(RepoPath descriptorPath) {
+        List<AqlSearchablePath> artifactPaths = Lists.newArrayList();
+        //All files in the folder containing the json file
+        AqlSearchablePath jsonRoot = new AqlSearchablePath(descriptorPath);
+        jsonRoot.setFileName("*.*");
+        artifactPaths.add(jsonRoot);
+
+        //All files in all subfolders of folder containing json file
+        AqlSearchablePath jsonRootSubfolders = new AqlSearchablePath(descriptorPath);
+        jsonRootSubfolders.setFileName("*.*");
+        if (".".equals(jsonRootSubfolders.getPath())) {  //Special case for root folder
+            jsonRootSubfolders.setPath("**");
+        } else {
+            jsonRootSubfolders.setPath(jsonRootSubfolders.getPath() + "/**");
+        }
+        artifactPaths.add(jsonRoot);
+        artifactPaths.add(jsonRootSubfolders);
+        return artifactPaths;
     }
 
     /**
@@ -1359,14 +1425,14 @@ public class BintrayServiceImpl implements BintrayService {
     private List<FileInfo> collectArtifactItemInfos(List<AqlSearchablePath> aqlSearchablePaths,
             Multimap<String, String> propertiesFilterList) {
         //Searching without any path at all is performance-risky...
-        if (aqlSearchablePaths == null || aqlSearchablePaths.isEmpty()) {
+        if (CollectionUtils.isNullOrEmpty(aqlSearchablePaths)) {
             return null;
         }
         AqlApiItem.AndClause<AqlApiItem> rootFilterClause = AqlApiItem.and();
         AqlApiItem.OrClause<AqlApiItem> artifactsPathOrClause = AqlApiItem.or();
         AqlApiItem.AndClause<AqlApiItem> propertiesAndClause = AqlApiItem.and();
 
-        //Use aql to resolve patterned path or patterned file names, as well as direct paths
+        //Resolve patterned path or patterned file names, as well as direct paths
         for (AqlSearchablePath path : aqlSearchablePaths) {
             log.debug("Adding path '{}' to artifact search", path.toRepoPath().toString());
             artifactsPathOrClause.append(
@@ -1378,13 +1444,11 @@ public class BintrayServiceImpl implements BintrayService {
             );
         }
 
-        //Use aql to filter results by property key and value
+        //Filter results by property key and value
         for (String key : propertiesFilterList.keySet()) {
             for (String value : propertiesFilterList.get(key)) {
                 log.debug("Adding property {}, with value {} to artifact search query", key, value);
-                propertiesAndClause.append(
-                        AqlApiItem.property().property(key, AqlComparatorEnum.equals, value)
-                );
+                propertiesAndClause.append(AqlApiItem.property().property(key, AqlComparatorEnum.equals, value));
             }
         }
         rootFilterClause.append(artifactsPathOrClause);
@@ -1400,12 +1464,13 @@ public class BintrayServiceImpl implements BintrayService {
             itemInfoList.add(repoService.getFileInfo(path));
             itemInfoPaths.add(path);
         }
-        log.debug("Artifact search returned the following artifacts: {}", Arrays.toString(itemInfoPaths.toArray()));
+        log.debug("BintaryService Artifact search returned the following artifacts: {}",
+                Arrays.toString(itemInfoPaths.toArray()));
         return itemInfoList;
     }
 
     private BintrayConfigDescriptor getBintrayGlobalConfig() {
-        if(centralConfig.getDescriptor().getBintrayConfig() == null) {
+        if (centralConfig.getDescriptor().getBintrayConfig() == null) {
             BintrayConfigDescriptor bintrayConfigdescriptor = new BintrayConfigDescriptor();
             MutableCentralConfigDescriptor cc = centralConfig.getMutableDescriptor();
             cc.setBintrayConfig(bintrayConfigdescriptor);
@@ -1440,11 +1505,10 @@ public class BintrayServiceImpl implements BintrayService {
             String gpgPassphrase, int fileCount, BasicStatusHolder status) {
 
         //gpgSign flag from REST query is set to false - skip the sign
-        if(gpgSignOverride != null && !gpgSignOverride) {
+        if (gpgSignOverride != null && !gpgSignOverride) {
             status.warn("The gpgSign override flag is set to false - skipping version signing", log);
             return;
         }
-
         boolean override = false;
         if (gpgSignOverride != null) {
             log.debug("gpgSign Override flag detected: {}.", true);

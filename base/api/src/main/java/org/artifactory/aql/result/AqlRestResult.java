@@ -3,8 +3,8 @@ package org.artifactory.aql.result;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
 import org.artifactory.aql.model.AqlPermissionProvider;
+import org.artifactory.aql.util.AqlUtils;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.repo.RepoPathFactory;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
@@ -37,7 +37,7 @@ public abstract class AqlRestResult implements Closeable {
                     String itemRepo = resultSet.getString("repo");
                     String itemPath = resultSet.getString("node_path");
                     String itemName = resultSet.getString("node_name");
-                    RepoPath repoPath = RepoPathFactory.fromAql(itemRepo, itemPath, itemName);
+                    RepoPath repoPath = AqlUtils.repoPathFromAql(itemRepo, itemPath, itemName);
                     return permissionProvider.canRead(repoPath);
                 } catch (Exception e) {
                     log.error("AQL minimal field expectation error: repo, path and name");
@@ -53,7 +53,7 @@ public abstract class AqlRestResult implements Closeable {
         } else {
             if (AqlDomainEnum.items == domain) {
                 try {
-                    RepoPath repoPath = RepoPathFactory.fromAql(repo, path, name);
+                    RepoPath repoPath = AqlUtils.repoPathFromAql(repo, path, name);
                     return permissionProvider.canRead(repoPath);
                 } catch (Exception e) {
                     log.error("AQL minimal field expectation error: repo, path and name");

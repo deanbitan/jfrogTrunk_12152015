@@ -9,4 +9,6 @@ public interface AqlPermissionProvider {
     boolean canRead(RepoPath repoPath);
 
     boolean isAdmin();
+
+    boolean isOss();
 }

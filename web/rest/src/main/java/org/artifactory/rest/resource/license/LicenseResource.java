@@ -20,6 +20,7 @@ package org.artifactory.rest.resource.license;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.rest.RestAddon;
@@ -30,7 +31,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.rest.util.RestUtils;
-import org.artifactory.util.PathUtils;
+import org.artifactory.util.CollectionUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -45,6 +46,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A resource for license retrieval
@@ -100,9 +102,7 @@ public class LicenseResource {
             @QueryParam(SearchRestConstants.AUTOFIND_PARAM) String autofindString,
             @QueryParam(SearchRestConstants.REPOS_PARAM) StringList repos) throws IOException {
 
-        if (repos == null || repos.isEmpty()) {
-            repos = getAllRealRepoKeys();
-        }
+        Set<String> repoKeys = (CollectionUtils.isNullOrEmpty(repos) ? getAllRealRepoKeys() : Sets.newHashSet(repos));
         boolean unapproved = true;
         if (StringUtils.isNotBlank(unapprovedString)) {
             unapproved = Integer.parseInt(unapprovedString) == 1;
@@ -123,21 +123,20 @@ public class LicenseResource {
         if (StringUtils.isNotBlank(approvedString)) {
             approved = Integer.parseInt(approvedString) == 1;
         }
-        boolean autofind = false;
+        boolean autoDiscover = false;
         if (StringUtils.isNotBlank(autofindString)) {
-            autofind = Integer.parseInt(autofindString) == 1;
+            autoDiscover = Integer.parseInt(autofindString) == 1;
         }
 
-        LicenseStatus status = new LicenseStatus(approved, autofind, neutral, notFound, unapproved, unknown);
+        LicenseStatus status = new LicenseStatus(approved, autoDiscover, neutral, notFound, unapproved, unknown);
         String servletContextUrl = RestUtils.getServletContextUrl(request);
-        LicensesSearchResult licensesInRepos = restAddon.findLicensesInRepos(status, repos, servletContextUrl);
+        LicensesSearchResult licensesInRepos = restAddon.findLicensesInRepos(status, repoKeys, servletContextUrl);
         return Response.status(Response.Status.OK).entity(licensesInRepos).build();
     }
 
-    private StringList getAllRealRepoKeys() {
+    private Set<String> getAllRealRepoKeys() {
         List<LocalRepoDescriptor> localAndCachedRepoDescriptors = repositoryService.getLocalAndCachedRepoDescriptors();
         Collection<String> transform = Collections2.transform(localAndCachedRepoDescriptors, DESCRIPTORS_TO_KEYS);
-        StringList list = new StringList(PathUtils.collectionToDelimitedString(transform));
-        return list;
+        return Sets.newHashSet(transform);
     }
 }

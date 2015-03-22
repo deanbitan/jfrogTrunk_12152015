@@ -203,7 +203,7 @@ public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
             if (MavenNaming.isMavenMetadata(res.getRepoPath().getPath())) {
                 markAsExpired = true;
             }
-            //Maven unique snapshot are expirable
+            //Maven non-unique snapshot
             if (MavenNaming.isNonUniqueSnapshot(res.getRepoPath().getPath())) {
                 markAsExpired = true;
             }

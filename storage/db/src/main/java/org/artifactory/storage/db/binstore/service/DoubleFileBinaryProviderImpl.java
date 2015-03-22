@@ -27,7 +27,6 @@ import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

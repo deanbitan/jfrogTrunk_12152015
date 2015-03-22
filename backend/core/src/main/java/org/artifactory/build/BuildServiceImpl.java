@@ -19,9 +19,9 @@
 package org.artifactory.build;
 
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.io.FileUtils;
@@ -42,16 +42,17 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.artifact.PromotionResult;
-import org.artifactory.api.search.ItemSearchResult;
-import org.artifactory.api.search.ItemSearchResults;
-import org.artifactory.api.search.SearchResultBase;
-import org.artifactory.api.search.SearchService;
-import org.artifactory.api.search.artifact.ArtifactSearchResult;
-import org.artifactory.api.search.artifact.ChecksumSearchControls;
-import org.artifactory.api.search.property.PropertySearchControls;
-import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.checksum.ChecksumType;
+import org.artifactory.aql.AqlConverts;
+import org.artifactory.aql.AqlService;
+import org.artifactory.aql.api.domain.sensitive.AqlApiBuild;
+import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
+import org.artifactory.aql.api.internal.AqlBase;
+import org.artifactory.aql.model.AqlComparatorEnum;
+import org.artifactory.aql.model.AqlFieldEnum;
+import org.artifactory.aql.result.AqlEagerResult;
+import org.artifactory.aql.result.rows.AqlBaseFullRowImpl;
+import org.artifactory.aql.result.rows.AqlBuild;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.factory.xstream.XStreamFactory;
@@ -64,6 +65,7 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.build.service.BuildStoreService;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.version.CompoundVersionDetails;
+import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
 import org.jfrog.build.api.BuildFileBean;
@@ -98,6 +100,7 @@ import java.util.concurrent.Callable;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Iterables.getLast;
 import static com.google.common.collect.Lists.newArrayList;
+import static org.artifactory.aql.api.internal.AqlBase.and;
 
 /**
  * Build service main implementation
@@ -119,9 +122,6 @@ public class BuildServiceImpl implements InternalBuildService {
     private RepositoryService repositoryService;
 
     @Autowired
-    private SearchService searchService;
-
-    @Autowired
     private BuildStoreService buildStoreService;
 
     @Autowired
@@ -129,6 +129,9 @@ public class BuildServiceImpl implements InternalBuildService {
 
     @Autowired(required = false)
     private Builds builds;
+
+    @Autowired
+    private AqlService aqlService;
 
     @Override
     public void init() {
@@ -289,7 +292,7 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildNumber = buildRun.getNumber();
         Build build = getBuild(buildRun);
         status.debug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
-        Map<BuildFileBean, FileInfo> buildArtifactsInfo = getBuildBeansInfo(build, true, true, StringUtils.EMPTY);
+        Map<Artifact, FileInfo> buildArtifactsInfo = getBuildArtifactsInfo(build, StringUtils.EMPTY);
         for (FileInfo fileInfo : buildArtifactsInfo.values()) {
             RepoPath repoPath = fileInfo.getRepoPath();
             BasicStatusHolder undeployStatus = repositoryService.undeploy(repoPath, true, true);
@@ -379,134 +382,144 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public Map<BuildFileBean, FileInfo> getBuildBeansInfo(Build build, boolean strictMatching, boolean artifacts,
-            String sourceRepository) {
-        /**
-         * 1. property search by build.name and build.version
-         * 2. match results against artifacts/dependencies of actual build
-         * 3. if still left something inside the build + strict=false - do "fallback" of checksum search best matching
-         */
-        Map<BuildFileBean, FileInfo> finalResults = new HashMap<>();
-
-        List<BuildFileBean> unmatchedBuildBeans = getBuildFileBeans(build, artifacts);
-        finalResults.putAll(searchFileInfosByBuildNameAndNumber(build, unmatchedBuildBeans, sourceRepository));
-
-        if (!strictMatching && !unmatchedBuildBeans.isEmpty()) {
-            finalResults.putAll(searchFileInfosByChecksums(unmatchedBuildBeans, sourceRepository));
+    public Map<Artifact, FileInfo> getNonStrictBuildArtifactsInfo(Build build, String sourceRepository) {
+        AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
+                AqlApiBuild.name().equal(build.getName()),
+                AqlApiBuild.number().equal(build.getNumber())
+        );
+        if (StringUtils.isNotBlank(sourceRepository)) {
+            and.append(
+                    AqlApiBuild.module().artifact().item().repo().equal(sourceRepository)
+            );
         }
 
-        return finalResults;
+        AqlApiBuild aqlBuild = AqlApiBuild.create().filter(and);
+
+        aqlBuild.include(
+                AqlApiBuild.module().artifact().item().sha1Actual(),
+                AqlApiBuild.module().artifact().item().md5Actual(),
+                AqlApiBuild.module().artifact().item().sha1Orginal(),
+                AqlApiBuild.module().artifact().item().md5Orginal(),
+                AqlApiBuild.module().artifact().item().created(),
+                AqlApiBuild.module().artifact().item().modifiedBy(),
+                AqlApiBuild.module().artifact().item().createdBy(),
+                AqlApiBuild.module().artifact().item().updated(),
+                AqlApiBuild.module().artifact().item().repo(),
+                AqlApiBuild.module().artifact().item().path(),
+                AqlApiBuild.module().artifact().item().size(),
+                AqlApiBuild.module().artifact().item().name()
+                //Ordering by the last updated field, in case of duplicates with the same checksum.
+        ).sortBy(AqlFieldEnum.itemUpdated).asc();
+
+        Map<String, BuildFileBean> buildFileBeans = getBuildFileBeans(build, true);
+        return matchBeanToFileInfo(aqlBuild, buildFileBeans);
     }
 
-    private List<BuildFileBean> getBuildFileBeans(Build build, boolean artifacts) {
-        List<BuildFileBean> artifactsList = Lists.newArrayList();
+    @Override
+    public Map<Artifact, FileInfo> getBuildArtifactsInfo(Build build, String sourceRepository) {
+        AqlBase.AndClause and = and();
+        if (StringUtils.isNotBlank(sourceRepository)) {
+            and.append(
+                    AqlApiItem.repo().equal(sourceRepository)
+            );
+        }
+        and.append(AqlApiItem.property().property("build.name", AqlComparatorEnum.equals, build.getName()));
+        and.append(AqlApiItem.property().property("build.number", AqlComparatorEnum.equals, build.getNumber()));
+        AqlBase aqlItem = AqlApiItem.create().filter(and);
+
+        //Ordering by the last updated field, in case of duplicates with the same checksum.
+        aqlItem.sortBy(AqlFieldEnum.itemUpdated).asc();
+
+        Map<String, BuildFileBean> buildFileBeans = getBuildFileBeans(build, true);
+        return matchBeanToFileInfo(aqlItem, buildFileBeans);
+    }
+
+    @Override
+    public Map<Dependency, FileInfo> getBuildDependenciesInfo(Build build, String sourceRepository) {
+        AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
+                AqlApiBuild.name().equal(build.getName()),
+                AqlApiBuild.number().equal(build.getNumber())
+        );
+        if (StringUtils.isNotBlank(sourceRepository)) {
+            and.append(
+                    AqlApiBuild.module().dependecy().item().repo().equal(sourceRepository)
+            );
+        }
+
+        AqlApiBuild aqlBuild = AqlApiBuild.create().filter(and);
+
+        aqlBuild.include(
+                AqlApiBuild.module().dependecy().item().sha1Actual(),
+                AqlApiBuild.module().dependecy().item().md5Actual(),
+                AqlApiBuild.module().dependecy().item().sha1Orginal(),
+                AqlApiBuild.module().dependecy().item().md5Orginal(),
+                AqlApiBuild.module().dependecy().item().created(),
+                AqlApiBuild.module().dependecy().item().modifiedBy(),
+                AqlApiBuild.module().dependecy().item().createdBy(),
+                AqlApiBuild.module().dependecy().item().updated(),
+                AqlApiBuild.module().dependecy().item().repo(),
+                AqlApiBuild.module().dependecy().item().path(),
+                AqlApiBuild.module().dependecy().item().name(),
+                AqlApiBuild.module().dependecy().item().size()
+                //Ordering by the last updated field, in case of duplicates with the same checksum.
+        ).sortBy(AqlFieldEnum.itemUpdated).asc();
+
+        Map<String, BuildFileBean> buildFileBeans = getBuildFileBeans(build, false);
+        return matchBeanToFileInfo(aqlBuild, buildFileBeans);
+    }
+
+    private <T extends BuildFileBean> Map<T, FileInfo> matchBeanToFileInfo(AqlBase aqlBuild,
+            Map<String, BuildFileBean> buildFileBeans) {
+        Map<T, FileInfo> foundResults = new HashMap<>();
+
+        AqlEagerResult<AqlBuild> aqlResult = aqlService.executeQueryEager(aqlBuild);
+        for (AqlBuild item : aqlResult.getResults()) {
+            BuildFileBean buildFileBean = buildFileBeans.get(((AqlBaseFullRowImpl) item).getActualSha1());
+            if (buildFileBean != null) {
+                foundResults.put((T) buildFileBean,
+                        (FileInfo) AqlConverts.toFileInfo.apply((AqlBaseFullRowImpl) item));
+            }
+        }
+
+        return foundResults;
+    }
+
+    private <T extends BuildFileBean> Map<String, T> getBuildFileBeans(Build build, boolean artifacts) {
+        Map<String, T> beansMap = Maps.newHashMap();
         List<Module> modules = build.getModules();
         if (modules == null) {
-            return artifactsList;
+            return beansMap;
         }
 
         for (Module module : modules) {
             if (artifacts) {
                 if (module.getArtifacts() != null) {
-                    artifactsList.addAll(module.getArtifacts());
+                    for (Artifact artifact : module.getArtifacts()) {
+                        if(artifact.getSha1() != null){
+                            beansMap.put(artifact.getSha1(), (T) artifact);
+                        }
+                        else{
+                            log.warn("Artifact: " + artifact.getName() + " is missing SHA1," +
+                                    " under build: " + build.getName());
+                        }
+                    }
                 }
             } else { // dependencies
                 if (module.getDependencies() != null) {
-                    artifactsList.addAll(module.getDependencies());
+                    for (Dependency dependency : module.getDependencies()) {
+                        if(dependency.getSha1() != null){
+                            beansMap.put(dependency.getSha1(), (T) dependency);
+                        }
+                        else{
+                            log.warn("Dependency: " + dependency.getId() + " is missing SHA1," +
+                                    " under build: " + build.getName());
+                        }
+                    }
                 }
             }
         }
-        return artifactsList;
+        return beansMap;
     }
-
-    private Map<BuildFileBean, FileInfo> searchFileInfosByChecksums(List<BuildFileBean> unmatchedBuildBeans,
-            String sourceRepository) {
-        Map<BuildFileBean, FileInfo> finalResults = new HashMap<>();
-        for (BuildFileBean unfoundBuildItem : unmatchedBuildBeans) {
-            ChecksumSearchControls controls = new ChecksumSearchControls();
-            controls.setLimitSearchResults(false);
-            controls.addChecksum(ChecksumType.sha1, unfoundBuildItem.getSha1());
-            controls.addChecksum(ChecksumType.md5, unfoundBuildItem.getMd5());
-            ItemSearchResults<ArtifactSearchResult> checksumResults =
-                    searchService.getArtifactsByChecksumResults(controls);
-
-            filterFileInfo(sourceRepository, finalResults, unfoundBuildItem, checksumResults.getResults());
-        }
-
-        return finalResults;
-    }
-
-    private Map<BuildFileBean, FileInfo> searchFileInfosByBuildNameAndNumber(Build build,
-            List<BuildFileBean> unmatchedBuildBeans, String sourceRepository) {
-        final PropertySearchControls searchControls = new PropertySearchControls();
-        searchControls.setLimitSearchResults(false);
-        searchControls.put("build.name", build.getName(), false);
-        searchControls.put("build.number", build.getNumber(), false);
-        ItemSearchResults<PropertySearchResult> results = searchService.searchProperty(searchControls);
-        Map<BuildFileBean, FileInfo> foundResults = new HashMap<>();
-
-        for (BuildFileBean buildFileBean : unmatchedBuildBeans) {
-            Collection<PropertySearchResult> checksumFiltered = Collections2.filter(results.getResults(),
-                    getChecksumBasedPredicate(buildFileBean));
-            filterFileInfo(sourceRepository, foundResults, buildFileBean, checksumFiltered);
-
-        }
-        //Remove already found artifacts with build details and checksum
-        Iterables.removeAll(unmatchedBuildBeans, foundResults.keySet());
-        return foundResults;
-    }
-
-    private void filterFileInfo(String sourceRepository, Map<BuildFileBean,
-            FileInfo> finalResults, BuildFileBean buildFileBean, Collection<? extends SearchResultBase> filtered) {
-        if (!Iterables.isEmpty(filtered)) {
-            Collection<? extends SearchResultBase> result;
-            //RepositoryKey filterFileInfo
-            if (StringUtils.isNotBlank(sourceRepository)) {
-                result = Collections2.filter(filtered,
-                        getRepoSearchPredicate(sourceRepository));
-
-                filtered = result;
-            }
-
-            if (!Iterables.isEmpty(filtered)) {
-                //In case more then one item satisfies the filters, get the latest modified item(heuristic)
-                finalResults.put(buildFileBean, getLatestItem(filtered));
-            }
-        }
-    }
-
-    private <T extends SearchResultBase> Predicate<T> getRepoSearchPredicate(final String repoKey) {
-        return new Predicate<T>() {
-            @Override
-            public boolean apply(T input) {
-                return input.getRepoKey().equals(repoKey);
-            }
-        };
-    }
-
-    private <T extends SearchResultBase> Predicate<T> getChecksumBasedPredicate(final BuildFileBean buildFileBean) {
-        return new Predicate<T>() {
-            @Override
-            public boolean apply(T input) {
-                if (input.getItemInfo() instanceof FileInfo) {
-                    return buildFileBean.getMd5().equals(((FileInfo) input.getItemInfo()).getMd5()) &&
-                            buildFileBean.getSha1().equals(((FileInfo) input.getItemInfo()).getSha1());
-                }
-
-                return false;
-            }
-        };
-    }
-
-    /*private Predicate<BuildFileBean> getFileInfoPredicate(final FileInfo fileInfo) {
-        return new Predicate<BuildFileBean>() {
-            @Override
-            public boolean apply(BuildFileBean input) {
-                return fileInfo.getSha1().equals(input.getSha1()) &&
-                        fileInfo.getMd5().equals(input.getMd5());
-            }
-        };
-    }*/
 
     @Override
     public void exportTo(ExportSettings settings) {
@@ -604,7 +617,7 @@ public class BuildServiceImpl implements InternalBuildService {
         final MutableStatusHolder multiStatusHolder = settings.getStatusHolder();
         multiStatusHolder.status("Starting build info import", log);
 
-        dbService.invokeInTransaction(new Callable<Object>() {
+        dbService.invokeInTransaction("BuildImport-deleteAllBuilds", new Callable<Object>() {
             @Override
             public Object call() throws Exception {
                 try {
@@ -673,7 +686,7 @@ public class BuildServiceImpl implements InternalBuildService {
             for (Module module : build.getModules()) {
                 if (module.getDependencies() != null) {
                     for (Dependency dependency : module.getDependencies()) {
-                        List<String> dependencyScopes = dependency.getScopes();
+                        Set<String> dependencyScopes = dependency.getScopes();
                         if (dependencyScopes != null) {
                             for (String dependencyScope : dependencyScopes) {
                                 if (StringUtils.isBlank(dependencyScope)) {
@@ -761,8 +774,8 @@ public class BuildServiceImpl implements InternalBuildService {
         log.debug("Deleting build {} : {} : {}", detailedBuildRun.getName(), detailedBuildRun.getNumber(),
                 detailedBuildRun.getStarted(), log);
         getTransactionalMe().deleteBuild(detailedBuildRun, false, status);
-        if(status.hasErrors()) {
-            log.error(status.getLastError().toString() ,log);
+        if (status.hasErrors()) {
+            log.error(status.getLastError().toString(), log);
         }
         log.debug("Adding new build {} : {} : {}", detailedBuildRun.getName(), detailedBuildRun.getNumber(),
                 detailedBuildRun.getStarted(), log);
@@ -774,66 +787,11 @@ public class BuildServiceImpl implements InternalBuildService {
 
     @Override
     public void updateBuild(final Build build, boolean updateChecksumProperties) {
-        /*
-        String buildName = build.getName();
-        String buildNumber = build.getNumber();
-        String buildStarted = build.getStarted();
-
-        String buildPathFromParams = getBuildPathFromParams(buildName, buildNumber, buildStarted);
-
-        MutableVfsNode buildNode = vfsDataService.getOrCreate(buildPathFromParams);
-
-        InputStreamFromOutputStream stream = null;
-        try {
-            stream = new InputStreamFromOutputStream() {
-
-                @Override
-                protected Object produce(OutputStream outputStream) throws Exception {
-                    JsonGenerator jsonGenerator = JacksonFactory.createJsonGenerator(outputStream);
-                    jsonGenerator.writeObject(build);
-                    return null;
-                }
-            };
-            buildNode.setContent(vfsDataService.createBinary(BuildRestConstants.MT_BUILD_INFO, stream));
-        } catch (Exception e) {
-            String errorMessage = String.format("An error occurred while updating the JSON data of build name " +
-                    "'%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
-            throw new RuntimeException(errorMessage, e);
-        } finally {
-            IOUtils.closeQuietly(stream);
-        }
-
-        try {
-            updateReleaseLastStatusProperty(build, buildNode);
-        } catch (RepositoryException e) {
-            String errorMessage = String.format("An error occurred while updating the latest release status " +
-                    "property of build name '%s', number '%s', started at '%s'.", buildName, buildNumber, buildStarted);
-            throw new RuntimeException(errorMessage, e);
-        }
-        */
     }
 
     @Override
     public void addPromotionStatus(Build build, PromotionStatus promotion) {
         buildStoreService.addPromotionStatus(build, promotion, authorizationService.currentUsername());
-    }
-
-    /**
-     * Returns the file info object of the result watch was last modified
-     *
-     * @param searchResults Search results to search within
-     * @return Latest modified search result file info. Null if no results were given
-     */
-    private FileInfo getLatestItem(Iterable<? extends SearchResultBase> searchResults) {
-        FileInfo latestItem = null;
-
-        for (ItemSearchResult result : searchResults) {
-            FileInfo fileInfo = (FileInfo) result.getItemInfo();
-            if ((latestItem == null) || (latestItem.getLastModified() < fileInfo.getLastModified())) {
-                latestItem = fileInfo;
-            }
-        }
-        return latestItem;
     }
 
     private void exportBuild(ExportSettings settings, BuildRun buildRun,

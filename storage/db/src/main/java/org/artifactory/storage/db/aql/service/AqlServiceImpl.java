@@ -3,7 +3,6 @@ package org.artifactory.storage.db.aql.service;
 import org.artifactory.aql.AqlService;
 import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.model.AqlPermissionProvider;
-import org.artifactory.aql.model.AqlPermissionProviderImpl;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.aql.result.rows.AqlRowResult;
@@ -43,6 +42,7 @@ public class AqlServiceImpl implements AqlService {
     private SqlQueryBuilder sqlQueryBuilder;
     private AqlQueryOptimizer optimizer;
     private AqlQueryValidator validator;
+    private AqlQueryRestrictor restrictor;
     private AqlPermissionProvider permissionProvider=new AqlPermissionProviderImpl();
 
     @PostConstruct
@@ -56,6 +56,7 @@ public class AqlServiceImpl implements AqlService {
         aqlApiToAqlAdapter = new AqlApiToAqlAdapter();
         optimizer = new AqlQueryOptimizer();
         validator = new AqlQueryValidator();
+        restrictor = new AqlQueryRestrictor();
     }
 
     /**
@@ -86,7 +87,6 @@ public class AqlServiceImpl implements AqlService {
         log.debug("Processing API AqlApi query");
         AqlQuery aqlQuery = aqlApiToAqlAdapter.toAqlModel(aql);
         optimizer.optimize(aqlQuery);
-        validator.validate(aqlQuery,permissionProvider);
         return (AqlEagerResultImpl<T>) getAqlQueryResult(aqlQuery);
     }
 
@@ -94,6 +94,7 @@ public class AqlServiceImpl implements AqlService {
     public AqlLazyResult executeQueryLazy(AqlBase aql) {
         log.debug("Processing API AqlApi query");
         AqlQuery aqlQuery = aqlApiToAqlAdapter.toAqlModel(aql);
+        optimizer.optimize(aqlQuery);
         return getAqlQueryStreamResult(aqlQuery);
     }
 
@@ -105,6 +106,7 @@ public class AqlServiceImpl implements AqlService {
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
         optimizer.optimize(aqlQuery);
         validator.validate(aqlQuery,permissionProvider);
+        restrictor.restrict(aqlQuery, permissionProvider);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
         AqlEagerResult aqlQueryResult = getAqlQueryResult(aqlQuery);
         return aqlQueryResult;
@@ -118,6 +120,7 @@ public class AqlServiceImpl implements AqlService {
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
         optimizer.optimize(aqlQuery);
         validator.validate(aqlQuery,permissionProvider);
+        restrictor.restrict(aqlQuery, permissionProvider);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
         return getAqlQueryStreamResult(aqlQuery);
     }
@@ -140,7 +143,7 @@ public class AqlServiceImpl implements AqlService {
         SqlQuery sqlQuery = sqlQueryBuilder.buildQuery(aqlQuery);
         log.trace("Successfully finished to convert the parser result into the following SQL query '{}'", sqlQuery);
         log.debug("processing the following SQL query: {}", sqlQuery);
-        AqlLazyResult aqlQueryStreamResult = aqlDao.executeQueryLazy(sqlQuery);
+        AqlLazyResult aqlQueryStreamResult = aqlDao.executeQueryLazy(sqlQuery, permissionProvider);
         log.debug("Successfully finished to process SQL query (lazy)");
         return aqlQueryStreamResult;
     }

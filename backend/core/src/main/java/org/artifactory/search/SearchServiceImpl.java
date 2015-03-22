@@ -67,7 +67,6 @@ import org.artifactory.search.build.BuildSearcher;
 import org.artifactory.search.deployable.VersionUnitSearcher;
 import org.artifactory.search.fields.FieldNameConverter;
 import org.artifactory.search.gavc.GavcSearcher;
-import org.artifactory.search.property.PropertySearcher;
 import org.artifactory.search.property.PropertySearcherAql;
 import org.artifactory.search.stats.LastDownloadedSearcher;
 import org.artifactory.security.AccessLogger;
@@ -203,7 +202,7 @@ public class SearchServiceImpl implements InternalSearchService {
             return new ItemSearchResults<>(Lists.<PropertySearchResult>newArrayList());
         }
 
-        PropertySearcher searcher = new PropertySearcher();
+        PropertySearcherAql searcher = new PropertySearcherAql();
         ItemSearchResults<PropertySearchResult> results = searcher.search(controls);
 
         return results;

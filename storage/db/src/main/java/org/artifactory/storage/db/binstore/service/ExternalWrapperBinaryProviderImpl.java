@@ -21,7 +21,6 @@ package org.artifactory.storage.db.binstore.service;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

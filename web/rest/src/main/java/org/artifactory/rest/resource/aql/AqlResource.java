@@ -4,10 +4,15 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
-import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.aql.AqlException;
+import org.artifactory.aql.AqlService;
+import org.artifactory.aql.model.AqlDomainEnum;
+import org.artifactory.aql.model.DomainSensitiveField;
+import org.artifactory.aql.result.AqlJsonResult;
+import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.aql.result.AqlRestResult;
+import org.artifactory.aql.result.AqlStreamResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +50,8 @@ public class AqlResource {
     AddonsManager addonsManager;
     @Autowired
     AuthorizationService authorizationService;
+    @Autowired
+    AqlService aqlService;
 
     @POST
     @Produces({MediaType.APPLICATION_JSON})
@@ -61,22 +68,22 @@ public class AqlResource {
         }
         // Try to execute the query
         try {
-            final AqlRestResult aqlResult = addonsManager.addonByType(RestAddon.class).executeQuery(query, request);
+
+            final AqlRestResult restResult = executeAqlQuery(query);
             // After success query execution prepare the result in stream.
             StreamingOutput stream = new StreamingOutput() {
                 @Override
                 public void write(OutputStream os) throws IOException, WebApplicationException {
-                    byte[] array = aqlResult.read();
+                    byte[] array = restResult.read();
                     try {
                         while (array != null) {
                             os.write(array);
-                            array = aqlResult.read();
+                            array = restResult.read();
                         }
                         os.flush();
                     } finally {
-                        IOUtils.closeQuietly(aqlResult);
+                        IOUtils.closeQuietly(restResult);
                     }
-                    //TODO How to ensure that we close the AQL Result
                 }
             };
             return Response.ok(stream).build();
@@ -95,6 +102,17 @@ public class AqlResource {
         }
     }
 
+    private AqlRestResult executeAqlQuery(String query) {
+        AqlLazyResult result = aqlService.executeQueryLazy(query);
+        final AqlRestResult restResult;
+        if (isContainsProperties(result)) {
+            restResult = new AqlJsonResult(result);
+        } else {
+            restResult = new AqlStreamResultImpl(result);
+        }
+        return restResult;
+    }
+
     private String getQuery(String contentQuery) {
         try {
             String query = contentQuery;
@@ -109,5 +127,16 @@ public class AqlResource {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private boolean isContainsProperties(AqlLazyResult result) {
+        for (DomainSensitiveField field : result.getFields()) {
+            AqlDomainEnum fieldDomain = field.getSubDomains().get(field.getSubDomains().size() - 1);
+            AqlDomainEnum mainDomain = field.getSubDomains().get(0);
+            if (fieldDomain != mainDomain && fieldDomain == AqlDomainEnum.properties) {
+                return true;
+            }
+        }
+        return false;
     }
 }

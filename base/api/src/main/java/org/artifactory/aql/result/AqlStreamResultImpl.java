@@ -4,7 +4,6 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
-import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.model.DomainSensitiveField;
 import org.codehaus.jackson.annotate.JsonAutoDetect;
 import org.codehaus.jackson.annotate.JsonMethod;
@@ -40,8 +39,8 @@ public class AqlStreamResultImpl extends AqlRestResult implements Cloneable {
     private ResultSet resultSet;
     private List<DomainSensitiveField> resultFields;
 
-    public AqlStreamResultImpl(AqlLazyResult lazyResult, AqlPermissionProvider permissionProvider) {
-        super(permissionProvider);
+    public AqlStreamResultImpl(AqlLazyResult lazyResult) {
+        super(lazyResult.getPermissionProvider());
         this.resultSet = lazyResult.getResultSet();
         this.resultFields = lazyResult.getFields();
         this.limit = lazyResult.getLimit();

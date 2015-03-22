@@ -18,8 +18,6 @@
 
 package org.artifactory.storage.db.binstore.service;
 
-import org.artifactory.storage.binstore.service.BinaryProvider;
-
 import javax.annotation.Nonnull;
 
 /**

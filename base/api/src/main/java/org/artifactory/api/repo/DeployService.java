@@ -24,7 +24,6 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.md.Properties;
-import org.artifactory.sapi.common.Lock;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,12 +37,10 @@ import java.io.File;
 public interface DeployService {
 
     @Request
-    @Lock
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, @Nullable Properties properties)
             throws RepoRejectException;
 
     @Request
-    @Lock
     void deploy(RepoDescriptor targetRepo, UnitInfo artifactInfo, File fileToDeploy, String pomString,
             boolean forceDeployPom, boolean partOfBundleDeploy, Properties properties) throws RepoRejectException;
 

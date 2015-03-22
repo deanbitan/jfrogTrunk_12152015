@@ -18,7 +18,6 @@
 
 package org.artifactory.repo;
 
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,11 @@ public class RepoPathFactory {
     }
 
     /**
+     * Constructs a RepoPath from the input repo key and optional path.
+     * Paths that end with slash ('/') are considered as paths pointing to folder ({@link org.artifactory.repo.RepoPath#isFolder()} will return true)
+     *
      * @param repoKey The key of any repo
-     * @param path    The relative path inside the repo
+     * @param path    The relative path inside the repo (empty for root repo path)
      */
     public static RepoPath create(String repoKey, String path) {
         try {
@@ -60,7 +62,8 @@ public class RepoPathFactory {
     }
 
     /**
-     * Constructs a RepoPath from a path containing both repo key and the relative path in the repo
+     * Constructs a RepoPath from a path containing both repo key and the relative path in the repo.
+     * Paths that end with slash ('/') are considered as paths pointing to folder ({@link org.artifactory.repo.RepoPath#isFolder()} will return true)
      *
      * @param rpp - {repoKey}/{itemRelativePath}
      * @return Matching repo path
@@ -69,9 +72,7 @@ public class RepoPathFactory {
         if (rpp == null || rpp.length() == 0) {
             throw new IllegalArgumentException("Path cannot be empty.");
         }
-        rpp = PathUtils.formatPath(rpp);
-        //Cannot return null
-        rpp = PathUtils.trimSlashes(rpp).toString();
+        rpp = PathUtils.trimLeadingSlashes(PathUtils.formatPath(rpp));
         int idx = rpp.indexOf('/');
         String repoKey;
         String path;
@@ -81,16 +82,8 @@ public class RepoPathFactory {
             path = "";
         } else {
             repoKey = rpp.substring(0, idx);
-            path = PathUtils.formatRelativePath(rpp.substring(idx + 1));
+            path = rpp.substring(idx + 1);
         }
         return create(repoKey, path);
-    }
-
-    public static RepoPath fromAql(String repo, String path, String name) {
-        if (StringUtils.equals(path, ".")) {
-            return create(repo, name);
-        } else {
-            return create(repo, path + "/" + name);
-        }
     }
 }

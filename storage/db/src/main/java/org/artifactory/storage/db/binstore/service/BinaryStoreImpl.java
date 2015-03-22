@@ -36,7 +36,6 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
 import org.artifactory.storage.db.DbService;
@@ -137,6 +136,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 }
                 binaryProviders.add(new BlobBinaryProviderImpl(jdbcHelper, dbService.getDatabaseType(), blobsFactory));
                 break;
+
             default:
                 throw new IllegalStateException("Binary provider name " + binaryProviderName + " not supported!");
         }
@@ -315,7 +315,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 // Let's check if in bin provider
                 if (getFirstBinaryProvider().exists(sha1, length)) {
                     // Good let's use it
-                    return insertRecordInDb(sha1, md5, length);
+                    return getTransactionalMe().insertRecordInDb(sha1, md5, length);
                 }
                 return null;
             }
@@ -328,24 +328,37 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     @Override
     @Nonnull
     public BinaryInfo addBinary(InputStream in) throws IOException {
-        InternalBinaryStore txMe = ContextHelper.get().beanForType(InternalBinaryStore.class);
-        BinaryInfo result = null;
+        BinaryInfo binaryInfo = null;
         if (in instanceof BinaryStoreInputStream) {
-            result = txMe.safeGetBinaryInfo((BinaryStoreInputStream) in);
+            // input stream is from existing binary
+            binaryInfo = getTransactionalMe().safeGetBinaryInfo((BinaryStoreInputStream) in);
         }
-        if (result == null) {
+        if (binaryInfo == null) {
             BinaryInfo bi = getFirstBinaryProvider().addStream(in);
             log.trace("Inserted binary {} to file store", bi.getSha1());
             // From here we managed to create a binary record on the binary provider
             // So, failing on the insert in DB (because saving the file took to long)
             // can be re-tried based on the sha1
             try {
-                result = txMe.insertRecordInDb(bi.getSha1(), bi.getMd5(), bi.getLength());
-            } catch (StorageException e) {
-                throw new BinaryInsertRetryException(bi, e);
+                binaryInfo = getTransactionalMe().insertRecordInDb(bi.getSha1(), bi.getMd5(), bi.getLength());
+            } catch (BinaryInsertRetryException e) {
+                if (log.isDebugEnabled()) {
+                    log.info("Retrying add binary after receiving exception", e);
+                } else {
+                    log.info("Retrying add binary after receiving exception: " + e.getMessage());
+                }
+                binaryInfo = addBinaryRecord(bi.getSha1(), bi.getMd5(), bi.getLength());
+                if (binaryInfo == null) {
+                    throw new StorageException("Failed to add binary record with SHA1 " + bi.getSha1() +
+                            "during retry", e);
+                }
             }
         }
-        return result;
+        return binaryInfo;
+    }
+
+    private InternalBinaryStore getTransactionalMe() {
+        return ContextHelper.get().beanForType(InternalBinaryStore.class);
     }
 
     @Override
@@ -438,13 +451,12 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         for (BinaryData bd : binsToDelete) {
             log.trace("Candidate for deletion: {}", bd);
-            dbService.invokeInTransaction(new BinaryCleaner(bd, result));
+            dbService.invokeInTransaction("BinaryCleaner#" + bd.getSha1(), new BinaryCleaner(bd, result));
         }
 
         if (result.checksumsCleaned > 0) {
-            InternalBinaryStore txMe = ContextHelper.get().beanForType(InternalBinaryStore.class);
-            result.archivePathsCleaned = txMe.deleteUnusedArchivePaths();
-            result.archiveNamesCleaned = txMe.deleteUnusedArchiveNames();
+            result.archivePathsCleaned = getTransactionalMe().deleteUnusedArchivePaths();
+            result.archiveNamesCleaned = getTransactionalMe().deleteUnusedArchiveNames();
         }
 
         result.gcEndTime = System.currentTimeMillis();

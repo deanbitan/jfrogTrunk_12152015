@@ -5,46 +5,69 @@
 
 package org.artifactory.addon.model.license;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.api.build.BuildService;
 import org.artifactory.api.license.LicenseInfo;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.PathUtils;
 import org.artifactory.webapp.actionable.RepoAwareActionableItemBase;
 import org.artifactory.webapp.actionable.action.ShowInTreeAction;
+import org.jfrog.build.api.Dependency;
 
-import java.util.List;
+import java.util.Set;
+
+import static org.artifactory.api.license.LicenseInfo.*;
 
 /**
  * @author Tomer Cohen
+ * @author Dan Feldman
  */
 public class ModuleLicenseModel extends RepoAwareActionableItemBase {
+
     private String id;
     private String md5;
     private String sha1;
-    private LicenseInfo license;
-    private String scopes;
-    private List<String> scopesList;
+    private LicenseInfo license = NOT_FOUND_LICENSE;              //License set as prop
+    private LicenseInfo extractedLicense = NOT_SEARCHED_LICENSE;  //Licenses from archive / descriptor
+    private Set<String> scopes = Sets.newHashSet();
+    private String scopeNames = "";
     private boolean selected;
-    private boolean overridable;
-    private boolean isNeutral = false;
+    private boolean overridable = false;
+    private boolean hasConflicts = false;
+    private boolean isNotFound = false;
+    private boolean neutral = false;
 
-    private LicenseInfo calculatedLicense;
+    public ModuleLicenseModel(RepoPath repoPath) {
+        super(repoPath);
+    }
 
     public ModuleLicenseModel(LicenseInfo license, String id, RepoPath repoPath) {
         super(repoPath);
         this.license = license;
         this.id = id;
-        this.calculatedLicense = license;
     }
 
-    public LicenseInfo getLicense() {
-        return license;
+    public static ModuleLicenseModel createNotFoundModel(RepoPath path) {
+        ModuleLicenseModel model = new ModuleLicenseModel(path);
+        model.extractedLicense = LicenseInfo.NOT_FOUND_LICENSE;
+        model.setModelProperties(false);
+        return model;
     }
 
-    public void setLicense(LicenseInfo license) {
-        this.license = license;
+    public void populateFields(Dependency dependency) {
+        this.md5 = dependency.getMd5();
+        this.sha1 = dependency.getSha1();
+        if (StringUtils.isNotBlank(dependency.getId())) {
+            this.id = dependency.getId();
+        }
+        if (CollectionUtils.isNullOrEmpty(dependency.getScopes()) || dependency.getScopes().contains(null)) {
+            this.scopes.add(BuildService.UNSPECIFIED_SCOPE);
+        } else {
+            setScopes(dependency.getScopes());
+        }
     }
 
     public String getId() {
@@ -71,29 +94,33 @@ public class ModuleLicenseModel extends RepoAwareActionableItemBase {
         this.sha1 = sha1;
     }
 
-    public String getScopes() {
+    public Set<String> getScopes() {
         return scopes;
     }
 
-    public void setScopes(List<String> scopes) {
-        setScopesList(scopes);
-        this.scopes = PathUtils.collectionToDelimitedString(scopes);
+    public void setScopes(Set<String> scopes) {
+        this.scopes = scopes;
+        this.scopeNames = PathUtils.collectionToDelimitedString(scopes);
     }
 
-    public LicenseInfo getCalculatedLicense() {
-        return calculatedLicense;
+    public String getScopeNames() {
+        return scopeNames;
     }
 
-    public void setCalculatedLicense(LicenseInfo calculatedLicense) {
-        this.calculatedLicense = calculatedLicense;
+    public LicenseInfo getLicense() {
+        return license;
     }
 
-    public boolean isNeutral() {
-        return isNeutral;
+    public void setLicense(LicenseInfo license) {
+        this.license = license;
     }
 
-    public void setNeutral(boolean neutral) {
-        isNeutral = neutral;
+    public LicenseInfo getExtractedLicense() {
+        return extractedLicense;
+    }
+
+    public void setExtractedLicense(LicenseInfo extractedLicense) {
+        this.extractedLicense = extractedLicense;
     }
 
     public boolean isSelected() {
@@ -104,22 +131,81 @@ public class ModuleLicenseModel extends RepoAwareActionableItemBase {
         this.selected = selected;
     }
 
-
-    public List<String> getScopesList() {
-        return scopesList;
-    }
-
-    public void setScopesList(List<String> scopesList) {
-        this.scopesList = scopesList != null ? scopesList : Lists.<String>newArrayList();
-    }
-
     public boolean isOverridable() {
         return overridable;
     }
 
-    public void setOverridable(boolean overridable) {
-        this.overridable = overridable;
+    public boolean hasConflicts() {
+        return hasConflicts;
     }
+
+    public boolean isNotFound() {
+        return isNotFound;
+    }
+
+    public boolean isNeutral() {
+        return neutral;
+    }
+
+    public void setNeutral(boolean isNeutral) {
+        this.neutral = isNeutral;
+    }
+
+    /**
+     * This method should be called after populating all licenses (property based and extracted), it will mark
+     * conflict, not found, and overridable status properties
+     */
+    public void setModelProperties(boolean canAnnotate) {
+        //Null proof just in case
+        if (license == null) {
+            license = LicenseInfo.NOT_FOUND_LICENSE;
+        }
+        if (extractedLicense == null) {
+            extractedLicense = LicenseInfo.NOT_SEARCHED_LICENSE;
+        }
+        //Both licenses not found (or extracted was not searched) - mark model as not found
+        if ((license.isNotFound() && extractedLicense.isNotFound())
+                || (license.isNotFound() && extractedLicense.isNotSearhced())) {
+            hasConflicts = true;
+            isNotFound = true;
+        } else {
+            overridable = hasMismatchingOverridableLicenses() && canAnnotate;
+            //No property-based license info
+            hasConflicts = license.isNotFound()
+                    //Conflicting licenses - mismatch between extracted(if it was searched) and property-based
+                    || hasMismatchingLicenses()
+                    //property-based license found and unapproved
+                    || (license.isFound() && !license.isApproved())
+                    //Property-based license is unknown
+                    || license.isUnknown();
+        }
+    }
+
+    /**
+     * true if property-based and extracted licenses are inconsistent, in case the extracted license was searched for
+     */
+    private boolean hasMismatchingLicenses() {
+        return !extractedLicense.isNotSearhced() && !license.equals(extractedLicense);
+    }
+
+    /**
+     * true if model has an extracted license that can override(i.e. has 'meaningful' data) the property-based one
+     * when running in auto mode (i.e property license if not found or empty unknown)
+     */
+    public boolean hasMismatchingAutoOverridableLicenses() {
+        return extractedLicense.isFound() && (license.isNotFound()
+                || (license.equals(EMPTY_UNKNOWN_LICENSE) && !extractedLicense.equals(EMPTY_UNKNOWN_LICENSE)));
+    }
+
+    /**
+     * true if the model has mismatching licenses and the extracted license is valid - doesn't allow overriding any
+     * property-based license with an unknown license.
+     * Use only with UI, the auto run (CI) has another variant of overridable model decision.
+     */
+    private boolean hasMismatchingOverridableLicenses() {
+        return hasMismatchingLicenses() && extractedLicense.isValidLicense();
+    }
+
 
     @Override
     public boolean equals(Object o) {
@@ -134,15 +220,11 @@ public class ModuleLicenseModel extends RepoAwareActionableItemBase {
 
         if (!getId().equals(that.getId())) {
             return false;
-        }
-        if (!license.equals(that.license)) {
+        } else if (!license.equals(that.license)) {
             return false;
-        }
-        if ((getRepoPath() != null) && !getRepoPath().equals(that.getRepoPath())) {
+        } else if (!extractedLicense.equals(that.extractedLicense)) {
             return false;
-        }
-        if ((calculatedLicense != null && that.calculatedLicense != null) && !calculatedLicense.equals(
-                that.calculatedLicense)) {
+        } else if ((getRepoPath() != null) && !getRepoPath().equals(that.getRepoPath())) {
             return false;
         }
         return true;
@@ -153,6 +235,7 @@ public class ModuleLicenseModel extends RepoAwareActionableItemBase {
         int result;
         result = 31 * getId().hashCode();
         result = 31 * result + license.hashCode();
+        result = 31 * result + extractedLicense.hashCode();
         if (getRepoPath() != null) {
             result = 31 * result + getRepoPath().hashCode();
         }
@@ -174,18 +257,5 @@ public class ModuleLicenseModel extends RepoAwareActionableItemBase {
         if (getRepoPath() != null && authService.canRead(getRepoPath())) {
             getActions().add(new ShowInTreeAction());
         }
-    }
-
-    public String getDependencyScope() {
-        String dependencyScopes = getScopes();
-        if (dependencyScopes == null || StringUtils.isBlank(dependencyScopes)) {
-            return "";
-        } else {
-            return dependencyScopes;
-        }
-    }
-
-    public boolean isInConflict() {
-        return getCalculatedLicense() != null && !getLicense().equals(getCalculatedLicense());
     }
 }

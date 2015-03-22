@@ -84,6 +84,16 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     }
 
     @Override
+    public void setContentDispositionAttachment(String filename) {
+        // ignore
+    }
+
+    @Override
+    public void setFilename(String filename) {
+        // ignore
+    }
+
+    @Override
     public Writer getWriter() throws IOException {
         return new NullWriter();
     }
@@ -123,7 +133,7 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
             if (isSuccessful()) {
                 sh.status(statusMessage, getStatus(), log);
             } else {
-                sh.error(statusMessage, getStatus(), getException(), log);
+                sh.error(statusMessage, getStatus(), log);
             }
         }
         return sh;

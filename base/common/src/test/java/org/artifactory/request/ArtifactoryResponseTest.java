@@ -74,6 +74,16 @@ public class ArtifactoryResponseTest {
             }
 
             @Override
+            public void setContentDispositionAttachment(String filename) {
+
+            }
+
+            @Override
+            public void setFilename(String filename) {
+
+            }
+
+            @Override
             public Writer getWriter() throws IOException {
                 return null;
             }

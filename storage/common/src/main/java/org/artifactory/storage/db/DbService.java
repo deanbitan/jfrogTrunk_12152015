@@ -56,10 +56,11 @@ public interface DbService extends ReloadableBean {
     /**
      * Enforce a new separate transaction to execute the given callable statement.
      *
-     * @param execute The Callable statement execute inside the NEW TX
-     * @param <T>     The return type
+     * @param <T>             The return type
+     * @param transactionName Symbolic name of the transaction
+     * @param execute         The Callable statement execute inside the NEW TX
      * @return Whatever the callable returned
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    <T> T invokeInTransaction(Callable<T> execute);
+    <T> T invokeInTransaction(String transactionName, Callable<T> execute);
 }

@@ -60,9 +60,18 @@ public interface RepoPath extends Info {
     @Nullable
     RepoPath getParent();
 
+    /**
+     * @return True if this repo path points to the root (i.e., the ath part is empty)
+     */
     boolean isRoot();
 
+    /**
+     * @return True if this repo path represents a file
+     */
     boolean isFile();
 
+    /**
+     * @return True if this repo path represents a folder
+     */
     boolean isFolder();
 }

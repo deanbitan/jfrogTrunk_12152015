@@ -24,6 +24,7 @@ import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.action.DeleteAction;
 
 /**
@@ -46,4 +47,6 @@ public interface DockerWebAddon extends Addon {
     ITab getDockerAncestryTab(String s, FileInfo fileInfo);
 
     DeleteAction getDeleteAction(ItemInfo itemInfo);
+
+    String getFolderCssClass(RepoPath repoPath, LocalRepoDescriptor repo);
 }

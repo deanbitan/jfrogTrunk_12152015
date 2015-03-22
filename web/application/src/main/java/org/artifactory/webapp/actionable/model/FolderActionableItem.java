@@ -19,6 +19,7 @@
 package org.artifactory.webapp.actionable.model;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.DockerWebAddon;
 import org.artifactory.addon.wicket.WatchAddon;
@@ -60,6 +61,7 @@ public class FolderActionableItem extends CachedItemActionableItem
     private DeleteVersionsAction delVersions;
     private boolean compactAllowed;
     private ItemAction watchAction;
+    private String cssClass;
 
     public FolderActionableItem(org.artifactory.fs.FolderInfo folderInfo, boolean compactAllowed) {
         super(folderInfo.getRepoPath());
@@ -72,6 +74,13 @@ public class FolderActionableItem extends CachedItemActionableItem
         }
 
         addActions();
+
+        AddonsManager addonsManager = getAddonsProvider();
+        DockerWebAddon dockerWebAddon = addonsManager.addonByType(DockerWebAddon.class);
+        cssClass = dockerWebAddon.getFolderCssClass(getRepoPath(), getRepo());
+        if (StringUtils.isBlank(cssClass)) {
+            cssClass = isCompacted() ? ItemCssClass.folderCompact.getCssClass() : ItemCssClass.folder.getCssClass();
+        }
     }
 
     private void compact() {
@@ -144,7 +153,7 @@ public class FolderActionableItem extends CachedItemActionableItem
 
     @Override
     public String getCssClass() {
-        return isCompacted() ? ItemCssClass.folderCompact.getCssClass() : ItemCssClass.folder.getCssClass();
+        return cssClass;
     }
 
     @Override

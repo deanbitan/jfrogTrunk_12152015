@@ -56,18 +56,21 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
     }
 
     /*Artifacts search*/
+    @Test
     public void findAllItemsTest() throws AqlException {
         AqlApiItem aql = AqlApiItem.create();
         AqlEagerResult<AqlItem> result = aqlService.executeQueryEager(aql);
         assertSize(result, 11);
     }
 
+    @Test
     public void findAllSortedItemsTest() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().sortBy(AqlFieldEnum.itemRepo);
         AqlEagerResult<AqlItem> result = aqlService.executeQueryEager(aql);
         assertSize(result, 11);
     }
 
+    @Test
     public void findItemsWithSort() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(
@@ -80,6 +83,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertItemt(result, "repo-copy", "org/shayy/badmd5", "badmd5.jar", file);
     }
 
+    @Test
     public void findItemsWithSha1AndMd5() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(
@@ -188,7 +192,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 filter(
                         and(
                                 AqlApiProperty.item().repo().equal("repo1"),
-                                flat(
+                                propertyResultFilter(
                                         AqlApiProperty.key().equal("yossis")
                                 )
                         )
@@ -207,7 +211,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 filter(
                         and(
                                 AqlApiProperty.item().repo().matches("rep?1"),
-                                flat(
+                                propertyResultFilter(
                                         AqlApiProperty.key().equal("yossis")
                                 )
                         )
@@ -226,7 +230,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 filter(
                         and(
                                 AqlApiProperty.item().repo().matches("rep_1"),
-                                flat(
+                                propertyResultFilter(
                                         AqlApiProperty.key().equal("yossis")
                                 )
                         )
@@ -236,6 +240,39 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertSize(result, 0);
     }
 
+    @Test(enabled = true)
+    public void nullUsage() throws AqlException {
+        // return only the properties with the key 'yossis' from repository 'repo1'
+        AqlApiItem aql = AqlApiItem.create().
+                filter(
+                        and(
+                                AqlApiItem.type().equal("any"),
+                                AqlApiItem.property().key().equal(null)
+                        )
+                ).
+                include(AqlApiItem.property().key(), AqlApiItem.property().value()).
+                sortBy(propertyKey).asc();
+        AqlEagerResult<AqlItem> result = aqlService.executeQueryEager(aql);
+        assertSize(result, 21);
+    }
+
+    @Test(enabled = true)
+    public void notNullUsage() throws AqlException {
+        // return only the properties with the key 'yossis' from repository 'repo1'
+        AqlApiItem aql = AqlApiItem.create().
+                filter(
+                        and(
+                                AqlApiItem.type().equal("any"),
+                                AqlApiItem.property().key().notEquals((String) null)
+                        )
+                ).
+                include(AqlApiItem.property().key(), AqlApiItem.property().value()).
+                sortBy(propertyKey).asc();
+        AqlEagerResult<AqlItem> result = aqlService.executeQueryEager(aql);
+        assertSize(result, 10);
+    }
+
+
     @Test(enabled = false)
     public void percentEscape() throws AqlException {
         // return only the properties with the key 'yossis' from repository 'repo1'
@@ -243,7 +280,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 filter(
                         and(
                                 AqlApiProperty.item().repo().matches("rep%1"),
-                                flat(
+                                propertyResultFilter(
                                         AqlApiProperty.key().equal("yossis")
                                 )
                         )
@@ -276,7 +313,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         );
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlJsonResult aqlJsonResult = new AqlJsonResult(aqlLazyResult,new AdminPermissions());
+        AqlJsonResult aqlJsonResult = new AqlJsonResult(aqlLazyResult);
 
         String string = new String(aqlJsonResult.read());
         Assert.assertTrue(string.contains("\"size\" : 43434"));
@@ -300,7 +337,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         );
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult,new AdminPermissions());
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -333,7 +370,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         ).limit(2);
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult,new AdminPermissions());
+        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -356,6 +393,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         Assert.assertTrue(string.contains("\"limit\" : 2"));
     }
 
+    @Test
     public void findArtifactsBiggerThan() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(
@@ -368,6 +406,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         }
     }
 
+    @Test
     public void findArtifactsBiggerThanWithLimit() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(
@@ -381,6 +420,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         }
     }
 
+    @Test
     public void findArtifactsUsinfInclude() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(
@@ -394,6 +434,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         }
     }
 
+    @Test
     public void usageOffTypeEqualAll() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(
@@ -404,6 +445,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertSize(result, 26);
     }
 
+    @Test
     public void findBuild() throws AqlException {
         AqlApiBuild aql = AqlApiBuild.create().
                 filter(
@@ -414,6 +456,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertBuild(result, "1", "bb");
     }
 
+    @Test
     public void findAqlApiBuildProperty() throws AqlException {
         AqlApiBuildProperty aql = AqlApiBuildProperty.create().
                 filter(
@@ -429,6 +472,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertBuildProperty(result, "status", "not-too-bad");
     }
 
+    @Test
     public void findAqlApiDependency() throws AqlException {
         AqlApiDependency aql = AqlApiDependency.create().
                 filter(
@@ -439,6 +483,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertDependency(result, "ba1mod3-art1", "dll");
     }
 
+    @Test
     public void findAqlApiStatistics() throws AqlException {
         AqlApiStatistic aql = AqlApiStatistic.create().
                 filter(
@@ -450,6 +495,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertStatistic(result, 15, "yossis");
     }
 
+    @Test
     public void findArtifact() throws AqlException {
         AqlApiArtifact aql = AqlApiArtifact.create().
                 filter(
@@ -460,6 +506,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         assertArtifact(result, "ba1mod1-art1", "dll");
     }
 
+    @Test
     public void findItemsUsingIncludeStatistics() throws AqlException {
         AqlApiItem aql = AqlApiItem.create().
                 filter(

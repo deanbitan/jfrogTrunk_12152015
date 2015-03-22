@@ -22,6 +22,14 @@ public class AqlApiDynamicFieldsDomains {
             this.domains.addAll(domains);
         }
 
+        public AqlApiComparator<T> size() {
+            return new AqlApiComparator(AqlFieldEnum.itemSize, domains);
+        }
+
+        public AqlApiComparator<T> updated() {
+            return new AqlApiComparator(AqlFieldEnum.itemUpdated, domains);
+        }
+
         public AqlApiComparator<T> repo() {
             return new AqlApiComparator(AqlFieldEnum.itemRepo, domains);
         }

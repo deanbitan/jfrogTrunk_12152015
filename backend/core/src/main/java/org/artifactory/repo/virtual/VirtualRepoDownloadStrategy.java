@@ -287,7 +287,7 @@ public class VirtualRepoDownloadStrategy {
                 continue;
             }
 
-            if (closestMatch != null && isExactMatchRequired(repo)) {
+            if (closestMatch != null && isNotSynchronizeProperties(repo)) {
                 continue;
             }
 
@@ -352,11 +352,10 @@ public class VirtualRepoDownloadStrategy {
         UnfoundRepoResource forbidden = null;
         //Traverse the local, caches and remote repositories and search for the newest snapshot
         //Make sure local repos are always searched first
-        boolean foundInLocalRepo = false;
 
         for (RealRepo repo : repositories) {
             RepoRequests.logToContext("Searching for the resource within %s", repo.getKey());
-            if (shouldSkipSnapshotRepo(foundInLocalRepo, repo)) {
+            if (shouldSkipSnapshotRepo(repo)) {
                 RepoRequests.logToContext("Skipping %s", repo.getKey());
                 continue;
             }
@@ -369,7 +368,6 @@ public class VirtualRepoDownloadStrategy {
 
             final RepoResource res = repo.getInfo(translatedContext);
             if (res.isFound()) {
-                foundInLocalRepo = isSnapshotFoundInLocalRepo(foundInLocalRepo, repo, translatedPath);
                 RepoRequests.logToContext("Resource last modified time - %s",
                         centralConfig.format(res.getLastModified()));
 
@@ -423,34 +421,19 @@ public class VirtualRepoDownloadStrategy {
         return latestRes;
     }
 
-    private boolean shouldSkipSnapshotRepo(boolean foundInLocalRepo, RealRepo repo) {
+    //Skip repos that don't handle snapshots and cache repos to allow their remotes' logic to discover newer versions
+    //see RTFACT-7095
+    private boolean shouldSkipSnapshotRepo(RealRepo repo) {
         //Skip if not handling
         if (!repo.isHandleSnapshots()) {
             RepoRequests.logToContext("%s doesn't handle snapshot resources", repo.getKey());
             return true;
+        } else if (repo.isCache()) {
+            return true;
+        } else {
+            return false;
         }
-        //Skip remote repos if found in local repo (including caches)
-        boolean exactMatchRequired = isExactMatchRequired(repo);
-        RepoRequests.logToContext("Resource was found in the local repo '%s' = %s, Repo is remote and doesn't " +
-                "sync properties = %s", repo.getKey(), foundInLocalRepo, exactMatchRequired);
-        return foundInLocalRepo && exactMatchRequired;
     }
-
-    private boolean isSnapshotFoundInLocalRepo(boolean foundInLocalRepo, RealRepo repo, String requestPath) {
-        if (repo.isLocal()) {
-            if (foundInLocalRepo) {
-                //Issue a warning for a resource found multiple times in local repos
-                RepoRequests.logToContext("Found multiple instances of the resource in local repositories.");
-                log.warn("{}: found multiple resource instances of '{}' in local repositories.",
-                        repo, requestPath);
-            } else {
-                RepoRequests.logToContext("Resource was found in %s", repo.getKey());
-                foundInLocalRepo = true;
-            }
-        }
-        return foundInLocalRepo;
-    }
-
 
     private UnfoundRepoResource checkIfForbidden(RepoResource resource) {
         if (resource instanceof UnfoundRepoResource) {
@@ -508,7 +491,7 @@ public class VirtualRepoDownloadStrategy {
         return layoutsCoreAddon.translateArtifactPath(sourceRepoLayout, targetRepoLayout, path);
     }
 
-    private boolean isExactMatchRequired(RealRepo repo) {
+    private boolean isNotSynchronizeProperties(RealRepo repo) {
         return !repo.isLocal() && !((RemoteRepoDescriptor) repo.getDescriptor()).isSynchronizeProperties();
     }
 }

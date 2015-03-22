@@ -39,6 +39,7 @@ import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
@@ -202,8 +203,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
                 log.debug("Overriding {} with sha1: {}", mutableFile.getRepoPath(), overriddenFileSha1);
             }
 
-            InputStream in = context.getInputStream();
-            fillFileData(in, mutableFile);
+            fillBinaryData(context, mutableFile);
 
             verifyChecksum(mutableFile);
 
@@ -276,6 +276,25 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
 
             context.setException(e);
             throw new RuntimeException("Failed to save resource '" + res.getRepoPath() + "'.", e);
+        }
+    }
+
+    private void fillBinaryData(SaveResourceContext context, MutableVfsFile mutableFile) {
+        BinaryInfo binaryInfo = context.getBinaryInfo();
+        boolean usedExistingBinary = false;
+        if (binaryInfo != null) {
+            usedExistingBinary = mutableFile.tryUsingExistingBinary(
+                    binaryInfo.getSha1(), binaryInfo.getMd5(), binaryInfo.getLength());
+            if (!usedExistingBinary) {
+                log.debug("Tried to save with existing binary info but failed: '{}': {}",
+                        mutableFile.getRepoPath().toPath(), binaryInfo);
+            }
+        }
+        if (!usedExistingBinary) {
+            InputStream in = context.getInputStream();
+            mutableFile.fillBinaryData(in);
+        } else {
+            log.trace("Using existing binary info for '{}': {}", mutableFile.getRepoPath().toPath(), binaryInfo);
         }
     }
 
@@ -579,10 +598,6 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         if (StringUtils.isNotBlank(context.getModifiedBy())) {
             mutableFile.setModifiedBy(context.getModifiedBy());
         }
-    }
-
-    private void fillFileData(InputStream in, MutableVfsFile mutableFile) {
-        mutableFile.fillBinaryData(in); //May throw a checksum error
     }
 
     private void setClientChecksums(RepoResource res, MutableVfsFile mutableFile) {

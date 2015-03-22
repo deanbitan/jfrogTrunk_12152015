@@ -57,8 +57,8 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
             if (element instanceof AqlBase.FreezeJoin) {
                 handleFreezeJoin((AqlBase.FreezeJoin) element, context);
             }
-            if (element instanceof AqlBase.FlatClause) {
-                handleFlat((AqlBase.FlatClause) element, context);
+            if (element instanceof AqlBase.PropertyResultFilterClause) {
+                handleFlat((AqlBase.PropertyResultFilterClause) element, context);
             }
             if (element instanceof AqlBase.PropertyCriteriaClause) {
                 handlePropertyCriteria((AqlBase.PropertyCriteriaClause) element, context);
@@ -122,7 +122,7 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         context.pop();
     }
 
-    private void handleFlat(AqlBase.FlatClause flat, AdapterContext context) {
+    private void handleFlat(AqlBase.PropertyResultFilterClause flat, AdapterContext context) {
         if (flat.isEmpty()) {
             return;
         }

@@ -24,7 +24,6 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageProperties;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
@@ -34,6 +33,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -88,6 +88,13 @@ class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinar
                 } catch (FileAlreadyExistsException ignore) {
                     // May happen in heavy concurrency cases
                     log.trace("Failed moving {} to {}. File already exist", preFileStoreFile.getAbsolutePath(), target);
+                } catch (AccessDeniedException permissions) {
+                    // May happen if two threads are trying to move to the same location in windows
+                    log.trace("Failed moving {} to {}. Checking if file already exist",
+                            preFileStoreFile.getAbsolutePath(), target);
+                    if (!target.toFile().exists()) {
+                        throw permissions;
+                    }
                 }
                 preFileStoreFile = null;
             } else {

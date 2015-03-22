@@ -20,7 +20,6 @@ package org.artifactory.webapp.servlet;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.io.output.NullWriter;
 import org.apache.http.HttpStatus;
 import org.artifactory.api.request.ArtifactoryResponse;
@@ -30,9 +29,9 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.springframework.http.MediaType;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Writer;
 import java.util.List;
 
@@ -47,8 +46,7 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
     private final String threadName;
     private final String time;
 
-    private Exception exception;
-    private long length;
+    private long length = -1;
     private int statusCode;
     private ArtifactoryResponse artifactoryResponse;
     private List<String> logAggregator = Lists.newArrayList();
@@ -60,13 +58,8 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
     }
 
     @Override
-    public void setException(Exception exception) {
-        this.exception = exception;
-    }
-
-    @Override
     public boolean isError() {
-        return ((statusCode > 0) && !HttpUtils.isSuccessfulResponseCode(statusCode)) || (exception != null);
+        return ((statusCode > 0) && !HttpUtils.isSuccessfulResponseCode(statusCode));
     }
 
     @Override
@@ -96,17 +89,7 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
     }
 
     @Override
-    public boolean isContentLengthSet() {
-        return length >= 0;
-    }
-
-    @Override
     public void setContentType(String contentType) {
-    }
-
-    @Override
-    public OutputStream getOutputStream() throws IOException {
-        return new NullOutputStream();
     }
 
     @Override
@@ -116,7 +99,6 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
 
     @Override
     public void sendInternalError(Exception exception, Logger logger) throws IOException {
-        this.exception = exception;
     }
 
     @Override
@@ -162,7 +144,7 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
 
     @Override
     public boolean isSuccessful() {
-        return ((statusCode <= 0) || HttpUtils.isSuccessfulResponseCode(statusCode)) && (exception == null);
+        return ((statusCode <= 0) || HttpUtils.isSuccessfulResponseCode(statusCode));
     }
 
     @Override
@@ -180,12 +162,12 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
     }
 
     @Override
-    public void flush() {
+    public void close(Closeable closeable) {
+        IOUtils.closeQuietly(closeable);
     }
 
     @Override
-    public Exception getException() {
-        return exception;
+    public void flush() {
     }
 
     @Override

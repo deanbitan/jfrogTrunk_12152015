@@ -26,12 +26,14 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.RestCoreAddon;
-import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.repo.exception.FileExpectedException;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.repo.exception.maven.BadPomException;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.InternalArtifactoryRequest;
+import org.artifactory.api.request.UploadService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -62,13 +64,8 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MutableRepoResourceInfo;
 import org.artifactory.resource.UnfoundRepoResource;
-import org.artifactory.sapi.fs.MutableVfsFile;
-import org.artifactory.sapi.fs.MutableVfsItem;
-import org.artifactory.sapi.fs.VfsFile;
-import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryStore;
-import org.artifactory.storage.fs.VfsItemFactory;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.HttpUtils;
@@ -90,11 +87,13 @@ import static org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType.SERVER
 import static org.artifactory.descriptor.repo.SnapshotVersionBehavior.DEPLOYER;
 
 /**
+ * Handles upload of a single item. The item can be file, directory, properties, checksum data etc.
+ * This service validates the request and delegates the actual upload to the repo and repo service.
+ *
  * @author Yoav Landman
  */
-
 @Service
-public class UploadServiceImpl implements InternalUploadService {
+public class UploadServiceImpl implements UploadService {
     private static final Logger log = LoggerFactory.getLogger(UploadServiceImpl.class);
 
     @Autowired
@@ -131,21 +130,6 @@ public class UploadServiceImpl implements InternalUploadService {
         validateRequestAndUpload(request, response);
     }
 
-    @Override
-    public void uploadWithinTransaction(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
-            throws IOException, RepoRejectException {
-        if (request.isDirectoryRequest()) {
-            createDirectory(request, response);
-        } else if (request.isChecksum()) {
-            validateAndUploadChecksum(request, response, repo);
-        } else if (NamingUtils.isMetadata(request.getPath())) {
-            response.sendError(SC_CONFLICT, "Old metadata notation is not supported anymore: " +
-                    request.getRepoPath(), log);
-        } else {
-            uploadArtifact(request, response, repo);
-        }
-    }
-
     private boolean responseWasIntercepted(ArtifactoryResponse response) {
         return response.isError();
     }
@@ -169,12 +153,9 @@ public class UploadServiceImpl implements InternalUploadService {
         }
 
         try {
-            // Servlet container doesn't support long values so we take it manually from the header
-            String contentLengthHeader = request.getHeader(HttpHeaders.CONTENT_LENGTH);
-            long contentLength = StringUtils.isBlank(contentLengthHeader) ? -1 : Long.parseLong(contentLengthHeader);
-            boolean directoryRequest = request.isDirectoryRequest();
+            long contentLength = request.getContentLength();
             RepoPath repoPath = InternalRepoPathFactory.create(targetRepository.getKey(), request.getPath(),
-                    directoryRequest);
+                    request.isDirectoryRequest());
             String requestSha1 = HttpUtils.getSha1Checksum(request);
             repoService.assertValidDeployPath(new ValidDeployPathContext.Builder(targetRepository, repoPath)
                     .contentLength(contentLength).requestSha1(requestSha1).build());
@@ -228,7 +209,16 @@ public class UploadServiceImpl implements InternalUploadService {
             response = new DelayedHttpResponse((HttpArtifactoryResponse) response);
         }
         try {
-            getInternalMe().uploadWithinTransaction(request, response, targetRepository);
+            if (request.isDirectoryRequest()) {
+                createDirectory(request, response);
+            } else if (request.isChecksum()) {
+                validateAndUploadChecksum(request, response, targetRepository);
+            } else if (NamingUtils.isMetadata(request.getPath())) {
+                response.sendError(SC_CONFLICT, "Old metadata notation is not supported anymore: " +
+                        request.getRepoPath(), log);
+            } else {
+                uploadArtifact(request, response, targetRepository);
+            }
         } catch (RepoRejectException e) {
             //Catch rejections on save
             response.sendError(e.getErrorCode(), e.getMessage(), log);
@@ -366,36 +356,9 @@ public class UploadServiceImpl implements InternalUploadService {
         response.sendSuccess();
     }
 
-    private void validatePathAndUploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
-            throws IOException {
-        RepoPath targetFileRepoPath = adjustAndGetChecksumTargetRepoPath(request, repo);
-        MutableVfsItem fsItem = repo.getMutableFsItem(targetFileRepoPath);
+    private void validatePathAndUploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response,
+            LocalRepo repo) throws IOException {
 
-        if (fsItem == null) {
-            response.sendError(SC_NOT_FOUND, "Target file to set checksum on doesn't exist: " + targetFileRepoPath,
-                    log);
-            return;
-        }
-
-        if (!fsItem.isFile()) {
-            response.sendError(SC_CONFLICT, "Checksum only supported for files (but found folder): " +
-                    targetFileRepoPath, log);
-            return;
-        }
-        //TORE: [by YS] move checksum upload to local repo
-        uploadChecksum(request, response, (MutableVfsFile) fsItem);
-    }
-
-    private RepoPath adjustAndGetChecksumTargetRepoPath(ArtifactoryRequest request, LocalRepo repo) {
-        String checksumTargetFile = request.getPath();
-        if (isMavenRepo(repo)) {
-            checksumTargetFile = adjustMavenSnapshotPath(repo, request);
-        }
-        return repo.getRepoPath(PathUtils.stripExtension(checksumTargetFile));
-    }
-
-    private void uploadChecksum(ArtifactoryRequest request, ArtifactoryResponse response, MutableVfsFile vfsFile)
-            throws IOException {
         String uploadedChecksum;
         try {
             uploadedChecksum = getChecksumContentAsString(request);
@@ -405,7 +368,33 @@ public class UploadServiceImpl implements InternalUploadService {
             return;
         }
 
-        updateChecksumInfoAndRespond(request, response, vfsFile, uploadedChecksum);
+        ChecksumType checksumType = ChecksumType.forFilePath(request.getPath());
+        RepoPath targetFileRepoPath = adjustAndGetChecksumTargetRepoPath(request, repo);
+        try {
+            ChecksumInfo checksumInfo = repoService.setClientChecksum(repo, checksumType, targetFileRepoPath,
+                    uploadedChecksum);
+            if (isChecksumValidAccordingToPolicy(uploadedChecksum, checksumInfo)) {
+                sendUploadedChecksumResponse(request, response, targetFileRepoPath);
+            } else {
+                String message = String.format("Checksum error for '%s': received '%s' but actual is '%s'",
+                        request.getPath(), uploadedChecksum, checksumInfo.getActual());
+                sendInvalidUploadedChecksumResponse(request, response, repo, targetFileRepoPath, message);
+            }
+        } catch (ItemNotFoundRuntimeException e) {
+            response.sendError(SC_NOT_FOUND, "Target file to set checksum on doesn't exist: " + targetFileRepoPath,
+                    log);
+        } catch (FileExpectedException e) {
+            response.sendError(SC_CONFLICT, "Checksum only supported for files (but found folder): " +
+                    targetFileRepoPath, log);
+        }
+    }
+
+    private RepoPath adjustAndGetChecksumTargetRepoPath(ArtifactoryRequest request, LocalRepo repo) {
+        String checksumTargetFile = request.getPath();
+        if (isMavenRepo(repo)) {
+            checksumTargetFile = adjustMavenSnapshotPath(repo, request);
+        }
+        return repo.getRepoPath(PathUtils.stripExtension(checksumTargetFile));
     }
 
     private String getChecksumContentAsString(ArtifactoryRequest request)
@@ -419,41 +408,17 @@ public class UploadServiceImpl implements InternalUploadService {
         }
     }
 
-    private void updateChecksumInfoAndRespond(ArtifactoryRequest request, ArtifactoryResponse response,
-            MutableVfsFile vfsFile, String uploadedChecksum) throws IOException {
-        ChecksumInfo checksumInfo = updateAndGetFileChecksumInfo(request, vfsFile, uploadedChecksum);
-        if (isChecksumValidAccordingToPolicy(uploadedChecksum, checksumInfo)) {
-            sendUploadedChecksumResponse(request, response, vfsFile.getRepoPath());
-        } else {
-            String message = String.format("Checksum error for '%s': received '%s' but actual is '%s'",
-                    request.getPath(), uploadedChecksum, checksumInfo.getActual());
-
-            sendInvalidUploadedChecksumResponse(request, response, vfsFile, message);
-        }
-    }
-
-    private ChecksumInfo updateAndGetFileChecksumInfo(ArtifactoryRequest request, MutableVfsFile vfsFile,
-            String checksum) {
-        ChecksumType checksumType = ChecksumType.forFilePath(request.getPath());
-        if (!checksumType.isValid(checksum)) {
-            log.warn("Uploading non valid original checksum for {}", vfsFile.getRepoPath());
-        }
-        vfsFile.setClientChecksum(checksumType, checksum);
-        return vfsFile.getInfo().getChecksumsInfo().getChecksumInfo(checksumType);
-    }
-
     private boolean isChecksumValidAccordingToPolicy(String checksum, ChecksumInfo checksumInfo) {
         return checksum.equalsIgnoreCase(checksumInfo.getActual());
     }
 
     private void sendInvalidUploadedChecksumResponse(ArtifactoryRequest request, ArtifactoryResponse response,
-            VfsFile vfsFile, String errorMessage) throws IOException {
-        VfsItemFactory repo = repoService.localOrCachedRepositoryByKey(vfsFile.getRepoKey());
-        ChecksumPolicy checksumPolicy = repo != null ? repo.getChecksumPolicy() : null;
+            LocalRepo targetRepo, RepoPath repoPath, String errorMessage) throws IOException {
+        ChecksumPolicy checksumPolicy = targetRepo.getChecksumPolicy();
         if (checksumPolicy instanceof LocalRepoChecksumPolicy &&
                 ((LocalRepoChecksumPolicy) checksumPolicy).getPolicyType().equals(SERVER)) {
             log.debug(errorMessage);
-            sendUploadedChecksumResponse(request, response, vfsFile.getRepoPath());
+            sendUploadedChecksumResponse(request, response, repoPath);
         } else {
             response.sendError(SC_CONFLICT, errorMessage, log);
         }
@@ -464,7 +429,6 @@ public class UploadServiceImpl implements InternalUploadService {
         response.setHeader("Location", buildArtifactUrl(request, targetFileRepoPath));
         response.setStatus(SC_CREATED);
         response.sendSuccess();
-        addonsManager.addonByType(ReplicationAddon.class).offerLocalReplicationDeploymentEvent(request.getRepoPath());
     }
 
     private void uploadArtifact(ArtifactoryRequest request, ArtifactoryResponse response, LocalRepo repo)
@@ -610,7 +574,7 @@ public class UploadServiceImpl implements InternalUploadService {
                 .properties(properties);
         populateItemInfoFromHeaders(request, res, contextBuilder);
         try {
-            RepoResource resource = repo.saveResource(contextBuilder.build());
+            RepoResource resource = repoService.saveResource(repo, contextBuilder.build());
             if (!resource.isFound()) {
                 response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
                 return;
@@ -734,10 +698,4 @@ public class UploadServiceImpl implements InternalUploadService {
         return adjustedPath;
     }
 
-    /**
-     * Returns the internal interface of the service for transaction management.
-     */
-    private InternalUploadService getInternalMe() {
-        return InternalContextHelper.get().beanForType(InternalUploadService.class);
-    }
 }

@@ -24,10 +24,10 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.HttpUtils;
-import org.artifactory.util.LoggingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,7 +36,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryResponseBase.class);
 
     private int status = HttpStatus.SC_OK;
-    private Exception exception;
     private long contentLength = -1;
     private String propertiesMediaType = null;
 
@@ -67,7 +66,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
             }
             sendSuccess();
         } catch (Exception e) {
-            exception = e;
             sendInternalError(e, log);
         } finally {
             IOUtils.closeQuietly(os);
@@ -103,7 +101,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         if (statusCode == HttpStatus.SC_NOT_FOUND || statusCode == HttpStatus.SC_NOT_MODIFIED) {
             logger.debug(msg);
         } else {
-            LoggingUtils.warnOrDebug(logger, msg);
+            log.warn(msg);
         }
         this.status = statusCode;
         sendErrorInternal(statusCode, reason);
@@ -155,16 +153,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     }
 
     @Override
-    public Exception getException() {
-        return exception;
-    }
-
-    @Override
-    public void setException(Exception exception) {
-        this.exception = exception;
-    }
-
-    @Override
     public long getContentLength() {
         return contentLength;
     }
@@ -173,11 +161,6 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
     public void setContentLength(long length) {
         //Cache the content length locally
         this.contentLength = length;
-    }
-
-    @Override
-    public boolean isContentLengthSet() {
-        return contentLength != -1;
     }
 
     @Override
@@ -195,5 +178,16 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         this.propertiesMediaType = propsQueryFormat;
     }
 
+    @Override
+    public void close(Closeable closeable) {
+        IOUtils.closeQuietly(closeable);
+    }
+
     protected abstract void sendErrorInternal(int code, String reason) throws IOException;
+
+    protected abstract OutputStream getOutputStream() throws IOException;
+
+    public abstract void setContentDispositionAttachment(String filename);
+
+    public abstract void setFilename(String filename);
 }

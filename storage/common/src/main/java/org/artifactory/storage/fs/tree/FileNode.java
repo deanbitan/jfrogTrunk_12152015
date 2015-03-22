@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.fs.tree;
 
+import org.artifactory.api.repo.RootNodesFilterResult;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 
@@ -37,6 +38,11 @@ public class FileNode extends ItemNode {
 
     @Override
     public List<ItemNode> getChildren() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<ItemNode> getChildren(boolean returnAcceptedNode,RootNodesFilterResult rootNodesFilterResult) {
         return Collections.emptyList();
     }
 

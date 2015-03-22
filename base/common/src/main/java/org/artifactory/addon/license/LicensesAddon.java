@@ -25,6 +25,7 @@ import org.artifactory.sapi.common.ImportSettings;
 import org.jfrog.build.api.Build;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Tomer Cohen
@@ -56,7 +57,7 @@ public interface LicensesAddon extends Addon {
      */
     void exportLicenses(ExportSettings exportSettings);
 
-    List findLicensesInRepos(List<String> repoKeys, LicenseStatus status);
+    List findLicensesInRepos(Set<String> repoKeys, LicenseStatus status);
 
     void reloadLicensesCache();
 }

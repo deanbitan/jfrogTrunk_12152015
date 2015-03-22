@@ -70,18 +70,7 @@ public abstract class Criteria implements AqlQueryElement {
 
     protected String a(AqlVariable variable1, SqlTable table1, AqlVariable variable2, SqlTable table2, boolean not) {
         String nullRelation = not ? " is null " : " is not null ";
-        if (variable1 instanceof AqlField && variable2 instanceof AqlField) {
-            return " (" + table1.getAlias() + toSql(
-                    variable1) + nullRelation + " and " + table2.getAlias() + toSql(
-                    variable2) + nullRelation + ")";
-        }
-        if (variable2 instanceof AqlField) {
-            return " " + table2.getAlias() + toSql(variable2) + nullRelation;
-        }
-        if (variable1 instanceof AqlField) {
             return " " + table1.getAlias() + toSql(variable1) + nullRelation;
-        }
-        return null;
     }
 
     private String toSql(AqlVariable variable) {
@@ -94,33 +83,37 @@ public abstract class Criteria implements AqlQueryElement {
         }
     }
 
-    protected void tryToAddParam(List<Object> params, AqlVariable variable) throws AqlException {
-        if (variable instanceof AqlValue) {
-            AqlValue value = (AqlValue) variable;
-            AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());
-            if (AqlComparatorEnum.matches.equals(comparatorEnum) || AqlComparatorEnum.notMatches.equals(
-                    comparatorEnum)) {
-                String modifiedValue = (String) value.toObject();
-                modifiedValue = modifiedValue.replace('*', '%');
-                modifiedValue = modifiedValue.replace('?', '_');
-                params.add(modifiedValue);
-            } else {
-                params.add(value.toObject());
-            }
+    protected Object resolveParam(List<Object> params, AqlVariable variable) throws AqlException {
+        AqlValue value = (AqlValue) variable;
+        Object param = value.toObject();
+        AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());
+        if (param != null &&
+                (AqlComparatorEnum.matches.equals(comparatorEnum) ||
+                        AqlComparatorEnum.notMatches.equals(comparatorEnum))) {
+            String modifiedValue = (String) param;
+            modifiedValue = modifiedValue.replace('*', '%');
+            modifiedValue = modifiedValue.replace('?', '_');
+            param = modifiedValue;
         }
+        return param;
     }
 
     public String createSqlCriteria(AqlComparatorEnum comparatorEnum, AqlVariable variable1, SqlTable table1,
-            SqlTable table2,
-            AqlVariable variable2)
-            throws AqlToSqlQueryBuilderException {
+            AqlVariable variable2, List<Object> params) {
+        Object param = resolveParam(params, variable2);
         String index1 = table1 != null && variable1 instanceof AqlField ? table1.getAlias() : "";
-        String index2 = table2 != null && variable2 instanceof AqlField ? table2.getAlias() : "";
         switch (comparatorEnum) {
             case equals: {
-                return " " + index1 + toSql(variable1) + " = " + index2 + toSql(variable2);
+                if (param != null) {
+                    params.add(param);
+                    return " " + index1 + toSql(variable1) + " = " + toSql(variable2);
+                } else {
+                    return " " + index1 + toSql(variable1) + " is null";
+                }
             }
             case matches: {
+                validateNotNullParam(param);
+                params.add(param);
                 if (variable2 instanceof AqlField) {
                     throw new AqlToSqlQueryBuilderException(
                             "Illegal syntax the 'match' operator is allowed only with 'value' in right side of the criteria.");
@@ -128,29 +121,53 @@ public abstract class Criteria implements AqlQueryElement {
                 return " " + index1 + toSql(variable1) + " like " + toSql(variable2);
             }
             case notMatches: {
+                validateNotNullParam(param);
+                params.add(param);
                 if (variable2 instanceof AqlField) {
                     throw new AqlToSqlQueryBuilderException(
                             "Illegal syntax the 'not match' operator is allowed only with 'value' in right side of the criteria.");
                 }
-                return " " + index1 + toSql(variable1) + " not like " + toSql(variable2);
+                return "(" + index1 + toSql(variable1) + " not like " + toSql(variable2) + " or " + index1 + toSql(
+                        variable1) + " is null)";
             }
             case less: {
-                return " " + index1 + toSql(variable1) + " < " + index2 + toSql(variable2);
+                validateNotNullParam(param);
+                params.add(param);
+                return " " + index1 + toSql(variable1) + " < " + toSql(variable2);
             }
             case greater: {
-                return " " + index1 + toSql(variable1) + " > " + index2 + toSql(variable2);
+                validateNotNullParam(param);
+                params.add(param);
+                return " " + index1 + toSql(variable1) + " > " + toSql(variable2);
             }
             case greaterEquals: {
-                return " " + index1 + toSql(variable1) + " >= " + index2 + toSql(variable2);
+                validateNotNullParam(param);
+                params.add(param);
+                return " " + index1 + toSql(variable1) + " >= " + toSql(variable2);
             }
             case lessEquals: {
-                return " " + index1 + toSql(variable1) + " <= " + index2 + toSql(variable2);
+                validateNotNullParam(param);
+                params.add(param);
+                return " " + index1 + toSql(variable1) + " <= " + toSql(variable2);
             }
             case notEquals: {
-                return " " + index1 + toSql(variable1) + " != " + index2 + toSql(variable2);
+                if (param != null) {
+                    params.add(param);
+                    return "(" + index1 + toSql(variable1) + " != " + toSql(variable2) + " or " + index1 + toSql(
+                            variable1) + " is null)";
+                } else {
+                    return " " + index1 + toSql(variable1) + " is not null";
+                }
             }
             default:
                 throw new IllegalStateException("Should not reach to the point of code");
+        }
+    }
+
+    private void validateNotNullParam(Object param) {
+        if (param == null) {
+            throw new AqlToSqlQueryBuilderException(
+                    "Illegal syntax the 'null' values are allowed to use only with equals and not equals operators.\n");
         }
     }
 }

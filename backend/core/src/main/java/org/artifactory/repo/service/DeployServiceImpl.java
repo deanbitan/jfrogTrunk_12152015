@@ -147,9 +147,7 @@ public class DeployServiceImpl implements DeployService {
 
     private void assertNotFailedRequest(String deployedFileName, InternalArtifactoryResponse response)
             throws RepoRejectException {
-        if (response.getException() != null) {
-            throw new RuntimeException("Cannot deploy file " + deployedFileName, response.getException());
-        } else if (!response.isSuccessful()) {
+        if (!response.isSuccessful()) {
             StringBuilder errorMessageBuilder = new StringBuilder("Cannot deploy file '").append(deployedFileName).
                     append("'. ");
             String statusMessage = response.getStatusMessage();

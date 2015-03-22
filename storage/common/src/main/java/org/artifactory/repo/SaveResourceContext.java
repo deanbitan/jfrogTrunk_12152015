@@ -18,6 +18,7 @@
 
 package org.artifactory.repo;
 
+import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.fs.RepoResource;
 import org.artifactory.io.RemoteResourceStreamHandle;
 import org.artifactory.md.Properties;
@@ -37,9 +38,14 @@ public class SaveResourceContext {
     private final long created;
     private final String createBy;
     private final String modifiedBy;
+    /**
+     * Optional existing binary info. If this field is not null, the content is already in the binary store and there's
+     * no need to re-read the input stream.
+     */
+    private final BinaryInfo binaryInfo;
 
     public SaveResourceContext(RepoResource repoResource, ResourceStreamHandle handle, InputStream inputStream,
-            Properties properties, long created, String createBy, String modifiedBy) {
+            Properties properties, long created, String createBy, String modifiedBy, BinaryInfo binaryInfo) {
         this.repoResource = repoResource;
         this.handle = handle;
         this.inputStream = inputStream;
@@ -47,6 +53,7 @@ public class SaveResourceContext {
         this.created = created;
         this.createBy = createBy;
         this.modifiedBy = modifiedBy;
+        this.binaryInfo = binaryInfo;
     }
 
     public RepoResource getRepoResource() {
@@ -79,6 +86,10 @@ public class SaveResourceContext {
         }
     }
 
+    public BinaryInfo getBinaryInfo() {
+        return binaryInfo;
+    }
+
     public static class Builder {
 
         private RepoResource repoResource;
@@ -88,6 +99,7 @@ public class SaveResourceContext {
         private String createBy;
         private String modifiedBy;
         private ResourceStreamHandle handle;
+        private BinaryInfo binaryInfo;
 
         public Builder(RepoResource repoResource, ResourceStreamHandle handle) {
             this(repoResource, handle.getInputStream());
@@ -97,6 +109,17 @@ public class SaveResourceContext {
         public Builder(RepoResource repoResource, InputStream inputStream) {
             this.repoResource = repoResource;
             this.inputStream = inputStream;
+        }
+
+        public Builder(SaveResourceContext other) {
+            repoResource = other.repoResource;
+            inputStream = other.inputStream;
+            handle = other.handle;
+            properties = other.properties;
+            createBy = other.createBy;
+            created = other.created;
+            modifiedBy = other.modifiedBy;
+            binaryInfo = other.binaryInfo;
         }
 
         public Builder properties(Properties properties) {
@@ -119,9 +142,14 @@ public class SaveResourceContext {
             return this;
         }
 
+        public Builder binaryInfo(BinaryInfo binaryInfo) {
+            this.binaryInfo = binaryInfo;
+            return this;
+        }
+
         public SaveResourceContext build() {
             return new SaveResourceContext(repoResource, handle, inputStream, properties, created, createBy,
-                    modifiedBy);
+                    modifiedBy, binaryInfo);
         }
     }
 }

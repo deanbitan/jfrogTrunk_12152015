@@ -19,6 +19,9 @@ public class AqlValue implements AqlVariable {
 
     public Object toObject() throws AqlException {
         Object result = value;
+        if (value == null) {
+            return null;
+        }
         if (AqlVariableTypeEnum.string == valueType) {
             result = value;
         }
@@ -31,7 +34,11 @@ public class AqlValue implements AqlVariable {
             }
         }
         if (AqlVariableTypeEnum.longInt == valueType) {
-            result = Long.valueOf(value);
+            try {
+                result = Long.valueOf(value);
+            } catch (NumberFormatException e) {
+                throw new AqlException("AQL Expect long value but found:" + value.toString() + "\n");
+            }
         }
         if (AqlVariableTypeEnum.itemType == valueType) {
             AqlItemTypeEnum aqlItemTypeEnum = AqlItemTypeEnum.fromSignature(value);
@@ -44,7 +51,11 @@ public class AqlValue implements AqlVariable {
             }
         }
         if (AqlVariableTypeEnum.integer == valueType) {
-            result = Integer.valueOf(value);
+            try {
+                result = Integer.valueOf(value);
+            } catch (NumberFormatException e) {
+                throw new AqlException("AQL Expect integer value but found:" + value.toString() + "\n");
+            }
         }
         return result;
 

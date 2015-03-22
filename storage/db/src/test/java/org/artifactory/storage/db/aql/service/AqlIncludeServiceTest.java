@@ -92,6 +92,7 @@ public class AqlIncludeServiceTest extends AqlAbstractServiceTest {
     /**
      * return result that contains all the domain's default fields and two extra fields
      */
+    @Test
     public void findPropertiesUsingNamesExtensionWithTwoExtensions() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "properties.find({\"value\" : {\"$match\" : \"*is is st*\"}}).include(\"item.name\",\"item.path\")");
@@ -107,6 +108,7 @@ public class AqlIncludeServiceTest extends AqlAbstractServiceTest {
     /**
      * Test the sort mechanism with the include mechanism
      */
+    @Test
     public void ensureSortOnIncludedFields() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "properties.find({\"value\" : {\"$match\" : \"*is is st*\"}})." +
@@ -124,6 +126,7 @@ public class AqlIncludeServiceTest extends AqlAbstractServiceTest {
     /**
      * Test the sort mechanism with the include domain mechanism
      */
+    @Test
     public void ensureSortOnIncludedDomain() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "items.find({\"artifact.module.build.number\" : {\"$match\" : \"2\"}}).include(\"property.*\").sort({\"$asc\" : [\"property.key\"]})");
@@ -138,6 +141,7 @@ public class AqlIncludeServiceTest extends AqlAbstractServiceTest {
     /**
      * Test the sort mechanism with the include domain mechanism
      */
+    @Test
     public void includePropertiesWithAtAndAsterisk() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "items.find({\"artifact.module.build.number\" : {\"$match\" : \"2\"}})." +
@@ -153,6 +157,7 @@ public class AqlIncludeServiceTest extends AqlAbstractServiceTest {
     /**
      * Test the sort mechanism with the include domain mechanism
      */
+    @Test
     public void multipleResultFilter() {
         AqlEagerResult<AqlBaseFullRowImpl> queryResult = aqlService.executeQueryEager(
                 "items.find()." +

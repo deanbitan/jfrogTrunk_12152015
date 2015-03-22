@@ -21,16 +21,14 @@ package org.artifactory.api.request;
 import org.artifactory.common.StatusHolder;
 import org.slf4j.Logger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Writer;
 
 public interface ArtifactoryResponse {
 
     String ARTIFACTORY_ID = "X-Artifactory-Id";
-
-    void setException(Exception exception);
 
     boolean isError();
 
@@ -46,11 +44,7 @@ public interface ArtifactoryResponse {
 
     long getContentLength();
 
-    boolean isContentLengthSet();
-
     void setContentType(String contentType);
-
-    OutputStream getOutputStream() throws IOException;
 
     Writer getWriter() throws IOException;
 
@@ -76,8 +70,6 @@ public interface ArtifactoryResponse {
 
     void flush();
 
-    Exception getException();
-
     void sendAuthorizationRequired(String message, String realm) throws IOException;
 
     boolean isPropertiesQuery();
@@ -85,4 +77,6 @@ public interface ArtifactoryResponse {
     String getPropertiesMediaType();
 
     void setPropertiesMediaType(String propsQueryFormat);
+
+    void close(Closeable closeable);
 }

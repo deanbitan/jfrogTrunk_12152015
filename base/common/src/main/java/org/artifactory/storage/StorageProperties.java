@@ -142,6 +142,30 @@ public class StorageProperties {
                 getProperty(Key.binaryProviderType, BinaryProviderType.filesystem.name()).trim());
     }
 
+    public String getS3BucketName() {
+        return getProperty(Key.binaryProviderS3BucketName, null);
+    }
+
+    public String getS3Region() {
+        return getProperty(Key.binaryProviderS3region, null);
+    }
+
+    public int getS3MaxRetriesNumber() {
+        return getIntProperty(Key.binaryProviderS3MaxRetryNumber.key, 5);
+    }
+
+    public String getS3BucketPath() {
+        return getProperty(Key.binaryProviderS3BucketPath, null);
+    }
+
+    public String getS3Credential() {
+        return getProperty(Key.binaryProviderS3Credential, null);
+    }
+
+    public String getS3Identity() {
+        return getProperty(Key.binaryProviderS3Identity, null);
+    }
+
     public String getBinaryProviderExternalDir() {
         return getProperty(Key.binaryProviderExternalDir);
     }
@@ -210,7 +234,14 @@ public class StorageProperties {
         binaryProviderFilesystemSecondDir("binary.provider.filesystem2.dir"),
         binaryProviderFilesystemSecondCheckPeriod("binary.provider.filesystem2.checkPeriod"),
         binaryProviderExternalDir("binary.provider.external.dir"),
-        binaryProviderExternalMode("binary.provider.external.mode");
+        binaryProviderS3BucketName("binary.provider.s3.bucket.name"),
+        binaryProviderS3region("binary.provider.s3.region"),
+        binaryProviderS3BucketPath("binary.provider.s3.bucket.path"),
+        binaryProviderExternalMode("binary.provider.external.mode"),
+        binaryProviderS3Identity("binary.provider.s3.identity"),
+        binaryProviderS3Credential("binary.provider.s3.credential"),
+        binaryProviderS3MaxRetryNumber("binary.provider.s3.max.retry.number");
+
 
         private final String key;
 
@@ -231,5 +262,8 @@ public class StorageProperties {
         filesystem, // binaries are stored in the filesystem
         fullDb,     // binaries are stored as blobs in the db, filesystem is used for caching unless cache size is 0
         cachedFS,   // binaries are stored in the filesystem, but a front cache (faster access) is added
+        S3JClouds,         // binaries are stored in S3 JClouds API
+        S3Amazon,          // binaries are stored in S3 amazon API
+        JetS3,             // binaries are stored in S3 JetS3 API
     }
 }

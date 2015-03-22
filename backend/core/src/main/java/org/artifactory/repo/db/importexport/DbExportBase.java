@@ -56,6 +56,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for exporting repository content.
@@ -146,7 +147,7 @@ public abstract class DbExportBase extends DbRepoImportExportBase {
             // incremental export - only export the file if it is newer
             log.trace("Source file last modified {} vs target file last modified {}", sourceFile.getLastModified(),
                     targetFile.lastModified());
-            if (sourceFile.getLastModified() <= targetFile.lastModified()) {
+            if (sourceFile.getLastModified() - targetFile.lastModified() < TimeUnit.MILLISECONDS.toMicros(1)) {
                 log.debug("Skipping not modified file {}", sourceFile.getRepoPath());
                 return true;
             }

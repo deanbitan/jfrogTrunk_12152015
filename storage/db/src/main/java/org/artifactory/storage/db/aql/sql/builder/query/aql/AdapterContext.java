@@ -2,6 +2,7 @@ package org.artifactory.storage.db.aql.sql.builder.query.aql;
 
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.DomainSensitiveField;
+import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlTable;
 
 import java.util.List;
 import java.util.Stack;
@@ -14,7 +15,7 @@ import java.util.Stack;
  */
 public class AdapterContext {
     private AqlQuery aqlQuery = new AqlQuery();
-    private int tableId = 100;
+    private int tableId = SqlTable.MINIMAL_DYNAMIC_TABLE_ID;
     private Stack<AqlQueryElement> functions = new Stack<>();
 
     public void push(AqlQueryElement aqlQueryElement) {

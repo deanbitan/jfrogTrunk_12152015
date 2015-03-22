@@ -19,6 +19,7 @@
 package org.artifactory.addon.wicket;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -189,8 +190,8 @@ import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.BaseBuildFileBean;
 import org.jfrog.build.api.Build;
-import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Module;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
@@ -418,8 +419,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Set<FileInfo> getNonStrictBuildFileBeanInfo(Build build, BuildFileBean bean) {
-        return Sets.newHashSet();
+    public Map<Artifact, FileInfo> getBuildArtifactsFileInfos(Build build) {
+        return Maps.newHashMap();
+    }
+
+    @Override
+    public Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build) {
+        return Maps.newHashMap();
     }
 
     @Override
@@ -684,7 +690,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Set<FileInfo> getNonStrictArtifactFileInfo(Build build) {
+    public Set<FileInfo> getNonStrictArtifactFileInfos(Build build) {
         return Sets.newHashSet();
     }
 
@@ -749,7 +755,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Set<org.artifactory.fs.FileInfo> getNonStrictDependencyFileInfo(Build build, Set<String> scopes) {
+    public Set<org.artifactory.fs.FileInfo> getNonStrictDependencyFileInfos(Build build, Set<String> scopes) {
         return Sets.newHashSet();
     }
 
@@ -930,11 +936,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public void validateMultiPushReplicationSupportedForTargetLicense(String targetLicenseKey,
-            boolean isMultiPushConfigure,String targetUrl) {
+            boolean isMultiPushConfigure, String targetUrl) {
         AddonsManager addonsManager = getAddonsManager();
-        if (!addonsManager.isLicenseKeyHashHAType(targetLicenseKey) && isMultiPushConfigure){
-            log.info("Multi Push Replication is not supported for target :"+targetUrl);
-            throw new IllegalArgumentException("Multi Push Replication is supported for targets with an enterprise license only");
+        if (!addonsManager.isLicenseKeyHashHAType(targetLicenseKey) && isMultiPushConfigure) {
+            log.info("Multi Push Replication is not supported for target :" + targetUrl);
+            throw new IllegalArgumentException(
+                    "Multi Push Replication is supported for targets with an enterprise license only");
         }
     }
 
@@ -1241,6 +1248,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public DeleteAction getDeleteAction(ItemInfo itemInfo) {
         return new DeleteAction();
+    }
+
+    @Override
+    public String getFolderCssClass(RepoPath repoPath, LocalRepoDescriptor repo) {
+        // Null means we fallback to default
+        return null;
     }
 
     @Override
