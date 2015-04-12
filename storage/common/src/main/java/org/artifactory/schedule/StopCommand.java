@@ -21,6 +21,8 @@ package org.artifactory.schedule;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import static org.artifactory.schedule.ScheduleJobEnum.DUMMY_JOB;
+
 /**
  * Date: 9/4/11 Time: 5:54 PM
  *
@@ -28,7 +30,9 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface StopCommand {
-    Class<? extends TaskCallback> command();
+    Class<? extends TaskCallback> command() default DummyJob.class;
+
+    ScheduleJobEnum commandName() default DUMMY_JOB;
 
     StopStrategy strategy();
 

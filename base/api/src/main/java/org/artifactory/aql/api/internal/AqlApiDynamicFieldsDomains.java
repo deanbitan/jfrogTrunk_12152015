@@ -288,10 +288,10 @@ public class AqlApiDynamicFieldsDomains {
             return new AqlApiComparator(AqlFieldEnum.propertyValue, domains);
         }
 
-        public AqlApiDependencyDynamicFieldsDomains<T> item() {
+        public AqlApiItemDynamicFieldsDomains<T> item() {
             ArrayList<AqlDomainEnum> tempDomains = Lists.newArrayList(domains);
             tempDomains.add(AqlDomainEnum.items);
-            return new AqlApiDependencyDynamicFieldsDomains(tempDomains);
+            return new AqlApiItemDynamicFieldsDomains(tempDomains);
         }
     }
 

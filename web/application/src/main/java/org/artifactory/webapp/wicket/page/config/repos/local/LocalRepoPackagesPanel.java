@@ -23,6 +23,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.BowerWebAddon;
 import org.artifactory.addon.wicket.DebianWebAddon;
 import org.artifactory.addon.wicket.DockerWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
@@ -57,6 +58,8 @@ public class LocalRepoPackagesPanel extends Panel {
                 buildPackagesConfigSection("gemsSupportSection", descriptor, form));
 
         addonsManager.addonByType(NpmWebAddon.class).createAndAddRepoConfigNpmSection(form, descriptor, isCreate);
+
+        addonsManager.addonByType(BowerWebAddon.class).createAndAddRepoConfigBowerSection(form, descriptor, isCreate);
 
         addonsManager.addonByType(DebianWebAddon.class).createAndAddLocalRepoDebianSection(form, descriptor);
 

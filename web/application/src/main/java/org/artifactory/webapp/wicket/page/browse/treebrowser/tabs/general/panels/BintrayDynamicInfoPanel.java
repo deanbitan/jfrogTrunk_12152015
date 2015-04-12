@@ -236,7 +236,7 @@ public class BintrayDynamicInfoPanel extends Panel {
         boolean userExists = isUserExists();
         String repoKey = itemInfo.getRepoKey();
         RepoDescriptor repoDescriptor = repositoryService.repoDescriptorByKey(repoKey);
-        boolean localRepository = isLocalRepo(repoDescriptor);
+        boolean localRepository = isLocalNonDockerRepo(repoDescriptor);
         boolean anonymousUser = authorizationService.isAnonymous();
         boolean hideUploads = ConstantValues.bintrayUIHideUploads.getBoolean();
         return !anonymousUser && localRepository && !itemInfo.isFolder() && !hideUploads && userExists ?
@@ -250,8 +250,9 @@ public class BintrayDynamicInfoPanel extends Panel {
         return !addons.isAolAdmin() && !userGroupService.currentUser().isTransientUser();
     }
 
-    private boolean isLocalRepo(RepoDescriptor repoDescriptor) {
-        return repoDescriptor.getClass().equals(LocalRepoDescriptor.class);
+    private boolean isLocalNonDockerRepo(RepoDescriptor repoDescriptor) {
+        return repoDescriptor.getClass().equals(LocalRepoDescriptor.class)
+                && !repoDescriptor.isEnableDockerSupport();
     }
 
     private void showPushToButton() {

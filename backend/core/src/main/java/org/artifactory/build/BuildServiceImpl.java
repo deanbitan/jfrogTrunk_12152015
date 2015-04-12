@@ -495,10 +495,9 @@ public class BuildServiceImpl implements InternalBuildService {
             if (artifacts) {
                 if (module.getArtifacts() != null) {
                     for (Artifact artifact : module.getArtifacts()) {
-                        if(artifact.getSha1() != null){
+                        if (artifact.getSha1() != null) {
                             beansMap.put(artifact.getSha1(), (T) artifact);
-                        }
-                        else{
+                        } else {
                             log.warn("Artifact: " + artifact.getName() + " is missing SHA1," +
                                     " under build: " + build.getName());
                         }
@@ -507,10 +506,9 @@ public class BuildServiceImpl implements InternalBuildService {
             } else { // dependencies
                 if (module.getDependencies() != null) {
                     for (Dependency dependency : module.getDependencies()) {
-                        if(dependency.getSha1() != null){
+                        if (dependency.getSha1() != null) {
                             beansMap.put(dependency.getSha1(), (T) dependency);
-                        }
-                        else{
+                        } else {
                             log.warn("Dependency: " + dependency.getId() + " is missing SHA1," +
                                     " under build: " + build.getName());
                         }

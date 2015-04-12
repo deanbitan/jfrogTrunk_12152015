@@ -1,5 +1,6 @@
 package org.artifactory.storage;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +46,8 @@ public class LinkedProperties extends Properties {
 
     @Override
     public synchronized Object setProperty(String key, String value) {
-        return linkedProps.put(key, value);
+        String trimmed = StringUtils.trimToEmpty(value); // nulls are not allowed
+        return linkedProps.put(key, trimmed);
     }
 
     /**

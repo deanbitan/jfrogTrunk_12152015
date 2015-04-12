@@ -62,25 +62,21 @@ public class ComplianceResource {
         RepoPath repoPath = RestUtils.calcRepoPathFromRequestPath(path);
 
         if (!repositoryService.exists(repoPath)) {
-            return Response.status(Response.Status.BAD_REQUEST).
-                    entity("Could not find artifact for " + path).
-                    build();
+            return Response.status(Response.Status.BAD_REQUEST).entity("Could not find artifact for " + path).build();
         }
 
         try {
             FileComplianceInfo fileComplianceInfo = blackDuckAddon.getExternalInfoFromMetadata(repoPath);
 
             if (fileComplianceInfo == null) {
-                return Response.status(Response.Status.NOT_FOUND).
-                        entity("Could not find compliance info for " + path).
+                return Response.status(Response.Status.NOT_FOUND).entity("Could not find compliance info for " + path).
                         build();
             }
 
             return Response.ok(fileComplianceInfo).build();
         } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).
-                    entity("An error occurred while trying to get compliance info for " + path).
-                    build();
+                    entity("An error occurred while trying to get compliance info for " + path).build();
         }
     }
 }

@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "assumedOfflinePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
-        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget", "pypi", "p2OriginalUrl"},
+        "remoteRepoLayout", "rejectInvalidJars", "p2Support", "nuget", "pypi", "bower", "p2OriginalUrl", "enableVcsSupport", "vcs"},
         namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
@@ -91,6 +91,12 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     private NuGetConfiguration nuget;
 
     private PypiConfiguration pypi;
+
+    private boolean enableVcsSupport;
+
+    private VcsConfiguration vcs;
+
+    private BowerConfiguration bower;
 
     public String getUrl() {
         return url;
@@ -250,6 +256,30 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
     public void setPypi(PypiConfiguration pypi) {
         this.pypi = pypi;
+    }
+
+    public boolean isEnableVcsSupport() {
+        return enableVcsSupport;
+    }
+
+    public void setEnableVcsSupport(boolean enableVcsSupport) {
+        this.enableVcsSupport = enableVcsSupport;
+    }
+
+    public VcsConfiguration getVcs() {
+        return vcs;
+    }
+
+    public void setVcs(VcsConfiguration vcs) {
+        this.vcs = vcs;
+    }
+
+    public BowerConfiguration getBower() {
+        return bower;
+    }
+
+    public void setBower(BowerConfiguration bower) {
+        this.bower = bower;
     }
 
     @Override

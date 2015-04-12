@@ -44,13 +44,11 @@ import static org.artifactory.api.rest.constant.ArtifactRestConstants.PATH_DOWNL
  * REST API for downloading an artifact
  *
  * @author Yoav Landman
- * @deprecated Use {@link org.artifactory.rest.resource.replication.ReplicationResource} instead
  */
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @Path(PATH_DOWNLOAD)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
-@Deprecated
 public class DownloadResource {
 
     @Context
@@ -72,7 +70,6 @@ public class DownloadResource {
     @GET
     @Path("{path: .+}")
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
-    @Deprecated
     public Response downloadArtifactOrFolder(
             @PathParam("path") String path,
             @QueryParam(ArtifactRestConstants.PARAM_CONTENT) Content content,

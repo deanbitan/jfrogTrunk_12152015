@@ -19,6 +19,8 @@
 package org.artifactory.storage.binstore.service;
 
 import org.artifactory.schedule.JobCommand;
+import org.artifactory.schedule.ScheduleJobEnum;
+import org.artifactory.schedule.StopCommand;
 import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.storage.spring.StorageContextHelper;
@@ -27,13 +29,20 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.artifactory.schedule.StopStrategy.PAUSE;
+
 /**
  * Date: 11/26/12
  * Time: 9:53 PM
  *
  * @author freds
  */
-@JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM)
+
+@JobCommand(singleton = true, schedulerUser = TaskUser.SYSTEM, manualUser = TaskUser.SYSTEM,
+        commandsToStop = {
+                //todo consider have group of index jobs/maintenance jobs/import-export jobs
+                @StopCommand(strategy = PAUSE,commandName = ScheduleJobEnum.ARCHIVE_INDEXER_JOB),
+        })
 public class BinaryStoreGarbageCollectorJob extends QuartzCommand {
     private static final Logger log = LoggerFactory.getLogger(BinaryStoreGarbageCollectorJob.class);
 

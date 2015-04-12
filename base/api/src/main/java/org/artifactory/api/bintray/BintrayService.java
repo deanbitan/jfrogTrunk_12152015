@@ -18,6 +18,7 @@
 
 package org.artifactory.api.bintray;
 
+import com.jfrog.bintray.client.api.handle.Bintray;
 import org.artifactory.api.bintray.exception.BintrayException;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
@@ -227,4 +228,6 @@ public interface BintrayService {
      * Retrieves true if system Bintray API key exists
      */
     boolean hasBintraySystemUser();
+
+    Bintray createBintrayClient(BasicStatusHolder status);
 }

@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * @Author Chen Keinan
+ * @author Chen Keinan
  */
 public class StoragePropertiesEncryptInterceptor {
     private static final Logger log = LoggerFactory.getLogger(StoragePropertiesEncryptInterceptor.class);
@@ -31,7 +31,17 @@ public class StoragePropertiesEncryptInterceptor {
             File propertiesFile = getPropertiesStorageFile();
             StorageProperties storageProperties = getStoragePropertiesFile();
             String password = storageProperties.getProperty(StorageProperties.Key.password);
-            storageProperties.setPassword(getNewPassword(encrypt, password));
+            if (StringUtils.isNotBlank(password)) {
+                storageProperties.setPassword(getNewPassword(encrypt, password));
+            }
+            String s3Credential = storageProperties.getProperty(StorageProperties.Key.binaryProviderS3Credential);
+            if (StringUtils.isNotBlank(s3Credential)) {
+                storageProperties.setS3Credential(getNewPassword(encrypt, s3Credential));
+            }
+            String s3ProxyCredential = storageProperties.getProperty(StorageProperties.Key.binaryProviderS3ProxyCredential);
+            if (StringUtils.isNotBlank(s3ProxyCredential)) {
+                storageProperties.setS3ProxyCredential(getNewPassword(encrypt, s3ProxyCredential));
+            }
             storageProperties.updateStoragePropertiesFile(propertiesFile);
         } catch (IOException e) {
             log.error("Error Loading encrypt storage properties File" + e.getMessage(), e, log);
@@ -55,7 +65,7 @@ public class StoragePropertiesEncryptInterceptor {
             }
             copyDefaultDerbyConfig(storagePropsFile);
         }
-        StorageProperties storageProps = new StorageProperties(storagePropsFile, true);
+        StorageProperties storageProps = new StorageProperties(storagePropsFile);
         return storageProps;
     }
 

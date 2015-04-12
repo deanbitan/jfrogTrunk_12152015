@@ -422,7 +422,9 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
                             keys));
         }
         for (StopCommand stopCommand : toRunJobCommand.commandsToStop()) {
-            final Class<? extends TaskCallback> callbackType = stopCommand.command();
+             Class<? extends TaskCallback> callbackType;
+            // get callback type from command or command name
+            callbackType = getCommand(typeToRun,stopCommand);
             if ((callbackType.getModifiers() & Modifier.ABSTRACT) != 0) {
                 throw new IllegalArgumentException(
                         "Job command definition for " + typeToRun.getName() + " contain an abstract class to stop!");
@@ -452,6 +454,35 @@ public class TaskServiceImpl implements TaskService, ContextReadinessListener {
         }
 
         return result;
+    }
+
+    /**
+     * get task to do stop command on it
+     *
+     * @param typeToRun
+     * @param stopCommand - stop command to execute on job
+     * @return callback task class
+     */
+    private Class<? extends TaskCallback> getCommand(Class<? extends TaskCallback> typeToRun, StopCommand stopCommand){
+
+        Class<? extends TaskCallback> callbackType = null;
+        ScheduleJobEnum commandName =  stopCommand.commandName();
+        // is command name define bu no command type
+        if (!commandName.equals(ScheduleJobEnum.DUMMY_JOB) && stopCommand.command() == DummyJob.class){
+             try {
+                callbackType = (Class<? extends TaskCallback>) Class.forName(commandName.jobName);
+            } catch (ClassNotFoundException e) {
+                log.error("class commandName not found ",e);
+             }
+        }
+        // no command name or command type has been define
+        else if (commandName.equals(ScheduleJobEnum.DUMMY_JOB) && stopCommand.command() == DummyJob.class){
+            log.error("no job command type or name was define for job class: "+typeToRun.getSimpleName());
+         }
+        else {//command type has been define
+           callbackType = stopCommand.command();
+        }
+        return callbackType;
     }
 
     private TaskTypePredicate getTaskPredicateForType(Class<? extends TaskCallback> callbackType,

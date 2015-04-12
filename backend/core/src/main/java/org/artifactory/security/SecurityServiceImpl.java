@@ -1512,9 +1512,11 @@ public class SecurityServiceImpl implements InternalSecurityService {
         if (!oldInfo.getIncludesPattern().equals(newInfo.getIncludesPattern())) {
             alertModifiedField("includes pattern");
         }
-
+        // make repo keys compatible with acl cached data
+        List<String> compatibleRepoKeys = makeRemoteRepoKeysAclCompatible(newInfo.getRepoKeys());
+        // validate repo keys data , make sure that old repo data and new repo data is the same
         Sets.SetView<String> repoKeys = Sets.symmetricDifference(Sets.newHashSet(oldInfo.getRepoKeys()),
-                Sets.newHashSet(newInfo.getRepoKeys()));
+                Sets.newHashSet(compatibleRepoKeys));
         if (repoKeys != null && !repoKeys.isEmpty()) {
             alertModifiedField("repositories");
         }

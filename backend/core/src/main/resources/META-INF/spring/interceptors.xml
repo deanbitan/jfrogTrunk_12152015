@@ -32,4 +32,5 @@
     <bean class="org.artifactory.repo.interceptor.AddPropertyAfterMoveOrCopyInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.NuGetCalculationInterceptor"/>
     <bean class="org.artifactory.repo.interceptor.NpmMetadataInterceptor"/>
+    <bean class="org.artifactory.repo.interceptor.BowerMetadataInterceptor"/>
 </beans>

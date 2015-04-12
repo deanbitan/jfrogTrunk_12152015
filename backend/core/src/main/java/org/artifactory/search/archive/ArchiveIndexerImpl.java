@@ -48,7 +48,6 @@ import org.artifactory.schedule.TaskUser;
 import org.artifactory.schedule.TaskUtils;
 import org.artifactory.schedule.quartz.QuartzCommand;
 import org.artifactory.spring.InternalContextHelper;
-import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.fs.VfsZipFile;
 import org.artifactory.storage.fs.service.ArchiveEntriesService;
@@ -316,7 +315,6 @@ public class ArchiveIndexerImpl implements InternalArchiveIndexer {
                     //todo consider have group of index jobs/maintenance jobs/import-export jobs
                     @StopCommand(command = ImportJob.class, strategy = IMPOSSIBLE),
                     @StopCommand(command = ArtifactCleanupJob.class, strategy = IMPOSSIBLE),
-                    @StopCommand(command = BinaryStoreGarbageCollectorJob.class, strategy = IMPOSSIBLE),
             })
     public static class ArchiveIndexJob extends QuartzCommand {
         @Override

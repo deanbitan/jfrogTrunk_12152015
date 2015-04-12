@@ -77,7 +77,7 @@ public class ArtifactoryHome {
 
     private File haEtcDir;
     private File haDataDir;
-    private File habackupDir;
+    private File haBackupDir;
 
     /**
      * protected constructor for testing usage only.
@@ -121,7 +121,7 @@ public class ArtifactoryHome {
     }
 
     public File getHaAwareBackupDir() {
-        return habackupDir != null ? habackupDir : backupDir;
+        return haBackupDir != null ? haBackupDir : backupDir;
     }
 
     public File getLogDir() {
@@ -218,11 +218,11 @@ public class ArtifactoryHome {
                 //create directory structure
                 haEtcDir = getOrCreateSubDir(haArtifactoryHome, "ha-etc");
                 haDataDir = getOrCreateSubDir(haArtifactoryHome, "ha-data");
-                habackupDir = getOrCreateSubDir(haArtifactoryHome, "ha-backup");
+                haBackupDir = getOrCreateSubDir(haArtifactoryHome, "ha-backup");
 
                 checkWritableDirectory(haEtcDir);
                 checkWritableDirectory(haDataDir);
-                checkWritableDirectory(habackupDir);
+                checkWritableDirectory(haBackupDir);
 
                 //load cluster properties
                 File clusterPropertiesFile = getArtifactoryClusterPropertiesFile();

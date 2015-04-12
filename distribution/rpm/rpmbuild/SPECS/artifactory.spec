@@ -208,25 +208,18 @@ if [ "$1" = "0" ]; then
 
   # ignore any failures or the package will be left in an inconsistent state
   %__mkdir_p "${BACKUP_DIR}" && \
-  %__mv %{target_etc_dir} "${BACKUP_DIR}/etc" && \
+  %__cp -r %{target_etc_dir} "${BACKUP_DIR}/etc" && \
   %__mv %{target_artifactory_home}/logs "${BACKUP_DIR}/logs" 2>&1 1>/dev/null
 
   if [ -d "%{target_artifactory_home}/data" ]; then
     %__rm -rf "%{target_artifactory_home}/data/tmp" 2>&1 1>/dev/null
     %__rm -rf "%{target_artifactory_home}/data/work" 2>&1 1>/dev/null
 
-    if [ $(stat -c "%d" %{target_artifactory_home}/data/) -eq $(stat -c "%d" ${BACKUP_DIR}) ]; then
-      echo "Backup %{target_artifactory_home}/data to ${BACKUP_DIR}/data"
-      %__mv %{target_artifactory_home}/data "${BACKUP_DIR}/data" 2>/dev/null
-    else
-      echo "PLEASE NOTE: Skipped creating a backup of the Artifactory data folder because source and target are not in the same drive [%{target_artifactory_home}/data, ${BACKUP_DIR}/data/]"
-      %__cp -pr %{target_artifactory_home}/data ${BACKUP_DIR}/data
-    fi
   fi
 
   if [ -e %{target_tomcat_home}/lib/mysql-connector-java*.jar ]; then
     echo "MySQL connector found"
-    %__mv %{target_tomcat_home}/lib/mysql-connector-java* "${BACKUP_DIR}" 2>/dev/null
+    %__cp %{target_tomcat_home}/lib/mysql-connector-java* "${BACKUP_DIR}" 2>/dev/null
   fi
   if [ -e %{target_artifactory_home}/backup ]; then
     %__mv %{target_artifactory_home}/backup "${BACKUP_DIR}/backup" 2>/dev/null
@@ -242,12 +235,16 @@ if [ "$1" = "0" ]; then
   echo "Logging off user %{username}"
   %{_bindir}/pkill -KILL -u %{username}
 
-  %__rm -rf %{target_artifactory_home}/work/* 2>/dev/null
+  %__rm -rf %{target_artifactory_home}/{work,temp} 2>/dev/null
+
+  # Removing Artifactory's exploded WAR directory
+  %__rm -rf %{target_tomcat_home}/webapps/%{name} 2>/dev/null
 
   # Ignoring user folders since the home dir is deleted already by the RPM spec
   echo "Removing local user %{username}"
   ( grep -q %{username} /etc/passwd &&
-  %{_sbindir}/userdel -r %{username} 2>/dev/null) || echo $?
+  %{_sbindir}/userdel %{username} 2>/dev/null) || echo $?
+#  %{_bindir}/rmdir %{target_artifactory_home} 2>/dev/null || echo $?
 
   EXISTING_GROUP="`grep %{group_name} /etc/group | awk -F ':' '{ print $1 }' 2>/dev/null`"
   if [ "$EXISTING_GROUP" == "%{group_name}" ]; then
@@ -255,15 +252,6 @@ if [ "$1" = "0" ]; then
     %{_sbindir}/groupdel %{group_name}
   fi
 
-  %__rm -rf %{target_artifactory_install} 2>/dev/null
-  %__rm -rf %{target_etc_dir} 2>/dev/null
-  %__rm -rf %{target_jfrog_doc} 2>/dev/null
-
-  # Do not remove /var/opt/jfrog always keep it
-  # Then remove /etc/opt/jfrog /opt/jfrog/doc and /opt/jfrog if empty
-  [ -z "`ls /etc%{target_jfrog_home}/`" ] && %__rm -r "/etc%{target_jfrog_home}"
-  [ -z "`ls %{target_jfrog_home}/doc`" ] && %__rm -r "%{target_jfrog_home}/doc"
-  [ -z "`ls %{target_jfrog_home}/`" ] && %__rm -r "%{target_jfrog_home}"
 fi
 exit 0
 

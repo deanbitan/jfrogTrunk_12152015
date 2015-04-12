@@ -45,6 +45,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enableNuGetSupport = false;
     private boolean enableGemsSupport = false;
     private boolean enableNpmSupport = false;
+    private boolean enableBowerSupport = false;
     private boolean enableDebianSupport = false;
     private boolean debianTrivialLayout = false;
     private boolean enablePypiSupport = false;
@@ -78,6 +79,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         }
         setEnableNuGetSupport(repoDescriptor.isEnableNuGetSupport());
         setEnableNpmSupport(repoDescriptor.isEnableNpmSupport());
+        setEnableBowerSupport(repoDescriptor.isEnableBowerSupport());
         setEnablePypiSupport(repoDescriptor.isEnablePypiSupport());
         setEnableDockerSupport(repoDescriptor.isEnableDockerSupport());
     }
@@ -171,6 +173,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setEnableNpmSupport(boolean enableNpmSupport) {
         this.enableNpmSupport = enableNpmSupport;
+    }
+
+    @Override
+    public boolean isEnableBowerSupport() {
+        return enableBowerSupport;
+    }
+
+    public void setEnableBowerSupport(boolean enableBowerSupport) {
+        this.enableBowerSupport = enableBowerSupport;
     }
 
     public void setEnableDebianSupport(boolean enableDebianSupport) {

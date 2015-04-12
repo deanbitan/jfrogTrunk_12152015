@@ -36,6 +36,8 @@ public interface HaAddon extends HaCommonAddon {
 
     LockingMap getLockingMap();
 
+    LockingMap getLockingMap(String mapName);
+
     void init();
 
     FsItemsVault getFsItemVault();

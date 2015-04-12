@@ -20,7 +20,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>3.5.3</version>
+    <version>3.6.0</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -131,85 +131,85 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-common</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-common</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
                 <type>war</type>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-green-skin</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat</groupId>
@@ -1022,7 +1022,7 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>repomd</artifactId>
-                <version>3.2.8</version>
+                <version>3.2.9</version>
             </dependency>
 
             <dependency>
@@ -1052,7 +1052,13 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>npm</artifactId>
-                <version>3.2.8</version>
+                <version>3.2.12</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jfrog.metadata</groupId>
+                <artifactId>bower</artifactId>
+                <version>3.2.12</version>
             </dependency>
 
             <dependency>
@@ -1064,13 +1070,13 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>docker</artifactId>
-                <version>3.2.8</version>
+                <version>3.2.12</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>pypi</artifactId>
-                <version>3.2.8</version>
+                <version>3.2.12</version>
             </dependency>
 
             <dependency>
@@ -1138,18 +1144,18 @@
             <dependency>
                 <groupId>com.github.zafarkhaja</groupId>
                 <artifactId>java-semver</artifactId>
-                <version>0.7.2</version>
+                <version>0.9.0</version>
             </dependency>
 
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
@@ -1372,7 +1378,124 @@
             <dependency>
                 <groupId>com.jfrog.bintray.client</groupId>
                 <artifactId>bintray-client-java-service</artifactId>
-                <version>0.7.1</version>
+                <version>0.8.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.jclouds</groupId>
+                <artifactId>jclouds-allblobstore</artifactId>
+                <version>1.9.0</version>
+                <exclusions>
+                    <exclusion>
+                    <groupId>org.yaml</groupId>
+                    <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.testng</groupId>
+                    <artifactId>junit</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>com.jamesmurty.utils</groupId>
+                    <artifactId>java-xmlbuilder</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>atmos</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.provider</groupId>
+                    <artifactId>azureblob</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>atmos</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>jsr250-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.provider</groupId>
+                    <artifactId>hpcloud-objectstorage</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>filesystem</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.provider</groupId>
+                    <artifactId>cloudfiles-us</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.provider</groupId>
+                    <artifactId>cloudfiles-uk</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>openstack</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>cloudfiles</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>openstack-keystone</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.common</groupId>
+                    <artifactId>openstack-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                    <groupId>org.apache.jclouds.api</groupId>
+                    <artifactId>swift</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.jclouds.api</groupId>
+                        <artifactId>openstack-swift</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.ws.rs</groupId>
+                        <artifactId>jsr311-api</artifactId>
+                    </exclusion>
+
+
+                    <!--<exclusion>-->
+                    <!--<groupId>com.google.inject</groupId>-->
+                    <!--<artifactId>guice</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                    <!--<groupId>org.apache.jclouds.api</groupId>-->
+                    <!--<artifactId>sts</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                    <!--<groupId>org.apache.jclouds</groupId>-->
+                    <!--<artifactId>jclouds-core</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                        <!--<groupId>com.google.inject.extensions</groupId>-->
+                        <!--<artifactId>guice-assistedinject</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                        <!--<groupId>com.google.code.gson</groupId>-->
+                        <!--<artifactId>gson</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                    <!--<groupId>org.99soft.guice</groupId>-->
+                    <!--<artifactId>rocoto</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                    <!--<groupId>org.apache.jclouds.provider</groupId>-->
+                    <!--<artifactId>aws-s3</artifactId>-->
+                    <!--</exclusion>-->
+                    <!--<exclusion>-->
+                    <!--<groupId>org.apache.jclouds</groupId>-->
+                    <!--<artifactId>jclouds-blobstore</artifactId>-->
+                    <!--</exclusion>-->
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1747,52 +1870,6 @@
     </reporting>
 
     <profiles>
-
-        <profile>
-            <id>oss-artifactory-build</id>
-            <activation>
-                <file>
-                    <exists>.svn</exists>
-                </file>
-            </activation>
-            <repositories>
-                <repository>
-                    <id>jfrog-libs-releases</id>
-                    <name>The jfrog repository for 3rd party releases</name>
-                    <url>http://repo.jfrog.org/artifactory/libs-releases</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-                <repository>
-                    <id>jfrog-libs-snapshots</id>
-                    <name>The jfrog repository for 3rd party snapshots</name>
-                    <url>http://repo.jfrog.org/artifactory/libs-snapshots</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>jfrog-plugins-releases</id>
-                    <name>The jfrog repository for plugin releases</name>
-                    <url>http://repo.jfrog.org/artifactory/plugins-releases</url>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </pluginRepository>
-                <pluginRepository>
-                    <id>jfrog-plugins-snapshots</id>
-                    <name>The jfrog repository for plugin snapshots</name>
-                    <url>http://repo.jfrog.org/artifactory/plugins-snapshots</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-
         <profile>
             <id>release</id>
             <build>

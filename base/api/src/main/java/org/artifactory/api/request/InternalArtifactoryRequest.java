@@ -18,11 +18,14 @@
 
 package org.artifactory.api.request;
 
+import com.google.common.collect.Maps;
+import org.apache.commons.collections.iterators.IteratorEnumeration;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.repo.RepoPath;
 
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.Map;
 
 /**
  * An internal resource request that is sent by Artifactory itself to the DownloadService asking for a resource.
@@ -48,6 +51,8 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
     private String servletContextUrl = "";
 
     private Boolean replaceHeadRequestWithGet;
+
+    private Map<String, String> headers = Maps.newHashMap();
 
     public InternalArtifactoryRequest(RepoPath repoPath) {
         String repoKey = processMatrixParamsIfExist(repoPath.getRepoKey());
@@ -111,12 +116,20 @@ public class InternalArtifactoryRequest extends ArtifactoryRequestBase {
 
     @Override
     public String getHeader(String headerName) {
-        return null;
+        return headers.get(headerName);
     }
 
     @Override
     public Enumeration getHeaders(String headerName) {
-        return null;
+        return new IteratorEnumeration(headers.values().iterator());
+    }
+
+    public void addHeader(String key, String value) {
+        this.headers.put(key, value);
+    }
+
+    public void addHeaders(Map<String, String> headers) {
+        this.headers.putAll(headers);
     }
 
     @Override

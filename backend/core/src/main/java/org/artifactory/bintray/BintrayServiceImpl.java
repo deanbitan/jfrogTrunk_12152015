@@ -386,7 +386,7 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     private List<FileInfo> collectBuildArtifactsToPush(Build build) {
-        Map<Artifact, FileInfo> infos = buildService.getNonStrictBuildArtifactsInfo(build, StringUtils.EMPTY);
+        Map<Artifact, FileInfo> infos = buildService.getBuildArtifactsInfo(build, StringUtils.EMPTY);
         return Lists.newArrayList(infos.values());
     }
 
@@ -529,6 +529,9 @@ public class BintrayServiceImpl implements BintrayService {
             //Publish comes last so that gpg sign files will get published too
             publishFiles(uploadInfo, status, bintrayVersionHandle);
         } catch (Exception e) {
+            if (!(e instanceof BintrayCallException) && !(e instanceof MultipleBintrayCallException)) {
+                status.error("Operation failed: ", HttpStatus.SC_CONFLICT, e, log);
+            }
             return status;
         }
         createUpdatePropsForPushedArtifacts(artifactsToPush, uploadInfo, status);
@@ -623,7 +626,8 @@ public class BintrayServiceImpl implements BintrayService {
         }
     }
 
-    private Bintray createBintrayClient(BasicStatusHolder status) {
+    @Override
+    public Bintray createBintrayClient(BasicStatusHolder status) {
         Bintray client;
         UsernamePasswordCredentials credsToUse;
         if (isUserHasBintrayAuth()) {
@@ -1500,44 +1504,55 @@ public class BintrayServiceImpl implements BintrayService {
         return false;
     }
 
-    //Handles signing the version according to the descriptor, override flag and passphrase (if given)
+    /**
+     * Handles signing the version according to the descriptor, override flag and passphrase (if given)
+     */
     private void signVersion(VersionHandle versionHandle, boolean descriptorGpgSign, Boolean gpgSignOverride,
             String gpgPassphrase, int fileCount, BasicStatusHolder status) {
 
-        //gpgSign flag from REST query is set to false - skip the sign
-        if (gpgSignOverride != null && !gpgSignOverride) {
-            status.warn("The gpgSign override flag is set to false - skipping version signing", log);
-            return;
-        }
-        boolean override = false;
-        if (gpgSignOverride != null) {
-            log.debug("gpgSign Override flag detected: {}.", true);
-            override = true;
-        }
-        //either gpgSign in descriptor is true, or passphrase is given and gpgSignOverride is null or true -> sign
-        if (descriptorGpgSign || StringUtils.isNotBlank(gpgPassphrase) || override) {
-            try {
-                if (StringUtils.isBlank(gpgPassphrase)) {
-                    status.warn("The gpgSign flag is set to true and no passphrase was given, attempting to sign the" +
-                            " version without a passphrase", log);
+        String signed = " - the version will be signed";
+        String notSigned = " - the version will not be signed";
+        // TODO: [by dan] I know this is ugly, but there are so many edge cases :(
+        try {
+            if (StringUtils.isNotBlank(gpgPassphrase)) {
+                String passphraseSent = "A passphrase was sent as a parameter to the command";
+                if (gpgSignOverride != null) {
+                    if (gpgSignOverride) {
+                        status.status(passphraseSent + ", and the gpgSign override flag was set to true" + signed, log);
+                        versionHandle.sign(gpgPassphrase, fileCount);
+                    } else {
+                        status.warn(passphraseSent + ", but the gpgSign override flag was set to false" + notSigned,
+                                log);
+                    }
+                } else {
+                    if (descriptorGpgSign) {
+                        status.status(passphraseSent + " without an override, and the gpgSign flag in the descriptor" +
+                                " was set to true" + signed, log);
+                        versionHandle.sign(gpgPassphrase, fileCount);
+                    } else {
+                        status.warn(
+                                passphraseSent + "without an override, and the gpgSign flag in the descriptor was" +
+                                        " set to false" + notSigned, log);
+                    }
+                }
+            } else if (gpgSignOverride != null) {
+                if (gpgSignOverride) {
+                    status.status("The gpgSign override flag is set to true and no passphrase was given, attempting" +
+                            " to sign the version without a passphrase", log);
                     versionHandle.sign(fileCount);
                 } else {
-                    if (!descriptorGpgSign) {
-                        String msg = "A passphrase was sent as a parameter to the command, and the %s, the version " +
-                                "will be signed";
-                        if (!override) {
-                            msg = String.format(msg, "gpgSign flag in the descriptor is set to false");
-                        } else {
-                            msg = String.format(msg, "gpgSign override flag was passed");
-                        }
-                        status.warn(msg, log);
-                    }
-                    status.status("Signing version...", log);
-                    versionHandle.sign(gpgPassphrase, fileCount);
+                    status.status("The gpgSign override flag is set to false" + notSigned, log);
                 }
-            } catch (BintrayCallException bce) {
-                status.error("Error while signing the version: " + bce.toString(), bce.getStatusCode(), log);
+            } else {
+                //no override - default to descriptor
+                if (descriptorGpgSign) {
+                    status.status("The gpgSign flag in the descriptor is set to true, attempting to sign the " +
+                            "version without a passphrase", log);
+                    versionHandle.sign(fileCount);
+                }
             }
+        } catch (BintrayCallException bce) {
+            status.error("Error while signing the version: " + bce.toString(), bce.getStatusCode(), log);
         }
     }
 }

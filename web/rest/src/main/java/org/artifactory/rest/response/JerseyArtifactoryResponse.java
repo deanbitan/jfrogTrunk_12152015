@@ -121,6 +121,12 @@ public class JerseyArtifactoryResponse extends ArtifactoryResponseBase {
     }
 
     @Override
+    public void setStatus(int status) {
+        super.setStatus(status);
+        response.status(status);
+    }
+
+    @Override
     public void setHeader(String header, String value) {
         response.header(header, value);
     }

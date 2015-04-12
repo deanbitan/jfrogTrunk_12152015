@@ -26,8 +26,7 @@ public class StoragePropertiesEncryptDecryptTest extends ArtifactoryHomeBoundTes
     @BeforeMethod
     public void loadProperties() throws IOException {
         String filePath = "/storage/storagepostgres.properties";
-        sp = new StorageProperties(
-                ResourceUtils.getResourceAsFile(filePath), true);
+        sp = new StorageProperties(ResourceUtils.getResourceAsFile(filePath));
     }
 
     @Test
@@ -40,16 +39,58 @@ public class StoragePropertiesEncryptDecryptTest extends ArtifactoryHomeBoundTes
         assertTrue(!CryptoHelper.isPasswordEncrypted(pass));
         pass = CryptoHelper.encryptIfNeeded(pass);
         int numOfLineBeforeEncryptAndSaving = getFileNumOfLines(filePath);
-        int passwordLinePositionBeforeEncryptAndSave = getPasswordPositionLine(filePath);
+        int passwordLinePositionBeforeEncryptAndSave = getKeyPositionLine(filePath, "password");
         sp.setPassword(pass);
         sp.updateStoragePropertiesFile(getPropertiesStorageFile(filePath));
         int numOfLineAfterEncryptAndSaving = getFileNumOfLines(filePath);
-        int passwordLinePositionAfterEncryptAndSave = getPasswordPositionLine(filePath);
+        int passwordLinePositionAfterEncryptAndSave = getKeyPositionLine(filePath, "password");
         // check that comments are maintain
         assertEquals(numOfLineBeforeEncryptAndSaving, numOfLineAfterEncryptAndSaving);
         // check that order is maintain
         assertEquals(passwordLinePositionBeforeEncryptAndSave, passwordLinePositionAfterEncryptAndSave);
 
+    }
+
+    @Test
+    public void propertiesS3CredentialEncryptionTest() throws IOException {
+        String filePath = "/storage/storagepostgres.properties";
+        if (!CryptoHelper.hasMasterKey()) {
+            CryptoHelper.createMasterKeyFile();
+        }
+        String pass = sp.getProperty(StorageProperties.Key.binaryProviderS3Credential);
+        assertTrue(!CryptoHelper.isPasswordEncrypted(pass));
+        pass = CryptoHelper.encryptIfNeeded(pass);
+        int numOfLineBeforeEncryptAndSaving = getFileNumOfLines(filePath);
+        int passwordLinePositionBeforeEncryptAndSave = getKeyPositionLine(filePath, "binary.provider.s3.credential");
+        sp.setS3Credential(pass);
+        sp.updateStoragePropertiesFile(getPropertiesStorageFile(filePath));
+        int numOfLineAfterEncryptAndSaving = getFileNumOfLines(filePath);
+        int passwordLinePositionAfterEncryptAndSave = getKeyPositionLine(filePath,"binary.provider.s3.credential");
+        // check that comments are maintain
+        assertEquals(numOfLineBeforeEncryptAndSaving, numOfLineAfterEncryptAndSaving);
+        // check that order is maintain
+        assertEquals(passwordLinePositionBeforeEncryptAndSave, passwordLinePositionAfterEncryptAndSave);
+    }
+
+    @Test
+    public void propertiesS3ProxyCredentialEncryptionTest() throws IOException {
+        String filePath = "/storage/storagepostgres.properties";
+        if (!CryptoHelper.hasMasterKey()) {
+            CryptoHelper.createMasterKeyFile();
+        }
+        String pass = sp.getProperty(StorageProperties.Key.binaryProviderS3ProxyCredential);
+        assertTrue(!CryptoHelper.isPasswordEncrypted(pass));
+        pass = CryptoHelper.encryptIfNeeded(pass);
+        int numOfLineBeforeEncryptAndSaving = getFileNumOfLines(filePath);
+        int passwordLinePositionBeforeEncryptAndSave = getKeyPositionLine(filePath, "binary.provider.s3.proxy.credential");
+        sp.setS3ProxyCredential(pass);
+        sp.updateStoragePropertiesFile(getPropertiesStorageFile(filePath));
+        int numOfLineAfterEncryptAndSaving = getFileNumOfLines(filePath);
+        int passwordLinePositionAfterEncryptAndSave = getKeyPositionLine(filePath,"binary.provider.s3.proxy.credential");
+        // check that comments are maintain
+        assertEquals(numOfLineBeforeEncryptAndSaving, numOfLineAfterEncryptAndSaving);
+        // check that order is maintain
+        assertEquals(passwordLinePositionBeforeEncryptAndSave, passwordLinePositionAfterEncryptAndSave);
     }
 
     private File getPropertiesStorageFile(String filePath) {
@@ -70,13 +111,13 @@ public class StoragePropertiesEncryptDecryptTest extends ArtifactoryHomeBoundTes
         return lineCount;
     }
 
-    private int getPasswordPositionLine(String filePath) {
+    private int getKeyPositionLine(String filePath,String key) {
         int lineCount = 0;
         try {
             String line;
             BufferedReader br = new BufferedReader(new FileReader((ResourceUtils.getResourceAsFile(filePath))));
             while ((line = br.readLine()) != null) {
-                if (line.startsWith("password")) {
+                if (line.startsWith(key)) {
                     lineCount++;
                     return lineCount;
                 }

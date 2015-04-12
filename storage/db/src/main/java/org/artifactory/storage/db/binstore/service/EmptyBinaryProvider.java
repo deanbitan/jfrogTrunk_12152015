@@ -20,6 +20,8 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
+import org.artifactory.storage.binstore.service.BinaryProviderBase;
+import org.artifactory.storage.binstore.service.BinaryProviderContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -50,7 +52,7 @@ class EmptyBinaryProvider extends BinaryProviderBase {
     @Nonnull
     @Override
     public InputStream getStream(String sha1) throws BinaryNotFoundException {
-        throw new BinaryNotFoundException("Binary Provider has no content for '" + sha1 + "'");
+        throw new BinaryNotFoundException("Binary provider has no content for '" + sha1 + "'");
     }
 
     @Override

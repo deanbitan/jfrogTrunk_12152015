@@ -32,11 +32,27 @@ public class JVMLockingMap implements LockingMap {
         }
     }
 
+    public static void main(String[] args) {
+        long l = TimeUnit.MILLISECONDS.toMillis(5000);
+        System.out.println(l);
+    }
     @Override
     public void removeAndUnlock(String path) {
         synchronized (locks) {
             locks.remove(path);
             locks.notifyAll();
+        }
+    }
+
+    @Override
+    public void removeAndForceUnlock(String path) {
+        removeAndUnlock(path);
+    }
+
+    @Override
+    public boolean isLocked(String path) {
+        synchronized (locks) {
+            return locks.containsKey(path);
         }
     }
 }

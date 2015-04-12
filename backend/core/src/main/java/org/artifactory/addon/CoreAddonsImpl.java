@@ -33,6 +33,7 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.ReplicationAddon;
+import org.artifactory.api.bintray.docker.BintrayPushRequest;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
@@ -82,6 +83,8 @@ import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.schedule.Task;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserGroupInfo;
+import org.artifactory.storage.StorageProperties;
+import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.artifactory.storage.fs.lock.FsItemsVault;
 import org.artifactory.storage.fs.lock.FsItemsVaultCacheImpl;
 import org.artifactory.storage.fs.lock.map.JVMLockingMap;
@@ -119,7 +122,7 @@ import java.util.concurrent.Semaphore;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon, NpmAddon, DebianAddon, PypiAddon, DockerAddon {
+        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, FileStoreAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -558,6 +561,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public LockingMap getLockingMap(String mapName) {
+        return new JVMLockingMap();
+    }
+
+    @Override
     public void init() {
     }
 
@@ -594,6 +602,36 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void reindex(LocalRepoDescriptor descriptor, boolean async) {
+
+    }
+
+    @Override
+    public void addBowerPackage(FileInfo info) {
+
+    }
+
+    @Override
+    public void removeBowerPackage(FileInfo info) {
+
+    }
+
+    @Override
+    public boolean isBowerFile(String filePath) {
+        return false;
+    }
+
+    @Override
+    public void requestAsyncReindexBowerPackages(String repoKey) {
+
+    }
+
+    @Override
+    public List<BinaryProviderBase> getS3JClouds(StorageProperties storageProperties) {
+        throw new UnsupportedOperationException("Register binary  providers is allowed only in HA environment");
+    }
+
+    @Override
+    public void pushTagToBintray(String repoKey, BintrayPushRequest request) {
 
     }
 }

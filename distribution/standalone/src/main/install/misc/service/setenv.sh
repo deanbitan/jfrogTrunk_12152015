@@ -17,7 +17,7 @@ createDir() {
 
 createDir "$ARTIFACTORY_HOME/logs"
 
-for d in $TOMCAT_HOME/{logs,temp,work}; do
+for d in $TOMCAT_HOME/logs $TOMCAT_HOME/temp $TOMCAT_HOME/work; do
     createDir "$(readlink -f $d)"
 done
 

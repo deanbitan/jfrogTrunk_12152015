@@ -79,6 +79,22 @@
                 </div>
             </div>
         </div>
+        <div wicket:id="bowerSupportSection">
+            <div class="field-row">
+                <p class="info">
+                    <span wicket:id="bowerRepoUrlLabel"/>
+                </p>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <input wicket:id="enableBowerSupport" type="checkbox"/>
+                    <span wicket:id="enableBowerSupport.help"></span>
+                </div>
+                <div class="field">
+                    <button type="button" wicket:id="reindexPackages"></button>
+                </div>
+            </div>
+        </div>
         <div wicket:id="debianSupportSection">
             <div class="field-row">
                 <div class="field">

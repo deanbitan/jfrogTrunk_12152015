@@ -414,6 +414,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         String repoKey = localRepoDescriptor.getKey();
         repoKeyExists(repoKey, false);
         localRepositoriesMap.put(repoKey, localRepoDescriptor);
+        conditionallyAddToBackups(localRepoDescriptor);
     }
 
     @Override
@@ -426,6 +427,15 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
             if (remoteRepoDescriptor instanceof HttpRepoDescriptor) {
                 ((HttpRepoDescriptor) remoteRepoDescriptor).setProxy(defaultProxyDescriptor);
             }
+        }
+
+        conditionallyAddToBackups(remoteRepoDescriptor);
+    }
+
+    private void conditionallyAddToBackups(RealRepoDescriptor remoteRepoDescriptor) {
+        // Conditionally add the repository to any backup exclude list
+        for (BackupDescriptor backup : getBackups()) {
+            backup.addExcludedRepository(remoteRepoDescriptor);
         }
     }
 

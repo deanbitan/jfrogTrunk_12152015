@@ -133,6 +133,11 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isEnableBowerSupport() {
+        return remoteRepo.isEnableBowerSupport();
+    }
+
+    @Override
     public boolean isEnableDebianSupport() {
         return remoteRepo.isEnableDebianSupport();
     }

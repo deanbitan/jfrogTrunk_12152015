@@ -14,16 +14,17 @@ import java.util.Date;
  */
 public class MockArtifactoryHome extends ArtifactoryHome {
 
-
     public MockArtifactoryHome() {
         super(new File(ConvertersManagerTestHelper.home + ".artifactory"));
     }
 
+    @Override
     public CompoundVersionDetails readRunningArtifactoryVersion() {
         return new CompoundVersionDetails(ArtifactoryVersion.getCurrent(), ArtifactoryVersion.getCurrent().name(), "1",
                 new Date().getTime());
     }
 
+    @Override
     public void writeBundledHomeArtifactoryProperties() {
         File artifactoryPropertiesFile = getHomeArtifactoryPropertiesFile();
         //Copy the artifactory.properties file into the data folder
@@ -39,6 +40,7 @@ public class MockArtifactoryHome extends ArtifactoryHome {
         }
     }
 
+    @Override
     public void writeBundledHaArtifactoryProperties() {
         File artifactoryPropertiesFile = getHaArtifactoryPropertiesFile();
         //Copy the artifactory.properties file into the data folder

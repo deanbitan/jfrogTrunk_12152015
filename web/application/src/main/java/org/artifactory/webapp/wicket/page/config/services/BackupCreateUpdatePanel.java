@@ -183,6 +183,9 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
         advancedFields.add(new StyledCheckbox("excludeBuilds"));
         advancedFields.add(new SchemaHelpBubble("excludeBuilds.help"));
 
+        advancedFields.add(new StyledCheckbox("excludeNewRepositories"));
+        advancedFields.add(new SchemaHelpBubble("excludeNewRepositories.help"));
+
         createIncremental = new StyledCheckbox("createIncrementalBackup",
                 new PropertyModel<Boolean>(this, "createIncrementalBackup"));
         createIncremental.setOutputMarkupId(true);

@@ -106,14 +106,19 @@ public abstract class BaseRepoPathMover {
     }
 
     /**
-     * <ul> <li>If not in a dry run.</li> <li>If not pruning empty folders (if true it will happen at a
-     * later stage).</li> <li>If not copying (no source removal when copying).</li> <li>If not on the root item (a
-     * repo).</li> <li>If not containing any children and items have been moved (children have actually been
-     * moved).</li> </ul>
+     * If not in a dry run, If not pruning empty folders (if true it will happen at a later stage),
+     * If not copying (no source removal when copying), If not on the root item (a repo),
+     * If not containing any children and folders or artifacts were moved.
      */
     protected boolean shouldRemoveSourceFolder(VfsFolder sourceFolder) {
-        return !dryRun && !pruneEmptyFolders && !copy && !sourceFolder.getRepoPath().isRoot() &&
-                !sourceFolder.hasChildren() && status.getMovedCount() != 0;
+        return !dryRun && !copy && !sourceFolder.getRepoPath().isRoot() && !sourceFolder.hasChildren()
+                && !pruneEmptyFolders && (status.getMovedFoldersCount() != 0 || status.getMovedArtifactsCount() != 0);
+    }
+
+    //If not containing any children and items have been moved (children have actually been moved)
+    protected boolean shouldRemoveTargetFolder(MutableVfsFolder targetFolder, int childrenSize) {
+        return !dryRun && targetFolder != null && !targetFolder.getRepoPath().isRoot() && !targetFolder.hasChildren()
+                && childrenSize != 0;
     }
 
     protected void handleFile(VfsItem source, RepoRepoPath<LocalRepo> targetRrp) {
@@ -121,7 +126,7 @@ public abstract class BaseRepoPathMover {
             if (!dryRun) {
                 moveFile((VfsFile) source, targetRrp);
             } else {
-                status.itemMoved();
+                status.artifactMoved();
             }
         }
     }
@@ -164,7 +169,8 @@ public abstract class BaseRepoPathMover {
             if (source.isFolder()) {
                 VfsItem targetFsItem = targetRepo.getMutableFsItem(targetRepoPath);
                 if (targetFsItem != null && targetFsItem.isFile()) {
-                    status.error("Can't move folder under file '" + targetRepoPath + "'. ", HttpStatus.SC_BAD_REQUEST, log);
+                    status.error("Can't move folder under file '" + targetRepoPath + "'. ", HttpStatus.SC_BAD_REQUEST,
+                            log);
                     return false;
                 }
             }
@@ -229,7 +235,7 @@ public abstract class BaseRepoPathMover {
         }
         saveSession();
         LockingHelper.removeLockEntry(sourceFile.getRepoPath());
-        status.itemMoved();
+        status.artifactMoved();
     }
 
     private void copyVfsFile(VfsFile sourceFile, MutableVfsFile targetFile) {
@@ -273,17 +279,16 @@ public abstract class BaseRepoPathMover {
         }
     }
 
+    /**
+     * Marks the current folder for pruning, works only if the config set prune to true.
+     */
     protected void clearEmptySourceDirs(VfsItem sourceItem) {
         RepoPath sourceRepoPath = getFolderRepoPath(sourceItem);
-        if (sourceRepoPath == null) {
+
+        // cleanup only in search results or promotion after move
+        if (sourceRepoPath == null || !pruneEmptyFolders || copy) {
             return;
         }
-
-        if (!pruneEmptyFolders || copy) {
-            // cleanup only in search results or promotion after move
-            return;
-        }
-
         FolderPruningService pruningService = ContextHelper.get().beanForType(FolderPruningService.class);
         pruningService.prune(sourceRepoPath);
     }

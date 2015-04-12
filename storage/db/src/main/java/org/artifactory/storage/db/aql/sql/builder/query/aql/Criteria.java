@@ -27,8 +27,7 @@ public abstract class Criteria implements AqlQueryElement {
     private SqlTable table2;
 
     public Criteria(List<AqlDomainEnum> subDomains, AqlVariable variable1, SqlTable table1, String comparatorName,
-            AqlVariable variable2,
-            SqlTable table2) {
+            AqlVariable variable2,SqlTable table2) {
         this.subDomains = subDomains;
         this.variable1 = variable1;
         this.table1 = table1;

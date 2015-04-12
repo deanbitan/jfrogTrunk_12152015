@@ -24,11 +24,13 @@ import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.p2.P2WebAddon;
+import org.artifactory.addon.wicket.BowerWebAddon;
 import org.artifactory.addon.wicket.DebianWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PypiWebAddon;
+import org.artifactory.addon.wicket.VcsWebAddon;
 import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 
@@ -55,7 +57,9 @@ public class HttpRepoPackagesPanel<T extends RemoteRepoDescriptor> extends Panel
                 buildPackagesConfigSection("gemsSupportSection", descriptor, form));
 
         addonsManager.addonByType(NpmWebAddon.class).createAndAddRepoConfigNpmSection(form, descriptor, isCreate);
+        addonsManager.addonByType(BowerWebAddon.class).createAndAddRepoConfigBowerSection(form, descriptor, isCreate);
         addonsManager.addonByType(DebianWebAddon.class).createAndAddLocalRepoDebianSection(form, descriptor);
         addonsManager.addonByType(PypiWebAddon.class).createAndAddPypiConfigSection(form, descriptor, isCreate);
+        addonsManager.addonByType(VcsWebAddon.class).createAndAddVcsConfigSection(form, descriptor, isCreate);
     }
 }

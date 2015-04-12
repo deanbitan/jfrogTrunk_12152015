@@ -5687,6 +5687,18 @@ table.data-table td.add-value-row {
     background: url(images/addons/16npm.png) no-repeat left top;
 }
 
+.addon-bower {
+    background: url(images/addons/16bower.png) no-repeat left top;
+}
+
+.addon-vcs {
+    background: url(images/addons/16vcs.png) no-repeat left top;
+}
+
+.addon-filestore {
+    background: url(images/addons/16filestore.png) no-repeat left top;
+}
+
 .addon-ha {
     background: url(images/addons/16ha.png) no-repeat left top;
 }

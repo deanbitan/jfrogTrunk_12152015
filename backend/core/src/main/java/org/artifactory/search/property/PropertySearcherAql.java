@@ -68,18 +68,9 @@ public class PropertySearcherAql extends SearcherBase<PropertySearchControls, Pr
         for (String key : openness) {
             for (String value : properties.get(key)) {
                 if (value == null || "*".equals(value.trim()) || StringUtils.isEmpty(value)) {
-                    and.append(
-                            AqlApiItem.property().key().matches(key)
-                    );
+                    createPropertyKeyCriteria(and, key);
                 } else {
-                    and.append(
-                            freezeJoin(
-                                    and(
-                                            AqlApiItem.property().key().matches(key),
-                                            AqlApiItem.property().value().matches(value)
-                                    )
-                            )
-                    );
+                    createPropertyCriteria(and, key, value);
                 }
             }
         }
@@ -108,5 +99,40 @@ public class PropertySearcherAql extends SearcherBase<PropertySearchControls, Pr
         }
 
         return new ItemSearchResults<>(Lists.newArrayList(globalResults), totalResultCount);
+    }
+
+    private void createPropertyCriteria(AndClause<AqlApiItem> and, String key, String value) {
+        CriteriaClause<AqlApiItem> keyCriteria;
+        CriteriaClause<AqlApiItem> valueCriteria;
+        if (key.contains("*") || key.contains("?")) {
+            keyCriteria = AqlApiItem.property().key().matches(key);
+        } else {
+            keyCriteria = AqlApiItem.property().key().equal(key);
+        }
+        if (value.contains("*") || value.contains("?")) {
+            valueCriteria = AqlApiItem.property().value().matches(value);
+        } else {
+            valueCriteria = AqlApiItem.property().value().equal(value);
+        }
+        and.append(
+                freezeJoin(
+                        and(
+                                keyCriteria,
+                                valueCriteria
+                        )
+                )
+        );
+    }
+
+    private void createPropertyKeyCriteria(AndClause<AqlApiItem> and, String key) {
+        if (key.contains("*") || key.contains("?")) {
+            and.append(
+                    AqlApiItem.property().key().matches(key)
+            );
+        } else {
+            and.append(
+                    AqlApiItem.property().key().equal(key)
+            );
+        }
     }
 }

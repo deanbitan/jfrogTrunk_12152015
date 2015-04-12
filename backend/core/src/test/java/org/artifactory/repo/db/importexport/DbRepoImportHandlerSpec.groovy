@@ -39,7 +39,7 @@ import org.artifactory.sapi.fs.MutableVfsFolder
 import org.artifactory.schedule.TaskService
 import org.artifactory.spring.InternalArtifactoryContext
 import org.artifactory.storage.BinaryInsertRetryException
-import org.artifactory.storage.db.binstore.model.BinaryInfoImpl
+import org.artifactory.storage.binstore.service.BinaryInfoImpl
 import org.artifactory.test.ArtifactoryHomeStub
 import org.artifactory.util.ResourceUtils
 import org.joda.time.DateTimeUtils

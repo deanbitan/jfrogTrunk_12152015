@@ -45,9 +45,11 @@ public enum AddonType {
     BLACKDUCK("blackduck", "Black Duck Integration", 250),
     GEMS("gems", "RubyGems", 1100),
     NPM("npm", "NPM", 860),
+    BOWER("bower", "Bower", 870),
     DEBIAN("debian", "Debian", 900),
     PYPI("pypi", "PyPI", 970),
     DOCKER("docker", "Docker", 910),
+    VCS("vcs", "VCS", 920),
     HA("ha", "High Availability", 2000);
 
 

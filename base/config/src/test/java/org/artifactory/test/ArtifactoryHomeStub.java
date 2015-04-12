@@ -33,7 +33,7 @@ import java.io.File;
 public class ArtifactoryHomeStub extends ArtifactoryHome {
 
     public ArtifactoryHomeStub() {
-        super(new File("./target"));
+        super(new File("./target/test/testhome"));
         setArtifactorySystemProperties(new ArtifactorySystemProperties());
     }
 

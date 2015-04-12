@@ -18,6 +18,8 @@
 
 package org.artifactory.descriptor.config;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
@@ -25,6 +27,7 @@ import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
@@ -34,6 +37,7 @@ import org.artifactory.util.RepoLayoutUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.testng.Assert.*;
@@ -81,6 +85,11 @@ public class CentralConfigDescriptorImplTest {
         BackupDescriptor backup2 = new BackupDescriptor();
         backup2.setKey("backup2");
         cc.addBackup(backup2);
+
+        BackupDescriptor backup3 = new BackupDescriptor();
+        backup3.setKey("backup3");
+        backup3.setExcludeNewRepositories(true);
+        cc.addBackup(backup3);
 
         PropertySet set1 = new PropertySet();
         set1.setName("set1");
@@ -268,17 +277,52 @@ public class CentralConfigDescriptorImplTest {
     }
 
     public void backupExistence() {
-        assertEquals(cc.getBackups().size(), 2, "Backups count mismatch");
+        assertEquals(cc.getBackups().size(), 3, "Backups count mismatch");
         assertTrue(cc.isBackupExists("backup1"));
         assertTrue(cc.isBackupExists("backup2"));
+        assertTrue(cc.isBackupExists("backup3"));
+
     }
 
     public void removeBackup() {
         assertTrue(cc.isBackupExists("backup2"));
         BackupDescriptor removedBackup = cc.removeBackup("backup2");
         assertEquals(removedBackup.getKey(), "backup2");
-        assertEquals(cc.getBackups().size(), 1, "Only one backup expected");
+        assertEquals(cc.getBackups().size(), 2, "Only 2 backups expected");
         assertFalse(cc.isBackupExists("backup2"));
+    }
+
+    public void excludeNewRepoFromBackup() {
+        LocalRepoDescriptor newLocal = new LocalRepoDescriptor();
+        newLocal.setKey("newLocal");
+        cc.addLocalRepository(newLocal);
+        RemoteRepoDescriptor newRemote = new HttpRepoDescriptor();
+        newRemote.setKey("newRemote");
+        cc.addRemoteRepository(newRemote);
+
+        assertTrue(cc.isBackupExists("backup1"));
+        BackupDescriptor backup1 = Iterables.tryFind(cc.getBackups(), new Predicate<BackupDescriptor>() {
+            @Override
+            public boolean apply(BackupDescriptor input) {
+                return "backup1".equals(input.getKey());
+            }
+        }).orNull();
+        assertNotNull(backup1, "Should find backup1");
+        assertEquals(backup1.getExcludedRepositories().size(), 0);
+
+        assertTrue(cc.isBackupExists("backup3"));
+        BackupDescriptor backup3 = Iterables.tryFind(cc.getBackups(), new Predicate<BackupDescriptor>() {
+            @Override
+            public boolean apply(BackupDescriptor input) {
+                return "backup3".equals(input.getKey());
+            }
+        }).orNull();
+        assertNotNull(backup3, "Should find backup3");
+
+        List<RealRepoDescriptor> excludedRepositories = backup3.getExcludedRepositories();
+        assertEquals(excludedRepositories.size(), 2);
+        assertTrue(excludedRepositories.contains(newLocal));
+        assertTrue(excludedRepositories.contains(newRemote));
     }
 
     public void propertySetExistence() {

@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.TreeSet;
 
+import static org.artifactory.storage.StorageProperties.*;
+
 /**
  * Displays a list of all the system properties and their values as well as memory information and JVM arguments
  *
@@ -77,7 +79,26 @@ public class SystemInfoPage extends AuthenticatedPage {
         StorageProperties storageProperties = ContextHelper.get().beanForType(StorageProperties.class);
         infoBuilder.append("Storage Info:").append("\n");
         addInfo(infoBuilder, "Database Type", storageProperties.getDbType().toString());
-        addInfo(infoBuilder, "Storage Type", storageProperties.getBinariesStorageType().toString());
+        BinaryProviderType binariesStorageType = storageProperties.getBinariesStorageType();
+        addInfo(infoBuilder, "Storage Type", binariesStorageType.toString());
+        if (BinaryProviderType.S3 == binariesStorageType) {
+            // S3 properties
+            addInfo(infoBuilder, "s3.bucket.name", storageProperties.getS3BucketName());
+            addInfo(infoBuilder, "s3.bucket.path", storageProperties.getS3BucketPath());
+            addInfo(infoBuilder, "s3.endpoint", storageProperties.getS3Entpoint());
+            // Retry properties
+            addInfo(infoBuilder, "retry.max.retries.number", Integer.toString(
+                    storageProperties.getMaxRetriesNumber()));
+            addInfo(infoBuilder, "retry.delay.between.retries", Integer.toString(
+                    storageProperties.getDelayBetweenRetries()));
+            // Eventually persisted properties
+            addInfo(infoBuilder, "eventually.persisted.max.number.of.threads", Integer.toString(
+                    storageProperties.getEventuallyPersistedMaxNumberOfThread()));
+            addInfo(infoBuilder, "eventually.persisted.timeout", Integer.toString(
+                    storageProperties.getEventuallyPersistedTimeOut()));
+            addInfo(infoBuilder, "eventually.dispatcher.sleep.time", Long.toString(
+                    storageProperties.getEventuallyPersistedDispatcherSleepTime()));
+        }
 
         infoBuilder.append("\n").append("System Properties:").append("\n");
         Properties properties = System.getProperties();

@@ -94,8 +94,8 @@ public abstract class NamingUtils {
         return fileName.endsWith(".rpm");
     }
 
-    public static boolean isGemFile(String fileNaem) {
-        MimeType mimeType = NamingUtils.getMimeType(fileNaem);
+    public static boolean isGemFile(String fileName) {
+        MimeType mimeType = NamingUtils.getMimeType(fileName);
         return "application/x-rubygems".equalsIgnoreCase(mimeType.getType());
     }
 

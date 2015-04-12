@@ -34,7 +34,13 @@ public class MoveMultiStatusHolder extends BasicStatusHolder {
     /**
      * Represents the number of artifacts that have been moved
      */
-    private int movedCounter = 0;
+    private int artifactsMovedCounter = 0;
+
+
+    /**
+     * Represents the number of folders that have been moved
+     */
+    private int foldersMovedCounter = 0;
 
     /**
      * Folders repo paths to calculate maven metadata on when the entire move/copy finishes
@@ -42,10 +48,17 @@ public class MoveMultiStatusHolder extends BasicStatusHolder {
     private Set<RepoPath> candidatesForMavenMetadataCalculation = Sets.newHashSet();
 
     /**
-     * Raises the moved item counter by 1
+     * Raises the moved artifacts counter by 1
      */
-    public void itemMoved() {
-        movedCounter++;
+    public void artifactMoved() {
+        artifactsMovedCounter++;
+    }
+
+    /**
+     * Raises the moved folder counter by 1
+     */
+    public void folderMoved() {
+        foldersMovedCounter++;
     }
 
     /**
@@ -58,12 +71,21 @@ public class MoveMultiStatusHolder extends BasicStatusHolder {
     }
 
     /**
-     * Returns the total number of items that have been moved
+     * Returns the total number of artifacts that have been moved
      *
-     * @return Total items moved
+     * @return Total artifacts moved
      */
-    public int getMovedCount() {
-        return movedCounter;
+    public int getMovedArtifactsCount() {
+        return artifactsMovedCounter;
+    }
+
+    /**
+     * Returns the total number of folders that have been moved
+     *
+     * @return Total folders moved
+     */
+    public int getMovedFoldersCount() {
+        return foldersMovedCounter;
     }
 
     public Set<RepoPath> getCandidatesForMavenMetadataCalculation() {
@@ -76,8 +98,10 @@ public class MoveMultiStatusHolder extends BasicStatusHolder {
         if (toMerge instanceof MoveMultiStatusHolder) {
             //Merge moved items counter
             MoveMultiStatusHolder moveMultiStatusHolder = (MoveMultiStatusHolder) toMerge;
-            movedCounter += moveMultiStatusHolder.getMovedCount();
-            candidatesForMavenMetadataCalculation.addAll(((MoveMultiStatusHolder) toMerge).getCandidatesForMavenMetadataCalculation());
+            artifactsMovedCounter += moveMultiStatusHolder.getMovedArtifactsCount();
+            foldersMovedCounter += moveMultiStatusHolder.getMovedFoldersCount();
+            candidatesForMavenMetadataCalculation.addAll(
+                    ((MoveMultiStatusHolder) toMerge).getCandidatesForMavenMetadataCalculation());
         }
     }
 }

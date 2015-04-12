@@ -29,4 +29,19 @@ public interface LockingMap {
      * @param path The path to remove
      */
     void removeAndUnlock(String path);
+
+
+    /**
+     * Removes the path from the map and releases it's lock regardless the thread owner.
+     *
+     * @param path The path to remove
+     */
+    void removeAndForceUnlock(String path);
+
+    /**
+     * checks if the path is locked.
+     *
+     * @param path The path to remove
+     */
+    boolean isLocked(String path);
 }

@@ -15,8 +15,7 @@ import java.util.List;
  */
 public class PropertyCriteria extends Criteria {
     public PropertyCriteria(List<AqlDomainEnum> subDomains, AqlVariable variable1, SqlTable table1,
-            String comparatorName,
-            AqlVariable variable2, SqlTable table2) {
+            String comparatorName,AqlVariable variable2, SqlTable table2) {
         super(subDomains, variable1, table1, comparatorName, variable2, table2);
     }
 
@@ -34,7 +33,7 @@ public class PropertyCriteria extends Criteria {
         AqlVariable value2 = getVariable2();
         // Get both tables which are node_props tables (this is property criteria)
         SqlTable table1 = getTable1();
-        SqlTable table2 = getTable2();
+        //SqlTable table2 = getTable2();
         // update the Sql input param list
         // Get the ComparatorEnum
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());

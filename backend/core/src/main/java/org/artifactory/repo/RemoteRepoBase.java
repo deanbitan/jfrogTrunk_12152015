@@ -138,13 +138,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private Collection<RemoteRepoInterceptor> interceptors;
 
     protected RemoteRepoBase(T descriptor, InternalRepositoryService repositoryService,
-            boolean globalOfflineMode,
-            RemoteRepo oldRemoteRepo) {
+            boolean globalOfflineMode,RemoteRepo oldRemoteRepo) {
         super(descriptor, repositoryService);
-
         ChecksumPolicyType checksumPolicyType = descriptor.getChecksumPolicyType();
         checksumPolicy = ChecksumPolicyBase.getByType(checksumPolicyType);
-
         this.globalOfflineMode = globalOfflineMode;
         if (oldRemoteRepo instanceof RemoteRepoBase) {
             this.oldRemoteRepo = (RemoteRepoBase) oldRemoteRepo;

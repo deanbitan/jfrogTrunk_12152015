@@ -18,6 +18,8 @@
 
 package org.artifactory.api.rest.artifact;
 
+import java.io.Serializable;
+
 /**
  * @author Eli Givoni
  */
@@ -30,7 +32,7 @@ public class RestFileInfo extends RestBaseStorageInfo {
     public Checksums checksums;
     public Checksums originalChecksums;
 
-    public static class Checksums {
+    public static class Checksums implements Serializable {
         public String sha1;
         public String md5;
 

@@ -18,6 +18,7 @@
 
 package org.artifactory.storage;
 
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.security.crypto.CryptoHelper;
@@ -31,7 +32,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Properties;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A convenient class to parse the storage properties file.
@@ -44,15 +46,16 @@ public class StorageProperties {
     private static final Logger log = LoggerFactory.getLogger(StorageProperties.class);
     private static final String DEFAULT_MAX_CACHE_SIZE = "5GB";
 
-    private Properties props = null;
+    private LinkedProperties props = null;
     private DbType dbType = null;
 
     public StorageProperties(File storagePropsFile) throws IOException {
-        props = new Properties();
+        props = new LinkedProperties();
         try (FileInputStream pis = new FileInputStream(storagePropsFile)) {
             props.load(pis);
         }
 
+        trimValues();
         assertMandatoryProperties();
 
         // cache commonly used properties
@@ -61,35 +64,17 @@ public class StorageProperties {
         // verify that the database is supported (will throw an exception if not found)
         log.debug("Loaded storage properties for supported database type: {}", getDbType());
     }
-
-    public StorageProperties(File storagePropsFile, boolean useLinkedProperties) throws IOException {
-        if (useLinkedProperties) {
-            props = new LinkedProperties();
-        } else {
-            props = new Properties();
-        }
-        try (FileInputStream pis = new FileInputStream(storagePropsFile)) {
-            props.load(pis);
-        }
-        assertMandatoryProperties();
-
-        // cache commonly used properties
-        dbType = DbType.parse(getProperty(Key.type));
-
-        // verify that the database is supported (will throw an exception if not found)
-        log.debug("Loaded storage properties for supported database type: {}", getDbType());
-    }
-
 
     /**
      * update storage properties file;
+     *
      * @param updateStoragePropFile
      * @throws IOException
      */
     public void updateStoragePropertiesFile(File updateStoragePropFile) throws IOException {
         if (props != null) {
-                OutputStream outputStream = new FileOutputStream(updateStoragePropFile);
-                props.store(outputStream, "");
+            OutputStream outputStream = new FileOutputStream(updateStoragePropFile);
+            props.store(outputStream, "");
         }
     }
 
@@ -129,41 +114,90 @@ public class StorageProperties {
     }
 
     public int getMaxActiveConnections() {
-        return Integer.parseInt(getProperty(Key.maxActiveConnections, DEFAULT_MAX_ACTIVE_CONNECTIONS + "").trim());
+        return getIntProperty(Key.maxActiveConnections.key, DEFAULT_MAX_ACTIVE_CONNECTIONS);
     }
 
     public int getMaxIdleConnections() {
-        return Integer.parseInt(getProperty(Key.maxIdleConnections, DEFAULT_MAX_IDLE_CONNECTIONS + "").trim());
+        return getIntProperty(Key.maxIdleConnections.key, DEFAULT_MAX_IDLE_CONNECTIONS);
     }
 
     @Nonnull
     public BinaryProviderType getBinariesStorageType() {
         return BinaryProviderType.valueOf(
-                getProperty(Key.binaryProviderType, BinaryProviderType.filesystem.name()).trim());
+                getProperty(Key.binaryProviderType, BinaryProviderType.filesystem.name()));
     }
 
     public String getS3BucketName() {
-        return getProperty(Key.binaryProviderS3BucketName, null);
+        return getProperty(Key.binaryProviderS3BucketName, "artifactory");
     }
 
-    public String getS3Region() {
-        return getProperty(Key.binaryProviderS3region, null);
+    public int getMaxRetriesNumber() {
+        return getIntProperty(Key.binaryProviderRetryMaxRetriesNumber.key, 5);
     }
 
-    public int getS3MaxRetriesNumber() {
-        return getIntProperty(Key.binaryProviderS3MaxRetryNumber.key, 5);
+    public int getDelayBetweenRetries() {
+        return getIntProperty(Key.binaryProviderRetryDelayBetweenRetries.key, 5000);
     }
 
     public String getS3BucketPath() {
-        return getProperty(Key.binaryProviderS3BucketPath, null);
+        return getProperty(Key.binaryProviderS3BucketPath, "filestore");
     }
 
     public String getS3Credential() {
-        return getProperty(Key.binaryProviderS3Credential, null);
+        String credential = getProperty(Key.binaryProviderS3Credential, null);
+        return CryptoHelper.decryptIfNeeded(credential);
+    }
+
+    public void setS3Credential(String credential) {
+        props.setProperty(Key.binaryProviderS3Credential.key(), credential);
+    }
+
+    public String getS3ProviderId() {
+        return getProperty(Key.binaryProviderS3ProviderId, "s3");
+    }
+
+    public Map<String, String> getParams() {
+        return getProperties(Key.binaryProviderS3Param.key + ".");
     }
 
     public String getS3Identity() {
         return getProperty(Key.binaryProviderS3Identity, null);
+    }
+
+    public int getEventuallyPersistedTimeOut() {
+        return getIntProperty(Key.binaryProviderEventuallyPersistedTimeOut.key, 120000);
+    }
+
+    public int getEventuallyPersistedMaxNumberOfThread() {
+        return getIntProperty(Key.binaryProviderEventuallyPersistedMaxNumberOfTreads.key, 5);
+    }
+
+    public long getEventuallyPersistedDispatcherSleepTime() {
+        return getLongProperty(Key.binaryProviderEventuallyPersistedDispatcherSleepTime.key, 5000);
+    }
+
+    public int getS3ProxyPort() {
+        return getIntProperty(Key.binaryProviderS3ProxyPort.key, -1);
+    }
+
+    public String getS3ProxyHost() {
+        return getProperty(Key.binaryProviderS3ProxyHost.key, null);
+    }
+
+    public long getS3BlobVerificationTimeout() {
+        return getIntProperty(Key.binaryProviderS3BlobVerifyTimeout.key, 60000);
+    }
+    public String getS3ProxyIdentity() {
+        return getProperty(Key.binaryProviderS3ProxyIdentity.key, null);
+    }
+
+    public String getS3ProxyCredential() {
+        String credential = getProperty(Key.binaryProviderS3ProxyCredential.key, null);
+        return CryptoHelper.decryptIfNeeded(credential);
+    }
+
+    public void setS3ProxyCredential(String credential) {
+        props.setProperty(Key.binaryProviderS3ProxyCredential.key(), credential);
     }
 
     public String getBinaryProviderExternalDir() {
@@ -182,12 +216,16 @@ public class StorageProperties {
         return StorageUnit.fromReadableString(getProperty(Key.binaryProviderCacheMaxSize, DEFAULT_MAX_CACHE_SIZE));
     }
 
+    public String getS3Entpoint() {
+        return getProperty(Key.binaryProviderS3Endpoint);
+    }
+
     public String getProperty(Key property) {
         return props.getProperty(property.key);
     }
 
     public String getProperty(Key property, String defaultValue) {
-        return  props.getProperty(property.key, defaultValue);
+        return props.getProperty(property.key, defaultValue);
     }
 
     public String getProperty(String key, String defaultValue) {
@@ -195,15 +233,41 @@ public class StorageProperties {
     }
 
     public boolean getBooleanProperty(String key, boolean defaultValue) {
-        return Boolean.parseBoolean(props.getProperty(key, defaultValue + "").trim());
+        return Boolean.parseBoolean(props.getProperty(key, defaultValue + ""));
     }
 
     public int getIntProperty(String key, int defaultValue) {
-        return Integer.parseInt(props.getProperty(key, defaultValue + "").trim());
+        return Integer.parseInt(props.getProperty(key, defaultValue + ""));
     }
 
     public long getLongProperty(String key, long defaultValue) {
-        return Long.parseLong(props.getProperty(key, defaultValue + "").trim());
+        return Long.parseLong(props.getProperty(key, defaultValue + ""));
+    }
+
+    public Map<String, String> getProperties(String prefix) {
+        Map<String, String> result = Maps.newHashMap();
+        Iterator<Map.Entry<String, String>> iterator = props.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> next = iterator.next();
+            if (next.getKey().startsWith(prefix)) {
+                String reminder = next.getKey().replace(prefix, "");
+                if (!StringUtils.isBlank(reminder)) {
+                    result.put(reminder, next.getValue());
+                }
+            }
+        }
+        return result;
+    }
+
+    private void trimValues() {
+        Iterator<Map.Entry<String, String>> iter = props.iterator();
+        while (iter.hasNext()) {
+            Map.Entry<String, String> entry = iter.next();
+            String value = entry.getValue();
+            if (!StringUtils.trimToEmpty(value).equals(value)) {
+                entry.setValue(StringUtils.trim(value));
+            }
+        }
     }
 
     private void assertMandatoryProperties() {
@@ -224,6 +288,7 @@ public class StorageProperties {
         return dbType == DbType.POSTGRESQL;
     }
 
+
     public enum Key {
         username, password, type, url, driver,
         maxActiveConnections("pool.max.active"), maxIdleConnections("pool.max.idle"),
@@ -234,13 +299,34 @@ public class StorageProperties {
         binaryProviderFilesystemSecondDir("binary.provider.filesystem2.dir"),
         binaryProviderFilesystemSecondCheckPeriod("binary.provider.filesystem2.checkPeriod"),
         binaryProviderExternalDir("binary.provider.external.dir"),
-        binaryProviderS3BucketName("binary.provider.s3.bucket.name"),
-        binaryProviderS3region("binary.provider.s3.region"),
-        binaryProviderS3BucketPath("binary.provider.s3.bucket.path"),
         binaryProviderExternalMode("binary.provider.external.mode"),
+
+        // Retry binary provider
+        binaryProviderRetryMaxRetriesNumber("binary.provider.retry.max.retries.number"),
+        binaryProviderRetryDelayBetweenRetries("binary.provider.retry.delay.between.retries"),
+
+        // S3 binary provider
+        binaryProviderS3BucketName("binary.provider.s3.bucket.name"),
+        binaryProviderS3BucketPath("binary.provider.s3.bucket.path"),
         binaryProviderS3Identity("binary.provider.s3.identity"),
         binaryProviderS3Credential("binary.provider.s3.credential"),
-        binaryProviderS3MaxRetryNumber("binary.provider.s3.max.retry.number");
+        binaryProviderS3ProviderId("binary.provider.s3.provider.id"),
+        binaryProviderS3ProxyPort("binary.provider.s3.proxy.port"),
+        binaryProviderS3ProxyHost("binary.provider.s3.proxy.host"),
+        binaryProviderS3BlobVerifyTimeout("binary.provider.s3.blob.verification.timeout"),
+        binaryProviderS3ProxyIdentity("binary.provider.s3.proxy.identity"),
+        binaryProviderS3ProxyCredential("binary.provider.s3.proxy.credential"),
+        binaryProviderS3Endpoint("binary.provider.s3.endpoint"),
+
+        // Dynamic S3 Param
+        binaryProviderS3Param("binary.provider.s3.env"),
+
+        // Eventually persisted binary provider
+        binaryProviderEventuallyPersistedMaxNumberOfTreads(
+                "binary.provider.eventually.persisted.max.number.of.threads"),
+        binaryProviderEventuallyPersistedTimeOut("binary.provider.eventually.persisted.timeout"),
+        binaryProviderEventuallyPersistedDispatcherSleepTime(
+                "binary.provider.eventually.dispatcher.sleep.time"); // in millis
 
 
         private final String key;
@@ -262,8 +348,6 @@ public class StorageProperties {
         filesystem, // binaries are stored in the filesystem
         fullDb,     // binaries are stored as blobs in the db, filesystem is used for caching unless cache size is 0
         cachedFS,   // binaries are stored in the filesystem, but a front cache (faster access) is added
-        S3JClouds,         // binaries are stored in S3 JClouds API
-        S3Amazon,          // binaries are stored in S3 amazon API
-        JetS3,             // binaries are stored in S3 JetS3 API
+        S3,         // binaries are stored in S3 JClouds API
     }
 }

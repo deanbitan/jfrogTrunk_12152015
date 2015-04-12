@@ -24,6 +24,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.LdapGroupAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
@@ -129,9 +130,10 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         contextSource.setBase(adjustBase(url.substring((scheme + baseUrl).length())));
         // set default connection timeout
         HashMap<String, String> env = new HashMap<>();
-        //TODO: [by yl] check how timeout is set on other jdks
         env.put("com.sun.jndi.ldap.connect.timeout", "10000");
-        env.put(Context.REFERRAL, "follow");
+        String referralStrategy = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
+                "security.ldap.referralStrategy", "follow");
+        env.put(Context.REFERRAL, referralStrategy);
         contextSource.setBaseEnvironmentProperties(env);
         SearchPattern searchPattern = ldapSetting.getSearch();
         if (searchPattern != null) {

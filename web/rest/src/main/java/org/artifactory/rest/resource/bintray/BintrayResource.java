@@ -18,8 +18,13 @@
 
 package org.artifactory.rest.resource.bintray;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.DockerAddon;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.api.bintray.BintrayService;
+import org.artifactory.api.bintray.docker.BintrayPushRequest;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.rest.constant.BintrayRestConstants;
@@ -38,8 +43,10 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -61,12 +68,15 @@ public class BintrayResource {
 
     @Autowired
     private InternalRepositoryService repositoryService;
+
     @Autowired
     private BintrayService bintrayService;
 
+    @Autowired
+    private AddonsManager addonsManager;
+
     @Context
     private HttpServletRequest request;
-
 
     /**
      * Pushes a version to Bintray according to the file paths that are specified in the JSON file, if no paths are
@@ -102,6 +112,33 @@ public class BintrayResource {
             throw new BadRequestException(iae.getMessage());
         } catch (DoesNotExistException dnee) {
             throw new NotFoundException(dnee.getMessage());
+        }
+    }
+
+    @POST
+    @Path("docker/push/{repoKey}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response pushDockerTag(@PathParam("repoKey") String repoKey, BintrayPushRequest request) throws IOException {
+        if (!BintrayRestHelper.isPushToBintrayAllowed()) {
+            throw new AuthorizationRestException();
+        }
+
+        if (StringUtils.isBlank(request.dockerRepository) || StringUtils.isBlank(request.dockerTagName)) {
+            throw new BadRequestException("You must provide dockerRepository and dockerTagName");
+        }
+
+        if (StringUtils.isBlank(request.bintraySubject) || StringUtils.isBlank(request.bintrayRepo)) {
+            throw new BadRequestException("You must provide bintraySubject and bintrayRepo");
+        }
+
+        try {
+            DockerAddon dockerAddon = addonsManager.addonByType(DockerAddon.class);
+            dockerAddon.pushTagToBintray(repoKey, request);
+            return request.async ?
+                    Response.status(HttpStatus.SC_ACCEPTED).entity("Docker tag pushing to Bintray accepted.").build()
+                    : Response.ok("Docker tag successfully pushed to Bintray").build();
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException(e.getMessage());
         }
     }
 }

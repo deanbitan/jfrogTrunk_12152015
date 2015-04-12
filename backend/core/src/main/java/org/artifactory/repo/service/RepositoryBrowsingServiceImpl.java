@@ -276,14 +276,14 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             }
         }
         if (includeRemoteResources) {
-            listRemoteBrowsableChildren(children, repo, relativePath, pathExistsInCache);
+            listRemoteBrowsableChildren(children, repo, relativePath, pathExistsInCache,updateRootNodesFilterFlag, rootNodesFilterResult);
         }
         Collections.sort(children);
         return children;
     }
 
     private void listRemoteBrowsableChildren(List<BaseBrowsableItem> children, RemoteRepo repo, String relativePath,
-            boolean pathExistsInCache) {
+            boolean pathExistsInCache,boolean updateRootNodesFilterFlag, RootNodesFilterResult rootNodesFilterResult) {
         RepoPath repoPath = repo.getRepoPath(relativePath);
         List<RemoteItem> remoteItems = repo.listRemoteResources(relativePath);
         // probably remote not found - return 404 only if current folder doesn't exist in the cache
@@ -311,6 +311,12 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 }
                 children.add(browsableItem);
             }
+            else if (updateRootNodesFilterFlag && !authService.canRead(cacheRepoPath) ){
+                rootNodesFilterResult.setAllItemNodesCanRead(false);
+            }
+        }
+        if (updateRootNodesFilterFlag && !children.isEmpty()){
+            rootNodesFilterResult.setAllItemNodesCanRead(true);
         }
     }
 
@@ -402,8 +408,8 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             boolean updateRootNodesFilterFlag, RootNodesFilterResult rootNodesFilterResult,
             List<BaseBrowsableItem> candidateChildren, List<VirtualRepo> searchableRepos,
             Multimap<String, VirtualRepo> pathToVirtualRepos) {
+        StringBuilder canReadReposFlags = new StringBuilder();
         if (updateRootNodesFilterFlag) {
-            boolean  atleastOneNodeCanRead = false;
             for (VirtualRepo repo : searchableRepos) {
                 RootNodesFilterResult localBrowsableItemAccept = new RootNodesFilterResult();
                 RootNodesFilterResult remoteBrowsableItemAccept = new RootNodesFilterResult();
@@ -411,12 +417,9 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                         updateRootNodesFilterFlag,localBrowsableItemAccept);
                 addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos,
                         updateRootNodesFilterFlag,remoteBrowsableItemAccept);
-                if (hasAtLeastOneItemWithReadPermission(localBrowsableItemAccept, remoteBrowsableItemAccept,
-                        candidateChildren)) {
-                    atleastOneNodeCanRead = true;
-                }
+                updatefolderCanRead(canReadReposFlags, localBrowsableItemAccept, remoteBrowsableItemAccept);
             }
-            if (!atleastOneNodeCanRead){
+            if (canReadReposFlags.toString().indexOf("false") != -1 && candidateChildren.isEmpty() ){
                 rootNodesFilterResult.setAllItemNodesCanRead(false);
             }
         }else {
@@ -431,10 +434,25 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         }
     }
 
+    /**
+     * update repo folder can read
+     * @param canReadReposFlags - update true / false flag for each repo that can or can not read
+     * @param localBrowsableItemAccept - hold can read flag for local
+     * @param remoteBrowsableItemAccept - hold can read flag for remote
+     */
+    private void updatefolderCanRead(StringBuilder canReadReposFlags, RootNodesFilterResult localBrowsableItemAccept,
+            RootNodesFilterResult remoteBrowsableItemAccept) {
+        if (hasAtLeastOneItemWithReadPermission(localBrowsableItemAccept, remoteBrowsableItemAccept)) {
+            canReadReposFlags.append("true");
+        }
+        else{
+            canReadReposFlags.append("false");
+        }
+    }
+
     private boolean hasAtLeastOneItemWithReadPermission(RootNodesFilterResult localBrowsableItemAccept,
-            RootNodesFilterResult remoteBrowsableItemAccept,List<BaseBrowsableItem> candidateChildren) {
-        return (localBrowsableItemAccept.isAllItemNodesCanRead() || remoteBrowsableItemAccept.isAllItemNodesCanRead())
-                && !candidateChildren.isEmpty();
+            RootNodesFilterResult remoteBrowsableItemAccept) {
+        return (localBrowsableItemAccept.isAllItemNodesCanRead() && remoteBrowsableItemAccept.isAllItemNodesCanRead());
     }
 
     private void addVirtualBrowsableItemsFromLocal(BrowsableItemCriteria criteria, VirtualRepo repo,

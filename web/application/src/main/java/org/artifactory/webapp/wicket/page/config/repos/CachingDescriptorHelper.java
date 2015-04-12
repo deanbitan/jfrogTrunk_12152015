@@ -78,6 +78,7 @@ public class CachingDescriptorHelper implements Serializable {
         MutableCentralConfigDescriptor configDescriptor = getSavedMutableDescriptor();
         configDescriptor.setLocalRepositoriesMap(modelMutableDescriptor.getLocalRepositoriesMap());
         configDescriptor.setLocalReplications(modelMutableDescriptor.getLocalReplications());
+        configDescriptor.setBackups(modelMutableDescriptor.getBackups());
         saveDescriptor(configDescriptor);
     }
 
@@ -85,6 +86,7 @@ public class CachingDescriptorHelper implements Serializable {
         MutableCentralConfigDescriptor configDescriptor = getSavedMutableDescriptor();
         configDescriptor.setRemoteRepositoriesMap(modelMutableDescriptor.getRemoteRepositoriesMap());
         configDescriptor.setRemoteReplications(modelMutableDescriptor.getRemoteReplications());
+        configDescriptor.setBackups(modelMutableDescriptor.getBackups());
         saveDescriptor(configDescriptor);
     }
 

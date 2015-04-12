@@ -98,7 +98,6 @@ public interface RestAddon extends Addon {
     /**
      * @deprecated use {@link RestAddon#replicate(org.artifactory.repo.RepoPath, org.artifactory.api.rest.replication.ReplicationRequest)} instead
      */
-    @Deprecated
     Response download(String path, DownloadResource.Content content, int mark,
             HttpServletResponse response) throws Exception;
 

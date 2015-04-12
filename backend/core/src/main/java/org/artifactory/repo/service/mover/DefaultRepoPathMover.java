@@ -58,8 +58,7 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         // See org.artifactory.repo.service.mover.MoverConfig,
         // copy(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, ...)
         // move(Set<RepoPath> pathsToCopy, String targetLocalRepoKey, ...)
-        if(unixStyleBehavior) {
-
+        if (unixStyleBehavior) {
             // if the target is a directory and it exists we move/copy the source UNDER the target directory (ie, we
             // don't replace it - this is the default unix filesystem behavior).
             VfsItem targetFsItem = targetRrp.getRepo().getMutableFsItem(targetRrp.getRepoPath());
@@ -69,7 +68,6 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
                         InternalRepoPathFactory.create(targetRrp.getRepoPath().getRepoKey(), adjustedPath));
             }
         }
-
         // ok start moving
         moveCopyRecursive(sourceItem, targetRrp);
 
@@ -89,7 +87,6 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         if (errorsOrWarningsOccurredAndFailFast()) {
             return;
         }
-
         if (source.isFolder()) {
             handleDir((VfsFolder) source, targetRrp);
         } else {
@@ -141,11 +138,8 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         } else if (!dryRun && copy && targetRepo.isPathPatternValid(targetRepoPath, path)) {
             storageInterceptors.afterCopy(source, targetFolder, status, properties);
         }
-        //If not containing any children and items have been moved (children have actually been moved)
-        if (!dryRun && targetFolder != null && !targetFolder.getRepoPath().isRoot() &&
-                !targetFolder.hasChildren() && children.size() != 0) {
-            // target folder is empty remove it immediately
-            deleteAndReplicateEvent(targetFolder);
+        if (shouldRemoveTargetFolder(targetFolder, children.size())) {
+            deleteAndReplicateEvent(targetFolder); // target folder is empty remove it immediately
         }
     }
 
@@ -166,11 +160,10 @@ class DefaultRepoPathMover extends BaseRepoPathMover {
         if (targetFolder == null) {
             log.debug("Creating target folder {}", targetRepoPath);
             targetFolder = targetRepo.createOrGetFolder(targetRepoPath);
-            status.itemMoved();
         } else {
             log.debug("Target folder {} already exist", targetRepoPath);
         }
-
+        status.folderMoved();
         targetFolder.fillInfo(sourceFolder.getInfo());
 
         // copy relevant metadata from source to target

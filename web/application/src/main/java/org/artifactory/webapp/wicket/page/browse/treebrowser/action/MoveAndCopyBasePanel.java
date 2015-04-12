@@ -151,8 +151,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                         sourceRepoPath.getRepoKey());
                 if (enableCustomTargetPathCheckBox.getModelObject() && sourceRepoDescriptor != null) {
                     newChoices.add(sourceRepoDescriptor);
-                }
-                else {
+                } else {
                     newChoices.remove(repoService.localRepoDescriptorByKey(sourceRepoPath.getRepoKey()));
                 }
                 Collections.sort(newChoices, new LocalRepoAlphaComparator());
@@ -173,12 +172,12 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         form.add(enableCustomTargetPathCheckBox);
 
         form.add(new HelpBubble("enableCustomTargetPathCheckBox.help",
-                new ResourceModel("enableCustomTargetPathCheckBox"+ getOperationType().opName + ".help"))
+                new ResourceModel("enableCustomTargetPathCheckBox" + getOperationType().opName + ".help"))
                 .setVisible(!isSearchResultsOperation()));
 
         targetPathPanel = new MoveAndCopyPathPanel("targetPathPanel", new PropertyModel<>(this, "targetPath"),
                 getOperationType());
-        if(sourceRepoPath != null) {
+        if (sourceRepoPath != null) {
             setTargetPath(sourceRepoPath.getPath()); //Only for copy/move path panel
         }
         targetPathPanel.setOutputMarkupId(true);
@@ -216,10 +215,9 @@ public abstract class MoveAndCopyBasePanel extends Panel {
      * @return if the move/copy action should suppress layout translation
      */
     protected Boolean getSuppressLayout() {
-        if(enableCustomTargetPathCheckBox.getModelObject()) {
+        if (enableCustomTargetPathCheckBox.getModelObject()) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -248,7 +246,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
      */
     protected List<LocalRepoDescriptor> getDeployableLocalRepoDescriptors() {
         List deployableRepoDescriptors = repoService.getDeployableRepoDescriptors();
-        if(sourceRepoPath != null) {
+        if (sourceRepoPath != null) {
             deployableRepoDescriptors.remove(repoService.localRepoDescriptorByKey(sourceRepoPath.getRepoKey()));
         }
         return deployableRepoDescriptors;
@@ -274,7 +272,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         return new TitledAjaxSubmitLink(wicketId, "Dry Run", form) {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
-                if(!isSearchResultsOperation()) {
+                if (!isSearchResultsOperation()) {
                     if (!sourceAndTargetAreValid()) {
                         AjaxUtils.refreshFeedback(target);
                         return;
@@ -324,7 +322,7 @@ public abstract class MoveAndCopyBasePanel extends Panel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
 
                 //Validation of source path is not needed for move/copy results
-                if(!isSearchResultsOperation()) {
+                if (!isSearchResultsOperation()) {
                     if (!sourceAndTargetAreValid()) {
                         AjaxUtils.refreshFeedback(target);
                         return;
@@ -341,11 +339,10 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                 String multipleFailsMessage = "%s %s have been produced during the " + opName.toLowerCase()
                         + ". Please " + "review the " + logs + " for further information.";
                 if (!status.isError() && !status.hasWarnings()) {
-                    String copyMoveSuccessMessage = "Successfully " + opText + " %s to '" + getTargetRepoPath() +"'.";
-                    if(isSearchResultsOperation()) {
+                    String copyMoveSuccessMessage = "Successfully " + opText + " %s to '" + getTargetRepoPath() + "'.";
+                    if (isSearchResultsOperation()) {
                         Session.get().info(String.format(copyMoveSuccessMessage, "search results"));
-                    }
-                    else {
+                    } else {
                         Session.get().info(String.format(copyMoveSuccessMessage, "'" + sourceRepoPath + "'"));
                     }
                     AjaxUtils.refreshFeedback(target);
@@ -360,11 +357,10 @@ public abstract class MoveAndCopyBasePanel extends Panel {
                     }
                     if (status.isError()) {
                         List<StatusEntry> errors = status.getErrors();
-                        if(errors.size() > 1) {
+                        if (errors.size() > 1) {
                             error(new UnescapedFeedbackMessage(String.format(multipleFailsMessage, errors.size(),
                                     "errors")));
-                        }
-                        else {
+                        } else {
                             String message = status.getStatusMsg();
                             Throwable exception = status.getException();
                             if (exception != null) {
@@ -385,11 +381,14 @@ public abstract class MoveAndCopyBasePanel extends Panel {
 
             @Override
             protected IAjaxCallDecorator getAjaxCallDecorator() {
-                if(getOperationType() == OperationType.MOVE_OPERATION //Confirmation dialog only for move panels
+                if (getOperationType() == OperationType.MOVE_OPERATION //Confirmation dialog only for move panels
                         || getOperationType() == OperationType.MOVE_RESULTS_OPERATION) {
 
                     // add confirmation dialog when clicked
-                    String message = String.format("Are you sure you wish to move '%s'?", sourceRepoPath);
+                    String confirmationMessage = "Are you sure you wish to move %s?";
+                    String message = isSearchResultsOperation() ?
+                            String.format(confirmationMessage, "all search results")
+                            : String.format(confirmationMessage, "'" + sourceRepoPath + "'");
                     return new ConfirmationAjaxCallDecorator(message);
                 } else {
                     return null;
@@ -415,15 +414,15 @@ public abstract class MoveAndCopyBasePanel extends Panel {
         return pathsToReturn;
     }
 
-    protected boolean sourceAndTargetAreValid(){
-        if(getSelectedTargetRepository().equalsIgnoreCase(sourceRepoPath.getRepoKey()) && !isTargetPathSpecified()) {
+    protected boolean sourceAndTargetAreValid() {
+        if (getSelectedTargetRepository().equalsIgnoreCase(sourceRepoPath.getRepoKey()) && !isTargetPathSpecified()) {
             error("Target path must be specified if source and target repositories are the same");
             return false;
         }
         return true;
     }
 
-    protected enum OperationType{
+    protected enum OperationType {
         COPY_OPERATION("Copy", "Copied"),
         COPY_RESULTS_OPERATION("Copy", "copied"),
         MOVE_OPERATION("Move", "Moved"),
@@ -440,8 +439,8 @@ public abstract class MoveAndCopyBasePanel extends Panel {
             return this.opName;
         }
 
-        protected  String getOpText() {
-            return  this.opText;
+        protected String getOpText() {
+            return this.opText;
         }
     }
 }

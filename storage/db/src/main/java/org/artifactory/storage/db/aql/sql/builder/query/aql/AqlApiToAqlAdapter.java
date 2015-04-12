@@ -55,10 +55,10 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
                 handleOr((AqlBase.OrClause) element, context);
             }
             if (element instanceof AqlBase.FreezeJoin) {
-                handleFreezeJoin((AqlBase.FreezeJoin) element, context);
+                handleMsp((AqlBase.FreezeJoin) element, context);
             }
             if (element instanceof AqlBase.PropertyResultFilterClause) {
-                handleFlat((AqlBase.PropertyResultFilterClause) element, context);
+                handleResultFilter((AqlBase.PropertyResultFilterClause) element, context);
             }
             if (element instanceof AqlBase.PropertyCriteriaClause) {
                 handlePropertyCriteria((AqlBase.PropertyCriteriaClause) element, context);
@@ -105,7 +105,7 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         addCriteria(context, criteria);
     }
 
-    private void handleFreezeJoin(AqlBase.FreezeJoin freezeJoin, AdapterContext context) {
+    private void handleMsp(AqlBase.FreezeJoin freezeJoin, AdapterContext context) {
         if (freezeJoin.isEmpty()) {
             return;
         }
@@ -113,7 +113,7 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         addOperatorToAqlQueryElements(context);
         // Push Join element that contains table index, this index will be used by in all the property tables that are
         // being used inside this function
-        context.push(new JoinAqlElement(context.provideIndex()));
+        context.push(new MspAqlElement(context.provideIndex()));
         context.addAqlQueryElements(open);
         // Recursively visit the internal elements
         visitElements(freezeJoin, context);
@@ -122,7 +122,7 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         context.pop();
     }
 
-    private void handleFlat(AqlBase.PropertyResultFilterClause flat, AdapterContext context) {
+    private void handleResultFilter(AqlBase.PropertyResultFilterClause flat, AdapterContext context) {
         if (flat.isEmpty()) {
             return;
         }
@@ -130,7 +130,7 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         addOperatorToAqlQueryElements(context);
         // Push Join element that contains table index, this index will be used by in all the property tables that are
         // being used inside this function
-        context.push(new FlatAqlElement());
+        context.push(new ResultFilterAqlElement());
         context.addAqlQueryElements(open);
         // Recursively visit the internal elements
         visitElements(flat, context);

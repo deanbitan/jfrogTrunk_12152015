@@ -11,8 +11,6 @@ import org.artifactory.converters.VersionProviderImpl;
 import org.artifactory.util.ResourceUtils;
 import org.artifactory.version.ArtifactoryVersion;
 import org.joda.time.DateTimeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 
 import java.io.File;
@@ -25,11 +23,11 @@ import static org.artifactory.common.ArtifactoryHome.*;
 import static org.artifactory.common.ConstantValues.*;
 
 /**
+ * Helper static methods for the ConverterManagerTest.
+ *
  * @author Gidi Shabat
- *         Helper static methods for the ConverterManagerTest
  */
 public class ConvertersManagerTestHelper {
-    private static final Logger log = LoggerFactory.getLogger(ConvertersManagerTestHelper.class);
     public static final String home = "target/converterManagerTest/";
     public static final String localHomeTestFile = home + ".history/localHome.test";
     public static final String clusterHomeTestFile = home + ".history/localCluster.test";

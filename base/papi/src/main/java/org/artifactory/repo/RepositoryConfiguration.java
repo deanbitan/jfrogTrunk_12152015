@@ -45,6 +45,8 @@ public interface RepositoryConfiguration {
 
     boolean isEnableNpmSupport();
 
+    boolean isEnableBowerSupport();
+
     boolean isEnableDebianSupport();
 
     boolean isDebianTrivialLayout();

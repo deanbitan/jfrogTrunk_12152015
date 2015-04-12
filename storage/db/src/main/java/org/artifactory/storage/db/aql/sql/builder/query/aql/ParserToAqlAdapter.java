@@ -34,7 +34,7 @@ import static org.artifactory.aql.model.AqlFieldEnum.propertyValue;
  * @author Gidi Shabat
  */
 public class ParserToAqlAdapter extends AqlAdapter {
-    private final FlatAqlElement resultField = new FlatAqlElement();
+    private final ResultFilterAqlElement resultFilter = new ResultFilterAqlElement();
 
     /**
      * Converts the parser results into AqlQuery
@@ -119,6 +119,7 @@ public class ParserToAqlAdapter extends AqlAdapter {
         boolean first = false;
         // Prepare the context for include property filter do not worry about empty parenthesis because the AqlOptimizer will clean it
         context.push(or);
+        context.push(resultFilter);
         context.addAqlQueryElements(open);
         while (!(context.getElement().getFirst() instanceof SectionEndElement)) {
             // Resolve the field sub domains
@@ -136,6 +137,7 @@ public class ParserToAqlAdapter extends AqlAdapter {
             }
         }
         context.addAqlQueryElements(close);
+        context.pop();
         context.pop();
     }
 
@@ -182,14 +184,12 @@ public class ParserToAqlAdapter extends AqlAdapter {
         context.addField(new DomainSensitiveField(AqlFieldEnum.propertyKey, subDomains));
         context.addField(new DomainSensitiveField(AqlFieldEnum.propertyValue, subDomains));
         String value = context.getElement().getSecond();
-        AqlComparatorEnum comparatorEnum = AqlComparatorEnum.matches;
+        AqlComparatorEnum comparatorEnum = AqlComparatorEnum.equals;
         // Only if the user has specify property key to filter then add the filter else just add the fields.
         if (!"*".equals(value)) {
-            context.push(resultField);
             Criteria criteria = createSimpleCriteria(subDomains, AqlFieldEnum.propertyKey, value, comparatorEnum,
                     context);
             addCriteria(context, criteria);
-            context.pop();
         }
         context.decrementIndex(1);
     }
@@ -245,7 +245,7 @@ public class ParserToAqlAdapter extends AqlAdapter {
             // In case of freeze join function generate new alias index for the properties tables
             // All the criterias that uses property table inside the function will use the same table.
             // Push freezeJoin to the operators queue
-            context.push(new JoinAqlElement(context.provideIndex()));
+            context.push(new MspAqlElement(context.provideIndex()));
         } else if (AqlOperatorEnum.and == function) {
             // Push or and the operators queue
             context.push(and);
@@ -254,7 +254,7 @@ public class ParserToAqlAdapter extends AqlAdapter {
             context.push(or);
         } else if (AqlOperatorEnum.resultFilter == function) {
             // Push or to the operators queue
-            context.push(resultField);
+            context.push(resultFilter);
         }
     }
 

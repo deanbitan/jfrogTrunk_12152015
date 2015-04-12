@@ -134,8 +134,7 @@ public class UploadServiceImpl implements UploadService {
         return response.isError();
     }
 
-    private void validateRequestAndUpload(ArtifactoryRequest request, ArtifactoryResponse response)
-            throws IOException {
+    private void validateRequestAndUpload(ArtifactoryRequest request, ArtifactoryResponse response) throws IOException {
         if (isRequestedRepoKeyInvalid(request)) {
             response.sendError(SC_NOT_FOUND, "No target local repository specified in deploy request.", log);
             return;

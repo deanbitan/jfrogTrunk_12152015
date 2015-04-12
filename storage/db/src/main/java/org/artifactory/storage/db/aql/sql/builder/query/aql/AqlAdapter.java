@@ -129,12 +129,12 @@ public abstract class AqlAdapter {
         AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(field.getFieldEnum());
         SqlTableEnum tableEnum = extension.table;
         if (SqlTableEnum.node_props == tableEnum) {
-            FlatAqlElement resultFieldAqlElement = (FlatAqlElement) getResultFilterOperator(context);
+            ResultFilterAqlElement resultFieldAqlElement = (ResultFilterAqlElement) getResultFilterOperator(context);
             if (resultFieldAqlElement != null) {
                 SqlTable table = tablesLinksMap.get(SqlTableEnum.node_props).getTable();
                 return new Pair<>(table, table);
             }
-            JoinAqlElement propertyAqlElement = (JoinAqlElement) getJoinOperator(context);
+            MspAqlElement propertyAqlElement = (MspAqlElement) getMspOperator(context);
             if (propertyAqlElement == null) {
                 SqlTable table = new SqlTable(SqlTableEnum.node_props, context.provideIndex());
                 return new Pair<>(table, table);
@@ -156,12 +156,12 @@ public abstract class AqlAdapter {
      * @return
      */
     public static Pair<SqlTable, SqlTable> resolveTableForPropertyCriteria(AdapterContext context) {
-        FlatAqlElement flatAqlElement = (FlatAqlElement) getResultFilterOperator(context);
-        if (flatAqlElement != null) {
+        ResultFilterAqlElement resultFilterElement = (ResultFilterAqlElement) getResultFilterOperator(context);
+        if (resultFilterElement != null) {
             SqlTable table = tablesLinksMap.get(SqlTableEnum.node_props).getTable();
             return new Pair<>(table, table);
         }
-        JoinAqlElement propertyAqlElement = (JoinAqlElement) getJoinOperator(context);
+        MspAqlElement propertyAqlElement = (MspAqlElement) getMspOperator(context);
         if (propertyAqlElement == null) {
             SqlTable table = new SqlTable(SqlTableEnum.node_props, context.provideIndex());
             return new Pair<>(table, table);
@@ -187,16 +187,16 @@ public abstract class AqlAdapter {
      * @param context
      * @return
      */
-    protected static AqlQueryElement getJoinOperator(AdapterContext context) {
+    protected static AqlQueryElement getMspOperator(AdapterContext context) {
         if (context.getFunctions().isEmpty()) {
             return null;
         }
         AqlQueryElement peek = context.peek();
-        if (peek instanceof JoinAqlElement) {
+        if (peek instanceof MspAqlElement) {
             return peek;
         }
         AqlQueryElement temp = context.pop();
-        peek = getJoinOperator(context);
+        peek = getMspOperator(context);
         context.push(temp);
         return peek;
     }
@@ -212,7 +212,7 @@ public abstract class AqlAdapter {
             return null;
         }
         AqlQueryElement peek = context.peek();
-        if (peek instanceof FlatAqlElement) {
+        if (peek instanceof ResultFilterAqlElement) {
             return peek;
         }
         AqlQueryElement temp = context.pop();

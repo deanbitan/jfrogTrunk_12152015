@@ -1,7 +1,7 @@
 package org.artifactory.storage.db.binstore.itest.service;
 
 import org.artifactory.binstore.BinaryInfo;
-import org.artifactory.storage.db.binstore.service.FileBinaryProvider;
+import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.test.TestUtils;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.AfterClass;

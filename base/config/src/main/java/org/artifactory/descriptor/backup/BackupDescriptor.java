@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @XmlType(name = "BackupType", propOrder = {"key", "enabled", "dir", "cronExp", "retentionPeriodHours", "createArchive",
-        "excludedRepositories", "sendMailOnError", "excludeBuilds"},
+        "excludedRepositories", "sendMailOnError", "excludeBuilds", "excludeNewRepositories"},
         namespace = Descriptor.NS)
 public class BackupDescriptor implements TaskDescriptor {
 
@@ -71,6 +71,9 @@ public class BackupDescriptor implements TaskDescriptor {
 
     @XmlElement(defaultValue = "false")
     private boolean excludeBuilds = false;
+
+    @XmlElement(defaultValue = "false")
+    private boolean excludeNewRepositories = false;
 
     public String getKey() {
         return key;
@@ -151,6 +154,10 @@ public class BackupDescriptor implements TaskDescriptor {
         return excludedRepositories.remove(realRepo);
     }
 
+    public boolean addExcludedRepository(RealRepoDescriptor realRepo) {
+        return excludeNewRepositories && excludedRepositories.add(realRepo);
+    }
+
     public boolean isIncremental() {
         return (retentionPeriodHours <= 0) && !isCreateArchive();
     }
@@ -169,6 +176,14 @@ public class BackupDescriptor implements TaskDescriptor {
 
     public void setExcludeBuilds(boolean excludeBuilds) {
         this.excludeBuilds = excludeBuilds;
+    }
+
+    public boolean isExcludeNewRepositories() {
+        return excludeNewRepositories;
+    }
+
+    public void setExcludeNewRepositories(boolean excludeNewRepositories) {
+        this.excludeNewRepositories = excludeNewRepositories;
     }
 
     @Override

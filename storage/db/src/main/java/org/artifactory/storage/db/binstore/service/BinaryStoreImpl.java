@@ -24,6 +24,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.FileStoreAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.storage.BinariesInfo;
@@ -36,12 +38,18 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
+import org.artifactory.storage.binstore.service.BinaryInfoImpl;
+import org.artifactory.storage.binstore.service.BinaryProviderBase;
+import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
+import org.artifactory.storage.binstore.service.providers.DoubleFileBinaryProviderImpl;
+import org.artifactory.storage.binstore.service.providers.ExternalWrapperBinaryProviderImpl;
+import org.artifactory.storage.binstore.service.providers.FileBinaryProviderImpl;
+import org.artifactory.storage.binstore.service.providers.FileCacheBinaryProviderImpl;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.binstore.dao.BinariesDao;
 import org.artifactory.storage.db.binstore.entity.BinaryData;
-import org.artifactory.storage.db.binstore.model.BinaryInfoImpl;
 import org.artifactory.storage.db.util.JdbcHelper;
 import org.artifactory.storage.db.util.blob.BlobWrapperFactory;
 import org.artifactory.storage.fs.service.ArchiveEntriesService;
@@ -56,6 +64,7 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -136,7 +145,18 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                 }
                 binaryProviders.add(new BlobBinaryProviderImpl(jdbcHelper, dbService.getDatabaseType(), blobsFactory));
                 break;
-
+            case S3: {
+                // create a chain of binary providers
+                // FileCacheBinaryProviderImplBinaryProvider
+                // EventuallyPersistedBinaryProvider
+                // RetryBinaryProvider
+                // S3BinaryProvider
+                AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+                FileStoreAddon fileStoreAddon = addonsManager.addonByType(FileStoreAddon.class);
+                List<BinaryProviderBase> chain = fileStoreAddon.getS3JClouds(storageProperties);
+                binaryProviders.addAll(chain);
+                break;
+            }
             default:
                 throw new IllegalStateException("Binary provider name " + binaryProviderName + " not supported!");
         }
@@ -149,6 +169,25 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                     new ExternalFileBinaryProviderImpl(new File(storageProperties.getBinaryProviderExternalDir())));
         }
         setBinaryProvidersContext(binaryProviders);
+    }
+
+    public BinaryProviderBase binaryProviderByName(String className) {
+        try {
+            AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+            if (addonsManager.isHaLicensed()) {
+                Class<?> binaryProviderClass = Class.forName(className);
+                Constructor<?> constructor = binaryProviderClass.getConstructor(StorageProperties.class);
+                BinaryProviderBase binaryProvider = (BinaryProviderBase) constructor.newInstance(storageProperties);
+                return binaryProvider;
+            } else {
+                throw new RuntimeException(
+                        "Can't init binary provider, this binary provider can work only with enterprise license");
+            }
+        } catch (Exception e) {
+            String message = String.format("Fail to create instance of the binary provider : %s", className);
+            log.error(message);
+            throw new RuntimeException(message, e);
+        }
     }
 
     private FileBinaryProvider createFilesystemBinaryProvider() {

@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
-        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport",
+        "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport", "enableBowerSupport",
         "enableDebianSupport", "enablePypiSupport", "enableDockerSupport"},
         namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
@@ -58,6 +58,8 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     private boolean enableGemsSupport;
 
     private boolean enableNpmSupport;
+
+    private boolean enableBowerSupport;
 
     private boolean enableDebianSupport;
 
@@ -144,6 +146,15 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setEnableNpmSupport(boolean enableNpmSupport) {
         this.enableNpmSupport = enableNpmSupport;
+    }
+
+    @Override
+    public boolean isEnableBowerSupport() {
+        return enableBowerSupport;
+    }
+
+    public void setEnableBowerSupport(boolean enableBowerSupport) {
+        this.enableBowerSupport = enableBowerSupport;
     }
 
     @Override

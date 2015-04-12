@@ -24,6 +24,7 @@ import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.BowerWebAddon;
 import org.artifactory.addon.wicket.DockerWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
@@ -204,6 +205,13 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
             tabs.add(npmInfoTab);
         }
 
+        if (getRepo().isEnableBowerSupport() && isBowerFile()) {
+            AddonsManager addonsProvider = getAddonsProvider();
+            BowerWebAddon bowerWebAddon = addonsProvider.addonByType(BowerWebAddon.class);
+            ITab bowerInfoTab = bowerWebAddon.getBowerInfoTab("Bower Info", getFileInfo());
+            tabs.add(bowerInfoTab);
+        }
+
         if (getRepo().isEnableDockerSupport() && isDockerJsonFile()) {
             AddonsManager addonsProvider = getAddonsProvider();
             DockerWebAddon dockerWebAddon = addonsProvider.addonByType(DockerWebAddon.class);
@@ -252,7 +260,7 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
             zapAction.setEnabled(false);
         }
 
-        if (!NamingUtils.isViewable((getFileInfo().getName()))) {
+        if (!NamingUtils.isViewable(getFileInfo().getName())) {
             viewAction.setEnabled(false);
         }
 
@@ -282,11 +290,11 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isPomFile() {
-        return MavenNaming.isPom((getFileInfo().getName()));
+        return MavenNaming.isPom(getFileInfo().getName());
     }
 
     private boolean isJnlpFile() {
-        MimeType mimeType = NamingUtils.getMimeType((getFileInfo().getName()));
+        MimeType mimeType = NamingUtils.getMimeType(getFileInfo().getName());
         return "application/x-java-jnlp-file".equalsIgnoreCase(mimeType.getType());
     }
 
@@ -295,15 +303,19 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
     }
 
     private boolean isNuPkgFile() {
-        return NamingUtils.isNuPkgFile((getFileInfo().getName()));
+        return NamingUtils.isNuPkgFile(getFileInfo().getName());
     }
 
     private boolean isGemFile() {
-        return NamingUtils.isGemFile((getFileInfo().getName()));
+        return NamingUtils.isGemFile(getFileInfo().getName());
     }
 
     private boolean isNpmFile() {
         return NamingUtils.isNpmFile(getFileInfo().getName());
+    }
+
+    private boolean isBowerFile() {
+        return getAddonsProvider().addonByType(BowerWebAddon.class).isBowerFile(getFileInfo().getName());
     }
 
     private boolean isPypiFile() {

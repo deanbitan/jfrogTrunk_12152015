@@ -105,6 +105,7 @@ import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
+import org.artifactory.descriptor.repo.BowerConfiguration;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.NuGetConfiguration;
@@ -225,7 +226,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
         P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
-        PypiWebAddon, DockerWebAddon {
+        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     private static String buildLatestVersionLabel(VersionHolder latestVersion) {
@@ -1282,6 +1283,67 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public boolean isPypiFile(FileInfo fileInfo) {
         return false;
+    }
+
+    @Override
+    public void createAndAddRepoConfigBowerSection(Form form, RepoDescriptor repoDescriptor, boolean isCreate) {
+        WebMarkupContainer bowerSection = new WebMarkupContainer("bowerSupportSection");
+        bowerSection.add(new TitledBorderBehavior("fieldset-border", "Bower"));
+        bowerSection.add(new DisabledAddonBehavior(AddonType.BOWER));
+        bowerSection.add(new StyledCheckbox("enableBowerSupport").setTitle("Enable Bower Support").setEnabled(false));
+        bowerSection.add(new SchemaHelpBubble("enableBowerSupport.help"));
+        bowerSection.add(new TitledAjaxSubmitLink("reindexPackages", "ReIndex Packages", form) {
+            @Override
+            protected void onSubmit(AjaxRequestTarget target, Form<?> form) {
+            }
+        }.setEnabled(false));
+
+        Label label = new Label("bowerRepoUrlLabel", "");
+        label.setVisible(false);
+
+        if (repoDescriptor instanceof RemoteRepoDescriptor) {
+            BowerConfiguration bowerConf = new BowerConfiguration();
+            bowerSection.add(new TextField<>("bowerRegistryUrl",
+                    new PropertyModel<String>(bowerConf, "bowerRegistryUrl")).setEnabled(false));
+            bowerSection.add(new SchemaHelpBubble("bowerRegistryUrl.help",
+                    new SchemaHelpModel(bowerConf, "bowerRegistryUrl")));
+        }
+
+        bowerSection.add(label);
+        form.add(bowerSection);
+    }
+
+    @Override
+    public ITab getBowerInfoTab(String tabTitle, FileInfo fileInfo) {
+        return new DisabledAddonTab(Model.of(tabTitle), AddonType.BOWER);
+    }
+
+    @Override
+    public boolean isBowerFile(String filePath) {
+        return false;
+    }
+
+    @Override
+    public void createAndAddVcsConfigSection(Form form, RemoteRepoDescriptor repoDescriptor, boolean isCreate) {
+        WebMarkupContainer vcsSection = new WebMarkupContainer("vcsSupportSection");
+        vcsSection.add(new TitledBorderBehavior("fieldset-border", "Vcs"));
+        vcsSection.add(new DisabledAddonBehavior(AddonType.VCS));
+        vcsSection.add(new StyledCheckbox("enableVcsSupport").setTitle("Enable Vcs Support").setEnabled(false));
+        vcsSection.add(new DisabledAddonHelpBubble("enableVcsSupport.help", VCS));
+
+        DropDownChoice providerDropdown = new DropDownChoice("provider", Model.of(), Collections.emptyList());
+        providerDropdown.setEnabled(false);
+        providerDropdown.add(new DisabledAddonBehavior(AddonType.VCS));
+        vcsSection.add(providerDropdown);
+        vcsSection.add(new DisabledAddonHelpBubble("provider.help", VCS));
+
+        WebMarkupContainer downloadUrlField = new WebMarkupContainer("downloadUrlField");
+        downloadUrlField.setVisible(false);
+        downloadUrlField.add(new TextField("downloadUrl").setEnabled(false).setVisible(false));
+        downloadUrlField.add(new DisabledAddonHelpBubble("downloadUrl.help", VCS).setVisible(false));
+        vcsSection.add(downloadUrlField);
+
+        form.add(vcsSection);
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

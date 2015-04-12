@@ -41,10 +41,11 @@ import static org.easymock.EasyMock.*;
 public class AccessFilterTest {
 
     public void testAuthenticationChallenge() throws IOException, ServletException {
-        ArtifactoryHome.bind(new ArtifactoryHome(new File("./test")));
-        ArtifactoryHome.get().getArtifactoryProperties().setProperty(ConstantValues.locksTimeoutSecs.getPropertyName(),
-                "10");
-         ArtifactoryBasicAuthenticationEntryPoint authenticationEntryPoint = new ArtifactoryBasicAuthenticationEntryPoint();
+        ArtifactoryHome.bind(new ArtifactoryHome(new File("./target/test/testAuthenticationChallenge")));
+        ArtifactoryHome.get().getArtifactoryProperties().setProperty(
+                ConstantValues.locksTimeoutSecs.getPropertyName(), "10");
+        ArtifactoryBasicAuthenticationEntryPoint authenticationEntryPoint =
+                new ArtifactoryBasicAuthenticationEntryPoint();
         HttpServletRequest request = createMock(HttpServletRequest.class);
 
         HttpServletResponse response = createMock(HttpServletResponse.class);
@@ -56,7 +57,8 @@ public class AccessFilterTest {
         expect(response.getWriter()).andReturn(printWriter);
 
         replay(request, response, printWriter);
-        authenticationEntryPoint.commence(request, response, new InsufficientAuthenticationException("Authentication required"));
+        authenticationEntryPoint.commence(request, response,
+                new InsufficientAuthenticationException("Authentication required"));
         verify(response);
     }
 }

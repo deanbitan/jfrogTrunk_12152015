@@ -68,6 +68,17 @@ public class StoragePropertiesTest {
         assertEquals(sp.getBinaryProviderCacheMaxSize(), 1073741824L); // 1g
     }
 
+    public void valuesWithSpaces() throws IOException {
+        StorageProperties sp = new StorageProperties(ResourceUtils.getResourceAsFile("/storage/trim.properties"));
+
+        assertEquals(sp.getDbType(), DbType.DERBY);
+        assertEquals(sp.getConnectionUrl(), "jdbc:to:removespaces");
+        assertEquals(sp.getDriverClass(), "some.driver");
+        assertEquals(sp.getProperty("binary.provider.filesystem.dir", ""), "a/b/c");
+        assertEquals(sp.getProperty("empty", ""), "");
+        assertEquals(sp.getProperty("emptySpaces", ""), "");
+    }
+
     public void isDerby() throws IOException {
         StorageProperties sp = new StorageProperties(
                 ResourceUtils.getResourceAsFile("/storage/minimalstorage.properties"));
