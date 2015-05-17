@@ -64,7 +64,7 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
             statusHolder.status("Skipping build item relocation: no target repository selected.", log);
         } else {
             assertRepoExists(targetRepo);
-            itemsToMove = collectItems(build, promotion, true, statusHolder);
+            itemsToMove = collectItems(build, promotion, statusHolder);
 
             promoteBuildItems(promotion, statusHolder, itemsToMove);
         }
@@ -107,7 +107,7 @@ public class BuildPromotionHelper extends BaseBuildPromoter {
             }
         } else {
             //In case the target repository is not defined, collect the items form the source.
-            modifiedItems = collectItems(build, promotion, true, statusHolder);
+            modifiedItems = collectItems(build, promotion, statusHolder);
         }
         return modifiedItems;
     }

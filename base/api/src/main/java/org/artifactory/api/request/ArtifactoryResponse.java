@@ -40,9 +40,11 @@ public interface ArtifactoryResponse {
 
     void setMd5(String md5);
 
-    void setContentLength(long length);
+    void setRangeSupport(String bytes);
 
     long getContentLength();
+
+    void setContentLength(long length);
 
     void setContentType(String contentType);
 

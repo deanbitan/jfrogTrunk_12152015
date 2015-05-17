@@ -47,11 +47,12 @@ public class ConvertersManagerTestHelper {
         convertersManager.getClusterHomeConverters().add(new MockHomeConverter(clusterHomeTestFile));
         convertersManager.convertHomes();
         MockArtifactoryContext artifactoryContext = new MockArtifactoryContext(dbVersion, 1, convertersManager,
-                versionProvider);
+                versionProvider, true);
         ArtifactoryContextThreadBinder.bind(artifactoryContext);
         ArtifactoryHome.bind(artifactoryHome);
         ((VersionProviderImpl) artifactoryContext.getVersionProvider()).loadDbVersion();
         MockHomeConverter artifactoryConverter = new MockHomeConverter(dbHomeTestFile);
+        convertersManager.beforeInits();
         convertersManager.serviceConvert(artifactoryConverter);
         convertersManager.afterAllInits();
         convertersManager.afterContextReady();

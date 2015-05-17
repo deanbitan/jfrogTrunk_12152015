@@ -24,4 +24,6 @@ package org.artifactory.api.rest.constant;
 public interface ReplicationsRestConstants {
     String ROOT = "replications";
     String MT_REPLICATION_CONFIG_REQUEST = RestConstants.MT_ARTIFACTORY_APP + ROOT + ".ReplicationConfigRequest+json";
+    String MT_MULTI_REPLICATION_CONFIG_REQUEST = RestConstants.MT_ARTIFACTORY_APP + ROOT + ".MultipleReplicationConfigRequest+json";
+
 }

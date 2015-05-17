@@ -18,6 +18,8 @@
 
 package org.artifactory.request;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -29,6 +31,7 @@ import org.artifactory.fs.RepoResource;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
+import org.artifactory.request.range.RangeAwareContext;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.ZipEntryResource;
@@ -45,6 +48,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.MT_ITEM_PROPERTIES;
+import static org.artifactory.request.range.ResponseWithRangeSupportHelper.createRangeAwareContext;
 
 /**
  * @author yoavl
@@ -58,26 +62,74 @@ public final class RequestResponseHelper {
         trafficService = service;
     }
 
-    public void sendBodyResponse(ArtifactoryResponse response, RepoResource res, ResourceStreamHandle handle)
-            throws IOException {
-        RepoPath repoPath = res.getRepoPath();
-        //First, update the real length
-        updateResponseActualLength(response, handle);
-        updateResponseFromRepoResource(response, res);
-        AccessLogger.downloaded(repoPath);
-        InputStream inputStream = handle.getInputStream();
-        final long start = System.currentTimeMillis();
+    private static void addDebugLog(long actualLength, long resLenght, RepoPath repoPath) {
         if (log.isDebugEnabled()) {
             log.debug("Sending back body response for '{}'. Original resource size: {}, actual size: {}.",
-                    repoPath, res.getSize(), handle.getSize());
+                    repoPath, resLenght, actualLength);
         }
-        response.sendStream(inputStream);
-
-        fireDownloadTrafficEvent(response, repoPath, handle.getSize(), start);
     }
 
-    public void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content)
+    public void sendBodyResponse(ArtifactoryResponse response, RepoResource res, ResourceStreamHandle handle,
+            InternalRequestContext requestContext) throws IOException {
+        // Try to get range headers
+        String rangesString = tryToGetRangeHeaderInsensitive(HttpHeaders.RANGE, requestContext.getRequest());
+        String ifRangesString = tryToGetRangeHeaderInsensitive(HttpHeaders.IF_RANGE, requestContext.getRequest());
+        // Get mimetype
+        String mimeType = res.getMimeType();
+        InputStream inputStream = handle.getInputStream();
+        // Get Actual file actualLength (Note that it might not be equal to the res.getSize)
+        long actualLength = handle.getSize();
+        AccessLogger.downloaded(res.getRepoPath());
+        addDebugLog(actualLength, res.getSize(), res.getRepoPath());
+        // Ensure valid content length
+        actualLength = actualLength > 0 ? actualLength : res.getSize();
+        // Get artifact last modified date
+        long lastModified = res.getLastModified();
+        // Get artifact sha1
+        String sha1 = res.getInfo().getSha1();
+        // Create range aware data for the response
+        RangeAwareContext context = createRangeAwareContext(inputStream, actualLength, rangesString, ifRangesString,
+                mimeType, lastModified, sha1);
+        // If request range not satisfiable update response status end return
+        if (context.getStatus() == HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+            response.setHeader(HttpHeaders.CONTENT_RANGE, context.getContentRange());
+            response.setStatus(context.getStatus());
+            return;
+        }
+        // Update response with repo resource info
+        updateResponseFromRepoResource(response, res, context.getEtagExtension());
+        // update content length with range aware content length
+        response.setContentLength(context.getContentLength());
+        // update content type with range aware content type
+        response.setContentType(context.getContentType());
+        // update headers with range aware headers
+        if (context.getContentRange() != null) {
+            response.setHeader(HttpHeaders.CONTENT_RANGE, context.getContentRange());
+        }
+        // Set response status
+        if (context.getStatus() > 0) {
+            response.setStatus(context.getStatus());
+        }
+        // Get range aware input stream
+        inputStream = context.getInputStream();
+        // Get current time for logs
+        long start = System.currentTimeMillis();
+        // Send range aware input stream
+        response.sendStream(inputStream);
+        fireDownloadTrafficEvent(response, res.getRepoPath(), actualLength, start);
+    }
+
+    private String tryToGetRangeHeaderInsensitive(String name, Request request) {
+        String header = request.getHeader(name);
+        if (StringUtils.isBlank(header)) {
+            header = request.getHeader(name.toLowerCase());
+        }
+        return header;
+    }
+
+    public void sendBodyResponse(ArtifactoryResponse response, RepoPath repoPath, String content, Request request)
             throws IOException {
+        // Make sure that the response is not empty
         if (content == null) {
             RuntimeException exception = new RuntimeException("Cannot send null response");
             response.sendInternalError(exception, log);
@@ -92,8 +144,34 @@ public final class RequestResponseHelper {
             response.setContentLength(bodySize);
             response.setLastModified(System.currentTimeMillis());
             AccessLogger.downloaded(repoPath);
-            final long start = System.currentTimeMillis();
-            response.sendStream(is);
+            // Try to get range header
+            String rangesString = tryToGetRangeHeaderInsensitive(HttpHeaders.RANGE, request);
+            // Create range aware data for the response
+            // If-Range is not supported
+            RangeAwareContext context = createRangeAwareContext(is, bodySize, rangesString, null, mimeType, -1, null);
+            // If request range not satisfiable update response status end return
+            if (context.getStatus() == HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                response.setHeader(HttpHeaders.CONTENT_RANGE, context.getContentRange());
+                response.setStatus(context.getStatus());
+                return;
+            }
+            // update content length with range aware content length
+            response.setContentLength(context.getContentLength());
+            // update content type with range aware content type
+            response.setContentType(context.getContentType());
+            // update headers with range aware headers
+            if (context.getContentRange() != null) {
+                response.setHeader(HttpHeaders.CONTENT_RANGE, context.getContentRange());
+            }
+            // Get range aware input stream
+            InputStream inputStream = context.getInputStream();
+            // Set response status
+            if (context.getStatus() > 0) {
+                response.setStatus(context.getStatus());
+            }
+            // Get current time for logs
+            long start = System.currentTimeMillis();
+            response.sendStream(inputStream);
             fireDownloadTrafficEvent(response, repoPath, bodySize, start);
         }
     }
@@ -110,71 +188,87 @@ public final class RequestResponseHelper {
 
     public void sendHeadResponse(ArtifactoryResponse response, RepoResource res) {
         log.debug("{}: Sending HEAD meta-information", res.getRepoPath());
-        updateResponseFromRepoResource(response, res);
+        if (!isContentLengthSet(response)) {
+            response.setContentLength(res.getSize());
+        }
+        updateResponseFromRepoResource(response, res, "");
+        response.setContentType(res.getMimeType());
         response.sendSuccess();
     }
 
     public void sendNotModifiedResponse(ArtifactoryResponse response, RepoResource res) throws IOException {
         log.debug("{}: Sending NOT-MODIFIED response", res.toString());
         response.setContentLength(0);
-        updateResponseFromRepoResource(response, res);
+        updateResponseFromRepoResource(response, res, "");
+        response.setContentType(res.getMimeType());
         response.setStatus(HttpStatus.SC_NOT_MODIFIED);
     }
 
-    /**
-     * Update the actual size according to the size of the content being sent. This may be different from the size
-     * contained in the RepoResource, which was retrieved using getInfo() on the repository, and may have changed in the
-     * repo just before sending back the stream, since we do not lock the repository item between getInfo() and
-     * getResourceStreamHandle().
-     *
-     * @param response
-     * @param handle
-     */
-    private void updateResponseActualLength(ArtifactoryResponse response, ResourceStreamHandle handle) {
-        long actualSize = handle.getSize();
-        if (actualSize > 0) {
-            response.setContentLength(actualSize);
-        }
-    }
-
     public void updateResponseForProperties(ArtifactoryResponse response, RepoResource res,
-            String content, MediaType mediaType) throws IOException {
+            String content, MediaType mediaType, InternalRequestContext requestContext) throws IOException {
         RepoPath propsDownloadRepoPath;
+        String contentType;
         if (mediaType.equals(MediaType.APPLICATION_XML)) {
             propsDownloadRepoPath = RepoPathFactory.create(res.getRepoPath().getRepoKey(),
                     res.getRepoPath().getPath() + "?" + ArtifactRestConstants.PROPERTIES_XML_PARAM);
-            response.setContentType(mediaType.getType());
+            contentType = mediaType.getType();
         } else if (mediaType.equals(MediaType.APPLICATION_JSON)) {
             propsDownloadRepoPath = RepoPathFactory.create(res.getRepoPath().getRepoKey(),
                     res.getRepoPath().getPath() + "?" + ArtifactRestConstants.PROPERTIES_PARAM);
-            response.setContentType(MT_ITEM_PROPERTIES);
+            contentType = MT_ITEM_PROPERTIES;
         } else {
             response.sendError(HttpStatus.SC_BAD_REQUEST, "Media Type " + mediaType + " not supported!", log);
             return;
         }
-
         // props generated xml and json always browsable
-        setBasicHeaders(response, res, false);
+        setBasicHeaders(response, res, false, "");
         noCache(response);
         byte[] bytes = content.getBytes("utf-8");
         try (InputStream is = new ByteArrayInputStream(bytes)) {
             int bodySize = bytes.length;
             response.setContentLength(bodySize);
             AccessLogger.downloaded(propsDownloadRepoPath);
-            final long start = System.currentTimeMillis();
-            response.sendStream(is);
+            // Try to get range header
+            String rangesString = tryToGetRangeHeaderInsensitive(HttpHeaders.RANGE, requestContext.getRequest());
+            String ifRangesString = tryToGetRangeHeaderInsensitive(HttpHeaders.IF_RANGE, requestContext.getRequest());
+            // Get artifact last modified date
+            long lastModified = res.getLastModified();
+            // Get artifact sha1
+            String sha1 = res.getInfo().getSha1();
+            // Create range aware data for the response
+            RangeAwareContext context = createRangeAwareContext(is, bodySize, rangesString, ifRangesString, contentType,
+                    lastModified, sha1);
+            // If request range not satisfiable update response status end return
+            if (context.getStatus() == HttpStatus.SC_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                response.setHeader(HttpHeaders.CONTENT_RANGE, context.getContentRange());
+                response.setStatus(context.getStatus());
+                return;
+            }
+            // update content length with range aware content length
+            response.setContentLength(context.getContentLength());
+            // update content type with range aware content type
+            response.setContentType(context.getContentType());
+            // update headers with range aware headers
+            if (context.getContentRange() != null) {
+                response.setHeader(HttpHeaders.CONTENT_RANGE, context.getContentRange());
+            }
+            // Set response status
+            if (context.getStatus() > 0) {
+                response.setStatus(context.getStatus());
+            }
+            // Get range aware input stream
+            InputStream inputStream = context.getInputStream();
+            // Get current time for logs
+            long start = System.currentTimeMillis();
+            // Send stream
+            response.sendStream(inputStream);
+            // Fire Download traffic event
             fireDownloadTrafficEvent(response, propsDownloadRepoPath, bodySize, start);
         }
     }
 
-    private void updateResponseFromRepoResource(ArtifactoryResponse response, RepoResource res) {
-        String mimeType = res.getMimeType();
-        response.setContentType(mimeType);
-        if (!isContentLengthSet(response)) {
-            //Only set the content length once
-            response.setContentLength(res.getSize());
-        }
-        setBasicHeaders(response, res, contentBrowsingDisabled(res));
+    private void updateResponseFromRepoResource(ArtifactoryResponse response, RepoResource res, String etagExtension) {
+        setBasicHeaders(response, res, contentBrowsingDisabled(res), etagExtension);
         if (res.isExpirable()) {
             noCache(response);
         }
@@ -184,19 +278,19 @@ public final class RequestResponseHelper {
         return response.getContentLength() != -1;
     }
 
-    private void setBasicHeaders(ArtifactoryResponse response, RepoResource res, boolean contentBrowsingDisabled) {
+    private void setBasicHeaders(ArtifactoryResponse response, RepoResource res, boolean contentBrowsingDisabled,
+            String etagExtension) {
         response.setLastModified(res.getLastModified());
         RepoResourceInfo info = res.getInfo();
-
         // set the sha1 as the eTag and the sha1 header
         String sha1 = info.getSha1();
-        response.setEtag(sha1);
+        String etag = sha1 != null ? sha1 + etagExtension : null;
+        response.setEtag(etag);
         response.setSha1(sha1);
-
+        response.setRangeSupport("bytes");
         // set the md5 header
         String md5 = info.getMd5();
         response.setMd5(md5);
-
         if (response instanceof ArtifactoryResponseBase) {
             String fileName = info.getName();
             if (!isNotZipResource(res)) {

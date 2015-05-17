@@ -79,13 +79,17 @@ public class TraceLoggingResponse implements ArtifactoryResponse {
     }
 
     @Override
-    public void setContentLength(long length) {
-        this.length = length;
+    public void setRangeSupport(String bytes) {
     }
 
     @Override
     public long getContentLength() {
         return length;
+    }
+
+    @Override
+    public void setContentLength(long length) {
+        this.length = length;
     }
 
     @Override

@@ -65,7 +65,7 @@ public class LocalRepoPackagesPanel extends Panel {
 
         addonsManager.addonByType(PypiWebAddon.class).createAndAddPypiConfigSection(form, descriptor, isCreate);
         
-        addonsManager.addonByType(DockerWebAddon.class).createAndAddRepoConfigDockerSection(form, descriptor);
+        addonsManager.addonByType(DockerWebAddon.class).createAndAddRepoConfigDockerSection(form, descriptor, isCreate);
     }
 
 }

@@ -27,6 +27,9 @@ public class DebianNaming {
     public final static String component = "deb.component";
     public final static String architecture = "deb.architecture";
     public final static String packageType = "deb.type";
+    public final static String packagesDistribution = "deb.packages.distribution";
+    public final static String packagesComponent = "deb.packages.component";
+    public final static String packagesArchitecture = "deb.packages.architecture";
 
     public static boolean isIndexFile(String fileName) {
         return isPackageIndex(fileName) || isReleaseIndex(fileName) || isContentIndex(fileName);
@@ -59,6 +62,7 @@ public class DebianNaming {
                 return false;
         }
     }
+
     public static boolean isReleaseIndex(String fileName) {
         fileName = fileName.toLowerCase();
         switch (fileName) {

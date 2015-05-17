@@ -37,8 +37,10 @@ public class PropertyCriteriaRelatedWithOr extends OptimizationStrategy {
             int start = matcher.start();
             int end = matcher.end();
             // The start index must point on criteria according to the pattern
-            Criteria firstCriteria = (Criteria) aqlQuery.getAqlElements().get(start);
-            SqlTable table = firstCriteria.getTable1();
+            SqlTable table = getFirstPropertyTable(aqlQuery, transformation, start, end);
+            if (table == null) {
+                continue;
+            }
             // Scan the sub query and replace the tables in "CRITERIAS WITH PROPERTIES" to the first table we just found
             // Note after replacing all the tables to a single table the SQL generator will bind all criterias to a single table
             // and no inner join will be generated for this criterias.
@@ -64,5 +66,13 @@ public class PropertyCriteriaRelatedWithOr extends OptimizationStrategy {
         }
     }
 
-
+    private SqlTable getFirstPropertyTable(AqlQuery aqlQuery, String transformation, int start, int end) {
+        for (int i = start; i < end; i++) {
+            if (transformation.charAt(i) == 'p' || transformation.charAt(i) == 'k' || transformation.charAt(i) == 'v') {
+                Criteria criteria = (Criteria) aqlQuery.getAqlElements().get(i);
+                return criteria.getTable1();
+            }
+        }
+        return null;
+    }
 }

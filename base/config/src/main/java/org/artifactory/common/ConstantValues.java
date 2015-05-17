@@ -79,6 +79,7 @@ public enum ConstantValues {
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
     mvnCentralIndexerMaxQueryIntervalSecs("mvn.central.indexerMaxQueryIntervalSecs", Seconds.DAY),
     mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
+    mvnMetadataSnapshotComparator("mvn.metadataSnapshotComparatorFqn"),
     mvnDynamicMetadataCacheRetentionSecs("mvn.dynamicMetadata.cacheRetentionSecs", 10),
     mvnMetadataVersion3Enabled("mvn.metadata.version3.enabled", TRUE),
     mvnCustomTypes("mvn.custom.types", "tar.gz,tar.bz2"),
@@ -171,7 +172,9 @@ public enum ConstantValues {
     debianIndexCycleSecs("debian.index.cycleSecs", 2),
     debianDefaultArchitectures("debian.default.architectures", "i386,amd64"),
     pypiIndexQuietPeriodSecs("pypi.index.quietPeriodSecs", 60),
-    pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60), ;
+    pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60),
+    dockerCleanupMaxAgeMillis("docker.cleanup.maxAgeMillis", Seconds.DAY * 1000),
+    httpRangeSupport("http.range.support", true);
     public static final String SYS_PROP_PREFIX = "artifactory.";
 
     private final String propertyName;

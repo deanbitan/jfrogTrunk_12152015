@@ -25,6 +25,8 @@ import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.maven.MavenMetadataCalculator;
+import org.artifactory.maven.snapshot.SnapshotComparator;
 import org.artifactory.maven.versioning.MavenVersionComparator;
 import org.artifactory.mime.MavenNaming;
 import org.artifactory.request.InternalRequestContext;
@@ -101,19 +103,18 @@ class MergeableMavenMetadata {
                         }
                     }
                 }
-
+                SnapshotComparator comparator = MavenMetadataCalculator.createSnapshotComparator();
                 // if there's a unique snapshot version prefer the one with the bigger build number
                 Snapshot snapshot = existingVersioning.getSnapshot();
                 Versioning otherMetadataVersioning = otherMetadata.getVersioning();
                 if (otherMetadataVersioning != null) {
                     Snapshot otherSnapshot = otherMetadataVersioning.getSnapshot();
                     if (snapshot != null && otherSnapshot != null) {
-                        if (snapshot.getBuildNumber() < otherSnapshot.getBuildNumber()) {
+                        if (comparator.compare(otherSnapshot, snapshot) > 0) {
                             snapshot.setBuildNumber(otherSnapshot.getBuildNumber());
                             snapshot.setTimestamp(otherSnapshot.getTimestamp());
                         }
                     }
-
                     if (mergeSnapshotVersions) {
                         addSnapshotVersions(existingVersioning, otherMetadataVersioning);
                     }
@@ -124,6 +125,7 @@ class MergeableMavenMetadata {
 
     private void addSnapshotVersions(Versioning existingVersioning, Versioning otherMetadataVersioning) {
         //Maven metadata merge function does not include snapshot version (https://jira.codehaus.org/browse/MNG-5180)
+        SnapshotComparator comparator = MavenMetadataCalculator.createSnapshotComparator();
         List<SnapshotVersion> otherSnapshotVersions = otherMetadataVersioning.getSnapshotVersions();
         if ((otherSnapshotVersions != null) && !otherSnapshotVersions.isEmpty()) {
 
@@ -135,11 +137,7 @@ class MergeableMavenMetadata {
                     for (SnapshotVersion existingSnapshotVersion : existingSnapshotVersions) {
                         if (snapshotVersionClassifiersEqual(otherSnapshotVersion, existingSnapshotVersion) &&
                                 snapshotVersionExtensionEqual(otherSnapshotVersion, existingSnapshotVersion)) {
-                            int otherSnapshotVersionBuildNumber = Integer.valueOf(
-                                    StringUtils.substringAfterLast(otherSnapshotVersion.getVersion(), "-"));
-                            int existingSnapshotVersionBuildNumber = Integer.valueOf(
-                                    StringUtils.substringAfterLast(existingSnapshotVersion.getVersion(), "-"));
-                            if (otherSnapshotVersionBuildNumber > existingSnapshotVersionBuildNumber) {
+                            if (comparator.compare(otherSnapshotVersion, existingSnapshotVersion) > 0) {
                                 existingSnapshotVersion.setUpdated(otherSnapshotVersion.getUpdated());
                                 existingSnapshotVersion.setVersion(otherSnapshotVersion.getVersion());
                             }

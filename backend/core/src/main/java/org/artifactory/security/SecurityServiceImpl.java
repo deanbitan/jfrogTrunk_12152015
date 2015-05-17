@@ -339,7 +339,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     @Override
-    public AclInfo createAcl(MutableAclInfo aclInfo) {
+    public void createAcl(MutableAclInfo aclInfo) {
         assertAdmin();
         if (StringUtils.isEmpty(aclInfo.getPermissionTarget().getName())) {
             throw new IllegalArgumentException("ACL name cannot be null");
@@ -347,10 +347,9 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
         MutableAclInfo compatibleAcl = makeNewAclRemoteRepoKeysAclCompatible(aclInfo);
         cleanupAclInfo(compatibleAcl);
-        AclInfo createdAcl = aclStoreService.createAcl(compatibleAcl);
+        aclStoreService.createAcl(compatibleAcl);
         interceptors.onPermissionsAdd();
         addons.addonByType(HaAddon.class).notify(HaMessageTopic.ACL_CHANGE_TOPIC, null);
-        return createdAcl;
     }
 
     @Override

@@ -20,6 +20,7 @@ package org.artifactory.repo;
 
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.descriptor.repo.DockerApiVersion;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -50,6 +51,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean debianTrivialLayout = false;
     private boolean enablePypiSupport = false;
     private boolean enableDockerSupport = false;
+    private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
 
     protected RepositoryConfigurationBase() {
     }
@@ -82,6 +84,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         setEnableBowerSupport(repoDescriptor.isEnableBowerSupport());
         setEnablePypiSupport(repoDescriptor.isEnablePypiSupport());
         setEnableDockerSupport(repoDescriptor.isEnableDockerSupport());
+        setDockerApiVersion(repoDescriptor.getDockerApiVersion().name());
     }
 
     public void setKey(String key) {
@@ -218,6 +221,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setEnableDockerSupport(boolean enableDockerSupport) {
         this.enableDockerSupport = enableDockerSupport;
+    }
+
+    @Override
+    public String getDockerApiVersion() {
+        return dockerApiVersion.name();
+    }
+
+    public void setDockerApiVersion(String dockerApiVersion) {
+        this.dockerApiVersion = DockerApiVersion.valueOf(dockerApiVersion);
     }
 
     /**

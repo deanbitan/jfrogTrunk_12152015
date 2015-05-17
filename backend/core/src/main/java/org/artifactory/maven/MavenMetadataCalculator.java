@@ -36,6 +36,8 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.maven.snapshot.BuildNumberSnapshotComparator;
+import org.artifactory.maven.snapshot.SnapshotComparator;
 import org.artifactory.maven.versioning.MavenMetadataVersionComparator;
 import org.artifactory.maven.versioning.VersionNameMavenMetadataVersionComparator;
 import org.artifactory.mime.MavenNaming;
@@ -50,7 +52,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +70,15 @@ import java.util.TreeSet;
  */
 public class MavenMetadataCalculator extends AbstractMetadataCalculator {
     private static final Logger log = LoggerFactory.getLogger(MavenMetadataCalculator.class);
-
+    private static Predicate<? super ItemNode> uniqueSnapshotFileOnly = new Predicate<ItemNode>() {
+        @Override
+        public boolean apply(@Nullable ItemNode pom) {
+            if (pom != null) {
+                return MavenNaming.isUniqueSnapshotFileName(pom.getName());
+            }
+            return false;
+        }
+    };
     private final RepoPath baseFolder;
     private final boolean recursive;
 
@@ -77,6 +91,46 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
     public MavenMetadataCalculator(RepoPath baseFolder, boolean recursive) {
         this.baseFolder = baseFolder;
         this.recursive = recursive;
+    }
+
+    public static MavenMetadataVersionComparator createVersionComparator() {
+        String comparatorFqn = ConstantValues.mvnMetadataVersionsComparator.getString();
+        if (StringUtils.isBlank(comparatorFqn)) {
+            // return the default comparator
+            return VersionNameMavenMetadataVersionComparator.get();
+        }
+
+        try {
+            Class<?> comparatorClass = Class.forName(comparatorFqn);
+            return (MavenMetadataVersionComparator) comparatorClass.newInstance();
+        } catch (Exception e) {
+            log.warn("Failed to create custom maven metadata version comparator '{}': {}", comparatorFqn,
+                    e.getMessage());
+            return VersionNameMavenMetadataVersionComparator.get();
+        }
+    }
+
+    public static SnapshotComparator createSnapshotComparator() {
+        SnapshotComparator comparator = BuildNumberSnapshotComparator.get();
+        // Try to load costume comparator
+        String comparatorFqn = ConstantValues.mvnMetadataSnapshotComparator.getString();
+        if (!StringUtils.isBlank(comparatorFqn)) {
+            try {
+                Class comparatorClass = Class.forName(comparatorFqn);
+                Method get = comparatorClass.getMethod("get");
+                comparator = (SnapshotComparator) get.invoke(null);
+                log.debug("Using costume snapshot comparator '{}' to calculate the latest snapshot", comparatorFqn);
+            } catch (NoSuchMethodException e1) {
+                log.warn(
+                        "Failed to create custom maven metadata snapshot comparator, the comparator should contain" +
+                                " static get method to avoid unnecessary object creation '{}': {}", comparatorFqn,
+                        e1.getMessage());
+            } catch (Exception e) {
+                log.warn("Failed to create custom maven metadata snapshot comparator '{}': {}", comparatorFqn,
+                        e.getMessage());
+            }
+        }
+        return comparator;
     }
 
     /**
@@ -225,12 +279,9 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
                 SnapshotVersionType folderItemSnapshotVersionType = new SnapshotVersionType(
                         folderItemModuleInfo.getExt(), folderItemModuleInfo.getClassifier());
                 if (latestSnapshotVersions.containsKey(folderItemSnapshotVersionType)) {
-                    int folderItemBuildNumber = Integer.parseInt(StringUtils.substringAfter(
-                            folderItemModuleInfo.getFileIntegrationRevision(), "-"));
+                    SnapshotComparator snapshotComparator = createSnapshotComparator();
                     ModuleInfo latestSnapshotVersion = latestSnapshotVersions.get(folderItemSnapshotVersionType);
-                    int latestSnapshotVersionBuildNumber = Integer.parseInt(StringUtils.substringAfter(
-                            latestSnapshotVersion.getFileIntegrationRevision(), "-"));
-                    if (folderItemBuildNumber > latestSnapshotVersionBuildNumber) {
+                    if (snapshotComparator.compare(folderItemModuleInfo, latestSnapshotVersion) > 0) {
                         latestSnapshotVersions.put(folderItemSnapshotVersionType, folderItemModuleInfo);
                     }
                 } else {
@@ -310,39 +361,14 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         return null;
     }
 
-    private MavenMetadataVersionComparator createVersionComparator() {
-        String comparatorFqn = ConstantValues.mvnMetadataVersionsComparator.getString();
-        if (StringUtils.isBlank(comparatorFqn)) {
-            // return the default comparator
-            return VersionNameMavenMetadataVersionComparator.get();
-        }
-
-        try {
-            Class<?> comparatorClass = Class.forName(comparatorFqn);
-            return (MavenMetadataVersionComparator) comparatorClass.newInstance();
-        } catch (Exception e) {
-            log.warn("Failed to create custom maven metadata version comparator '{}': {}", comparatorFqn,
-                    e.getMessage());
-            return VersionNameMavenMetadataVersionComparator.get();
-        }
-    }
-
     private String getLatestUniqueSnapshotPomName(Iterable<ItemNode> poms) {
-        String latestUniquePom = null;
-        int latest = 0;
-
-        for (ItemNode pom : poms) {
-            String pomName = pom.getName();
-            if (MavenNaming.isUniqueSnapshotFileName(pomName)) {
-                int currentBuildNumber = MavenNaming.getUniqueSnapshotVersionBuildNumber(pomName);
-                if (currentBuildNumber >= latest) {
-                    latest = currentBuildNumber;
-                    latestUniquePom = pomName;
-                }
-            }
-        }
-
-        return latestUniquePom;
+        // Get Default Comparator
+        Comparator<ItemNode> comparator = createSnapshotComparator();
+        ArrayList<ItemNode> list = Lists.newArrayList(poms);
+        list = Lists.newArrayList(Iterables.filter(list, uniqueSnapshotFileOnly));
+        Collections.sort(list, comparator);
+        String name = list.size() > 0 ? list.get(list.size() - 1).getName() : null;
+        return name;
     }
 
     private List<ItemNode> getSubFoldersContainingPoms(ItemNode treeNode) {

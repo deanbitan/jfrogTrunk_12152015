@@ -176,6 +176,11 @@ public class StorageProperties {
         return getLongProperty(Key.binaryProviderEventuallyPersistedDispatcherSleepTime.key, 5000);
     }
 
+    public long getEventuallyPersistedWaitForHazelcastTime() {
+        return getLongProperty(Key.binaryProviderEventuallyPersistedWaitHazelcastTime.key, 60000);
+    }
+
+
     public int getS3ProxyPort() {
         return getIntProperty(Key.binaryProviderS3ProxyPort.key, -1);
     }
@@ -326,7 +331,9 @@ public class StorageProperties {
                 "binary.provider.eventually.persisted.max.number.of.threads"),
         binaryProviderEventuallyPersistedTimeOut("binary.provider.eventually.persisted.timeout"),
         binaryProviderEventuallyPersistedDispatcherSleepTime(
-                "binary.provider.eventually.dispatcher.sleep.time"); // in millis
+                "binary.provider.eventually.dispatcher.sleep.time"), // in millis
+        binaryProviderEventuallyPersistedWaitHazelcastTime(
+                "binary.provider.eventually.persisted.wait.hazelcast.time"); // in millis
 
 
         private final String key;

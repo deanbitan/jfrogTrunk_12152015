@@ -372,27 +372,25 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void findArtifactsWithCanonicalAndOperatorsAndArtifactsFieldsAndPropertyKeyMatchingAndNorEqual() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"type\" : \"any\",\"$or\" : [{\"$and\" : [{\"repo\" : \"repo1\"},{\"$and\" : [{\"@build.name\" : {\"$ne\" : \"ant\"}},{\"@jungle\": {\"$ne\" : \"*\"}}]}]},{\"path\" : {\"$match\" : \"x*\"}}]})");
-        assertSize(queryResult, 13);
-        assertItem(queryResult, "repo1", ".", "ant", folder);
-        assertItem(queryResult, "repo1", "ant", "ant", folder);
-        assertItem(queryResult, "repo1", "org/yossis/tools", "file2.bin", file);
+                "items.find({\"type\" : \"any\",\"$or\" : [{\"$and\" : [{\"repo\" : \"repo1\"},{\"$and\" : [{\"@build.name\" : {\"$ne\" : \"an\"}},{\"@jungle\": {\"$ne\" : \"*\"}}]}]},{\"path\" : {\"$match\" : \"x*\"}}]})");
+        assertSize(queryResult, 2);
+        assertItem(queryResult, "repo1", ".", ".", folder);
+        assertItem(queryResult, "repo1", "ant/ant/1.5", "ant-1.5.jar", file);
     }
 
     @Test
     public void findArtifactsWithCanonicalAndOrOperatorsAndArtifactsFieldsUsingNotEquals() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"type\" : \"any\",\"$or\" : [{\"$and\" : [{\"repo\" : \"repo1\"},{\"$or\" : [{\"@build.name\" : {\"$ne\" : \"ant\"}},{\"@jungle\": {\"$eq\" : \"*\"}}]}]},{\"path\" : {\"$match\" : \"x*\"}}]})");
-        assertSize(queryResult, 13);
+                "items.find({\"type\" : \"any\",\"$or\" : [{\"$and\" : [{\"repo\" : \"repo1\"},{\"$or\" : [{\"@yossis\" : {\"$ne\" : \"ant\"}},{\"@jungle\": {\"$eq\" : \"*\"}}]}]},{\"path\" : {\"$match\" : \"x*\"}}]})");
+        assertSize(queryResult, 2);
         assertItem(queryResult, "repo1", "org", "yossis", folder);
-        assertItem(queryResult, "repo1", "org/yossis", "tools", folder);
-        assertItem(queryResult, "repo1", "org/yossis/tools", "file3.bin", file);
+        assertItem(queryResult, "repo1", "org/yossis/tools", "test.bin", file);
     }
 
     @Test
     public void findArtifactsWithCanonicalAndOrOperatorsAndArtifactsFieldsAndArchiveFields() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"repo\" : \"repo1\", \"$and\" : [{\"@build.name\" : {\"$ne\" : \"ant\"}},{\"archive.entry_name\": {\"$match\" : \"file*\"}}]})");
+                "items.find({\"repo\" : \"repo1\", \"$and\" : [{\"@yossis\" : {\"$ne\" : \"an\"}},{\"archive.entry_name\": {\"$match\" : \"file*\"}}]})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "org/yossis/tools", "test.bin", file);
     }
@@ -466,7 +464,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     public void findArtifactWithPropertyNotMatches() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "items.find({\"@build.name\"  : {\"$nmatch\" : \"*GPL\"}})");
-        assertSize(queryResult, 11);
+        assertSize(queryResult, 1);
     }
 
     @Test(enabled = false)

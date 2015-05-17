@@ -30,6 +30,8 @@ import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
 import org.artifactory.fs.ItemInfo;
+import org.artifactory.md.Properties;
+import org.artifactory.repo.RepoPath;
 
 import java.util.List;
 
@@ -91,7 +93,7 @@ public interface PropertiesWebAddon extends Addon {
      * @param propertySets Available property sets
      * @return Property sets selector tab if addon enabled. Disabled addon tab if not
      */
-    public ITab getRepoConfigPropertySetsTab(String tabTitle, final RealRepoDescriptor entity,
+    ITab getRepoConfigPropertySetsTab(String tabTitle, final RealRepoDescriptor entity,
             final List<PropertySet> propertySets);
 
     BaseModalPanel getEditPropertyPanel(EditValueButtonRefreshBehavior refreshBehavior, PropertyItem propertyItem,
@@ -105,4 +107,16 @@ public interface PropertiesWebAddon extends Addon {
      * @return Property management display component
      */
     Component getTreeItemPropertiesPanel(String panelId, ItemInfo itemInfo);
+
+    /**
+     * Get properties set on the path
+     *
+     * @param path
+     */
+    Properties getProperties(RepoPath path);
+
+    /**
+     * Removes all properties on the path according to the keys supplied
+     */
+    void removeProperties(RepoPath path, String propToDelete);
 }

@@ -1077,4 +1077,20 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     public void setBintrayConfig(BintrayConfigDescriptor bintrayConfigDescriptor) {
         this.bintrayConfig = bintrayConfigDescriptor;
     }
+
+    @Override
+    public List<LocalReplicationDescriptor> getMultiLocalReplications(String repoKey) {
+        return getMultiLocalReplications(repoKey,localReplications);
+    }
+
+    private <T extends ReplicationBaseDescriptor> List<T> getMultiLocalReplications(String replicatedRepoKey,List<T> replications) {
+        List<T> localReplicationList = new ArrayList<>();
+        if (StringUtils.isNotBlank(replicatedRepoKey)) {
+            for (T replication : replications) {
+                if (replicatedRepoKey.equals(replication.getRepoKey()))
+                localReplicationList.add(replication);
+            }
+        }
+        return localReplicationList;
+    }
 }

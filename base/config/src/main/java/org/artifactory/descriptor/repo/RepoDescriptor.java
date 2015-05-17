@@ -71,4 +71,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     boolean isEnablePypiSupport();
     
     boolean isEnableDockerSupport();
+
+    DockerApiVersion getDockerApiVersion();
 }

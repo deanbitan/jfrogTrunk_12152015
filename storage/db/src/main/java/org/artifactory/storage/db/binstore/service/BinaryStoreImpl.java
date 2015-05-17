@@ -64,7 +64,6 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -169,25 +168,6 @@ public class BinaryStoreImpl implements InternalBinaryStore {
                     new ExternalFileBinaryProviderImpl(new File(storageProperties.getBinaryProviderExternalDir())));
         }
         setBinaryProvidersContext(binaryProviders);
-    }
-
-    public BinaryProviderBase binaryProviderByName(String className) {
-        try {
-            AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-            if (addonsManager.isHaLicensed()) {
-                Class<?> binaryProviderClass = Class.forName(className);
-                Constructor<?> constructor = binaryProviderClass.getConstructor(StorageProperties.class);
-                BinaryProviderBase binaryProvider = (BinaryProviderBase) constructor.newInstance(storageProperties);
-                return binaryProvider;
-            } else {
-                throw new RuntimeException(
-                        "Can't init binary provider, this binary provider can work only with enterprise license");
-            }
-        } catch (Exception e) {
-            String message = String.format("Fail to create instance of the binary provider : %s", className);
-            log.error(message);
-            throw new RuntimeException(message, e);
-        }
     }
 
     private FileBinaryProvider createFilesystemBinaryProvider() {

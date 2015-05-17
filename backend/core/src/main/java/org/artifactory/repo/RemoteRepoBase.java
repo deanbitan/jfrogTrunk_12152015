@@ -81,6 +81,7 @@ import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
 import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.ExceptionUtils;
+import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,10 +105,8 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends RealRepoBase<T> implements RemoteRepo<T> {
     private static final Logger log = LoggerFactory.getLogger(RemoteRepoBase.class);
-
-    private LocalCacheRepo localCacheRepo;
-    private RemoteRepoBase oldRemoteRepo;
-
+    private final ChecksumPolicy checksumPolicy;
+    private final LockingMap lockingMap;
     /**
      * Flags this repository as assumed offline. The repository enters this state when a download request fails with
      * exception.
@@ -118,7 +117,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * The next time, in milliseconds, to check online status of this repository
      */
     protected long nextOnlineCheckMillis;
-
+    private LocalCacheRepo localCacheRepo;
+    private RemoteRepoBase oldRemoteRepo;
     /**
      * Cache of resources not found on the remote machine. Keyed by resource path.
      */
@@ -127,13 +127,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * Cache of remote directories listing.
      */
     private Map<String, List<RemoteItem>> remoteResourceCache;
-
-    private final ChecksumPolicy checksumPolicy;
-
     private boolean globalOfflineMode;
-
-    private final LockingMap lockingMap;
-
     // List of interceptors for various download resolution points
     private Collection<RemoteRepoInterceptor> interceptors;
 
@@ -151,6 +145,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             this.oldRemoteRepo = null;
             HaAddon haAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaAddon.class);
             this.lockingMap = haAddon.getLockingMap();
+        }
+        if (isNpmJsRepo()) {
+            excludes.addAll(Lists.newArrayList("**/*.pom", "**/*.jar", "**/maven-metadata.xml"));
         }
     }
 
@@ -529,8 +526,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
         RepoResource cachedResource = getLocalCacheRepo().getInfo(requestContext);
         boolean foundExpiredResourceAndNewerRemote = foundExpiredAndRemoteIsNewer(remoteResource, cachedResource);
-        RepoRequests.logToContext("Found expired cached resource but remote is newer = %s",
-                foundExpiredResourceAndNewerRemote);
+        RepoRequests.logToContext(
+                "Found expired cached resource but remote is newer = %s. Cached resource: %s, Remote resource: %s",
+                foundExpiredResourceAndNewerRemote, cachedResource.getLastModified(), remoteResource.getLastModified());
 
         boolean forceExpiryCheck = requestContext.isForceExpiryCheck();
         RepoRequests.logToContext("Force expiration on the cached resource = %s", forceExpiryCheck);
@@ -741,9 +739,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             // set exception here before the remote stream is closed to signal an error
             Throwable ioCause = ExceptionUtils.getCauseOfTypes(e, IOException.class);
             if (ioCause != null) {
-                log.error("IO error while trying to download resource {}'': {}: {}", remoteRepoPath,
-                        ioCause.getClass().getName(), ioCause.getMessage());
-                log.debug("IO error while trying to download resource {}'': {}",
+                log.error("IO error while trying to download resource '{}': {}: {}", remoteRepoPath,
+                        ioCause.getClass().getName(), HttpClientUtils.getErrorMessage(ioCause));
+                log.debug("IO error while trying to download resource '{}': {}",
                         remoteResource.getRepoPath(), ioCause.getMessage(), ioCause);
                 setExceptionOnHandle(handle, e);
                 throw (IOException) ioCause;
@@ -1025,7 +1023,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @throws IOException If remote checksum is not found or there was a problem retrieving it
      */
     private String getRemoteChecksum(String path) throws IOException {
-        if (StringUtils.contains(getUrl(), "registry.npmjs.org")) {
+        if (isNpmJsRepo()) {
             return null;
         }
         if (StringUtils.contains(getUrl(), "github.com")) {
@@ -1036,6 +1034,10 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             InputStream is = handle.getInputStream();
             return Checksum.checksumStringFromStream(is);
         }
+    }
+
+    private boolean isNpmJsRepo() {
+        return StringUtils.contains(getUrl(), "registry.npmjs.org");
     }
 
     /**

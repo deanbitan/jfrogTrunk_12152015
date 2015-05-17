@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.10"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.10"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.11"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.11"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -490,6 +490,19 @@
                         Enable Docker support for this repository.
                     </xs:documentation>
                 </xs:annotation>
+            </xs:element>
+            <xs:element name="dockerApiVersion" default="V1" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Docker API version.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="V1"/>
+                        <xs:enumeration value="V2"/>
+                    </xs:restriction>
+                </xs:simpleType>
             </xs:element>
         </xs:sequence>
     </xs:complexType>

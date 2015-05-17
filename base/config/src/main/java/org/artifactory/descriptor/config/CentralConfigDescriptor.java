@@ -138,4 +138,6 @@ public interface CentralConfigDescriptor extends Descriptor {
     ExternalProvidersDescriptor getExternalProvidersDescriptor();
 
     BintrayConfigDescriptor getBintrayConfig();
+
+    List<LocalReplicationDescriptor> getMultiLocalReplications(String repoKey);
 }

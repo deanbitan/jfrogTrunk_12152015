@@ -40,7 +40,7 @@ public interface AclStoreService {
     Collection<AclInfo> getAllAcls();
 
     @Lock
-    AclInfo createAcl(AclInfo entity);
+    void createAcl(AclInfo entity);
 
     @Lock
     void updateAcl(MutableAclInfo acl);

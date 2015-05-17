@@ -138,6 +138,24 @@
                     <span wicket:id="enableDockerSupport.help"></span>
                 </div>
             </div>
+            <div class="field-row">
+                <div class="field field-sep required value-type-field">
+                    <label>API Version</label>
+
+                    <div wicket:id="dockerApiVersion" class="value">
+                        <span>
+                            <input wicket:id="v1" type="radio"/>
+                            <label>V1</label>
+                            <span wicket:id="v1.help"></span>
+                        </span>
+                        <span>
+                            <input wicket:id="v2" type="radio"/>
+                            <label>V2</label>
+                            <span wicket:id="v2.help"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
 </wicket:panel>

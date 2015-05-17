@@ -151,6 +151,11 @@ public class DelayedHttpResponse extends ArtifactoryResponseBase {
     }
 
     @Override
+    public void setRangeSupport(String bytes) {
+        response.setRangeSupport(bytes);
+    }
+
+    @Override
     public void setSha1(String sha1) {
         response.setSha1(sha1);
     }

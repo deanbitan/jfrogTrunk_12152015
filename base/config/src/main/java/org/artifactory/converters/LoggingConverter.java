@@ -18,6 +18,8 @@
 
 package org.artifactory.converters;
 
+import org.apache.commons.io.FileUtils;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.FatalConversionException;
 import org.artifactory.logging.version.LoggingVersion;
 import org.artifactory.version.CompoundVersionDetails;
@@ -62,6 +64,52 @@ public class LoggingConverter implements ArtifactoryConverterAdapter {
     @Override
     public boolean isInterested(CompoundVersionDetails source, CompoundVersionDetails target) {
         return source != null && !source.isCurrent();
+    }
+
+    @Override
+    public void backup() {
+        File loginFile = new File(path, ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME);
+        File loginBackupFile = new File(path, ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME + ".back");
+        try {
+            if (loginBackupFile.exists()) {
+                FileUtils.forceDelete(loginBackupFile);
+            }
+            FileUtils.copyFile(loginFile, loginBackupFile);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Fail to save backup file '" + loginBackupFile.getAbsolutePath() + "' from the login file: '" + loginFile.getAbsolutePath() + "'",
+                    e);
+        }
+    }
+
+    @Override
+    public void clean() {
+        File loginBackupFile = new File(path, ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME + ".back");
+        try {
+            if (loginBackupFile.exists()) {
+                FileUtils.forceDelete(loginBackupFile);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Fail to clean backup file '" + loginBackupFile.getAbsolutePath() +
+                            "' after success conversion'", e);
+        }
+    }
+
+    @Override
+    public void revert() {
+        File loginFile = new File(path, ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME);
+        File loginBackupFile = new File(path, ArtifactoryHome.LOGBACK_CONFIG_FILE_NAME + ".back");
+        try {
+            if (loginBackupFile.exists()) {
+                if (loginFile.exists()) {
+                    FileUtils.forceDelete(loginFile);
+                }
+                FileUtils.moveFile(loginBackupFile, loginFile);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Fail to revert conversion", e);
+        }
     }
 }
 

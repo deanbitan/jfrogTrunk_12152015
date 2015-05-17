@@ -78,6 +78,7 @@ import javax.ws.rs.ext.Provider;
         SecurityRestConstants.MT_PERMISSION_TARGETS,
         ReplicationRestConstants.MT_REPLICATION_REQUEST,
         ReplicationsRestConstants.MT_REPLICATION_CONFIG_REQUEST,
+        ReplicationsRestConstants.MT_MULTI_REPLICATION_CONFIG_REQUEST,
         BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_REQUEST,
         BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST
 })
@@ -128,6 +129,7 @@ import javax.ws.rs.ext.Provider;
         ReplicationRestConstants.MT_REPLICATION_REQUEST,
         ReplicationRestConstants.MT_REPLICATION_STATUS,
         ReplicationsRestConstants.MT_REPLICATION_CONFIG_REQUEST,
+        ReplicationsRestConstants.MT_MULTI_REPLICATION_CONFIG_REQUEST,
         PluginRestConstants.MT_BUILD_STAGING_STRATEGY,
         BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_RESULT,
         SearchRestConstants.MT_ARTIFACT_VERSIONS_SEARCH_RESULT,

@@ -128,12 +128,19 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         String baseUrl = getLdapBaseUrl(scheme, url);
         DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(scheme + baseUrl);
         contextSource.setBase(adjustBase(url.substring((scheme + baseUrl).length())));
-        // set default connection timeout
+
+        // set default connection timeout, read timeout and referral strategy.
         HashMap<String, String> env = new HashMap<>();
-        env.put("com.sun.jndi.ldap.connect.timeout", "10000");
+        String connectTimeout = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
+                "artifactory.security.ldap.connect.timeoutMillis", "10000"); 
+        env.put("com.sun.jndi.ldap.connect.timeout",connectTimeout);
+        String readTimeout = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
+                "artifactory.security.ldap.socket.timeoutMillis", "15000");
+            env.put("com.sun.jndi.ldap.read.timeout", readTimeout);
         String referralStrategy = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
-                "security.ldap.referralStrategy", "follow");
+                "artifactory.security.ldap.referralStrategy", "follow");
         env.put(Context.REFERRAL, referralStrategy);
+
         contextSource.setBaseEnvironmentProperties(env);
         SearchPattern searchPattern = ldapSetting.getSearch();
         if (searchPattern != null) {

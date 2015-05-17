@@ -47,4 +47,19 @@ public class MockHomeConverter implements ArtifactoryConverterAdapter {
     public boolean isInterested(CompoundVersionDetails source, CompoundVersionDetails target) {
         return source.getVersion().before(target.getVersion());
     }
+
+    @Override
+    public void revert() {
+
+    }
+
+    @Override
+    public void backup() {
+
+    }
+
+    @Override
+    public void clean() {
+
+    }
 }

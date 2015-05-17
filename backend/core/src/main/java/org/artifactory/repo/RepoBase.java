@@ -44,9 +44,8 @@ import java.util.List;
 public abstract class RepoBase<T extends RepoDescriptor> implements Repo<T> {
     private final T descriptor;
     private final InternalRepositoryService repositoryService;
-
+    protected List<String> excludes;
     private List<String> includes;
-    private List<String> excludes;
 
     protected RepoBase(T descriptor, InternalRepositoryService repositoryService) {
         this.repositoryService = repositoryService;

@@ -65,6 +65,10 @@ public class ArtifactoryResponseTest {
             }
 
             @Override
+            public void setRangeSupport(String bytes) {
+            }
+
+            @Override
             public void setContentType(String contentType) {
             }
 

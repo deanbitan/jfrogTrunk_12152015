@@ -22,32 +22,23 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
- * A custom exception that enables retaining an error status code received from a remote request exception
+ * A custom exception that enables retaining an error status code and message received from a remote request exception.
  *
  * @author Noam Y. Tenne
+ * @author Yossi Shaul
  */
 public class RemoteRequestException extends IOException {
 
     private int remoteReturnCode;
-    private String responseBody;
 
     /**
-     * @param message          Exception message
-     * @param remoteReturnCode Remote returned HTTP status code
+     * @param message              Exception message
+     * @param remoteReturnCode     Remote returned HTTP status code
+     * @param remoteResponseReason Remote returned HTTP status reason
      */
-    public RemoteRequestException(String message, int remoteReturnCode) {
-        this(message, remoteReturnCode, null);
-    }
-
-    /**
-     * @param message          Exception message
-     * @param remoteReturnCode Remote returned HTTP status code
-     * @param responseBody     Optional response body
-     */
-    public RemoteRequestException(String message, int remoteReturnCode, @Nullable String responseBody) {
-        super(message);
+    public RemoteRequestException(String message, int remoteReturnCode, @Nullable String remoteResponseReason) {
+        super(message + " (remote response: " + remoteReturnCode + ": " + remoteResponseReason + ")");
         this.remoteReturnCode = remoteReturnCode;
-        this.responseBody = responseBody;
     }
 
     /**

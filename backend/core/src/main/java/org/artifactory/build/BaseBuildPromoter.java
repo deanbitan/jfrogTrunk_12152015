@@ -18,9 +18,6 @@
 
 package org.artifactory.build;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import org.artifactory.addon.AddonsManager;
@@ -40,17 +37,16 @@ import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.util.DoesNotExistException;
 import org.jfrog.build.api.Build;
-import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.Dependency;
-import org.jfrog.build.api.Module;
 import org.jfrog.build.api.release.Promotion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.artifactory.build.BuildServiceUtils.*;
 
 /**
  * @author Noam Y. Tenne
@@ -86,40 +82,37 @@ public class BaseBuildPromoter {
      *
      * @param build             Build info to collect from
      * @param promotion
-     * @param strictMatching
      * @param multiStatusHolder Status holder
      * @return Item repo paths
      */
-    protected Set<RepoPath> collectItems(Build build, Promotion promotion, boolean strictMatching,
-            BasicStatusHolder multiStatusHolder) {
+    protected Set<RepoPath> collectItems(Build build, Promotion promotion, BasicStatusHolder multiStatusHolder) {
         Set<RepoPath> itemsToMove = Sets.newHashSet();
-
         if (noModules(build)) {
             return itemsToMove;
         }
-
         //Artifacts should be collected
         if (promotion.isArtifacts()) {
-            Map<org.jfrog.build.api.Artifact, FileInfo> buildArtifactsInfo = buildService.getBuildArtifactsInfo(build,
+            Set<ArtifactoryBuildArtifact> buildArtifactsInfo = buildService.getBuildArtifactsFileInfos(build, false,
                     promotion.getSourceRepo());
             String errorMessage = "Unable to find artifacts of build '" + build.getName() + "' #" + build.getNumber();
-            validateFullPromote(build, multiStatusHolder, buildArtifactsInfo, true);
+            verifyAllArtifactInfosExistInSet(build, true, multiStatusHolder, buildArtifactsInfo, VerifierLogLevel.err);
 
             if (!multiStatusHolder.getErrors().isEmpty()) {
                 if (promotion.isFailFast()) {
                     throw new ItemNotFoundRuntimeException(errorMessage + ": aborting promotion.");
                 }
             }
-            for (FileInfo fileInfo : buildArtifactsInfo.values()) {
-                itemsToMove.add(fileInfo.getRepoPath());
+            for (ArtifactoryBuildArtifact artifact : buildArtifactsInfo) {
+                itemsToMove.add(artifact.getFileInfo().getRepoPath());
             }
         }
 
         //Build dependencies should be collected
         if (promotion.isDependencies()) {
-            Map<Dependency, FileInfo> buildDependenciesInfo = buildService.getBuildDependenciesInfo(build,
+            Map<Dependency, FileInfo> buildDependenciesInfo = buildService.getBuildDependenciesFileInfos(build,
                     promotion.getSourceRepo());
-            validateFullPromote(build, multiStatusHolder, buildDependenciesInfo, false);
+            verifyAllDependencyInfosExistInMap(build, true, multiStatusHolder, buildDependenciesInfo,
+                    VerifierLogLevel.err);
             for (Map.Entry<Dependency, FileInfo> entry : buildDependenciesInfo.entrySet()) {
                 Dependency dependency = entry.getKey();
                 if (dependency != null) {
@@ -133,49 +126,7 @@ public class BaseBuildPromoter {
                 }
             }
         }
-
         return itemsToMove;
-    }
-
-    private <T extends BuildFileBean> void validateFullPromote(Build build, BasicStatusHolder multiStatusHolder,
-            Map<T, FileInfo> buildArtifactsInfo,
-            boolean artifacts) {
-        List<BuildFileBean> buildBeans = Lists.newArrayList();
-        for (Module module : build.getModules()) {
-            if (artifacts) {
-                if (module.getArtifacts() != null) {
-                    buildBeans.addAll(module.getArtifacts());
-                }
-            } else {
-                if (module.getDependencies() != null) {
-                    buildBeans.addAll(module.getDependencies());
-                }
-            }
-        }
-
-        for (final BuildFileBean buildBean : buildBeans) {
-            Iterable<T> filter = Iterables.filter(buildArtifactsInfo.keySet(),
-                    new Predicate<BuildFileBean>() {
-                        @Override
-                        public boolean apply(BuildFileBean input) {
-                            return buildBean.getMd5().equals(input.getMd5()) &&
-                                    buildBean.getSha1().equals(input.getSha1());
-                        }
-                    });
-
-            if (Iterables.isEmpty(filter)) {
-                if (buildBean instanceof org.jfrog.build.api.Artifact) {
-                    multiStatusHolder.error(
-                            "Unable to find artifact '" + ((org.jfrog.build.api.Artifact) buildBean).getName() + "' of build '" +
-                                    build.getName() + "' #" + build.getNumber(), log);
-                }
-                if (buildBean instanceof org.jfrog.build.api.Dependency) {
-                    multiStatusHolder.error(
-                            "Unable to find dependency '" + ((org.jfrog.build.api.Dependency) buildBean).getId() + "' of build '" +
-                                    build.getName() + "' #" + build.getNumber(), log);
-                }
-            }
-        }
     }
 
     private boolean noModules(Build build) {

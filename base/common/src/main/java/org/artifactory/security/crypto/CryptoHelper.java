@@ -54,7 +54,9 @@ import java.security.spec.X509EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.Random;
 import java.util.Set;
+
 
 /**
  * Helper class for encrypting/decrypting passwords.
@@ -263,8 +265,9 @@ public abstract class CryptoHelper {
             throw new RuntimeException(
                     "Cannot remove master key file if it does not exists at " + keyFile.getAbsolutePath());
         }
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmsss");
-        File renamed = new File(keyFile + "." + format.format(new Date()));
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmsssSSS");
+        File renamed = new File(keyFile + "." + new Random().nextInt((10000-1)+1)+ "."+format.format(new Date()));
+
         try {
             FileUtils.moveFile(keyFile, renamed);
         } catch (IOException e) {

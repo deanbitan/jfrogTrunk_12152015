@@ -22,6 +22,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.thoughtworks.xstream.XStream;
 import org.apache.commons.io.FileUtils;
@@ -52,9 +53,9 @@ import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlBaseFullRowImpl;
-import org.artifactory.aql.result.rows.AqlBuild;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.factory.xstream.XStreamFactory;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
@@ -64,11 +65,11 @@ import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.build.service.BuildStoreService;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.util.CollectionUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.BuildAgent;
-import org.jfrog.build.api.BuildFileBean;
 import org.jfrog.build.api.BuildType;
 import org.jfrog.build.api.Dependency;
 import org.jfrog.build.api.Issue;
@@ -91,7 +92,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,14 +134,16 @@ public class BuildServiceImpl implements InternalBuildService {
     @Autowired
     private AqlService aqlService;
 
+    private XStream buildXStream;
+
     @Override
     public void init() {
-        //Nothing to init
+        buildXStream = XStreamFactory.create(ImportableExportableBuild.class);
     }
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
-        //Nothing to reload
+        buildXStream = XStreamFactory.create(ImportableExportableBuild.class);
     }
 
     @Override
@@ -292,11 +295,13 @@ public class BuildServiceImpl implements InternalBuildService {
         String buildNumber = buildRun.getNumber();
         Build build = getBuild(buildRun);
         status.debug("Starting to remove the artifacts of build '" + buildName + "' #" + buildNumber, log);
-        Map<Artifact, FileInfo> buildArtifactsInfo = getBuildArtifactsInfo(build, StringUtils.EMPTY);
-        for (FileInfo fileInfo : buildArtifactsInfo.values()) {
-            RepoPath repoPath = fileInfo.getRepoPath();
-            BasicStatusHolder undeployStatus = repositoryService.undeploy(repoPath, true, true);
-            status.merge(undeployStatus);
+        Set<ArtifactoryBuildArtifact> buildArtifactsInfos = getBuildArtifactsFileInfos(build, false, StringUtils.EMPTY);
+        for (ArtifactoryBuildArtifact artifact : buildArtifactsInfos) {
+            if (artifact.getFileInfo() != null) {
+                RepoPath repoPath = artifact.getFileInfo().getRepoPath();
+                BasicStatusHolder undeployStatus = repositoryService.undeploy(repoPath, true, true);
+                status.merge(undeployStatus);
+            }
         }
         status.debug("Finished removing the artifacts of build '" + buildName + "' #" + buildNumber, log);
     }
@@ -382,7 +387,91 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public Map<Artifact, FileInfo> getNonStrictBuildArtifactsInfo(Build build, String sourceRepository) {
+    public Set<ArtifactoryBuildArtifact> getBuildArtifactsFileInfos(Build build, boolean useFallBack,
+            String sourceRepo) {
+        AqlBase.AndClause and = and();
+        if (StringUtils.isNotBlank(sourceRepo)) {
+            and.append(
+                    AqlApiItem.repo().equal(sourceRepo)
+            );
+        }
+        and.append(AqlApiItem.property().property("build.name", AqlComparatorEnum.equals, build.getName()));
+        and.append(AqlApiItem.property().property("build.number", AqlComparatorEnum.equals, build.getNumber()));
+        AqlBase buildArtifactsQuery = AqlApiItem.create().filter(and);
+
+        AqlEagerResult<AqlBaseFullRowImpl> aqlResult = aqlService.executeQueryEager(buildArtifactsQuery);
+        Multimap<String, Artifact> buildArtifacts = BuildServiceUtils.getBuildArtifacts(build);
+        List<String> virtualRepoKeys = getVirtualRepoKeys();
+        Set<ArtifactoryBuildArtifact> matchedArtifacts = matchArtifactsToFileInfos(aqlResult.getResults(),
+                buildArtifacts, virtualRepoKeys);
+
+        //buildArtifacts contains all remaining artifacts that weren't matched - match them with the weak search
+        //only if indicated and if such remaining unmatched artifacts still exist in the map.
+        if (useFallBack && !buildArtifacts.isEmpty()) {
+            matchedArtifacts.addAll(matchUnmatchedArtifactsNonStrict(build, sourceRepo, buildArtifacts,
+                    virtualRepoKeys));
+        }
+        //Lastly, populate matchedArtifacts with all remaining unmatched artifacts with null values to help users of
+        //this function know if all build artifacts were found.
+        for (Artifact artifact : buildArtifacts.values()) {
+            matchedArtifacts.add(new ArtifactoryBuildArtifact(artifact, null));
+        }
+        return matchedArtifacts;
+    }
+
+    /**
+     * Matches FileInfos to build artifacts(created from an aql query's result) by checksum and by artifact name.
+     * If indicated by {@param matchAnyChecksum} matches only by checksum if no exact match by name was found
+     */
+    /* This matching logic is kinda partial as we still can't match exactly sha1 to RepoPath because there's
+    * not enough information from the BuildInfo (just sha1 and artifact id). It will not harm promotion \ push to
+    * bintray etc. as ALL sha1's are still returned so nothing is skipped, this more of a UI issue that we are
+    * currently reluctant to resolve (i.e. by introducing a unique id in the BuildInfo and put it as a property)
+    */
+    private Set<ArtifactoryBuildArtifact> matchArtifactsToFileInfos(List<AqlBaseFullRowImpl> queryResults,
+            Multimap<String, Artifact> checksumToArtifactsMap, List<String> virtualRepoKeys) {
+        //Map<Artifact, FileInfo> foundResults = Maps.newHashMap();
+        Set<ArtifactoryBuildArtifact> results = Sets.newHashSet();
+
+        for (final AqlBaseFullRowImpl result : queryResults) {
+            //Don't include results from virtual repos
+            if (!virtualRepoKeys.contains(result.getRepo())) {
+                Collection<Artifact> artifacts = checksumToArtifactsMap.get(result.getActualSha1());
+                if (CollectionUtils.notNullOrEmpty(artifacts)) {
+                    //Try to match exactly by artifact name
+                    try {
+                        Artifact idMatch = Iterables.find(artifacts, new Predicate<Artifact>() {
+                            @Override
+                            public boolean apply(Artifact input) {
+                                return input.getName() != null && input.getName().equals(result.getName());
+                            }
+                        });
+                        results.add(new ArtifactoryBuildArtifact(idMatch,
+                                (FileInfo) AqlConverts.toFileInfo.apply(result)));
+                        artifacts.remove(idMatch);
+                    } catch (Exception e) {
+                        //If no match just take the first artifact (it did match the checksum)
+                        Iterator<Artifact> artifactsIter = artifacts.iterator();
+                        results.add(new ArtifactoryBuildArtifact(artifactsIter.next(),
+                                (FileInfo) AqlConverts.toFileInfo.apply(result)));
+                        //Remove artifact from list so we match everything
+                        artifactsIter.remove();
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    /**
+     * The 'non-strict' variant of the artifact search is used as a fallback for artifacts that couldn't be matched by
+     * the regular property based search.
+     * AqlApiBuid.name() and AqlApiBuid.number() are considered 'weak' constraints as the linkage between aql domains is
+     * performed by sha1 - so we might end up 'finding' the wrong artifact (meaning the wrong repoPath that has a
+     * correct checksum - see todos above)
+     */
+    private Set<ArtifactoryBuildArtifact> matchUnmatchedArtifactsNonStrict(Build build, String sourceRepository,
+            Multimap<String, Artifact> unmatchedArtifacts, List<String> virtualRepoKeys) {
         AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
                 AqlApiBuild.name().equal(build.getName()),
                 AqlApiBuild.number().equal(build.getNumber())
@@ -392,10 +481,8 @@ public class BuildServiceImpl implements InternalBuildService {
                     AqlApiBuild.module().artifact().item().repo().equal(sourceRepository)
             );
         }
-
-        AqlApiBuild aqlBuild = AqlApiBuild.create().filter(and);
-
-        aqlBuild.include(
+        AqlBase nonStrictQuery = AqlApiBuild.create().filter(and);
+        nonStrictQuery.include(
                 AqlApiBuild.module().artifact().item().sha1Actual(),
                 AqlApiBuild.module().artifact().item().md5Actual(),
                 AqlApiBuild.module().artifact().item().sha1Orginal(),
@@ -408,34 +495,17 @@ public class BuildServiceImpl implements InternalBuildService {
                 AqlApiBuild.module().artifact().item().path(),
                 AqlApiBuild.module().artifact().item().size(),
                 AqlApiBuild.module().artifact().item().name()
-                //Ordering by the last updated field, in case of duplicates with the same checksum.
-        ).sortBy(AqlFieldEnum.itemUpdated).asc();
+                //Ordering by the last updated field, in case of duplicates with the same checksum
+                //Since this is match any checksum mode
+        ).sortBy(AqlFieldEnum.itemUpdated).desc();
 
-        Map<String, BuildFileBean> buildFileBeans = getBuildFileBeans(build, true);
-        return matchBeanToFileInfo(aqlBuild, buildFileBeans);
+
+        AqlEagerResult<AqlBaseFullRowImpl> aqlResult = aqlService.executeQueryEager(nonStrictQuery);
+        return matchArtifactsToFileInfos(aqlResult.getResults(), unmatchedArtifacts, virtualRepoKeys);
     }
 
     @Override
-    public Map<Artifact, FileInfo> getBuildArtifactsInfo(Build build, String sourceRepository) {
-        AqlBase.AndClause and = and();
-        if (StringUtils.isNotBlank(sourceRepository)) {
-            and.append(
-                    AqlApiItem.repo().equal(sourceRepository)
-            );
-        }
-        and.append(AqlApiItem.property().property("build.name", AqlComparatorEnum.equals, build.getName()));
-        and.append(AqlApiItem.property().property("build.number", AqlComparatorEnum.equals, build.getNumber()));
-        AqlBase aqlItem = AqlApiItem.create().filter(and);
-
-        //Ordering by the last updated field, in case of duplicates with the same checksum.
-        aqlItem.sortBy(AqlFieldEnum.itemUpdated).asc();
-
-        Map<String, BuildFileBean> buildFileBeans = getBuildFileBeans(build, true);
-        return matchBeanToFileInfo(aqlItem, buildFileBeans);
-    }
-
-    @Override
-    public Map<Dependency, FileInfo> getBuildDependenciesInfo(Build build, String sourceRepository) {
+    public Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build, String sourceRepository) {
         AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
                 AqlApiBuild.name().equal(build.getName()),
                 AqlApiBuild.number().equal(build.getNumber())
@@ -445,10 +515,9 @@ public class BuildServiceImpl implements InternalBuildService {
                     AqlApiBuild.module().dependecy().item().repo().equal(sourceRepository)
             );
         }
-
-        AqlApiBuild aqlBuild = AqlApiBuild.create().filter(and);
-
-        aqlBuild.include(
+        AqlBase buildDependenciesQuery = AqlApiBuild.create().filter(and);
+        buildDependenciesQuery.include(
+                AqlApiBuild.module().dependecy().name(),
                 AqlApiBuild.module().dependecy().item().sha1Actual(),
                 AqlApiBuild.module().dependecy().item().md5Actual(),
                 AqlApiBuild.module().dependecy().item().sha1Orginal(),
@@ -464,60 +533,57 @@ public class BuildServiceImpl implements InternalBuildService {
                 //Ordering by the last updated field, in case of duplicates with the same checksum.
         ).sortBy(AqlFieldEnum.itemUpdated).asc();
 
-        Map<String, BuildFileBean> buildFileBeans = getBuildFileBeans(build, false);
-        return matchBeanToFileInfo(aqlBuild, buildFileBeans);
-    }
+        AqlEagerResult<AqlBaseFullRowImpl> results = aqlService.executeQueryEager(buildDependenciesQuery);
+        Multimap<String, Dependency> buildDependencies = BuildServiceUtils.getBuildDependencies(build);
+        Map<Dependency, FileInfo> matchedDependencies = matchDependenciesToFileInfos(results.getResults(),
+                buildDependencies);
 
-    private <T extends BuildFileBean> Map<T, FileInfo> matchBeanToFileInfo(AqlBase aqlBuild,
-            Map<String, BuildFileBean> buildFileBeans) {
-        Map<T, FileInfo> foundResults = new HashMap<>();
-
-        AqlEagerResult<AqlBuild> aqlResult = aqlService.executeQueryEager(aqlBuild);
-        for (AqlBuild item : aqlResult.getResults()) {
-            BuildFileBean buildFileBean = buildFileBeans.get(((AqlBaseFullRowImpl) item).getActualSha1());
-            if (buildFileBean != null) {
-                foundResults.put((T) buildFileBean,
-                        (FileInfo) AqlConverts.toFileInfo.apply((AqlBaseFullRowImpl) item));
+        //Lastly, populate matchedDependencies with all remaining unmatched dependencies with null values to help users
+        //of this function know if all build artifacts were found.
+        for (Dependency dependency : buildDependencies.values()) {
+            if (!matchedDependencies.containsKey(dependency)) {
+                matchedDependencies.put(dependency, null);
             }
         }
+        return matchedDependencies;
+    }
 
+    /**
+     * We're making a best effort to guess the relevant dependency according to the id given by the BuildInfo,
+     * if indeed more than one dependency is a match for the checksum. if not - the one found is used.
+     * Unlike matching the build's artifacts above, a weak match is enough and maybe even recommended here as
+     * dependencies might move around or get deleted and we will still find a correct one from another repo.
+     */
+    private Map<Dependency, FileInfo> matchDependenciesToFileInfos(List<AqlBaseFullRowImpl> queryResults,
+            Multimap<String, Dependency> checksumToDependencyMap) {
+
+        List<String> virtualRepoKeys = getVirtualRepoKeys();
+        Map<Dependency, FileInfo> foundResults = Maps.newHashMap();
+        for (final AqlBaseFullRowImpl result : queryResults) {
+            //Don't include results from virtual repos
+            if (!virtualRepoKeys.contains(result.getRepo())) {
+                Collection<Dependency> dependencies = checksumToDependencyMap.get(result.getActualSha1());
+                if (CollectionUtils.notNullOrEmpty(dependencies)) {
+                    FileInfo dependencyFileInfo = (FileInfo) AqlConverts.toFileInfo.apply(result);
+                    //Try to match exactly by dependency id if possible
+                    try {
+                        Dependency idMatch = Iterables.find(dependencies, new Predicate<Dependency>() {
+                            @Override
+                            public boolean apply(Dependency input) {
+                                return input.getId() != null && input.getId().contains(result.getBuildDependencyName());
+                            }
+                        });
+                        foundResults.put(idMatch, dependencyFileInfo);
+                    } catch (Exception e) {
+                        //If no match just take the first dependency (it did match the checksum)
+                        foundResults.put(dependencies.iterator().next(), dependencyFileInfo);
+                    }
+                }
+            }
+        }
         return foundResults;
     }
 
-    private <T extends BuildFileBean> Map<String, T> getBuildFileBeans(Build build, boolean artifacts) {
-        Map<String, T> beansMap = Maps.newHashMap();
-        List<Module> modules = build.getModules();
-        if (modules == null) {
-            return beansMap;
-        }
-
-        for (Module module : modules) {
-            if (artifacts) {
-                if (module.getArtifacts() != null) {
-                    for (Artifact artifact : module.getArtifacts()) {
-                        if (artifact.getSha1() != null) {
-                            beansMap.put(artifact.getSha1(), (T) artifact);
-                        } else {
-                            log.warn("Artifact: " + artifact.getName() + " is missing SHA1," +
-                                    " under build: " + build.getName());
-                        }
-                    }
-                }
-            } else { // dependencies
-                if (module.getDependencies() != null) {
-                    for (Dependency dependency : module.getDependencies()) {
-                        if (dependency.getSha1() != null) {
-                            beansMap.put(dependency.getSha1(), (T) dependency);
-                        } else {
-                            log.warn("Dependency: " + dependency.getId() + " is missing SHA1," +
-                                    " under build: " + build.getName());
-                        }
-                    }
-                }
-            }
-        }
-        return beansMap;
-    }
 
     @Override
     public void exportTo(ExportSettings settings) {
@@ -812,13 +878,12 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     private void importBuildFiles(ImportSettings settings, Collection<File> buildExportFiles) {
-
-        XStream xStream = getImportableExportableXStream();
         for (File buildExportFile : buildExportFiles) {
             FileInputStream inputStream = null;
             try {
                 inputStream = new FileInputStream(buildExportFile);
-                ImportableExportableBuild importableBuild = (ImportableExportableBuild) xStream.fromXML(inputStream);
+                ImportableExportableBuild importableBuild = (ImportableExportableBuild) buildXStream
+                        .fromXML(inputStream);
                 // import each build in a separate transaction
                 getTransactionalMe().importBuild(settings, importableBuild);
             } catch (Exception e) {
@@ -836,20 +901,10 @@ public class BuildServiceImpl implements InternalBuildService {
         FileOutputStream buildFileOutputStream = null;
         try {
             buildFileOutputStream = new FileOutputStream(buildFile);
-            getImportableExportableXStream().toXML(exportedBuild, buildFileOutputStream);
+            buildXStream.toXML(exportedBuild, buildFileOutputStream);
         } finally {
             IOUtils.closeQuietly(buildFileOutputStream);
         }
-    }
-
-    /**
-     * Returns an XStream object to parse and generate {@link org.artifactory.api.build.ImportableExportableBuild}
-     * classes
-     *
-     * @return ImportableExportableBuild ready XStream object
-     */
-    private XStream getImportableExportableXStream() {
-        return XStreamFactory.create(ImportableExportableBuild.class);
     }
 
     /**
@@ -859,5 +914,13 @@ public class BuildServiceImpl implements InternalBuildService {
      */
     private InternalBuildService getTransactionalMe() {
         return ContextHelper.get().beanForType(InternalBuildService.class);
+    }
+
+    private List<String> getVirtualRepoKeys() {
+        List<String> virtualKeys = Lists.newArrayList();
+        for (RepoDescriptor virtualDescriptor : repositoryService.getVirtualRepoDescriptors()) {
+            virtualKeys.add(virtualDescriptor.getKey());
+        }
+        return virtualKeys;
     }
 }

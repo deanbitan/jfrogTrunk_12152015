@@ -40,6 +40,18 @@ public class ModuleInfoUtilsTest {
         constructArtifactPath(new ModuleInfo(), null);
     }
 
+    /*@Test(description = "RTFACT-7125")
+    public void constructMavenSnapshotWithDots() {
+        ModuleInfo module = new ModuleInfoBuilder().organization("org.jfrog").module("mod").baseRevision("1.0").ext("jar")
+                .fileIntegrationRevision("SNAPSHOT").folderIntegrationRevision("SNAPSHOT").build();
+        String path = constructArtifactPath(module, RepoLayoutUtils.MAVEN_2_DEFAULT, true, true);
+        Assert.assertEquals(path, "org.jfrog/mod/1.0-SNAPSHOT/mod-1.0-SNAPSHOT.jar");
+        String path2 = constructArtifactPath(module, RepoLayoutUtils.MAVEN_2_DEFAULT);
+        Assert.assertEquals(path2, "org/jfrog/mod/1.0-SNAPSHOT/mod-1.0-SNAPSHOT.jar");
+        String path3 = constructArtifactPath(module, RepoLayoutUtils.MAVEN_2_DEFAULT, true);
+        Assert.assertEquals(path3, "org/jfrog/mod/1.0-SNAPSHOT/mod-1.0-SNAPSHOT.jar");
+    }*/
+
     @Test(expectedExceptions = IllegalArgumentException.class,
             expectedExceptionsMessageRegExp = "Unable to construct a path from a null repository layout.")
     public void constructArtifactPathWithNullRepoLayout() {

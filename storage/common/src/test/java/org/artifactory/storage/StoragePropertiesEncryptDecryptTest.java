@@ -48,7 +48,6 @@ public class StoragePropertiesEncryptDecryptTest extends ArtifactoryHomeBoundTes
         assertEquals(numOfLineBeforeEncryptAndSaving, numOfLineAfterEncryptAndSaving);
         // check that order is maintain
         assertEquals(passwordLinePositionBeforeEncryptAndSave, passwordLinePositionAfterEncryptAndSave);
-
     }
 
     @Test

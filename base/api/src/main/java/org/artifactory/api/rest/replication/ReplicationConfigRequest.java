@@ -1,11 +1,13 @@
 package org.artifactory.api.rest.replication;
 
+import org.artifactory.api.rest.restmodel.IModel;
+
 import java.io.Serializable;
 
 /**
  * @author mamo
  */
-public class ReplicationConfigRequest implements Serializable {
+public class ReplicationConfigRequest implements Serializable, IModel {
 
     //local/remote
     private Boolean enabled;

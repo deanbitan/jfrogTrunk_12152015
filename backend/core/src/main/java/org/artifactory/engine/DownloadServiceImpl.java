@@ -352,7 +352,8 @@ public class DownloadServiceImpl implements InternalDownloadService {
                                 "Media Type " + mediaType + " not supported!", log);
                         return;
                     }
-                    requestResponseHelper.updateResponseForProperties(response, resource, content, mediaType);
+                    requestResponseHelper.updateResponseForProperties(response, resource, content, mediaType,
+                            requestContext);
                 } else {
                     RepoRequests.logToContext("No properties found. Responding with 404");
                     response.sendError(HttpStatus.SC_NOT_FOUND, "No properties could be found.", log);
@@ -360,7 +361,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
             } else {
                 RepoRequests.logToContext("Responding with selected content handle");
                 //Streaming the file is done outside a tx, so there is a chance that the content will change!
-                requestResponseHelper.sendBodyResponse(response, resource, handle);
+                requestResponseHelper.sendBodyResponse(response, resource, handle, requestContext);
             }
         } catch (RepoRejectException rre) {
             int status = rre.getErrorCode();
@@ -605,7 +606,8 @@ public class DownloadServiceImpl implements InternalDownloadService {
             // send the checksum as the response body, use the original repo path (the checksum path,
             // not the file) from the request
             RepoRequests.logToContext("Sending checksum response with status %s", response.getStatus());
-            requestResponseHelper.sendBodyResponse(response, requestRepoPath, checksum);
+
+            requestResponseHelper.sendBodyResponse(response, requestRepoPath, checksum, request);
         }
     }
 

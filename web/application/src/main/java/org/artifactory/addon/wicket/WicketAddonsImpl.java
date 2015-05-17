@@ -43,6 +43,8 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
+import org.apache.wicket.markup.html.form.Radio;
+import org.apache.wicket.markup.html.form.RadioGroup;
 import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
@@ -77,6 +79,7 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.version.VersionHolder;
 import org.artifactory.api.version.VersionInfoService;
+import org.artifactory.build.ArtifactoryBuildArtifact;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.MutableStatusHolder;
@@ -105,20 +108,13 @@ import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
-import org.artifactory.descriptor.repo.BowerConfiguration;
-import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.NuGetConfiguration;
-import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
+import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
@@ -420,8 +416,13 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Map<Artifact, FileInfo> getBuildArtifactsFileInfos(Build build) {
-        return Maps.newHashMap();
+    public Set<ArtifactoryBuildArtifact> getBuildArtifactsFileInfosWithFallback(Build build) {
+        return Sets.newHashSet();
+    }
+
+    @Override
+    public Set<ArtifactoryBuildArtifact> getBuildArtifactsFileInfos(Build build) {
+        return Sets.newHashSet();
     }
 
     @Override
@@ -527,6 +528,16 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     @Override
     public Component getTreeItemPropertiesPanel(String panelId, ItemInfo itemInfo) {
         return new DisabledPropertiesPanel(panelId, panelId);
+    }
+
+    @Override
+    public Properties getProperties(RepoPath path) {
+        return (Properties) InfoFactoryHolder.get().createProperties();
+    }
+
+    @Override
+    public void removeProperties(RepoPath path, String propToDelete) {
+
     }
 
     @Override
@@ -691,11 +702,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Set<FileInfo> getNonStrictArtifactFileInfos(Build build) {
-        return Sets.newHashSet();
-    }
-
-    @Override
     public CreateUpdatePanel<LdapGroupSetting> getLdapGroupPanel(CreateUpdateAction createUpdateAction,
             LdapGroupSetting ldapGroupSetting, LdapGroupListPanel ldapGroupListPanel) {
         return null;
@@ -756,7 +762,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public Set<org.artifactory.fs.FileInfo> getNonStrictDependencyFileInfos(Build build, Set<String> scopes) {
+    public Set<org.artifactory.fs.FileInfo> getBuildDependencyFileInfos(Build build, Set<String> scopes) {
         return Sets.newHashSet();
     }
 
@@ -1223,13 +1229,20 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor) {
+    public void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor,
+            boolean isCreate) {
         WebMarkupContainer dockerSection = new WebMarkupContainer("dockerSupportSection");
         dockerSection.add(new TitledBorderBehavior("fieldset-border", "Docker"));
         dockerSection.add(new DisabledAddonBehavior(AddonType.DOCKER));
         dockerSection.add(
                 new StyledCheckbox("enableDockerSupport").setTitle("Enable Docker Support").setEnabled(false));
         dockerSection.add(new SchemaHelpBubble("enableDockerSupport.help"));
+        final RadioGroup dockerApiVersion = new RadioGroup("dockerApiVersion");
+        dockerApiVersion.add(new Radio<>("v1", Model.of(DockerApiVersion.V1)));
+        dockerApiVersion.add(new HelpBubble("v1.help", "Support Docker V1 API"));
+        dockerApiVersion.add(new Radio<>("v2", Model.of(DockerApiVersion.V2)));
+        dockerApiVersion.add(new HelpBubble("v2.help", "Support Docker V2 API"));
+        dockerSection.add(dockerApiVersion);
         Label label = new Label("dockerRepoUrlLabel", "");
         label.setVisible(false);
         dockerSection.add(label);

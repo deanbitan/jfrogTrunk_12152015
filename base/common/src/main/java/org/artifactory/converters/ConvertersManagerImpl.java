@@ -5,6 +5,7 @@ import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.ArtifactoryConverter;
+import org.artifactory.common.property.FatalConversionException;
 import org.artifactory.storage.db.properties.model.DbProperties;
 import org.artifactory.storage.db.properties.service.ArtifactoryCommonDbPropertiesService;
 import org.artifactory.version.CompoundVersionDetails;
@@ -50,40 +51,25 @@ public class ConvertersManagerImpl implements ConverterManager {
         clusterHomeConverters.add(new MimeTypeConverter(artifactoryHome.getHaAwareMimeTypesFile()));
     }
 
+    @Override
     public void convertHomes() {
-        convertLocalHome();
-        convertCluster();
+        convertHome();
+        convertClusterHome();
     }
 
-    private void convertLocalHome() {
-        try {
-            if (isLocalHomeInterested()) {
-                CompoundVersionDetails originalHome = vp.getOriginalHome();
-                CompoundVersionDetails running = vp.getRunning();
-                homeConversionRunning = true;
-                String message = "Starting home conversion, from {}, to {}";
-                log.info(message, originalHome.getVersion(), running.getVersion());
-                runConverters(localHomeConverters, originalHome, running);
-                log.info("Finished home conversion");
+    @Override
+    public void beforeInits() {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        if (homeConversionRunning) {
+            boolean lockdown = addonsManager.lockdown();
+            if (lockdown) {
+                cleanRevertConverters(localHomeConverters, LocalConverterTaskType.revert);
+                cleanRevertConverters(clusterHomeConverters, LocalConverterTaskType.revert);
+                throw new FatalConversionException("Found invalid license, reverting conversions and stopping startup");
+            } else {
+                cleanRevertConverters(localHomeConverters, LocalConverterTaskType.clean);
+                cleanRevertConverters(clusterHomeConverters, LocalConverterTaskType.clean);
             }
-        } catch (Exception e) {
-            handleException(e);
-        }
-    }
-
-    private void convertCluster() {
-        try {
-            if (isHaInterested()) {
-                CompoundVersionDetails originalHa = vp.getOriginalHa();
-                CompoundVersionDetails running = vp.getRunning();
-                homeConversionRunning = true;
-                String message = "Starting cluster home conversion, from {}, to {}";
-                log.info(message, originalHa.getVersion(), running.getVersion());
-                runConverters(clusterHomeConverters, originalHa, running);
-                log.info("Finished cluster home conversion");
-            }
-        } catch (Exception e) {
-            handleException(e);
         }
     }
 
@@ -156,6 +142,38 @@ public class ConvertersManagerImpl implements ConverterManager {
         }
     }
 
+    private void convertHome() {
+        try {
+            if (isLocalHomeInterested()) {
+                CompoundVersionDetails originalHome = vp.getOriginalHome();
+                CompoundVersionDetails running = vp.getRunning();
+                homeConversionRunning = true;
+                String message = "Starting home conversion, from {}, to {}";
+                log.info(message, originalHome.getVersion(), running.getVersion());
+                runConverters(localHomeConverters, originalHome, running);
+                log.info("Finished home conversion");
+            }
+        } catch (Exception e) {
+            handleException(e);
+        }
+    }
+
+    private void convertClusterHome() {
+        try {
+            if (isHaInterested()) {
+                CompoundVersionDetails originalHa = vp.getOriginalHa();
+                CompoundVersionDetails running = vp.getRunning();
+                homeConversionRunning = true;
+                String message = "Starting cluster home conversion, from {}, to {}";
+                log.info(message, originalHa.getVersion(), running.getVersion());
+                runConverters(clusterHomeConverters, originalHa, running);
+                log.info("Finished cluster home conversion");
+            }
+        } catch (Exception e) {
+            handleException(e);
+        }
+    }
+
     private void handleException(Exception e) {
         log.error("Conversion failed. You should analyze the error and retry launching " +
                 "Artifactory. Error is: {}", e.getMessage());
@@ -182,7 +200,24 @@ public class ConvertersManagerImpl implements ConverterManager {
             CompoundVersionDetails toVersion) {
         for (ArtifactoryConverterAdapter converter : converters) {
             if (converter.isInterested(fromVersion, toVersion)) {
+                converter.backup();
                 converter.convert(fromVersion, toVersion);
+            }
+        }
+    }
+
+    private void cleanRevertConverters(List<ArtifactoryConverterAdapter> converters,
+            LocalConverterTaskType localConverterTaskType) {
+        for (ArtifactoryConverterAdapter converter : converters) {
+            switch (localConverterTaskType) {
+                case clean: {
+                    converter.clean();
+                    break;
+                }
+                case revert: {
+                    converter.revert();
+                    break;
+                }
             }
         }
     }
@@ -235,4 +270,9 @@ public class ConvertersManagerImpl implements ConverterManager {
     public List<ArtifactoryConverterAdapter> getClusterHomeConverters() {
         return clusterHomeConverters;
     }
+
+    private static enum LocalConverterTaskType {
+        convert, backup, revert, clean
+    }
+
 }

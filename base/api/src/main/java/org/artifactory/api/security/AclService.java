@@ -77,7 +77,7 @@ public interface AclService {
     boolean canManage(UserInfo user, PermissionTargetInfo target);
 
     @Lock
-    AclInfo createAcl(MutableAclInfo entity);
+    void createAcl(MutableAclInfo entity);
 
     @Lock
     void deleteAcl(PermissionTargetInfo target);

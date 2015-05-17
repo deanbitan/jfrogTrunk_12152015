@@ -39,8 +39,10 @@ public interface DockerWebAddon extends Addon {
      *
      * @param form       Repo configuration form
      * @param descriptor Configured repo descriptor
+     * @param isCreate   Whether it's a create new repository action
      */
-    void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor);
+    void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor,
+            boolean isCreate);
 
     ITab getDockerInfoTab(String tabTitle, FileInfo fileInfo);
 

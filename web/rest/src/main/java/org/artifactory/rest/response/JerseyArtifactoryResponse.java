@@ -61,6 +61,12 @@ public class JerseyArtifactoryResponse extends ArtifactoryResponseBase {
     }
 
     @Override
+    public void setContentLength(long length) {
+        super.setContentLength(length);
+        setHeader("Content-Length", String.valueOf(length));
+    }
+
+    @Override
     public void setEtag(String etag) {
         if (etag != null) {
             response.header("ETag", etag);
@@ -84,6 +90,15 @@ public class JerseyArtifactoryResponse extends ArtifactoryResponseBase {
             response.header(ArtifactoryRequest.CHECKSUM_MD5, md5);
         } else {
             log.debug("Could not register a null md5 tag with the response.");
+        }
+    }
+
+    @Override
+    public void setRangeSupport(String rangeSupport) {
+        if (rangeSupport != null) {
+            response.header(ArtifactoryRequest.ACCEPT_RANGES, rangeSupport);
+        } else {
+            log.debug("Could not register a null range support tag with the response.");
         }
     }
 

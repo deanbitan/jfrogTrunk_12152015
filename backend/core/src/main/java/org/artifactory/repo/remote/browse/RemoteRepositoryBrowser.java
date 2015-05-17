@@ -19,12 +19,12 @@
 package org.artifactory.repo.remote.browse;
 
 import com.google.common.base.Charsets;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.util.EntityUtils;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.request.RemoteRequestException;
 import org.artifactory.util.HttpUtils;
@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -60,16 +59,13 @@ public abstract class RemoteRepositoryBrowser {
         try (CloseableHttpResponse response = client.executeMethod(method)) {
             assertSizeLimit(url, response);
 
-            InputStream responseBodyAsStream = HttpUtils.getResponseBody(response);
-            String responseString = IOUtils.toString(responseBodyAsStream, Charsets.UTF_8.name());
             StatusLine status = response.getStatusLine();
             if (status.getStatusCode() != HttpStatus.SC_OK) {
                 String message = "Unable to retrieve " + url + ": "
                         + status.getStatusCode() + ": " + status.getReasonPhrase();
-                throw new RemoteRequestException(message, status.getStatusCode(), responseString);
+                throw new RemoteRequestException(message, status.getStatusCode(), status.getReasonPhrase());
             }
-
-            return responseString;
+            return EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
         }
     }
 

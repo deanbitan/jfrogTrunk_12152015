@@ -28,6 +28,8 @@ public interface ArtifactoryRequest extends Request {
 
     String CHECKSUM_MD5 = "X-Checksum-Md5";
 
+    String ACCEPT_RANGES = "Accept-Ranges";
+
     String FILE_NAME = "X-Artifactory-Filename";
 
     /**

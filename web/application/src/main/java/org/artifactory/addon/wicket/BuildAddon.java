@@ -24,6 +24,7 @@ import org.artifactory.addon.AddonType;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.build.artifacts.BuildArtifactsRequest;
 import org.artifactory.api.rest.build.diff.BuildsDiff;
+import org.artifactory.build.ArtifactoryBuildArtifact;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.Lock;
@@ -101,14 +102,6 @@ public interface BuildAddon extends Addon {
     String getDeleteVersionsWarningMessage(List<RepoPath> versionPaths, String defaultMessage);
 
     /**
-     * Returns a list of build-artifact file info objects
-     *
-     * @param build Build to extract artifacts from
-     * @return Artifact file info list
-     */
-    Set<FileInfo> getNonStrictArtifactFileInfos(Build build);
-
-    /**
      * Returns a list of build-dependency file info objects, as well as their descriptor according to the layout if
      * exists.
      *
@@ -116,7 +109,7 @@ public interface BuildAddon extends Addon {
      * @param scopes Scopes to add. null = add all dependencies.
      * @return Dependency file info list
      */
-    Set<FileInfo> getNonStrictDependencyFileInfos(Build build, Set<String> scopes);
+    Set<FileInfo> getBuildDependencyFileInfos(Build build, Set<String> scopes);
 
     /**
      * Returns a list of build-artifact actionable items
@@ -147,15 +140,28 @@ public interface BuildAddon extends Addon {
     SaveSearchResultsPanel getBuildSearchResultsPanel(AddonType requestingAddon, Build build);
 
     /**
-     * Returns a file info of artifact object for a build file bean
+     * Returns a mapping of file info to artifact for all artifacts in this build, will return artifacts that were not
+     * directly involved in the build (but same checksum!) if the build's artifacts themselves were'nt found based on
+     * their properties.
+     * NOTE: a mapping might be null if the artifact does not exist in artifactory
      *
      * @param build The searched build
      * @return file beans and file infos
      */
-    Map<Artifact, FileInfo> getBuildArtifactsFileInfos(Build build);
+    Set<ArtifactoryBuildArtifact> getBuildArtifactsFileInfosWithFallback(Build build);
+
+    /**
+     * Returns a mapping of file info to artifact for all artifacts in this build.
+     * NOTE: a mapping might be null if the artifact does not exist in artifactory
+     *
+     * @param build The searched build
+     * @return file beans and file infos
+     */
+    Set<ArtifactoryBuildArtifact> getBuildArtifactsFileInfos(Build build);
 
     /**
      * Returns a file info of dependency object for a build file bean
+     * NOTE: a mapping might be null if the dependency does not exist in artifactory
      *
      * @param build The searched build
      * @return file beans and file infos

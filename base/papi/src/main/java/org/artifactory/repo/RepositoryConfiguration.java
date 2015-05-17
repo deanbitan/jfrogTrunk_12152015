@@ -54,4 +54,6 @@ public interface RepositoryConfiguration {
     boolean isEnablePypiSupport();
 
     boolean isEnableDockerSupport();
+
+    String getDockerApiVersion();
 }

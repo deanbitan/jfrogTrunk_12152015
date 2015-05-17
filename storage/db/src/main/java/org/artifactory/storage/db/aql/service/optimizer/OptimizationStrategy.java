@@ -87,7 +87,7 @@ public abstract class OptimizationStrategy {
                     } else if (AqlFieldEnum.propertyValue == field.getFieldEnum()) {
                         builder.append("V");
                     } else {
-                        builder.append("c");
+                        builder.append("C");
                     }
                 }
             }

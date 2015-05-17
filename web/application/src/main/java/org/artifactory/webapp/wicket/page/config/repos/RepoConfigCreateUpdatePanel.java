@@ -26,7 +26,6 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.common.wicket.behavior.CssClass;
 import org.artifactory.common.wicket.behavior.OnKeyUpUpdatingBehavior;
 import org.artifactory.common.wicket.behavior.defaultbutton.DefaultButtonBehavior;
@@ -62,8 +61,6 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
     protected AddonsManager addons;
     @SpringBean
     protected CentralConfigService centralConfigService;
-    @SpringBean
-    protected PropertiesService propsService;
 
     protected RepoConfigCreateUpdatePanel(CreateUpdateAction action, final E repoDescriptor,
             CachingDescriptorHelper cachingDescriptorHelper) {
@@ -137,9 +134,10 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
      * update repo related property in db in case repo data (replication and etc)
      * has been changed or deleted
      */
-    public void updateRepositoryProperties(){
+    public void updateRepositoryReplicationProperties() {
 
     }
+
     /**
      * sync local with saved replication data  after removing replication data without saving it
      */
@@ -182,7 +180,7 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
                 } else {
                     saveEditDescriptor(repoDescriptor);
                     getPage().info("Repository '" + repoDescriptor.getKey() + "' successfully updated.");
-                    updateRepositoryProperties();
+                    updateRepositoryReplicationProperties();
                 }
 
                 cachingDescriptorHelper.reset();

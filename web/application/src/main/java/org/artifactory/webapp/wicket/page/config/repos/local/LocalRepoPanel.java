@@ -37,6 +37,7 @@ import org.artifactory.md.Properties;
 import org.artifactory.webapp.wicket.page.config.repos.CachingDescriptorHelper;
 import org.artifactory.webapp.wicket.page.config.repos.RepoConfigCreateUpdatePanel;
 import org.artifactory.webapp.wicket.util.CronUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,8 +70,8 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
             }
         });
 
-        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         List<PropertySet> propertySets = getCachingDescriptorHelper().getModelMutableDescriptor().getPropertySets();
+        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         tabList.add(propertiesWebAddon.getRepoConfigPropertySetsTab("Property Sets", entity, propertySets));
 
         MutableCentralConfigDescriptor mutableDescriptor = cachingDescriptorHelper.getModelMutableDescriptor();
@@ -111,42 +112,45 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
      * update repo replication related property following to repo data update or deletion
      */
     @Override
-    public void updateRepositoryProperties(){
+    public void updateRepositoryReplicationProperties() {
         Set<String> propsKeys = getRepoReplicationPropsKeysFromDB();
         List<String> localRepoList = getLocalReplicationPropertiesKeysList();
         List<String> propsToBeRemoved = getUnusedPropsToDeleteList(localRepoList, propsKeys);
         deleteUnusedPropertiesFromDB(propsToBeRemoved);
     }
 
-    /** check if licensed for HA then return appropriate key properties
+    /**
+     * check if licensed for HA then return appropriate key properties
      *
      * @return if HA License return unique key with url , else none multi push basic key
      */
     private List<String> getLocalReplicationPropertiesKeysList() {
         List<String> localRepoList;
-        if(addons.isHaLicensed()) {
+        if (addons.isHaLicensed()) {
             localRepoList = getUniqueMultiPushKeyProperties();
-        }else localRepoList = getNoneMultiPushUniqueList();
+        } else {
+            localRepoList = getNoneMultiPushUniqueList();
+        }
         return localRepoList;
     }
 
     /**
      * return the basic non Multi Push Unique Key properties name For Replication
+     *
      * @return list of non Multi Push Key properties name
      */
     private List<String> getNoneMultiPushUniqueList() {
         List<String> noneMultiPushUniqueKeyList = new ArrayList<>();
-        noneMultiPushUniqueKeyList.add("artifactory.replication."+replicationDescriptor.getRepoKey()
+        noneMultiPushUniqueKeyList.add("artifactory.replication." + replicationDescriptor.getRepoKey()
                 + ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX);
-        noneMultiPushUniqueKeyList.add("artifactory.replication."+replicationDescriptor.getRepoKey()
-                +ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX);
-        noneMultiPushUniqueKeyList.add("artifactory.replication."+replicationDescriptor.getRepoKey()
-                +ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX);
+        noneMultiPushUniqueKeyList.add("artifactory.replication." + replicationDescriptor.getRepoKey()
+                + ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX);
+        noneMultiPushUniqueKeyList.add("artifactory.replication." + replicationDescriptor.getRepoKey()
+                + ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX);
         return noneMultiPushUniqueKeyList;
     }
 
     /**
-     *
      * @return Unique Multi Push Replication Keys (with url)
      */
     private List<String> getUniqueMultiPushKeyProperties() {
@@ -155,48 +159,52 @@ public class LocalRepoPanel extends RepoConfigCreateUpdatePanel<LocalRepoDescrip
     }
 
     /**
-     *
      * @return props key of specific repo from DB
      */
     private Set<String> getRepoReplicationPropsKeysFromDB() {
-        Properties propsServiceProperties = propsService.getProperties(replicationDescriptor.getRepoPath());
+        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
+        Properties propsServiceProperties = propertiesWebAddon.getProperties(replicationDescriptor.getRepoPath());
         return propsServiceProperties.keySet();
     }
 
     /**
      * remove unused replication properties due to repo replication updated (delete / url change)
+     *
      * @param propsToBeRemoved
      */
     private void deleteUnusedPropertiesFromDB(List<String> propsToBeRemoved) {
-        for (String propToDelete : propsToBeRemoved){
-            propsService.deleteProperty(replicationDescriptor.getRepoPath(),propToDelete);
+        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
+        for (String propToDelete : propsToBeRemoved) {
+            propertiesWebAddon.removeProperties(replicationDescriptor.getRepoPath(), propToDelete);
         }
     }
 
     /**
      * compare replication property based updated descriptor replication list
      * and return list if property to be removed f not needed
+     *
      * @param localRepoList - update descriptor replication list after update
-     * @param propsKeys property Set from DB
+     * @param propsKeys     property Set from DB
      * @return list of unused property to be removed
      */
     private List<String> getUnusedPropsToDeleteList(List<String> localRepoList, Set<String> propsKeys) {
         List<String> propsToBeRemoved = new ArrayList<>();
-        for (String propKey : propsKeys){
-            String propsPartialKey = propKey.replace("artifactory.replication."+replicationDescriptor.getRepoKey(),"")
+        for (String propKey : propsKeys) {
+            String propsPartialKey = propKey.replace("artifactory.replication." + replicationDescriptor.getRepoKey(),
+                    "")
                     .replace(ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX, "")
                     .replace(ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX, "")
                     .replace(ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX, "");
 
-            if (!localRepoList.contains(propsPartialKey) && !propsToBeRemoved.contains(propKey)){
-                propsToBeRemoved.add("artifactory.replication."+replicationDescriptor.getRepoKey()
-                        +propsPartialKey+ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX);
-                propsToBeRemoved.add("artifactory.replication."+replicationDescriptor.getRepoKey()
-                        +propsPartialKey+ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX);
-                propsToBeRemoved.add("artifactory.replication."+replicationDescriptor.getRepoKey()
-                        +propsPartialKey+ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX);
+            if (!localRepoList.contains(propsPartialKey) && !propsToBeRemoved.contains(propKey)) {
+                propsToBeRemoved.add("artifactory.replication." + replicationDescriptor.getRepoKey()
+                        + propsPartialKey + ReplicationAddon.PROP_REPLICATION_STARTED_SUFFIX);
+                propsToBeRemoved.add("artifactory.replication." + replicationDescriptor.getRepoKey()
+                        + propsPartialKey + ReplicationAddon.PROP_REPLICATION_FINISHED_SUFFIX);
+                propsToBeRemoved.add("artifactory.replication." + replicationDescriptor.getRepoKey()
+                        + propsPartialKey + ReplicationAddon.PROP_REPLICATION_RESULT_SUFFIX);
             }
-       }
+        }
         return propsToBeRemoved;
     }
 

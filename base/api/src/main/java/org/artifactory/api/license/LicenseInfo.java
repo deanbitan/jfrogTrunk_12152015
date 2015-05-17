@@ -188,7 +188,7 @@ public class LicenseInfo implements Serializable {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + name.hashCode();
-        result = 31 * result + longName.hashCode();
+        result = (longName != null ? (31 * result + longName.hashCode()) : result);
         return result;
     }
 

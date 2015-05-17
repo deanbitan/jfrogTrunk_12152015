@@ -70,12 +70,10 @@ import java.util.regex.Pattern;
  * @author Yoav Landman
  */
 public abstract class MavenModelUtils {
+    public static final String UTF8 = "utf-8";
     private static final Logger log = LoggerFactory.getLogger(MavenModelUtils.class);
     private static final DateTimeFormatter UNIQUE_SNAPSHOT_FORMATTER =
             DateTimeFormat.forPattern("yyyyMMdd.HHmmss").withZoneUTC();
-
-    public static final String UTF8 = "utf-8";
-
     //Uses lazy evaluation of the version (+?)
     //see: http://www.regular-expressions.info/reference.html
     //For testing, see: http://www.cis.upenn.edu/~matuszek/General/RegexTester/regex-tester.html
@@ -98,6 +96,14 @@ public abstract class MavenModelUtils {
      */
     public static String dateToUniqueSnapshotTimestamp(long time) {
         return UNIQUE_SNAPSHOT_FORMATTER.print(time);
+    }
+
+    /**
+     * @param dateTime Time to format
+     * @return Maven unique snapshot timestamp for the input date. For example: 20130603.113821
+     */
+    public static Date uniqueSnapshotTimestampToDate(String dateTime) {
+        return UNIQUE_SNAPSHOT_FORMATTER.parseDateTime(dateTime).toDate();
     }
 
     /**

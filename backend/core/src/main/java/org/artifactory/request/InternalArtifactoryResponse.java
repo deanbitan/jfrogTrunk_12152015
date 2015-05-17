@@ -63,6 +63,11 @@ public class InternalArtifactoryResponse extends ArtifactoryResponseBase {
     }
 
     @Override
+    public void setRangeSupport(String bytes) {
+        // ignore
+    }
+
+    @Override
     public void setSha1(String sha1) {
         // ignore
     }

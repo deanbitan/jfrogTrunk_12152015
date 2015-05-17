@@ -39,7 +39,19 @@ public class PomTargetPathValidatorTest {
 
     public void validatePomTargetValidPath() throws IOException {
         InputStream inputStream = ResourceUtils.getResource("/org/artifactory/maven/yourpit-1.0.0-alpha2.pom");
-        String path = "yourpit/yourpit/1.0.0-alpha2";
+        String path = "org/yourpit/yourpit/1.0.0-alpha2";
+
+        ModuleInfo moduleInfo = ModuleInfoUtils.moduleInfoFromDescriptorPath(path, RepoLayoutUtils.MAVEN_2_DEFAULT);
+
+        PomTargetPathValidator validator = new PomTargetPathValidator(path, moduleInfo);
+        validator.validate(inputStream, false);
+        assertFalse(validator.isMavenPlugin(), "Not expected detection of maven plugin");
+    }
+
+    @Test(expectedExceptions = BadPomException.class)
+    public void validatePomWithDots() throws IOException {
+        InputStream inputStream = ResourceUtils.getResource("/org/artifactory/maven/yourpit-1.0.0-alpha2.pom");
+        String path = "org.jfrog/yourpit/1.0.0-alpha2";
 
         ModuleInfo moduleInfo = ModuleInfoUtils.moduleInfoFromDescriptorPath(path, RepoLayoutUtils.MAVEN_2_DEFAULT);
 

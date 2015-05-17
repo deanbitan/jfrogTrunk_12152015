@@ -33,15 +33,15 @@ public class PropertyCriteria extends Criteria {
         AqlVariable value2 = getVariable2();
         // Get both tables which are node_props tables (this is property criteria)
         SqlTable table1 = getTable1();
-        //SqlTable table2 = getTable2();
+        // SqlTable table2 = getTable2();
         // update the Sql input param list
         // Get the ComparatorEnum
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());
         AqlVariable key = AqlFieldResolver.resolve(AqlFieldEnum.propertyKey.signature);
         AqlVariable value = AqlFieldResolver.resolve(AqlFieldEnum.propertyValue.signature);
-        boolean not = AqlComparatorEnum.notEquals == comparatorEnum || AqlComparatorEnum.notMatches == comparatorEnum;
-        String relation = not ? " or " : " and ";
-        return "(" + createSqlCriteria(comparatorEnum, key, table1, value1, params) + relation +
+        // The key comparator should always be equals
+        AqlComparatorEnum keyComparator = AqlComparatorEnum.equals;
+        return "(" + createSqlCriteria(keyComparator, key, table1, value1, params) + " and " +
                 createSqlCriteria(comparatorEnum, value, table1, value2, params) + ")";
     }
 }

@@ -86,7 +86,7 @@ public class AclServiceImpl implements AclStoreService {
     }
 
     @Override
-    public AclInfo createAcl(AclInfo entity) {
+    public void createAcl(AclInfo entity) {
         try {
             PermissionTargetInfo permTargetInfo = entity.getPermissionTarget();
             PermissionTarget dbPermTarget = permTargetsDao.findPermissionTarget(permTargetInfo.getName());
@@ -106,7 +106,6 @@ public class AclServiceImpl implements AclStoreService {
         } finally {
             aclsCache.promoteAclsDbVersion();
         }
-        return getAclsMap().get(entity.getPermissionTarget().getName());
     }
 
     @Override
@@ -311,6 +310,47 @@ public class AclServiceImpl implements AclStoreService {
         return aclsCache.get();
     }
 
+    private static class AclsCache {
+        private final AclCacheLoader cacheLoader;
+        private AtomicInteger aclsDbVersion = new AtomicInteger(
+                1);  // promoted on each DB change (permission change/add/delete)
+        private volatile int aclsMapVersion = 0; // promoted each time we load the map from DB
+        private volatile Map<String, AclInfo> aclsMap;
+
+        public AclsCache(AclCacheLoader cacheLoader) {
+            this.cacheLoader = cacheLoader;
+        }
+
+        /**
+         * Call this method each permission update/change/delete in DB.
+         */
+        public int promoteAclsDbVersion() {
+            return aclsDbVersion.incrementAndGet();
+        }
+
+        /**
+         * Returns permissions map.
+         */
+        public Map<String, AclInfo> get() {
+            Map<String, AclInfo> tempMap = aclsMap;
+            if (aclsDbVersion.get() > aclsMapVersion) {
+                // Need to update aclsMap (new version in aclsDbVersion).
+                synchronized (cacheLoader) {
+                    tempMap = aclsMap;
+                    // Double check after cacheLoader synchronization.
+                    if (aclsDbVersion.get() > aclsMapVersion) {
+                        // The map will be valid for version the current aclsDbVersion.
+                        int startingVersion = aclsDbVersion.get();
+                        tempMap = cacheLoader.call();
+                        aclsMap = tempMap;
+                        aclsMapVersion = startingVersion;
+                    }
+                }
+            }
+            return tempMap;
+        }
+    }
+
     private class AclCacheLoader implements Callable<Map<String, AclInfo>> {
         @Override
         public Map<String, AclInfo> call() {
@@ -344,47 +384,6 @@ public class AclServiceImpl implements AclStoreService {
                 throw new StorageException("Could not load all Access Control List from DB due to:" + e.getMessage(),
                         e);
             }
-        }
-    }
-
-    private static class AclsCache {
-        private AtomicInteger aclsDbVersion = new AtomicInteger(
-                1);  // promoted on each DB change (permission change/add/delete)
-        private volatile int aclsMapVersion = 0; // promoted each time we load the map from DB
-        private volatile Map<String, AclInfo> aclsMap;
-        private final AclCacheLoader cacheLoader;
-
-        public AclsCache(AclCacheLoader cacheLoader) {
-            this.cacheLoader = cacheLoader;
-        }
-
-        /**
-         * Call this method each permission update/change/delete in DB.
-         */
-        public int promoteAclsDbVersion() {
-            return aclsDbVersion.incrementAndGet();
-        }
-
-        /**
-         * Returns permissions map.
-         */
-        public Map<String, AclInfo> get() {
-            Map<String, AclInfo> tempMap = aclsMap;
-            if (aclsDbVersion.get() > aclsMapVersion) {
-                // Need to update aclsMap (new version in aclsDbVersion).
-                synchronized (cacheLoader) {
-                    tempMap = aclsMap;
-                    // Double check after cacheLoader synchronization.
-                    if (aclsDbVersion.get() > aclsMapVersion) {
-                        // The map will be valid for version the current aclsDbVersion.
-                        int startingVersion = aclsDbVersion.get();
-                        tempMap = cacheLoader.call();
-                        aclsMap = tempMap;
-                        aclsMapVersion = startingVersion;
-                    }
-                }
-            }
-            return tempMap;
         }
     }
 }

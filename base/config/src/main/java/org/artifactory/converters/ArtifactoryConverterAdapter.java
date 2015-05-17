@@ -10,4 +10,9 @@ public interface ArtifactoryConverterAdapter extends ArtifactoryConverter {
 
     boolean isInterested(CompoundVersionDetails source, CompoundVersionDetails target);
 
+    void revert();
+
+    void backup();
+
+    void clean();
 }

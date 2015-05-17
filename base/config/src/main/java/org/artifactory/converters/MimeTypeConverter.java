@@ -20,6 +20,7 @@ package org.artifactory.converters;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
+import org.apache.commons.io.FileUtils;
 import org.artifactory.mime.version.MimeTypesVersion;
 import org.artifactory.version.CompoundVersionDetails;
 
@@ -66,6 +67,52 @@ public class MimeTypeConverter implements ArtifactoryConverterAdapter {
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute mimetypes conversion", e);
 
+        }
+    }
+
+    @Override
+    public void backup() {
+        File mimeTypeFile = path;
+        File mimeTypeBackupFile = new File(path.getAbsolutePath() + ".back");
+        try {
+            if (mimeTypeBackupFile.exists()) {
+                FileUtils.forceDelete(mimeTypeBackupFile);
+            }
+            FileUtils.copyFile(mimeTypeFile, mimeTypeBackupFile);
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Fail to save backup file '" + mimeTypeBackupFile.getAbsolutePath() + "' from the login file: '" + mimeTypeFile.getAbsolutePath() + "'",
+                    e);
+        }
+    }
+
+    @Override
+    public void clean() {
+        File mimeTypeBackupFile = new File(path.getAbsolutePath() + ".back");
+        try {
+            if (mimeTypeBackupFile.exists()) {
+                FileUtils.forceDelete(mimeTypeBackupFile);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Fail to clean backup file '" + mimeTypeBackupFile.getAbsolutePath() +
+                            "' after success conversion'", e);
+        }
+    }
+
+    @Override
+    public void revert() {
+        File mimeTypeFile = path;
+        File mimeTypeBackupFile = new File(path.getAbsolutePath() + ".back");
+        try {
+            if (mimeTypeBackupFile.exists()) {
+                if (mimeTypeFile.exists()) {
+                    FileUtils.forceDelete(mimeTypeFile);
+                }
+                FileUtils.moveFile(mimeTypeBackupFile, mimeTypeFile);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Fail to revert conversion", e);
         }
     }
 }

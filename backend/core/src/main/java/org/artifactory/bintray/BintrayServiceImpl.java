@@ -70,6 +70,8 @@ import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlItem;
 import org.artifactory.aql.util.AqlSearchablePath;
+import org.artifactory.build.ArtifactoryBuildArtifact;
+import org.artifactory.build.BuildServiceUtils;
 import org.artifactory.build.InternalBuildService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusEntry;
@@ -104,7 +106,6 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
-import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.Build;
 import org.jfrog.build.api.release.BintrayUploadInfoOverride;
 import org.joda.time.format.ISODateTimeFormat;
@@ -134,6 +135,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.artifactory.aql.api.internal.AqlBase.and;
+import static org.artifactory.build.BuildServiceUtils.VerifierLogLevel;
 
 /**
  * @author Shay Yaakov
@@ -201,25 +203,23 @@ public class BintrayServiceImpl implements BintrayService {
         BasicStatusHolder status = new BasicStatusHolder();
         String buildNameAndNumber = build.getName() + ":" + build.getNumber();
         status.status("Starting pushing build '" + buildNameAndNumber + "' to Bintray.", log);
-        List<FileInfo> artifactsToPush = collectBuildArtifactsToPush(build);
-        if (artifactsToPush != null) {
-            try (CloseableHttpClient client = createHTTPClient()) {
-                status.status("Found " + artifactsToPush.size() + " artifacts to push.", log);
-                for (FileInfo fileInfo : artifactsToPush) {
-                    bintrayParams.setPath(fileInfo.getRelPath());
-                    if (bintrayParams.isUseExistingProps()) {
-                        BintrayParams paramsFromProperties = createParamsFromProperties(fileInfo.getRepoPath());
-                        bintrayParams.setRepo(paramsFromProperties.getRepo());
-                        bintrayParams.setPackageId(paramsFromProperties.getPackageId());
-                        bintrayParams.setVersion(paramsFromProperties.getVersion());
-                        bintrayParams.setPath(paramsFromProperties.getPath());
-                    }
-                    try {
-                        performPush(client, fileInfo, bintrayParams, status, headersMap);
-                    } catch (IOException e) {
-                        sendBuildPushNotification(status, buildNameAndNumber);
-                        throw e;
-                    }
+        List<FileInfo> artifactsToPush = collectBuildArtifactsToPush(build, null);
+        try (CloseableHttpClient client = createHTTPClient()) {
+            status.status("Found " + artifactsToPush.size() + " artifacts to push.", log);
+            for (FileInfo fileInfo : artifactsToPush) {
+                bintrayParams.setPath(fileInfo.getRelPath());
+                if (bintrayParams.isUseExistingProps()) {
+                    BintrayParams paramsFromProperties = createParamsFromProperties(fileInfo.getRepoPath());
+                    bintrayParams.setRepo(paramsFromProperties.getRepo());
+                    bintrayParams.setPackageId(paramsFromProperties.getPackageId());
+                    bintrayParams.setVersion(paramsFromProperties.getVersion());
+                    bintrayParams.setPath(paramsFromProperties.getPath());
+                }
+                try {
+                    performPush(client, fileInfo, bintrayParams, status, headersMap);
+                } catch (IOException e) {
+                    sendBuildPushNotification(status, buildNameAndNumber);
+                    throw e;
                 }
             }
         }
@@ -385,9 +385,21 @@ public class BintrayServiceImpl implements BintrayService {
         repoService.setProperties(repoPath, properties);
     }
 
-    private List<FileInfo> collectBuildArtifactsToPush(Build build) {
-        Map<Artifact, FileInfo> infos = buildService.getBuildArtifactsInfo(build, StringUtils.EMPTY);
-        return Lists.newArrayList(infos.values());
+    /**
+     * Uses the {@link org.artifactory.api.build.BuildService} to retrieve all build artifacts and filters out missing
+     * entries (Artifacts that don't exist return a null FileInfo mapping).
+     * Logs missing artifacts with level warn
+     *
+     * @param build  Build to retrieve artifacts for.
+     * @param status StatusHolder for logging.
+     * @return List of FileInfo objects that represent this build's (found) artifacts
+     */
+    private List<FileInfo> collectBuildArtifactsToPush(Build build, @Nullable BasicStatusHolder status) {
+        status = status == null ? new BasicStatusHolder() : status;
+        log.info("Collecting Build artifacts to push for build {}:{}", build.getName(), build.getNumber());
+        Set<ArtifactoryBuildArtifact> infos = buildService.getBuildArtifactsFileInfos(build, false, StringUtils.EMPTY);
+        BuildServiceUtils.verifyAllArtifactInfosExistInSet(build, true, status, infos, VerifierLogLevel.warn);
+        return Lists.newArrayList(BuildServiceUtils.toFileInfoList(infos));
     }
 
     private void performPush(CloseableHttpClient client, FileInfo fileInfo, BintrayParams bintrayParams,
@@ -400,10 +412,8 @@ public class BintrayServiceImpl implements BintrayService {
         }
 
         if (!authorizationService.canAnnotate(fileInfo.getRepoPath())) {
-            String message = String.format(
-                    "You do not have annotate permissions on the published files in Artifactory. " +
-                            "Bintray package and version properties will not be recorded."
-            );
+            String message = "You do not have annotate permissions on the published files in Artifactory. " +
+                    "Bintray package and version properties will not be recorded.";
             status.warn(message, log);
         }
 
@@ -452,7 +462,7 @@ public class BintrayServiceImpl implements BintrayService {
             return status;
         }
         //Get artifacts from build and filter out descriptor
-        List<FileInfo> artifactsToPush = collectBuildArtifactsToPush(build);
+        List<FileInfo> artifactsToPush = collectBuildArtifactsToPush(build, status);
         filterOutJsonFileFromArtifactsToPush(artifactsToPush, null, status);
 
         //No artifacts in build
@@ -530,7 +540,7 @@ public class BintrayServiceImpl implements BintrayService {
             publishFiles(uploadInfo, status, bintrayVersionHandle);
         } catch (Exception e) {
             if (!(e instanceof BintrayCallException) && !(e instanceof MultipleBintrayCallException)) {
-                status.error("Operation failed: ", HttpStatus.SC_CONFLICT, e, log);
+                status.error("Operation failed: " + e.getMessage(), HttpStatus.SC_CONFLICT, e, log);
             }
             return status;
         }
@@ -627,18 +637,10 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     @Override
-    public Bintray createBintrayClient(BasicStatusHolder status) {
-        Bintray client;
-        UsernamePasswordCredentials credsToUse;
-        if (isUserHasBintrayAuth()) {
-            credsToUse = getCurrentUserBintrayCreds();
-        } else {
-            status.status("No Bintray credentials defined for current user, using the default credentials", log);
-            credsToUse = getGlobalBintrayCreds();
-        }
-
+    public Bintray createBintrayClient(BasicStatusHolder status) throws IllegalArgumentException {
+        UsernamePasswordCredentials credsToUse = getCurrentUserBintrayCreds();
         CloseableHttpClient httpClient = createHTTPClient(credsToUse);
-        client = BintrayClient.create(httpClient, PathUtils.trimTrailingSlashes(getBaseBintrayApiUrl()),
+        Bintray client = BintrayClient.create(httpClient, PathUtils.trimTrailingSlashes(getBaseBintrayApiUrl()),
                 ConstantValues.bintrayClientThreadPoolSize.getInt(),
                 ConstantValues.bintrayClientSignRequestTimeout.getInt());
         return client;
@@ -1044,13 +1046,12 @@ public class BintrayServiceImpl implements BintrayService {
 
     private UsernamePasswordCredentials getCurrentUserBintrayCreds() {
         UserInfo userInfo = getCurrentUser();
-        String bintrayAuth = userInfo.getBintrayAuth();
+        String bintrayAuth = userInfo == null ? "" : userInfo.getBintrayAuth();
         if (StringUtils.isNotBlank(bintrayAuth)) {
             String[] bintrayAuthTokens = StringUtils.split(bintrayAuth, ":");
             if (bintrayAuthTokens.length != 2) {
                 throw new IllegalArgumentException("Found invalid Bintray credentials.");
             }
-
             return new UsernamePasswordCredentials(bintrayAuthTokens[0], bintrayAuthTokens[1]);
         }
         throw new IllegalArgumentException(

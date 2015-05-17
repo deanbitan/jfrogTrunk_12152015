@@ -99,6 +99,10 @@ public class StoragePropertiesEncryptInterceptorTest {
             if ("getArtifactoryHome".equals(method.getName())) {
                 return ArtifactoryHome.get();
             }
+            if ("beanForType".equals(method.getName()) && ((Class) args[0]).getName().equals(
+                    StorageProperties.class.getName())) {
+                return new StorageProperties(ArtifactoryHome.get().getStoragePropertiesFile());
+            }
             throw new IllegalStateException("The state is not expected in this test: " + method.getName());
         }
     }

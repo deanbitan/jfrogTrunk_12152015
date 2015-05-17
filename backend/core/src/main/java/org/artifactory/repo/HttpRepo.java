@@ -312,17 +312,18 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         RepoRequests.logToContext("Executing GET request to %s", fullUrl);
         final CloseableHttpResponse response = executeMethod(method, headers);
 
-        int statusCode = response.getStatusLine().getStatusCode();
+        StatusLine statusLine = response.getStatusLine();
+        int statusCode = statusLine.getStatusCode();
         if (statusCode == HttpStatus.SC_NOT_FOUND) {
             //Not found
             IOUtils.closeQuietly(response);
-            RepoRequests.logToContext("Received response status %s - throwing exception", statusCode);
-            throw new RemoteRequestException("Unable to find " + fullUrl, statusCode);
+            RepoRequests.logToContext("Received response status %s - throwing exception", statusLine);
+            throw new RemoteRequestException("Unable to find " + fullUrl, statusCode, statusLine.getReasonPhrase());
         }
         if (statusCode != HttpStatus.SC_OK) {
             IOUtils.closeQuietly(response);
-            RepoRequests.logToContext("Received response status %s - throwing exception", statusCode);
-            throw new RemoteRequestException("Error fetching " + fullUrl, statusCode);
+            RepoRequests.logToContext("Received response status %s - throwing exception", statusLine);
+            throw new RemoteRequestException("Error fetching " + fullUrl, statusCode, statusLine.getReasonPhrase());
         }
         //Found
         long contentLength = HttpUtils.getContentLength(response);
@@ -392,7 +393,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      * @throws IOException If the repository is offline or if any error occurs during the execution
      */
     public CloseableHttpResponse executeMethod(HttpRequestBase method) throws IOException {
-        return this.executeMethod(method, null, null);
+        return executeMethod(method, null, null);
     }
 
     /**
@@ -406,7 +407,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      */
     public CloseableHttpResponse executeMethod(HttpRequestBase method, @Nullable HttpContext context)
             throws IOException {
-        return this.executeMethod(method, context, null);
+        return executeMethod(method, context, null);
     }
 
     /**

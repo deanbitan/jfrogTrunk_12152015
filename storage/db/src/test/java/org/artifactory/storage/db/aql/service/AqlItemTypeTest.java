@@ -6,7 +6,7 @@ import org.testng.annotations.Test;
 /**
  * @author Gidi Shabat
  */
-public class ItemTypeTest extends AqlAbstractServiceTest {
+public class AqlItemTypeTest extends AqlAbstractServiceTest {
     /**
      * By default return only files
      */

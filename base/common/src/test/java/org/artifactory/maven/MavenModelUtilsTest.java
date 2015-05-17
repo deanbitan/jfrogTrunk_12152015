@@ -139,7 +139,7 @@ public class MavenModelUtilsTest extends ArtifactoryHomeBoundTest {
     public void getArtifactInfoPom() throws Exception {
         File artifact = ResourceUtils.getResourceAsFile("/org/artifactory/maven/yourpit-1.0.0-alpha2.pom");
         MavenArtifactInfo artifactInfo = MavenModelUtils.artifactInfoFromFile(artifact);
-        assertEquals(artifactInfo.getGroupId(), "yourpit");
+        assertEquals(artifactInfo.getGroupId(), "org.yourpit");
         assertEquals(artifactInfo.getArtifactId(), "yourpit");
         assertEquals(artifactInfo.getVersion(), "1.0.0-alpha2");
         assertNull(artifactInfo.getClassifier(), "Classifier should be null");

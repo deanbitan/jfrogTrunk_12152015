@@ -1,5 +1,6 @@
 package org.artifactory.converters.helpers;
 
+import org.artifactory.addon.AddonsManager;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.repo.RepositoryService;
@@ -17,6 +18,9 @@ import org.artifactory.storage.db.properties.service.ArtifactoryCommonDbProperti
 import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
 import org.artifactory.version.ArtifactoryVersion;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.Map;
 
 /**
@@ -24,19 +28,31 @@ import java.util.Map;
  */
 public class MockArtifactoryContext implements ArtifactoryContext {
 
-    private ConvertersManagerImpl convertersManager;
-    private VersionProviderImpl versionProvider;
     private final MockDbPropertiesService mockDbPropertiesService;
     private final MockArtifactoryStateManager mockArtifactoryStateManager;
     private final MockArtifactoryServersCommonService mockArtifactoryServersCommonService;
+    private final AddonsManager addonsManager;
+    private ConvertersManagerImpl convertersManager;
+    private VersionProviderImpl versionProvider;
 
     public MockArtifactoryContext(ArtifactoryVersion version, long release, ConvertersManagerImpl convertersManager,
-            VersionProviderImpl versionProvider) {
+            VersionProviderImpl versionProvider, final boolean validLicense) {
         this.convertersManager = convertersManager;
         this.versionProvider = versionProvider;
         mockDbPropertiesService = new MockDbPropertiesService(version, release);
         mockArtifactoryStateManager = new MockArtifactoryStateManager();
         mockArtifactoryServersCommonService = new MockArtifactoryServersCommonService(version);
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        Class[] interfaces = {AddonsManager.class};
+        addonsManager = (AddonsManager) Proxy.newProxyInstance(contextClassLoader, interfaces, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                if ("lockdown".equals(method.getName())) {
+                    return !validLicense;
+                }
+                return null;
+            }
+        });
     }
 
     @Override
@@ -59,6 +75,9 @@ public class MockArtifactoryContext implements ArtifactoryContext {
         }
         if (type.equals(ArtifactoryServersCommonService.class)) {
             return (T) mockArtifactoryServersCommonService;
+        }
+        if (type.equals(AddonsManager.class)) {
+            return (T) addonsManager;
         }
 
         return null;

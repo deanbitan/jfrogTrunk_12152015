@@ -23,6 +23,7 @@ import org.apache.http.HttpStatus;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.common.StatusHolder;
 import org.artifactory.util.ExceptionUtils;
+import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +118,7 @@ public abstract class ArtifactoryResponseBase implements ArtifactoryResponse {
         Throwable ioException = ExceptionUtils.getCauseOfTypes(exception, IOException.class);
         String reason;
         if (ioException != null) {
-            reason = ioException.getMessage() != null ? ioException.getMessage() : ioException.getClass().getName();
+            reason = HttpClientUtils.getErrorMessage(ioException);
             String message;
             if (isCommitted()) {
                 // The client already received a status answer, so changing the status code

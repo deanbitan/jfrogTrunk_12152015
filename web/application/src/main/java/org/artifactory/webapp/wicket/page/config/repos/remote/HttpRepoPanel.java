@@ -103,8 +103,8 @@ public class HttpRepoPanel extends RepoConfigCreateUpdatePanel<HttpRepoDescripto
             }
         });
 
-        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         List<PropertySet> propertySets = getCachingDescriptorHelper().getModelMutableDescriptor().getPropertySets();
+        PropertiesWebAddon propertiesWebAddon = addons.addonByType(PropertiesWebAddon.class);
         tabs.add(propertiesWebAddon.getRepoConfigPropertySetsTab("Property Sets", entity, propertySets));
 
         replicationDescriptor = cachingDescriptorHelper.getModelMutableDescriptor().getRemoteReplication(

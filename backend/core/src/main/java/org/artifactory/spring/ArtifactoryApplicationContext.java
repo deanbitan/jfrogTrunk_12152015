@@ -86,18 +86,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContext
         implements InternalArtifactoryContext {
-    private static final Logger log = LoggerFactory.getLogger(ArtifactoryApplicationContext.class);
-
     public static final String CURRENT_TIME_EXPORT_DIR_NAME = "current";
-
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryApplicationContext.class);
+    private final ArtifactoryHome artifactoryHome;
+    private final ConverterManager converterManager;
+    private final String contextId;
+    private final SpringConfigPaths springConfigPaths;
     private Set<Class<? extends ReloadableBean>> toInitialize = new HashSet<>();
     private ConcurrentHashMap<Class, Object> beansForType = new ConcurrentHashMap<>();
     private List<ReloadableBean> reloadableBeans;
-    private final ArtifactoryHome artifactoryHome;
-    private final ConverterManager converterManager;
     private VersionProviderImpl versionProvider;
-    private final String contextId;
-    private final SpringConfigPaths springConfigPaths;
     private volatile boolean ready;
     private long started;
     private boolean offline;
@@ -217,6 +215,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             log.debug("Reloadable list of beans: {}", reloadableBeans);
             log.info("Artifactory context starting up...");
             versionProvider.loadDbVersion();    // db should have been initialized by now -> we can read the db version
+            converterManager.beforeInits();
             for (ReloadableBean reloadableBean : reloadableBeans) {
                 String beanIfc = getInterfaceName(reloadableBean);
                 log.info("Initializing {}", beanIfc);
@@ -340,28 +339,6 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
         setReady(true);
     }
 
-    private void setReady(boolean ready) {
-        this.ready = ready;
-        if (hasBeanFactory()) {
-            //Signal to all the context ready listener beans
-            final Map<String, ContextReadinessListener> contextReadinessListeners =
-                    beansForType(ContextReadinessListener.class);
-            log.debug("Signaling context ready={} to context readiness listener beans.", ready);
-            for (ContextReadinessListener bean : contextReadinessListeners.values()) {
-                String beanIfc = getInterfaceName(bean);
-                log.debug("Signaling context ready={} to {}.", ready, beanIfc);
-                if (ready) {
-                    bean.onContextReady();
-                } else {
-                    bean.onContextUnready();
-                }
-            }
-        }
-        if (ready) {
-            log.info("Artifactory application context is ready.");
-        }
-    }
-
     private String getInterfaceName(Object bean) {
         return bean.getClass().getInterfaces()[0].getName();
     }
@@ -406,6 +383,28 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
     @Override
     public boolean isReady() {
         return ready;
+    }
+
+    private void setReady(boolean ready) {
+        this.ready = ready;
+        if (hasBeanFactory()) {
+            //Signal to all the context ready listener beans
+            final Map<String, ContextReadinessListener> contextReadinessListeners =
+                    beansForType(ContextReadinessListener.class);
+            log.debug("Signaling context ready={} to context readiness listener beans.", ready);
+            for (ContextReadinessListener bean : contextReadinessListeners.values()) {
+                String beanIfc = getInterfaceName(bean);
+                log.debug("Signaling context ready={} to {}.", ready, beanIfc);
+                if (ready) {
+                    bean.onContextReady();
+                } else {
+                    bean.onContextUnready();
+                }
+            }
+        }
+        if (ready) {
+            log.info("Artifactory application context is ready.");
+        }
     }
 
     @Override

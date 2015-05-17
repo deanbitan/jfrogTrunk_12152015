@@ -65,6 +65,14 @@ public class HttpArtifactoryResponse extends ArtifactoryResponseBase {
         }
     }
 
+    public void setRangeSupport(String bytes) {
+        if (bytes != null) {
+            response.setHeader(ArtifactoryRequest.ACCEPT_RANGES, bytes);
+        } else {
+            log.debug("Could not register a null range support tag with the response.");
+        }
+    }
+
     @Override
     public void setSha1(String sha1) {
         if (sha1 != null) {

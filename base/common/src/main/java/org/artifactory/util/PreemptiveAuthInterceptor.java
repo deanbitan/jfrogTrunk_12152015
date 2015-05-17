@@ -24,12 +24,13 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.AuthState;
-import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.Credentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.protocol.HttpContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -39,6 +40,8 @@ import java.io.IOException;
  * @author Yossi Shaul
  */
 public class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
+    private static final Logger log = LoggerFactory.getLogger(PreemptiveAuthInterceptor.class);
+
     @Override
     public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
         HttpClientContext clientContext = HttpClientContext.adapt(context);
@@ -51,9 +54,11 @@ public class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
             Credentials creds = credsProvider.getCredentials(
                     new AuthScope(targetHost.getHostName(), targetHost.getPort()));
             if (creds == null) {
-                throw new AuthenticationException("No credentials found for host " + targetHost);
+                log.debug("No credentials found for host " + targetHost);
+            } else {
+                log.debug("Updating credentials for host " + targetHost);
+                authState.update(new BasicScheme(), creds);
             }
-            authState.update(new BasicScheme(), creds);
         }
     }
 }

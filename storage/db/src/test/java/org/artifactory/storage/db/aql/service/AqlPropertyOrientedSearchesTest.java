@@ -113,8 +113,7 @@ public class AqlPropertyOrientedSearchesTest extends DbBaseTest {
         AqlEagerResult results = aqlService.executeQueryEager(
                 "items.find({\"type\" : \"any\",\"@role\":{\"$ne\": \"manager\"}})"
         );
-
-        Assertions.assertThat(results.getResults()).hasSize(11);   // all items
+        Assertions.assertThat(results.getResults()).hasSize(1);   // all items
     }
 
     @Test

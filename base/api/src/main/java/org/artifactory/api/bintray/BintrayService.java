@@ -229,5 +229,5 @@ public interface BintrayService {
      */
     boolean hasBintraySystemUser();
 
-    Bintray createBintrayClient(BasicStatusHolder status);
+    Bintray createBintrayClient(BasicStatusHolder status) throws IllegalArgumentException;
 }
