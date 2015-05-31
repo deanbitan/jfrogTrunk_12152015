@@ -20,6 +20,8 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
+import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageException;
@@ -52,17 +54,19 @@ import static org.artifactory.storage.db.binstore.dao.BinariesDao.TEMP_SHA1_PREF
 public class BlobBinaryProviderImpl extends BinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(BlobBinaryProviderImpl.class);
 
-    private final JdbcHelper jdbcHelper;
-    private final DbType databaseType;
-    private final BlobWrapperFactory blobsFactory;
+    private JdbcHelper jdbcHelper;
+    private DbType databaseType;
+    private BlobWrapperFactory blobsFactory;
 
-    public BlobBinaryProviderImpl(JdbcHelper jdbcHelper, DbType databaseType, BlobWrapperFactory blobsFactory) {
-        this.databaseType = databaseType;
-        this.blobsFactory = blobsFactory;
+    @Override
+    public void initialize() {
+        ArtifactoryContext context = ContextHelper.get();
+        this.databaseType = context.beanForType(DbService.class).getDatabaseType();
+        this.blobsFactory = context.beanForType(BlobWrapperFactory.class);
+        jdbcHelper = context.beanForType(JdbcHelper.class);
         if (jdbcHelper == null) {
             throw new IllegalArgumentException("Cannot create Blob binary provider without JDBC Helper!");
         }
-        this.jdbcHelper = jdbcHelper;
     }
 
     @Override

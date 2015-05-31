@@ -21,14 +21,16 @@ package org.artifactory.storage.db.binstore.itest.service;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
+import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
-import org.artifactory.test.TestUtils;
+import org.artifactory.storage.binstore.service.providers.DoubleFileBinaryProviderImpl;
 import org.artifactory.util.ResourceUtils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import static org.testng.Assert.*;
@@ -120,11 +122,12 @@ public class BinaryStoreImplDoubleFileProviderTest extends BinaryStoreImplBaseTe
     }
 
     protected FileBinaryProvider[] getAllProviders() {
-        try {
-            return (FileBinaryProvider[]) TestUtils.getField(binaryStore.getFileBinaryProvider(), "providers",
-                    Class.forName("org.artifactory.storage.db.binstore.service.DoubleFileBinaryProviderImpl"));
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        List<BinaryProviderBase> subBinaryProviders = ((DoubleFileBinaryProviderImpl) binaryStore.
+                getFileBinaryProvider()).getSubBinaryProviders();
+        FileBinaryProvider[] array = new FileBinaryProvider[2];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (FileBinaryProvider) subBinaryProviders.get(i);
         }
+        return array;
     }
 }

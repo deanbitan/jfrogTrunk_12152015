@@ -20,12 +20,8 @@ package org.artifactory.storage.db.binstore.service;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
-import org.apache.commons.lang.StringUtils;
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.FileStoreAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.storage.BinariesInfo;
@@ -40,18 +36,18 @@ import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.GarbageCollectorInfo;
 import org.artifactory.storage.binstore.service.BinaryInfoImpl;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
+import org.artifactory.storage.binstore.service.BinaryProviderFactory;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
 import org.artifactory.storage.binstore.service.providers.DoubleFileBinaryProviderImpl;
 import org.artifactory.storage.binstore.service.providers.ExternalWrapperBinaryProviderImpl;
-import org.artifactory.storage.binstore.service.providers.FileBinaryProviderImpl;
-import org.artifactory.storage.binstore.service.providers.FileCacheBinaryProviderImpl;
+import org.artifactory.storage.config.model.ChainMetaData;
+import org.artifactory.storage.config.model.Param;
+import org.artifactory.storage.config.model.ProviderMetaData;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.binstore.dao.BinariesDao;
 import org.artifactory.storage.db.binstore.entity.BinaryData;
-import org.artifactory.storage.db.util.JdbcHelper;
-import org.artifactory.storage.db.util.blob.BlobWrapperFactory;
 import org.artifactory.storage.fs.service.ArchiveEntriesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,14 +63,15 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.artifactory.storage.StorageProperties.BinaryProviderType;
+import static org.artifactory.storage.binstore.service.BinaryProviderFactory.*;
+import static org.artifactory.storage.db.binstore.service.ConfigurableBinaryProviderManager.buildByConfig;
+import static org.artifactory.storage.db.binstore.service.ConfigurableBinaryProviderManager.buildByStorageProperties;
 
 /**
  * The main binary store of Artifactory that delegates to the BinaryProvider chain.
@@ -92,19 +89,14 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     private ArchiveEntriesService archiveEntriesService;
 
     @Autowired
-    private JdbcHelper jdbcHelper;
-
-    @Autowired
     private DbService dbService;
 
     @Autowired
     private StorageProperties storageProperties;
 
-    @Autowired
-    private BlobWrapperFactory blobsFactory;
-
     private UsageTrackingBinaryProvider firstBinaryProvider;
 
+    // TODO get rid from this fileBinaryProvider
     private FileBinaryProvider fileBinaryProvider;
 
     /**
@@ -114,85 +106,64 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @PostConstruct
     public void initialize() {
-        LinkedList<BinaryProviderBase> binaryProviders = Lists.newLinkedList();
-        // Always starts with read tracker
-        deleteProtectedBinaries = new MapMaker().makeMap();
-        firstBinaryProvider = new UsageTrackingBinaryProvider(this);
-        binaryProviders.add(firstBinaryProvider);
-        // Init of bin providers depending on constant values
-        BinaryProviderType binaryProviderName = storageProperties.getBinariesStorageType();
-        switch (binaryProviderName) {
-            case filesystem:
-                fileBinaryProvider = createFilesystemBinaryProvider();
-                binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
-                break;
-            case cachedFS:
-                if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {
-                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getDataDir(),
-                            storageProperties);
-                    binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
-                } else {
-                    throw new IllegalStateException("Binary provider typed cachedFS cannot have a zero cached size!");
-                }
-                binaryProviders.add((BinaryProviderBase) createFilesystemBinaryProvider());
-                break;
-            case fullDb:
-                if (storageProperties.getBinaryProviderCacheMaxSize() > 0) {
-                    fileBinaryProvider = new FileCacheBinaryProviderImpl(ArtifactoryHome.get().getDataDir(),
-                            storageProperties);
-                    binaryProviders.add((BinaryProviderBase) fileBinaryProvider);
-                }
-                binaryProviders.add(new BlobBinaryProviderImpl(jdbcHelper, dbService.getDatabaseType(), blobsFactory));
-                break;
-            case S3: {
-                // create a chain of binary providers
-                // FileCacheBinaryProviderImplBinaryProvider
-                // EventuallyPersistedBinaryProvider
-                // RetryBinaryProvider
-                // S3BinaryProvider
-                AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-                FileStoreAddon fileStoreAddon = addonsManager.addonByType(FileStoreAddon.class);
-                List<BinaryProviderBase> chain = fileStoreAddon.getS3JClouds(storageProperties);
-                binaryProviders.addAll(chain);
-                break;
+        try {
+            log.debug("Initializing the ConfigurableBinaryProviderManager");
+            deleteProtectedBinaries = new MapMaker().makeMap();
+            File haAwareEtcDir = ArtifactoryHome.get().getHaAwareEtcDir();
+            ChainMetaData selectedChain;
+            // If the new generation binary config exist the use it else use the old generation filestore
+            File userConfigFile = new File(haAwareEtcDir, "binarystore.xml");
+            if (userConfigFile.exists()) {
+                // Create binary provider according to the The new generation config
+                selectedChain = buildByConfig(userConfigFile);
+            } else {
+                // Create binary provider using to the The old generation properties
+                selectedChain = buildByStorageProperties(storageProperties);
             }
-            default:
-                throw new IllegalStateException("Binary provider name " + binaryProviderName + " not supported!");
+            // Now that we have the chain create the binary providers
+            firstBinaryProvider = (UsageTrackingBinaryProvider) buildProviders(selectedChain, this, storageProperties);
+            fileBinaryProvider = searchForFileBinaryProvider(firstBinaryProvider);
+            // Add External binary providers
+            String mode = storageProperties.getBinaryProviderExternalMode();
+            String externalDir = storageProperties.getBinaryProviderExternalDir();
+            String fileStoreDir = fileBinaryProvider.getBinariesDir().getAbsolutePath();
+            addBinaryProvider(createExternalBinaryProviders(mode, externalDir, fileStoreDir, storageProperties, this));
+        } catch (IOException e) {
+            throw new RuntimeException(
+                    "Failed to initialize binary providers. Reason io exception occurred during the config read process");
         }
-        if (storageProperties.getBinaryProviderExternalDir() != null) {
-            if (storageProperties.getBinaryProviderExternalMode() != null) {
-                binaryProviders.add(new ExternalWrapperBinaryProviderImpl(fileBinaryProvider.getBinariesDir(),
-                        storageProperties.getBinaryProviderExternalMode()));
-            }
-            binaryProviders.add(
-                    new ExternalFileBinaryProviderImpl(new File(storageProperties.getBinaryProviderExternalDir())));
-        }
-        setBinaryProvidersContext(binaryProviders);
     }
 
-    private FileBinaryProvider createFilesystemBinaryProvider() {
-        FileBinaryProvider provider;
-        if (StringUtils.isBlank(storageProperties.getBinaryProviderFilesystemSecondDir())) {
-            provider = new FileBinaryProviderImpl(
-                    ArtifactoryHome.get().getHaAwareDataDir(), storageProperties);
-        } else {
-            provider = new DoubleFileBinaryProviderImpl(
-                    ArtifactoryHome.get().getHaAwareDataDir(), storageProperties);
+    private void addBinaryProvider(List<BinaryProviderBase> binaryProvidersToAdd) {
+        BinaryProviderBase binaryProvider = (BinaryProviderBase) fileBinaryProvider;
+        while (binaryProvider.getBinaryProvider() != null) {
+            binaryProvider = binaryProvider.getBinaryProvider();
         }
-        return provider;
+        for (BinaryProviderBase toAdd : binaryProvidersToAdd) {
+            binaryProvider.setBinaryProvider(toAdd);
+            binaryProvider = toAdd;
+        }
     }
 
     @Override
-    public void addExternalFilestore(File externalDir, ProviderConnectMode connectMode) {
-        if (connectMode != ProviderConnectMode.PASS_THROUGH) {
-            addBinaryProvider(new ExternalWrapperBinaryProviderImpl(getBinariesDir(), connectMode));
+    public void addExternalFilestore(File externalFileDir, ProviderConnectMode connectMode) {
+        // The external binary provider works only if the file binary provider is not null
+        if (getBinariesDir() == null) {
+            return;
         }
-        addBinaryProvider(new ExternalFileBinaryProviderImpl(externalDir));
+        String mode = connectMode.propName;
+        String externalDir = externalFileDir.getAbsolutePath();
+        String fileStoreDir = fileBinaryProvider.getBinariesDir().getAbsolutePath();
+        addBinaryProvider(createExternalBinaryProviders(mode, externalDir, fileStoreDir, storageProperties, this));
     }
 
     @Override
     public void disconnectExternalFilestore(File externalDir, ProviderConnectMode disconnectMode,
             BasicStatusHolder statusHolder) {
+        // The external binary provider works only if the file binary provider is not null
+        if (getBinariesDir() == null) {
+            return;
+        }
         // First search for the external binary store to disconnect
         ExternalFileBinaryProviderImpl externalFilestore = null;
         BinaryProviderBase bp = getFirstBinaryProvider();
@@ -226,8 +197,11 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         if (wrapper != null) {
             wrapper.setConnectMode(disconnectMode);
         } else {
-            wrapper = new ExternalWrapperBinaryProviderImpl(getBinariesDir(), disconnectMode);
-            wrapper.setContext(new BinaryProviderContextImpl(this, externalFilestore));
+            ProviderMetaData providerMetaData = new ProviderMetaData("external-wrapper", "external-wrapper");
+            providerMetaData.addParam(new Param("dir", getBinariesDir().getAbsolutePath()));
+            providerMetaData.addParam(new Param("connectMode", disconnectMode.propName));
+            wrapper = BinaryProviderFactory.create(providerMetaData, storageProperties, this);
+            wrapper.setBinaryProvider(externalFilestore);
         }
 
         // Now run fetch all on wrapper
@@ -270,47 +244,10 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
     }
 
-    void addBinaryProvider(BinaryProviderBase binaryProvider) {
-        LinkedList<BinaryProviderBase> binaryProviders = Lists.newLinkedList();
-        BinaryProviderBase bp = getFirstBinaryProvider();
-        while (bp != null) {
-            binaryProviders.add(bp);
-            bp = bp.next();
-        }
-        binaryProviders.removeLast();
-        binaryProviders.add(binaryProvider);
-        setBinaryProvidersContext(binaryProviders);
-    }
-
-    private void setBinaryProvidersContext(LinkedList<BinaryProviderBase> binaryProviders) {
-        if (!(binaryProviders.getFirst() instanceof UsageTrackingBinaryProvider)) {
-            throw new IllegalStateException("The first binary provider should be read tracking!");
-        }
-        // Make sure the last one is the empty binary provider
-        if (!(binaryProviders.getLast() instanceof EmptyBinaryProvider)) {
-            binaryProviders.add(new EmptyBinaryProvider());
-        }
-        FileBinaryProvider foundFileBinaryProvider = null;
-        BinaryProviderBase previous = null;
-        for (BinaryProviderBase binaryProvider : binaryProviders) {
-            if (previous != null) {
-                // Set next to previous
-                previous.setContext(new BinaryProviderContextImpl(this, binaryProvider));
-            }
-            if (foundFileBinaryProvider == null && previous instanceof FileBinaryProvider) {
-                foundFileBinaryProvider = (FileBinaryProvider) previous;
-            }
-            previous = binaryProvider;
-        }
-        fileBinaryProvider = foundFileBinaryProvider;
-        firstBinaryProvider = (UsageTrackingBinaryProvider) binaryProviders.getFirst();
-    }
-
     private BinaryProviderBase getFirstBinaryProvider() {
         return firstBinaryProvider;
     }
 
-    @Nullable
     public FileBinaryProvider getFileBinaryProvider() {
         return fileBinaryProvider;
     }
@@ -497,7 +434,8 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         return result;
     }
 
-    Set<String> isInStore(Set<String> sha1List) {
+    @Override
+    public Set<String> isInStore(Set<String> sha1List) {
         try {
             return Sets.newHashSet(
                     Iterables.transform(binariesDao.search(ChecksumType.sha1, sha1List),
@@ -661,7 +599,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
 
     @Override
     public void ping() {
-        FileBinaryProvider binaryProvider = getFileBinaryProvider();
+        FileBinaryProvider binaryProvider = fileBinaryProvider;
         if (binaryProvider != null) {
             if (!binaryProvider.isAccessible()) {
                 throw new StorageException("Cannot access " +
@@ -690,6 +628,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
      * @param sha1 sha1 checksum of the binary to check
      * @return True if the given binary is currently used by a reader (e.g., open stream) or writer
      */
+    @Override
     public boolean isActivelyUsed(String sha1) {
         AtomicInteger usageCounter = deleteProtectedBinaries.get(sha1);
         return usageCounter != null && usageCounter.get() > 0;

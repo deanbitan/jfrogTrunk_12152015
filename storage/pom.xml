@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.artifactory</groupId>
         <artifactId>artifactory-parent</artifactId>
-        <version>3.7.0</version>
+        <version>3.8.0</version>
     </parent>
 
     <artifactId>artifactory-storage-parent</artifactId>
@@ -29,6 +29,7 @@
     <name>Artifactory Storage Parent</name>
 
     <modules>
+        <module>config</module>
         <module>common</module>
         <module>update</module>
         <module>db</module>

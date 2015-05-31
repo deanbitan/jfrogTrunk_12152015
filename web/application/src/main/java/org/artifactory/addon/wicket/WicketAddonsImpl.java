@@ -222,7 +222,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
         P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
-        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon {
+        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon, VagrantWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     private static String buildLatestVersionLabel(VersionHolder latestVersion) {
@@ -1357,6 +1357,20 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         vcsSection.add(downloadUrlField);
 
         form.add(vcsSection);
+    }
+
+    @Override
+    public void createAndAddRepoConfigVagrantSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor) {
+        WebMarkupContainer vagrantSection = new WebMarkupContainer("vagrantSupportSection");
+        vagrantSection.add(new TitledBorderBehavior("fieldset-border", "Vagrant"));
+        vagrantSection.add(new DisabledAddonBehavior(AddonType.VAGRANT));
+        vagrantSection.add(new StyledCheckbox("enableVagrantSupport").setTitle("Enable Vagrant Support").setEnabled(false));
+        vagrantSection.add(new SchemaHelpBubble("enableVagrantSupport.help"));
+        Label label = new Label("vagrantRepoUrlLabel", "");
+        label.setVisible(false);
+        vagrantSection.add(label);
+        form.add(vagrantSection);
+
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

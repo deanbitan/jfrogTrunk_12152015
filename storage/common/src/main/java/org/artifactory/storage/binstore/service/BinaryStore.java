@@ -102,4 +102,8 @@ public interface BinaryStore {
      * @return The total size or -1 if the binary does not supports fetch of the full size.
      */
     long getStorageSize();
+
+    boolean isActivelyUsed(String sha1);
+
+    Set<String> isInStore(Set<String> filesInFolder);
 }

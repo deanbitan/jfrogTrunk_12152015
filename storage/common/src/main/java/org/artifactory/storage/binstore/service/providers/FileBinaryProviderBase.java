@@ -38,10 +38,6 @@ import java.io.File;
 public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyBase {
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderBase.class);
 
-    public FileBinaryProviderBase(File binariesDir) {
-        super(binariesDir);
-    }
-
     @Override
     protected void verifyState(File binariesDir) {
         super.verifyState(binariesDir);
@@ -66,8 +62,7 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
     }
 
     protected boolean deleteNoChain(String sha1) {
-        check();
-        if (getContext().isActivelyUsed(sha1)) {
+        if (getBinaryStore().isActivelyUsed(sha1)) {
             log.info("File {} is read. Deletion is skipped", sha1);
             return false;
         }

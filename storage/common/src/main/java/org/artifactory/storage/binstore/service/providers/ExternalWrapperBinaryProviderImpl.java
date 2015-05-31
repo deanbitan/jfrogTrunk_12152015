@@ -47,13 +47,11 @@ public class ExternalWrapperBinaryProviderImpl extends FileBinaryProviderReadOnl
 
     ProviderConnectMode connectMode;
 
-    public ExternalWrapperBinaryProviderImpl(File binariesDir, String connectModeValue) {
-        this(binariesDir, ProviderConnectMode.getConnectMode(connectModeValue));
-    }
-
-    public ExternalWrapperBinaryProviderImpl(File binariesDir, ProviderConnectMode connectMode) {
-        super(binariesDir);
-        this.connectMode = connectMode;
+    @Override
+    public void initialize() {
+        super.initialize();
+        String connectModeName = getParam("connectMode", ProviderConnectMode.COPY_FIRST.name());
+        this.connectMode = ProviderConnectMode.getConnectMode(connectModeName);
         if (connectMode == null) {
             throw new IllegalArgumentException("Cannot create Wrapper with null connection mode!");
         }

@@ -49,6 +49,7 @@ public enum AddonType {
     DEBIAN("debian", "Debian", 900),
     PYPI("pypi", "PyPI", 970),
     DOCKER("docker", "Docker", 910),
+    VAGRANT("vagrant", "Vagrant", 915),
     VCS("vcs", "VCS", 920),
     HA("ha", "High Availability", 2000);
 

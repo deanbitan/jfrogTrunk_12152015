@@ -1,7 +1,6 @@
 package org.artifactory.storage.binstore.service.providers;
 
 import org.artifactory.binstore.BinaryInfo;
-import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.slf4j.Logger;
@@ -19,12 +18,13 @@ import java.io.InputStream;
  */
 public class RetryBinaryProvider extends BinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(RetryBinaryProvider.class);
-    private int delayBetweenRetry;
+    private int interval;
     private int maxTrays;
 
-    public RetryBinaryProvider(StorageProperties soStorageProperties) {
-        this.maxTrays = soStorageProperties.getMaxRetriesNumber();
-        this.delayBetweenRetry = soStorageProperties.getDelayBetweenRetries();
+    @Override
+    public void initialize() {
+        this.maxTrays = getIntParam("maxTrays", getStorageProperties().getMaxRetriesNumber());
+        this.interval = getIntParam("interval", getStorageProperties().getDelayBetweenRetries());
     }
 
     @Override
@@ -53,10 +53,12 @@ public class RetryBinaryProvider extends BinaryProviderBase {
         } catch (Exception e) {
             if (trying < maxTrays) {
                 waitDelayTime();
-                log.trace("Failed to delete blob from  '{}'  from S3, trying again for the  '{}'  time", path, trying);
+                log.trace(
+                        "Failed to delete blob from  '{}'  from next binary provider, trying again for the  '{}'  time",
+                        path, trying);
                 return delete(path, ++trying);
             } else {
-                log.error("Failed to delete blob  '{}'  item from S3", path, e);
+                log.error("Failed to delete blob  '{}'  item from next binary provider", path, e);
                 return false;
             }
         }
@@ -68,10 +70,12 @@ public class RetryBinaryProvider extends BinaryProviderBase {
         } catch (Exception e) {
             if (trying < maxTrays) {
                 waitDelayTime();
-                log.trace("Failed to check if blob  '{}'  exist in S3, trying again for the  '{}'  time", sha1, trying);
+                log.trace(
+                        "Failed to check if blob  '{}'  exist in next binary provider, trying again for the  '{}'  time",
+                        sha1, trying);
                 return isExist(sha1, length, ++trying);
             } else {
-                log.error("Failed to check if blob  '{}'  exist in S3", sha1, e);
+                log.error("Failed to check if blob  '{}'  exist in next binary provider", sha1, e);
                 throw e;
             }
         }
@@ -87,10 +91,11 @@ public class RetryBinaryProvider extends BinaryProviderBase {
             }
             if (trying < maxTrays) {
                 waitDelayTime();
-                log.trace("Failed to fetch  blob  '{}'  from S3, trying again for the  '{}'  time", path, trying);
+                log.trace("Failed to fetch  blob  '{}'  from next binary provider, trying again for the  '{}'  time",
+                        path, trying);
                 return getStream(path, ++trying);
             } else {
-                log.error("Failed to fetch blob  '{}'  from S3", path, e);
+                log.error("Failed to fetch blob  '{}'  from next binary provider", path, e);
                 throw e;
             }
         }
@@ -101,12 +106,16 @@ public class RetryBinaryProvider extends BinaryProviderBase {
             return next().addStream(inputStream);
         } catch (Exception e) {
             if (trying < maxTrays) {
-                log.warn("Failed to add  blob to S3 for the '{}' time, a retry will start in seconds ", trying + 1);
-                log.debug("Failed to add  blob to S3 for the '{}' time, a retry will start in seconds ", trying + 1, e);
+                log.warn(
+                        "Failed to add  blob to next binary provider for the '{}' time, a retry will start in seconds ",
+                        trying + 1);
+                log.debug(
+                        "Failed to add  blob to next binary provider for the '{}' time, a retry will start in seconds ",
+                        trying + 1, e);
                 waitDelayTime();
                 return addStream(inputStream, ++trying);
             } else {
-                log.error("Failed to add blob to S3", e);
+                log.error("Failed to add blob to next binary provider", e);
                 throw e;
             }
         }
@@ -115,7 +124,7 @@ public class RetryBinaryProvider extends BinaryProviderBase {
 
     private void waitDelayTime() {
         try {
-            Thread.sleep(delayBetweenRetry);
+            Thread.sleep(interval);
         } catch (InterruptedException e) {
             log.debug("waiting {} milli seconds before next retry");
         }

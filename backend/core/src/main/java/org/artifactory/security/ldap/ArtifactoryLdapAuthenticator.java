@@ -132,7 +132,7 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         // set default connection timeout, read timeout and referral strategy.
         HashMap<String, String> env = new HashMap<>();
         String connectTimeout = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
-                "artifactory.security.ldap.connect.timeoutMillis", "10000"); 
+                "artifactory.security.ldap.connect.timeoutMillis", "10000");
         env.put("com.sun.jndi.ldap.connect.timeout",connectTimeout);
         String readTimeout = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
                 "artifactory.security.ldap.socket.timeoutMillis", "15000");
@@ -140,6 +140,11 @@ public class ArtifactoryLdapAuthenticator implements InternalLdapAuthenticator {
         String referralStrategy = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
                 "artifactory.security.ldap.referralStrategy", "follow");
         env.put(Context.REFERRAL, referralStrategy);
+        String poolIdleTimeout = ArtifactoryHome.get().getArtifactoryProperties().getProperty(
+                "artifactory.security.ldap.pool.timeoutMillis", null);
+        if (poolIdleTimeout != null) {
+            env.put("com.sun.jndi.ldap.connect.pool.timeout", poolIdleTimeout);
+        }
 
         contextSource.setBaseEnvironmentProperties(env);
         SearchPattern searchPattern = ldapSetting.getSearch();

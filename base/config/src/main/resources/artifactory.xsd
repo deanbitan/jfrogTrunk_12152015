@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.11"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.11"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.12"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.12"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -503,6 +503,13 @@
                         <xs:enumeration value="V2"/>
                     </xs:restriction>
                 </xs:simpleType>
+            </xs:element>
+            <xs:element name="enableVagrantSupport" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable Vagrant boxes support for this repository.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:sequence>
     </xs:complexType>

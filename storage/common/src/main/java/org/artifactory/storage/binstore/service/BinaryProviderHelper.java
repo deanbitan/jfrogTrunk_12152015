@@ -2,10 +2,8 @@ package org.artifactory.storage.binstore.service;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
-import org.artifactory.storage.StorageProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,12 +120,7 @@ public class BinaryProviderHelper {
     }
 
 
-    public static File getDataFolder(File rootDataDir, StorageProperties storageProperties,
-            StorageProperties.Key keyProperty, String defaultName) {
-        String name = storageProperties.getProperty(keyProperty);
-        if (StringUtils.isBlank(name)) {
-            return new File(rootDataDir, defaultName);
-        }
+    public static File getDataFolder(File rootDataDir, String name) {
         File currentFile = new File(name);
         if (currentFile.isAbsolute()) {
             return currentFile;

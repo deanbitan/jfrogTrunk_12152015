@@ -52,6 +52,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enablePypiSupport = false;
     private boolean enableDockerSupport = false;
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
+    private boolean enableVagrantSupport = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -85,6 +86,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         setEnablePypiSupport(repoDescriptor.isEnablePypiSupport());
         setEnableDockerSupport(repoDescriptor.isEnableDockerSupport());
         setDockerApiVersion(repoDescriptor.getDockerApiVersion().name());
+        setEnableVagrantSupport(repoDescriptor.isEnableVagrantSupport());
     }
 
     public void setKey(String key) {
@@ -230,6 +232,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setDockerApiVersion(String dockerApiVersion) {
         this.dockerApiVersion = DockerApiVersion.valueOf(dockerApiVersion);
+    }
+
+    @Override
+    public boolean isEnableVagrantSupport() {
+        return enableVagrantSupport;
+    }
+
+    public void setEnableVagrantSupport(boolean enableVagrantSupport) {
+        this.enableVagrantSupport = enableVagrantSupport;
     }
 
     /**

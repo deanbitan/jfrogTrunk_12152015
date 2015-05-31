@@ -209,6 +209,14 @@ public class StorageProperties {
         return getProperty(Key.binaryProviderExternalDir);
     }
 
+    public String getBinaryProviderDir() {
+        return getProperty(Key.binaryProviderFilesystemDir);
+    }
+
+    public String getBinaryCacheProviderDir() {
+        return getProperty(Key.binaryProviderCacheDir, "cache");
+    }
+
     public String getBinaryProviderExternalMode() {
         return getProperty(Key.binaryProviderExternalMode);
     }

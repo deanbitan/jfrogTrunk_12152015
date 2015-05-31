@@ -59,6 +59,7 @@
     <mimetype type="application/x-rubygems" extensions="gem" css="gem"/>
     <mimetype type="application/x-ruby-marshal" extensions="rz" css="ruby-marshal"/>
     <mimetype type="application/x-debian-package" extensions="deb" css="deb"/>
+    <mimetype type="application/x-vagrant-box" extensions="box" css="box"/>
 
     <!-- not registered -->
     <mimetype type="text/x-scala-source" extensions="scala" viewable="true" syntax="scala"/>

@@ -73,4 +73,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     boolean isEnableDockerSupport();
 
     DockerApiVersion getDockerApiVersion();
+
+    boolean isEnableVagrantSupport();
 }

@@ -29,7 +29,7 @@ import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
         "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport", "enableBowerSupport",
-        "enableDebianSupport", "enablePypiSupport", "enableDockerSupport", "dockerApiVersion"},
+        "enableDebianSupport", "enablePypiSupport", "enableDockerSupport", "dockerApiVersion", "enableVagrantSupport"},
         namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
@@ -69,6 +69,8 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     @XmlElement(defaultValue = "V1", required = false)
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
+
+    private boolean enableVagrantSupport;
 
     @Override
     public String getKey() {
@@ -194,6 +196,15 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setDockerApiVersion(String dockerApiVersion) {
         this.dockerApiVersion = DockerApiVersion.valueOf(dockerApiVersion);
+    }
+
+    @Override
+    public boolean isEnableVagrantSupport() {
+        return enableVagrantSupport;
+    }
+
+    public void setEnableVagrantSupport(boolean enableVagrantSupport) {
+        this.enableVagrantSupport = enableVagrantSupport;
     }
 
     @Override

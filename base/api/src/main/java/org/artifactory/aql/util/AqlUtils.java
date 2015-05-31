@@ -1,5 +1,6 @@
 package org.artifactory.aql.util;
 
+import com.google.common.collect.HashMultimap;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.aql.AqlService;
@@ -7,6 +8,7 @@ import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlBaseFullRowImpl;
 import org.artifactory.aql.result.rows.AqlItem;
+import org.artifactory.aql.result.rows.AqlProperty;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
 
@@ -67,5 +69,18 @@ public class AqlUtils {
         );
         AqlEagerResult<AqlItem> results = ContextHelper.get().beanForType(AqlService.class).executeQueryEager(aql);
         return results != null && results.getResults() != null && results.getResults().size() > 0;
+    }
+
+    /**
+     * Returns a multimap of propertyKey -> values
+     *
+     * @param results The AQL properties search result
+     */
+    public static HashMultimap<String, String> propsToMap(AqlEagerResult<AqlProperty> results) {
+        HashMultimap<String, String> map = HashMultimap.create();
+        for (AqlProperty property : results.getResults()) {
+            map.put(property.getKey(), property.getValue());
+        }
+        return map;
     }
 }

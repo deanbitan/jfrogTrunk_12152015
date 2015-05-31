@@ -20,6 +20,7 @@ package org.artifactory.storage.binstore.service.providers;
 
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
+import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
@@ -41,13 +42,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DynamicFileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(DynamicFileBinaryProviderImpl.class);
 
-    private final long checkPeriod;
-    private final AtomicLong lastCheck = new AtomicLong(0);
+    private long checkPeriod;
+    private AtomicLong lastCheck = new AtomicLong(0);
     private boolean active = false;
 
-    public DynamicFileBinaryProviderImpl(File binariesDir, long checkPeriod) {
-        super(binariesDir);
-        this.checkPeriod = checkPeriod;
+    @Override
+    public void initialize() {
+        super.initialize();
+        this.checkPeriod = getLongParam("period", getStorageProperties().getLongProperty(
+                StorageProperties.Key.binaryProviderFilesystemSecondCheckPeriod.key(), 30000L));
     }
 
     @Override
@@ -105,11 +108,11 @@ public class DynamicFileBinaryProviderImpl extends FileBinaryProviderBase implem
         for (File file : files) {
             filesInFolder.add(file.getName());
         }
-        Set<String> existingSha1 = getContext().isInStore(filesInFolder);
+        Set<String> existingSha1 = getBinaryStore().isInStore(filesInFolder);
         for (File file : files) {
             String sha1 = file.getName();
             if (!existingSha1.contains(sha1)) {
-                if (getContext().isActivelyUsed(sha1)) {
+                if (getBinaryStore().isActivelyUsed(sha1)) {
                     statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
                 } else {
                     long size = file.length();

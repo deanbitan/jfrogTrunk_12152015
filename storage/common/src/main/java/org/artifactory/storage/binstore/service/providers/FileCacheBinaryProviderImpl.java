@@ -27,7 +27,6 @@ import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.storage.StorageException;
-import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.util.Files;
@@ -50,8 +49,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.artifactory.storage.binstore.service.BinaryProviderHelper.getDataFolder;
-
 /**
  * A binary provider that manage low level checksum files on filesystem.
  *
@@ -61,16 +58,16 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
     private static final Logger log = LoggerFactory.getLogger(FileCacheBinaryProviderImpl.class);
 
     private long maxTotalSize;  // in bytes
-    private final Semaphore cacheCleanerSemaphore;
-    private final AtomicLong totalSize; // in bytes
-    private final ConcurrentMap<String, LruEntry> lruCache;
+    private Semaphore cacheCleanerSemaphore;
+    private AtomicLong totalSize; // in bytes
+    private ConcurrentMap<String, LruEntry> lruCache;
 
-    public FileCacheBinaryProviderImpl(File rootDataDir, StorageProperties storageProperties) {
-        super(getDataFolder(rootDataDir, storageProperties,
-                StorageProperties.Key.binaryProviderCacheDir, "cache"));
+    @Override
+    public void initialize() {
+        super.initialize();
         lruCache = Maps.newConcurrentMap();
         totalSize = new AtomicLong(0);
-        maxTotalSize = storageProperties.getBinaryProviderCacheMaxSize();
+        maxTotalSize = getLongParam("maxSize", getStorageProperties().getBinaryProviderCacheMaxSize());
         cacheCleanerSemaphore = new Semaphore(1);
         syncCacheEntries();
     }
@@ -83,7 +80,6 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
 
     @Override
     public InputStream getStream(String sha1) {
-        check();
         File cachedFile = getFile(sha1);
         try {
             // Returns from cache if there
@@ -109,7 +105,6 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
     @Override
     @Nonnull
     public BinaryInfo addStream(InputStream in) throws IOException {
-        check();
         // Save to a temp file while the stream is being passed to the next in chain!
         SavedToFileInputStream savedToFile = null;
         try {
@@ -173,7 +168,7 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
         }
         for (File file : files) {
             String sha1 = file.getName();
-            if (getContext().isActivelyUsed(sha1)) {
+            if (getBinaryStore().isActivelyUsed(sha1)) {
                 statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
             } else {
                 lruCache.remove(sha1);

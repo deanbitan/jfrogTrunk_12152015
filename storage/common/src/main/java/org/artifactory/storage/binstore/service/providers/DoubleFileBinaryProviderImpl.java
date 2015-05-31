@@ -25,11 +25,9 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.io.checksum.Sha1Md5ChecksumInputStream;
 import org.artifactory.storage.StorageException;
-import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.binstore.service.BinaryInfoImpl;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
-import org.artifactory.storage.binstore.service.BinaryProviderContext;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.slf4j.Logger;
@@ -54,8 +52,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.artifactory.storage.binstore.service.BinaryProviderHelper.getDataFolder;
-
 /**
  * A binary provider that manage low level checksum files on filesystem.
  *
@@ -63,40 +59,30 @@ import static org.artifactory.storage.binstore.service.BinaryProviderHelper.getD
  */
 public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(DoubleFileBinaryProviderImpl.class);
-    private final DynamicFileBinaryProviderImpl[] providers;
-
-    public DoubleFileBinaryProviderImpl(File rootDataDir, StorageProperties storageProperties) {
-        long checkPeriod = storageProperties.getLongProperty(
-                StorageProperties.Key.binaryProviderFilesystemSecondCheckPeriod.key(), 60000L);
-        providers = new DynamicFileBinaryProviderImpl[2];
-        providers[0] = new DynamicFileBinaryProviderImpl(
-                getDataFolder(rootDataDir, storageProperties,
-                        StorageProperties.Key.binaryProviderFilesystemDir, "filestore"), checkPeriod);
-        providers[1] = new DynamicFileBinaryProviderImpl(
-                getDataFolder(rootDataDir, storageProperties,
-                        StorageProperties.Key.binaryProviderFilesystemSecondDir, "second-filestore"), checkPeriod);
-    }
 
     public void syncFilestores() {
         log.info("Synchronizing Binary Stores");
         for (int i = 0; i < 256; i++) {
             String key = String.format("%02X", i & 0xFF).toLowerCase();
-            List<Set<String>> sets = new ArrayList<>(providers.length);
-            for (DynamicFileBinaryProviderImpl provider : providers) {
-                File folder = new File(provider.getBinariesDir(), key);
+            List<Set<String>> sets = new ArrayList<>(getSubBinaryProviders().size());
+            for (BinaryProviderBase provider : getSubBinaryProviders()) {
+                DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+                File folder = new File(dynamicProvider.getBinariesDir(), key);
                 if (folder.exists()) {
                     sets.add(Sets.newHashSet(folder.list()));
                 } else {
                     sets.add(new HashSet<String>(0));
                 }
             }
-            for (int j = 0; j < providers.length; j++) {
-                DynamicFileBinaryProviderImpl myProvider = providers[j];
+            for (int j = 0; j < getSubBinaryProviders().size(); j++) {
+                DynamicFileBinaryProviderImpl myProvider = (DynamicFileBinaryProviderImpl) getSubBinaryProviders().get(
+                        j);
                 // Copy the files that the other provider has that I do not have
                 Set<String> myFiles = sets.get(j);
-                for (int k = 0; k < providers.length; k++) {
+                for (int k = 0; k < getSubBinaryProviders().size(); k++) {
                     if (k != j) {
-                        DynamicFileBinaryProviderImpl otherProvider = providers[k];
+                        DynamicFileBinaryProviderImpl otherProvider = (DynamicFileBinaryProviderImpl) getSubBinaryProviders().get(
+                                k);
                         Set<String> otherFiles = sets.get(k);
                         for (String sha1 : otherFiles) {
                             if (!myFiles.contains(sha1)) {
@@ -158,15 +144,6 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
         }
     }
 
-    @Override
-    public void setContext(@Nonnull BinaryProviderContext ctx) {
-        super.setContext(ctx);
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            provider.setContext(ctx);
-            provider.verifyState(provider.binariesDir);
-        }
-    }
-
     private DynamicFileBinaryProviderImpl getFirst() {
         DynamicFileBinaryProviderImpl result = findActiveBinaryProvider();
 
@@ -179,9 +156,10 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
     private DynamicFileBinaryProviderImpl findActiveBinaryProvider() {
         // TODO: Load balance or weigh based read
         DynamicFileBinaryProviderImpl result = null;
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            if (provider.isActive()) {
-                result = provider;
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            if (dynamicProvider.isActive()) {
+                result = dynamicProvider;
                 break;
             }
         }
@@ -194,7 +172,7 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
         DynamicFileBinaryProviderImpl provider = findActiveBinaryProvider();
         if (provider == null) {
             // Don't throw exception here always return the first one
-            return providers[0].getBinariesDir();
+            return ((DynamicFileBinaryProviderImpl) getSubBinaryProviders().get(0)).getBinariesDir();
         }
         return provider.getBinariesDir();
     }
@@ -207,9 +185,10 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
 
     @Override
     public void prune(BasicStatusHolder statusHolder) {
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            if (provider.isActive()) {
-                provider.prune(statusHolder);
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            if (dynamicProvider.isActive()) {
+                dynamicProvider.prune(statusHolder);
             }
         }
     }
@@ -217,9 +196,10 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
     @Override
     public boolean isAccessible() {
         boolean oneActive = false;
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            provider.verifyState(provider.binariesDir);
-            if (provider.isActive()) {
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            dynamicProvider.verifyState(dynamicProvider.binariesDir);
+            if (dynamicProvider.isActive()) {
                 oneActive = true;
             }
         }
@@ -228,8 +208,9 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
 
     @Override
     public boolean exists(String sha1, long length) {
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            if (provider.isActive() && provider.exists(sha1, length)) {
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            if (dynamicProvider.isActive() && provider.exists(sha1, length)) {
                 return true;
             }
         }
@@ -241,17 +222,18 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
     public InputStream getStream(String sha1) throws BinaryNotFoundException {
         BinaryNotFoundException eNotFound = null;
         // TODO: Load balance or weigh based read
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            if (provider.isActive()) {
-                File file = provider.getFile(sha1);
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            if (dynamicProvider.isActive()) {
+                File file = dynamicProvider.getFile(sha1);
                 if (file.exists()) {
                     log.trace("File found: {}", file.getAbsolutePath());
                     try {
                         return new FileInputStream(file);
                     } catch (FileNotFoundException e) {
                         log.info("Failed accessing existing file due to " + e.getMessage() + ".\n" +
-                                "Will mark provider " + provider.getBinariesDir().getAbsolutePath() + " inactive!");
-                        provider.markInactive(e);
+                                "Will mark provider " + dynamicProvider.getBinariesDir().getAbsolutePath() + " inactive!");
+                        dynamicProvider.markInactive(e);
                         eNotFound = new BinaryNotFoundException("Couldn't access file '" + file.getAbsolutePath() + "'",
                                 e);
                     }
@@ -269,9 +251,10 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
         // We are blocking GC from running if not ALL providers are up.
         // So, should return true only if all deletion worked
         boolean result = true;
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            if (provider.isActive()) {
-                result &= provider.delete(sha1);
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            if (dynamicProvider.isActive()) {
+                result &= dynamicProvider.delete(sha1);
             } else {
                 result = false;
             }
@@ -369,19 +352,6 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
         }
     }
 
-    static class ProviderAndTempFile {
-        final DynamicFileBinaryProviderImpl provider;
-        File tempFile = null;
-        IOException somethingWrong = null;
-
-        ProviderAndTempFile(DynamicFileBinaryProviderImpl provider) throws IOException {
-            this.provider = provider;
-            if (provider.isActive()) {
-                tempFile = BinaryProviderHelper.createTempBinFile(provider.tempBinariesDir);
-            }
-        }
-    }
-
     /**
      * Creates a temp file for each active provider and copies the data there.
      * The input stream is closed afterwards.
@@ -391,10 +361,11 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
      * @throws java.io.IOException On failure writing to all temp file
      */
     private ProviderAndTempFile[] writeToTempFile(InputStream in) throws IOException {
-        ProviderAndTempFile[] result = new ProviderAndTempFile[providers.length];
+        ProviderAndTempFile[] result = new ProviderAndTempFile[getSubBinaryProviders().size()];
         int i = 0;
-        for (DynamicFileBinaryProviderImpl provider : providers) {
-            result[i++] = new ProviderAndTempFile(provider);
+        for (BinaryProviderBase provider : getSubBinaryProviders()) {
+            DynamicFileBinaryProviderImpl dynamicProvider = (DynamicFileBinaryProviderImpl) provider;
+            result[i++] = new ProviderAndTempFile(dynamicProvider);
         }
 
         //log.trace("Saving temp files: {} {}", 0, 0);
@@ -409,6 +380,10 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
         }
         //log.trace("Saved  temp file: {} {}", temp[0].getAbsolutePath(), temp[1].getAbsolutePath());
         return result;
+    }
+
+    interface Do {
+        void call(FileOutputStream os) throws IOException;
     }
 
     /*
@@ -446,8 +421,17 @@ public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements 
     }
     */
 
-    interface Do {
-        void call(FileOutputStream os) throws IOException;
+    static class ProviderAndTempFile {
+        final DynamicFileBinaryProviderImpl provider;
+        File tempFile = null;
+        IOException somethingWrong = null;
+
+        ProviderAndTempFile(DynamicFileBinaryProviderImpl provider) throws IOException {
+            this.provider = provider;
+            if (provider.isActive()) {
+                tempFile = BinaryProviderHelper.createTempBinFile(provider.tempBinariesDir);
+            }
+        }
     }
 
     static class DoWrite implements Do {

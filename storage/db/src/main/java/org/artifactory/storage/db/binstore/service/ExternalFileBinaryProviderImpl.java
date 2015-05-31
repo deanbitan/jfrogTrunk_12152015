@@ -21,11 +21,8 @@ package org.artifactory.storage.db.binstore.service;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.providers.FileBinaryProviderReadOnlyBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -35,12 +32,7 @@ import java.io.InputStream;
  *
  * @author Fred Simon
  */
-class ExternalFileBinaryProviderImpl extends FileBinaryProviderReadOnlyBase {
-    private static final Logger log = LoggerFactory.getLogger(ExternalFileBinaryProviderImpl.class);
-
-    public ExternalFileBinaryProviderImpl(File externalFilestoreDir) {
-        super(externalFilestoreDir);
-    }
+public class ExternalFileBinaryProviderImpl extends FileBinaryProviderReadOnlyBase {
 
     @Override
     @Nonnull

@@ -83,8 +83,6 @@ import org.artifactory.sapi.fs.VfsItem;
 import org.artifactory.schedule.Task;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.UserGroupInfo;
-import org.artifactory.storage.StorageProperties;
-import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.artifactory.storage.fs.lock.FsItemsVault;
 import org.artifactory.storage.fs.lock.FsItemsVaultCacheImpl;
 import org.artifactory.storage.fs.lock.map.JVMLockingMap;
@@ -122,7 +120,7 @@ import java.util.concurrent.Semaphore;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, FileStoreAddon {
+        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -623,11 +621,6 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public void requestAsyncReindexBowerPackages(String repoKey) {
 
-    }
-
-    @Override
-    public List<BinaryProviderBase> getS3JClouds(StorageProperties storageProperties) {
-        throw new UnsupportedOperationException("Register binary  providers is allowed only in HA environment");
     }
 
     @Override

@@ -18,6 +18,8 @@
 
 package org.artifactory.storage.binstore.service.providers;
 
+import org.apache.commons.lang.StringUtils;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
@@ -35,6 +37,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
+import static org.artifactory.storage.binstore.service.BinaryProviderHelper.getDataFolder;
+
 /**
  * Date: 12/16/12
  * Time: 10:44 AM
@@ -45,13 +49,18 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
         implements FileBinaryProvider, FileProviderStrategy {
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderReadOnlyBase.class);
 
-    protected final File binariesDir;
-    protected final File tempBinariesDir;
+    protected File binariesDir;
+    protected File tempBinariesDir;
 
-    public FileBinaryProviderReadOnlyBase(File binariesDir) {
+    @Override
+    public void initialize() {
         // Main filestore directory
-        this.binariesDir = binariesDir;
-        // folder for temporary binaries before moving to the permanent location
+        File haAwareDataDir = ArtifactoryHome.get().getHaAwareDataDir();
+        String binaryProviderDir = getStorageProperties().getBinaryProviderDir();
+        if (StringUtils.isBlank(binaryProviderDir)) {
+            binaryProviderDir = "filestore";
+        }
+        binariesDir = getDataFolder(haAwareDataDir, getParam("dir", binaryProviderDir));
         this.tempBinariesDir = getNewTempBinariesFile(binariesDir);
         verifyState(binariesDir);
     }
@@ -88,7 +97,6 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
 
     @Override
     public boolean exists(String sha1, long length) {
-        check();
         File file = getFile(sha1);
         if (file.exists()) {
             log.trace("File found: {}", file.getAbsolutePath());
@@ -112,7 +120,6 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
 
     @Override
     public InputStream getStream(String sha1) {
-        check();
         File file = getFile(sha1);
         try {
             if (!file.exists()) {

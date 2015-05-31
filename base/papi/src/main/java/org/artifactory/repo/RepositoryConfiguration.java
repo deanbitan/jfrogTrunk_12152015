@@ -56,4 +56,6 @@ public interface RepositoryConfiguration {
     boolean isEnableDockerSupport();
 
     String getDockerApiVersion();
+
+    boolean isEnableVagrantSupport();
 }

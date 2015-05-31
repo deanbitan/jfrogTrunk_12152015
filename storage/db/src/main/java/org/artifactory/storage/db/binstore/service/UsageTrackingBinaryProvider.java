@@ -37,19 +37,13 @@ import java.io.InputStream;
  *
  * @author freds
  */
-class UsageTrackingBinaryProvider extends BinaryProviderBase implements BinaryProvider {
+public class UsageTrackingBinaryProvider extends BinaryProviderBase implements BinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(UsageTrackingBinaryProvider.class);
-
-    private final InternalBinaryStore binaryStore;
-
-    UsageTrackingBinaryProvider(InternalBinaryStore binaryStore) {
-        this.binaryStore = binaryStore;
-    }
 
     @Nonnull
     @Override
     public InputStream getStream(String sha1) throws BinaryNotFoundException {
-        return new ReaderTrackingStream(next().getStream(sha1), sha1, binaryStore);
+        return new ReaderTrackingStream(next().getStream(sha1), sha1, getBinaryStore());
     }
 
 
