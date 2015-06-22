@@ -80,7 +80,8 @@ import javax.ws.rs.ext.Provider;
         ReplicationsRestConstants.MT_REPLICATION_CONFIG_REQUEST,
         ReplicationsRestConstants.MT_MULTI_REPLICATION_CONFIG_REQUEST,
         BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_REQUEST,
-        BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST
+        BuildRestConstants.MT_BUILD_ARTIFACTS_REQUEST,
+        GitLfsResourceConstants.LFS_JSON
 })
 @Produces({
         MediaType.APPLICATION_JSON,
@@ -133,7 +134,8 @@ import javax.ws.rs.ext.Provider;
         PluginRestConstants.MT_BUILD_STAGING_STRATEGY,
         BuildRestConstants.MT_BUILD_PATTERN_ARTIFACTS_RESULT,
         SearchRestConstants.MT_ARTIFACT_VERSIONS_SEARCH_RESULT,
-        SearchRestConstants.MT_BUILD_ARTIFACTS_SEARCH_RESULT
+        SearchRestConstants.MT_BUILD_ARTIFACTS_SEARCH_RESULT,
+        GitLfsResourceConstants.LFS_JSON
 })
 public class JsonProvider extends JacksonJsonProvider implements ContextResolver<ObjectMapper> {
 

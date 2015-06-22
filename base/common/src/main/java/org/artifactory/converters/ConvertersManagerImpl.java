@@ -65,7 +65,8 @@ public class ConvertersManagerImpl implements ConverterManager {
             if (lockdown) {
                 cleanRevertConverters(localHomeConverters, LocalConverterTaskType.revert);
                 cleanRevertConverters(clusterHomeConverters, LocalConverterTaskType.revert);
-                throw new FatalConversionException("Found invalid license, reverting conversions and stopping startup");
+                throw new FatalConversionException(
+                        "Reverting conversions and stopping Artifactory due to missing or invalid license");
             } else {
                 cleanRevertConverters(localHomeConverters, LocalConverterTaskType.clean);
                 cleanRevertConverters(clusterHomeConverters, LocalConverterTaskType.clean);

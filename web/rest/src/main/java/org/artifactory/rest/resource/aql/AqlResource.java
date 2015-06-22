@@ -42,16 +42,16 @@ import java.net.URLDecoder;
 @Path(AqlResource.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class AqlResource {
-    private static final Logger log = LoggerFactory.getLogger(AqlResource.class);
     public static final String PATH_ROOT = "search/aql";
-    @Context
-    private HttpServletRequest request;
+    private static final Logger log = LoggerFactory.getLogger(AqlResource.class);
     @Autowired
     AddonsManager addonsManager;
     @Autowired
     AuthorizationService authorizationService;
     @Autowired
     AqlService aqlService;
+    @Context
+    private HttpServletRequest request;
 
     @POST
     @Produces({MediaType.APPLICATION_JSON})
@@ -118,10 +118,10 @@ public class AqlResource {
             String query = contentQuery;
             if (StringUtils.isBlank(query)) {
                 // Try to find query in the attached params ()
-                query = (String) request.getParameterMap().get("query");
-            }
-            if (query != null) {
-                query = URLDecoder.decode(query, "UTF-8");
+                query = ((String[]) request.getParameterMap().get("query"))[0];
+                if (query != null) {
+                    query = URLDecoder.decode(query, "UTF-8");
+                }
             }
             return query;
         } catch (Exception e) {

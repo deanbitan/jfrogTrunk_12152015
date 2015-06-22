@@ -51,6 +51,7 @@ public enum AddonType {
     DOCKER("docker", "Docker", 910),
     VAGRANT("vagrant", "Vagrant", 915),
     VCS("vcs", "VCS", 920),
+    GITLFS("git-lfs", "Git LFS", 930),
     HA("ha", "High Availability", 2000);
 
 

@@ -51,6 +51,7 @@ public enum ConstantValues {
     downloadStatsEnabled("repo.downloadStatsEnabled", TRUE),
     disableGlobalRepoAccess("repo.global.disabled", FALSE),
     fsItemCacheIdleTimeSecs("fsitem.cache.idleTimeSecs", Seconds.MINUTE * 20),
+    dockerTokensCacheIdleTimeSecs("docker.tokens.cache.idleTimeSecs", Seconds.MINUTE * 4),
     cacheFSSyncquietPeriodSecs("cacheFS.sync.quietPeriodSecs", Seconds.MINUTE * 15),
     searchMaxResults("search.maxResults", 500),
     searchUserQueryLimit("search.userQueryLimit", 1000),

@@ -21,6 +21,7 @@ package org.artifactory.storage.db.binstore.service;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -40,6 +41,7 @@ import org.artifactory.storage.binstore.service.BinaryProviderFactory;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.artifactory.storage.binstore.service.providers.DoubleFileBinaryProviderImpl;
 import org.artifactory.storage.binstore.service.providers.ExternalWrapperBinaryProviderImpl;
 import org.artifactory.storage.config.model.ChainMetaData;
@@ -52,6 +54,9 @@ import org.artifactory.storage.fs.service.ArchiveEntriesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
@@ -64,6 +69,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
@@ -103,10 +109,12 @@ public class BinaryStoreImpl implements InternalBinaryStore {
      * Map of delete protected sha1 checksums to the number of protections (active readers + writer count for each binary)
      */
     private ConcurrentMap<String, AtomicInteger> deleteProtectedBinaries;
+    private Map<String, Class> binaryProvidersMap;
 
     @PostConstruct
     public void initialize() {
         try {
+            binaryProvidersMap = loadProvidersMap();
             log.debug("Initializing the ConfigurableBinaryProviderManager");
             deleteProtectedBinaries = new MapMaker().makeMap();
             File haAwareEtcDir = ArtifactoryHome.get().getHaAwareEtcDir();
@@ -126,22 +134,59 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             // Add External binary providers
             String mode = storageProperties.getBinaryProviderExternalMode();
             String externalDir = storageProperties.getBinaryProviderExternalDir();
-            String fileStoreDir = fileBinaryProvider.getBinariesDir().getAbsolutePath();
-            addBinaryProvider(createExternalBinaryProviders(mode, externalDir, fileStoreDir, storageProperties, this));
+            addBinaryProvider(
+                    createExternalBinaryProviders(mode, externalDir, fileBinaryProvider, storageProperties, this));
         } catch (IOException e) {
             throw new RuntimeException(
                     "Failed to initialize binary providers. Reason io exception occurred during the config read process");
         }
     }
 
+    @Override
+    public Map<String, Class> getBinaryProvidersMap() {
+        return binaryProvidersMap;
+    }
+
+    private Map<String, Class> loadProvidersMap() {
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(BinaryProviderClassInfo.class));
+        Map<String, Class> providersMap = Maps.newHashMap();
+        for (BeanDefinition bd : scanner.findCandidateComponents("org.artifactory.storage.db.binstore")) {
+            updateMap(providersMap, bd);
+        }
+        for (BeanDefinition bd : scanner.findCandidateComponents("org.artifactory.addon.filestore")) {
+            updateMap(providersMap, bd);
+        }
+        for (BeanDefinition bd : scanner.findCandidateComponents("org.artifactory.storage.binstore")) {
+            updateMap(providersMap, bd);
+        }
+
+
+        return providersMap;
+    }
+
+    private void updateMap(Map<String, Class> providersMap, BeanDefinition bd) {
+        try {
+            String beanClassName = bd.getBeanClassName();
+            Class<?> beanClass = Class.forName(beanClassName);
+            BinaryProviderClassInfo annotation = beanClass.getAnnotation(BinaryProviderClassInfo.class);
+            providersMap.put(annotation.nativeName(), beanClass);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to init Binary provider. Reason class not found.", e);
+        }
+    }
+
+
     private void addBinaryProvider(List<BinaryProviderBase> binaryProvidersToAdd) {
         BinaryProviderBase binaryProvider = (BinaryProviderBase) fileBinaryProvider;
-        while (binaryProvider.getBinaryProvider() != null) {
-            binaryProvider = binaryProvider.getBinaryProvider();
-        }
-        for (BinaryProviderBase toAdd : binaryProvidersToAdd) {
-            binaryProvider.setBinaryProvider(toAdd);
-            binaryProvider = toAdd;
+        if (binaryProvider != null) {
+            while (binaryProvider.getBinaryProvider() != null) {
+                binaryProvider = binaryProvider.getBinaryProvider();
+            }
+            for (BinaryProviderBase toAdd : binaryProvidersToAdd) {
+                binaryProvider.setBinaryProvider(toAdd);
+                binaryProvider = toAdd;
+            }
         }
     }
 
@@ -153,8 +198,8 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         }
         String mode = connectMode.propName;
         String externalDir = externalFileDir.getAbsolutePath();
-        String fileStoreDir = fileBinaryProvider.getBinariesDir().getAbsolutePath();
-        addBinaryProvider(createExternalBinaryProviders(mode, externalDir, fileStoreDir, storageProperties, this));
+        addBinaryProvider(
+                createExternalBinaryProviders(mode, externalDir, fileBinaryProvider, storageProperties, this));
     }
 
     @Override

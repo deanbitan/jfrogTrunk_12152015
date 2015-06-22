@@ -1,6 +1,7 @@
 package org.artifactory.api.bintray;
 
 import com.jfrog.bintray.client.api.details.PackageDetails;
+import com.jfrog.bintray.client.api.details.RepositoryDetails;
 import com.jfrog.bintray.client.api.details.VersionDetails;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
@@ -22,6 +23,8 @@ import java.util.Set;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BintrayUploadInfo implements Serializable {
 
+    @JsonProperty("repo")
+    RepositoryDetails repositoryDetails;
     @JsonProperty("package")
     PackageDetails packageDetails;
     @JsonProperty("version")
@@ -32,7 +35,7 @@ public class BintrayUploadInfo implements Serializable {
     private List<String> artifactPaths;                         //Fully qualified paths, from any repo
     @JsonProperty(value = "applyToProps")
     private Set<Map<String, Collection<String>>> filterProps;   //Properties to filter artifacts by
-    @JsonProperty(value = "publish")
+    @JsonProperty
     private Boolean publish;
 
     public BintrayUploadInfo() {
@@ -47,6 +50,14 @@ public class BintrayUploadInfo implements Serializable {
         this.packageDetails.setLicenses(override.licenses);
         this.versionDetails = new VersionDetails(override.versionName);
         this.packageDetails.setVcsUrl(override.vcsUrl);
+    }
+
+    public RepositoryDetails getRepositoryDetails() {
+        return repositoryDetails;
+    }
+
+    public void setRepositoryDetails(RepositoryDetails repositoryDetails) {
+        this.repositoryDetails = repositoryDetails;
     }
 
     public PackageDetails getPackageDetails() {

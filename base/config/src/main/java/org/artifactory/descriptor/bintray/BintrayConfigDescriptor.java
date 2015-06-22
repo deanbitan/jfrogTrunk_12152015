@@ -19,7 +19,7 @@ public class BintrayConfigDescriptor implements Descriptor {
     @XmlElement(required = true)
     private String apiKey;
     @XmlElement(required = true, defaultValue = "200")
-    private int fileUploadLimit;
+    private int fileUploadLimit = 200;
 
 
     public String getUserName() {

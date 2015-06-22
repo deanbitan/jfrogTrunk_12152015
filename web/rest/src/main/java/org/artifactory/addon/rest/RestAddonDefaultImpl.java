@@ -271,6 +271,11 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
+    public ResponseCtx reloadPlugins() {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
     public ArtifactVersionsResult getArtifactVersions(String groupId, String artifactId, @Nullable String version,
             @Nullable StringList reposToSearch, boolean remote, boolean limitSearch) {
         throw new MissingRestAddonException();

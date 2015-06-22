@@ -84,7 +84,9 @@ public interface HttpRepositoryConfiguration extends RepositoryConfiguration {
 
     boolean isP2Support();
 
-    public boolean isAllowAnyHostAuth();
+    boolean isAllowAnyHostAuth();
 
-    public boolean isEnableCookieManagement();
+    boolean isEnableCookieManagement();
+
+    boolean isEnableTokenAuthentication();
 }

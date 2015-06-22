@@ -120,7 +120,7 @@ import java.util.concurrent.Semaphore;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon {
+        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon, GitLfsAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 

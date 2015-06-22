@@ -24,6 +24,7 @@ import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProvider;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ import java.io.InputStream;
  *
  * @author freds
  */
+@BinaryProviderClassInfo(nativeName = "tracking")
 public class UsageTrackingBinaryProvider extends BinaryProviderBase implements BinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(UsageTrackingBinaryProvider.class);
 

@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Date: 12/11/12
@@ -161,4 +162,10 @@ public interface InternalBinaryStore extends BinaryStore {
      * @param sha1 The sha1 checksum to remove protection from
      */
     void decrementNoDeleteLock(String sha1);
+
+
+    /**
+     * returns Binary providers classes by native (type).
+     */
+    public Map<String, Class> getBinaryProvidersMap();
 }

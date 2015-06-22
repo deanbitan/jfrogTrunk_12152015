@@ -27,6 +27,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.DebianWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
+import org.artifactory.addon.wicket.GitLfsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PypiWebAddon;
@@ -100,6 +101,13 @@ public class GeneralTabPanel extends Panel {
             if (!pypiWebAddon.isDefault() && repoItem.getRepo().isEnablePypiSupport()) {
                 distributionManagement.add(
                         pypiWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
+                                repoItem.getRepoPath()));
+            }
+
+            GitLfsWebAddon lfsWebAddon = addonsManager.addonByType(GitLfsWebAddon.class);
+            if (!lfsWebAddon.isDefault() && repoItem.getRepo().isEnableGitLfsSupport()) {
+                distributionManagement.add(
+                        lfsWebAddon.buildDistributionManagementPanel(distributionManagement.newChildId(),
                                 repoItem.getRepoPath()));
             }
 

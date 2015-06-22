@@ -183,6 +183,7 @@ import org.artifactory.webapp.wicket.page.security.group.GroupsPage;
 import org.artifactory.webapp.wicket.page.security.user.UsersPage;
 import org.artifactory.webapp.wicket.panel.export.ExportResultsPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
+import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
 import org.jfrog.build.api.Artifact;
 import org.jfrog.build.api.BaseBuildFileBean;
@@ -222,7 +223,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
         P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
-        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon, VagrantWebAddon {
+        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon, VagrantWebAddon, GitLfsWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     private static String buildLatestVersionLabel(VersionHolder latestVersion) {
@@ -1229,23 +1230,27 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor,
-            boolean isCreate) {
+    public void createAndAddRepoConfigDockerSection(Form form, RepoDescriptor repoDescriptor, boolean isCreate) {
         WebMarkupContainer dockerSection = new WebMarkupContainer("dockerSupportSection");
         dockerSection.add(new TitledBorderBehavior("fieldset-border", "Docker"));
         dockerSection.add(new DisabledAddonBehavior(AddonType.DOCKER));
-        dockerSection.add(
-                new StyledCheckbox("enableDockerSupport").setTitle("Enable Docker Support").setEnabled(false));
+        dockerSection.add(new StyledCheckbox("enableDockerSupport").setTitle("Enable Docker Support").setEnabled(false));
         dockerSection.add(new SchemaHelpBubble("enableDockerSupport.help"));
-        final RadioGroup dockerApiVersion = new RadioGroup("dockerApiVersion");
-        dockerApiVersion.add(new Radio<>("v1", Model.of(DockerApiVersion.V1)));
-        dockerApiVersion.add(new HelpBubble("v1.help", "Support Docker V1 API"));
-        dockerApiVersion.add(new Radio<>("v2", Model.of(DockerApiVersion.V2)));
-        dockerApiVersion.add(new HelpBubble("v2.help", "Support Docker V2 API"));
-        dockerSection.add(dockerApiVersion);
         Label label = new Label("dockerRepoUrlLabel", "");
         label.setVisible(false);
         dockerSection.add(label);
+
+        if (repoDescriptor instanceof LocalRepoDescriptor) {
+            final RadioGroup dockerApiVersion = new RadioGroup("dockerApiVersion");
+            dockerApiVersion.add(new Radio<>("v1", Model.of(DockerApiVersion.V1)));
+            dockerApiVersion.add(new HelpBubble("v1.help", "Support Docker V1 API"));
+            dockerApiVersion.add(new Radio<>("v2", Model.of(DockerApiVersion.V2)));
+            dockerApiVersion.add(new HelpBubble("v2.help", "Support Docker V2 API"));
+            dockerSection.add(dockerApiVersion);
+        } else if (repoDescriptor instanceof RemoteRepoDescriptor) {
+            dockerSection.add(new StyledCheckbox("dockerTokenAuthentication").setTitle("Enable Token Authentication").setEnabled(false));
+            dockerSection.add(new SchemaHelpBubble("dockerTokenAuthentication.help"));
+        }
         form.add(dockerSection);
     }
 
@@ -1371,6 +1376,26 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         vagrantSection.add(label);
         form.add(vagrantSection);
 
+    }
+
+    @Override
+    public void createAndAddRepoConfigGitLfsSection(Form<LocalRepoDescriptor> form, RepoDescriptor descriptor) {
+        WebMarkupContainer gitLfsSection = new WebMarkupContainer("gitLfsSupportSection");
+        gitLfsSection.add(new TitledBorderBehavior("fieldset-border", "Git LFS"));
+        gitLfsSection.add(new DisabledAddonBehavior(AddonType.GITLFS));
+        gitLfsSection.add(
+                new StyledCheckbox("enableGitLfsSupport").setTitle("Enable Git LFS Support").setEnabled(false));
+        gitLfsSection.add(new SchemaHelpBubble("enableGitLfsSupport.help"));
+        Label label = new Label("gitLfsRepoUrlLabel", "");
+        label.setVisible(false);
+        gitLfsSection.add(label);
+        form.add(gitLfsSection);
+    }
+
+    @Override
+    public ItemCssClass getFileCssClass(RepoPath path) {
+        //null falls back to default in FileActionableItem
+        return null;
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

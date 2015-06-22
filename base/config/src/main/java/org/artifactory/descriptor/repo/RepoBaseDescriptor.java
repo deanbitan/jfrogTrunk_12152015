@@ -29,7 +29,8 @@ import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "description", "notes", "includesPattern", "excludesPattern",
         "repoLayout", "enableNuGetSupport", "enableGemsSupport", "enableNpmSupport", "enableBowerSupport",
-        "enableDebianSupport", "enablePypiSupport", "enableDockerSupport", "dockerApiVersion", "enableVagrantSupport"},
+        "enableDebianSupport", "enablePypiSupport", "enableDockerSupport", "dockerApiVersion", "enableVagrantSupport",
+        "enableGitLfsSupport"},
         namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
@@ -71,6 +72,8 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
 
     private boolean enableVagrantSupport;
+
+    private boolean enableGitLfsSupport;
 
     @Override
     public String getKey() {
@@ -205,6 +208,15 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setEnableVagrantSupport(boolean enableVagrantSupport) {
         this.enableVagrantSupport = enableVagrantSupport;
+    }
+
+    @Override
+    public boolean isEnableGitLfsSupport() {
+        return enableGitLfsSupport;
+    }
+
+    public void setEnableGitLfsSupport(boolean enableGitLfsSupport) {
+        this.enableGitLfsSupport = enableGitLfsSupport;
     }
 
     @Override

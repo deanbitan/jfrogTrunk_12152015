@@ -21,6 +21,7 @@ package org.artifactory.storage.binstore.service.providers;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,7 @@ import static org.artifactory.storage.binstore.service.BinaryProviderHelper.save
  *
  * @author Fred Simon
  */
+@BinaryProviderClassInfo(nativeName = "file-system")
 public class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderImpl.class);
 

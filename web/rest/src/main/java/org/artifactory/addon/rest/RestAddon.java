@@ -352,6 +352,13 @@ public interface RestAddon extends Addon {
     ResponseCtx deployPlugin(Reader pluginContent, String scriptName);
 
     /**
+     * Reloads user plugins. Nothing is reloaded if there's no plugin present or no plugin modified since the last reload.
+     *
+     * @return Response context with status for various reloaded user plugins.
+     */
+    ResponseCtx reloadPlugins();
+
+    /**
      * Searches for artifact versions by it's groupId and artifactId (version is optional and relates to
      * integration versions only). The results are sorted from latest to oldest (latest is first).
      *

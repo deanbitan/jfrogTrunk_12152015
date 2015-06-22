@@ -29,6 +29,7 @@ import org.artifactory.io.SimpleResourceStreamHandle;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.rest.ErrorResponse;
 import org.artifactory.rest.common.list.KeyValueList;
+import org.artifactory.util.StringInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -49,7 +50,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
@@ -91,10 +91,10 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response execute(@Context Request request,
-                            InputStream body,
-                            @PathParam("executionName") String executionName,
-                            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-                            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+            InputStream body,
+            @PathParam("executionName") String executionName,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
         Map<String, List<String>> params =
                 paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
         try (ResourceStreamHandle handle = new SimpleResourceStreamHandle(body)) {
@@ -116,10 +116,10 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response executePut(@Context Request request,
-                               InputStream body,
-                               @PathParam("executionName") String executionName,
-                               @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-                               @QueryParam(PARAM_ASYNC) int async) throws Exception {
+            InputStream body,
+            @PathParam("executionName") String executionName,
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
         return execute(request, body, executionName, paramsList, async);
     }
 
@@ -127,8 +127,8 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response execute(@Context Request request, @PathParam("executionName") String executionName,
-                            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-                            @QueryParam(PARAM_ASYNC) int async) throws Exception {
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
         Map<String, List<String>> params =
                 paramsList != null ? paramsList.toStringMap() : Maps.<String, List<String>>newHashMap();
         ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).runPluginExecution(executionName,
@@ -145,8 +145,8 @@ public class PluginsResource {
     @Path(PATH_EXECUTE + "/{executionName: .+}")
     @Produces(TEXT_PLAIN)
     public Response executeDelete(@Context Request request, @PathParam("executionName") String executionName,
-                                  @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
-                                  @QueryParam(PARAM_ASYNC) int async) throws Exception {
+            @QueryParam(PARAM_PARAMS) KeyValueList paramsList,
+            @QueryParam(PARAM_ASYNC) int async) throws Exception {
         return execute(request, executionName, paramsList, async);
     }
 
@@ -183,11 +183,29 @@ public class PluginsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deploy(Reader pluginScript, @PathParam("scriptName") String scriptName) {
         ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).deployPlugin(pluginScript, scriptName);
-        if(responseCtx.getStatus() >= 400) {
+        if (responseCtx.getStatus() >= 400) {
             ErrorResponse errorResponse = new ErrorResponse(responseCtx.getStatus(), responseCtx.getMessage());
             return Responses.clientError().type(MediaType.APPLICATION_JSON).entity(errorResponse).build();
         } else {
             return responseFromResponseCtx(responseCtx);
+        }
+    }
+
+    @POST
+    @Path("reload")
+    @Produces(MediaType.TEXT_PLAIN)
+    @RolesAllowed(AuthorizationService.ROLE_ADMIN)
+    public Response reload() {
+        try {
+            ResponseCtx responseCtx = addonsManager.addonByType(RestAddon.class).reloadPlugins();
+            return Response.status(responseCtx.getStatus())
+                    // ugly hack to force text response (to overcome our default in org.artifactory.rest.common.RestErrorResponseFilter
+                    .entity(new StringInputStream(responseCtx.getMessage()))
+                    .type(MediaType.TEXT_PLAIN).build();
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse(
+                    Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorResponse).build();
         }
     }
 

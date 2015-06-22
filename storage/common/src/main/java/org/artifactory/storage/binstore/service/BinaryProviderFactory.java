@@ -9,34 +9,39 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Gidi Shabat
  */
 public class BinaryProviderFactory {
     private static final Logger log = LoggerFactory.getLogger(BinaryProviderFactory.class);
-    public static <T extends BinaryProviderBase> T create(BinaryProviderTypes type, String id,
-            StorageProperties properties) {
-        return create(type, id, properties, null);
-    }
 
-    public static <T extends BinaryProviderBase> T create(BinaryProviderTypes type, String id,
+    public static <T extends BinaryProviderBase> T createByType(String type, String id,
             StorageProperties properties, InternalBinaryStore binaryStore) {
-        ProviderMetaData providerMetaData = new ProviderMetaData(id, type.getType());
-        return create(providerMetaData, properties, binaryStore);
+        ProviderMetaData providerMetaData = new ProviderMetaData(id, type);
+        T t = create(providerMetaData, properties, binaryStore);
+        t.initialize();
+        return t;
 
     }
 
     public static <T extends BinaryProviderBase> T create(ProviderMetaData providerMetaData,
             StorageProperties properties, InternalBinaryStore binaryStore) {
-        BinaryProviderTypes type = BinaryProviderTypes.getBinaryProviderTypeById(providerMetaData.getType());
-        BinaryProviderBase instance = type.instance();
-        instance.setProviderMetaData(providerMetaData);
-        instance.setStorageProperties(properties);
-        instance.setBinaryStore(binaryStore);
-        instance.setEmpty(new EmptyBinaryProvider());
-        instance.initialize();
-        return (T) instance;
+        try {
+            //Map<String, Class> providersMap = loadProvidersMap();
+            Map<String, Class> binaryProvidersMap = binaryStore.getBinaryProvidersMap();
+            Class binaryProviderClass = binaryProvidersMap.get(providerMetaData.getType());
+            BinaryProviderBase instance = (BinaryProviderBase) binaryProviderClass.newInstance();
+            instance.setProviderMetaData(providerMetaData);
+            instance.setStorageProperties(properties);
+            instance.setBinaryStore(binaryStore);
+            instance.setEmpty(new EmptyBinaryProvider());
+            return (T) instance;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initiate binary provider.", e);
+        }
+
     }
 
     public static BinaryProviderBase buildProviders(ChainMetaData configChain, InternalBinaryStore binaryStore,
@@ -53,9 +58,11 @@ public class BinaryProviderFactory {
             return null;
         }
         BinaryProviderBase binaryProvider = create(providerMetaData, storageProperties, binaryStore);
-        binaryProvider.setBinaryProvider(build(providerMetaData.getProviderMetaData(), binaryStore, storageProperties));
+        binaryProvider.setBinaryProvider(
+                build(providerMetaData.getProviderMetaData(), binaryStore, storageProperties));
         for (ProviderMetaData subProviderMetaData : providerMetaData.getSubProviderMetaDataList()) {
-            binaryProvider.addSubBinaryProvider(build(subProviderMetaData, binaryStore, storageProperties));
+            binaryProvider.addSubBinaryProvider(
+                    build(subProviderMetaData, binaryStore, storageProperties));
         }
         binaryProvider.initialize();
         return binaryProvider;
@@ -88,10 +95,12 @@ public class BinaryProviderFactory {
     }
 
     public static List<BinaryProviderBase> createExternalBinaryProviders(String mode, String externalDir,
-            String filestoreDir, StorageProperties storageProperties, InternalBinaryStore binaryStore) {
+            FileBinaryProvider fileBinaryProvider, StorageProperties storageProperties,
+            InternalBinaryStore binaryStore) {
         List<BinaryProviderBase> result = Lists.newArrayList();
         if (externalDir != null) {
             if (mode != null) {
+                String filestoreDir = fileBinaryProvider.getBinariesDir().getAbsolutePath();
                 result.add(createExternalWrapperBinaryProvider(mode, filestoreDir, storageProperties, binaryStore));
             }
             result.add(createExternalFileBinaryProvider(externalDir, storageProperties, binaryStore));
@@ -104,13 +113,17 @@ public class BinaryProviderFactory {
         ProviderMetaData providerMetaData = new ProviderMetaData("external-wrapper", "external-wrapper");
         providerMetaData.addParam(new Param("connectMode", mode));
         providerMetaData.addParam(new Param("dir", dir));
-        return BinaryProviderFactory.create(providerMetaData, storageProperties, binaryStore);
+        BinaryProviderBase binaryProvider = create(providerMetaData, storageProperties, binaryStore);
+        binaryProvider.initialize();
+        return binaryProvider;
     }
 
-    public static BinaryProviderBase createExternalFileBinaryProvider(String dir,
-            StorageProperties storageProperties, InternalBinaryStore binaryStore) {
+    public static BinaryProviderBase createExternalFileBinaryProvider(String dir, StorageProperties storageProperties,
+            InternalBinaryStore binaryStore) {
         ProviderMetaData providerMetaData = new ProviderMetaData("external-file", "external-file");
         providerMetaData.addParam(new Param("dir", dir));
-        return BinaryProviderFactory.create(providerMetaData, storageProperties, binaryStore);
+        BinaryProviderBase binaryProvider = create(providerMetaData, storageProperties, binaryStore);
+        binaryProvider.initialize();
+        return binaryProvider;
     }
 }

@@ -29,6 +29,7 @@ import org.artifactory.common.ConstantValues;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Fred Simon
  */
+@BinaryProviderClassInfo(nativeName = "cache-fs")
 public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(FileCacheBinaryProviderImpl.class);
 

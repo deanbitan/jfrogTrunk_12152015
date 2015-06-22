@@ -27,6 +27,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.wicket.BowerWebAddon;
 import org.artifactory.addon.wicket.DockerWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
+import org.artifactory.addon.wicket.GitLfsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
 import org.artifactory.addon.wicket.PypiWebAddon;
@@ -118,8 +119,10 @@ public class FileActionableItem extends RepoAwareActionableItemBase implements F
 
     @Override
     public String getCssClass() {
+        ItemCssClass cssClass;
         String path = getRepoPath().getPath();
-        return ItemCssClass.getFileCssClass(path).getCssClass();
+        cssClass = getAddonsProvider().addonByType(GitLfsWebAddon.class).getFileCssClass(getRepoPath());
+        return cssClass != null ? cssClass.getCssClass() : ItemCssClass.getFileCssClass(path).getCssClass();
     }
 
     @Override

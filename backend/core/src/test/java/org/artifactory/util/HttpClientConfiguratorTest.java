@@ -19,7 +19,10 @@
 package org.artifactory.util;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.config.Registry;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
@@ -29,6 +32,7 @@ import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.TestUtils;
+import org.artifactory.util.bearer.BearerSchemeFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -78,6 +82,27 @@ public class HttpClientConfiguratorTest extends ArtifactoryHomeBoundTest {
         assertEquals(((HttpClientConfigurator.DefaultHostRoutePlanner)
                 routePlanner).getDefaultHost().getHostName(), "bob", "Unexpected host.");
     }
+
+    public void testTokenAuthentication() {
+        HttpClient client = new HttpClientConfigurator().host("bob").enableTokenAuthentication(true).getClient();
+        Registry<AuthSchemeProvider> registry = getAuthSchemeRegistry(client);
+        assertThat(registry.lookup("bearer")).isInstanceOf(BearerSchemeFactory.class);
+        RequestConfig defaultConfig = getDefaultConfig(client);
+        assertThat(defaultConfig.getTargetPreferredAuthSchemes().size()).isEqualTo(1);
+        assertThat(defaultConfig.getTargetPreferredAuthSchemes().iterator().next()).isEqualTo("Bearer");
+    }
+
+    private Registry<AuthSchemeProvider> getAuthSchemeRegistry(HttpClient client) {
+        return TestUtils.getField(client, "authSchemeRegistry", Registry.class);
+    }
+
+    private RequestConfig getDefaultConfig(HttpClient client) {
+        return TestUtils.getField(client, "defaultConfig", RequestConfig.class);
+    }
+
+    /*private Registry<AuthSchemeProvider> getAuthSchemeRegistry(HttpClient client) {
+        return TestUtils.getField(client, "authSchemeRegistry", Registry.class);
+    }*/
 
     private DefaultRoutePlanner getRoutePlanner(HttpClient client) {
         return TestUtils.getField(client, "routePlanner", DefaultRoutePlanner.class);

@@ -75,4 +75,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     DockerApiVersion getDockerApiVersion();
 
     boolean isEnableVagrantSupport();
+
+    boolean isEnableGitLfsSupport();
 }

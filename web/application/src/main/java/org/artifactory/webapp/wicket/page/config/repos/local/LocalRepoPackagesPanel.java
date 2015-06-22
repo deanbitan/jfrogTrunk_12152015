@@ -23,15 +23,7 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.BowerWebAddon;
-import org.artifactory.addon.wicket.DebianWebAddon;
-import org.artifactory.addon.wicket.DockerWebAddon;
-import org.artifactory.addon.wicket.GemsWebAddon;
-import org.artifactory.addon.wicket.NpmWebAddon;
-import org.artifactory.addon.wicket.NuGetWebAddon;
-import org.artifactory.addon.wicket.PypiWebAddon;
-import org.artifactory.addon.wicket.VagrantWebAddon;
-import org.artifactory.addon.wicket.YumWebAddon;
+import org.artifactory.addon.wicket.*;
 import org.artifactory.common.wicket.component.form.SecureForm;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 
@@ -69,6 +61,8 @@ public class LocalRepoPackagesPanel extends Panel {
         addonsManager.addonByType(DockerWebAddon.class).createAndAddRepoConfigDockerSection(form, descriptor, isCreate);
 
         addonsManager.addonByType(VagrantWebAddon.class).createAndAddRepoConfigVagrantSection(form, descriptor);
+
+        addonsManager.addonByType(GitLfsWebAddon.class).createAndAddRepoConfigGitLfsSection(form, descriptor);
     }
 
 }

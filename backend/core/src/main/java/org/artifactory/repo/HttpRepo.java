@@ -216,6 +216,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         return getDescriptor().isAllowAnyHostAuth();
     }
 
+    public boolean isEnableTokenAuthentication() {
+        return getDescriptor().isEnableTokenAuthentication();
+    }
+
     public boolean isEnableCookieManagement() {
         return getDescriptor().isEnableCookieManagement();
     }
@@ -568,7 +572,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         }
 
         RepoRequests.logToContext("Returning found remote resource info");
-        RepoResource res = new RemoteRepoResource(repoPath, lastModified, contentLength, checksums);
+        RepoResource res = new RemoteRepoResource(repoPath, lastModified, contentLength, checksums, response.getAllHeaders());
         return res;
     }
 
@@ -615,6 +619,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 .proxy(getProxy())
                 .authentication(getUsername(), CryptoHelper.decryptIfNeeded(getPassword()), isAllowAnyHostAuth())
                 .enableCookieManagement(isEnableCookieManagement())
+                .enableTokenAuthentication(isEnableTokenAuthentication())
                 .getClient();
     }
 

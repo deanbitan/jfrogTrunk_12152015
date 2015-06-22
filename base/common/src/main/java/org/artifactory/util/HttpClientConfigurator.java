@@ -25,6 +25,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthSchemeProvider;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.NTCredentials;
@@ -33,6 +34,8 @@ import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -49,6 +52,7 @@ import org.apache.http.protocol.HttpContext;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.security.crypto.CryptoHelper;
+import org.artifactory.util.bearer.BearerSchemeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +62,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -283,6 +288,27 @@ public class HttpClientConfigurator {
             config.setCookieSpec(null);
         }
         explicitCookieSupport = enableCookieManagement;
+        return this;
+    }
+
+    public HttpClientConfigurator enableTokenAuthentication(boolean enableTokenAuthentication) {
+        if (enableTokenAuthentication) {
+            if (StringUtils.isBlank(host)) {
+                throw new IllegalStateException("Cannot configure authentication when host is not set.");
+            }
+
+            config.setTargetPreferredAuthSchemes(Collections.singletonList("Bearer"));
+
+            // We need dummy credentials otherwise we won't respond to a challenge properly
+            AuthScope authScope = new AuthScope(host, AuthScope.ANY_PORT, AuthScope.ANY_REALM);
+            credsProvider.setCredentials(authScope, new UsernamePasswordCredentials("dummy", "dummy"));
+
+            Registry<AuthSchemeProvider> bearerRegistry = RegistryBuilder.<AuthSchemeProvider>create()
+                    .register("Bearer", new BearerSchemeFactory())
+                    .build();
+
+            builder.setDefaultAuthSchemeRegistry(bearerRegistry);
+        }
         return this;
     }
 

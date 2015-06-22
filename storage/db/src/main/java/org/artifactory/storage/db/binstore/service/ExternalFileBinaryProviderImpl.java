@@ -20,6 +20,7 @@ package org.artifactory.storage.db.binstore.service;
 
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.binstore.BinaryInfo;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.artifactory.storage.binstore.service.providers.FileBinaryProviderReadOnlyBase;
 
 import javax.annotation.Nonnull;
@@ -32,6 +33,8 @@ import java.io.InputStream;
  *
  * @author Fred Simon
  */
+
+@BinaryProviderClassInfo(nativeName = "external-file")
 public class ExternalFileBinaryProviderImpl extends FileBinaryProviderReadOnlyBase {
 
     @Override

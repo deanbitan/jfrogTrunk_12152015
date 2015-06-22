@@ -24,8 +24,6 @@ import org.artifactory.build.staging.BuildStagingStrategy;
 import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
@@ -47,4 +45,11 @@ public interface PluginsAddon extends Addon, ImportableExportable {
     ResponseCtx promote(String promotionName, String buildName, String buildNumber, Map params);
 
     ResponseCtx deployPlugin(Reader pluginContent, String scriptName);
+
+    /**
+     * Reloads user plugins. Nothing is reloaded if there's no plugin present or no plugin modified since the last reload.
+     *
+     * @return Response context with status for various reloaded user plugins.
+     */
+    ResponseCtx reloadPlugins();
 }

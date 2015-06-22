@@ -4,6 +4,9 @@ import static org.artifactory.aql.model.AqlVariableTypeEnum.*;
 
 /**
  * @author Gidi Shabat
+ *
+ * This class contains all the Fields (domain, native name and type) supported by AQL
+ * In order to add new Field to AQL, just add new field to this class and update acordinatlly the AqlFieldExtensionEnum class
  */
 public enum AqlFieldEnum {
     // node
@@ -17,7 +20,7 @@ public enum AqlFieldEnum {
     itemModifiedBy("modified_by", "items", string),
     itemType("type", "items", AqlVariableTypeEnum.itemType),
     itemDepth("depth", "items", integer),
-    itemNodeId("node", "items", integer),
+    itemNodeId("node", "items", longInt),
     itemOriginalMd5("original_md5", "items", string),
     itemActualMd5("actual_md5", "items", string),
     itemOriginalSha1("original_sha1", "items", string),

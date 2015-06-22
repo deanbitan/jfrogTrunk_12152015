@@ -3,6 +3,7 @@ package org.artifactory.storage.binstore.service.providers;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,7 @@ import java.io.InputStream;
  *
  * @author Gidi Shabat
  */
+@BinaryProviderClassInfo(nativeName = "retry")
 public class RetryBinaryProvider extends BinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(RetryBinaryProvider.class);
     private int interval;

@@ -22,6 +22,7 @@ import org.apache.wicket.extensions.markup.html.tabs.ITab;
 import org.apache.wicket.markup.html.form.Form;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.RepoPath;
@@ -41,8 +42,7 @@ public interface DockerWebAddon extends Addon {
      * @param descriptor Configured repo descriptor
      * @param isCreate   Whether it's a create new repository action
      */
-    void createAndAddRepoConfigDockerSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor,
-            boolean isCreate);
+    void createAndAddRepoConfigDockerSection(Form form, RepoDescriptor descriptor, boolean isCreate);
 
     ITab getDockerInfoTab(String tabTitle, FileInfo fileInfo);
 

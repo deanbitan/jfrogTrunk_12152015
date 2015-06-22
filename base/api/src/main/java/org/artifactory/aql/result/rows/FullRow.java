@@ -36,7 +36,7 @@ public interface FullRow {
 
     int getDepth();
 
-    int getNodeId();
+    long getNodeId();
 
     String getOriginalMd5();
 

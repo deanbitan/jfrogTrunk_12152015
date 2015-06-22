@@ -25,8 +25,10 @@ public class MergeProvidersWithChainsVisitor extends ConfigVisitor {
     @Override
     ProviderMetaData onChainSubProvider(ProviderMetaData providerMetaData) {
         ProviderMetaData defaultProviderMetaData = findDefaultProvider(providerMetaData.getId());
-        providerMetaData.merge(defaultProviderMetaData);
-        providerMetaData.setType(defaultProviderMetaData.getType());
+        if (defaultProviderMetaData != null) {
+            providerMetaData.merge(defaultProviderMetaData);
+            providerMetaData.setType(defaultProviderMetaData.getType());
+        }
         return null;
     }
 

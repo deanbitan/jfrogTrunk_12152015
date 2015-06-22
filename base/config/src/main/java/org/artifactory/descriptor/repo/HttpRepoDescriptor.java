@@ -26,7 +26,8 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RemoteRepoType",
-        propOrder = {"username", "password", "allowAnyHostAuth", "socketTimeoutMillis", "enableCookieManagement", "localAddress", "proxy", "queryParams"},
+        propOrder = {"username", "password", "allowAnyHostAuth", "socketTimeoutMillis", "enableCookieManagement",
+                "enableTokenAuthentication", "localAddress", "proxy", "queryParams"},
         namespace = Descriptor.NS)
 public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
@@ -41,8 +42,9 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     private boolean enableCookieManagement;
 
-    private String localAddress;
+    private boolean enableTokenAuthentication;
 
+    private String localAddress;
     @XmlIDREF
     @XmlElement(name = "proxyRef")
     private ProxyDescriptor proxy;
@@ -112,5 +114,13 @@ public class HttpRepoDescriptor extends RemoteRepoDescriptor {
 
     public void setEnableCookieManagement(boolean enableCookieManagement) {
         this.enableCookieManagement = enableCookieManagement;
+    }
+
+    public boolean isEnableTokenAuthentication() {
+        return enableTokenAuthentication;
+    }
+
+    public void setEnableTokenAuthentication(boolean enableTokenAuthentication) {
+        this.enableTokenAuthentication = enableTokenAuthentication;
     }
 }

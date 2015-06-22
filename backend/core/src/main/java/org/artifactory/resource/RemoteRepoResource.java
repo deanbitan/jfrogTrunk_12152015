@@ -18,6 +18,7 @@
 
 package org.artifactory.resource;
 
+import org.apache.http.Header;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.RepoResource;
@@ -36,8 +37,11 @@ public class RemoteRepoResource implements RepoResource {
     private final MutableRepoResourceInfo info;
     private RepoPath responseRepoPath;
     private boolean expirable;
+    private Header[] allHeaders;
 
-    public RemoteRepoResource(RepoPath repoPath, long lastModified, long size, Set<ChecksumInfo> checksums) {
+    public RemoteRepoResource(RepoPath repoPath, long lastModified, long size, Set<ChecksumInfo> checksums,
+            Header[] allHeaders) {
+        this.allHeaders = allHeaders;
         if (NamingUtils.isMetadata(repoPath.getPath())) {
             //TODO: [by YS] remove if not used by the replication for properties
             info = InfoFactoryHolder.get().createMetadata(repoPath);
@@ -117,6 +121,10 @@ public class RemoteRepoResource implements RepoResource {
     @Override
     public void expirable() {
         expirable = true;
+    }
+
+    public Header[] getAllHeaders() {
+        return allHeaders;
     }
 
     @Override

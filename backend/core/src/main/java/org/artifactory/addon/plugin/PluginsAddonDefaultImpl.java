@@ -65,6 +65,11 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     }
 
     @Override
+    public ResponseCtx reloadPlugins() {
+        throw new UnsupportedOperationException("Reloading User Plugins require Artifactory Pro.");
+    }
+
+    @Override
     public boolean isDefault() {
         return true;
     }

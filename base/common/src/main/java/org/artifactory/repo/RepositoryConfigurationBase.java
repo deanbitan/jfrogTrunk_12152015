@@ -53,6 +53,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enableDockerSupport = false;
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
     private boolean enableVagrantSupport = false;
+    private boolean enableGitLfsSupport = false;
 
     protected RepositoryConfigurationBase() {
     }
@@ -87,6 +88,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         setEnableDockerSupport(repoDescriptor.isEnableDockerSupport());
         setDockerApiVersion(repoDescriptor.getDockerApiVersion().name());
         setEnableVagrantSupport(repoDescriptor.isEnableVagrantSupport());
+        setEnableGitLfsSupport(repoDescriptor.isEnableGitLfsSupport());
     }
 
     public void setKey(String key) {
@@ -241,6 +243,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setEnableVagrantSupport(boolean enableVagrantSupport) {
         this.enableVagrantSupport = enableVagrantSupport;
+    }
+
+    @Override
+    public boolean isEnableGitLfsSupport() {
+        return enableGitLfsSupport;
+    }
+
+    public void setEnableGitLfsSupport(boolean enableGitLfsSupport) {
+        this.enableGitLfsSupport = enableGitLfsSupport;
     }
 
     /**

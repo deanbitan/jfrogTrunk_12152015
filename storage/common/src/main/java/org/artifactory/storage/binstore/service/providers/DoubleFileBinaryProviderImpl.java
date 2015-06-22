@@ -30,6 +30,7 @@ import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Fred Simon
  */
+@BinaryProviderClassInfo(nativeName = "double")
 public class DoubleFileBinaryProviderImpl extends BinaryProviderBase implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(DoubleFileBinaryProviderImpl.class);
 

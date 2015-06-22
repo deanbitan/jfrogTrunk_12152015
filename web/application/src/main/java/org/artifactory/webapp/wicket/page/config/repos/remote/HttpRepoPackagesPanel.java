@@ -26,6 +26,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.p2.P2WebAddon;
 import org.artifactory.addon.wicket.BowerWebAddon;
 import org.artifactory.addon.wicket.DebianWebAddon;
+import org.artifactory.addon.wicket.DockerWebAddon;
 import org.artifactory.addon.wicket.GemsWebAddon;
 import org.artifactory.addon.wicket.NpmWebAddon;
 import org.artifactory.addon.wicket.NuGetWebAddon;
@@ -60,6 +61,7 @@ public class HttpRepoPackagesPanel<T extends RemoteRepoDescriptor> extends Panel
         addonsManager.addonByType(BowerWebAddon.class).createAndAddRepoConfigBowerSection(form, descriptor, isCreate);
         addonsManager.addonByType(DebianWebAddon.class).createAndAddLocalRepoDebianSection(form, descriptor);
         addonsManager.addonByType(PypiWebAddon.class).createAndAddPypiConfigSection(form, descriptor, isCreate);
+        addonsManager.addonByType(DockerWebAddon.class).createAndAddRepoConfigDockerSection(form, descriptor, isCreate);
         addonsManager.addonByType(VcsWebAddon.class).createAndAddVcsConfigSection(form, descriptor, isCreate);
     }
 }

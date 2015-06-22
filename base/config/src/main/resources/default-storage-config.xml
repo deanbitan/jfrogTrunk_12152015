@@ -15,13 +15,13 @@
     </chain>
 
     <chain template="cache-fs">
-        <provider id="cache-fs" type="cache">
+        <provider id="cache-fs" type="cache-fs">
             <provider id="file-system" type="file-system"/>
         </provider>
     </chain>
     <!--Full-db default chain-->
     <chain template="full-db">
-        <provider id="cache-fs" type="cache">
+        <provider id="cache-fs" type="cache-fs">
             <provider id="blob" type="blob"/>
         </provider>
     </chain>

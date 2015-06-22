@@ -107,7 +107,7 @@ public class AqlBaseFullRowImpl
     }
 
     @Override
-    public int getNodeId() {
+    public long getNodeId() {
         return (int) map.get(AqlFieldEnum.itemNodeId);
     }
 

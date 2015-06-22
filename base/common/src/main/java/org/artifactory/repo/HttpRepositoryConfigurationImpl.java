@@ -74,6 +74,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private boolean p2Support = false;
     private boolean allowAnyHostAuth;
     private boolean enableCookieManagement;
+    private boolean enableTokenAuthentication;
 
     public HttpRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -96,6 +97,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
             setPassword(password);
         }
         setAllowAnyHostAuth(repoDescriptor.isAllowAnyHostAuth());
+        setEnableTokenAuthentication(repoDescriptor.isEnableTokenAuthentication());
         ProxyDescriptor proxy = repoDescriptor.getProxy();
         if (proxy != null) {
             setProxy(proxy.getKey());
@@ -417,6 +419,15 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
 
     public void setAllowAnyHostAuth(boolean allowAnyHostAuth) {
         this.allowAnyHostAuth = allowAnyHostAuth;
+    }
+
+    @Override
+    public boolean isEnableTokenAuthentication() {
+        return enableTokenAuthentication;
+    }
+
+    public void setEnableTokenAuthentication(boolean enableTokenAuthentication) {
+        this.enableTokenAuthentication = enableTokenAuthentication;
     }
 
     @Override

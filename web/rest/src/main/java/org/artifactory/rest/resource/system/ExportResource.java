@@ -20,6 +20,8 @@ package org.artifactory.rest.resource.system;
 
 
 import org.apache.http.HttpStatus;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.config.ExportSettingsImpl;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -27,6 +29,7 @@ import org.artifactory.api.rest.constant.ImportRestConstants;
 import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.rest.common.exception.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +72,7 @@ public class ExportResource {
     @Path(ImportRestConstants.SYSTEM_PATH)
     @Produces({SystemRestConstants.MT_EXPORT_SETTINGS, MediaType.APPLICATION_JSON})
     public ExportSettingsConfigurationImpl settingsExample() {
+        assertNotAol();
         ExportSettingsConfigurationImpl settings = new ExportSettingsConfigurationImpl();
         settings.setExportPath("/export/path");
         return settings;
@@ -78,6 +82,7 @@ public class ExportResource {
     @Path(ImportRestConstants.SYSTEM_PATH)
     @Consumes({SystemRestConstants.MT_EXPORT_SETTINGS, MediaType.APPLICATION_JSON})
     public Response activateExport(ExportSettingsConfigurationImpl settings) {
+        assertNotAol();
         ImportExportStreamStatusHolder holder = new ImportExportStreamStatusHolder(httpResponse);
         ExportSettingsImpl exportSettings = new ExportSettingsImpl(new File(settings.getExportPath()), holder);
         exportSettings.setIncludeMetadata(settings.isIncludeMetadata());
@@ -116,5 +121,12 @@ public class ExportResource {
             repoKeys.add(localRepoDescriptor.getKey());
         }
         return repoKeys;
+    }
+
+    private void assertNotAol() {
+        if (ContextHelper.get().beanForType(AddonsManager.class).addonByType(CoreAddons.class).isAol()) {
+            log.debug("Canceling system export request - not allowed on AOL");
+            throw new BadRequestException("Export System function is not supported when running on the cloud");
+        }
     }
 }

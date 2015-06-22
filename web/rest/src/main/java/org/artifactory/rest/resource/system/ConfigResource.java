@@ -19,14 +19,21 @@
 package org.artifactory.rest.resource.system;
 
 
+import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.api.rest.constant.ConfigRestConstants;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.rest.common.exception.BadRequestException;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.util.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -35,7 +42,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
+
 
 /**
  * @author freds
@@ -45,10 +54,12 @@ public class ConfigResource {
 
     CentralConfigService centralConfigService;
     private HttpServletRequest request;
+    private final UrlValidator urlValidator;
 
     public ConfigResource(CentralConfigService centralConfigService, HttpServletRequest httpServletRequest) {
         this.centralConfigService = centralConfigService;
         this.request = httpServletRequest;
+        this.urlValidator = new UrlValidator("http", "https");
     }
 
     @GET
@@ -81,14 +92,14 @@ public class ConfigResource {
 
     @PUT
     @Consumes("application/xml")
-    @Path("remoteRepositories")
+    @Path(ConfigRestConstants.REMOTE_REPOSITORIES_PATH)
     public void useRemoteRepositories(String xmlContent) {
         //TODO: [by tc] do
     }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("logoUrl")
+    @Path(ConfigRestConstants.LOGO_URL_PATH)
     public String logoUrl() {
         String descriptorLogo = centralConfigService.getDescriptor().getLogo();
         if (StringUtils.isNotBlank(descriptorLogo)) {
@@ -101,5 +112,51 @@ public class ConfigResource {
         }
 
         return null;
+    }
+
+    @PUT
+    @Consumes({MediaType.TEXT_PLAIN})
+    @RolesAllowed(AuthorizationService.ROLE_ADMIN)
+    @Path(ConfigRestConstants.URL_BASE_PATH)
+    public Response setUrlBase(String urlBase) {
+        log.debug("Updating URL base: {}", urlBase);
+        final String messageFailed = "Updating URL base has failed.\n";
+        final String messageOk = "URL base has been successfully updated to \"%s\".\n";
+
+        validateUrl(urlBase);
+        persistUrl(urlBase);
+
+        if(!centralConfigService.getMutableDescriptor().getUrlBase().equals(urlBase))
+            return Response.serverError().entity(messageFailed).build();
+        return Response.ok().entity(String.format(messageOk, urlBase)).build();
+    }
+
+    /**
+     * Saves new urlBase in configuration.
+     *
+     * @param urlBase url to save.
+     */
+    private void persistUrl(String urlBase) {
+        MutableCentralConfigDescriptor descriptor = centralConfigService.getMutableDescriptor();
+        descriptor.setUrlBase(urlBase);
+        centralConfigService.saveEditedDescriptorAndReload(descriptor);
+    }
+
+    /**
+     * Validates URL using UrlValidator.
+     *
+     * @see {@link org.artifactory.util.UrlValidator}
+     *
+     * @param urlBase url to validate.
+     * @throws BadRequestException if URL is in illegal form.
+     */
+    private void validateUrl(String urlBase) {
+        if (!Strings.isNullOrEmpty(urlBase)) { // we allow removing custom urlBase
+            try {
+                urlValidator.validate(urlBase);
+            } catch (UrlValidator.UrlValidationException ex) {
+                throw new BadRequestException(ex.getMessage());
+            }
+        }
     }
 }

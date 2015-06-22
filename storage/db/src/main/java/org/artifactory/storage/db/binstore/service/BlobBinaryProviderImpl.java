@@ -28,6 +28,7 @@ import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryInfoImpl;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryProviderBase;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.util.DbUtils;
@@ -51,6 +52,7 @@ import static org.artifactory.storage.db.binstore.dao.BinariesDao.TEMP_SHA1_PREF
  *
  * @author freds
  */
+@BinaryProviderClassInfo(nativeName = "blob")
 public class BlobBinaryProviderImpl extends BinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(BlobBinaryProviderImpl.class);
 

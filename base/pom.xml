@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.artifactory</groupId>
         <artifactId>artifactory-parent</artifactId>
-        <version>3.8.0</version>
+        <version>3.9.0</version>
     </parent>
 
     <artifactId>artifactory-base-parent</artifactId>

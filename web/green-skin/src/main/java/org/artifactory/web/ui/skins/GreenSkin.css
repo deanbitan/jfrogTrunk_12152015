@@ -4283,6 +4283,10 @@ div.general-settings-panel input.text-file {
     background-image: url("images/addons/16vagrant.png");
 }
 
+.lfs {
+    background-image: url("images/addons/16gitlfs.png");
+}
+
 .docker-folder {
     background: url("images/addons/16docker.png");
 }
@@ -5721,6 +5725,10 @@ table.data-table td.add-value-row {
 
 .addon-vagrant {
     background: url(images/addons/16vagrant.png) no-repeat left top;
+}
+
+.addon-git-lfs {
+    background: url(images/addons/16gitlfs.png) no-repeat left top;
 }
 
 /*-- ProfilePanel --*/

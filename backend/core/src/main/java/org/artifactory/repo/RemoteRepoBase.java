@@ -146,7 +146,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             HaAddon haAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaAddon.class);
             this.lockingMap = haAddon.getLockingMap();
         }
-        if (isNpmJsRepo()) {
+        if (isNonMavenRepo()) {
             excludes.addAll(Lists.newArrayList("**/*.pom", "**/*.jar", "**/maven-metadata.xml"));
         }
     }
@@ -1023,7 +1023,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * @throws IOException If remote checksum is not found or there was a problem retrieving it
      */
     private String getRemoteChecksum(String path) throws IOException {
-        if (isNpmJsRepo()) {
+        if (isNonMavenRepo()) {
             return null;
         }
         if (StringUtils.contains(getUrl(), "github.com")) {
@@ -1036,8 +1036,8 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
     }
 
-    private boolean isNpmJsRepo() {
-        return StringUtils.contains(getUrl(), "registry.npmjs.org");
+    private boolean isNonMavenRepo() {
+        return StringUtils.contains(getUrl(), "registry.npmjs.org") || StringUtils.contains(getUrl(), "docker.io");
     }
 
     /**

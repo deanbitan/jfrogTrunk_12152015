@@ -321,7 +321,6 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         Assert.assertTrue(string.contains("\"actual_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
         Assert.assertTrue(string.contains("\"created_by\" : \"yossis-1\""));
         Assert.assertTrue(string.contains("\"depth\" : 4"));
-        Assert.assertTrue(string.contains("\"id\" : 11"));
         Assert.assertTrue(string.contains("\"original_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
         Assert.assertTrue(string.contains("\"actual_sha1\" : \"acab88fc2a043c2479a6de676a2f8179e9ea2167\""));
         Assert.assertTrue(string.contains("\"path\" : \"org/yossis/tools\""));
@@ -352,7 +351,6 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         Assert.assertTrue(string.contains("\"actual_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
         Assert.assertTrue(string.contains("\"created_by\" : \"yossis-1\""));
         Assert.assertTrue(string.contains("\"depth\" : 4"));
-        Assert.assertTrue(string.contains("\"id\" : 11"));
         Assert.assertTrue(string.contains("\"original_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
         Assert.assertTrue(string.contains("\"actual_sha1\" : \"acab88fc2a043c2479a6de676a2f8179e9ea2167\""));
         Assert.assertTrue(string.contains("\"path\" : \"org/yossis/tools\""));
@@ -385,7 +383,6 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
         Assert.assertTrue(string.contains("\"actual_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
         Assert.assertTrue(string.contains("\"created_by\" : \"yossis-1\""));
         Assert.assertTrue(string.contains("\"depth\" : 4"));
-        Assert.assertTrue(string.contains("\"id\" : 11"));
         Assert.assertTrue(string.contains("\"original_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
         Assert.assertTrue(string.contains("\"actual_sha1\" : \"acab88fc2a043c2479a6de676a2f8179e9ea2167\""));
         Assert.assertTrue(string.contains("\"path\" : \"org/yossis/tools\""));

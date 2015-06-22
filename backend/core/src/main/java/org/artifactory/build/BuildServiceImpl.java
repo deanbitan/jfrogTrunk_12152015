@@ -53,6 +53,7 @@ import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlBaseFullRowImpl;
+import org.artifactory.aql.util.AqlUtils;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
@@ -187,9 +188,11 @@ public class BuildServiceImpl implements InternalBuildService {
 
         log.debug("Added info for build '{}' #{}", buildName, buildNumber);
 
+        log.debug("Running License check on build '{}' #{}", buildName, buildNumber);
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
         licensesAddon.performOnBuildArtifacts(build);
 
+        log.debug("Governance check will attempt to run (if enabled) on build '{}' #{}", buildName, buildNumber);
         BlackDuckAddon blackDuckAddon = addonsManager.addonByType(BlackDuckAddon.class);
         blackDuckAddon.performBlackDuckOnBuildArtifacts(build);
 
@@ -390,7 +393,9 @@ public class BuildServiceImpl implements InternalBuildService {
     public Set<ArtifactoryBuildArtifact> getBuildArtifactsFileInfos(Build build, boolean useFallBack,
             String sourceRepo) {
         AqlBase.AndClause and = and();
+        log.debug("Executing Artifacts search for build {}:{}", build.getName(), build.getNumber());
         if (StringUtils.isNotBlank(sourceRepo)) {
+            log.debug("Search limited to repo: {}", sourceRepo);
             and.append(
                     AqlApiItem.repo().equal(sourceRepo)
             );
@@ -400,19 +405,26 @@ public class BuildServiceImpl implements InternalBuildService {
         AqlBase buildArtifactsQuery = AqlApiItem.create().filter(and);
 
         AqlEagerResult<AqlBaseFullRowImpl> aqlResult = aqlService.executeQueryEager(buildArtifactsQuery);
+        log.debug("Search returned {} artifacts", aqlResult.getSize());
         Multimap<String, Artifact> buildArtifacts = BuildServiceUtils.getBuildArtifacts(build);
+        log.debug("This build contains {} artifacts (taken from build info)", buildArtifacts.size());
         List<String> virtualRepoKeys = getVirtualRepoKeys();
         Set<ArtifactoryBuildArtifact> matchedArtifacts = matchArtifactsToFileInfos(aqlResult.getResults(),
                 buildArtifacts, virtualRepoKeys);
+        log.debug("Matched {} build artifacts to actual paths returned by search", matchedArtifacts.size());
 
         //buildArtifacts contains all remaining artifacts that weren't matched - match them with the weak search
         //only if indicated and if such remaining unmatched artifacts still exist in the map.
         if (useFallBack && !buildArtifacts.isEmpty()) {
-            matchedArtifacts.addAll(matchUnmatchedArtifactsNonStrict(build, sourceRepo, buildArtifacts,
-                    virtualRepoKeys));
+            log.debug("Unmatched artifacts exist and 'use weak match fallback' flag is lit - executing weak match");
+            Set<ArtifactoryBuildArtifact> weaklyMatchedArtifacts = matchUnmatchedArtifactsNonStrict(build, sourceRepo,
+                    buildArtifacts, virtualRepoKeys);
+            log.debug("Weak match has matched {} additional artifacts", weaklyMatchedArtifacts);
+            matchedArtifacts.addAll(weaklyMatchedArtifacts);
         }
         //Lastly, populate matchedArtifacts with all remaining unmatched artifacts with null values to help users of
         //this function know if all build artifacts were found.
+        log.debug("{} artifacts were not matched to actual paths", buildArtifacts.size());
         for (Artifact artifact : buildArtifacts.values()) {
             matchedArtifacts.add(new ArtifactoryBuildArtifact(artifact, null));
         }
@@ -432,7 +444,6 @@ public class BuildServiceImpl implements InternalBuildService {
             Multimap<String, Artifact> checksumToArtifactsMap, List<String> virtualRepoKeys) {
         //Map<Artifact, FileInfo> foundResults = Maps.newHashMap();
         Set<ArtifactoryBuildArtifact> results = Sets.newHashSet();
-
         for (final AqlBaseFullRowImpl result : queryResults) {
             //Don't include results from virtual repos
             if (!virtualRepoKeys.contains(result.getRepo())) {
@@ -440,27 +451,42 @@ public class BuildServiceImpl implements InternalBuildService {
                 if (CollectionUtils.notNullOrEmpty(artifacts)) {
                     //Try to match exactly by artifact name
                     try {
-                        Artifact idMatch = Iterables.find(artifacts, new Predicate<Artifact>() {
-                            @Override
-                            public boolean apply(Artifact input) {
-                                return input.getName() != null && input.getName().equals(result.getName());
-                            }
-                        });
-                        results.add(new ArtifactoryBuildArtifact(idMatch,
-                                (FileInfo) AqlConverts.toFileInfo.apply(result)));
-                        artifacts.remove(idMatch);
+                        tryExactArtifactToFileInfoMatch(results, result, artifacts);
                     } catch (Exception e) {
                         //If no match just take the first artifact (it did match the checksum)
-                        Iterator<Artifact> artifactsIter = artifacts.iterator();
-                        results.add(new ArtifactoryBuildArtifact(artifactsIter.next(),
-                                (FileInfo) AqlConverts.toFileInfo.apply(result)));
-                        //Remove artifact from list so we match everything
-                        artifactsIter.remove();
+                        matchAnyArtifactToFileInfo(results, result, artifacts);
                     }
                 }
             }
         }
         return results;
+    }
+
+    /**
+     * Tries to match an artifact to a path based on it's name. If a match is found it is added to the result set
+     * and removed from the liist
+     */
+    private void tryExactArtifactToFileInfoMatch(Set<ArtifactoryBuildArtifact> results, final AqlBaseFullRowImpl result,
+            Collection<Artifact> artifacts) {
+        Artifact idMatch = Iterables.find(artifacts, new Predicate<Artifact>() {
+            @Override
+            public boolean apply(Artifact input) {
+                return input.getName() != null && input.getName().equals(result.getName());
+            }
+        });
+        results.add(new ArtifactoryBuildArtifact(idMatch, (FileInfo) AqlConverts.toFileInfo.apply(result)));
+        log.debug("Matched artifact {} to path {}", idMatch.getName(), AqlUtils.repoPathFromAql(result));
+        artifacts.remove(idMatch);
+    }
+
+    private void matchAnyArtifactToFileInfo(Set<ArtifactoryBuildArtifact> results, AqlBaseFullRowImpl result,
+            Collection<Artifact> artifacts) {
+        Iterator<Artifact> artifactsIter = artifacts.iterator();
+        Artifact matchedArtifact = artifactsIter.next();
+        results.add(new ArtifactoryBuildArtifact(matchedArtifact, (FileInfo) AqlConverts.toFileInfo.apply(result)));
+        log.debug("Matched artifact {} to path {}", matchedArtifact.getName(), AqlUtils.repoPathFromAql(result));
+        //Remove artifact from list to ensure that we match everything
+        artifactsIter.remove();
     }
 
     /**
@@ -470,15 +496,17 @@ public class BuildServiceImpl implements InternalBuildService {
      * performed by sha1 - so we might end up 'finding' the wrong artifact (meaning the wrong repoPath that has a
      * correct checksum - see todos above)
      */
-    private Set<ArtifactoryBuildArtifact> matchUnmatchedArtifactsNonStrict(Build build, String sourceRepository,
+    private Set<ArtifactoryBuildArtifact> matchUnmatchedArtifactsNonStrict(Build build, String sourceRepo,
             Multimap<String, Artifact> unmatchedArtifacts, List<String> virtualRepoKeys) {
         AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
                 AqlApiBuild.name().equal(build.getName()),
                 AqlApiBuild.number().equal(build.getNumber())
         );
-        if (StringUtils.isNotBlank(sourceRepository)) {
+        log.debug("Executing 'non-strict' Artifacts search for build {}:{}", build.getName(), build.getNumber());
+        if (StringUtils.isNotBlank(sourceRepo)) {
+            log.debug("Search limited to repo: {}", sourceRepo);
             and.append(
-                    AqlApiBuild.module().artifact().item().repo().equal(sourceRepository)
+                    AqlApiBuild.module().artifact().item().repo().equal(sourceRepo)
             );
         }
         AqlBase nonStrictQuery = AqlApiBuild.create().filter(and);
@@ -501,18 +529,21 @@ public class BuildServiceImpl implements InternalBuildService {
 
 
         AqlEagerResult<AqlBaseFullRowImpl> aqlResult = aqlService.executeQueryEager(nonStrictQuery);
+        log.debug("Search returned {} artifacts", aqlResult.getSize());
         return matchArtifactsToFileInfos(aqlResult.getResults(), unmatchedArtifacts, virtualRepoKeys);
     }
 
     @Override
-    public Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build, String sourceRepository) {
+    public Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build, String sourceRepo) {
         AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
                 AqlApiBuild.name().equal(build.getName()),
                 AqlApiBuild.number().equal(build.getNumber())
         );
-        if (StringUtils.isNotBlank(sourceRepository)) {
+        log.debug("Executing dependencies search for build {}:{}", build.getName(), build.getNumber());
+        if (StringUtils.isNotBlank(sourceRepo)) {
+            log.debug("Search limited to repo: {}", sourceRepo);
             and.append(
-                    AqlApiBuild.module().dependecy().item().repo().equal(sourceRepository)
+                    AqlApiBuild.module().dependecy().item().repo().equal(sourceRepo)
             );
         }
         AqlBase buildDependenciesQuery = AqlApiBuild.create().filter(and);
@@ -534,12 +565,16 @@ public class BuildServiceImpl implements InternalBuildService {
         ).sortBy(AqlFieldEnum.itemUpdated).asc();
 
         AqlEagerResult<AqlBaseFullRowImpl> results = aqlService.executeQueryEager(buildDependenciesQuery);
+        log.debug("Search returned {} dependencies", results.getSize());
         Multimap<String, Dependency> buildDependencies = BuildServiceUtils.getBuildDependencies(build);
+        log.debug("This build contains {} dependencies (taken from build info)", buildDependencies.size());
         Map<Dependency, FileInfo> matchedDependencies = matchDependenciesToFileInfos(results.getResults(),
                 buildDependencies);
+        log.debug("Matched {} build dependencies to actual paths returned by search", matchedDependencies.size());
 
         //Lastly, populate matchedDependencies with all remaining unmatched dependencies with null values to help users
         //of this function know if all build artifacts were found.
+        log.debug("{} dependencies were not matched to actual paths", buildDependencies.size());
         for (Dependency dependency : buildDependencies.values()) {
             if (!matchedDependencies.containsKey(dependency)) {
                 matchedDependencies.put(dependency, null);
@@ -563,25 +598,57 @@ public class BuildServiceImpl implements InternalBuildService {
             //Don't include results from virtual repos
             if (!virtualRepoKeys.contains(result.getRepo())) {
                 Collection<Dependency> dependencies = checksumToDependencyMap.get(result.getActualSha1());
-                if (CollectionUtils.notNullOrEmpty(dependencies)) {
-                    FileInfo dependencyFileInfo = (FileInfo) AqlConverts.toFileInfo.apply(result);
-                    //Try to match exactly by dependency id if possible
+                if (!CollectionUtils.isNullOrEmpty(dependencies)) {
+                    FileInfo dependencyFileInfo;
                     try {
-                        Dependency idMatch = Iterables.find(dependencies, new Predicate<Dependency>() {
-                            @Override
-                            public boolean apply(Dependency input) {
-                                return input.getId() != null && input.getId().contains(result.getBuildDependencyName());
-                            }
-                        });
-                        foundResults.put(idMatch, dependencyFileInfo);
+                        dependencyFileInfo = (FileInfo) AqlConverts.toFileInfo.apply(result);
+                        //Try matching dependencies exactly by id and add them to the results, overwriting previously
+                        //found (maybe not exactly matched) dependencies
+                        tryExactDependencyMatch(foundResults, result, dependencies, dependencyFileInfo);
+                        //Add all dependencies that weren't matched yet to make sure we don't leave false unmatched ones
+                        matchAnyDependencyToFileInfo(foundResults, dependencies, dependencyFileInfo);
                     } catch (Exception e) {
-                        //If no match just take the first dependency (it did match the checksum)
-                        foundResults.put(dependencies.iterator().next(), dependencyFileInfo);
+                        log.debug("Error creating path from aql result: {} :\n {}", result.toString(), e.getMessage());
                     }
                 }
             }
         }
         return foundResults;
+    }
+
+
+    /**
+     * Tries to match dependencies exactly to a path (file info) based on the dependency's name, and adds matched
+     * dependencies to the result map.
+     */
+    private void tryExactDependencyMatch(Map<Dependency, FileInfo> foundResults, final AqlBaseFullRowImpl result,
+            Collection<Dependency> dependencies, FileInfo dependencyFileInfo) {
+
+        Iterable<Dependency> exactMatches = Iterables.filter(dependencies, new Predicate<Dependency>() {
+            @Override
+            public boolean apply(Dependency input) {
+                return input.getId() != null && input.getId().contains(result.getBuildDependencyName());
+            }
+        });
+        for (Dependency exactMatch : exactMatches) {
+            log.debug("Exactly matched dependency {} to path {}", exactMatch.getId(),
+                    dependencyFileInfo.getRepoPath().toString());
+            foundResults.put(exactMatch, dependencyFileInfo);
+        }
+    }
+
+    /**
+     * Adds each dependency in the collection to the result map, if it was not already matched before.
+     */
+    private void matchAnyDependencyToFileInfo(Map<Dependency, FileInfo> foundResults,
+            Collection<Dependency> dependencies, FileInfo dependencyFileInfo) {
+        for (Dependency dependency : dependencies) {
+            if (!foundResults.containsKey(dependency)) {
+                log.debug("Matched dependency {} to path {}", dependency.getId(),
+                        dependencyFileInfo.getRepoPath().toString());
+                foundResults.put(dependency, dependencyFileInfo);
+            }
+        }
     }
 
 

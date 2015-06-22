@@ -1,10 +1,10 @@
 package org.artifactory.storage.config.visitor;
 
 
-import com.sun.org.apache.xerces.internal.dom.ElementNSImpl;
 import org.artifactory.storage.config.model.Param;
 import org.artifactory.storage.config.model.Property;
 import org.artifactory.storage.config.model.ProviderMetaData;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -19,7 +19,7 @@ public class ProviderAdapter extends XmlAdapter {
 
     @Override
     public Object unmarshal(Object obj) throws Exception {
-        ElementNSImpl element = (ElementNSImpl) obj;
+        Element element = (Element) obj;
         NodeList childNodes = element.getChildNodes();
         String id = element.getAttribute("id");
         String type = element.getAttribute("type");
@@ -35,8 +35,8 @@ public class ProviderAdapter extends XmlAdapter {
                 ProviderMetaData newProviderMetaData = (ProviderMetaData) unmarshal(item);
                 providerMetaData.addSubProvider(newProviderMetaData);
             } else if ("property".equals(itemName)) {
-                String name = ((ElementNSImpl) item).getAttribute("name");
-                String value = ((ElementNSImpl) item).getAttribute("value");
+                String name = ((Element) item).getAttribute("name");
+                String value = ((Element) item).getAttribute("value");
                 providerMetaData.addProperty(new Property(name, value));
             } else if (!content.isEmpty()) {
                 providerMetaData.addParam(new Param(item.getNodeName(), item.getTextContent()));

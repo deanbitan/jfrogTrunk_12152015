@@ -26,10 +26,12 @@ import com.google.common.collect.Multimap;
 import com.jfrog.bintray.client.api.BintrayCallException;
 import com.jfrog.bintray.client.api.MultipleBintrayCallException;
 import com.jfrog.bintray.client.api.details.PackageDetails;
+import com.jfrog.bintray.client.api.details.RepositoryDetails;
 import com.jfrog.bintray.client.api.details.VersionDetails;
 import com.jfrog.bintray.client.api.handle.Bintray;
 import com.jfrog.bintray.client.api.handle.PackageHandle;
 import com.jfrog.bintray.client.api.handle.RepositoryHandle;
+import com.jfrog.bintray.client.api.handle.SubjectHandle;
 import com.jfrog.bintray.client.api.handle.VersionHandle;
 import com.jfrog.bintray.client.impl.BintrayClient;
 import org.apache.commons.io.IOUtils;
@@ -76,7 +78,6 @@ import org.artifactory.build.InternalBuildService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusEntry;
 import org.artifactory.descriptor.bintray.BintrayConfigDescriptor;
-import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
@@ -134,6 +135,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.artifactory.aql.api.internal.AqlBase.and;
 import static org.artifactory.build.BuildServiceUtils.VerifierLogLevel;
 
@@ -467,7 +470,7 @@ public class BintrayServiceImpl implements BintrayService {
 
         //No artifacts in build
         if (CollectionUtils.isNullOrEmpty(artifactsToPush)) {
-            status.error("No artifacts found to push to Bintray, aborting operation", HttpStatus.SC_NOT_FOUND, log);
+            status.error("No artifacts found to push to Bintray, aborting operation", SC_NOT_FOUND, log);
             return status;
         }
 
@@ -523,12 +526,7 @@ public class BintrayServiceImpl implements BintrayService {
         try (Bintray client = createBintrayClient(status)) {
             validatePushRequestParams(subject, artifactsToPush, status);
 
-            String bintrayRepo = uploadInfo.getPackageDetails().getRepo();
-            RepositoryHandle bintrayRepoHandle = client.subject(subject).repository(bintrayRepo);
-            if (!bintrayRepoExists(status, subject, bintrayRepoHandle)) {
-                return status;
-            }
-
+            RepositoryHandle bintrayRepoHandle = validateRepoAndCreateIfNeeded(uploadInfo, client, status);
             PackageHandle bintrayPackageHandle = createOrUpdatePackage(uploadInfo, bintrayRepoHandle, status);
             bintrayVersionHandle = createOrUpdateVersion(uploadInfo, bintrayPackageHandle, status);
 
@@ -569,11 +567,9 @@ public class BintrayServiceImpl implements BintrayService {
         }
     }
 
-    private boolean bintrayRepoExists(BasicStatusHolder status, String subject, RepositoryHandle bintrayRepoHandle) {
+    private boolean bintrayRepoExists(RepositoryHandle bintrayRepoHandle, BasicStatusHolder status) {
         try {
             if (!bintrayRepoHandle.exists()) {  //Repo exists?
-                status.error("No such Repository " + bintrayRepoHandle.name() + " for subject " + subject,
-                        HttpStatus.SC_NOT_FOUND, log);
                 return false;
             }
         } catch (BintrayCallException bce) {
@@ -617,23 +613,60 @@ public class BintrayServiceImpl implements BintrayService {
 
         if (snapshotArtifactsExistInArtifactsToPush(artifactsToPush)) {
             status.error("Snapshot artifacts were detected in the build artifacts, Bintray does not accept snapshots" +
-                    " - aborting", HttpStatus.SC_BAD_REQUEST, log);
-            throw new BintrayCallException(HttpStatus.SC_BAD_REQUEST, status.getLastError().getMessage(), "");
+                    " - aborting", SC_BAD_REQUEST, log);
+            throw new BintrayCallException(SC_BAD_REQUEST, status.getLastError().getMessage(), "");
         }
         int fileUploadLimit = getFileUploadLimit();
         if (fileUploadLimit != 0 && artifactsToPush.size() > fileUploadLimit) { //0 is unlimited
             status.error(String.format("The amount of artifacts that are about to be pushed(%s) exceeds the maximum" +
                     " amount set by the administrator(%s), aborting operation", artifactsToPush.size(), fileUploadLimit)
-                    , HttpStatus.SC_BAD_REQUEST, log);
-            throw new BintrayCallException(HttpStatus.SC_BAD_REQUEST, status.getLastError().getMessage(), "");
+                    , SC_BAD_REQUEST, log);
+            throw new BintrayCallException(SC_BAD_REQUEST, status.getLastError().getMessage(), "");
         }
 
         //Subject must be specified in json
         if (StringUtils.isBlank(subject)) {
             status.error("Bintray subject must be defined in the spec or given as an override param - aborting",
-                    HttpStatus.SC_BAD_REQUEST, log);
-            throw new BintrayCallException(HttpStatus.SC_BAD_REQUEST, status.getLastError().getMessage(), "");
+                    SC_BAD_REQUEST, log);
+            throw new BintrayCallException(SC_BAD_REQUEST, status.getLastError().getMessage(), "");
         }
+    }
+
+    private RepositoryHandle validateRepoAndCreateIfNeeded(BintrayUploadInfo uploadInfo, Bintray client,
+            BasicStatusHolder status) throws Exception {
+
+        String subjectName = uploadInfo.getPackageDetails().getSubject();
+        String bintrayRepo = uploadInfo.getPackageDetails().getRepo();
+        SubjectHandle subject = client.subject(subjectName);
+        //No 'repo' clause --> return RepositoryHandle matching the 'repo' field in the 'package' clause
+        if (!hasRepoClause(uploadInfo)) {
+            RepositoryHandle bintrayRepoHandle = subject.repository(bintrayRepo);
+            if (!bintrayRepoExists(bintrayRepoHandle, status)) {
+                //Doesn't matter what the exception holds, only the status is returned by the calling method
+                status.error("No such Repository " + bintrayRepo + " for subject " + subjectName, SC_NOT_FOUND, log);
+                throw new BintrayCallException(SC_BAD_REQUEST, "no such repo ", bintrayRepo);
+            } else {
+                return bintrayRepoHandle;
+            }
+            //'repo' clause exists -> verify name consistency with 'repo' field in the 'package' clause if exists
+        } else if (!repoNamesMatch(uploadInfo, bintrayRepo)) {
+            status.error("Mismatch between the 'name' field in the 'repo' clause and the 'repo' field in the " +
+                    "'package' clause, aborting operation", SC_BAD_REQUEST, log);
+            //Doesn't matter what the exception holds, only the status is returned by the calling method
+            throw new BintrayCallException(SC_BAD_REQUEST, "mismatch between repo name fields", bintrayRepo);
+        }
+        //Create or update the repo
+        return createOrUpdateRepo(uploadInfo.getRepositoryDetails(), subject, status);
+    }
+
+    private boolean hasRepoClause(BintrayUploadInfo uploadInfo) {
+        return uploadInfo.getRepositoryDetails() != null
+                && StringUtils.isNotBlank(uploadInfo.getRepositoryDetails().getName());
+    }
+
+    private boolean repoNamesMatch(BintrayUploadInfo uploadInfo, String bintrayRepo) {
+        return StringUtils.isBlank(bintrayRepo)
+                || uploadInfo.getRepositoryDetails().getName().equalsIgnoreCase(bintrayRepo);
     }
 
     @Override
@@ -645,7 +678,6 @@ public class BintrayServiceImpl implements BintrayService {
                 ConstantValues.bintrayClientSignRequestTimeout.getInt());
         return client;
     }
-
 
     @Override
     public List<Repo> getReposToDeploy(@Nullable Map<String, String> headersMap) throws IOException, BintrayException {
@@ -743,9 +775,8 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     private boolean validCredentialsExist(BasicStatusHolder status) {
-        if (!isUserHasBintrayAuth() && !hasBintraySystemUser()) {
-            status.error("No Bintray Authentication defined for user and no default Bintray Credentials found",
-                    HttpStatus.SC_UNAUTHORIZED, log);
+        if (!isUserHasBintrayAuth()) {
+            status.error("No Bintray Authentication defined for user", HttpStatus.SC_UNAUTHORIZED, log);
             return false;
         }
         return true;
@@ -1113,7 +1144,7 @@ public class BintrayServiceImpl implements BintrayService {
             if (override.isValid()) {
                 return new BintrayUploadInfo(override);
             } else if (!override.isEmpty()) {
-                status.error("Invalid override parameters given, aborting operation.", HttpStatus.SC_BAD_REQUEST, log);
+                status.error("Invalid override parameters given, aborting operation.", SC_BAD_REQUEST, log);
                 return null;
             }
         }
@@ -1141,7 +1172,7 @@ public class BintrayServiceImpl implements BintrayService {
         AqlEagerResult<AqlItem> results = aqlService.executeQueryEager(aql);
 
         if (results.getSize() == 0) {
-            status.error("Descriptor not found in build artifacts, aborting operation", HttpStatus.SC_NOT_FOUND, log);
+            status.error("Descriptor not found in build artifacts, aborting operation", SC_NOT_FOUND, log);
             return null;
         }
 
@@ -1156,8 +1187,7 @@ public class BintrayServiceImpl implements BintrayService {
             }
         }
         if (matchedFilesCounter > 1) {
-            status.error("Found More than one Descriptor in build artifacts, aborting operation",
-                    HttpStatus.SC_BAD_REQUEST, log);
+            status.error("Found More than one Descriptor in build artifacts, aborting operation", SC_BAD_REQUEST, log);
             return null;
         }
         return repoService.getFileInfo(path);
@@ -1166,8 +1196,7 @@ public class BintrayServiceImpl implements BintrayService {
     private BintrayUploadInfo validateUploadInfoFile(FileInfo descriptorJson, BasicStatusHolder status) {
         if (!isBintrayJsonInfoFile(descriptorJson.getRepoPath().getName())) {
             status.error("The path specified: " + descriptorJson.getRepoPath() + ", does not point to a descriptor. " +
-                            "The file name must contain 'bintray-info' and have a .json extension",
-                    HttpStatus.SC_NOT_FOUND, log);
+                    "The file name must contain 'bintray-info' and have a .json extension", SC_NOT_FOUND, log);
             return null;
         }
         BintrayUploadInfo uploadInfo = null;
@@ -1178,7 +1207,7 @@ public class BintrayServiceImpl implements BintrayService {
             uploadInfo = mapper.readValue(jsonContentStream, BintrayUploadInfo.class);
         } catch (IOException e) {
             log.debug("{}", e);
-            status.error("Can't process the json file: " + e.getMessage(), HttpStatus.SC_BAD_REQUEST, log);
+            status.error("Can't process the json file: " + e.getMessage(), SC_BAD_REQUEST, log);
         } finally {
             IOUtils.closeQuietly(jsonContentStream);
         }
@@ -1194,7 +1223,7 @@ public class BintrayServiceImpl implements BintrayService {
             //size == 1 && get(0) == "" --> field looks like "applyToFiles": ""  (jackson deserialization edge case)
             if (!(descriptorArtifactPaths.size() == 1 && StringUtils.isBlank(descriptorArtifactPaths.get(0)))) {
                 status.error("Json file contains paths to artifacts, this command pushes whole builds only, aborting " +
-                        "operation", HttpStatus.SC_BAD_REQUEST, log);
+                        "operation", SC_BAD_REQUEST, log);
                 return;
             }
         }
@@ -1212,7 +1241,7 @@ public class BintrayServiceImpl implements BintrayService {
         //applyToProps filtered out all files
         if (CollectionUtils.isNullOrEmpty(artifactsToPush)) {
             status.error("The 'applyToProps' field in the json descriptor contains one or more properties that " +
-                    "caused all artifacts to be filtered out, aborting operation", HttpStatus.SC_BAD_REQUEST, log);
+                    "caused all artifacts to be filtered out, aborting operation", SC_BAD_REQUEST, log);
         }
     }
 
@@ -1270,6 +1299,41 @@ public class BintrayServiceImpl implements BintrayService {
 
 
     /**
+     * Create or update an existing Bintray Repository with the specified info
+     *
+     * @param repositoryDetails BintrayUploadInfo representing the supplied json file
+     * @param subjectHandle     SubjectHandle retrieved by the Bintray Java Client
+     * @param status            status holder of entire operation
+     * @return a RepositoryHandle   pointing to the created/updated repository
+     * @throws Exception on any error occurred
+     */
+    private RepositoryHandle createOrUpdateRepo(RepositoryDetails repositoryDetails, SubjectHandle subjectHandle,
+            BasicStatusHolder status) throws Exception {
+
+        String repoName = repositoryDetails.getName();
+        RepositoryHandle bintrayRepoHandle = subjectHandle.repository(repoName);
+        try {
+            if (!bintrayRepoExists(bintrayRepoHandle, status)) {
+                //Repo doesn't exist - create it using the RepoDetails
+                status.status("Creating repo " + repoName + " for subject " + bintrayRepoHandle.owner().name(), log);
+                bintrayRepoHandle = subjectHandle.createRepo(repositoryDetails);
+            } else if (repositoryDetails.getUpdateExisting() != null && repositoryDetails.getUpdateExisting()) {
+                //Repo exists - update only if indicated
+                status.status("Updating repo " + repoName + " with values taken from descriptor", log);
+                bintrayRepoHandle.update(repositoryDetails);
+            }
+        } catch (BintrayCallException bce) {
+            status.error(bce.getMessage() + ":" + bce.getReason(), bce.getStatusCode(), log);
+            throw bce;
+        } catch (IOException ioe) {
+            log.debug("{}", ioe);
+            throw ioe;
+        }
+        //Repo exists and should not be updated
+        return bintrayRepoHandle;
+    }
+
+    /**
      * Create or update an existing Bintray Package with the specified info
      *
      * @param info             BintrayUploadInfo representing the supplied json file
@@ -1296,7 +1360,6 @@ public class BintrayServiceImpl implements BintrayService {
             status.error(bce.toString(), bce.getStatusCode(), bce, log);
             throw bce;
         } catch (IOException ioe) {
-            status.error(ioe.getMessage(), HttpStatus.SC_BAD_REQUEST, log);
             log.debug("{}", ioe);
             throw ioe;
         }
@@ -1329,7 +1392,6 @@ public class BintrayServiceImpl implements BintrayService {
             status.error(bce.toString(), bce.getStatusCode(), bce, log);
             throw bce;
         } catch (IOException ioe) {
-            status.error(ioe.getMessage(), HttpStatus.SC_BAD_REQUEST, log);
             log.debug("{}", ioe);
             throw ioe;
         }
@@ -1378,7 +1440,7 @@ public class BintrayServiceImpl implements BintrayService {
                 }
             } catch (IllegalArgumentException iae) {
                 status.error("Paths in the descriptor must point to a file or use a valid wildcard that denotes " +
-                        "several files (i.e. /*.*)", HttpStatus.SC_BAD_REQUEST, iae, log);
+                        "several files (i.e. /*.*)", SC_BAD_REQUEST, iae, log);
                 return null;
             }
         }
@@ -1387,7 +1449,7 @@ public class BintrayServiceImpl implements BintrayService {
 
         //aql search returned no artifacts for query
         if (CollectionUtils.isNullOrEmpty(artifactsToPush)) {
-            status.error("No artifacts found to push to Bintray, aborting operation", HttpStatus.SC_NOT_FOUND, log);
+            status.error("No artifacts found to push to Bintray, aborting operation", SC_NOT_FOUND, log);
         }
         return artifactsToPush;
     }
@@ -1475,14 +1537,8 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     private BintrayConfigDescriptor getBintrayGlobalConfig() {
-        if (centralConfig.getDescriptor().getBintrayConfig() == null) {
-            BintrayConfigDescriptor bintrayConfigdescriptor = new BintrayConfigDescriptor();
-            MutableCentralConfigDescriptor cc = centralConfig.getMutableDescriptor();
-            cc.setBintrayConfig(bintrayConfigdescriptor);
-            centralConfig.saveEditedDescriptorAndReload(cc);
-            return bintrayConfigdescriptor;
-        }
-        return centralConfig.getDescriptor().getBintrayConfig();
+        BintrayConfigDescriptor bintrayDescriptor = centralConfig.getDescriptor().getBintrayConfig();
+        return bintrayDescriptor != null ? bintrayDescriptor : new BintrayConfigDescriptor();
     }
 
     //Match anything as long as it has bintray-info in the name (case insensitive) and .json extension

@@ -37,7 +37,7 @@ public interface AqlItem extends AqlRowResult {
 
     int getDepth();
 
-    int getNodeId();
+    long getNodeId();
 
     String getOriginalMd5();
 

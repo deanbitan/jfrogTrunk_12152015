@@ -18,6 +18,8 @@
 
 package org.artifactory.webapp.servlet;
 
+import com.google.common.collect.Lists;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -26,6 +28,7 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.request.DownloadService;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.rest.constant.ArtifactRestConstants;
+import org.artifactory.api.rest.constant.GitLfsResourceConstants;
 import org.artifactory.api.webdav.WebdavService;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
@@ -53,6 +56,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 
 public class RepoFilter extends DelayedFilterBase {
@@ -190,7 +195,9 @@ public class RepoFilter extends DelayedFilterBase {
                             "Returning " + HttpServletResponse.SC_FORBIDDEN);
                 }
             } else {
-                chain.doFilter(request, response);
+                // TODO: [by dan] this is a workaround for the Git LFS bug in 0.5.1 - see RTFACT-7587 remove this ugly
+                // TODO: hack when we decide we can drop support for versions < 0.5.2 or when Jersey is updated above 2.0
+                chain.doFilter(wrapLfsRequestIfNeeded(request), response);
             }
         }
         if (log.isDebugEnabled()) {
@@ -387,5 +394,36 @@ public class RepoFilter extends DelayedFilterBase {
             return true;
         }
         return false;
+    }
+
+    private HttpServletRequest wrapLfsRequestIfNeeded(HttpServletRequest request) {
+        if (isGitLfsRequest(request)) {
+            log.debug("Identified '/api/lfs' in incoming ServletRequest path. " +
+                    "Wrapping it with a GitLfsMalformedRequestWrapper");
+            return new GitLfsMalformedRequestWrapper(request);
+        }
+        return request;
+    }
+
+    private boolean isGitLfsRequest(HttpServletRequest request) {
+        String lfsApiPath = "/api/" + GitLfsResourceConstants.PATH_ROOT;
+        String joinedRequestPath = request.getServletPath() + request.getPathInfo();
+        return joinedRequestPath.contains(lfsApiPath) || request.getRequestURL().toString().contains(lfsApiPath);
+    }
+
+    private static class GitLfsMalformedRequestWrapper extends HttpServletRequestWrapper {
+        public GitLfsMalformedRequestWrapper(HttpServletRequest request) {
+            super(request);
+        }
+
+        @Override
+        public Enumeration getHeaders(String name) {
+            if (name.equalsIgnoreCase(HttpHeaders.ACCEPT) || name.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE)) {
+                log.debug("Returning fixed Git LFS header {}", name);
+                return Collections.enumeration(Lists.newArrayList(GitLfsResourceConstants.LFS_JSON));
+            } else {
+                return super.getHeaders(name);
+            }
+        }
     }
 }

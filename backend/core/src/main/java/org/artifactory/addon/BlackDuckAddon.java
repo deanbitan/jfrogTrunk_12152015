@@ -18,6 +18,7 @@
 
 package org.artifactory.addon;
 
+import org.artifactory.api.repo.Async;
 import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.repo.RepoPath;
 import org.jfrog.build.api.Build;
@@ -37,6 +38,7 @@ public interface BlackDuckAddon extends Addon {
      *
      * @param build The build to perform the license calculation on.
      */
+    @Async(delayUntilAfterCommit = true)
     void performBlackDuckOnBuildArtifacts(Build build);
 
 }

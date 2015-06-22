@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.12"
-           xmlns="http://artifactory.jfrog.org/xsd/1.5.12"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.5.13"
+           xmlns="http://artifactory.jfrog.org/xsd/1.5.13"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -511,6 +511,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="enableGitLfsSupport" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable Git LFS support for this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -562,6 +569,13 @@
                         <xs:annotation>
                             <xs:documentation source="description">
                                 Enable cookie management if the remote repo uses cookies to manage client state.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="enableTokenAuthentication" type="xs:boolean" default="false" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Enable token (Bearer) based authentication
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>

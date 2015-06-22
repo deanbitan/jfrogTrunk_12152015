@@ -18,18 +18,11 @@
 
 package org.artifactory.webapp.wicket.util.validation;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpHost;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URIUtils;
 import org.apache.wicket.validation.IValidatable;
 import org.apache.wicket.validation.ValidationError;
 import org.apache.wicket.validation.validator.StringValidator;
 import org.artifactory.util.PathUtils;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Arrays;
+import org.artifactory.util.UrlValidator;
 
 /**
  * Validates a URI. We use our own validator since the UrlValidator of wicket is broken in 1.3.5
@@ -39,7 +32,7 @@ import java.util.Arrays;
  */
 public class UriValidator extends StringValidator {
 
-    private String[] allowedSchemes;
+    private final transient UrlValidator urlValidator;
 
     /**
      * Creates new URI validator.
@@ -47,7 +40,7 @@ public class UriValidator extends StringValidator {
      * @param allowedSchemes List of allowed uri schemes (http, ldap, etc.). If empty all schemes are allowed.
      */
     public UriValidator(String... allowedSchemes) {
-        this.allowedSchemes = allowedSchemes;
+        this.urlValidator = new UrlValidator(allowedSchemes);
     }
 
     @Override
@@ -60,45 +53,14 @@ public class UriValidator extends StringValidator {
         }
 
         try {
-            URI parsedUri = new URIBuilder(uri).build();
-            String scheme = parsedUri.getScheme();
-            if (!anySchemaAllowed() && StringUtils.isBlank(scheme)) {
-                addError(validatable, String.format(
-                        "Url scheme cannot be empty. The following schemes are allowed: %s. " +
-                                "For example: %s://host",
-                        Arrays.asList(allowedSchemes), allowedSchemes[0]
-                ));
-
-            } else if (!allowedSchema(scheme)) {
-                addError(validatable, String.format(
-                        "Scheme '%s' is not allowed. The following schemes are allowed: %s",
-                        scheme, Arrays.asList(allowedSchemes)));
-            }
-
-            HttpHost host = URIUtils.extractHost(parsedUri);
-            if (host == null) {
-                addError(validatable, "Cannot resolve host from url: " + uri);
-            }
-        } catch (URISyntaxException e) {
-            addError(validatable, String.format("'%s' is not a valid url", uri));
+            urlValidator.validate(uri);
+        } catch (UrlValidator.UrlValidationException e) {
+            addError(validatable, e.getMessage());
         }
     }
 
-    private boolean allowedSchema(String scheme) {
-        if (anySchemaAllowed()) {
-            return true;
-        }
-
-        for (String allowedScheme : allowedSchemes) {
-            if (allowedScheme.equalsIgnoreCase(scheme)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean anySchemaAllowed() {
-        return allowedSchemes == null || allowedSchemes.length == 0;
+    protected boolean allowedSchema(String scheme) {
+        return urlValidator.isAllowedSchema(scheme);
     }
 
     private void addError(IValidatable validatable, String message) {

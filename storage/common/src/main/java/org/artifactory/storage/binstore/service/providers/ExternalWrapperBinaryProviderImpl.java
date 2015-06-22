@@ -25,6 +25,7 @@ import org.artifactory.storage.binstore.service.BinaryProviderBase;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.ProviderConnectMode;
+import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ import java.nio.file.StandardCopyOption;
  *
  * @author freds
  */
+@BinaryProviderClassInfo(nativeName = "external-wrapper")
 public class ExternalWrapperBinaryProviderImpl extends FileBinaryProviderReadOnlyBase {
     private static final Logger log = LoggerFactory.getLogger(ExternalWrapperBinaryProviderImpl.class);
 
