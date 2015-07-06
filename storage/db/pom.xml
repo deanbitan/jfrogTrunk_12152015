@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>3.9.1</version>
+        <version>3.9.2</version>
     </parent>
 
     <dependencies>
