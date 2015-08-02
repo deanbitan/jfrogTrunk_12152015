@@ -261,8 +261,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
-    public void setIndexer(IndexerDescriptor descriptor) {
-        this.indexer = descriptor;
+    public void setIndexer(IndexerDescriptor mavenIndexer) {
+        this.indexer = mavenIndexer;
     }
 
     @Override
@@ -272,7 +272,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @Override
     public void setServerName(String serverName) {
-        this.serverName = serverName;
+        this.serverName = StringUtils.stripToNull(serverName);
     }
 
     @Override
@@ -356,10 +356,10 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
 
         if (removedRepo instanceof RepoBaseDescriptor) {
-            // remove from the indexer exclude list
+            // remove from the indexer include list
             IndexerDescriptor indexer = getIndexer();
             if (indexer != null) {
-                indexer.removeExcludedRepository((RepoBaseDescriptor) removedRepo);
+                indexer.removeIncludedRepository((RepoBaseDescriptor) removedRepo);
             }
         }
 
@@ -422,13 +422,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         String repoKey = remoteRepoDescriptor.getKey();
         repoKeyExists(repoKey, false);
         remoteRepositoriesMap.put(repoKey, remoteRepoDescriptor);
-        ProxyDescriptor defaultProxyDescriptor = defaultProxyDefined();
-        if (defaultProxyDescriptor != null) {
-            if (remoteRepoDescriptor instanceof HttpRepoDescriptor) {
-                ((HttpRepoDescriptor) remoteRepoDescriptor).setProxy(defaultProxyDescriptor);
-            }
-        }
-
         conditionallyAddToBackups(remoteRepoDescriptor);
     }
 
@@ -649,7 +642,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
-    private ProxyDescriptor getProxy(String proxyKey) {
+    @Override
+    public ProxyDescriptor getProxy(String proxyKey) {
         for (ProxyDescriptor proxy : proxies) {
             if (proxy.getKey().equals(proxyKey)) {
                 return proxy;
@@ -658,7 +652,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return null;
     }
 
-    private BackupDescriptor getBackup(String backupKey) {
+    @Override
+    public BackupDescriptor getBackup(String backupKey) {
         for (BackupDescriptor backup : backups) {
             if (backup.getKey().equals(backupKey)) {
                 return backup;

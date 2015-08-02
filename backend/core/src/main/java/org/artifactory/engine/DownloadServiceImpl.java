@@ -23,6 +23,7 @@ import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.addon.plugin.ResponseCtx;
+import org.artifactory.addon.plugin.download.AfterDownloadAction;
 import org.artifactory.addon.plugin.download.AfterDownloadErrorAction;
 import org.artifactory.addon.plugin.download.AltResponseAction;
 import org.artifactory.addon.plugin.download.BeforeDownloadAction;
@@ -217,6 +218,12 @@ public class DownloadServiceImpl implements InternalDownloadService {
         } finally {
             if (response.isSuccessful()) {
                 RepoRequests.logToContext("Request succeeded");
+            }
+            try {
+                pluginAddon.execPluginActions(AfterDownloadAction.class, new Object(), request, response);
+            } catch (Exception e) {
+                RepoRequests.logToContext("Failed to execute After Download plugin: %s", e.getMessage());
+                throw e;
             }
         }
     }
@@ -521,9 +528,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
     private void respondResourceNotFound(InternalRequestContext requestContext, ArtifactoryResponse response,
             RepoResource resource) throws IOException {
-        String reason = "Resource not found";
+        String detail = "Resource not found";
         int status = HttpStatus.SC_NOT_FOUND;
-        RepoRequests.logToContext("Setting default response status to '%s' reason to '%s'", status, reason);
+        RepoRequests.logToContext("Setting default response status to '%s' reason to '%s'", status, detail);
         if (resource instanceof UnfoundRepoResourceReason) {
             RepoRequests.logToContext("Response is an instance of UnfoundRepoResourceReason");
             UnfoundRepoResourceReason unfound = (UnfoundRepoResourceReason) resource;
@@ -537,9 +544,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
             RepoRequests.logToContext("Original response status is auth related = %s",
                     Boolean.toString(!originalStatusNotAuthorization));
             if (!hideUnauthorizedResources || originalStatusNotAuthorization) {
-                reason = unfound.getReason();
+                detail = unfound.getDetail();
                 status = unfound.getStatusCode();
-                RepoRequests.logToContext("Using original response status of '%s' and message '%s'", status, reason);
+                RepoRequests.logToContext("Using original response status of '%s' and message '%s'", status, detail);
             }
         }
         if (status == HttpStatus.SC_FORBIDDEN && authorizationService.isAnonymous()) {
@@ -547,9 +554,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
                     status);
             // Transform a forbidden to unauthorized if received for an anonymous user
             String realmName = authenticationEntryPoint.getRealmName();
-            response.sendAuthorizationRequired(reason, realmName);
+            response.sendAuthorizationRequired(detail, realmName);
         } else {
-            sendError(requestContext, response, status, reason, log);
+            sendError(requestContext, response, status, detail, log);
         }
     }
 

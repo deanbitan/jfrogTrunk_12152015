@@ -18,6 +18,7 @@
 
 package org.artifactory.api.security;
 
+import org.artifactory.common.Info;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.MutableGroupInfo;
@@ -26,6 +27,7 @@ import org.artifactory.security.UserInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -147,4 +149,10 @@ public interface UserGroupService {
     GroupInfo findGroup(String groupName);
 
     String createEncryptedPasswordIfNeeded(UserInfo user, String password);
+
+    Collection<Info> getUsersGroupsPaging(boolean includeAdmins, String orderBy,
+            String startOffset, String limit, String direction);
+
+    long getAllUsersGroupsCount(boolean includeAdmins);
+
 }

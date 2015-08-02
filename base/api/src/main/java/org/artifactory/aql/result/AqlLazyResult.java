@@ -19,7 +19,9 @@ public interface AqlLazyResult {
 
     ResultSet getResultSet();
 
-    int getLimit();
+    long getLimit();
+
+    long getOffset();
 
     Map<AqlFieldEnum, String> getDbFieldNames();
 

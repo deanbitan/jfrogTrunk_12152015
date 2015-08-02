@@ -1,6 +1,7 @@
 package org.artifactory.api.repo;
 
 import org.artifactory.api.rest.artifact.RepairPathConflictsResult;
+import org.artifactory.fs.ItemInfo;
 
 import java.util.List;
 
@@ -24,4 +25,6 @@ public interface CaseSensitivityRepairService {
      * paths and a status message
      */
     RepairPathConflictsResult fixCaseConflicts(List<RepairPathConflictsResult.PathConflict> conflicts);
+
+    List<ItemInfo> getOrphanItems(String path);
 }

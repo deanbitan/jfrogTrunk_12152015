@@ -36,6 +36,7 @@ import org.apache.wicket.request.http.WebResponse;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.AddonsWebManager;
+import org.artifactory.addon.FooterMessage;
 import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.addon.wicket.SamlAddon;
 import org.artifactory.addon.wicket.WebApplicationAddon;
@@ -396,7 +397,10 @@ public abstract class BasePage extends WebPage implements HasModalHandler {
 
             String message = null;
             if (authorizationService.isAdmin() || isTrial()) {
-                message = addonsWebManager.getLicenseFooterMessage();
+                FooterMessage licenseFooterMessage = addonsWebManager.getLicenseFooterMessage();
+                if(licenseFooterMessage!=null){
+                    message=licenseFooterMessage.getMessage();
+                }
                 setDefaultModelObject(message);
             }
             setVisible(StringUtils.isNotEmpty(message));

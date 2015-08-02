@@ -32,9 +32,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.GemsAddon;
 import org.artifactory.addon.NuGetAddon;
 import org.artifactory.addon.WebstartAddon;
+import org.artifactory.addon.gems.GemsAddon;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
@@ -304,13 +304,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (!gemsAddon.isDefault()) {
             for (LocalRepo localRepo : globalVirtualRepo.getLocalRepositories()) {
                 if (!localRepo.isBlackedOut()) {
-                    if (localRepo.getDescriptor().isEnableGemsSupport()) {
+                    if (localRepo.getDescriptor().getType().equals(RepoType.Gems)) {
                         gemsAddon.afterRepoInit(localRepo.getKey());
                     }
                 }
             }
             for (VirtualRepo virtualRepo : getVirtualRepositories()) {
-                if (virtualRepo.getDescriptor().isEnableGemsSupport()) {
+                if (virtualRepo.getDescriptor().getType().equals(RepoType.Gems)) {
                     gemsAddon.afterRepoInit(virtualRepo.getKey());
                 }
             }
@@ -321,7 +321,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         if (!nuGetAddon.isDefault()) {
             for (LocalRepo localRepo : globalVirtualRepo.getLocalRepositories()) {
                 if (!localRepo.isBlackedOut()) {
-                    if (localRepo.getDescriptor().isEnableNuGetSupport()) { //feature
+                    if (localRepo.getDescriptor().getType().equals(RepoType.NuGet)) { //feature
                         nuGetAddon.afterRepoInit(localRepo.getKey());
                     }
                 }
@@ -1383,6 +1383,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
+    public List<ItemInfo> getOrphanItems(RepoPath repoPath) {
+        return fileService.getOrphanItems(repoPath);
+    }
+
+    @Override
     public List<LocalRepoDescriptor> getLocalRepoDescriptors() {
         return new ArrayList<>(centralConfigService.getDescriptor().getLocalRepositoriesMap().values());
     }
@@ -1696,7 +1701,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     @Override
     public boolean isRepoPathAccepted(RepoPath repoPath) {
         LocalRepo repo = getLocalOrCachedRepository(repoPath);
-        return repo.accepts(repoPath);
+        return repo == null || repo.accepts(repoPath);
     }
 
     @Override
@@ -1777,6 +1782,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         } finally {
             IOUtils.closeQuietly(zin);
         }
+    }
+
+    @Override
+    public ZipInputStream zipInputStream(RepoPath zipPath) throws IOException {
+        LocalRepo localRepo = getLocalOrCachedRepository(zipPath);
+        VfsFile file = localRepo.getImmutableFile(zipPath);
+             return new ZipInputStream(file.getStream());
     }
 
     @Override

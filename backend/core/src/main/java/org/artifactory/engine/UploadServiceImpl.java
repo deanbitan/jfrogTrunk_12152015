@@ -575,7 +575,7 @@ public class UploadServiceImpl implements UploadService {
         try {
             RepoResource resource = repoService.saveResource(repo, contextBuilder.build());
             if (!resource.isFound()) {
-                response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getReason(), log);
+                response.sendError(SC_NOT_FOUND, ((UnfoundRepoResource) resource).getDetail(), log);
                 return;
             }
             sendSuccessfulResponse(request, response, repoPath, false);

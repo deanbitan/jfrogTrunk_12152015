@@ -22,10 +22,14 @@ import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.property.PropertySet;
+import org.artifactory.descriptor.repo.BowerConfiguration;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
+import org.artifactory.descriptor.repo.VcsConfiguration;
+import org.artifactory.descriptor.repo.VcsGitProvider;
+import org.artifactory.descriptor.repo.VcsType;
 import org.artifactory.util.RepoLayoutUtils;
 
 import javax.annotation.Nonnull;
@@ -71,10 +75,12 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private boolean archiveBrowsingEnabled = false;
     private boolean listRemoteFolderItems = true;
     private boolean rejectInvalidJars = false;
-    private boolean p2Support = false;
     private boolean allowAnyHostAuth;
     private boolean enableCookieManagement;
     private boolean enableTokenAuthentication;
+    private String queryParams;
+    private BowerConfiguration bowerConfiguration = new BowerConfiguration();
+    private VcsConfiguration vcsConfiguration = new VcsConfiguration();
 
     public HttpRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -148,7 +154,8 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         setArchiveBrowsingEnabled(repoDescriptor.isArchiveBrowsingEnabled());
         setListRemoteFolderItems(repoDescriptor.isListRemoteFolderItems());
         setRejectInvalidJars(repoDescriptor.isRejectInvalidJars());
-        setP2Support(repoDescriptor.isP2Support());
+        this.bowerConfiguration = repoDescriptor.getBower();
+        this.vcsConfiguration = repoDescriptor.getVcs();
     }
 
     @Override
@@ -404,15 +411,6 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     }
 
     @Override
-    public boolean isP2Support() {
-        return p2Support;
-    }
-
-    public void setP2Support(boolean p2Support) {
-        this.p2Support = p2Support;
-    }
-
-    @Override
     public boolean isAllowAnyHostAuth() {
         return allowAnyHostAuth;
     }
@@ -431,11 +429,57 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     }
 
     @Override
+    public String getQueryParams() {
+        return queryParams;
+    }
+
+    public void setQueryParams(String queryParams) {
+        this.queryParams = queryParams;
+    }
+
+    @Override
     public boolean isEnableCookieManagement() {
         return enableCookieManagement;
     }
 
     public void setEnableCookieManagement(boolean enableCookieManagement) {
         this.enableCookieManagement = enableCookieManagement;
+    }
+
+    @Override
+    public String getBowerRegistryUrl() {
+        return this.bowerConfiguration != null ? this.bowerConfiguration.getBowerRegistryUrl() : null;
+    }
+
+    @Override
+    public String getVcsType() {
+        return this.vcsConfiguration != null ? this.vcsConfiguration.getType().name() : null;
+    }
+
+    @Override
+    public String getVcsGitProvider() {
+        return this.vcsConfiguration != null ? this.vcsConfiguration.getGit().getProvider().name() : null;
+    }
+
+    @Override
+    public String getVcsGitDownloadUrl() {
+        return this.vcsConfiguration != null ? this.vcsConfiguration.getGit().getDownloadUrl() : null;
+    }
+
+    // Keep these setters for jackson
+    public void setBowerRegistryUrl(String bowerRegistryUrl) {
+        this.bowerConfiguration.setBowerRegistryUrl(bowerRegistryUrl);
+    }
+
+    public void setVcsType(String vcsType) {
+        this.vcsConfiguration.setType(VcsType.valueOf(vcsType));
+    }
+
+    public void setVcsGitProvider(String gitProvider) {
+        this.vcsConfiguration.getGit().setProvider(VcsGitProvider.valueOf(gitProvider));
+    }
+
+    public void setVcsGitDownloadUrl(String vcsGitDownloadUrl) {
+        this.vcsConfiguration.getGit().setDownloadUrl(vcsGitDownloadUrl);
     }
 }

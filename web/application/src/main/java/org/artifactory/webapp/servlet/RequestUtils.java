@@ -174,8 +174,9 @@ public abstract class RequestUtils {
     }
 
     public static boolean isReservedName(String pathPrefix) {
-        return UI_PATH_PREFIXES.contains(pathPrefix) || NON_UI_PATH_PREFIXES.contains(pathPrefix) ||
-                "list".equals(pathPrefix);
+        return !(UI_PATH_PREFIXES.parallelStream().filter(pathPrefix::equalsIgnoreCase).count() == 0
+                && NON_UI_PATH_PREFIXES.parallelStream().filter(pathPrefix::equalsIgnoreCase).count() == 0
+                && !"list".equalsIgnoreCase(pathPrefix));
     }
 
     public static boolean isAuthHeaderPresent(HttpServletRequest request) {

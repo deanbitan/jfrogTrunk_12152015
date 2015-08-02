@@ -55,4 +55,8 @@ public enum VcsGitProvider {
     public String getDownloadUrl() {
         return downloadUrl;
     }
+
+    public String toString() {
+        return prettyText;
+    }
 }

@@ -18,8 +18,10 @@
 
 package org.artifactory.rest.util;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.RepositoryService;
@@ -40,10 +42,10 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.rest.common.util.RestUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
 /**
  * Helper class for returning search results (quick, gavc, property, checksum, xpath)

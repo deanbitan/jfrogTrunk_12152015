@@ -1,7 +1,10 @@
 package org.artifactory.storage.db.aql.parser.elements.low.level;
 
+import com.google.common.collect.Lists;
 import org.artifactory.storage.db.aql.parser.AqlParserContext;
 import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
+
+import java.util.List;
 
 /**
  * @author Gidi Shabat
@@ -27,6 +30,13 @@ public class InternalSignElement extends InternalParserElement {
         } else {
             return new ParserElementResultContainer[0];
         }
+    }
+
+    @Override
+    public List<String> next() {
+        List<String> result = Lists.newArrayList();
+        result.add(sign);
+        return result;
     }
 }
 

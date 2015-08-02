@@ -187,6 +187,25 @@ public class CaseSensitivityRepairServiceImpl implements CaseSensitivityRepairSe
         return result;
     }
 
+    @Override
+    public List<ItemInfo> getOrphanItems(String path) {
+        RepoPath basePath;
+        Repo repo;
+        try {
+            basePath = InternalRepoPathFactory.create(path);
+            repo = repositoryService.getRepoRepoPath(basePath).getRepo();
+        } catch (Exception e) {
+            log.error("Invalid path: " + path);
+            return Lists.newArrayList();
+        }
+        if (!repo.isLocal()) {
+            log.error("Error: Can only repair paths of local repositories");
+            return Lists.newArrayList();
+        }
+
+        return repositoryService.getOrphanItems(basePath);
+    }
+
     /**
      * Returns whether the repository can be repaired. If not, a proper message will be set in the supplied result
      * @param conflicts

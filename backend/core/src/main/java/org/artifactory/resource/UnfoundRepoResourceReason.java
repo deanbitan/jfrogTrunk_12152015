@@ -31,7 +31,17 @@ public interface UnfoundRepoResourceReason {
     int getStatusCode();
 
     /**
-     * @return The reason a resource is not found
+     * @return The a detail explaining why resource was not found
      */
-    String getReason();
+    String getDetail();
+
+    /**
+     * @return The a reason for missing resource
+     */
+    Reason getReason();
+
+    /**
+     * Unfound reason
+     */
+    enum Reason {UNDEFINED, PROPERTY_MISMATCH, EXPIRED};
 }

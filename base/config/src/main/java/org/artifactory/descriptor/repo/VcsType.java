@@ -28,5 +28,16 @@ import javax.xml.bind.annotation.XmlEnumValue;
  */
 @XmlEnum(String.class)
 public enum VcsType {
-    @XmlEnumValue("git")GIT
+    @XmlEnumValue("git")GIT("git");
+
+    private final String val;
+
+    VcsType(String val) {
+        this.val = val;
+    }
+
+    public String toString() {
+        return val;
+    }
+
 }

@@ -113,51 +113,50 @@ public abstract class AqlRestResult implements Closeable {
         @JsonProperty("value")
         protected String propertyValue;
 
-        @JsonProperty("entry_name")
+        @JsonProperty("entry.name")
         protected String archiveEntryName;
-        @JsonProperty("entry_path")
+        @JsonProperty("entry.path")
         protected String archiveEntryPath;
-        @JsonProperty("module_name")
+        @JsonProperty("module.name")
         protected String buildModuleName;
-        @JsonProperty("dependency_name")
+        @JsonProperty("dependency.name")
         protected String buildDependencyName;
-        @JsonProperty("dependency_scope")
+        @JsonProperty("dependency.scope")
         protected String buildDependencyScope;
-        @JsonProperty("dependency_type")
+        @JsonProperty("dependency.type")
         protected String buildDependencyType;
-        @JsonProperty("dependency_sha1")
+        @JsonProperty("dependency.sha1")
         protected String buildDependencySha1;
-        @JsonProperty("dependency_md5")
+        @JsonProperty("dependency.md5")
         protected String buildDependencyMd5;
-        @JsonProperty("artifact_name")
+        @JsonProperty("artifact.name")
         protected String buildArtifactName;
-        @JsonProperty("artifact_type")
+        @JsonProperty("artifact.type")
         protected String buildArtifactType;
-        @JsonProperty("artifact_sha1")
+        @JsonProperty("artifact.sha1")
         protected String buildArtifactSha1;
-        @JsonProperty("artifact_md5")
+        @JsonProperty("artifact.md5")
         protected String buildArtifactMd5;
-        @JsonProperty("build_property_key")
-        protected String buildPropKey;
-        @JsonProperty("build_property_value")
-        protected String buildPropValue;
-        @JsonProperty("build_url")
+        @JsonProperty("build.property.key")
+        protected String buildPropertyKey;
+        @JsonProperty("build.property.value")
+        protected String buildPropertyValue;
+        @JsonProperty("build.url")
         protected String buildUrl;
-        @JsonProperty("build_name")
+        @JsonProperty("build.name")
         protected String buildName;
-        @JsonProperty("build_number")
+        @JsonProperty("build.number")
         protected String buildNumber;
-        @JsonProperty("build_created")
+        @JsonProperty("build.created")
         protected String buildCreated;
-        @JsonProperty("build_created_by")
+        @JsonProperty("build.created_by")
         protected String buildCreatedBy;
-        @JsonProperty("build_modified")
+        @JsonProperty("build.modified")
         protected String buildModified;
-        @JsonProperty("build_modified_by")
+        @JsonProperty("build.modified_by")
         protected String buildModifiedBy;
         @JsonProperty("properties")
         protected List<Property> properties;
-
         public String getKey() {
             StringBuilder builder;
             builder = new StringBuilder();
@@ -169,7 +168,7 @@ public abstract class AqlRestResult implements Closeable {
                     archiveEntryPath).append(buildModuleName).append(buildDependencyName).append(
                     buildDependencyScope).append(buildDependencyType).append(buildDependencySha1).append(
                     buildDependencyMd5).append(buildArtifactName).append(buildArtifactType).append(
-                    buildArtifactSha1).append(buildArtifactMd5).append(buildPropKey).append(buildPropValue).append(
+                    buildArtifactSha1).append(buildArtifactMd5).append(buildPropertyKey).append(buildPropertyValue).append(
                     buildUrl).append(buildName).append(buildNumber).append(buildCreated).append(buildCreatedBy).append(
                     buildModified).append(buildModifiedBy);
             return builder.toString();
@@ -189,34 +188,21 @@ public abstract class AqlRestResult implements Closeable {
     @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
     @JsonPropertyOrder(value = {"propertyKey", "propertyValue"}, alphabetic = true)
     protected class Property {
+        @JsonProperty("key")
+        protected String propertyKey;
+        @JsonProperty("value")
+        protected String propertyValue;
+
         public void put(String fieldName, Object value) throws Exception {
             Field declaredField = getClass().getDeclaredField(fieldName);
             declaredField.setAccessible(true);
             declaredField.set(this, value);
         }
-
-        @JsonProperty("key")
-        protected String propertyKey;
-        @JsonProperty("value")
-        protected String propertyValue;
     }
 
     @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
     @JsonPropertyOrder(value = {"start", "end", "total"}, alphabetic = true)
     protected class Range {
-
-        public Range(long start, long end, long limited) {
-            this.start = start;
-            this.end = end;
-            this.limited = Integer.MAX_VALUE == limited ? null : limited;
-        }
-
-        public Range(long start, long end, long total, long limited) {
-            this.start = start;
-            this.end = end;
-            this.total = total;
-            this.limited = Integer.MAX_VALUE == limited ? null : limited;
-        }
 
         @JsonProperty("start_pos")
         protected Long start;
@@ -224,8 +210,20 @@ public abstract class AqlRestResult implements Closeable {
         protected Long end;
         @JsonProperty("total")
         protected Long total;
-
         @JsonProperty("limit")
         protected Long limited;
+
+        public Range(long start, long end, long limited) {
+            this.start = start;
+            this.end = end;
+            this.limited = Long.MAX_VALUE == limited ? null : limited;
+        }
+
+        public Range(long start, long end, long total, long limited) {
+            this.start = start;
+            this.end = end;
+            this.total = total;
+            this.limited = Long.MAX_VALUE == limited ? null : limited;
+        }
     }
 }

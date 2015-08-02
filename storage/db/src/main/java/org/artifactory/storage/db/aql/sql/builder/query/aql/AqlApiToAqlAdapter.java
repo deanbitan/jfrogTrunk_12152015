@@ -4,6 +4,7 @@ import org.artifactory.aql.AqlFieldResolver;
 import org.artifactory.aql.api.AqlApiElement;
 import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.model.AqlDomainEnum;
+import org.artifactory.aql.model.AqlField;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlVariable;
 import org.artifactory.aql.model.AqlVariableTypeEnum;
@@ -69,6 +70,9 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
             if (element instanceof AqlBase.LimitApiElement) {
                 handleLimit((AqlBase.LimitApiElement) element, context);
             }
+            if (element instanceof AqlBase.OffsetApiElement) {
+                handleOffset((AqlBase.OffsetApiElement) element, context);
+            }
             if (element instanceof AqlBase.FilterApiElement) {
                 visitElements(element, context);
             }
@@ -80,13 +84,18 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         context.setLimit(element.getLimit());
     }
 
+    private void handleOffset(AqlBase.OffsetApiElement element, AdapterContext context) {
+        //Read the offset value from the AqlBase LimitApiElement and put it in the context (AqlQuery)
+        context.setOffset(element.getOffset());
+    }
+
     private void handlePropertyCriteria(AqlBase.PropertyCriteriaClause element, AdapterContext context) {
         // Converts AqlBase propertyCriteriaClause into real PropertyCriteria
         AqlVariable variable1 = AqlFieldResolver.resolve(element.getString1(), AqlVariableTypeEnum.string);
         AqlVariable variable2 = AqlFieldResolver.resolve(element.getString2(), AqlVariableTypeEnum.string);
         Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(context);
         List<AqlDomainEnum> subDomains = element.getSubDomains();
-        Criteria criteria = new PropertyCriteria(subDomains, variable1, tables.getFirst(),
+        Criteria criteria = new ComplexPropertyCriteria(subDomains, variable1, tables.getFirst(),
                 element.getComparator().signature,
                 variable2, tables.getSecond());
         addCriteria(context, criteria);
@@ -94,14 +103,20 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
 
     private void handleCriteria(AqlBase.CriteriaClause element, AdapterContext context) {
         // Converts AqlBase CriteriaClause into real criteria
-        AqlVariable criteriaField = AqlFieldResolver.resolve(element.getFieldEnum());
+        AqlField criteriaField = AqlFieldResolver.resolve(element.getFieldEnum());
         AqlVariable criteriaValue = AqlFieldResolver.resolve(element.getValue(), element.getFieldEnum().type);
         Pair<SqlTable, SqlTable> tables = resolveTableForSimpleCriteria(
                 new Pair<>(criteriaField, criteriaValue), context);
         List<AqlDomainEnum> subDomains = element.getSubDomains();
-        Criteria criteria = new SimpleCriteria(subDomains, criteriaField, tables.getFirst(),
-                element.getComparator().signature,
-                criteriaValue, tables.getSecond());
+        Criteria criteria;
+        // Create equals criteria
+        if (AqlFieldEnum.propertyKey == element.getFieldEnum() || AqlFieldEnum.propertyValue == element.getFieldEnum()) {
+            criteria = new SimplePropertyCriteria(subDomains, criteriaField, tables.getFirst(),
+                    element.getComparator().signature, criteriaValue, tables.getSecond());
+        } else {
+            criteria = new SimpleCriteria(subDomains, criteriaField, tables.getFirst(),
+                    element.getComparator().signature, criteriaValue, tables.getSecond());
+        }
         addCriteria(context, criteria);
     }
 

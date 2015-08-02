@@ -1,9 +1,12 @@
 package org.artifactory.storage.db.aql.parser.elements.low.level;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.storage.db.aql.parser.AqlParser;
 import org.artifactory.storage.db.aql.parser.AqlParserContext;
 import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
+
+import java.util.List;
 
 /**
  * @author Gidi Shabat
@@ -48,5 +51,12 @@ public class InternalNumberElement extends InternalParserElement {
         String trim = StringUtils.replaceOnce(queryRemainder, string, "").trim();
         context.update(trim);
         return new ParserElementResultContainer[]{new ParserElementResultContainer(trim, string)};
+    }
+
+    @Override
+    public List<String> next() {
+        List<String> result = Lists.newArrayList();
+        result.add("<number>");
+        return result;
     }
 }

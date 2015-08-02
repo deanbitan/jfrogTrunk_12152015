@@ -38,6 +38,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     private String key;
     private String type;
+    private String packageType;
     private String description = "";
     private String notes = "";
     private String includesPattern = "";
@@ -61,6 +62,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     protected RepositoryConfigurationBase(RepoDescriptor repoDescriptor, String type) {
         this.key = repoDescriptor.getKey();
         this.type = type;
+        this.packageType = repoDescriptor.getType().toString().toLowerCase();
         String description = repoDescriptor.getDescription();
         if (StringUtils.isNotBlank(description)) {
             setDescription(description);
@@ -81,14 +83,55 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
         if (repoLayout != null) {
             setRepoLayoutRef(repoLayout.getName());
         }
-        setEnableNuGetSupport(repoDescriptor.isEnableNuGetSupport());
-        setEnableNpmSupport(repoDescriptor.isEnableNpmSupport());
-        setEnableBowerSupport(repoDescriptor.isEnableBowerSupport());
-        setEnablePypiSupport(repoDescriptor.isEnablePypiSupport());
-        setEnableDockerSupport(repoDescriptor.isEnableDockerSupport());
-        setDockerApiVersion(repoDescriptor.getDockerApiVersion().name());
-        setEnableVagrantSupport(repoDescriptor.isEnableVagrantSupport());
-        setEnableGitLfsSupport(repoDescriptor.isEnableGitLfsSupport());
+
+
+        switch (repoDescriptor.getType()) {
+            case Maven:
+                break;
+            case Gradle:
+                break;
+            case Ivy:
+                break;
+            case SBT:
+                break;
+            case NuGet:
+                setEnableNuGetSupport(true);
+                break;
+            case Gems:
+                setEnableGemsSupport(true);
+                break;
+            case Npm:
+                setEnableNpmSupport(true);
+                break;
+            case Bower:
+                setEnableBowerSupport(true);
+                break;
+            case Debian:
+                setEnableDebianSupport(true);
+                break;
+            case Pypi:
+                setEnablePypiSupport(true);
+                break;
+            case Docker:
+                setEnableDockerSupport(true);
+                setDockerApiVersion(repoDescriptor.getDockerApiVersion().name());
+                break;
+            case Vagrant:
+                setEnableVagrantSupport(true);
+                break;
+            case GitLfs:
+                setEnableGitLfsSupport(true);
+                break;
+            case YUM:
+                break;
+            case VCS:
+                break;
+            case P2:
+                break;
+            case Generic:
+                break;
+        }
+
     }
 
     public void setKey(String key) {
@@ -108,6 +151,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     @JsonProperty(TYPE_KEY)
     public String getType() {
         return type;
+    }
+
+    @Override
+    public String getPackageType() {
+        return packageType;
+    }
+
+    public void setPackageType(String packageType) {
+        this.packageType = packageType.toLowerCase();
     }
 
     @Override

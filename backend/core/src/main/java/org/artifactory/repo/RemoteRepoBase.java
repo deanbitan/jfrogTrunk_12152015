@@ -73,6 +73,7 @@ import org.artifactory.resource.RemoteRepoResource;
 import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.resource.UnfoundRepoResourceReason;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryStore;
@@ -83,6 +84,8 @@ import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.resource.UnfoundRepoResourceReason.Reason;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -310,10 +313,16 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
         }
 
-        if (cachedResource != null && cachedResource.isFound()) {
-            RepoRequests.logToContext("Found resource in local cache - returning cached resource");
-            // found in local cache
-            return returnCachedResource(repoPath, cachedResource);
+        if (cachedResource != null) {
+            if (cachedResource.isFound()) {
+                RepoRequests.logToContext("Found resource in local cache - returning cached resource");
+                // found in local cache
+                return returnCachedResource(repoPath, cachedResource);
+            } else if (cachedResource instanceof UnfoundRepoResourceReason &&
+                    ((UnfoundRepoResourceReason)cachedResource).getReason() == Reason.PROPERTY_MISMATCH) {
+                RepoRequests.logToContext("Found resource in local cache, but property doesn't match.");
+                return returnCachedResource(repoPath, cachedResource);
+            }
         }
 
         boolean foundExpiredInCache = ((cachedResource != null) && cachedResource.isExpired());
@@ -882,11 +891,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     @Nonnull
     public List<RemoteItem> listRemoteResources(String directoryPath) {
         assert !isOffline() : "Should never be called in offline mode";
-
         if (!isRemoteRepoListingAllowed(directoryPath)) {
             return Collections.emptyList();
         }
-
         List<RemoteItem> cachedUrls = remoteResourceCache.get(directoryPath);
         if (CollectionUtils.notNullOrEmpty(cachedUrls)) {
             return cachedUrls;

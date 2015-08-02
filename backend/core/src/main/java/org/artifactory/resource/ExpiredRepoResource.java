@@ -36,7 +36,7 @@ public class ExpiredRepoResource implements RepoResource, UnfoundRepoResourceRea
     }
 
     @Override
-    public String getReason() {
+    public String getDetail() {
         return "Resource has expired";
     }
 
@@ -113,4 +113,10 @@ public class ExpiredRepoResource implements RepoResource, UnfoundRepoResourceRea
     public String toString() {
         return wrappedResource.getRepoPath().toString();
     }
+
+    @Override
+    public Reason getReason() {
+        return Reason.EXPIRED;
+    }
+
 }

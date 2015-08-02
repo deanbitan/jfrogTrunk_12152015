@@ -36,6 +36,9 @@ public class BuildRunImpl implements BuildRun {
     private final String started;
     private final String ciUrl;
     private final String releaseStatus;
+    private String numOfModules;
+    private String numOfArtifact;
+    private String numOfDependencies;
 
     public BuildRunImpl(String name, String number, Date started) {
         this(name, number, BuildInfoUtils.formatBuildTime(started.getTime()));
@@ -163,6 +166,30 @@ public class BuildRunImpl implements BuildRun {
         result = 31 * result + number.hashCode();
         result = 31 * result + (started != null ? started.hashCode() : 0);
         return result;
+    }
+
+    public String getNumOfModules() {
+        return numOfModules;
+    }
+
+    public void setNumOfModules(String numOfModules) {
+        this.numOfModules = numOfModules;
+    }
+
+    public String getNumOfArtifact() {
+        return numOfArtifact;
+    }
+
+    public void setNumOfArtifact(String numOfArtifact) {
+        this.numOfArtifact = numOfArtifact;
+    }
+
+    public String getNumOfDependencies() {
+        return numOfDependencies;
+    }
+
+    public void setNumOfDependencies(String numOfDependencies) {
+        this.numOfDependencies = numOfDependencies;
     }
 
     @Override

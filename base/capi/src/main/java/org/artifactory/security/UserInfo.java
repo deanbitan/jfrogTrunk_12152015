@@ -29,6 +29,7 @@ import java.util.Set;
  * @author Fred Simon
  */
 public interface UserInfo extends Info {
+    String MISSION_CONTROLL = "Mission-Control";
     String ANONYMOUS = "anonymous";
 
     String getUsername();

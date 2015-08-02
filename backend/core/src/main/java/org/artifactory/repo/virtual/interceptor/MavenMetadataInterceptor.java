@@ -122,7 +122,7 @@ public class MavenMetadataInterceptor extends VirtualRepoInterceptorBase {
         String path = repoPath.getPath();
         if (mergedMavenMetadata.getMetadata() == null) {
             if (forbidden != null) {
-                return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
+                return new UnfoundRepoResource(repoPath, forbidden.getDetail(), forbidden.getStatusCode());
             } else {
                 return new UnfoundRepoResource(repoPath, "Maven metadata not found for '" + path + "'.");
             }

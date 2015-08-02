@@ -21,6 +21,7 @@ package org.artifactory.storage.db.fs.itest.dao;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.fs.dao.NodesDao;
 import org.artifactory.storage.db.fs.entity.Node;
 import org.artifactory.storage.db.fs.entity.NodeBuilder;
@@ -221,7 +222,7 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void updateFolderNode() throws SQLException {
-        NodeBuilder b = new NodeBuilder().nodeId(31).file(false).repo("repo").path("path/to/dir").name("toupdate")
+        NodeBuilder b = new NodeBuilder().nodeId(50).file(false).repo("repo").path("path/to/dir").name("toupdate")
                 .createdBy("yossis").modifiedBy("yossis");
 
         nodesDao.create(b.build());
@@ -243,7 +244,7 @@ public class NodesDaoTest extends DbBaseTest {
         assertEquals(updatedNode.getModified(), nodeToUpdate.getModified());
         assertEquals(updatedNode.getModifiedBy(), nodeToUpdate.getModifiedBy());
         assertEquals(updatedNode.getUpdated(), nodeToUpdate.getUpdated());
-        assertEquals(updatedNode.getNodeId(), 31, "Node id shouldn't have been updated");
+        assertEquals(updatedNode.getNodeId(), 50, "Node id shouldn't have been updated");
         assertEquals(updatedNode.isFile(), false, "Node type shouldn't have been updated");
     }
 
@@ -350,6 +351,34 @@ public class NodesDaoTest extends DbBaseTest {
         assertNotNull(node);
         assertEquals(node.getRepo(), "repo-copy");
         assertEquals(node.getName(), "file3.bin");
+    }
+
+    public void findMissingDirectories() throws Exception {
+        if (storageProperties.getDbType() == DbType.DERBY) {
+            return; // CONCAT doesn't work on Derby + it's irrelevant
+        }
+        List<Node> nodes = nodesDao.getOrphanNodes(new NodePath("repo3", null, null, false));
+        assertEquals(nodes.size(), 2);
+        Node node = getById(nodes, 33);
+        assertNotNull(node);
+        assertEquals(node.getPath(), "a/B");
+        assertEquals(node.getName(), "C");
+        node = getById(nodes, 34);
+        assertNotNull(node);
+        assertEquals(node.getPath(), "B");
+        assertEquals(node.getName(), "test.txt");
+    }
+
+    public void findMissingDirectoriesUnderPath() throws Exception {
+        if (storageProperties.getDbType() == DbType.DERBY) {
+            return; // CONCAT doesn't work on Derby + it's irrelevant
+        }
+        List<Node> nodes = nodesDao.getOrphanNodes(new NodePath("repo3", "a", "B", false));
+        assertEquals(nodes.size(), 1);
+        Node node = getById(nodes, 33);
+        assertNotNull(node);
+        assertEquals(node.getPath(), "a/B");
+        assertEquals(node.getName(), "C");
     }
 
     public void searchBadMd5Checksums() throws Exception {

@@ -10,7 +10,7 @@ public enum ScheduleJobEnum {
 
     public String jobName;
 
-    ScheduleJobEnum(String sqlKeyName) {
-        this.jobName = sqlKeyName;
+    ScheduleJobEnum(String keyName) {
+        this.jobName = keyName;
          }
     }

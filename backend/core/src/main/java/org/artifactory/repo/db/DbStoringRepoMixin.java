@@ -26,7 +26,7 @@ import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.FilteredResourcesAddon;
+import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.RestCoreAddon;
@@ -83,6 +83,7 @@ import org.artifactory.resource.MutableRepoResourceInfo;
 import org.artifactory.resource.ResolvedResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.resource.UnfoundRepoResourceReason;
 import org.artifactory.sapi.fs.MutableVfsFile;
 import org.artifactory.sapi.fs.MutableVfsFolder;
 import org.artifactory.sapi.fs.MutableVfsItem;
@@ -456,7 +457,8 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
                 RepoRequests.logToContext("Request query properties conflict with those that annotate the " +
                         "artifact - returning unfound resource");
                 return new UnfoundRepoResource(repoPath, "File '" + repoPath +
-                        "' was found, but mandatory properties do not match.");
+                        "' was found, but mandatory properties do not match.",
+                        UnfoundRepoResourceReason.Reason.PROPERTY_MISMATCH);
             }
         }
 

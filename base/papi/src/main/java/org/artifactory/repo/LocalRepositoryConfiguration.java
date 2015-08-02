@@ -48,4 +48,6 @@ public interface LocalRepositoryConfiguration extends RepositoryConfiguration {
 
     int getYumRootDepth();
 
+    String getYumGroupFileNames();
+
 }

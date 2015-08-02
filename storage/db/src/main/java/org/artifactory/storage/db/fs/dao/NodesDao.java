@@ -405,6 +405,27 @@ public class NodesDao extends BaseDao {
         return results;
     }
 
+    public List<Node> getOrphanNodes(NodePath path) throws SQLException {
+        ResultSet resultSet = null;
+        List<Node> results = new ArrayList<>();
+        try {
+            resultSet = jdbcHelper.executeSelect("SELECT * FROM nodes n1" +
+                    " WHERE n1.repo = ?" +
+                    " AND n1.node_path like ?" +
+                    " AND n1.node_name NOT IN" +
+                    " (SELECT n2.node_name FROM nodes n2, nodes n3" +
+                    " WHERE (n2.node_path like '%/%' AND n2.node_path like CONCAT('%/', n3.node_name))" +
+                    " OR (n2.node_path not like '%/%' AND n2.node_path like CONCAT('%', n3.node_name)))",
+                    path.getRepo(), emptyIfNullOrDot(path.getPath()) + "%");
+            while (resultSet.next()) {
+                results.add(nodeFromResultSet(resultSet));
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return results;
+    }
+
     public Set<RepoStorageSummary> getRepositoriesStorageSummary() throws SQLException {
         ResultSet resultSet = null;
         Set<RepoStorageSummary> results = Sets.newHashSet();

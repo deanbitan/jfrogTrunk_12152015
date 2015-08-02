@@ -25,22 +25,35 @@ import org.artifactory.repo.RepoPath;
 public class UnfoundRepoResource implements RepoResource, UnfoundRepoResourceReason {
 
     private final RepoPath repoPath;
-    private final String reason;
+    private final String detail;
     private final int statusCode;
+    private final Reason reason;
 
-    public UnfoundRepoResource(RepoPath repoPath, String reason) {
-        this(repoPath, reason, HttpStatus.SC_NOT_FOUND);
+    public UnfoundRepoResource(RepoPath repoPath, String detail, Reason reason) {
+        this(repoPath, reason, detail, HttpStatus.SC_NOT_FOUND);
     }
 
-    public UnfoundRepoResource(RepoPath repoPath, String reason, int statusCode) {
+    public UnfoundRepoResource(RepoPath repoPath, String detail) {
+        this(repoPath, detail, HttpStatus.SC_NOT_FOUND);
+    }
+
+    public UnfoundRepoResource(RepoPath repoPath, String detail, int statusCode) {
         this.repoPath = repoPath;
-        this.reason = reason;
+        this.detail = detail;
         this.statusCode = statusCode > 0 ? statusCode : HttpStatus.SC_NOT_FOUND;
+        this.reason =  Reason.UNDEFINED;
+    }
+
+    public UnfoundRepoResource(RepoPath repoPath, Reason reason, String detail, int statusCode) {
+        this.repoPath = repoPath;
+        this.detail = detail;
+        this.statusCode = statusCode > 0 ? statusCode : HttpStatus.SC_NOT_FOUND;
+        this.reason = reason;
     }
 
     @Override
-    public String getReason() {
-        return reason;
+    public String getDetail() {
+        return detail;
     }
 
     @Override
@@ -114,5 +127,9 @@ public class UnfoundRepoResource implements RepoResource, UnfoundRepoResourceRea
 
     @Override
     public void expirable() {
+    }
+
+    public Reason getReason() {
+        return reason;
     }
 }

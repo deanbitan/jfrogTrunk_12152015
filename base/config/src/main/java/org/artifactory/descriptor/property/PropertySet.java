@@ -20,6 +20,7 @@ package org.artifactory.descriptor.property;
 
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.util.AlreadyExistsException;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;

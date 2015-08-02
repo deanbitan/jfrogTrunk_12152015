@@ -109,4 +109,6 @@ public interface FileService {
     long getFilesTotalSize(RepoPath repoPath);
 
     Set<RepoStorageSummary> getRepositoriesStorageSummary();
+
+    List<ItemInfo> getOrphanItems(RepoPath repoPath);
 }

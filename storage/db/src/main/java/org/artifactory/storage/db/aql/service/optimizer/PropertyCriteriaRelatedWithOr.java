@@ -1,9 +1,10 @@
 package org.artifactory.storage.db.aql.service.optimizer;
 
 import org.artifactory.storage.db.aql.sql.builder.query.aql.AqlQuery;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.ComplexPropertyCriteria;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.Criteria;
-import org.artifactory.storage.db.aql.sql.builder.query.aql.PropertyCriteria;
 import org.artifactory.storage.db.aql.sql.builder.query.aql.SimpleCriteria;
+import org.artifactory.storage.db.aql.sql.builder.query.aql.SimplePropertyCriteria;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlTable;
 
 import java.util.regex.Matcher;
@@ -46,8 +47,8 @@ public class PropertyCriteriaRelatedWithOr extends OptimizationStrategy {
             // and no inner join will be generated for this criterias.
             for (int i = start; i < end; i++) {
                 if (transformation.charAt(i) == 'p') {
-                    PropertyCriteria criteria = (PropertyCriteria) aqlQuery.getAqlElements().get(i);
-                    PropertyCriteria newCriteria = new PropertyCriteria(criteria.getSubDomains(),
+                    ComplexPropertyCriteria criteria = (ComplexPropertyCriteria) aqlQuery.getAqlElements().get(i);
+                    ComplexPropertyCriteria newCriteria = new ComplexPropertyCriteria(criteria.getSubDomains(),
                             criteria.getVariable1(), table, criteria.getComparatorName(), criteria.getVariable2(),
                             table);
                     aqlQuery.getAqlElements().remove(i);
@@ -55,10 +56,18 @@ public class PropertyCriteriaRelatedWithOr extends OptimizationStrategy {
 
                 }
                 if (transformation.charAt(i) == 'k' || transformation.charAt(i) == 'v') {
-                    SimpleCriteria criteria = (SimpleCriteria) aqlQuery.getAqlElements().get(i);
-                    SimpleCriteria newCriteria = new SimpleCriteria(criteria.getSubDomains(),
-                            criteria.getVariable1(), table, criteria.getComparatorName(), criteria.getVariable2(),
-                            table);
+                    Criteria criteria = (Criteria) aqlQuery.getAqlElements().get(i);
+                    Criteria newCriteria = null;
+                    if (criteria instanceof SimpleCriteria) {
+                        newCriteria = new SimpleCriteria(criteria.getSubDomains(),
+                                criteria.getVariable1(), table, criteria.getComparatorName(), criteria.getVariable2(),
+                                table);
+                    }
+                    if (criteria instanceof SimplePropertyCriteria) {
+                        newCriteria = new SimplePropertyCriteria(criteria.getSubDomains(),
+                                criteria.getVariable1(), table, criteria.getComparatorName(), criteria.getVariable2(),
+                                table);
+                    }
                     aqlQuery.getAqlElements().remove(i);
                     aqlQuery.getAqlElements().add(i, newCriteria);
                 }

@@ -157,4 +157,5 @@ public interface SecurityService extends ImportableExportable {
     SaltedPassword generateSaltedPassword(String rawPassword, @Nullable String salt);
 
     String getDefaultSalt();
+
 }

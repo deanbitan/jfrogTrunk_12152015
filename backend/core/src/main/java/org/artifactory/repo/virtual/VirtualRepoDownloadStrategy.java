@@ -333,7 +333,7 @@ public class VirtualRepoDownloadStrategy {
         // not found in any repo
         if (forbidden != null) {
             RepoRequests.logToContext("Returning a forbidden-unfound resource");
-            return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
+            return new UnfoundRepoResource(repoPath, forbidden.getDetail(), forbidden.getStatusCode());
         } else {
             RepoRequests.logToContext("Returning an unfound resource");
             return new UnfoundRepoResource(repoPath, "Could not find resource");
@@ -407,7 +407,7 @@ public class VirtualRepoDownloadStrategy {
         if (latestRes == null || nonFoundRetrievalCacheHit) {
             if (forbidden != null) {
                 RepoRequests.logToContext("Returning a forbidden-unfound resource");
-                return new UnfoundRepoResource(repoPath, forbidden.getReason(), forbidden.getStatusCode());
+                return new UnfoundRepoResource(repoPath, forbidden.getDetail(), forbidden.getStatusCode());
             } else {
                 RepoRequests.logToContext("Returning an unfound resource");
                 String msg = "Artifact not found: " + resourcePath +

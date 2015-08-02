@@ -356,6 +356,20 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public List<ItemInfo> getOrphanItems(RepoPath repoPath) {
+        try {
+            List<Node> orphanNodes = nodesDao.getOrphanNodes(NodePath.fromRepoPath(repoPath));
+            List<ItemInfo> orphanItems = Lists.newArrayList();
+            for (Node orphanNode : orphanNodes) {
+                orphanItems.add(itemInfoFromNode(orphanNode));
+            }
+            return orphanItems;
+        } catch (SQLException e) {
+            throw new VfsException("Failed to find orphan nodes under: '" + repoPath + "': " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void debugNodeStructure(RepoPath repoPath) throws VfsException {
         log.info("************************ Tree structure dump ************************");
         debugNodeStructure(loadItem(repoPath), 0);

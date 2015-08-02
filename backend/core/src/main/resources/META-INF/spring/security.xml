@@ -17,8 +17,8 @@
   ~ You should have received a copy of the GNU Lesser General Public License
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
   -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
@@ -28,6 +28,7 @@
     </bean>
 
     <!-- register artifactory authentication filters -->
+    <bean class="org.artifactory.webapp.servlet.authentication.MissionControlAuthenticationFilter"/>
     <bean class="org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationFilter"/>
     <bean class="org.artifactory.webapp.servlet.authentication.ArtifactoryRememberMeFilter"/>
 
@@ -46,6 +47,7 @@
     </bean>
 
     <!-- create authentication providers -->
+    <bean class="org.artifactory.security.mission.control.MissionControlAuthenticationProviderImpl"/>
     <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider"/>
     <bean id="crowdAuthenticationProviderAdapter"
           class="org.artifactory.security.crowd.CrowdAuthenticationProviderAdapter"/>

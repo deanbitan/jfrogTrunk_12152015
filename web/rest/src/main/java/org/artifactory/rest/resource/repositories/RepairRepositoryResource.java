@@ -18,10 +18,14 @@
 
 package org.artifactory.rest.resource.repositories;
 
+import com.google.common.collect.Lists;
 import org.artifactory.api.repo.CaseSensitivityRepairService;
+import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.rest.artifact.RepairPathConflictsResult;
 import org.artifactory.api.rest.constant.RepairRepositoryConstants;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.fs.ItemInfo;
+import org.artifactory.repo.RepoPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +41,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 /**
  * @author Yoav Luft
@@ -46,20 +51,39 @@ import javax.ws.rs.core.MediaType;
 @Path(RepairRepositoryConstants.PATH_ROOT)
 @RolesAllowed({AuthorizationService.ROLE_ADMIN})
 public class RepairRepositoryResource {
-
     private static final Logger log = LoggerFactory.getLogger(RepairRepositoryResource.class);
 
     @Autowired
     CaseSensitivityRepairService repairService;
 
-    /**
-     * Returns a JSON list of files which have conflicting path information.
-     *
-     * @param path Root path for searching for conflicts
-     * @param dryRun If true, no change to conflicting files will be done. Defaults to true.
-     * @return {@link RepairPathConflictsResult} containing repair results
-     * @throws IOException
-     */
+    @Autowired
+    RepositoryService repositoryService;
+
+    @POST
+    @Path("createOrphanItems/{path: .+}")
+    @Produces({MediaType.APPLICATION_JSON})
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
+    public List<String> createMissingParents(@PathParam("path") String path,
+            @DefaultValue("true") @QueryParam("dry") String dryRun) {
+
+        List<ItemInfo> orphanItems = repairService.getOrphanItems(path);
+        if (!isDryRun(dryRun) && !orphanItems.isEmpty()) {
+            for (ItemInfo orphanItem : orphanItems) {
+                repositoryService.mkdirs(orphanItem.getRepoPath().getParent());
+            }
+        }
+
+        List<String> result = Lists.newArrayList();
+        for (ItemInfo orphanItem : orphanItems) {
+            RepoPath parent = orphanItem.getRepoPath().getParent();
+            if (parent != null) {
+                log.debug("Creating missing directory '{}'", parent);
+                result.add(parent.toPath());
+            }
+        }
+        return result;
+    }
+
     @POST
     @Path("{path: .+}")
     @Produces({MediaType.APPLICATION_JSON})
