@@ -686,9 +686,120 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
         assertSize(queryResult, 3);
     }
 
+    @Test
+    public void findBuildPropertiesByBuildPropertiesUsingAt() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "builds.find({\"@status\" :\"good\",\"@start\" :\"4\"})");
+        assertSize(queryResult, 1);
+    }
 
     @Test
-    public void findBuildWithNotMatchItemProperties4() {
+    public void findBuildPropertiesByBuildProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "build.properties.find({\"status\" :\"good\",\"start\" :\"4\"})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findBuildModulePropertiesByModuleProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "module.properties.find({\"status\" :\"good\",\"start\" :\"4\"})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findBuildModulePropertiesByBuildName() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "module.properties.find({\"module.build.name\" :\"ba\",\"start\" :\"4\"})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findItemsFilteringByBuildProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "items.find({\"artifact.module.build.@start\" :\"1\"})");
+        assertSize(queryResult, 1);
+    }
+
+    @Test
+    public void findModulesFilteringByBuildProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"build.@start\" :\"1\"})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findModulesFilteringByItemProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"artifact.item.@yossis\" :\"pdf\"})");
+        assertSize(queryResult, 3);
+    }
+
+    @Test
+    public void findModulesFilteringByModulePropertiesWithStarOnValue() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"@start\" :\"*\"})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findModulesFilteringByModulePropertiesWithStarOnKey() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"@*\" :\"1\"})");
+        assertSize(queryResult, 1);
+    }
+
+    @Test
+    public void findModulesFilteringByModulePropertiesWithStarOnKeyAndValue() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"@*\" :{\"$match\":\"*\"}})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findBuildsFilteringByBuildProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"build.@start\" :\"1\"})");
+        assertSize(queryResult, 2);
+    }
+
+    @Test
+    public void findBuildsFilteringByItemProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"artifact.item.@yossis\" :\"pdf\"})");
+        assertSize(queryResult, 3);
+    }
+
+    @Test
+    public void findBuildsFilteringByModulePropertiesWithStarOnValue() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "builds.find({\"@start\" :\"*\"})");
+        assertSize(queryResult, 3);
+    }
+
+    @Test
+    public void findBuildsFilteringByModulePropertiesWithStarOnKey() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "builds.find({\"@*\" :\"1\"})");
+        assertSize(queryResult, 1);
+    }
+
+    @Test
+    public void findBuildsFilteringByModulePropertiesWithStarOnKeyAndValue() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "builds.find({\"@*\" :{\"$match\":\"*\"}})");
+        assertSize(queryResult, 3);
+    }
+
+    @Test
+    public void findBuildsFilteringByModulePropertiesAndIncludeUsage() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "builds.find({\"@*\" :{\"$match\":\"*\"}}).include(\"@start\")");
+        assertSize(queryResult, 3);
+    }
+
+    @Test
+    public void findBuildWithNotMatchItemProperties5() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "builds.find({\"module.artifact.item.repo\" :\"repo1\", \"module.artifact.item.@build.number\" :{\"$nmatch\":\"67\"}})");
         assertSize(queryResult, 3);

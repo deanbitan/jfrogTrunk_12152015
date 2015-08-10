@@ -5,7 +5,7 @@
                 <td>{{jfNpmInfo.DICTIONARY[key]}}:</td>
                 <td>
                     <span ng-if="key != 'repository'">{{value}}</span>
-                    <span ng-if="key === 'repository'"><a target="_blank" href="{{value}}">{{value}}</a></span>
+                    <span ng-if="key === 'repository'"><a target="_blank" ng-href="{{value}}">{{value}}</a></span>
                 </td>
             </tr>
         </table>

@@ -42,10 +42,10 @@ public class CreateLdapGroupService implements RestService {
             MutableCentralConfigDescriptor configDescriptor = centralConfigService.getMutableDescriptor();
             configDescriptor.getSecurity().addLdapGroup(ldapSetting);
             centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-            artifactoryResponse.info("LDAP '" + ldapSetting.getName() + "' successfully created.");
+            artifactoryResponse.info("Successfully created LDAP group '" + ldapSetting.getName() + "'");
         } catch (Exception e) {
             log.error("Could not save LDAP group Settings {}", e);
-            artifactoryResponse.error("LDAP '" + ldapSetting.getName() + "' Could not be saved");
+            artifactoryResponse.error(" Could not be save LDAP group'" + ldapSetting.getName() + "'");
         }
     }
 }

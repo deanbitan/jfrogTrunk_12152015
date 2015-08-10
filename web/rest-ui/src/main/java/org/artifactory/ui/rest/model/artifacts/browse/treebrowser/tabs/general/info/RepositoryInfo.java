@@ -101,13 +101,11 @@ public class RepositoryInfo extends BaseInfo {
         // repository name
         this.setName(repoPath.getRepoKey());
         // set repository path
-        this.setRepositoryPath(repoPath.getRepoKey()+"/"+repoPath.getPath());
+        this.setRepositoryPath(repoPath.getRepoKey() + SLASH);
         // set repository layout
         setRepositoryLayout(repoDescriptor);
         // set created since data
         setCreatedSinceData(repoService, repoPath, centralConfigService, userName);
-        // set artifact count
-        //setArtifactCount(repoService, repoPath);
         // set last replication status
         setLastReplicationStatus(getLastReplicationInfo(repoPath));
 
@@ -127,7 +125,7 @@ public class RepositoryInfo extends BaseInfo {
         // repository name
         this.setName(repoPath.getRepoKey());
         // set repository path
-        this.setRepositoryPath(repoPath.getRepoKey() + "/" + repoPath.getPath());
+        this.setRepositoryPath(repoPath.getRepoKey() + SLASH);
         // set repository layout
         setRepositoryLayout(repoDescriptor);
 
@@ -147,7 +145,7 @@ public class RepositoryInfo extends BaseInfo {
         // repository name
         this.setName(repoPath.getRepoKey());
         // set repository path
-        this.setRepositoryPath(repoPath.getRepoKey() + "/" + repoPath.getPath());
+        this.setRepositoryPath(repoPath.getRepoKey() + SLASH);
         // set repository url
         setRemoteRepositoryUrl(repoDescriptor);
 
@@ -171,19 +169,6 @@ public class RepositoryInfo extends BaseInfo {
             this.setRepositoryLayout(repoDescriptor.getRepoLayout().getName());
         }
     }
-
-    /**
-     * set artifact count
-     *
-     * @param repoService - repository service
-     * @param repoPath    - repository path
-     */
-/*
-    private void setArtifactCount(RepositoryService repoService, RepoPath repoPath) {
-        long count = repoService.getArtifactCount(repoPath);
-        this.setArtifactsCount(NumberFormatter.formatLong(count));
-    }
-*/
 
     /**
      * set created since data

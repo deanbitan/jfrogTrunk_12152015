@@ -13,8 +13,6 @@ import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.BaseArtif
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.general.info.BaseInfo;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.general.info.FolderInfo;
 
-import java.util.List;
-
 /**
  * @author Chen Keinan
  */
@@ -31,22 +29,13 @@ public class VirtualRemoteFolderGeneralArtifactInfo extends BaseArtifactInfo {
 
     public void populateGeneralData(BaseBrowsableItem item) {
         BaseInfo baseInfo;
-        if (item.isRemote()) {
+        if (item instanceof VirtualBrowsableItem || item.isRemote()) {
             baseInfo = populateVirtualRemoteFolderInfo(item);
             this.info = baseInfo;
         } else {
             // get local or cached repo key
             String repoKey = item.getRepoKey();
             RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
-            if (item instanceof VirtualBrowsableItem) {
-                List<String> repoKeys = ((VirtualBrowsableItem) item).getRepoKeys();
-                for (String key : repoKeys) {
-                    if (key != repoKey && repositoryService.localOrCachedRepoDescriptorByKey(key) != null) {
-                        repoKey = key;
-                        break;
-                    }
-                }
-            }
             FolderInfo folderInfo = new FolderInfo();
             CentralConfigService centralConfig = ContextHelper.get().getCentralConfig();
             AuthorizationService authService = ContextHelper.get().getAuthorizationService();

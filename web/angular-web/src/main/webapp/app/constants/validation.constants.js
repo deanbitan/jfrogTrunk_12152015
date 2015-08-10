@@ -46,7 +46,7 @@ const customMessages = {
     },
     "maintenance": {
         "min": "Value must be between 0 and 99",
-        "max": "Value must be between 0 and 99",
+        "max": "Value must be between 0 and 99"
     },
     "crowd": {
         "min": "Value must be between 0 and 9999999999999",
@@ -54,7 +54,7 @@ const customMessages = {
         "url": "Please enter a valid url"
     },
     "ldapSettings": {
-        "ldapUrl": "LDAP url must be a valid ldap url, e.g: ldap://somehost.com"
+        "ldapUrl": "You must fill a valid LDAP url"
     },
     "gridFilter": {
         "maxlength": "Filter is too long"

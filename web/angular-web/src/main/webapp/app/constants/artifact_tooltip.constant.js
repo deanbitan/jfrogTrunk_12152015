@@ -190,7 +190,8 @@ This is a convenience; not a restrictive measure. You can still assign any prope
 see:<a href="http://www.quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger" target="_blank">The CronTrigger Tutorial</a>.`,
                 nextReplicationTime: `The next replication time based on the Cron expression`,
                 enableEventReplication: `When set, additions and modifications are replicated as they occur.`,
-                trivialLayout: `When set, the repository will use the deprecated trivial layout.`
+                trivialLayout: `When set, the repository will use the deprecated trivial layout.`,
+                forceDockerAuth:'Force basic authentication credentials in order to use this repository.'
 
             },
             remoteForm: {
@@ -495,7 +496,7 @@ For more details, please refer to <a href="http://www.jfrog.com/confluence/displ
             deployAsMaven: `Deploy a Maven artifact where the target deployment path is based on Maven attributes.
 If you want to specify the target deployment path manually, unset this option.`,
             deployAsDebian: `Deploying a Debian file to a Debian repository requires coordinates. Setting this flag lets you configure the Debian file coordinates`,
-            disabled: `You do not have permission to deploy.`
+            disabled: `You do not have deploy permission`
         },
         pushToBintray: {
             bintrayPackageName: `A target package name under the repository.You must create the package in Bintray first if it does not exist.`,

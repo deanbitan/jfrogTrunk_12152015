@@ -147,7 +147,7 @@ export class AdminRepositoriesController {
                 name: 'Repository Key',
                 displayName: 'Repository Key',
                 field: 'repoKey',
-                cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'local\',repoKey: row.entity.repoKey})">{{COL_FIELD}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'local\',repoKey: row.entity.repoKey})" id="repositories-local-key">{{COL_FIELD}}</a></div>',
                 width: '55%',
                 enableSorting: !this.features.isGlobalRepoEnabled()
                 //sort: {
@@ -165,7 +165,7 @@ export class AdminRepositoriesController {
                 name: 'Recalculate Index',
                 displayName: 'Recalculate Index',
                 field: 'reindex',
-                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-re-index" ng-click="!row.entity.hasReindexAction || grid.appScope.Repositories._calculateIndex(row.entity)" ng-disabled="!row.entity.hasReindexAction" jf-tooltip="{{row.entity.hasReindexAction ? \'Recalculate Index Now\' : \'Recalculate Not Supported For Repo Type\'}}"></a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-re-index" ng-click="!row.entity.hasReindexAction || grid.appScope.Repositories._calculateIndex(row.entity)" ng-disabled="!row.entity.hasReindexAction" jf-tooltip="{{row.entity.hasReindexAction ? \'Recalculate Index Now\' : \'Recalculate Not Supported For Repo Type\'}}" id="repositories-local-reindex"></a></div>',
                 width: '15%',
                 enableSorting: false
             },
@@ -173,7 +173,7 @@ export class AdminRepositoriesController {
                 name: 'Replications',
                 displayName: 'Replications',
                 field: 'replications',
-                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-run" ng-click="!row.entity.replications || grid.appScope.Repositories.localReplicationsRunNow(row.entity.repoKey)" ng-disabled="!row.entity.replications" jf-tooltip="{{row.entity.replications ? \'Run Replication\' : \'No Replication Configured\'}}"></a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-run" ng-click="!row.entity.replications || grid.appScope.Repositories.localReplicationsRunNow(row.entity.repoKey)" ng-disabled="!row.entity.replications" jf-tooltip="{{row.entity.replications ? \'Run Replication\' : \'No Replication Configured\'}}" id="repositories-local-replicate"></a></div>',
                 width: '15%',
                 actions: {
                     delete: row => this._deleteSelected(row)
@@ -189,7 +189,7 @@ export class AdminRepositoriesController {
                 name: 'Repository Key',
                 displayName: 'Repository key',
                 field: 'repoKey',
-                cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'remote\',repoKey: row.entity.repoKey})">{{COL_FIELD}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'remote\',repoKey: row.entity.repoKey})" id="repositories-remote-key">{{COL_FIELD}}</a></div>',
                 width: '20%',
                 enableSorting: !this.features.isGlobalRepoEnabled()
             },
@@ -211,7 +211,7 @@ export class AdminRepositoriesController {
                 name: 'Recalculate Index',
                 displayName: 'Recalculate Index',
                 field: 'reindex',
-                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-re-index" ng-click="!row.entity.hasReindexAction || grid.appScope.Repositories._calculateIndex(row.entity)" ng-disabled="!row.entity.hasReindexAction" jf-tooltip="{{row.entity.hasReindexAction ? \'Recalculate Index Now\' : \'Recalculate Not Supported For Repo Type\'}}"></a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-re-index" ng-click="!row.entity.hasReindexAction || grid.appScope.Repositories._calculateIndex(row.entity)" ng-disabled="!row.entity.hasReindexAction" jf-tooltip="{{row.entity.hasReindexAction ? \'Recalculate Index Now\' : \'Recalculate Not Supported For Repo Type\'}}" id="repositories-local-reindex"></a></div>',
                 width: '15%',
                 enableSorting: false
             },
@@ -219,7 +219,7 @@ export class AdminRepositoriesController {
                 name: 'Replications',
                 displayName: 'Replications',
                 field: 'hasEnabledReplication',
-                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-run" ng-click="!row.entity.hasEnabledReplication || grid.appScope.Repositories.remoteExecuteReplicationNow(row.entity.repoKey)" ng-disabled="!row.entity.hasEnabledReplication" jf-tooltip="{{row.entity.hasEnabledReplication ? \'Run Replication\' : \'No Replication Configured\'}}"></a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-run" ng-click="!row.entity.hasEnabledReplication || grid.appScope.Repositories.remoteExecuteReplicationNow(row.entity.repoKey)" ng-disabled="!row.entity.hasEnabledReplication" jf-tooltip="{{row.entity.hasEnabledReplication ? \'Run Replication\' : \'No Replication Configured\'}}" id="repositories-local-replicate"></a></div>',
                 width: '15%',
                 actions: {
                     delete: row => this._deleteSelected(row)
@@ -235,7 +235,7 @@ export class AdminRepositoriesController {
                 name: 'Repository Key',
                 displayName: 'Repository key',
                 field: 'repoKey',
-                cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'virtual\',repoKey: row.entity.repoKey})">{{COL_FIELD}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'virtual\',repoKey: row.entity.repoKey})" id="repositories-virtual-key">{{COL_FIELD}}</a></div>',
                 width: '20%',
                 enableSorting: !this.features.isGlobalRepoEnabled()
             },
@@ -257,7 +257,7 @@ export class AdminRepositoriesController {
                 name: 'Selected Repositories',
                 displayName: 'Selected Repositories',
                 field: 'selectedRepos',
-                cellTemplate: '<div class="ui-grid-cell-contents">{{row.entity.selectedRepos.join(";")}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents" id="repositories-virtual-selected">{{row.entity.selectedRepos.join(";")}}</a></div>',
                 width: '40%',
                 enableSorting: false
             },
@@ -265,7 +265,7 @@ export class AdminRepositoriesController {
                 name: 'Recalculate Index',
                 displayName: 'Recalculate Index',
                 field: 'reindex',
-                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-re-index" ng-click="!row.entity.hasReindexAction || grid.appScope.Repositories._calculateIndex(row.entity)" ng-disabled="!row.entity.hasReindexAction" jf-tooltip="{{row.entity.hasReindexAction ? \'Recalculate Index Now\' : \'Recalculate Not Supported For Repo Type\'}}"></a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center"><a class="grid-column-button icon icon-re-index" ng-click="!row.entity.hasReindexAction || grid.appScope.Repositories._calculateIndex(row.entity)" ng-disabled="!row.entity.hasReindexAction" jf-tooltip="{{row.entity.hasReindexAction ? \'Recalculate Index Now\' : \'Recalculate Not Supported For Repo Type\'}}" id="repositories-virtual-reindex"></a></div>',
                 width: '15%',
                 actions: {
                     delete: row => this._deleteSelected(row)

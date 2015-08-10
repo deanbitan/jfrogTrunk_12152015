@@ -120,7 +120,12 @@ public class ModuleDependencyModel extends BaseModel implements RestPaging {
                 }
                 break;
                 case "Updated": {
-                    prevName = name;
+                    String diffName = moduleDependency.getDiffName();
+                    if (diffName != null && diffName.length() > 0) {
+                        prevName = diffName;
+                    } else {
+                        prevName = name;
+                    }
                 }
                 break;
                 case "Unchanged": {

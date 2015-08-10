@@ -49,7 +49,7 @@ public class UpdateSamlService implements RestService {
             samlSettings.setCertificate(samlSettings.getCertificate());
             securityDescriptor.setSamlSettings(samlSettings);
             centralConfigService.saveEditedDescriptorAndReload(centralConfig);
-            response.info("SAML SSO settings successfully updated.");
+            response.info("Successfully updated SAML SSO settings");
         } catch (Exception e) {
             response.error(e.getMessage());
         }

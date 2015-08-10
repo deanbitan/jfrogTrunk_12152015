@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.List;
@@ -42,12 +43,14 @@ public class MultiPartUtils {
         int fileUploadMaxSizeMb = centralConfigService.getMutableDescriptor().getFileUploadMaxSizeMb();
         // get uploaded file map
         Map<String, List<FormDataBodyPart>> fields = formDataMultiPart.getFields();
+        int sizeInBytes = getContentLengthFromMultiPart(formDataMultiPart);
         fields.forEach((name, dataBody) -> {
             List<FormDataBodyPart> formDataBodyParts = fields.get(name);
             formDataBodyParts.forEach(formDataBodyPart -> {
                 // get file name and data
-                byte[] fileAsBytes = formDataBodyPart.getValueAs(byte[].class);
-                if (FileUtils.bytesToMeg(fileAsBytes.length) > fileUploadMaxSizeMb && fileUploadMaxSizeMb > 0) {
+                InputStream inputStream = formDataBodyPart.getEntityAs(InputStream.class);
+                long sizeInMb = FileUtils.bytesToMB(sizeInBytes);
+                if (sizeInMb > fileUploadMaxSizeMb && fileUploadMaxSizeMb > 0) {
                     throw new BadRequestException("Uploaded file size is bigger than " + fileUploadMaxSizeMb + "MB");
                 }
                 String fileName = formDataBodyPart.getContentDisposition().getFileName();
@@ -57,13 +60,23 @@ public class MultiPartUtils {
                         fileName = UUID.randomUUID().toString() + "_" + fileName;
                     }
                     String fileLocation = uploadDir + File.separator + fileName;
-                    FileUtils.writeFile(fileLocation, fileAsBytes);
+                    FileUtils.copyInputStreamToFile(inputStream, new File(fileLocation));
                     fileNames.add(fileName);
                 } catch (UnsupportedEncodingException e) {
                     log.error(e.getMessage());
                 }
             });
         });
+    }
+
+    /**
+     * get content length from multi part
+     *
+     * @param formDataMultiPart - form data multi part
+     * @return - content length in bytes
+     */
+    private static int getContentLengthFromMultiPart(FormDataMultiPart formDataMultiPart) {
+        return Integer.parseInt(String.valueOf(formDataMultiPart.getHeaders().get("Content-Length").get(0)));
     }
 
 

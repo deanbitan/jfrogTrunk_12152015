@@ -30,7 +30,7 @@ public class UpdateSecurityConfigService implements RestService {
         updateSecurityDescriptor(editedDescriptor, securityDescriptor);
         centralConfig.setSecurity(securityDescriptor);
         centralConfigService.saveEditedDescriptorAndReload(centralConfig);
-        response.info("Security settings successfully updated.");
+        response.info("Successfully updated security settings");
     }
 
     /**

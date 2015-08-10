@@ -22,7 +22,7 @@ public abstract class BaseGroupService implements RestService {
             try {
                 userGroupService.addUsersToGroup(
                         groupName, users);
-                response.info("Successfully added selected users  to group '" + groupName + "'.");
+                response.info("Successfully added selected users to group '" + groupName + "'");
             } catch (GroupNotFoundException gnfe) {
                 response.error("Could not find group '" + groupName + "': " + gnfe.getMessage());
             }

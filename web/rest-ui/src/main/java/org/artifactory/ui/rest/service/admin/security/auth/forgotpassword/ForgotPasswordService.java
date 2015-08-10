@@ -1,10 +1,11 @@
 package org.artifactory.ui.rest.service.admin.security.auth.forgotpassword;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.UserGroupService;
-import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
-import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
@@ -68,15 +69,17 @@ public class ForgotPasswordService implements RestService {
      */
 
     private String getResetPasswordPageUrl() {
-        MutableCentralConfigDescriptor mutableCentralConfigDescriptor = centralConfigService.getMutableDescriptor();
-        MailServerDescriptor mailServer = mutableCentralConfigDescriptor.getMailServer();
-        String resetPageUrl = null;
-        if (mailServer != null && StringUtils.isNotBlank(mailServer.getArtifactoryUrl())) {
-            resetPageUrl = mailServer.getArtifactoryUrl();
+        CoreAddons addon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(CoreAddons.class);
+        String resetPageUrl = addon.getArtifactoryUrl();
+        if (resetPageUrl != null &&  StringUtils.isNotBlank(resetPageUrl)) {
             if (!resetPageUrl.endsWith("/")) {
                 resetPageUrl += "/";
             }
-            resetPageUrl += HttpUtils.ANGULAR_WEBAPP + "/#/resetpassword";
+            if (addon.isAol()) {
+                resetPageUrl += "#/resetpassword";
+            } else {
+                resetPageUrl += HttpUtils.ANGULAR_WEBAPP + "/#/resetpassword";
+            }
         }
         return resetPageUrl;
     }

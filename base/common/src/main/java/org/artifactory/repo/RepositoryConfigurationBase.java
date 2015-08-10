@@ -53,6 +53,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enablePypiSupport = false;
     private boolean enableDockerSupport = false;
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
+    private boolean forceDockerAuthentication = false;
     private boolean enableVagrantSupport = false;
     private boolean enableGitLfsSupport = false;
 
@@ -115,6 +116,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
             case Docker:
                 setEnableDockerSupport(true);
                 setDockerApiVersion(repoDescriptor.getDockerApiVersion().name());
+                setForceDockerAuthentication(repoDescriptor.isForceDockerAuthentication());
                 break;
             case Vagrant:
                 setEnableVagrantSupport(true);
@@ -286,6 +288,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setDockerApiVersion(String dockerApiVersion) {
         this.dockerApiVersion = DockerApiVersion.valueOf(dockerApiVersion);
+    }
+
+    @Override
+    public boolean isForceDockerAuthentication() {
+        return forceDockerAuthentication;
+    }
+
+    public void setForceDockerAuthentication(boolean forceDockerAuthentication) {
+        this.forceDockerAuthentication = forceDockerAuthentication;
     }
 
     @Override

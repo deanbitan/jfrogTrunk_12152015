@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.artifacts.deploy;
 
+import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.api.artifact.ArtifactInfo;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.api.config.CentralConfigService;
@@ -55,7 +56,9 @@ public class ArtifactMultiDeployService implements RestService {
 
         if (!fileNames.isEmpty()) {
             //deploy file
-            deploy(fileNames.get(0), response, repoKey, path);
+            String savedUniqueFileName = fileNames.get(0);
+            String actualFileName = fileNames.get(1);
+            deploy(savedUniqueFileName, actualFileName, response, repoKey, path);
         }
     }
 
@@ -74,8 +77,11 @@ public class ArtifactMultiDeployService implements RestService {
             // get upload model
             UploadArtifactInfo uploadArtifactInfo = (UploadArtifactInfo) artifactoryRequest.getImodel();
             // save file data tto temp
-            MultiPartUtils.saveFileDataToTemp(centralConfigService, uploadArtifactInfo.fetchFormDataMultiPart(), uploadDir,
-                    fileNames, false);
+            FormDataMultiPart formDataMultiPart = uploadArtifactInfo.fetchFormDataMultiPart();
+            String fileName = formDataMultiPart.getFields().get("file").get(0).getContentDisposition().getFileName();
+            MultiPartUtils.saveFileDataToTemp(centralConfigService, formDataMultiPart, uploadDir,
+                    fileNames, true);
+            fileNames.add(fileName);
         } catch (Exception e) {
             response.error(e.getMessage());
         }
@@ -87,22 +93,24 @@ public class ArtifactMultiDeployService implements RestService {
      *
      * @param artifactoryResponse - encapsulate data require for response
      */
-    private void deploy(String fileName, RestResponse artifactoryResponse, String repoKey, String path) {
+    private void deploy(String savedUniqueFileName, String actualFileName, RestResponse artifactoryResponse,
+            String repoKey, String path) {
         String uploadDir = ContextHelper.get().getArtifactoryHome().getTempUploadDir().getAbsolutePath();
-        Properties properties = parseMatrixParams(fileName);
+        Properties properties = parseMatrixParams(actualFileName);
         LocalRepoDescriptor localRepoDescriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoKey);
         try {
-            File file = new File(uploadDir, fileName);
+            File file = new File(uploadDir, savedUniqueFileName);
             UnitInfo unitInfo = new ArtifactInfo(path);
             // deploy file
             deployService.deploy(localRepoDescriptor, unitInfo, file, properties);
             // delete tmp file
             Files.removeFile(file);
-            UploadedArtifactInfo uploadedArtifactInfo = new UploadedArtifactInfo(TreeUtils.shouldProvideTreeLink(localRepoDescriptor, unitInfo.getPath()), repoKey, unitInfo.getPath());
+            boolean showUrl = TreeUtils.shouldProvideTreeLink(localRepoDescriptor, unitInfo.getPath());
+            UploadedArtifactInfo uploadedArtifactInfo = new UploadedArtifactInfo(showUrl, repoKey, unitInfo.getPath());
             artifactoryResponse.iModel(uploadedArtifactInfo);
         } catch (RepoRejectException e) {
             log.error(e.toString());
-            artifactoryResponse.error("failed to deploy file:" + fileName + " to Repository: " + repoKey);
+            artifactoryResponse.error("failed to deploy file:" + actualFileName + " to Repository: " + repoKey);
         }
     }
 

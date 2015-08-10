@@ -26,15 +26,15 @@
 
     <div ng-if="jfDiff.selectedBuildNumber">
         <jf-panel jf-panel-heading="Artifacts ({{jfDiff.artifactsLength}} Results)">
-            <jf-grid grid-options="jfDiff.artifactsGridOptions" filter-field="name"></jf-grid>
+            <jf-grid grid-options="jfDiff.artifactsGridOptions" filter-field="name" no-count></jf-grid>
         </jf-panel>
 
         <jf-panel jf-panel-heading="Dependencies ({{jfDiff.dependenciesLength}} Results)">
-            <jf-grid grid-options="jfDiff.dependenciesGridOptions" filter-field="name"></jf-grid>
+            <jf-grid grid-options="jfDiff.dependenciesGridOptions" filter-field="name" no-count></jf-grid>
         </jf-panel>
 
         <jf-panel jf-panel-heading="Environment Variables ({{jfDiff.variablesLength}} Results)">
-            <jf-grid grid-options="jfDiff.envVarsGridOptions" filter-field="key"></jf-grid>
+            <jf-grid grid-options="jfDiff.envVarsGridOptions" filter-field="key" no-count></jf-grid>
         </jf-panel>
     </div>
 </div>

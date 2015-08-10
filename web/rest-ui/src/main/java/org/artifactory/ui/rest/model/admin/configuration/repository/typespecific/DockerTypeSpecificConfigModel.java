@@ -5,19 +5,21 @@ import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues;
 
-import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues.DEFAULT_DOCKER_API_VER;
-import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues.DEFAULT_TOKEN_AUTH;
+import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues.*;
 
 /**
  * @author Dan Feldman
  */
 public class DockerTypeSpecificConfigModel implements TypeSpecificConfigModel {
 
+    protected Boolean forceDockerAuthentication = DEFAULT_FORCE_DOCKER_AUTH;
+
     //local
     protected DockerApiVersion dockerApiVersion = DEFAULT_DOCKER_API_VER;
 
     //remote
     protected Boolean enableTokenAuthentication = DEFAULT_TOKEN_AUTH;
+    protected Boolean listRemoteFolderItems = DEFAULT_LIST_REMOTE_ITEMS_UNSUPPORTED_TYPE;
 
 
     public DockerApiVersion getDockerApiVersion() {
@@ -28,12 +30,28 @@ public class DockerTypeSpecificConfigModel implements TypeSpecificConfigModel {
         this.dockerApiVersion = dockerApiVersion;
     }
 
-    public Boolean getEnableTokenAuthentication() {
+    public Boolean isEnableTokenAuthentication() {
         return enableTokenAuthentication;
     }
 
     public void setEnableTokenAuthentication(Boolean enableTokenAuthentication) {
         this.enableTokenAuthentication = enableTokenAuthentication;
+    }
+
+    public Boolean isForceDockerAuthentication() {
+        return forceDockerAuthentication;
+    }
+
+    public void setForceDockerAuthentication(Boolean forceDockerAuthentication) {
+        this.forceDockerAuthentication = forceDockerAuthentication;
+    }
+
+    public Boolean isListRemoteFolderItems() {
+        return listRemoteFolderItems;
+    }
+
+    public void setListRemoteFolderItems(Boolean listRemoteFolderItems) {
+        this.listRemoteFolderItems = listRemoteFolderItems;
     }
 
     @Override

@@ -1,10 +1,7 @@
 package org.artifactory.ui.rest.service.builds.buildsinfo.tabs;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.build.ArtifactBuildAddon;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.build.BuildRun;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
@@ -92,12 +89,10 @@ public class GetBuildGeneralInfoService implements RestService {
      * @return
      */
     private Build getBuild(String buildName, String buildNumber, String buildStarted, RestResponse response) {
-        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-        ArtifactBuildAddon artifactBuildAddon = addonsManager.addonByType(ArtifactBuildAddon.class);
         boolean buildStartedSupplied = StringUtils.isNotBlank(buildStarted);
         try {
             Build build = null;
-            build = getBuild(buildName, buildNumber, buildStarted, artifactBuildAddon, buildStartedSupplied, build);
+            build = getBuild(buildName, buildNumber, buildStarted, buildStartedSupplied, build);
             if (build == null) {
                 StringBuilder builder = new StringBuilder().append("Could not find build '").append(buildName).
                         append("' #").append(buildNumber);
@@ -121,13 +116,12 @@ public class GetBuildGeneralInfoService implements RestService {
      * @param buildName            - build n name
      * @param buildNumber          - build number
      * @param buildStarted         - build started date
-     * @param artifactBuildAddon   - artifact build addon
      * @param buildStartedSupplied - build started supplier
      * @param build                - run build model
      * @return - build model
      */
-    private Build getBuild(String buildName, String buildNumber, String buildStarted,
-            ArtifactBuildAddon artifactBuildAddon, boolean buildStartedSupplied, Build build) {
+    private Build getBuild(String buildName, String buildNumber, String buildStarted, boolean buildStartedSupplied,
+            Build build) {
         if (buildStartedSupplied) {
             BuildRun buildRun = buildService.getBuildRun(buildName, buildNumber, buildStarted);
             if (buildRun != null) {
@@ -135,7 +129,7 @@ public class GetBuildGeneralInfoService implements RestService {
             }
         } else {
             //Take the latest build of the specified number
-            build = artifactBuildAddon.getLatestBuildByNameAndNumber(buildName, buildNumber);
+            build = buildService.getLatestBuildByNameAndNumber(buildName, buildNumber);
         }
         return build;
     }

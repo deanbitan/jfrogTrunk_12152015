@@ -44,7 +44,7 @@ public class DeleteUserService<T extends DeleteUsersModel> implements RestServic
         if(model.getUserNames().size()>1){
             response.info("Successfully removed "+model.getUserNames().size()+" users");
         }else if(model.getUserNames().size()==1){
-            response.info("User " + model.getUserNames().get(0) + " successfully removed");
+            response.info("Successfully removed user '" + model.getUserNames().get(0) + "'");
         }
     }
 

@@ -24,6 +24,7 @@ import org.artifactory.util.Pair;
  */
 public class BaseInfo {
 
+    protected final String SLASH = "/";
     private String name;
     private String repoType;
     private String repositoryPath;

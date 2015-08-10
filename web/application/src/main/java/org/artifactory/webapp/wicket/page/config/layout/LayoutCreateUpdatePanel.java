@@ -179,12 +179,12 @@ public class LayoutCreateUpdatePanel extends CreateUpdatePanel<RepoLayout> {
                 if (isCreate()) {
                     configDescriptor.addRepoLayout(entity);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    String message = "Layout '" + entity.getName() + "' successfully created.";
+                    String message = "Successfully created layout '" + entity.getName() + "'";
                     AccessLogger.created(message);
                     getPage().info(message);
                 } else {
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    String message = "Layout '" + entity.getName() + "' successfully updated.";
+                    String message = "Successfully created layout '" + entity.getName() + "'";
                     AccessLogger.updated(message);
                     getPage().info(message);
                 }

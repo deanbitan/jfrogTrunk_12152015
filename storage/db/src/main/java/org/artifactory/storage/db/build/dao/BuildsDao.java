@@ -209,8 +209,8 @@ public class BuildsDao extends BaseDao {
         ResultSet rs = null;
         List<GeneralBuild> buildList = new ArrayList<>();
         try {
-            String buildsQuery = "select * from builds  where build_name = ? and build_date < ? order by build_number desc";
-            rs = jdbcHelper.executeSelect(buildsQuery, buildName, buildDate);
+            String buildsQuery = "select * from builds  where build_name = ? and build_date < ?  order by build_number desc";
+            rs = jdbcHelper.executeSelect(buildsQuery, buildName, Long.parseLong(buildDate));
             while (rs.next()) {
                 Long id = rs.getLong(1);
                 GeneralBuild buildEntity = resultSetToGeneralBuild(rs, id);
@@ -275,7 +275,7 @@ public class BuildsDao extends BaseDao {
         ResultSet rsArtCurr = null;
         ResultSet rsArtPrev = null;
         try {
-            String[] diffParams = getArtifatBuildQueryParam(buildParams);
+            Object[] diffParams = getArtifatBuildQueryParam(buildParams);
             String buildQuery = getArtifactBuildDiffQuery(buildParams);
             rs = jdbcHelper.executeSelect(buildQuery, diffParams);
             while (rs.next()) {
@@ -323,9 +323,9 @@ public class BuildsDao extends BaseDao {
      * @param buildParams
      * @return
      */
-    private String[] getArtifatBuildQueryParam(BuildParams buildParams) {
+    private Object[] getArtifatBuildQueryParam(BuildParams buildParams) {
         if (!buildParams.isAllArtifact()) {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
@@ -334,7 +334,7 @@ public class BuildsDao extends BaseDao {
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId()};
         } else {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
@@ -355,7 +355,7 @@ public class BuildsDao extends BaseDao {
     public int getModuleArtifactsForDiffCount(BuildParams buildParams, String offset, String limit) {
         ResultSet rs = null;
         try {
-            String[] diffParams = getArtifactDiffCountParam(buildParams);
+            Object[] diffParams = getArtifactDiffCountParam(buildParams);
             String buildQuery = getArtifactDiffCount(buildParams);
             rs = jdbcHelper.executeSelect(buildQuery, diffParams);
             if (rs.next()) {
@@ -382,7 +382,7 @@ public class BuildsDao extends BaseDao {
         List<BuildProps> buildPropsList = new ArrayList<>();
         try {
             String baseQuery;
-            String[] diffParams = getBuildPropsParam(buildParams);
+            Object[] diffParams = getBuildPropsParam(buildParams);
             String buildQuery = getPropsQuery(buildParams);
             rs = jdbcHelper.executeSelect(buildQuery, diffParams);
             while (rs.next()) {
@@ -405,7 +405,7 @@ public class BuildsDao extends BaseDao {
     public long getBuildPropsCounts(BuildParams buildParams) {
         ResultSet rs = null;
         try {
-            String[] diffParams = getBuildPropsParam(buildParams);
+            Object[] diffParams = getBuildPropsParam(buildParams);
             String buildQuery = getPropsQueryCounts(buildParams);
             rs = jdbcHelper.executeSelect(buildQuery, diffParams);
             if (rs.next()) {
@@ -425,11 +425,11 @@ public class BuildsDao extends BaseDao {
      * @param buildParams - build params
      * @return list of build props param
      */
-    private String[] getBuildPropsParam(BuildParams buildParams) {
+    private Object[] getBuildPropsParam(BuildParams buildParams) {
         if (buildParams.isEnvProps()) {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate()};
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate()};
         } else {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate()
             };
         }
@@ -477,7 +477,7 @@ public class BuildsDao extends BaseDao {
         ResultSet rs = null;
         try {
             String baseQuery;
-            String[] diffParams = {buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+            Object[] diffParams = {buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate()};
             String buildQuery = BuildQueries.BUILD_PROPS_COUNT;
@@ -502,7 +502,7 @@ public class BuildsDao extends BaseDao {
         ResultSet rs = null;
         List<BuildProps> buildPropsList = new ArrayList<>();
         try {
-            String[] diffParams = {buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
+            Object[] diffParams = {buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
@@ -531,14 +531,14 @@ public class BuildsDao extends BaseDao {
      * @param buildParams - build diff param for query
      * @return - param array for diff
      */
-    private String[] getArtifactDiffCountParam(BuildParams buildParams) {
+    private Object[] getArtifactDiffCountParam(BuildParams buildParams) {
         if (!buildParams.isAllArtifact()) {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId()};
 
         } else {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate()};
         }
@@ -575,13 +575,14 @@ public class BuildsDao extends BaseDao {
         Map<String, ModuleDependency> moduleDependencyMap = new HashMap<>();
         try {
             StringBuilder builder = new StringBuilder(getBaseDependencyQuery(buildParams));
-            String[] diffParams = getBuildDependencyParams(buildParams);
+            Object[] diffParams = getBuildDependencyParams(buildParams);
             /// update query with specific conditions
             updateQueryWithSpecificConditions(buildParams, builder);
             String buildQuery = builder.toString();
             rs = jdbcHelper.executeSelect(buildQuery, diffParams);
             Map<String, String> tempDependencyMap = new HashMap<>();
             StringBuilder inClauseBuilder = new StringBuilder();
+            inClauseBuilder.append("(");
             while (rs.next()) {
                 String sha1 = rs.getString(3);
                 if (tempDependencyMap.get(sha1) == null) {
@@ -601,11 +602,9 @@ public class BuildsDao extends BaseDao {
             inClause = inClause + ")";
             // update dependencies repo path data
             if (!dependencies.isEmpty()) {
-                rsDep = getModuleDependencyNodes(buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
-                        buildParams.getBuildModuleId(), moduleDependencyMap, inClause);
+                rsDep = getModuleDependencyNodes(moduleDependencyMap, inClause);
                 if (buildParams.isAllArtifact()) {
-                    rsDepCompared = getModuleDependencyNodes(buildParams.getComperedBuildNum(),
-                            buildParams.getComperedBuildDate(), null, moduleDependencyMap, inClause);
+                    rsDepCompared = getModuleDependencyNodes(moduleDependencyMap, inClause);
                 }
                 dependencies.forEach(dependency -> {
                     ModuleDependency moduleDependency = moduleDependencyMap.get(dependency.getSha1());
@@ -650,10 +649,10 @@ public class BuildsDao extends BaseDao {
      * @param buildParams - build diff param
      * @return - build dependency param for diff query
      */
-    private String[] getBuildDependencyParams(BuildParams buildParams) {
+    private Object[] getBuildDependencyParams(BuildParams buildParams) {
         // build params for all build artifact query
         if (!buildParams.isAllArtifact()) {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
@@ -663,7 +662,7 @@ public class BuildsDao extends BaseDao {
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId()};
         } else {// build params for module build artifact query
             if (buildParams.isExcludeInternalDependencies()) {
-                return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+                return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                         buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
@@ -673,7 +672,7 @@ public class BuildsDao extends BaseDao {
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                         buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate()};
             } else {
-                return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+                return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                         buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
@@ -713,7 +712,7 @@ public class BuildsDao extends BaseDao {
         String baseQuery;
         try {
             baseQuery = getBuildDependencyCountQuery(buildParams);
-            String[] diffParams = getBuildDependencyCountParam(buildParams);
+            Object[] diffParams = getBuildDependencyCountParam(buildParams);
             StringBuilder builder = new StringBuilder(baseQuery);
             if (buildParams.isExcludeInternalDependencies()) {
                 // exclude internal dependencies
@@ -740,19 +739,19 @@ public class BuildsDao extends BaseDao {
      * @param buildParams - build diff param for query
      * @return - param array for diff
      */
-    private String[] getBuildDependencyCountParam(BuildParams buildParams) {
+    private Object[] getBuildDependencyCountParam(BuildParams buildParams) {
         if (!buildParams.isAllArtifact()) {
-            return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
+            return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(), buildParams.getBuildModuleId(),
                     buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(), buildParams.getBuildModuleId()};
         } else {
             if (buildParams.isExcludeInternalDependencies()) {
-                return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+                return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                         buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate(),
                         buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate()};
             } else {
-                return new String[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
+                return new Object[]{buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                         buildParams.getCurrBuildNum(), buildParams.getCurrBuildDate(),
                         buildParams.getComperedBuildNum(), buildParams.getComperedBuildDate()};
             }
@@ -935,7 +934,7 @@ public class BuildsDao extends BaseDao {
 
         List<PublishedModule> modules = new ArrayList<>();
         try {
-            rs = jdbcHelper.executeSelect(buildQuery, buildName, date);
+            rs = jdbcHelper.executeSelect(buildQuery, buildName, Long.parseLong(date));
             while (rs.next()) {
                 PublishedModule module = new PublishedModule();
                 module.setId(rs.getString(1));
@@ -971,7 +970,7 @@ public class BuildsDao extends BaseDao {
         Map<String, ModuleArtifact> artifactMap = new HashMap<>();
         try {
             // get artifact info
-            rs = getPaginatedArtifact(buildNumber, date, moduleId, orderBy, direction, offset, limit);
+            rs = getPaginatedArtifact(buildNumber, Long.parseLong(date), moduleId, orderBy, direction, offset, limit);
             while (rs.next()) {
                 artifacts.add(new ModuleArtifact(null, null, rs.getString(1), rs.getString(2), rs.getString(3)));
             }
@@ -1006,7 +1005,7 @@ public class BuildsDao extends BaseDao {
      * @param limit       - limit
      * @return query result set
      */
-    private ResultSet getPaginatedArtifact(String buildNumber, String date,
+    private ResultSet getPaginatedArtifact(String buildNumber, Long date,
                                            String moduleId, String orderBy, String direction, String offset,
                                            String limit) throws SQLException {
         ResultSet rs;
@@ -1071,7 +1070,7 @@ public class BuildsDao extends BaseDao {
 
         List<ModuleDependency> dependencies = new ArrayList<>();
         try {
-            rs = jdbcHelper.executeSelect(buildQuery, buildNumber, date, moduleId);
+            rs = jdbcHelper.executeSelect(buildQuery, buildNumber, Long.parseLong(date), moduleId);
             StringBuilder inClauseBuilder = new StringBuilder();
             inClauseBuilder.append("(");
             while (rs.next()) {
@@ -1086,7 +1085,7 @@ public class BuildsDao extends BaseDao {
 
             if (!dependencies.isEmpty()) {
                 // get repo key and path data for dependency
-                rsDep = getModuleDependencyNodes(buildNumber, date, moduleId, moduleDependencyMap, inClause);
+                rsDep = getModuleDependencyNodes(moduleDependencyMap, inClause);
                 dependencies.forEach(dependency -> {
                     ModuleDependency moduleDependency = moduleDependencyMap.get(dependency.getSha1());
                     if (moduleDependency != null) {
@@ -1106,8 +1105,8 @@ public class BuildsDao extends BaseDao {
         return dependencies;
     }
 
-    private ResultSet getModuleDependencyNodes(String buildNumber, String date,
-            String moduleId, Map<String, ModuleDependency> moduleDependencyMap, String inClause) throws SQLException {
+    private ResultSet getModuleDependencyNodes(Map<String, ModuleDependency> moduleDependencyMap, String inClause)
+            throws SQLException {
         ResultSet rsDep = jdbcHelper.executeSelect(
                 "SELECT distinct nodes.repo,nodes.node_path,nodes.node_name,nodes.sha1_actual FROM nodes\n" +
                         "                where nodes.sha1_actual in " + inClause);
@@ -1203,9 +1202,9 @@ public class BuildsDao extends BaseDao {
         List<BuildEntity> buildNames = new ArrayList<>();
         try {
             String allBuildsQuery = "select * from (\n" +
-                    "  (SELECT build_name as buildName , max(build_date) as build_time\n" +
-                    "   from builds as c GROUP BY build_name ) as build_a\n" +
-                    "   inner join (select * from builds) as build_b on build_b.build_date = build_a.build_time) \n" +
+                    "  (SELECT build_name buildName , max(build_date) build_time\n" +
+                    "   from builds c GROUP BY build_name ) build_a\n" +
+                    "   inner join (select * from builds)  build_b on build_b.build_date = build_a.build_time) \n" +
                     "where build_a.buildName=build_b.build_name";
             rs = jdbcHelper.executeSelect(allBuildsQuery);
             BuildEntity buildEntity;

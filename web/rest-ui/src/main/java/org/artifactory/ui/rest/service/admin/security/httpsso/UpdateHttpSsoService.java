@@ -33,7 +33,7 @@ public class UpdateHttpSsoService implements RestService {
         flipCreationLogic(httpSsoSettings);
         // save sso setting to descriptor
         saveSsoSetting(centralConfig, securityDescriptor, httpSsoSettings);
-        response.info("HTTP SSO settings successfully updated.");
+        response.info("Successfully updated HTTP SSO settings");
     }
 
     /**

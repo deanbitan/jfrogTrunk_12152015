@@ -5,7 +5,7 @@
         <div ng-repeat="(key,value) in jfNuget.nugetData.nugetGeneralInfo"
              class="artifact-file-icon"
              ng-if="key == 'iconUrl'">
-            <img src="{{value}}" alt="logo"/>
+            <img ng-src="{{value}}" alt="logo"/>
         </div>
 
         <table class="jf-data-table">
@@ -13,7 +13,7 @@
                 <td>{{jfNuget.DICTIONARY[key]}}:</td>
                 <td>
                     <span ng-if="key != 'id' && key != 'description' && key != 'iconUrl' && key != 'licenseUrl' && key != 'projectUrl'">{{value}}</span>
-                    <span ng-if="key === 'licenseUrl' || key === 'projectUrl'"><a href="{{value}}" target="_blank">{{value}}</a></span>
+                    <span ng-if="key === 'licenseUrl' || key === 'projectUrl'"><a ng-href="{{value}}" target="_blank">{{value}}</a></span>
                     <span ng-if="key === 'id'"><a ng-href="{{jfNuget.nugetData.nugetGeneralInfo.projectUrl}}" target="_blank">{{value}}</a></span>
                 </td>
             </tr>

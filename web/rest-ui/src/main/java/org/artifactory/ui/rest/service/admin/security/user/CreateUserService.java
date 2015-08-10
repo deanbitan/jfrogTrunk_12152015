@@ -67,12 +67,12 @@ public class CreateUserService<T extends User> implements RestService<T> {
     private void updateArtifactoryResponse(RestResponse artifactoryRestResponse,
             User user,boolean succeeded ,boolean create){
         if (!succeeded) {
-            artifactoryRestResponse.error("User '" + user.getName() + " already exists");
+            artifactoryRestResponse.error("User '" + user.getName() + "' already exists");
             return;
         }
         // update successful user creation data
         if(create) {
-            artifactoryRestResponse.info("User '" + user.getName() + "' successfully created");
+            artifactoryRestResponse.info("Successfully created user '" + user.getName() + "'");
             artifactoryRestResponse.responseCode(HttpServletResponse.SC_CREATED);
         }
     }

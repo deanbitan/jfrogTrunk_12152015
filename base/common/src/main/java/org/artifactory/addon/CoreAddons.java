@@ -83,4 +83,6 @@ public interface CoreAddons extends Addon {
      * @return Artifactory version string for list browsing
      */
     String getListBrowsingVersion();
+
+    String getArtifactoryUrl();
 }

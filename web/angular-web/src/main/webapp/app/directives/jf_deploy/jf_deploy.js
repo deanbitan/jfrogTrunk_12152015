@@ -20,6 +20,7 @@ class jfDeployController {
         this.FileUploader = FileUploader;
         this.deployFile = {};
         this.errorQueue = [];
+        this.multiSuccessMessage = '';
         this.TOOLTIP = TOOLTIP.artifacts.deploy;
         this.deployFile.targetPath = '';
         this.progress = false;
@@ -151,7 +152,6 @@ class jfDeployController {
                 singleDeploy.publishUnitConfigFile = true;
                 singleDeploy.unitConfigFileContent = this.deployFile.unitConfigFileContent;
             }
-
             this.artifactDeployDao.post(singleDeploy).$promise.then((result)=> {
                 if (result.data) {
                     this.artifactoryNotifications.createMessageWithHtml(jfDeployController.createNotification(result.data));
@@ -185,8 +185,19 @@ class jfDeployController {
     }
 
     setDeploy(deploy) {
+        if (this.comm.needToCancel && this.currentDeploy === 'single' && deploy === 'multi') {
+            this.comm.cancelUploadedFile(this.deployFile.fileName);
+            this.comm.needToCancel = false;
+        }
         this.currentDeploy = deploy;
         this.initDeploy();
+    }
+
+    onRemoveSingle() {
+        if (this.comm.needToCancel) {
+            this.comm.cancelUploadedFile(this.deployFile.fileName);
+            this.comm.needToCancel = false;
+        }
     }
 
     isSelectedDeploy(deploy) {
@@ -354,9 +365,14 @@ class jfDeployController {
             this.updateMavenTargetPath()
         }
 
-        if (this.currentDeploy != 'single') {
+        if (this.currentDeploy === 'single') {
+            this.comm.needToCancel = true;
+        }
+        else {
             if (response.repoKey && response.artifactPath) {
-                this.artifactoryNotifications.createMessageWithHtml(jfDeployController.createNotification(response));
+                let msg = jfDeployController.createNotification(response);
+                if (msg.type === 'success') this.multiSuccessMessage += msg.body + '<br>';
+                else this.artifactoryNotifications.createMessageWithHtml(msg);
             }
         }
     }
@@ -398,11 +414,12 @@ class jfDeployController {
                 body += '<li>"' + error.item.file.name + '" ' + error.response.error + '</li>'
             })
             body += '</ul>';
-            this.artifactoryNotifications.createMessageWithHtml({type: 'error', body: body});
+            this.artifactoryNotifications.createMessageWithHtml({type: 'error', body: body, timeout: 10000});
             this.uploader.queue = [];
             this.errorQueue=[];
         }
         else if (this.onSuccess && typeof this.onSuccess === 'function') {
+            this.artifactoryNotifications.createMessageWithHtml({type: 'success', body: this.multiSuccessMessage});
             this.onSuccess();
         }
         if (this.currentDeploy != 'single') {

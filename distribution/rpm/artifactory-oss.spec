@@ -125,11 +125,13 @@ if [ -e "$SERVICE_FILE" ]; then
     fi
 fi
 
+[ -e /etc/opt/jfrog/artifactory ] && read uid gid <<<$(stat -c '%u %g' /etc/opt/jfrog/artifactory)
+
 echo "Checking if group %{group_name} exists..."
 getent group "%{group_name}" 2>&1 1>/dev/null
 if [ $? != 0  ]; then
   echo "Group %{group_name} doesn't exist. Creating ..."
-  %{_sbindir}/groupadd -r %{group_name} || exit $?
+  %{_sbindir}/groupadd -r %{group_name} ${gid:+-g} $gid|| exit $?
 else
   echo "Group %{group_name} exists."
 fi
@@ -144,7 +146,7 @@ echo "Checking if user %{username} exists..."
 getent passwd "%{username}" 2>&1 1>/dev/null
 if [ $? != 0 ]; then
   echo "User %{username} doesn't exist. Creating ..."
-  %{_sbindir}/useradd %{username} -g %{username} -d %{target_artifactory_home} || exit $?
+  %{_sbindir}/useradd %{username} -g %{username} -d %{target_artifactory_home} ${uid:+-u} $uid || exit $?
   chown %{username} %{target_artifactory_home} || exit $?
 else
   echo "User %{username} exists."
@@ -254,11 +256,13 @@ exit 0
 
 %posttrans
 echo post transaction %{name} \$1 = $1 >>/tmp/rpminst
+[ -e /etc/opt/jfrog/artifactory ] && read uid gid <<<$(stat -c '%u %g' /etc/opt/jfrog/artifactory)
+
 echo "Checking if group %{group_name} exists..."
 getent group "%{group_name}" 2>&1 1>/dev/null
 if [ $? != 0  ]; then
   echo "Group %{group_name} doesn't exist. Creating ..."
-  %{_sbindir}/groupadd -r %{group_name} || exit $?
+  %{_sbindir}/groupadd -r %{group_name} ${gid:+-g} $gid|| exit $?
 else
   echo "Group %{group_name} exists."
 fi
@@ -273,7 +277,7 @@ echo "Checking if user %{username} exists..."
 getent passwd "%{username}" 2>&1 1>/dev/null
 if [ $? != 0 ]; then
   echo "User %{username} doesn't exist. Creating ..."
-  %{_sbindir}/useradd %{username} -g %{username} -d %{target_artifactory_home} || exit $?
+  %{_sbindir}/useradd %{username} -g %{username} -d %{target_artifactory_home} ${uid:+-u} $uid || exit $?
   chown %{username} %{target_artifactory_home} || exit $?
 else
   echo "User %{username} exists."

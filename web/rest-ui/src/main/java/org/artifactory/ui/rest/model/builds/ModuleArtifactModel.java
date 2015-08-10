@@ -105,7 +105,12 @@ public class ModuleArtifactModel extends BaseModel implements RestPaging {
                 }
                 break;
                 case "Updated": {
-                    prevName = name;
+                    String diffName = moduleArtifact.getDiffName();
+                    if (diffName != null && diffName.length() > 0) {
+                        prevName = diffName;
+                    } else {
+                        prevName = name;
+                    }
                 }
                 break;
                 case "Unchanged": {

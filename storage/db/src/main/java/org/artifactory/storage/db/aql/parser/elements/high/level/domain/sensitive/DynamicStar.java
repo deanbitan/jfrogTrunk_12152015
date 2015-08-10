@@ -35,6 +35,9 @@ public class DynamicStar extends DomainSensitiveParserElement {
             case modules: {
                 return AqlParser.buildModuleStar;
             }
+            case moduleProperties: {
+                return AqlParser.buildModulePropertiesStar;
+            }
             case buildProperties: {
                 return AqlParser.buildPropertiesStar;
             }

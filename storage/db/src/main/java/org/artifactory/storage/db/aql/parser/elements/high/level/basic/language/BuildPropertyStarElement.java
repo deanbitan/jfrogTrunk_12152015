@@ -28,7 +28,7 @@ public class BuildPropertyStarElement extends LazyParserElement implements Domai
     }
 
     private void fillWithDomainFields(List<ParserElement> list) {
-        list.add(forward(new InternalSignElement("@"), AqlParser.value));
+        list.add(AqlParser.star);
     }
 
     private void fillWithSubDomains(List<ParserElement> list) {

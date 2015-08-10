@@ -42,9 +42,9 @@ public class FixChecksumsService implements RestService {
             try {
                 log.debug("Fixing checksums for {}", path);
                 repoService.fixChecksums(path);
-                response.info("Successfully fixed checksum inconsistency.");
+                response.info("Successfully fixed checksum inconsistency");
             } catch (Exception e) {
-                response.error("Could not fix checksum inconsistency: " + e.getMessage() + ".");
+                response.error("Could not fix checksum inconsistency");
             }
         }
     }

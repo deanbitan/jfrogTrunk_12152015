@@ -114,14 +114,14 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
             error("Group '" + group.getGroupName() + "' already exists.");
             return true;    // has error
         } else {
-            getPage().info("Group '" + group.getGroupName() + "' successfully created.");
+            getPage().info("Successfully created group'" + group.getGroupName() + "'");
             return false;   // no error
         }
     }
 
     private void onUpdate() {
         groupService.updateGroup(getGroupInfo());
-        getPage().info("Group '" + getGroupInfo().getGroupName() + "' successfully updated.");
+        getPage().info("Successfully updated group '" + getGroupInfo().getGroupName()  + "'");
     }
 
     private MutableGroupInfo getGroupInfo() {

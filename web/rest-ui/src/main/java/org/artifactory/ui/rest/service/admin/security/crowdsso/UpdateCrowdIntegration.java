@@ -47,9 +47,9 @@ public class UpdateCrowdIntegration implements RestService {
             SecurityDescriptor securityDescriptor = centralConfig.getSecurity();
             securityDescriptor.setCrowdSettings(crowdSettings);
             centralConfigService.saveEditedDescriptorAndReload(centralConfig);
-            artifactoryResponse.info("Atlassian Crowd settings successfully updated.");
+            artifactoryResponse.info("Successfully updated Atlassian Crowd settings");
         } catch (Exception e) {
-            artifactoryResponse.error("An error occurred while saving the new settings: " + e.getMessage());
+            artifactoryResponse.error("FAiled to save new settings");
             log.error("An error occurred while saving new Crowd SSO settings", e);
         }
     }

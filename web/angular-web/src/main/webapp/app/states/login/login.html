@@ -1,5 +1,5 @@
 <div class="center-login">
-    <form name="Login.loginForm" class="jumbotron login-form" ng-submit="Login.login()" novalidate>
+    <form name="Login.loginForm" class="jumbotron login-form" ng-submit="Login.login()" novalidate id="login-form">
         <a class="pull-right close-button" ui-sref="home">&#10005;</a>
         <div class="login-inner">
             <h3>Welcome to Artifactory!</h3>
@@ -42,7 +42,8 @@
                 <div class="form-group-cell">
                     <a href
                        ng-mousedown="Login.ssoLogin()"
-                       target="_blank">SSO Login</a>
+                       target="_blank"
+                       id="sso-login">SSO Login</a>
                 </div>
             </div>
             <div class="jf-form-errors" ng-if="Login.errorMessage" ng-bind="Login.errorMessage"></div>
@@ -50,9 +51,11 @@
 
         <div class="login-button-bar">
             <div class="pull-left margin-top-10">
-                <a href ng-mousedown="Login.gotoForgotPwd()" ng-if="Login.canResetPassword">Forgot Password?</a>
+                <a href ng-mousedown="Login.gotoForgotPwd()" ng-if="Login.canResetPassword" id="forgot-password">Forgot Password?</a>
             </div>
-            <button type="submit" class="btn btn-primary pull-right" ng-disabled="!Login.loginForm.$valid">Log In</button>
+            <button type="submit" class="btn btn-primary pull-right" ng-disabled="!Login.loginForm.$valid" id="login">
+                Log In
+            </button>
         </div>
     </form>
 </div>

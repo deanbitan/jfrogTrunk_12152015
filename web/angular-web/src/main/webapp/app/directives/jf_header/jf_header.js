@@ -2,10 +2,11 @@ import EVENTS from '../../constants/artifacts_events.constants';
 import API from '../../constants/api.constants';
 
 class jfHeaderController {
-    constructor($scope, $q, User, $state, $timeout, $window, GeneralConfigDao, ArtifactoryEventBus) {
+    constructor($scope, $q, User, $state, $timeout, $window, GeneralConfigDao, FooterDao, ArtifactoryEventBus) {
         this.$scope = $scope;
         this.currentUser = User.getCurrent();
         this.generalConfigDao = GeneralConfigDao;
+        this.footerDao = FooterDao;
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.user = User;
         this.state = $state;
@@ -13,7 +14,8 @@ class jfHeaderController {
         this.$window = $window;
         this.$q = $q;
 
-        this.logoEndPoint = `${API.API_URL}/generalConfig/logo`;
+
+        this.logoEndPoint = `${API.API_URL}/auth/screen/logo`;
         this.defaultLogoUrl = 'images/artifactory_logo.png';
 
         this._registerEvents();
@@ -28,50 +30,28 @@ class jfHeaderController {
 
 
     _getLogoUrlAndServerName() {
-        this._imageExists(this.logoEndPoint).then(()=>{
-            this.logoUrl = '';
-            this.$timeout(()=> {
-                this.logoUrl = this.logoEndPoint;
-            });
-        })
-        .catch(()=>{
-            this.generalConfigDao.getData().$promise.then((data) => {
 
-                if (data.serverName) this.$window.document.title = data.serverName;
-                else this.$window.document.title = 'Artifactory';
+        this.footerDao.get(true).then(footerData => {
+
+            if (footerData.serverName) this.$window.document.title = footerData.serverName;
+            else this.$window.document.title = 'Artifactory';
+
+            if (footerData.userLogo) {
                 this.logoUrl = '';
                 this.$timeout(()=> {
-                    if (data.logoUrl) {
-                        this.logoUrl = data.logoUrl;
-                    }
-                    else {
-                        this.logoUrl = this.defaultLogoUrl;
-                    }
+                    this.logoUrl = this.logoEndPoint;
                 });
-            })
-                .catch((err)=> {
-                    if (err.status === 401) {
-                        this.$timeout(()=> {
-                            this.logoUrl = this.defaultLogoUrl;
-                        });
-                    }
-                });
+            }
+            else if (footerData.logoUrl) {
+                this.logoUrl = footerData.logoUrl;
+            }
+            else {
+                this.logoUrl = this.defaultLogoUrl;
+            }
         });
 
     }
 
-    _imageExists(url) {
-        let deferred = this.$q.defer();
-        let img = new Image();
-        img.onload = () => {
-            deferred.resolve();
-        };
-        img.onerror = () => {
-            deferred.reject('no image found');
-        };
-        img.src = url;
-        return deferred.promise;
-    }
 
 
     logout() {

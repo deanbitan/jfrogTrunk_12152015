@@ -4,14 +4,14 @@
         <table class="jf-data-table">
             <tr ng-repeat="(key,value) in jfRubyGems.gemsRubyData.gemsInfo">
                 <td ng-if="key == 'homepage'" class="gems-key">Homepage :</td>
-                <td ng-if="key == 'homepage'"><a href="{{value}}" target="_blank" class="gems-value">{{value}}</a></td>
+                <td ng-if="key == 'homepage'"><a ng-href="{{value}}" target="_blank" class="gems-value">{{value}}</a></td>
 
                 <td ng-if="key != 'homepage'">{{jfRubyGems.DICTIONARY[key]}} :</td>
                 <td ng-if="key != 'homepage'" class="gems-value">{{value}}
-                    <a ng-if="key === 'repositoryPath'"
-                       clip-copy="jfRubyGems.getRepoPath()"
-                       jf-tooltip="Copy to Clipboard"
-                       class="copy-to-clip icon icon-copy-to-clipboard"></a>
+                    <jf-clip-copy ng-if="key === 'repositoryPath'"
+                                  text-to-copy="jfRubyGems.getRepoPath()"
+                                  object-name="Path"></jf-clip-copy>
+
                 </td>
             </tr>
         </table>

@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.0"
-           xmlns="http://artifactory.jfrog.org/xsd/1.6.0"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.1"
+           xmlns="http://artifactory.jfrog.org/xsd/1.6.1"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -455,6 +455,13 @@
                         <xs:enumeration value="V2"/>
                     </xs:restriction>
                 </xs:simpleType>
+            </xs:element>
+            <xs:element name="forceDockerAuthentication" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Force basic authentication credentials in order to use this repository.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:sequence>
     </xs:complexType>

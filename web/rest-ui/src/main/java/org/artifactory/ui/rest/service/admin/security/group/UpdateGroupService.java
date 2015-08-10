@@ -40,7 +40,7 @@ public class UpdateGroupService extends BaseGroupService {
         // add users to group
         addUsertoGroup(((Group) group).getUsersInGroup(), group.getGroupName(), response, userGroupService);
         //update response
-        response.info("Group '" + group.getGroupName() + "' successfully updated");
+        response.info("Successfully updated group '" + group.getGroupName() + "'");
     }
 
     /**

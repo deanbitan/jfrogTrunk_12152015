@@ -15,9 +15,13 @@ public class Footer extends BaseModel {
     private boolean isAol;
     private String versionID;
     private boolean globalRepoEnabled;
+    private boolean userLogo;
+    private String logoUrl;
+    private String serverName;
 
     public Footer(String licenseInfo, String versionInfo, String copyRights, String copyRightsUrl,
-                  String buildNumber, boolean isAol, boolean isGlobalRepoEnabled, String versionID) {
+            String buildNumber, boolean isAol, boolean isGlobalRepoEnabled, String versionID, boolean userLogo,
+            String logoUrl,String serverName) {
         this.licenseInfo = licenseInfo;
         this.versionInfo = versionInfo;
         this.copyRights = copyRights;
@@ -26,6 +30,9 @@ public class Footer extends BaseModel {
         this.isAol = isAol;
         this.globalRepoEnabled = isGlobalRepoEnabled;
         this.versionID = versionID;
+        this.userLogo = userLogo;
+        this.logoUrl = logoUrl;
+        this.serverName = serverName;
     }
 
     public String getLicenseInfo() {
@@ -83,5 +90,29 @@ public class Footer extends BaseModel {
 
     public boolean isGlobalRepoEnabled() {
         return globalRepoEnabled;
+    }
+
+    public boolean isUserLogo() {
+        return userLogo;
+    }
+
+    public void setUserLogo(boolean userLogo) {
+        this.userLogo = userLogo;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
+
+    public String getServerName() {
+        return serverName;
+    }
+
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
     }
 }

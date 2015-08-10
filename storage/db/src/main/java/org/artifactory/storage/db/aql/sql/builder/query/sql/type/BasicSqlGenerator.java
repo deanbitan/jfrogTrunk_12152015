@@ -356,6 +356,8 @@ public abstract class BasicSqlGenerator {
                 return SqlTableEnum.build_dependencies;
             case modules:
                 return SqlTableEnum.build_modules;
+            case moduleProperties:
+                return SqlTableEnum.module_props;
         }
         return null;
     }

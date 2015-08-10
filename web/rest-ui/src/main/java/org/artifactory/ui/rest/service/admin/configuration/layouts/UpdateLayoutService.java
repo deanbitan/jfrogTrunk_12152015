@@ -35,7 +35,7 @@ public class UpdateLayoutService implements RestService<RepoLayout> {
 
             centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
 
-            String message = "Layout '" + repoLayout.getName() + "' successfully updated.";
+            String message = "Successfully updated layout '" + repoLayout.getName() + "'";
             response.info(message);
         } catch (ValidationException e) {
             response.error(e.getMessage());

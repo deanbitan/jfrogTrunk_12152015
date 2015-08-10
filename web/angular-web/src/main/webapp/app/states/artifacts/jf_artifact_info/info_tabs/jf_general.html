@@ -16,14 +16,10 @@
                 {{jfGeneral.DICTIONARY[key]}}:
             </td>
             <td ng-if="key != 'licenses' && key != 'filtered' && key != 'showFilteredResourceCheckBox' && key != 'signingKeyLink' && key != 'artifactsCount'">
-                {{value}} <a ng-if="key === 'repositoryPath'"
-                             class="copy-to-clip icon icon-copy-to-clipboard"
-                             clip-copy="value"
-                             jf-tooltip="Copy Path to Clipboard"></a>
-                <!--a ng-if="key === 'name'"
-                   clip-copy="value"
-                   jf-tooltip="Copy"
-                   class="copy-to-clip icon icon-copy-to-clipboard"></a-->
+                {{value}}
+                <jf-clip-copy ng-if="key === 'repositoryPath'"
+                              text-to-copy="value" object-name="Path"></jf-clip-copy>
+
                 <jf-help-tooltip ng-if="jfGeneral.TOOLTIP[key]" html="jfGeneral.TOOLTIP[key]"></jf-help-tooltip>
             </td>
 
@@ -143,7 +139,19 @@
           ng-if="jfGeneral.generalData.virtualRepositories.virtualRepositories.length">
     <div ng-repeat="item in jfGeneral.generalData.virtualRepositories.virtualRepositories"
          class="virtual-repo-item">
-        <a target="_blank" ng-href="{{ item.linkUrl }}"><i class="icon icon-local-repo"></i>{{item.repoKey}}</a>
+        <a target="_blank" ng-href="{{item.linkUrl }}"><i class="icon icon-virtual-repo"></i>{{item.repoKey}}</a>
+    </div>
+</jf-panel>
+
+<jf-panel jf-panel-heading="Included Repositories"
+          ng-if="jfGeneral.generalData.includedRepositories.repositories.length">
+    <div ng-repeat="item in jfGeneral.generalData.includedRepositories.repositories"
+         class="virtual-repo-item">
+        <a target="_blank" ng-href="{{ item.linkUrl }}">
+            <i ng-if="item.type=='local'" class="icon icon-local-repo"></i>
+            <i ng-if="item.type=='remote'" class="icon icon-remote-repo"></i>
+            <i ng-if="item.type=='virtual'" class="icon icon-virtual-repo"></i>
+            {{item.repoKey}}</a>
     </div>
 </jf-panel>
 

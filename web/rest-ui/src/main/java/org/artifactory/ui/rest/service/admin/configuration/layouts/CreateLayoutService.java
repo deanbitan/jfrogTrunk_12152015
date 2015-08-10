@@ -33,7 +33,7 @@ public class CreateLayoutService implements RestService<RepoLayout> {
             mutableDescriptor.addRepoLayout(repoLayout);
             centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
 
-            String message = "Layout '" + repoLayout.getName() + "' successfully created.";
+            String message = "Successfully created layout '" + repoLayout.getName() + "'";
             response.info(message);
         } catch (ValidationException e) {
             response.error(e.getMessage());

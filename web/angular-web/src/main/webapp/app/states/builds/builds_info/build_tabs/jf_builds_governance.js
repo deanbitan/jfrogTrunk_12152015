@@ -142,7 +142,7 @@ class jfBuildsGovernanceController {
             time: this.$stateParams.startTime,
             action: 'buildGovernance'
         }).$promise.then((data) => {
-                    //console.log(data);
+                    console.log(data);
 
                     this.gotData = true;
                     if (data.feedbackMsg && data.feedbackMsg.warn) {
@@ -160,6 +160,7 @@ class jfBuildsGovernanceController {
                     this.codeCenterApp = data.applicationInfo;
 
                 }).catch((err)=> {
+                    console.log('err',err);
                     this.noData = true;
                     if (err.data && err.data.error) {
                         this.artifactoryNotifications.create({error: err.data.error});

@@ -25,6 +25,7 @@ let events = {
 
     SHOW_SPINNER: 'spinner:show',
     HIDE_SPINNER: 'spinner:hide',
+    CANCEL_SPINNER: 'spinner:cancel',
 
     USER_CHANGED:           'user:changed',
     DEPLOY_FILES:           'deploy:deployFiles',

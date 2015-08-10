@@ -26,7 +26,7 @@ public class UpdateBlackDuckService implements RestService {
         // update black suck setting
         updateBlackDuckSetting(request);
         // update response feedback
-        response.info("Black Duck setting successfully updated. ");
+        response.info("Successfully updated Black Duck settings");
     }
 
     /**

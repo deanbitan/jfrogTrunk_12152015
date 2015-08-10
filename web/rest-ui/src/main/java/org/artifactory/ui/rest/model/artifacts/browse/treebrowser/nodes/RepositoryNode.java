@@ -11,6 +11,7 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.model.RestModel;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.BaseArtifact;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.IAction;
@@ -61,7 +62,8 @@ public class RepositoryNode extends BaseNode {
     }
 
     @Override
-    public Collection<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact) {
+    public Collection<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request) {
         List<INode> childNodeList = new ArrayList<>();
         childNodeList.add(this);
         return childNodeList;
@@ -230,13 +232,14 @@ public class RepositoryNode extends BaseNode {
     }
 
     @Override
-    public Collection<? extends RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact, Properties props) {
+    public Collection<? extends RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact,
+            Properties props, ArtifactoryRestRequest request) {
         if (isArchive()) {
             // get all archive children
             return getArchiveChildren(authService, isCompact);
         } else {
             // get repository or folder children 1st depth
-            return getRepoOrFolderChildren(authService, isCompact);
+            return getRepoOrFolderChildren(authService, isCompact, request);
         }
     }
 
@@ -245,10 +248,12 @@ public class RepositoryNode extends BaseNode {
      *
      * @param authService - authorization service
      * @param isCompact   - is compacted
+     * @param request
      * @return
      */
-    private Collection<? extends RestModel> getRepoOrFolderChildren(AuthorizationService authService, boolean isCompact) {
-        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact);
+    private Collection<? extends RestModel> getRepoOrFolderChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request) {
+        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact, request);
         List<RestModel> treeModel = new ArrayList<>();
         items.forEach(item -> {
             // update additional data

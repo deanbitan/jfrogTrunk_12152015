@@ -12,8 +12,7 @@
                 <div class="clearfix"></div>
                 <jf-grid grid-options="Ldap.settingsGridOption"
                          filter-field="key"
-                         filter-on-change="true"
-                         ng-if="Ldap.ldapSettingsData.length">
+                         filter-on-change="true">
                 </jf-grid>
             </jf-panel>
             <jf-panel jf-panel-heading="LDAP Groups"
@@ -26,8 +25,7 @@
                 <div class="clearfix"></div>
                 <jf-grid grid-options="Ldap.groupsGridOption"
                          filter-field="name"
-                         filter-on-change="true"
-                         ng-if="Ldap.ldapGroupsData.length">
+                         filter-on-change="true">
                 </jf-grid>
             </jf-panel>
         </div>

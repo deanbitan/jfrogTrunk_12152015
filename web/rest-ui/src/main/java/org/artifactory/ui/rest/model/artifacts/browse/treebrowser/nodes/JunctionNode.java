@@ -36,6 +36,7 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.model.RestModel;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes.archive.ArchiveEntriesTree;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes.archive.ArchiveTreeNode;
@@ -67,7 +68,8 @@ public class JunctionNode implements RestTreeNode {
 
 
     @Override
-    public Collection<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact) {
+    public Collection<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request) {
         List<RestTreeNode> children;
         // create repo path
         RepoPath repositoryPath = InternalRepoPathFactory.create(getRepoKey(), getPath());
@@ -320,14 +322,14 @@ public class JunctionNode implements RestTreeNode {
 
     @Override
     public Collection<? extends RestModel> fetchItemTypeData(AuthorizationService authService,
-                                                          boolean isCompact, Properties props) {
+            boolean isCompact, Properties props, ArtifactoryRestRequest request) {
         if ((repoType.equals("local") || repoType.equals("cached")) && isArchive()) {
             // get all archive children
             return getArchiveChildren(authService, isCompact);
         } else {
             this.props = props;
             // get repository or folder children 1st depth
-            return getRepoOrFolderChildren(authService, isCompact);
+            return getRepoOrFolderChildren(authService, isCompact, request);
         }
     }
 
@@ -336,10 +338,12 @@ public class JunctionNode implements RestTreeNode {
      *
      * @param authService - authorization service
      * @param isCompact   - is compacted
+     * @param request
      * @return
      */
-    private Collection<? extends RestModel> getRepoOrFolderChildren(AuthorizationService authService, boolean isCompact) {
-        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact);
+    private Collection<? extends RestModel> getRepoOrFolderChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request) {
+        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact, request);
         List<RestModel> treeModel = new ArrayList<>();
         items.forEach(item -> {
             // update additional data

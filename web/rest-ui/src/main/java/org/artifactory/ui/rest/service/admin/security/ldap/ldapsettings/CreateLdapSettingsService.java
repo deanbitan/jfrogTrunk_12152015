@@ -38,6 +38,6 @@ public class CreateLdapSettingsService implements RestService {
         MutableCentralConfigDescriptor configDescriptor = centralConfigService.getMutableDescriptor();
         configDescriptor.getSecurity().addLdap(ldapSetting);
         centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-        artifactoryResponse.info("LDAP '" + ldapSetting.getKey() + "' successfully created.");
+        artifactoryResponse.info("Successfully created LDAP settings '" + ldapSetting.getKey() + "'");
     }
 }

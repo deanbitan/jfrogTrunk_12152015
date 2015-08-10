@@ -2,6 +2,7 @@ package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.general.
 
 import org.apache.commons.lang.time.DurationFormatUtils;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.fs.ItemInfo;
@@ -46,14 +47,12 @@ public class FolderInfo extends BaseInfo {
         // set name
         this.setName(repoPath.getName());
         // set repository path
-        this.setRepositoryPath(repoPath.getRepoKey() + "/" + repoPath.getPath());
+        this.setRepositoryPath(repoPath.getRepoKey() + SLASH + repoPath.getPath() + SLASH);
         ItemInfo itemInfo = repoService.getItemInfo(repoPath);
         // set watching since
         setWatchingSince(fetchWatchingSince(userName, repoPath));
         // set created
         setCreated(centralConfigService, itemInfo);
-        // set artifact count
-        //setArtifactCount(repoService, repoPath);
         // set deployed by
         this.setDeployedBy(itemInfo.getModifiedBy());
         // set last replication status
@@ -96,10 +95,15 @@ public class FolderInfo extends BaseInfo {
      * @param item
      */
     public void populateVirtualRemoteFolderInfo(BaseBrowsableItem item) {
+        CentralConfigService centralConfig = ContextHelper.get().getCentralConfig();
         // set name
         this.setName(item.getName());
         // set repository path
-        this.setRepositoryPath(item.getRepoKey() + "/" + item.getRelativePath());
+        this.setRepositoryPath(item.getRepoKey() + SLASH + item.getRelativePath() + SLASH);
+
+        if (!item.isRemote()) {
+            this.setCreated(centralConfig.format(item.getCreated()));
+        }
     }
 
     /**

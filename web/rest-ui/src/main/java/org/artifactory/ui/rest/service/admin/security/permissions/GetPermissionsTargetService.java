@@ -119,7 +119,7 @@ public class GetPermissionsTargetService implements RestService {
             } else {
                 permissionTargetInfo.getRepoKeys().forEach(key -> {
                     if (key.endsWith("-cache")) {
-                        tempRepoKeysList.add(key.replace("-cache", ""));
+                        tempRepoKeysList.add(key.substring(0, key.length() - 6));
                     } else {
                         tempRepoKeysList.add(key);
                     }

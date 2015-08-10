@@ -32,10 +32,10 @@ public class UpdatePropertyService implements RestService {
             RepoPath repoPath = RequestUtils.getPathFromRequest(request);
             propsService.editProperty(repoPath, propertiesTab.getParent(), propertiesTab.getProperty(),
                     propertiesTab.getSelectedValues());
-            response.info("property "+propertiesTab.getProperty().getName()+" successfully updated");
+            response.info("Successfully updated property '" + propertiesTab.getProperty().getName() + "'");
         }catch (Exception e){
-            log.error("failed to create property:"+propertiesTab.getProperty().getName());
-            response.info("property "+propertiesTab.getProperty().getName()+" failed to update");
+            log.error("Failed to create property '" + propertiesTab.getProperty().getName() +  "'");
+            response.info("Failed to update property '" + propertiesTab.getProperty().getName() +  "'");
         }
     }
 }

@@ -40,6 +40,6 @@ public class UpdateMailService implements RestService {
         MailServer mailServer = (MailServer) artifactoryRequest.getImodel();
         configDescriptor.setMailServer(mailServer);
         centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-        artifactoryResponse.info("Mail server settings successfully updated.");
+        artifactoryResponse.info("Successfully updated Mail server settings");
     }
 }

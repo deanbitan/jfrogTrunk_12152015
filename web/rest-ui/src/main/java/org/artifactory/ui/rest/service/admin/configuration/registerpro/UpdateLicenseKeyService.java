@@ -69,9 +69,9 @@ public class UpdateLicenseKeyService implements RestService {
             licenseType=licenseDetails[2];
         }
         if (hasLicenseAlready) {
-            artifactoryResponse.info(licenseType+" license successfully updated");
+            artifactoryResponse.info("Successfully updated " + licenseType + " license");
         } else {
-            artifactoryResponse.info(licenseType+" license successfully created");
+            artifactoryResponse.info("Successfully created " + licenseType + " license");
         }
     }
 

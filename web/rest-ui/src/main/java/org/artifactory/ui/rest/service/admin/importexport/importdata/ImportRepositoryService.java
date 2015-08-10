@@ -80,7 +80,7 @@ public class ImportRepositoryService implements RestService {
      * @return if true - import all repositories
      */
     private boolean isImportAllRepos(String repoKey) {
-        if (repoKey == "All") {
+        if (repoKey.equals("All Repositories")) {
             return true;
         }
         return false;

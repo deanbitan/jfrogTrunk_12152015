@@ -28,7 +28,7 @@ public class UpdateBackupService implements RestService {
         // update backup
         updateBackup(backupDescriptor);
         // update feedback msg
-        response.info("Backup " + backupDescriptor.getKey() + " successfully updated.");
+        response.info("Successfully updated backup '" + backupDescriptor.getKey() + "'");
     }
 
     /**

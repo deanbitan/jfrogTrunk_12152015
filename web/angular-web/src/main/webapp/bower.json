@@ -31,7 +31,7 @@
     "angular-ui-codemirror": "0.2.3",
     "codemirror": "5.0.0",
     "angular-hotkeys": "chieffancypants/angular-hotkeys#1.4.5",
-    "jstree": "500tech/jstree#3.0.0-beta10-patch6",
+    "jstree": "500tech/jstree#3.0.0-beta10-patch7",
     "angular-ui-select": "0.11.2",
     "lessfonts-open-sans": "1.0.2",
     "selectize": "0.12.1",

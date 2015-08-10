@@ -21,6 +21,8 @@ module.exports = {
 
     DESTINATIONS: {
         TARGET: '../../../../war/src/main/webapp/webapp',
-        INDEX : '../../../../war/src/main/webapp/webapp'
+        TARGET_REV: [
+            '../../../../war/src/main/webapp/webapp/**'
+        ]
     }
 };

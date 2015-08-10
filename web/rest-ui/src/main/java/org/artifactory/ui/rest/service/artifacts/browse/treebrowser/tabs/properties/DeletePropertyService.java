@@ -41,7 +41,7 @@ public class DeletePropertyService<T extends DeletePropertyModel> implements Res
         if(model.getProperties().size()>1){
             response.info("Successfully removed "+model.getProperties().size()+" properties");
         }else if(model.getProperties().size()==1){
-            response.info("Property " + model.getProperties().get(0).getName() + " successfully removed");
+            response.info("Successfully removed property '" + model.getProperties().get(0).getName() + "'");
         }
     }
 

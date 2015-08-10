@@ -38,7 +38,7 @@ public class DeletePropertySetService<T extends DeletePropertySetModel> implemen
         if(model.getPropertySetNames().size()>1){
             response.info("Successfully removed "+model.getPropertySetNames().size()+" property sets");
         }else if(model.getPropertySetNames().size()==1){
-            response.info("Property set " + model.getPropertySetNames().get(0) + " successfully removed");
+            response.info("Successfully removed property set '" + model.getPropertySetNames().get(0) + "'");
         }
     }
 

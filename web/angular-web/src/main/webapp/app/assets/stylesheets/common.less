@@ -353,20 +353,31 @@ h1 {
   pointer-events: none;
   z-index: 1000000;
   white-space: nowrap;
-  border: 2px black dashed !important;
-  background-color: @grayBGLight !important;
-  padding: 0 !important;
-  .dragged-additionals-more {
-    color: darkgreen !important;
-    font-weight: bold !important;
-    text-align: center;
+  background-color: @greenBGLighter !important;
+  padding: 0 14px;
+  box-shadow: -2px 2px 0 0 @greenFontHeader;
+  color: @greenFontHeader !important;
+  font-size: 16px;
+  font-weight: bold !important;
+  height: 40px !important;
+  line-height: 40px;
+
+  &.multiple {
+    padding-left: 34px;
   }
-  div {
-    padding: 0 5px;
-    border-bottom: 1px gray dashed !important;
-    &:last-child {
-      border: none !important;
-    }
+
+  span {
+    font-size: 28px;
+    position: absolute;
+    left: 10px;
+    margin: -1px 8px 0 0;
+  }
+
+  div.drag-item-text {
+    padding: 0 !important;
+    color: @greenFontHeader !important;
+    font-weight: bold !important;
+    line-height: 40px;
   }
 }
 
@@ -394,7 +405,7 @@ h1 {
   }
 
   &.drag-placeholder {
-    border: 2px #00ff00 dashed;
+    border: 1px solid @greenBGLighter;
     background-color: white !important;
   }
 
@@ -436,7 +447,7 @@ h1 {
 .delete-drop-item {
   position: absolute;
   top: 3px;
-  right: 3px;
+  right: 6px;
   text-decoration: none;
   font-size: 18px;
 
@@ -1514,6 +1525,11 @@ h5 {
 
     margin-top: -50px;
     margin-left: -50px;
+
+    #jf-content & {
+      margin-top: -110px;
+      margin-left: -150px;
+    }
   }
 
   .icon-hourglass {

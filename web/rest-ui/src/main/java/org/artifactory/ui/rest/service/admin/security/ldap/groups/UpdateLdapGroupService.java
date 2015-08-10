@@ -42,10 +42,10 @@ public class UpdateLdapGroupService implements RestService {
         try {
             configDescriptor.getSecurity().ldapGroupSettingChanged(ldapSetting);
             centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-            artifactoryResponse.info("LDAP '" + ldapSetting.getName() + "' successfully updated.");
+            artifactoryResponse.info("Successfully updated LDAP '" + ldapSetting.getName() + "'");
         } catch (Exception e) {
-            log.error("Could not save LDAP group Settings {}", e);
-            artifactoryResponse.error("LDAP '" + ldapSetting.getName() + "' Could not be saved");
+            log.error("Failed to save LDAP group settings {}", e);
+            artifactoryResponse.error("Failed to save LDAP '" + ldapSetting.getName() + "'");
         }
     }
 }

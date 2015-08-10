@@ -68,7 +68,7 @@ public class WatchArtifactService implements RestService {
                 addUnwatchMessage(userName, artifactoryResponse, artifactWatchAddon, repoPath, pathToWatch);
             }
         } catch (Exception e) {
-            artifactoryResponse.error("failed to watch artifact : " + pathToWatch.toString() + " by user:" + userName);
+            artifactoryResponse.error("Failed to add watch on '" + pathToWatch.toString() + "' by user '" + userName + "'");
         }
     }
 
@@ -86,10 +86,10 @@ public class WatchArtifactService implements RestService {
         artifactWatchAddon.addWatcher(pathToWatch, userName);
         if (repoPath.getPath().length() > 0) {
             artifactoryResponse.info(
-                    "artifact : " + pathToWatch.toString() + " is now been watched by user:" + userName);
+                    "Successfully added watch on artifact '" + pathToWatch.toString() + "' by user '" + userName + "'");
         } else {
             artifactoryResponse.info(
-                    "repository : " + pathToWatch.toString() + " is now been watched by user:" + userName);
+                    "Successfully added watch on repository '" + pathToWatch.toString() + "' by user '" + userName + "'");
         }
     }
 
@@ -107,11 +107,11 @@ public class WatchArtifactService implements RestService {
         if (repoPath.getPath().length() > 0) {
             artifactWatchAddon.removeWatcher(pathToWatch, userName);
             artifactoryResponse.info(
-                    "watch on artifact : " + pathToWatch.toString() + "  by user:" + userName + " hsa been removed");
+                    "Successfully removed watch on artifact '" + pathToWatch.toString() + "' by user '" + userName + "'");
         } else {
             artifactWatchAddon.removeWatcher(pathToWatch, userName);
             artifactoryResponse.info(
-                    "watch on repository : " + pathToWatch.toString() + "  by user:" + userName + " has been removed");
+                    "Successfully removed watch on repository '" + pathToWatch.toString() + "' by user '" + userName + "'");
         }
     }
 }

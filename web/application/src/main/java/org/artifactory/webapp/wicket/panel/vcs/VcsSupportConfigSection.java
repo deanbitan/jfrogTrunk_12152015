@@ -31,7 +31,7 @@ import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.descriptor.repo.VcsConfiguration;
-import org.artifactory.descriptor.repo.VcsGitProvider;
+import org.artifactory.descriptor.repo.vcs.VcsGitProvider;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpBubble;
 import org.artifactory.webapp.wicket.page.config.SchemaHelpModel;
 

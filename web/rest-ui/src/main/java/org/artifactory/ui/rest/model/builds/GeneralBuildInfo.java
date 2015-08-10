@@ -23,6 +23,8 @@ public class GeneralBuildInfo extends BaseModel implements RestPaging {
     private String buildStat;
 
 
+    public GeneralBuildInfo() {}
+
     public GeneralBuildInfo(BuildBuilder buildBuilder) {
         this.buildName = buildBuilder.buildName;
         this.lastBuildTime = buildBuilder.lastBuildTime;

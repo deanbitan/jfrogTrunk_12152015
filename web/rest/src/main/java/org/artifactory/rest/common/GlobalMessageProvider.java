@@ -6,6 +6,7 @@ import com.sun.jersey.spi.container.ContainerResponse;
 import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.FooterMessage;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.storage.StorageQuotaInfo;
 import org.artifactory.storage.StorageService;
@@ -31,10 +32,10 @@ public class GlobalMessageProvider {
     private volatile ReentrantLock lock = new ReentrantLock();
 
     public void decorateWithGlobalMessages(ContainerResponse response, AddonsManager addonsManager,
-            StorageService storageService, UserGroupService userGroupService) {
-        boolean admin=userGroupService.currentUser().isAdmin();
-        boolean notAnonymous = !userGroupService.currentUser().isAnonymous();
+            StorageService storageService,AuthorizationService authenticationService) {
         try {
+            boolean admin=authenticationService.isAdmin();
+            boolean notAnonymous = !authenticationService.isAnonymous();
             // Try to update the cache if needed
             triggerCacheUpdateProcessIfNeeded(addonsManager, storageService);
             // update response header with message in cache

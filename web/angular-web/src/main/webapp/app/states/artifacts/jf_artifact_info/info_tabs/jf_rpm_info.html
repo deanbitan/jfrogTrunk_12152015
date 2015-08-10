@@ -14,7 +14,7 @@
         <table class="jf-data-table">
             <tr ng-repeat="(key,value) in jfRpm.rpmData.miscRpmMetadata">
                 <td ng-if="key === 'url'">{{jfRpm.DICTIONARY[key]}}:</td>
-                <td ng-if="key === 'url'"><a href="{{value}}" target="_blank">{{value}}</a></td>
+                <td ng-if="key === 'url'"><a ng-href="{{value}}" target="_blank">{{value}}</a></td>
 
                 <td ng-if="key !== 'url'">{{jfRpm.DICTIONARY[key]}}:</td>
                 <td ng-if="key !== 'url'">{{value}}</td>

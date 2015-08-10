@@ -90,7 +90,7 @@ public class UpdateUserProfileService implements RestService {
         }
         userGroupService.updateUser(mutableUser, !mutableUser.hasSameAuthorizationContext(userInfo));
         AccessLogger.updated("User " + mutableUser.getUsername() + " has updated his profile successfully");
-        artifactoryResponse.info("Profile successfully updated.");
+        artifactoryResponse.info("Successfully updated profile '" + mutableUser.getUsername() + "'");
     }
 
     /**

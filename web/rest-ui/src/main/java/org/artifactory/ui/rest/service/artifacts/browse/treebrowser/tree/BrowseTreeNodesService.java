@@ -31,7 +31,7 @@ public class BrowseTreeNodesService implements RestService {
         // get branch model
         RestTreeNode itemNode = (RestTreeNode) request.getImodel();
         // populate branch items
-        Collection<? extends RestModel> items = populateBranchItems(itemNode, isCompact, props);
+        Collection<? extends RestModel> items = populateBranchItems(itemNode, isCompact, props, request);
         // update response data
         updateResponseData(response, items);
     }
@@ -51,8 +51,10 @@ public class BrowseTreeNodesService implements RestService {
      * populate branch childes
      *
      * @param itemNode - current branch
+     * @param request
      */
-    private Collection<? extends RestModel> populateBranchItems(RestTreeNode itemNode, boolean isCompact, Properties props) {
-        return itemNode.fetchItemTypeData(authService, isCompact, props);
+    private Collection<? extends RestModel> populateBranchItems(RestTreeNode itemNode, boolean isCompact,
+            Properties props, ArtifactoryRestRequest request) {
+        return itemNode.fetchItemTypeData(authService, isCompact, props, request);
     }
 }

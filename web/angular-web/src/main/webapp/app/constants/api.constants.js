@@ -53,7 +53,7 @@ export default {
     "ARTIFACT_SEARCH": "/artifactsearch",
     "DEPENDENCY_DECLARATION": "/dependencydeclaration",
     "ARTIFACT": "/artifact",
-    "FOOTER":"/screen/footer",
+    "FOOTER":"/auth/screen/footer",
     "VIEWS":"/views",
     "CROWD":"/crowd",
     "EXPORT": "/artifactexport",

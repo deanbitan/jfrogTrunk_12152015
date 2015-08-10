@@ -8,8 +8,8 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
-import org.artifactory.descriptor.repo.VcsGitProvider;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.vcs.VcsGitProvider;
 import org.artifactory.ui.rest.model.admin.configuration.propertysets.PropertySetNameModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.AdvancedRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.BasicRepositoryConfigModel;
@@ -287,6 +287,8 @@ public class RepoConfigValidator {
                 DockerTypeSpecificConfigModel docker = (DockerTypeSpecificConfigModel) model;
                 docker.setDockerApiVersion(
                         Optional.ofNullable(docker.getDockerApiVersion()).orElse(DEFAULT_DOCKER_API_VER));
+                docker.setForceDockerAuthentication(
+                        Optional.ofNullable(docker.isForceDockerAuthentication()).orElse(DEFAULT_FORCE_DOCKER_AUTH));
                 break;
             case NuGet:
                 NugetTypeSpecificConfigModel nuget = (NugetTypeSpecificConfigModel) model;
@@ -326,7 +328,11 @@ public class RepoConfigValidator {
             case Docker:
                 DockerTypeSpecificConfigModel docker = (DockerTypeSpecificConfigModel) model;
                 docker.setEnableTokenAuthentication(
-                        Optional.ofNullable(docker.getEnableTokenAuthentication()).orElse(DEFAULT_TOKEN_AUTH));
+                        Optional.ofNullable(docker.isEnableTokenAuthentication()).orElse(DEFAULT_TOKEN_AUTH));
+                docker.setForceDockerAuthentication(
+                        Optional.ofNullable(docker.isForceDockerAuthentication()).orElse(DEFAULT_FORCE_DOCKER_AUTH));
+                docker.setListRemoteFolderItems(Optional.ofNullable(docker.isListRemoteFolderItems())
+                        .orElse(DEFAULT_LIST_REMOTE_ITEMS_UNSUPPORTED_TYPE));
                 break;
             case Bower:
                 BowerTypeSpecificConfigModel bower = (BowerTypeSpecificConfigModel) model;
@@ -362,6 +368,16 @@ public class RepoConfigValidator {
             case Generic:
                 GenericTypeSpecificConfigModel generic = (GenericTypeSpecificConfigModel) model;
                 generic.setListRemoteFolderItems(Optional.ofNullable(generic.isListRemoteFolderItems())
+                        .orElse(DEFAULT_LIST_REMOTE_ITEMS_SUPPORTED_TYPE));
+                break;
+            case Gems:
+                GemsTypeSpecificConfigModel gems = (GemsTypeSpecificConfigModel) model;
+                gems.setListRemoteFolderItems(Optional.ofNullable(gems.isListRemoteFolderItems())
+                        .orElse(DEFAULT_LIST_REMOTE_ITEMS_SUPPORTED_TYPE));
+                break;
+            case Pypi:
+                PypiTypeSpecificConfigModel pypi = (PypiTypeSpecificConfigModel) model;
+                pypi.setListRemoteFolderItems(Optional.ofNullable(pypi.isListRemoteFolderItems())
                         .orElse(DEFAULT_LIST_REMOTE_ITEMS_SUPPORTED_TYPE));
                 break;
             case Vagrant:

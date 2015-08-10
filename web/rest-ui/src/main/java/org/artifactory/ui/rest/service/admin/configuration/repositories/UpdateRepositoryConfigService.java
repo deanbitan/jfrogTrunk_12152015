@@ -37,17 +37,17 @@ public class UpdateRepositoryConfigService implements RestService<RepositoryConf
         log.debug("Creating descriptor from received model");
         String repoKey = model.getGeneral().getRepoKey();
         if (!configDescriptor.isRepositoryExists(repoKey)) {
-            response.error("Repository " + repoKey + " doesn't exist.").responseCode(HttpStatus.SC_BAD_REQUEST);
+            response.error("Repository '" + repoKey + "' doesn't exist.").responseCode(HttpStatus.SC_BAD_REQUEST);
             return;
         }
         log.info("Updating repository {}", repoKey);
         try {
             model.updateRepo(updater);
-            response.info("Repository updated successfully");
+            response.info("Successfully updated repository '" + repoKey + "'");
         } catch (Exception e) {
             log.error("Failed to update repository {}: {}", repoKey, e.getMessage());
             log.debug("Failed to update repository: ", e);
-            response.error("Failed to update repository " + repoKey + ": " + e.getMessage());
+            response.error("Failed to update repository '" + repoKey + "'");
         }
     }
 }

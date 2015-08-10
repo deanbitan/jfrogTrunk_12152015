@@ -59,10 +59,10 @@ public class SetLicensesOnPathService implements RestService {
             log.debug("Request sent with empty license set - deleting license properties from path {}", path);
             propertiesService.deleteProperty(path, LicensesAddon.LICENSES_PROP_FULL_NAME);
             propertiesService.deleteProperty(path, LicensesAddon.LICENSES_UNKNOWN_PROP_FULL_NAME);
-            response.info("License information successfully updated");
+            response.info("Successfully updated License information");
         } else {
             if (licensesAddon.setLicensePropsOnPath(path, newLicenses)) {
-                response.info("License information successfully updated");
+                response.info("Successfully updated License information");
             } else {
                 response.error("Failed to update license information - check the log for more information")
                         .responseCode(HttpStatus.SC_BAD_REQUEST);

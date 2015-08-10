@@ -44,7 +44,7 @@ public abstract class AqlAdapter {
     public static Criteria createSimplePropertyCriteria(List<AqlDomainEnum> subDomains, AqlFieldEnum aqlField,
             String name2,
             AqlComparatorEnum comparatorEnum, AdapterContext context) {
-        Pair<AqlVariable, AqlVariable> variables = new Pair(new AqlField(aqlField), new AqlValue(aqlField.type, name2));
+        Pair<AqlVariable, AqlVariable> variables = new Pair<>(new AqlField(aqlField), new AqlValue(aqlField.type, name2));
         Pair<SqlTable, SqlTable> tables = resolveTableForSimpleCriteria(variables, context);
         return new SimplePropertyCriteria(subDomains, variables.getFirst(), tables.getFirst(), comparatorEnum.signature,
                 variables.getSecond(), tables.getSecond());
@@ -61,7 +61,7 @@ public abstract class AqlAdapter {
             AdapterContext tableReference) {
         AqlVariable variable1 = AqlFieldResolver.resolve(name1, AqlVariableTypeEnum.string);
         AqlVariable variable2 = AqlFieldResolver.resolve(name2, AqlVariableTypeEnum.string);
-        Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(tableReference);
+        Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(tableReference,subDomains);
         return new ComplexPropertyCriteria(subDomains, variable1, tables.getFirst(),
                 comparatorEnum.signature, variable2, tables.getSecond());
     }
@@ -74,7 +74,7 @@ public abstract class AqlAdapter {
      */
     public static Criteria createSimpleCriteria(List<AqlDomainEnum> subDomains, AqlFieldEnum aqlField, String name2,
             AqlComparatorEnum comparatorEnum, AdapterContext context) {
-        Pair<AqlVariable, AqlVariable> variables = new Pair(new AqlField(aqlField), new AqlValue(aqlField.type, name2));
+        Pair<AqlVariable, AqlVariable> variables = new Pair<>(new AqlField(aqlField), new AqlValue(aqlField.type, name2));
         Pair<SqlTable, SqlTable> tables = resolveTableForSimpleCriteria(variables, context);
         return new SimpleCriteria(subDomains, variables.getFirst(), tables.getFirst(), comparatorEnum.signature,
                 variables.getSecond(), tables.getSecond());
@@ -87,31 +87,29 @@ public abstract class AqlAdapter {
      * 2. if the table is property table then by default generate new table with new alias id to each property table
      * unless the criteria is inside freezeJoin function, and in such case use the table index provided in the
      * join operator
-     *
-     * @param variables
-     * @param context
-     * @return
      */
     public static Pair<SqlTable, SqlTable> resolveTableForSimpleCriteria(Pair<AqlVariable, AqlVariable> variables,
             AdapterContext context) {
         AqlField field = (AqlField) variables.getFirst();
         AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(field.getFieldEnum());
         SqlTableEnum tableEnum = extension.table;
-        if (SqlTableEnum.node_props == tableEnum) {
+        if (SqlTableEnum.node_props == tableEnum || SqlTableEnum.build_props == tableEnum ||
+                SqlTableEnum.module_props == tableEnum) {
             ResultFilterAqlElement resultFieldAqlElement = (ResultFilterAqlElement) getResultFilterOperator(context);
             if (resultFieldAqlElement != null) {
-                SqlTable table = tablesLinksMap.get(SqlTableEnum.node_props).getTable();
+                SqlTable table = tablesLinksMap.get(tableEnum).getTable();
                 return new Pair<>(table, table);
             }
             MspAqlElement propertyAqlElement = (MspAqlElement) getMspOperator(context);
             if (propertyAqlElement == null) {
-                SqlTable table = new SqlTable(SqlTableEnum.node_props, context.provideIndex());
+                SqlTable table = new SqlTable(tableEnum, context.provideIndex());
                 return new Pair<>(table, table);
             }
-            SqlTable table = new SqlTable(SqlTableEnum.node_props, propertyAqlElement.getTableId());
+            SqlTable table = new SqlTable(tableEnum, propertyAqlElement.getTableId());
             return new Pair<>(table, table);
         } else {
-            return new Pair<>(tablesLinksMap.get(tableEnum).getTable(), null);
+            SqlTable table = tablesLinksMap.get(tableEnum).getTable();
+            return new Pair<>(table, table);
         }
     }
 
@@ -120,30 +118,30 @@ public abstract class AqlAdapter {
      * by default generate new table with new alias id to each property table unless the criteria is inside freezeJoin
      * function, and in such case use the table index provided in the
      * join operator
-     *
-     * @param context
-     * @return
      */
-    public static Pair<SqlTable, SqlTable> resolveTableForPropertyCriteria(AdapterContext context) {
+    public static Pair<SqlTable, SqlTable> resolveTableForPropertyCriteria(AdapterContext context,List<AqlDomainEnum> subDomains) {
         ResultFilterAqlElement resultFilterElement = (ResultFilterAqlElement) getResultFilterOperator(context);
         if (resultFilterElement != null) {
-            SqlTable table = tablesLinksMap.get(SqlTableEnum.node_props).getTable();
+            AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size() - 1);
+            AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(aqlDomainEnum.fields[0]);
+            SqlTable table = tablesLinksMap.get(extension.table).getTable();
             return new Pair<>(table, table);
         }
         MspAqlElement propertyAqlElement = (MspAqlElement) getMspOperator(context);
         if (propertyAqlElement == null) {
-            SqlTable table = new SqlTable(SqlTableEnum.node_props, context.provideIndex());
+            AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size() - 1);
+            AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(aqlDomainEnum.fields[0]);
+            SqlTable table = new SqlTable(extension.table, context.provideIndex());
             return new Pair<>(table, table);
         }
-        SqlTable table = new SqlTable(SqlTableEnum.node_props, propertyAqlElement.getTableId());
+        AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size() - 1);
+        AqlFieldExtensionEnum extension = AqlFieldExtensionEnum.getExtensionFor(aqlDomainEnum.fields[0]);
+        SqlTable table = new SqlTable(extension.table, propertyAqlElement.getTableId());
         return new Pair<>(table, table);
     }
 
     /**
      * Scans the context que for leading join operators
-     *
-     * @param context
-     * @return
      */
     protected static AqlQueryElement getMspOperator(AdapterContext context) {
         if (context.getFunctions().isEmpty()) {
@@ -161,9 +159,6 @@ public abstract class AqlAdapter {
 
     /**
      * Scans the context que for leading join operators
-     *
-     * @param context
-     * @return
      */
     protected static AqlQueryElement getResultFilterOperator(AdapterContext context) {
         if (context.getFunctions().isEmpty()) {
@@ -181,9 +176,6 @@ public abstract class AqlAdapter {
 
     /**
      * Scans the context que for leading or/and operators
-     *
-     * @param context
-     * @return
      */
     protected static AqlQueryElement getOperator(AdapterContext context) {
         if (context.getFunctions().isEmpty()) {
@@ -201,8 +193,6 @@ public abstract class AqlAdapter {
 
     /**
      * Adds operator to the AqlQuery if needed
-     *
-     * @param context
      */
     protected static void addOperatorToAqlQueryElements(AdapterContext context) {
         List<AqlQueryElement> currentAqlQueryElments = context.getAqlQueryElements();
@@ -216,8 +206,6 @@ public abstract class AqlAdapter {
     /**
      * This is ugly hack that force AQL ITEMS queries to return (by default) on files by
      * Injecting extra  (type=file) filter to the query.
-     *
-     * @param context
      */
     protected void injectDefaultValues(AdapterContext context) {
         AqlQuery aqlQuery = context.getAqlQuery();
@@ -250,9 +238,6 @@ public abstract class AqlAdapter {
 
     /**
      * Adds criteria to the AqlQuery and its leading operator if needed
-     *
-     * @param context
-     * @param criteria
      */
     protected void addCriteria(AdapterContext context, Criteria criteria) {
         addOperatorToAqlQueryElements(context);

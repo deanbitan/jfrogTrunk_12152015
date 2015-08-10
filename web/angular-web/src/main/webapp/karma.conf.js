@@ -36,7 +36,7 @@ module.exports = function (config) {
         junitReporter: {
             outputDir: 'test_results'
         },
-        reporters: ['dots'],
+        reporters: ['progress'],
         port: 9876,
         colors: true,
         logLevel: config.LOG_INFO,
@@ -48,7 +48,7 @@ module.exports = function (config) {
         },
 
         browserDisconnectTimeout: 20000,
-        browserDisconnectTolerance: 1,
+        browserDisconnectTolerance: 3,
         browserNoActivityTimeout: 60000,        
 
         // define browsers

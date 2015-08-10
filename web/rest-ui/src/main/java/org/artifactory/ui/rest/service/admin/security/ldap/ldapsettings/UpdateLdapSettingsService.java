@@ -50,7 +50,7 @@ public class UpdateLdapSettingsService implements RestService {
                 ldapSettings.set(indexOfLdapSetting, ldapSetting);
             }
             centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-            response.info("LDAP '" + ldapSetting.getKey() + "' successfully updated.");
+            response.info("Successfully updated LDAP settings '" + ldapSetting.getKey() + "'");
         }
     }
 }

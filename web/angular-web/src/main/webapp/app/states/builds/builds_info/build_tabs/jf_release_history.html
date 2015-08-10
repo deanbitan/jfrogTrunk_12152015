@@ -6,7 +6,7 @@
             <tr ng-repeat="(key,value) in history" ng-if="jfReleaseHistory.DICTIONARY[key]">
                 <td>{{jfReleaseHistory.DICTIONARY[key]}}:</td>
                 <td ng-if="key === 'url'">
-                    <a href="{{value}}"
+                    <a ng-href="{{value}}"
                        target="_blank">{{value}}</a>
                 </td>
                 <td ng-if="key !== 'url'">

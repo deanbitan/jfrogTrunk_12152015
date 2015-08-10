@@ -30,7 +30,7 @@ public class UpdateProxyService implements RestService {
         // update proxy
         updateProxy(proxyDescriptor, proxyKey);
         // update response feedback
-        response.info("Proxy '" + proxyKey + "' successfully updated.");
+        response.info("Successfully updated proxy '" + proxyKey + "'");
     }
 
     /**

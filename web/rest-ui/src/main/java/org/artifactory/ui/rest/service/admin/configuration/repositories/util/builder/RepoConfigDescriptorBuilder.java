@@ -222,6 +222,7 @@ public class RepoConfigDescriptorBuilder {
             case Docker:
                 DockerTypeSpecificConfigModel docker = (DockerTypeSpecificConfigModel) type;
                 descriptor.setDockerApiVersion(docker.getDockerApiVersion().toString());
+                descriptor.setForceDockerAuthentication(docker.isForceDockerAuthentication());
                 break;
             case Debian:
                 DebTypeSpecificConfigModel deb = (DebTypeSpecificConfigModel) type;
@@ -261,14 +262,18 @@ public class RepoConfigDescriptorBuilder {
             case Bower:
                 BowerTypeSpecificConfigModel bower = (BowerTypeSpecificConfigModel) type;
                 buildAndSetBowerConfig(descriptor, bower);
+                descriptor.setListRemoteFolderItems(bower.isListRemoteFolderItems());
                 break;
             case VCS:
                 VcsTypeSpecificConfigModel vcs = (VcsTypeSpecificConfigModel) type;
                 buildAndSetVcsConfig(descriptor, vcs);
+                descriptor.setListRemoteFolderItems(vcs.isListRemoteFolderItems());
                 break;
             case Docker:
                 DockerTypeSpecificConfigModel docker = (DockerTypeSpecificConfigModel) type;
-                descriptor.setEnableTokenAuthentication(docker.getEnableTokenAuthentication());
+                descriptor.setEnableTokenAuthentication(docker.isEnableTokenAuthentication());
+                descriptor.setForceDockerAuthentication(docker.isForceDockerAuthentication());
+                descriptor.setListRemoteFolderItems(docker.isListRemoteFolderItems());
                 break;
             case Debian:
                 DebTypeSpecificConfigModel deb = (DebTypeSpecificConfigModel) type;
@@ -290,6 +295,14 @@ public class RepoConfigDescriptorBuilder {
             case Npm:
                 NpmTypeSpecificConfigModel npm = (NpmTypeSpecificConfigModel) type;
                 descriptor.setListRemoteFolderItems(npm.isListRemoteFolderItems());
+                break;
+            case Gems:
+                GemsTypeSpecificConfigModel gems = (GemsTypeSpecificConfigModel) type;
+                descriptor.setListRemoteFolderItems(gems.isListRemoteFolderItems());
+                break;
+            case Pypi:
+                PypiTypeSpecificConfigModel pypi = (PypiTypeSpecificConfigModel) type;
+                descriptor.setListRemoteFolderItems(pypi.isListRemoteFolderItems());
                 break;
         }
     }

@@ -36,7 +36,7 @@ public class DeleteGroupService<T extends DeleteGroupsModel> implements RestServ
         if(model.getGroupNames().size()>1){
             response.info("Successfully removed "+model.getGroupNames().size()+" groups");
         }else if(model.getGroupNames().size()==1){
-            response.info("Group " + model.getGroupNames().get(0) + " successfully removed");
+            response.info("Successfully removed group '" + model.getGroupNames().get(0) + "'");
         }
     }
 }

@@ -29,7 +29,7 @@ public class UpdateGeneralConfigService implements RestService {
         GeneralConfig generalConfig = (GeneralConfig) request.getImodel();
         // update general setting and set config descriptor
         updateDescriptorAndSave(generalConfig);
-        response.info("Settings successfully updated.");
+        response.info("Successfully updated settings");
     }
 
     /**

@@ -1,3 +1,4 @@
+
 // For debugging only:
 window._aolSimulate = function (value) {
     localStorage._aol = value ? "true" : "false";
@@ -37,6 +38,11 @@ export const FEATURES = {
         license: 'PRO',
         label: 'Properties',
         path: 'properties'
+    },
+    'builds': {
+        license: 'PRO',
+        label: 'Builds',
+        path: 'build'
     },
 
     'watches': {
@@ -185,8 +191,7 @@ export const HIDDEN_AOL_FEATURES = [
     'configdescriptor',
     'securitydescriptor',
     'system',
-    'mail',
-    'repositories'
+    'mail'
 ];
 
 // Features that are hidden for AOL

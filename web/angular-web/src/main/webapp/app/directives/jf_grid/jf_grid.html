@@ -1,7 +1,11 @@
 <div class="grid-container" ng-if="gridOptions.data">
     <div class="wrapper-grid-actions">
+
+        <div ng-if="!noCount" class="grid-counter">{{ getTotalRecords() }}</div>
+
         <div ng-if="filterField" class="filter-group">
             <jf-grid-filter
+                    auto-focus="{{autoFocus}}"
                     filter-grid="gridOptions"
                     filter-field="{{ filterField }}"
                     filter-field2="{{ filterField2 }}"
@@ -9,7 +13,8 @@
             </jf-grid-filter>
         </div>
 
-        <jf-grid-pagination grid-api="gridOptions.api"
+        <jf-grid-pagination ng-show="!noPagination"
+                            grid-api="gridOptions.api"
                             class="pull-right">
         </jf-grid-pagination>
 

@@ -133,6 +133,16 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isForceDockerAuthentication() {
+        return remoteRepo.isForceDockerAuthentication();
+    }
+
+    @Override
+    public void setForceDockerAuthentication(boolean forceDockerAuthentication) {
+        remoteRepo.setForceDockerAuthentication(forceDockerAuthentication);
+    }
+
+    @Override
     public boolean identicalCache(RepoDescriptor oldDescriptor) {
         if (!(oldDescriptor instanceof LocalCacheRepoDescriptor)) {
             return false;

@@ -58,11 +58,11 @@ public class CreatePropertyService implements RestService {
                 propsService.addProperty(repoPath, propertiesTab.getParent(), propertiesTab.getProperty(),
                         propertiesTab.getSelectedValues());
             }
-            artifactoryResponse.info("Property " + propertiesTab.getProperty().getName() + " successfully created");
+            artifactoryResponse.info("Successfully created property '" + propertiesTab.getProperty().getName() + "'");
             artifactoryResponse.responseCode(HttpServletResponse.SC_CREATED);
         } catch (CancelException e) {
             log.error("Failed to create property:" + propertiesTab.getProperty().getName());
-            artifactoryResponse.error("Property " + propertiesTab.getProperty().getName() + " failed to create");
+            artifactoryResponse.error("Failed to created property '" + propertiesTab.getProperty().getName() + "'");
         }
     }
 }

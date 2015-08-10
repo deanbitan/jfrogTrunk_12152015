@@ -45,6 +45,7 @@
                                 ng-if="Search.repoList"
                                 exclude-list="Search.repoList"
                                 include-list="Search.query.selectedRepositories"
+                                objects-name="Repositories"
                                 include-display-field="repoKey"
                                 exclude-display-field="repoKey"
                                 headers="{leftTitle:'Available Repositories', rightTitle:'Selected Repositories'}">
@@ -59,7 +60,8 @@
 
             <jf-grid
                     grid-options="Search.gridOptions"
-                    filter-field="name">
+                    filter-field="name"
+                    no-count>
             </jf-grid>
         </div>
     </div>

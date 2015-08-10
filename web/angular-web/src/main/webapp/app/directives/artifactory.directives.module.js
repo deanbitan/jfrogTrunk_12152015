@@ -41,6 +41,7 @@ import {jfHideForAol} from './jf_hide_for_aol/jf_hide_for_aol';
 import {jfFileDrop} from './jf_file_drop/jf_file_drop';
 import {jfAutoComplete} from './jf_auto_complete/jf_auto_complete';
 import {jfTooltipOnOverflow} from './jf_tooltip_on_overflow/jf_tooltip_on_overflow';
+import {jfClipCopy} from './jf_clip_copy/jf_clip_copy';
 
 // custom field validators
 import {jfValidation}   from './jf_validation/jf_validation';
@@ -57,7 +58,7 @@ import {jfRepokeyValidator}   from './jf_repokey_validator/jf_repokey_validtaor'
 import {jfValidatorDateFormat}   from './validators/jf_validator_date_format';
 
 
-angular.module('artifactory.directives', ['artifactory.services', 'searchTabs'])
+angular.module('artifactory.directives', ['artifactory.services', 'searchTabs', 'ui.select', 'ngSanitize', 'ui.highlight'])
     .directive({
         'jfAccordion': jfAccordion,
         'jfCode': jfCode,
@@ -112,5 +113,6 @@ angular.module('artifactory.directives', ['artifactory.services', 'searchTabs'])
         'jfHideForAol': jfHideForAol,
         'jfFileDrop': jfFileDrop,
         'jfAutoComplete': jfAutoComplete,
-        'jfTooltipOnOverflow': jfTooltipOnOverflow
+        'jfTooltipOnOverflow': jfTooltipOnOverflow,
+        'jfClipCopy': jfClipCopy
     });

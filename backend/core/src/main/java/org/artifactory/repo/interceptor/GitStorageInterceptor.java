@@ -10,7 +10,7 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.VcsConfiguration;
-import org.artifactory.descriptor.repo.VcsType;
+import org.artifactory.descriptor.repo.vcs.VcsType;
 import org.artifactory.md.Properties;
 import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.repo.InternalRepoPathFactory;

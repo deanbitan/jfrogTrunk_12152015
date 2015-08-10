@@ -4,11 +4,13 @@ import ICONS from '../constants/artifact_browser_icons.constant';
 import FIELD_OPTIONS from '../../../constants/field_options.constats';
 
 export class ArtifactsController {
-    constructor($scope, $stateParams, $state, $sce, ArtifactoryEventBus, ArtifactoryModal, ArtifactoryState, User,
+    constructor($scope, $stateParams, $state, $sce, ArtifactoryEventBus, ArtifactoryModal, ArtifactoryState, User, ArtifactDeployDao,
             SetMeUpDao, ArtifactoryFeatures, parseUrl) {
+
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.stateParams = $stateParams;
         this.setMeUpDao = SetMeUpDao;
+        this.artifactDeployDao = ArtifactDeployDao;
         this.$state = $state;
         this.$scope = $scope;
         this.modal = ArtifactoryModal;
@@ -23,7 +25,7 @@ export class ArtifactsController {
         this.artifactoryState = ArtifactoryState;
         this.tooltips = TOOLTIPS;
         this.icons = ICONS;
-        this.$sce = $sce
+        this.$sce = $sce;
         this.initEvent();
         this.repoPackageTypes = FIELD_OPTIONS.repoPackageTypes.slice(0);//make a copy
 
@@ -67,10 +69,19 @@ export class ArtifactsController {
     openDeploy() {
         this.initDeployScope();
         this.modalInstance = this.modal.launchModal('deploy_modal', this.deployScope);
+        this.modalInstance.result.finally(()=>{
+            if (this.deployScope.comm.needToCancel) {
+                this._cancelUploadedFile(this.deployScope.deployController.deployFile.fileName);
+            }
+        });
     }
 
     deploy() {
         this.artifactoryEventBus.dispatch(EVENTS.DEPLOY_FILES, {toDeploy:true ,onSuccess: this.modalInstance.close.bind(this)});
+    }
+
+    _cancelUploadedFile(fileName) {
+        this.artifactDeployDao.cancelUpload({fileName: fileName});
     }
 
     initEvent() {
@@ -80,15 +91,21 @@ export class ArtifactsController {
 
     initDeployScope() {
         this.deployScope = this.$scope.$new();
-        this.deployScope.close = ()=>this.modalInstance.close();
+
+        this.deployScope.close = ()=> this.modalInstance.close();
         this.deployScope.title = "Deploy";
         this.deployScope.node = this.node;
         this.deployScope.comm = {
             setController: (controller) => {
                 this.deployScope.deployController = controller;
-            }
+            },
+            needToCancel: false,
+            cancelUploadedFile: (fileName)=>this._cancelUploadedFile(fileName)
+        };
+        this.deployScope.deploy=()=> {
+            this.deployScope.comm.needToCancel = false;
+            this.deploy();
         }
-        this.deployScope.deploy=()=> this.deploy();
     }
 
     initSetMeUpScope() {
@@ -182,16 +199,14 @@ export class ArtifactsController {
                 general: {
                     title: "Using Docker with Artifactory requires a reverse proxy such as Nginx or Apache. For more details please visit our <a href=\"http://www.jfrog.com/confluence/display/RTF/Docker+Repositories#DockerRepositories-RequirementforaReverseProxy(Nginx/Apache)\">documentation</a>."
                 },
-                read:[{
+                read: [{
                     before: "Execute docker pull from the endpoint URL.<br>" + "For example, to pull from server named " + "<b>artprod.company.com</b> that is behind Nginx or Apache:",
                     snippet: "docker pull artprod.company.com/<DOCKER_REPOSITORY>:<DOCKER_TAG>"
                 }],
-                deploy: [
-                {
+                deploy: [{
                     before: "Execute \"docker push\" from the endpoint URL.<br>" + "For example, to push to a server named " + "<b>artprod.company.com</b> that is behind Nginx or Apache:",
                     snippet: "docker tag ubuntu artprod.company.com/<DOCKER_REPOSITORY>:<DOCKER_TAG>"
-                },
-                {
+                }, {
                     snippet: "docker push artprod.company.com/<DOCKER_REPOSITORY>:<DOCKER_TAG>"
                 }]
             },
@@ -212,14 +227,12 @@ export class ArtifactsController {
                     before: "If you are using Artifactory Online the URL would be:",
                     snippet: "https://<SERVER_NAME>.artifactoryonline.com/<SERVER_NAME>/api/nuget/$1",
                     after: "This URL handles all NuGet related requests (search, download, upload, delete) and supports both V1 and V2 requests of the NuGet API.<br />"
-                },{
-                    before: "<b>Visual Studio Configuration</b><br/>" +
-                            "To configure the NuGet Visual Studio Extension to use Artifactory, you need to add Artifactory as another Package Source under NuGet Package Manager.<br />  1. Access the corresponding repositories in the \"Options\" window (Options | Tools) and select to add another Package Source.<br />" +
-                            "Name: ENTER_RESOUCE_NAME (e.g. Artifactory NuGet repository)<br />  2. Paste the snippet below in the URL field",
+                }, {
+                    before: "<b>Visual Studio Configuration</b><br/>" + "To configure the NuGet Visual Studio Extension to use Artifactory, you need to add Artifactory as another Package Source under NuGet Package Manager.<br />  1. Access the corresponding repositories in the \"Options\" window (Options | Tools) and select to add another Package Source.<br />" + "Name: ENTER_RESOUCE_NAME (e.g. Artifactory NuGet repository)<br />  2. Paste the snippet below in the URL field",
                     snippet: "$2/api/nuget/$1",
                     after: " 3. Make sure it is checked."
 
-                 }],
+                }],
                 deploy: [{
                     before: "To support more manageable layouts and additional features such as cleanup, NuGet repositories support custom layouts. When pushing a package, you need to ensure that its layout matches the target repository’s layout.",
                     snippet: "nuget push <PACKAGE> -Source $2/api/nuget/$1/<PATH_TO_FOLDER>"
@@ -243,74 +256,79 @@ export class ArtifactsController {
                 }
             },
             npm: {
-                read: [{
+                general: [{
+                    title: "In order for your npm command line client to work with Artifactory you will firstly need to set the relevant authentication. For getting authentication details run the following command:",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> $2/api/npm/auth"
+                }, {
+                    before: "The response should be pasted in the <i>~/.npmrc</i> (in Windows %USERPROFILE%/<i>.npmrc</i>) file. Here is an example of the content of the file",
+                    snippet: "_auth = <USERNAME>:<API_KEY> (converted to base 64)\n" + "email = youremail@email.com\n" + "always-auth = true"
+                }, {
+                    before: "Artifactory also support scoped packages. For getting authentication details run the following command:",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> \"$2/api/npm/$1/auth/<SCOPE>\""
+                }, {
+                    before: "The response should be pasted in the <i>~/.npmrc</i> (in Windows %USERPROFILE%/<i>.npmrc</i>) file. Here is an example of the content of the file",
+                    snippet: "@<SCOPE>:registry=$2/api/npm/$1/\n" + "//$4/api/npm/$1/:_password=<API_KEY>\n" + "//$4/api/npm/$1/:username=<USER_NAME>\n" + "//$4/api/npm/$1/:email=email@domain.com\n" + "//$4api/npm/$1/:always-auth=true\n"
+                }, {
                     before: "Run the following command to replace the default npm registry with an Artifactory repository",
                     snippet: "npm config set registry $2/api/npm/$1"
                 }, {
-                    before: "The npm command line tool requires that sensitive operations, such as publish, are authenticated with the server using basic HTTP authentication.\n            For getting authentication details run the following command:",
-                    snippet: "curl -u<USERNAME>:<API_KEY> http://127.0.0.1:8080/artifactory/api/npm/auth"
+                    before: "For scoped package run the following command",
+                    snippet: "npm config set @<SCOPE>:regitrsy $2/api/npm/$1"
+                }],
+                read: [{
+                    before: "After adding Artifactory as the default repository you can install a package using the npm install command",
+                    snippet: "npm install package-name"
                 }, {
-                    before: "To support authentication you need to edit your <i>.npmrc</i> file and enter the following:",
-                    snippet: "_auth = <API_KEY> \n" + "email = youremail@email.com\n" + "always-auth = true"
-                },{
-                    before: "To install a package from an Artifactory repository using the npm install command",
+                    before: "To install a package by specifying Artifactory repository use the following npm command",
                     snippet: "npm install package-name --registry $2/api/npm/$1"
                 }],
                 deploy: [{
                     before: "To deploy your package to an Artifactory repository you can either add the following to the <i>package.json</i> file",
                     snippet: "\"publishConfig\":{\"registry\":\"$2/api/npm/$1\"}"
-                },
-                {
+                }, {
+                    before: "And then you can simple run the default npm publish command",
+                    snippet: "npm publish"
+                }, {
                     before: "Or provide the local repository to the npm publish command",
-                    snippet: "npm publish --registry $2/api/npm/$1",
-                    after: "Make sure you have added authentication credentials to your <i>.npmrc</i> file (see Resolve settings below)"
-                }]
+                    snippet: "npm publish --registry $2/api/npm/$1" }]
             },
             gems: {
                 general: [{
                     title: "For your gem client to upload and download Gems from this repository you need to add it to your <i>~/.gemrc</i> file using the following command:",
-                    snippet: "gem source -a http://<USERNAME>:<API_KEY>@$4/artifactory/api/gems/$1/",
-                },
-                {
+                    snippet: "gem source -a http://<USERNAME>:<API_KEY>@$4/artifactory/api/gems/$1/"
+                }, {
                     before: "If anonymous access is enabled you can also use the following:",
-                    snippet: "gem source -a $2/api/gems/$1/",
+                    snippet: "gem source -a $2/api/gems/$1/"
 
-                },
-                {
+                }, {
                     before: "To view a list of your effective sources and their order of resolution, run the following command:",
                     snippet: "gem source --list",
                     after: "Make sure that this repository is at the top of the list."
 
-                },
-                {
+                }, {
                     before: "If you want to setup the credentials for your gem tool either include your API_KEY in the <i>~/.gem/credentials</i> file, or run the following command:",
-                    snippet: "curl $2/api/gems/$1/api/v1/api_key.yaml -u <USERNAME>:<API_KEY> > ~/.gem/credentials"
-                },
-                {
+                    snippet: "curl $2/api/gems/$1/api/v1/api_key.yaml -u<USERNAME>:<API_KEY> > ~/.gem/credentials"
+                }, {
                     before: "<b>Running on Linux</b> <br/> On Linux you may need to change the permissions of the credentials file to 600 by navigating to <i>~/.gem</i> directory and running:",
                     snippet: "chmod 600 credentials"
-                },
-                {
+                }, {
                     before: "<b>Running on Windows</b> <br/> On Windows, the credentials file is located at <i>%USERPROFILE%/.gem/credentials</i>. Note that you also need to set the API key encoding to be \"ASCII\". For example:",
                     snippet: "curl $2/api/gems/$1/api/v1/api_key.yaml | Out-File <i>~/.gem/credentials</i> -Encoding \"ASCII\""
-                },
-                {
+                }, {
                     before: "<b>API keys</b> <br/> You can modify the credentials file manually and add different API keys. You can then use the command below to choose the relevant API key.",
                     snippet: "gem push -k <KEY>"
                 }],
-                deploy:[{
+                deploy: [{
                     before: "In order to push gems to this repository, you can set the global variable $RUBYGEMS_HOST to point to it as follows:",
                     snippet: "export RUBYGEMS_HOST=$2/api/gems/$1"
-                },
-                {
+                }, {
                     before: "You can also specify the target repository when pushing the gem by using the --source option:",
                     snippet: "gem push <PACKAGE> --source $2/api/gems/$1"
                 }],
-                read:[{
+                read: [{
                     before: "After completing the configuration under General section above, simply execute the following command:",
                     snippet: "gem install <PACKAGE>"
-                },
-                {
+                }, {
                     before: "The package  will be resolved from the repository configured in your <i>~/.gemrc</i> file. You can also specify a source with the following command:",
                     snippet: "gem install <PACKAGE> --source $2/api/gems/$1"
                 }]
@@ -322,7 +340,7 @@ export class ArtifactsController {
                 },
                 deploy: {
                     before: "You can upload any file using the following command:",
-                    snippet: "curl -u<USERNAME>:<API_KEY> -T <PATH_TO_FILE> \"$2/$1/<TARGET_FILE_PATH>\""
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -T <PATH_TO_FILE> \"$2/$1/<TARGET_FILE_PATH>\""
                 }
             },
             vagrant: {
@@ -332,33 +350,32 @@ export class ArtifactsController {
                 },
                 deploy: {
                     before: "To deploy Vagrant boxes to this Artifactory repository using an explicit URL with Matrix Parameters use:",
-                    snippet: "curl -u<USERNAME>:<API_KEY> -T <PATH_TO_FILE> \"$2/$1/{vagrantBoxName.box};box_name={name};box_provider={provider};box_version={version}\""
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -T <PATH_TO_FILE> \"$2/$1/{vagrantBoxName.box};box_name={name};box_provider={provider};box_version={version}\""
                 }
             },
             vcs: {
                 general: {
                     title: "Artifactory supports downloading tags or branches using a simple GET request. You can also specify to download a specific tag or branch as a tar.gz or zip, and a specific file within a tag or branch as a zip file."
                 },
-                read:[
-                    {
-                        before: "Use the following command to cache a branch",
-                        snippet: "curl -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/tags/$1/<USERR_ORG>/<REPO>"
-                    },{
-                        before: "Use the following command to cache a branchs",
-                        snippet: "curl -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/branches/$1/<USERR_ORG>/<REPO>"
-                    },{
-                        before: "Use the following command to cache a tag (you can specify if the package will be downloaded as a tar.gz or a zip, default is tar.gz)",
-                        snippet: "curl -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadTag/$1/<USER_ORG>/<REPO>/<TAG_NAME>?ext=<tar.gz/zip>"
-                    },{
-                        before: "Use the following command to download a file within a tag as a zip",
-                        snippet: "curl -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadTag/$1/<USER_ORG>/<REPO>/<TAG_NAME>!<PATH_TO_FILE>?ext=zip"
-                    },{
-                        before: "Use the following command to download a branch (specify tar.gz or a zip, by adding a parameter in the url default is tar.gz) Downloading can be executed conditionally according to properties by specifying the <a href=\"http://www.jfrog.com/confluence/display/RTF/Controlling+Artifact+Resolution+with+Properties\">properties query param</a>. In this case only cached artifacts are searched.",
-                        snippet: "curl -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadBranche/$1/<USER_ORG>/<REPO>/<BRANCH_NAME>?ext=<tar.gz/zip>[&properties=key=value]"
-                    },{
-                        before: "Use the following command to download a file within a branch as a zip",
-                        snippet: "curl -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadBranch/$1/<USER_ORG>/<REPO>/<TAG_NAME>!<PATH_TO_FILE>?ext=zip"
-                    }]
+                read: [{
+                    before: "Use the following command to list all tags",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/tags/$1/<USERR_ORG>/<REPO>"
+                }, {
+                    before: "Use the following command to list all branches",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/branches/$1/<USERR_ORG>/<REPO>"
+                }, {
+                    before: "Use the following command to download a tag (you can specify if the package will be downloaded as a tar.gz or a zip, default is tar.gz)",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadTag/$1/<USER_ORG>/<REPO>/<TAG_NAME>?ext=<tar.gz/zip>"
+                }, {
+                    before: "Use the following command to download a file within a tag as a zip",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadTag/$1/<USER_ORG>/<REPO>/<TAG_NAME>!<PATH_TO_FILE>?ext=zip"
+                }, {
+                    before: "Use the following command to download a branch (specify tar.gz or a zip, by adding a parameter in the url default is tar.gz) Downloading can be executed conditionally according to properties by specifying the <a href=\"http://www.jfrog.com/confluence/display/RTF/Controlling+Artifact+Resolution+with+Properties\">properties query param</a>. In this case only cached artifacts are searched.",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadBranch/$1/<USER_ORG>/<REPO>/<BRANCH_NAME>?ext=<tar.gz/zip>[&properties=key=value]"
+                }, {
+                    before: "Use the following command to download a file within a branch as a zip",
+                    snippet: "curl -i -u<USERNAME>:<API_KEY> -XGET $2/api/vcs/downloadBranch/$1/<USER_ORG>/<REPO>/<BRANCH_NAME>!<PATH_TO_FILE>?ext=zip"
+                }]
             },
             yum: {
                 read: [{
@@ -382,8 +399,8 @@ export class ArtifactsController {
                     after: "You can add this setting to the <i>/usr/local/etc/sbtopts</i> file"
                 }],
                 read: {
-                        before: "Add the following to your <i>build.sbt</i> file",
-                        snippet: "resolvers += \n" + "\"Artifactory\" at \"$2/$1/\""
+                    before: "Add the following to your <i>build.sbt</i> file",
+                    snippet: "resolvers += \n" + "\"Artifactory\" at \"$2/$1/\""
                 },
                 deploy: [{
                     before: "To publish <b>releases</b> add the following to your build.sbt",
@@ -448,7 +465,7 @@ export class ArtifactsController {
         }
 
         this.setMeUpScope.getGradleProps = function () {
-            let scope = this.me()
+            let scope = this.me();
             return JSON.stringify({
                 pluginRepoKey: scope.selection.gradle.pluginResolver,
                 libsResolverRepoKey: scope.selection.gradle.libsResolver,
@@ -824,7 +841,8 @@ export class ArtifactsController {
 
             // Select the repo according to current node
             for (var i = 0; i < this.setMeUpScope.reposAndTypes.length; i++) {
-                if (this.setMeUpScope.reposAndTypes[i].text.toLowerCase() == this.setMeUpScope.node.text.toLowerCase()) {
+                if (this.setMeUpScope.reposAndTypes[i].text.toLowerCase() == this.setMeUpScope.node.text.toLowerCase() ||
+                        this.setMeUpScope.reposAndTypes[i].text.concat("-cache").toLowerCase() == this.setMeUpScope.node.text.toLowerCase()) {
                     this.setMeUpScope.selection.repo = this.setMeUpScope.reposAndTypes[i]
                     this.setMeUpScope.resolveSnippet()
                     break

@@ -21,9 +21,6 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
 
     /**
      * Converts Aql (Api) into SqlQuery
-     *
-     * @param AqlBase
-     * @return
      */
     public AqlQuery toAqlModel(AqlBase AqlBase) {
         // Initialize the context
@@ -93,8 +90,8 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         // Converts AqlBase propertyCriteriaClause into real PropertyCriteria
         AqlVariable variable1 = AqlFieldResolver.resolve(element.getString1(), AqlVariableTypeEnum.string);
         AqlVariable variable2 = AqlFieldResolver.resolve(element.getString2(), AqlVariableTypeEnum.string);
-        Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(context);
         List<AqlDomainEnum> subDomains = element.getSubDomains();
+        Pair<SqlTable, SqlTable> tables = resolveTableForPropertyCriteria(context, subDomains);
         Criteria criteria = new ComplexPropertyCriteria(subDomains, variable1, tables.getFirst(),
                 element.getComparator().signature,
                 variable2, tables.getSecond());

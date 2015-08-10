@@ -1,9 +1,9 @@
 <jf-panel jf-panel-heading="Ivy Content"
           ng-if="jfIvyView.ivyViewData.fileContent">
 
-    <a clip-copy="jfIvyView.ivyViewData.fileContent"
-       jf-tooltip="Copy to Clipboard"
-       class="copy-to-clip code-mirror-copy icon icon-copy-to-clipboard"></a>
+    <jf-clip-copy text-to-copy="jfIvyView.ivyViewData.fileContent"
+                  class="code-mirror-copy"
+                  object-name="Content"></jf-clip-copy>
 
     <jf-code-mirror mime-type="text/xml"
                     model="jfIvyView.ivyViewData.fileContent">

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.time.LocalDate;
 
 /**
@@ -36,7 +37,7 @@ public class GetFooterService implements RestService {
         String versionInfo = getVersionInfo();
         String versionID = getVersionID(versionInfo);
         Footer footer = new Footer(getFooterLicenseInfo(), versionInfo, getCopyrights(), getCopyRightsUrl(),
-                getBuildNum(), isAol(), isGlobalRepoEnabled(), versionID);
+                getBuildNum(), isAol(), isGlobalRepoEnabled(), versionID, isUserLogo(), getLogoUrl(), getServer());
         response.iModel(footer);
     }
 
@@ -135,5 +136,38 @@ public class GetFooterService implements RestService {
      */
     private String getCopyRightsUrl() {
         return "http://www.jfrog.com";
+    }
+
+    /**
+     * check if user logo exist
+     *
+     * @return true if user logo exist
+     */
+    private boolean isUserLogo() {
+        String logoDir = ContextHelper.get().getArtifactoryHome().getLogoDir().getAbsolutePath();
+        File sourceFile = new File(logoDir, "logo");
+        boolean fileExist = sourceFile.canRead();
+        if (fileExist) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * return logo url link
+     *
+     * @return
+     */
+    private String getLogoUrl() {
+        return centralConfigService.getDescriptor().getLogo();
+    }
+
+    /**
+     * return logo url link
+     *
+     * @return
+     */
+    private String getServer() {
+        return centralConfigService.getDescriptor().getServerName();
     }
 }

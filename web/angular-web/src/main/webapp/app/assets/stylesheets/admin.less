@@ -424,10 +424,11 @@
   margin-right: 10px;
 
   a {
-    cursor: pointer;
+    float: left;
     color: @grayFontGeneral;
-    margin-left: 18px;
+    margin-left: 20px;
     font-size: 16px;
+    cursor: pointer;
 
     &:hover {
       text-decoration: none;
@@ -435,10 +436,9 @@
     }
 
     .grid-button-icon {
+      float: left;
       font-size: 18px;
-      position: relative;
-      top: 1px;
-      margin-right: 8px;
+      margin: -1px 8px 0 0;
     }
 
     &[disabled] {

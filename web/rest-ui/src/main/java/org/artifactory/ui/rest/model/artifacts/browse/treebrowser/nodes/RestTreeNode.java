@@ -1,12 +1,13 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes;
 
-import java.util.Collection;
-
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.md.Properties;
 import org.artifactory.rest.common.model.RestModel;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.codehaus.jackson.annotate.JsonSubTypes;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
+
+import java.util.Collection;
 
 /**
  * @author Chen Keinan
@@ -23,15 +24,18 @@ public interface RestTreeNode extends RestModel {
     /**
      * update additional tree data
      */
-    Collection<? extends RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact, Properties props);
+    Collection<? extends RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact,
+            Properties props, ArtifactoryRestRequest request);
 
     /**
      * get node child's by authorization service service
      *
      * @param authService - authorization service
+     * @param request
      * @return list for tee nodes
      */
-    Collection<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact);
+    Collection<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request);
 
 
 }

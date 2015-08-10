@@ -25,7 +25,7 @@ public class UpdateBintrayUIService implements RestService {
         // update bintray setting
         updateBintraySetting(request);
         //send feedback msg
-        response.info("Bintray setting successfully updated.");
+        response.info("Successfully updated Bintray settings");
     }
 
     /**

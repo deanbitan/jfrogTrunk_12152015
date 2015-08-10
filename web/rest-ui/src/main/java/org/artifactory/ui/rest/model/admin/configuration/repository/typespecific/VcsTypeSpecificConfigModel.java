@@ -1,8 +1,8 @@
 package org.artifactory.ui.rest.model.admin.configuration.repository.typespecific;
 
 import org.artifactory.descriptor.repo.RepoType;
-import org.artifactory.descriptor.repo.VcsGitProvider;
-import org.artifactory.descriptor.repo.VcsType;
+import org.artifactory.descriptor.repo.vcs.VcsGitProvider;
+import org.artifactory.descriptor.repo.vcs.VcsType;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues;
 import org.codehaus.jackson.annotate.JsonIgnore;

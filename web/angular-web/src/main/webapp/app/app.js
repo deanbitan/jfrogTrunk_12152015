@@ -10,6 +10,11 @@ if (!String.prototype.endsWith) {
         return this.substr(this.length - str.length,str.length)===str;
     }
 }
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function (str) {
+        return this.substr(0, str.length)===str;
+    }
+}
 
 /**
  * providers configurations

@@ -54,6 +54,8 @@ public enum AqlFieldExtensionEnum {
     buildArtifactMd5(AqlFieldEnum.buildArtifactMd5, build_artifacts, md5, false),
     buildPropertyKey(AqlFieldEnum.buildPropertyKey, build_props, prop_key, false),
     buildPropertyValue(AqlFieldEnum.buildPropertyValue, build_props, prop_value, false),
+    modulePropertyKey(AqlFieldEnum.modulePropertyKey, module_props,prop_key,false),
+    modulePropertyValue(AqlFieldEnum.modulePropertyValue, module_props,prop_value,false),
     buildUrl(AqlFieldEnum.buildUrl, builds, ci_url, false),
     buildName(AqlFieldEnum.buildName, builds, build_name, false),
     buildNumber(AqlFieldEnum.buildNumber, builds, build_number, false),

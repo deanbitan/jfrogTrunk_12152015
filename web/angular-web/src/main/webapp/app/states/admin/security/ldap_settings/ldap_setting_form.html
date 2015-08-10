@@ -46,6 +46,7 @@
                                            ng-model="LdapSettingForm.ldap.ldapUrl"
                                            name="ldapURL"
                                            class="input-text"
+                                           placeholder="e.g. ldap://myserver:myport/dc=sampledomain,dc=com"
                                            required>
                                 </jf-field>
                             </div>
@@ -70,7 +71,8 @@
                                            type="text"
                                            ng-model="LdapSettingForm.ldap.userDnPattern"
                                            name="dnPattern"
-                                           class="input-text">
+                                           class="input-text"
+                                            placeholder="e.g. uid={0},ou=People">
                                 </jf-field>
                             </div>
                         </div>

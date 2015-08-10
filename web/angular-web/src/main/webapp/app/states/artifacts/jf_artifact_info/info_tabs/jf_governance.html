@@ -13,10 +13,10 @@
                 <td>
                     <span ng-switch="key">
                         <span ng-switch-when="name">
-                            <a href="{{jfGovernance.governanceData.info.componentLink}}" target="_blank">{{value}}</a>
+                            <a ng-href="{{jfGovernance.governanceData.info.componentLink}}" target="_blank">{{value}}</a>
                         </span>
                         <span ng-switch-when="homepage">
-                            <a href="{{value}}" target="_blank">{{value}}</a>
+                            <a ng-href="{{value}}" target="_blank">{{value}}</a>
                         </span>
                         <span ng-switch-when="description">
                             {{value}}

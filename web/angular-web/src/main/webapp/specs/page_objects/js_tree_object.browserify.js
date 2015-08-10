@@ -1,8 +1,10 @@
 'use strict';
 function JsTreeObject(jsTreeElement) {
-  this.jstree = jsTreeElement.jstree();
+  this.jstree = function() {
+    return $('.jstree').jstree();
+  }
   this.getNode = function(node) {
-    return this.jstree.get_node(node);
+    return this.jstree().get_node(node);
   };
   
   this.expandFirstItem = function() {
@@ -15,11 +17,11 @@ function JsTreeObject(jsTreeElement) {
 
   this.getNodeWithText = function(text) {
     return _.find($('.jstree-anchor'), function(el) {
-      return $(el).text() === text;
+      return $(el).text().match(new RegExp(text));
     });
   };
   this.getRootItem = function() {
-    return this.jstree.get_node('#');
+    return this.jstree().get_node('#');
   }
 }
 module.exports = JsTreeObject;

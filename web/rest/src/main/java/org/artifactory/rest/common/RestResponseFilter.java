@@ -22,10 +22,12 @@ import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerResponse;
 import com.sun.jersey.spi.container.ContainerResponseFilter;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.rest.ErrorResponse;
 import org.artifactory.rest.util.AuthUtils;
 import org.artifactory.storage.StorageService;
+import org.artifactory.util.PathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -64,7 +66,7 @@ public class RestResponseFilter implements ContainerResponseFilter {
     private StorageService storageService;
 
     @Autowired
-    private UserGroupService userGroupService;
+    private AuthorizationService authenticationService;
 
     private GlobalMessageProvider messageProvider;
 
@@ -76,7 +78,10 @@ public class RestResponseFilter implements ContainerResponseFilter {
     public ContainerResponse filter(ContainerRequest request, ContainerResponse response) {
         int status = response.getStatus();
         // add message to response headers
-        messageProvider.decorateWithGlobalMessages(response,addonsManager,storageService,userGroupService);
+        String baseUrl = PathUtils.trimTrailingSlashes(request.getBaseUri().getPath());
+        if(baseUrl.endsWith("ui")) {
+            messageProvider.decorateWithGlobalMessages(response, addonsManager, storageService, authenticationService);
+        }
         AuthUtils.addSessionStatusToHeaders(response, uriInfo, this.request);
         if (status >= 400) {
             Object entity = response.getEntity();

@@ -5,12 +5,16 @@
             <ul class="list-unstyled">
                 <li class="inline-block package-type"
                     ng-class="{typeValidation: !RepositoryForm.repoInfo.typeSpecific.repoType, 'not-clickable': !RepositoryForm.newRepository}"
-                    ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()">
+                    ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()"
+                    id="local-repository-package-type-button">
                     <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType">No Type</span>
+
                     <div ng-if="RepositoryForm.repoInfo.typeSpecific.repoType"
                          class="repotype iconrepo iconrepo-{{RepositoryForm.repoInfo.typeSpecific.repoType.toLowerCase()}}">
                     </div>
-                    <div class="repotitle" ng-if="RepositoryForm.repoInfo.typeSpecific.repoType">{{ RepositoryForm.repoInfo.typeSpecific.repoType }}</div>
+                    <div class="repotitle" ng-if="RepositoryForm.repoInfo.typeSpecific.repoType">{{
+                        RepositoryForm.repoInfo.typeSpecific.repoType }}
+                    </div>
                 </li>
             </ul>
             <input class="hidden"
@@ -18,7 +22,8 @@
                    name="repoType"
                    required
                    ng-change="RepositoryForm.setRepoLayout()"/>
-            <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen" class="repository-error">You must a specify package type</span>
+            <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen"
+                  class="repository-error">You must specify a package type</span>
         </div>
 
         <div class="form-group">
@@ -36,7 +41,7 @@
                            ng-model-options="{debounce: { 'default': 500 } }"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                    <div ng-message-exp="'repoKeyValidator'">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
+                    <div ng-message-exp="'repoKeyValidator'" id="local-repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                 </ng-messages>
             </div>
             <div class="form-group-cell"
@@ -64,12 +69,14 @@
                             <jf-field>
                                 <label>Repository Layout</label>
                                 <ui-select ng-model="RepositoryForm.repoInfo.basic.layout">
-                                    <ui-select-match placeholder="Select Repository Layout...">
+                                    <ui-select-match placeholder="Select Repository Layout..."
+                                                     id="local-repository-layout-dropdown">
                                         {{$select.selected}}
                                     </ui-select-match>
                                     <ui-select-choices
                                             repeat="item in RepositoryForm.repositoryLayouts | filter: $select.search track by $index">
-                                        <div ng-bind-html="item | highlight: $select.search"></div>
+                                        <div ng-bind-html="item | highlight: $select.search"
+                                             id="local-repository-layout-item"></div>
                                     </ui-select-choices>
                                 </ui-select>
                             </jf-field>
@@ -83,7 +90,8 @@
                               class="input-text"
                               name="publicDescription"
                               cols="5"
-                              ng-model="RepositoryForm.repoInfo.basic.publicDescription">
+                              ng-model="RepositoryForm.repoInfo.basic.publicDescription"
+                              id="local-repository-public-description-textarea">
                     </textarea>
                             </jf-field>
                         </div>
@@ -94,29 +102,34 @@
                               class="input-text"
                               name="internalDescription"
                               ng-model="RepositoryForm.repoInfo.basic.internalDescription"
-                              cols="5"></textarea>
+                              cols="5"
+                              id="local-repository-internal-description-textarea"></textarea>
                             </jf-field>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-group-cell">
                             <jf-field>
-                                <label>Includes Pattern</label>
-                                <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.includesPattern"></jf-help-tooltip>
+                                <label>Include Patterns</label>
+                                <jf-help-tooltip
+                                        html="RepositoryForm.TOOLTIP.localForm.includesPattern"></jf-help-tooltip>
                     <textarea type="text"
                               class="input-text"
                               name="includesPattern"
                               ng-model="RepositoryForm.repoInfo.basic.includesPattern"
-                              cols="5"></textarea>
+                              cols="5"
+                              id="local-repository-include-pattern-textarea"></textarea>
                             </jf-field>
                         </div>
                         <div class="form-group-cell">
                             <jf-field>
-                                <label>Excludes Pattern</label>
-                                <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.excludedPattern"></jf-help-tooltip>
+                                <label>Exclude Patterns</label>
+                                <jf-help-tooltip
+                                        html="RepositoryForm.TOOLTIP.localForm.excludedPattern"></jf-help-tooltip>
                     <textarea type="text" class="input-text" name="excludesPattern"
                               ng-model="RepositoryForm.repoInfo.basic.excludesPattern"
-                              cols="5"></textarea>
+                              cols="5"
+                              id="local-repository-exclude-pattern-textarea"></textarea>
                             </jf-field>
                         </div>
                     </div>
@@ -165,7 +178,8 @@
                             <div class="form-group-cell">
                                 <jf-field>
                                     <label for="maxUniqueSnapshots">Max Unique Snapshots</label>
-                                    <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.maxUniqueSnapshots"></jf-help-tooltip>
+                                    <jf-help-tooltip
+                                            html="RepositoryForm.TOOLTIP.localForm.maxUniqueSnapshots"></jf-help-tooltip>
                                     <input type="text"
                                            class="input-text"
                                            id="maxUniqueSnapshots"
@@ -246,7 +260,8 @@
                                            id="trivialLayout"
                                            ng-model="RepositoryForm.repoInfo.typeSpecific.trivialLayout">
                                 </jf-checkbox>
-                                <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.trivialLayout"></jf-help-tooltip>
+                                <jf-help-tooltip
+                                        html="RepositoryForm.TOOLTIP.localForm.trivialLayout"></jf-help-tooltip>
                             </div>
                         </div>
                     </jf-panel>
@@ -267,6 +282,12 @@
                                     <label for="v2" class="input-label-weight">V2</label>
                                 </li>
                             </ul>
+                            <jf-checkbox text="Force Authentication">
+                                <input type="checkbox"
+                                       id="forceDockerAuth"
+                                       ng-model="RepositoryForm.repoInfo.typeSpecific.forceDockerAuthentication">
+                            </jf-checkbox>
+                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.forceDockerAuth"></jf-help-tooltip>
                         </div>
                     </jf-panel>
                 </div>
@@ -276,7 +297,8 @@
                             <div class="form-group-cell">
                                 <jf-field>
                                     <label>Max Unique Snapshots</label>
-                                    <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.maxUniqueSnapshots"></jf-help-tooltip>
+                                    <jf-help-tooltip
+                                            html="RepositoryForm.TOOLTIP.localForm.maxUniqueSnapshots"></jf-help-tooltip>
                                     <input type="text"
                                            class="input-text"
                                            name="maxUniqueSnapshots"
@@ -297,16 +319,17 @@
                 <!-- Cron expression is required only if there are replications -->
                 <jf-field validations="common" autofocus="RepositoryForm.isCurrentTab('replications')">
                     <label class="mandatory">Cron Expression</label>
-                    <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.cronExpressionReplication"></jf-help-tooltip>
+                    <jf-help-tooltip
+                            html="RepositoryForm.TOOLTIP.localForm.cronExpressionReplication"></jf-help-tooltip>
                     <input
-                           type="text"
-                           class="input-text"
-                           name="cronExp"
-                           ng-required="RepositoryForm.repoInfo.replications.length"
-                           jf-validator-cron
-                           jf-validator-cron-is-replication="true"
-                           ng-model-options="{debounce: { 'default': 500 } }"
-                           ng-model="RepositoryForm.repoInfo.cronExp"/>
+                            type="text"
+                            class="input-text"
+                            name="cronExp"
+                            ng-required="RepositoryForm.repoInfo.replications.length"
+                            jf-validator-cron
+                            jf-validator-cron-is-replication="true"
+                            ng-model-options="{debounce: { 'default': 500 } }"
+                            ng-model="RepositoryForm.repoInfo.cronExp"/>
                 </jf-field>
             </div>
             <div class="form-group-cell cron-wrapper">
@@ -357,6 +380,7 @@
                                   exclude-list="RepositoryForm.propertiesList"
                                   include-display-field="name"
                                   exclude-display-field="name"
+                                  objects-name="Property Sets"
                                   headers="{leftTitle:'Available',
       rightTitle:'Selected'}"></jf-drag-drop>
 

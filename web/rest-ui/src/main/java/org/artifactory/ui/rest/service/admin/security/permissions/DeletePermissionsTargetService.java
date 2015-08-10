@@ -38,7 +38,7 @@ public class DeletePermissionsTargetService<T extends DeletePermissionTargetMode
         if(model.getPermissionTargetNames().size() > 1) {
             response.info("Successfully removed "+model.getPermissionTargetNames().size()+" permission targets");
         }else if(model.getPermissionTargetNames().size()==1){
-            response.info("Permission target " + model.getPermissionTargetNames().get(0) + " successfully removed");
+            response.info("Successfully removed permission target '" + model.getPermissionTargetNames().get(0) + "'");
         }
     }
 }

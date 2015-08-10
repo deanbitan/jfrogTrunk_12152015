@@ -7,6 +7,7 @@ export function jfDragDrop() {
             excludeList: '=',
             includeDisplayField: '@',
             excludeDisplayField: '@',
+            objectsName: '@',
             headers: '=',
             onChange: '&',
             disabled: '@'
@@ -53,7 +54,6 @@ class jfDragDropController {
         this.$timeout = $timeout;
         this.draggedObject = null;
         this.PLACEHOLDER = {'@@@DNDPH@@@': '@@@DNDPH@@@'};
-        this.MAX_SHOWN_ADDITIONALS = 5;
 
         this.disabled = $attrs.hasOwnProperty('disabled');
         this.selectedItems = [];
@@ -365,14 +365,12 @@ class jfDragDropController {
 
 
     _dragStart(event,ui) {
-
         let dragObj=this._objectFromElement(event.target);
 
         if (this.disabled || (dragObj.draggedFrom === this.includeList && _.isObject(dragObj.dataObject) && dragObj.dataObject["__fixed__"])) {
             event.preventDefault();
             return;
         }
-
         this._initDragObject(dragObj);
 
         this._initDragHelper(ui.helper);
@@ -418,34 +416,21 @@ class jfDragDropController {
 
             this._clearSelectedItems();
 
-
-            let count = 0;
-            this.draggedObject.additionals.forEach((selected)=>{
-                let elem=this._elementFromObject(selected);
-                if (elem) {
-                    count++;
-                    if (count < this.MAX_SHOWN_ADDITIONALS) {
-                        this.draggedObject.helper.append('<div>' + elem.html() + '</div>');
-                        let elemXicon = this.draggedObject.helper.find('.delete-drop-item');
-                        if (elemXicon) elemXicon.remove();
-                    }
-                    else if (count === this.MAX_SHOWN_ADDITIONALS){
-                        let moreCount = this.draggedObject.additionals.length-this.MAX_SHOWN_ADDITIONALS+1;
-                        this.draggedObject.helper.append('<div class="dragged-additionals-more">And '+ moreCount +' more item'+(moreCount>1?'s':'')+'...</div>');
-                    }
+            this.$scope.$apply(()=>{
+                this.draggedObject.additionals.forEach((selected)=>{
                     this.draggedObject.draggedFrom.splice(this.draggedObject.draggedFrom.indexOf(selected), 1);
-                    this.$scope.$apply();
+                });
 
-                }
+                if (this.draggedObject.additionals.length > 0)
+                    this.draggedObject.helper.addClass('multiple').html('<span>&equiv;</span>' + (1 + this.draggedObject.additionals.length) + ' ' + (this.objectsName ? this.objectsName : 'Items'));
             });
-
-
         }
     }
 
     _dragStop(event,ui) {
         if (this.draggedObject) {
             let ph = this._removePlaceHolder();
+            //console.log('mouseInExclude: '+this.mouseInExclude, 'mouseInInclude: '+this.mouseInInclude);
             if (this.mouseInExclude || this.mouseInInclude) {
                 let droppedInArray = this.mouseInExclude ? this.excludeList : this.includeList;
 
@@ -479,29 +464,32 @@ class jfDragDropController {
     _undragAdditionals(startIndex) {
         if (this.draggedObject.additionals) {
             let next = startIndex;
-            this.draggedObject.additionals.forEach((additional)=>{
-                if (this.mouseInInclude) {
-                    this.includeList.splice(next,0,additional);
-                }
-                else if (this.mouseInExclude) {
-                    this.excludeList.splice(next,0,additional);
-                }
-                else {
-                    this.draggedObject.draggedFrom.splice(next,0,additional);
-                }
+            this.$scope.$apply(()=>{
+                this.draggedObject.additionals.forEach((additional)=>{
+                    if (this.mouseInInclude) {
+                        this.includeList.splice(next,0,additional);
+                    }
+                    else if (this.mouseInExclude) {
+                        this.excludeList.splice(next,0,additional);
+                    }
+                    else {
+                        this.draggedObject.draggedFrom.splice(next,0,additional);
+                    }
 
-                if (_.isObject(additional)) {
-                    additional["__fixed__"] = undefined;
-                }
-                this.$scope.$apply();
-                this._initDragAndDropOnElement(this._elementFromObject(additional));
-                next++;
+                    if (_.isObject(additional)) {
+                        additional["__fixed__"] = undefined;
+                    }
+                    //                this.$scope.$apply();
+                    this._initDragAndDropOnElement(this._elementFromObject(additional));
+                    next++;
+                });
+
             });
         }
     }
 
     _initDragAndDropOnElement(elem) {
-        if (!elem) return;
+        if (!elem || elem.hasClass('drag-enabled')) return;
         elem.draggable({
             helper: 'clone',
             cursorAt: {left:-5, top:-5},
@@ -509,6 +497,7 @@ class jfDragDropController {
             start: (event, ui) => this._dragStart(event,ui),
             stop: (event, ui) => this._dragStop(event,ui)
         });
+        elem.addClass('drag-enabled');
     }
 
     _objectFromElement(elem) {
@@ -549,12 +538,14 @@ class jfDragDropController {
     }
     mouseIsInInclude(isIn) {
         this.mouseInInclude = isIn;
+        if (this.mouseInInclude) this.mouseInExclude = false;
         if (isIn && this.draggedObject && this.draggedObject.phArray !== this.includeList) {
             this._insertPlaceHolder(this.includeList,this.includeList.length);
         }
     }
     mouseIsInExclude(isIn) {
         this.mouseInExclude = isIn;
+        if (this.mouseInExclude) this.mouseInInclude = false;
         if (isIn && this.draggedObject && this.draggedObject.phArray !== this.excludeList) {
             this._insertPlaceHolder(this.excludeList,this.excludeList.length);
         }
@@ -563,6 +554,7 @@ class jfDragDropController {
     initDragElement(item) {
         this.$timeout(()=>{
             let elem = this._elementFromObject(item);
+
             this._initDragAndDropOnElement(elem);
         });
     }
@@ -580,6 +572,9 @@ class jfDragDropController {
                 this._insertPlaceHolder(array,index);
             }
 
+        }
+        else if (item != null) {
+            this.initDragElement(item);
         }
     }
 

@@ -5,8 +5,6 @@ var JsTreeObject = require('../page_objects/js_tree_object.browserify.js');
 var mockStorage = require('../../mocks/artifactory_storage_mock.browserify.js');
 describe('unit test:jf_tree_browser directive', function () {
   var element,
-    treeElement,
-    searchElement,
     $scope,
     httpBackend,
     RESOURCE,
@@ -32,10 +30,8 @@ describe('unit test:jf_tree_browser directive', function () {
   function compileDirective() {
     $scope = compileHtml('<jf-tree-browser></jf-tree-browser>');
     flush();
-    element = angular.element(document.body).find('jf-tree-browser');
-    treeElement = element.find('#tree-element');
-    jsTreeObject = new JsTreeObject($('.jstree'));
-    searchElement = element.find('.jf-tree-search');
+    element = angular.element(document.body).find('jf-tree-browser')[0];
+    jsTreeObject = new JsTreeObject();
   }
 
   function repo1Item() {
@@ -58,8 +54,6 @@ describe('unit test:jf_tree_browser directive', function () {
 
   it('should show tree', function() {
     expect(element).toBeDefined();
-    expect(treeElement).toBeDefined();
-    expect(searchElement).toBeDefined();
     expect(jsTreeObject.getNodeWithText('repo1')).toBeDefined();
   });
   it('should allow to expand a repo', function() {

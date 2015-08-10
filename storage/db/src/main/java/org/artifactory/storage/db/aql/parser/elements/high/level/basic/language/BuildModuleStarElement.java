@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.storage.db.aql.parser.elements.ParserElement;
 import org.artifactory.storage.db.aql.parser.elements.low.level.InternalNameElement;
+import org.artifactory.storage.db.aql.parser.elements.low.level.InternalSignElement;
 import org.artifactory.storage.db.aql.parser.elements.low.level.LazyParserElement;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class BuildModuleStarElement extends LazyParserElement implements DomainP
         list.add(forward(new InternalNameElement(builds.signatue), dot, buildStar));
         list.add(forward(new InternalNameElement(artifacts.signatue), dot, buildArtifactStar));
         list.add(forward(new InternalNameElement(dependencies.signatue), dot, buildDependenciesStar));
+        list.add(forward(new InternalSignElement("@"), buildModulePropertiesStar));
     }
 
     @Override

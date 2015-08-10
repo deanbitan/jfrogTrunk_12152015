@@ -1,10 +1,7 @@
 package org.artifactory.ui.rest.service.builds.buildsinfo;
 
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.build.ArtifactBuildAddon;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.common.BasicStatusHolder;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.StatusEntry;
@@ -16,6 +13,7 @@ import org.artifactory.ui.rest.model.builds.DeleteBuildsModel;
 import org.artifactory.ui.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -31,6 +29,9 @@ import java.util.List;
 @RolesAllowed({AuthorizationService.ROLE_ADMIN})
 public class DeleteBuildService<T extends DeleteBuildsModel> implements RestService<T> {
     private static final Logger log = LoggerFactory.getLogger(DeleteBuildService.class);
+
+    @Autowired
+    private BuildService buildService;
 
     @Override
     public void execute(ArtifactoryRestRequest<T> request, RestResponse response) {
@@ -57,13 +58,10 @@ public class DeleteBuildService<T extends DeleteBuildsModel> implements RestServ
         String buildName = coordinate.getBuildName();
         String buildNumber = coordinate.getBuildNumber();
         long buildDate = coordinate.getDate();
-        BuildService buildService = ContextHelper.get().beanForType(BuildService.class);
         BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
-        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-        ArtifactBuildAddon artifactBuildAddon = addonsManager.addonByType(ArtifactBuildAddon.class);
         try {
             String buildStarted = DateUtils.formatBuildDate(buildDate);
-            BuildRun buildRun = artifactBuildAddon.getBuildRun(buildName, buildNumber, buildStarted);
+            BuildRun buildRun = buildService.getBuildRun(buildName, buildNumber, buildStarted);
             buildService.deleteBuild(buildRun, false, multiStatusHolder);
             multiStatusHolder.status(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),
                     log);

@@ -24,10 +24,15 @@ export function jfGrid($timeout,$compile) {
             filterField: '@?',
             filterField2: '@?',
             filterOnChange: '@?',
-            noPagination: '@'
+            autoFocus: '@',
+            objectName: '@'
         },
         templateUrl: 'directives/jf_grid/jf_grid.html',
-        link: ($scope, $element) => {
+        link: ($scope, $element, $attrs) => {
+
+            $scope.noCount = $attrs.hasOwnProperty('noCount');
+            $scope.noPagination = $attrs.hasOwnProperty('noPagination');
+
             $($element).on('mouseenter','.ui-grid-cell-contents',(e)=>{
                 let cellItem = $(e.target);
 
@@ -45,8 +50,13 @@ export function jfGrid($timeout,$compile) {
                             });
                             cellItem.tooltipster('show');
                         }
-                        else
+                        else {
                             cellItem.tooltipster('enable');
+
+                            let currentContent = isListTooltip(cellItem) ? formatListContent(cellItemContent) : cellItemContent;
+                            if (cellItem.tooltipster('content') != currentContent)
+                                cellItem.tooltipster('content', currentContent);
+                        }
                     }
                     else if (cellItem.hasClass('tooltipstered'))
                         cellItem.tooltipster('disable');
@@ -58,6 +68,33 @@ export function jfGrid($timeout,$compile) {
             });
 
 
+            $scope.getTotalRecords = () => {
+                let count;
+
+                if (!$scope.gridOptions.api) return 0;
+
+                let visRows = $scope.gridOptions.api.grid.getVisibleRows();
+                let totalRows = $scope.gridOptions.api.grid.rows.length;
+                if (_.findWhere(visRows,{entity:{_emptyRow:true}}))
+                    count = totalRows - 1;
+                else
+                    count = totalRows;
+
+                let recordsName;
+
+                if ($scope.objectName) {
+                    if ($scope.objectName.indexOf('/')>=0) {
+                        let splited = $scope.objectName.split('/');
+                        recordsName = count !== 1 ? splited[1] : splited[0];
+                    }
+                    else
+                        recordsName = count !== 1 ? $scope.objectName + 's' : $scope.objectName;
+                }
+                else
+                    recordsName = count !== 1 ? 'records' : 'record';
+
+                return count + ' ' + _.startCase(recordsName);
+            };
         }
     }
 }

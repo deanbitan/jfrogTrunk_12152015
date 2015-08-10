@@ -41,7 +41,7 @@ public class CreateProxyService implements RestService {
      * @param proxyDescriptor     - proxy descriptor
      */
     private void updateResponse(RestResponse artifactoryResponse, ProxyDescriptor proxyDescriptor) {
-        artifactoryResponse.info("Proxy '" + proxyDescriptor.getKey() + "' successfully created.");
+        artifactoryResponse.info("Successfully created proxy '" + proxyDescriptor.getKey() + "'");
         artifactoryResponse.responseCode(HttpServletResponse.SC_CREATED);
     }
 

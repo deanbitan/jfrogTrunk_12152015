@@ -41,6 +41,7 @@ class jfArtifactInfoController {
         let features = {
             'Watch': 'watches',
             'Properties': 'properties',
+            'Builds': 'builds',
             'BlackDuck': 'blackDuck'
         };
         this.infoTabs.forEach((tab) => {

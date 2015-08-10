@@ -327,7 +327,9 @@
     <!-- Build Snippet -->
     <div class="settings-view" ng-if="snippet">
         <div class="clearfix"></div>
-        <a clip-copy="snippet" jf-tooltip="Copy to Clipboard" class="copy-to-clip code-mirror-copy icon icon-copy-to-clipboard"></a>
+        <jf-clip-copy text-to-copy="snippet"
+                      class="code-mirror-copy"
+                      object-name="Snippet"></jf-clip-copy>
         <jf-code-mirror mime-type="text/xml"
                         model="snippet">
         </jf-code-mirror>
@@ -339,7 +341,10 @@
         <div ng-repeat="snip in generalSnippets">
             <p ng-if="snip.title" ng-bind-html="snip.title"><p>
             <p ng-if="snip.before" ng-bind-html="snip.before"></p>
-            <a ng-if="snip.snippet" clip-copy="snip.snippet" jf-tooltip="Copy to Clipboard" class="copy-to-clip code-mirror-copy icon icon-copy-to-clipboard"></a>
+            <jf-clip-copy ng-if="snip.snippet"
+                          text-to-copy="snip.snippet"
+                          class="code-mirror-copy"
+                          object-name="Snippet"></jf-clip-copy>
             <jf-code-mirror ng-if="snip.snippet" mime-type="text/xml"
                             model="snip.snippet">
             </jf-code-mirror>
@@ -352,7 +357,9 @@
         <label class="snippet">Deploy</label>
         <div ng-repeat="snip in deploySnippets">
             <p ng-if="snip.before" ng-bind-html="snip.before"></p>
-            <a clip-copy="snip.snippet" jf-tooltip="Copy to Clipboard" class="copy-to-clip code-mirror-copy icon icon-copy-to-clipboard"></a>
+            <jf-clip-copy text-to-copy="snip.snippet"
+                          class="code-mirror-copy"
+                          object-name="Snippet"></jf-clip-copy>
             <jf-code-mirror mime-type="text/xml"
                             model="snip.snippet">
             </jf-code-mirror>
@@ -365,7 +372,9 @@
         <label class="snippet">Resolve</label>
         <div ng-repeat="snip in readSnippets">
             <p ng-if="snip.before" ng-bind-html="snip.before"></p>
-            <a clip-copy="snip.snippet" jf-tooltip="Copy to Clipboard" class="copy-to-clip code-mirror-copy icon icon-copy-to-clipboard"></a>
+            <jf-clip-copy text-to-copy="snip.snippet"
+                          class="code-mirror-copy"
+                          object-name="Snippet"></jf-clip-copy>
             <jf-code-mirror mime-type="text/xml"
                             model="snip.snippet">
             </jf-code-mirror>

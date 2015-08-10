@@ -42,7 +42,7 @@ public class DeployArtifactResource extends BaseResource {
 
     @POST
     @Path("cancelupload")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response cancelUploadArtifact(UploadArtifactInfo uploadArtifactInfo)
             throws Exception {

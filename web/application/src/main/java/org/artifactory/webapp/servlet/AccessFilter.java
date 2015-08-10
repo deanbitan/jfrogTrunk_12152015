@@ -303,7 +303,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
             if (authFilter.acceptEntry(request)) {
                 log.debug("Sending request requiring authentication");
                 authFilter.commence(request, response,
-                        new InsufficientAuthenticationException("Authentication is required."));
+                        new InsufficientAuthenticationException("Authentication is required"));
             } else {
                 log.debug("No filter or entry just chain");
                 chain.doFilter(request, response);

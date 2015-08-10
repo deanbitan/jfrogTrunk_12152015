@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <button type="button" class="close" data-dismiss="close" aria-label="Close" ng-click="PropertyForm.closeModal()">
+    <button type="button" class="close" data-dismiss="close" aria-label="Close" ng-click="PropertyForm.cancel()">
         <span aria-hidden="true">&times;</span>
     </button>
     <h4 class="modal-title" class="panel-heading">{{ PropertyForm.isNew && 'New' || 'Edit'}} Property</h4>
@@ -56,38 +56,34 @@
                             ng-change="PropertyForm.errorMessage = null">
                 </jf-field>
             </div>
-            <div class="btn-group">
-                <button type = "button" class="btn btn-small" ng-click="PropertyForm.addValue()">Add</button>
+            <div class="form-group-cell auto-width">
+                <button type="button" class="btn btn-secondary" ng-click="PropertyForm.addValue()">Add</button>
             </div>
         </div>
         <div class="jf-validation" ng-if="propertyForm.propertyType.$error.defaultValues">
             Cannot select multiple default values for the selected type
         </div>
 
-        <div class="form-group" ng-repeat="value in PropertyForm.property.predefinedValues">
-            <div class="form-group-cell form-link auto-width">
-                <jf-checkbox jf-tooltip="Default">
-                    <input id="default_{{$index}}"
-                           type="checkbox"
-                           value="default"
-                           ng-change="PropertyForm.invalidateType()"
-                           ng-model="value.defaultValue"/>
-                </jf-checkbox>
-            </div>
-            <div class="form-group-cell">
-                <input type="text"
-                       class="input-text"
-                       ng-model="value.value">
-            </div>
-            <div class="form-group-cell form-link auto-width">
-                <a href="" class="pull-left" ng-click="PropertyForm.removeValue(value)"><span aria-hidden="true">&times;</span></a>
+        <div id="property-set-list">
+            <div class="property-set-row" ng-repeat="value in PropertyForm.property.predefinedValues">
+                <div>{{value.value}}</div>
+                <div>
+                    <a href="" class="icon icon-clear" ng-click="PropertyForm.removeValue(value)"></a>
+                    <jf-checkbox text="Default">
+                        <input id="default_{{$index}}"
+                               type="checkbox"
+                               value="default"
+                               ng-change="PropertyForm.invalidateType()"
+                               ng-model="value.defaultValue"/>
+                    </jf-checkbox>
+                </div>
             </div>
         </div>
 
         <div class="jf-validation">{{PropertyForm.errorMessage}}</div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="button" ng-click="PropertyForm.closeModal()">Cancel</button>
+        <button class="btn btn-default" type="button" ng-click="PropertyForm.cancel()">Cancel</button>
         <button class="btn btn-primary" type="submit" ng-disabled="!propertyForm.$valid">Save</button>
     </div>
 </form>

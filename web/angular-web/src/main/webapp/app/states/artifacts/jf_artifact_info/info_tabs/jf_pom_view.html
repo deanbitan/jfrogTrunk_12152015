@@ -1,9 +1,9 @@
 <jf-panel jf-panel-heading="POM Content"
           ng-if="jfPomView.pomViewData.fileContent">
 
-    <a clip-copy="jfPomView.pomViewData.fileContent"
-       jf-tooltip="Copy to Clipboard"
-       class="copy-to-clip code-mirror-copy icon icon-copy-to-clipboard"></a>
+    <jf-clip-copy text-to-copy="jfPomView.pomViewData.fileContent"
+                  class="code-mirror-copy"
+                  object-name="Content"></jf-clip-copy>
 
     <jf-code-mirror mime-type="text/xml"
                     height="500px"

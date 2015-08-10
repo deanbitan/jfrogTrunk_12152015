@@ -44,6 +44,7 @@ public class AqlParser {
     public static final StatisticsDomainsElement statisticsDomains = new StatisticsDomainsElement();
     public static final BuildDomainsElement buildDomains = new BuildDomainsElement();
     public static final BuildPropertyDomainsElement buildPropertiesDomains = new BuildPropertyDomainsElement();
+    public static final BuildModulePropertyDomainsElement buildModulePropertiesDomains = new BuildModulePropertyDomainsElement();
     public static final BuildModuleDomainsElement buildModuleDomains = new BuildModuleDomainsElement();
     public static final BuildDependenciesDomainsElement buildDependenciesDomains = new BuildDependenciesDomainsElement();
     public static final BuildArtifactDomainsElement buildArtifactDomains = new BuildArtifactDomainsElement();
@@ -54,6 +55,7 @@ public class AqlParser {
     public static final StatisticsStarElement statisticsStar = new StatisticsStarElement();
     public static final BuildStarElement buildStar = new BuildStarElement();
     public static final BuildPropertyStarElement buildPropertiesStar = new BuildPropertyStarElement();
+    public static final BuildModulePropertyStarElement buildModulePropertiesStar = new BuildModulePropertyStarElement();
     public static final BuildModuleStarElement buildModuleStar = new BuildModuleStarElement();
     public static final BuildDependenciesStarElement buildDependenciesStar = new BuildDependenciesStarElement();
     public static final BuildArtifactStarElement buildArtifactStar = new BuildArtifactStarElement();
@@ -64,6 +66,7 @@ public class AqlParser {
     public static final StatisticsValuesElement statisticsValues = new StatisticsValuesElement();
     public static final BuildValuesElement buildValues = new BuildValuesElement();
     public static final BuildPropertyValuesElement buildPropertiesValues = new BuildPropertyValuesElement();
+    public static final BuildModulePropertyValuesElement buildModulePropertiesValues = new BuildModulePropertyValuesElement();
     public static final BuildModuleValuesElement buildModuleValues = new BuildModuleValuesElement();
     public static final BuildDependenciesValuesElement buildDependenciesValues = new BuildDependenciesValuesElement();
     public static final BuildArtifactValuesElement buildArtifactValues = new BuildArtifactValuesElement();
@@ -74,6 +77,7 @@ public class AqlParser {
     public static final StatisticsFieldsElement statisticsFields = new StatisticsFieldsElement();
     public static final BuildFieldsElement buildFields = new BuildFieldsElement();
     public static final BuildPropertyFieldsElement buildPropertiesFields = new BuildPropertyFieldsElement();
+    public static final BuildModulePropertyFieldsElement buildModulePropertiesFields = new BuildModulePropertyFieldsElement();
     public static final BuildModuleFieldsElement buildModuleFields = new BuildModuleFieldsElement();
     public static final BuildDependenciesFieldsElement buildDependenciesFields = new BuildDependenciesFieldsElement();
     public static final BuildArtifactFieldsElement buildArtifactFields = new BuildArtifactFieldsElement();

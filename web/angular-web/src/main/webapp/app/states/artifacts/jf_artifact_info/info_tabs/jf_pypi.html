@@ -8,7 +8,7 @@
                 <td ng-if="(key!='license' && key!='homepage') || !jfPyPi.isValidUrl(value)">{{value}}</td>
 
                 <td ng-if="(key==='license' || key==='homepage') && jfPyPi.isValidUrl(value)">{{jfPyPi.DICTIONARY[key]}}:</td>
-                <td ng-if="(key==='license' || key==='homepage') && jfPyPi.isValidUrl(value)"><a href="{{value}}" target="_blank">{{value}}</a></td>
+                <td ng-if="(key==='license' || key==='homepage') && jfPyPi.isValidUrl(value)"><a ng-href="{{value}}" target="_blank">{{value}}</a></td>
             </tr>
         </table>
     </jf-panel>

@@ -106,7 +106,7 @@
                         <div class="form-group">
                             <div class="form-group-cell">
                                 <jf-field>
-                                    <label for="includesPattern">Include Pattern</label>
+                                    <label for="includesPattern">Include Patterns</label>
                                     <jf-help-tooltip html="RepositoryForm.TOOLTIP.virtualForm.includesPattern"></jf-help-tooltip>
                         <textarea type="text"
                                   class="input-text"
@@ -118,12 +118,12 @@
                             </div>
                             <div class="form-group-cell">
                                 <jf-field>
-                                    <label for="excludePattern">Exclude Pattern</label>
+                                    <label for="excludesPattern">Exclude Patterns</label>
                                     <jf-help-tooltip html="RepositoryForm.TOOLTIP.virtualForm.excludedPattern"></jf-help-tooltip>
                         <textarea type="text" class="input-text"
-                                  id="excludePattern"
-                                  name="excludePattern"
-                                  ng-model="RepositoryForm.repoInfo.basic.excludePattern"
+                                  id="excludesPattern"
+                                  name="excludesPattern"
+                                  ng-model="RepositoryForm.repoInfo.basic.excludesPattern"
                                   cols="5"></textarea>
                                 </jf-field>
                             </div>
@@ -139,6 +139,7 @@
                                           exclude-list="RepositoryForm.repositoriesList"
                                           include-display-field="repoName"
                                           exclude-display-field="repoName"
+                                          objects-name="Repositories"
                                           ng-if="RepositoryForm.repositoriesList && RepositoryForm.repoInfo.basic.selectedRepositories"
                                           on-change="VirtualRepository.onchangeRepo()"
                                           headers="{leftTitle:'Available Repositories', rightTitle:'Selected Repositories'}"></jf-drag-drop>

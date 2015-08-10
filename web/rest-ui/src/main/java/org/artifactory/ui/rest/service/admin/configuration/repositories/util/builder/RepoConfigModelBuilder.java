@@ -278,6 +278,7 @@ public class
                 if (dockerApiVersion != null) {
                     dockerType.setDockerApiVersion(dockerApiVersion);
                 }
+                dockerType.setForceDockerAuthentication(descriptor.isForceDockerAuthentication());
                 model = dockerType;
                 break;
             case NuGet:
@@ -363,6 +364,7 @@ public class
             case Docker:
                 DockerTypeSpecificConfigModel dockerType = new DockerTypeSpecificConfigModel();
                 dockerType.setEnableTokenAuthentication(descriptor.isEnableTokenAuthentication());
+                dockerType.setForceDockerAuthentication(descriptor.isForceDockerAuthentication());
                 model = dockerType;
                 break;
             case NuGet:

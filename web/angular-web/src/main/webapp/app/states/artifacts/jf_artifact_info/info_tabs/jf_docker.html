@@ -18,7 +18,7 @@
         <div ng-repeat="(key,value) in jfDocker.dockerData.nugetGeneralInfo"
              class="artifact-file-icon"
              ng-if="key == 'iconUrl'">
-            <img src="{{value}}" alt="logo"/>
+            <img ng-src="{{value}}" alt="logo"/>
         </div>
 
         <table class="jf-data-table">

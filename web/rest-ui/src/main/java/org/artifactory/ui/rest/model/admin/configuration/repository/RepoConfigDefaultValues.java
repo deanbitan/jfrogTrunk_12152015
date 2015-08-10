@@ -5,8 +5,8 @@ import org.artifactory.descriptor.repo.DockerApiVersion;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.SnapshotVersionBehavior;
-import org.artifactory.descriptor.repo.VcsGitProvider;
-import org.artifactory.descriptor.repo.VcsType;
+import org.artifactory.descriptor.repo.vcs.VcsGitProvider;
+import org.artifactory.descriptor.repo.vcs.VcsType;
 
 /**
  * @author Dan Feldman
@@ -61,7 +61,8 @@ public interface RepoConfigDefaultValues {
 
     //docker
     DockerApiVersion DEFAULT_DOCKER_API_VER = DockerApiVersion.V2;
-    boolean DEFAULT_TOKEN_AUTH = false;
+    boolean DEFAULT_TOKEN_AUTH = true;
+    boolean DEFAULT_FORCE_DOCKER_AUTH = false;
 
     //maven / gradle / ivy / sbt
     int DEFAULT_MAX_UNIQUE_SNAPSHOTS = 0;

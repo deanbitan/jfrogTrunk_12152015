@@ -13,10 +13,11 @@ class jfAutoCompleteController {
                 }
             }
         });
-        $($element).autocomplete('widget').css('z-index','9999999999');
-        $($element).autocomplete('widget').css('max-height','400px');
-        $($element).autocomplete('widget').css('overflow-y','auto');
-        $($element).autocomplete('widget').css('overflow-x','hidden');
+        let widget = $($element).autocomplete('widget');
+        widget.css('z-index','9999999999');
+        widget.css('max-height','400px');
+        widget.css('overflow-y','auto');
+        widget.css('overflow-x','hidden');
 
 
         $scope.$watch('uiItems',(newVal,oldVal)=>{

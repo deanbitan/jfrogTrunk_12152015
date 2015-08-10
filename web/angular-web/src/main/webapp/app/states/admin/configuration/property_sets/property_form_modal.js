@@ -1,7 +1,7 @@
 // modal
 let $rootScope;
 let ArtifactoryModal;
-let $q, Property, PropertySet;
+let Property, PropertySet;
 class PropertyFormModal {
     constructor(propertySet, property, isNew) {
         this.scope = $rootScope.$new();
@@ -14,20 +14,17 @@ class PropertyFormModal {
     }
 
     launch() {
-        this.deferred = $q.defer();
         this.modalInstance = ArtifactoryModal.launchModal('property_form_modal', this.scope)
-        return this.deferred.promise;
+        return this.modalInstance.result;
     }
 
     save() {
         angular.copy(this.property, this.originalProperty);
-        this.deferred.resolve();
-        this.closeModal();
+        this.modalInstance.close();
     }
 
-    closeModal() {
-        this.deferred.reject();
-        this.modalInstance.close();
+    cancel() {
+        this.modalInstance.dismiss();
     }
 
     isPropertyUnique(propertyName) {
@@ -84,11 +81,10 @@ class PropertyFormModal {
     }
 }
 
-export function PropertyFormModalFactory(_$rootScope_, _ArtifactoryModal_, _$q_, _Property_, _PropertySet_) {
+export function PropertyFormModalFactory(_$rootScope_, _ArtifactoryModal_, _Property_, _PropertySet_) {
     Property = _Property_;
     PropertySet = _PropertySet_;
     $rootScope = _$rootScope_;
     ArtifactoryModal = _ArtifactoryModal_;
-    $q = _$q_;
     return PropertyFormModal;
 }

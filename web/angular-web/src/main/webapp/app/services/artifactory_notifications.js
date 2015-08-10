@@ -4,8 +4,9 @@
  */
 export class ArtifactoryNotifications {
 
-    constructor(toaster) {
+    constructor(toaster, $timeout) {
         this.toast = toaster;
+        this.$timeout = $timeout;
         this.lastNotification = null;
     }
 
@@ -21,7 +22,7 @@ export class ArtifactoryNotifications {
                 showCloseButton: true
             });
             this.lastNotification = message.info;
-            setTimeout(() => {
+            this.$timeout(() => {
                 this.lastNotification = null
             }, message.timeout || 5000);
             //this.toast.create({animation:'fade',content:message.info});
@@ -38,7 +39,7 @@ export class ArtifactoryNotifications {
                 showCloseButton: true
             });
             this.lastNotification = message.error;
-            setTimeout(() => {
+            this.$timeout(() => {
                 this.lastNotification = null
             }, message.timeout || 5000);
             //this.toast.danger({animation:'fade',content:message.error});
@@ -51,11 +52,10 @@ export class ArtifactoryNotifications {
                 type: 'warning',
                 timeout: message.timeout || 4000,
                 body: message.warn,
-                showCloseButton: true,
-                preventDuplicates: true
+                showCloseButton: true
             });
             this.lastNotification = message.warn;
-            setTimeout(() => {
+            this.$timeout(() => {
                 this.lastNotification = null
             }, message.timeout || 1000);
         }

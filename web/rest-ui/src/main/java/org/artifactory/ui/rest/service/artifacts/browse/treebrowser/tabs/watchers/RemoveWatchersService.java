@@ -29,9 +29,9 @@ public class RemoveWatchersService<T extends DeleteWatchersModel> implements Res
             removeWatcherAndUpdateResponse(response, watcher.getName(), repoPath);
         }
         if(imodel.getWatches().size()>1){
-            response.info("Successfully removed "+imodel.getWatches().size()+" watchers");
+            response.info("Successfully removed " + imodel.getWatches().size() + " watchers");
         }else if(imodel.getWatches().size()==1){
-            response.info("Watcher " + imodel.getWatches().get(0).getName() + " successfully removed");
+            response.info("Successfully removed watcher '" + imodel.getWatches().get(0).getName() + "'");
         }
     }
 

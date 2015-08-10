@@ -37,6 +37,6 @@ public class UpdateIndexerService implements RestService {
         MutableCentralConfigDescriptor configDescriptor = centralConfigService.getMutableDescriptor();
         configDescriptor.setIndexer(indexer.toDescriptor());
         centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-        artifactoryResponse.info("Indexer service settings successfully updated.");
+        artifactoryResponse.info("Successfully updated Indexer service settings");
     }
 }

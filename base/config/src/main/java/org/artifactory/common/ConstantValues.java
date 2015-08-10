@@ -163,6 +163,7 @@ public enum ConstantValues {
     archiveIndexerTaskIntervalSecs("archive.indexer.intervalSecs", 60),
     inMemoryNuGetRemoteCaches("nuget.inMemoryRemoteCaches", TRUE),
     nuGetRequireAuthentication("nuget.forceAuthentication", FALSE),
+    dockerForceAuthentication("docker.forceAuthentication", FALSE),
     haHeartbeatIntervalSecs("ha.heartbeat.intervalSecs", 5),
     haHeartbeatStaleIntervalSecs("ha.heartbeat.staleSecs", 30),
     haMembersIntroductionIntervalSecs("ha.membersIntroduction.intervalSecs", 30),

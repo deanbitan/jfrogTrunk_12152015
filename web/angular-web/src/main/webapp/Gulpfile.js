@@ -19,12 +19,38 @@ var prefixer = require('gulp-autoprefixer');
 var combiner = require('stream-combiner2');
 var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
+var RevAll = require('gulp-rev-all');
+var revReplace = require("gulp-rev-replace");
+
+var rimraf = require('gulp-rimraf');
 
 // default task runs the development tasks seq
 gulp.task('default',['build', 'watch']);
 gulp.task('build',
-        ['webpack', 'templates', 'vendorScripts', 'vendorStyles', 'vendorStylesAssets', 'vendorFonts', 'less', 'copy', 'fonts', 'images']);
+    function() {
+        runSequence(
+            'clean',
+            [
+                'webpack',
+                'templates',
+                'vendorScripts',
+                'vendorStyles',
+                'vendorStylesAssets',
+                'vendorFonts',
+                'less',
+                'copyHtml',
+                'fonts',
+                'images'
+            ],
+            'revreplace'
+        );
+    }
+);
 
+gulp.task('clean', function() { 
+    return gulp.src(CONFIG.DESTINATIONS.TARGET, { read: false })
+        .pipe(rimraf({ force: true }));
+});
 
 // Reload everything:
 gulp.task("reload", reload);
@@ -78,7 +104,7 @@ gulp.task('watch', function () {
     gulp.watch(CONFIG.SOURCES.VENDOR_CSS, sequence(['vendorStyles'], 'reloadCss'));
     gulp.watch(CONFIG.SOURCES.FONTS, sequence('fonts', 'reload'));
     //gulp.watch(CONFIG.SOURCES.MEDIUM_SVG_ICONS, sequence('iconfonts', 'reload'));
-    gulp.watch(CONFIG.SOURCES.INDEX, sequence('copy', 'reload'));
+    gulp.watch(CONFIG.SOURCES.INDEX, sequence('copyHtml', 'reload'));
 });
 
 // install bower dependedencies
@@ -172,9 +198,9 @@ gulp.task('less', function () {
 });
 
 // copy html file to dest
-gulp.task('copy', function () {
+gulp.task('copyHtml', function () {
     return gulp.src(CONFIG.SOURCES.INDEX)
-        .pipe(gulp.dest(CONFIG.DESTINATIONS.INDEX))
+        .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
 });
 
 //copy fonts
@@ -187,4 +213,30 @@ gulp.task('fonts', function () {
 gulp.task('images', function () {
     return gulp.src(CONFIG.SOURCES.IMAGES)
             .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET + '/images'))
+});
+
+function transformFilename(file, hash) {
+    var ext = path.extname(file.path);
+    return path.basename(file.path, ext) + '.' + process.env.BUILD_NUMBER + ext; // 3410c.filename.ext
+}
+
+gulp.task("revision", function(){
+    if (process.env.BUILD_NUMBER) {    
+        var revAll = new RevAll({transformFilename: transformFilename});
+        return gulp.src(CONFIG.DESTINATIONS.TARGET_REV)
+            .pipe(revAll.revision())
+            .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
+            .pipe(revAll.manifestFile())
+            //     .pipe(revDel({ dest: CONFIG.DESTINATIONS.TARGET, force: true }))
+            .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
+    }
+})
+
+gulp.task("revreplace", ['revision'], function() {
+    if (process.env.BUILD_NUMBER) {    
+        var manifest = gulp.src(CONFIG.DESTINATIONS.TARGET + "/rev-manifest.json");
+        return gulp.src(CONFIG.SOURCES.INDEX)
+            .pipe(revReplace({manifest: manifest}))
+            .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET));
+    }
 });

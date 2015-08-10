@@ -55,11 +55,11 @@ public class TestBintrayUIService implements RestService {
             String apiKey = CryptoHelper.decryptIfNeeded(bintrayConfigDescriptor.getApiKey());
             bintrayUser = bintrayService.getBintrayUser(bintrayConfigDescriptor.getUserName(),
                     apiKey, headersMap);
-            artifactoryResponse.info("Successfully authenticated '" + bintrayUser.getFullName() + "' with Bintray.");
+            artifactoryResponse.info("Successfully authenticated '" + bintrayUser.getFullName() + "'");
         } catch (IOException e) {
-            artifactoryResponse.error("Connection failed with exception: " + e.getMessage());
+            artifactoryResponse.error("Authentication failed");
         } catch (BintrayException e) {
-            artifactoryResponse.error("Could not authenticate user: " + e.getStatus() + " " + e.getMessage());
+            artifactoryResponse.error("Authentication failed");
         } catch (IllegalArgumentException e) {
             artifactoryResponse.error(e.getMessage());
         }

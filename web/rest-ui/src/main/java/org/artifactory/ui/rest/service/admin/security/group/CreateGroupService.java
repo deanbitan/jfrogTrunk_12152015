@@ -46,12 +46,12 @@ public class CreateGroupService extends BaseGroupService {
     private void updateResponse(RestResponse restResponse,
             MutableGroupInfo group,boolean created) {
         if (!created) {
-            String errorMsg = "error with creating group:"+group.getGroupName() ;
+            String errorMsg = "Error with creating group: " + group.getGroupName() ;
             restResponse.error(errorMsg);
             return;
         }
         else{
-            restResponse.info("Group '" + group.getGroupName() + "' successfully created");
+            restResponse.info("Successfully created group '" + group.getGroupName() + "'");
             restResponse.responseCode(HttpServletResponse.SC_CREATED);
         }
     }

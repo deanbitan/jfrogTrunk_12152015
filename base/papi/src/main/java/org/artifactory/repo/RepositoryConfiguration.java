@@ -59,6 +59,8 @@ public interface RepositoryConfiguration {
 
     String getDockerApiVersion();
 
+    boolean isForceDockerAuthentication();
+
     boolean isEnableVagrantSupport();
 
     boolean isEnableGitLfsSupport();

@@ -44,7 +44,7 @@ public class CreateRepositoryConfigService implements RestService<RepositoryConf
         MutableCentralConfigDescriptor configDescriptor = configService.getMutableDescriptor();
         String repoKey = model.getGeneral().getRepoKey();
         if (configDescriptor.isRepositoryExists(repoKey)) {
-            response.error("Repository " + repoKey + " already exists.")
+            response.error("Repository " + repoKey + " already exists")
                     .responseCode(HttpStatus.SC_BAD_REQUEST);
             return false;
         }
@@ -53,7 +53,7 @@ public class CreateRepositoryConfigService implements RestService<RepositoryConf
             //Run repo name validation only on create
             repoValidator.validateRepoName(model.getGeneral().getRepoKey());
             model.createRepo(creator);
-            response.info("Repository added successfully");
+            response.info("Successfully added repository '" + repoKey + "'");
         } catch (Exception e) {
             log.error("Failed to create repository {}: {}", repoKey, e.getMessage());
             log.debug("Failed to create repository: ", e);

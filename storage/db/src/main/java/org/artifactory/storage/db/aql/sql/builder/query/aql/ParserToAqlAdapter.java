@@ -19,8 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.artifactory.aql.model.AqlFieldEnum.propertyKey;
-import static org.artifactory.aql.model.AqlFieldEnum.propertyValue;
+import static org.artifactory.aql.model.AqlFieldEnum.*;
 
 /**
  * Converts the parser results into AqlQuery
@@ -176,13 +175,21 @@ public class ParserToAqlAdapter extends AqlAdapter {
      * Special case for properties that allows to  add property key to return specific property
      */
     private void handleIncludePropertyKeyFilter(ParserToAqlAdapterContext context, List<AqlDomainEnum> subDomains) {
-        context.addField(new DomainSensitiveField(AqlFieldEnum.propertyKey, subDomains));
-        context.addField(new DomainSensitiveField(AqlFieldEnum.propertyValue, subDomains));
+        AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size()-1);
+        AqlFieldEnum propKeyField=null;
+        AqlFieldEnum propValueField=null;
+        switch (aqlDomainEnum){
+            case properties:propKeyField=propertyKey;propValueField=propertyValue;break;
+            case moduleProperties:propKeyField=modulePropertyKey;propValueField=modulePropertyValue;break;
+            case buildProperties:propKeyField=buildPropertyKey;propValueField=buildPropertyValue;break;
+        }
+        context.addField(new DomainSensitiveField(propKeyField, subDomains));
+        context.addField(new DomainSensitiveField(propValueField, subDomains));
         String value = context.getElement().getSecond();
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.equals;
         // Only if the user has specify property key to filter then add the filter else just add the fields.
         if (!"*".equals(value)) {
-            Criteria criteria = createSimpleCriteria(subDomains, AqlFieldEnum.propertyKey, value, comparatorEnum,
+            Criteria criteria = createSimpleCriteria(subDomains, propKeyField, value, comparatorEnum,
                     context);
             addCriteria(context, criteria);
         }
@@ -276,7 +283,9 @@ public class ParserToAqlAdapter extends AqlAdapter {
         // Get the criteria second variable
         String variable = resolveVariable(context);
         // Create equals criteria
-        if (AqlFieldEnum.propertyKey == aqlField || AqlFieldEnum.propertyValue == aqlField) {
+        if (AqlFieldEnum.propertyKey == aqlField || AqlFieldEnum.propertyValue == aqlField||
+                AqlFieldEnum.modulePropertyKey == aqlField || AqlFieldEnum.modulePropertyValue == aqlField||
+                AqlFieldEnum.buildPropertyKey == aqlField || AqlFieldEnum.buildPropertyValue == aqlField) {
             Criteria criteria = createSimplePropertyCriteria(subDomain, aqlField, variable, AqlComparatorEnum.equals,
                     context);
             addCriteria(context, criteria);
@@ -302,7 +311,9 @@ public class ParserToAqlAdapter extends AqlAdapter {
         // Get the criteria second variable
         String name2 = resolveVariable(context);
         // Create criteria
-        if (AqlFieldEnum.propertyKey == aqlField || AqlFieldEnum.propertyValue == aqlField) {
+        if (AqlFieldEnum.propertyKey == aqlField || AqlFieldEnum.propertyValue == aqlField||
+                AqlFieldEnum.buildPropertyKey == aqlField || AqlFieldEnum.buildPropertyValue == aqlField||
+                AqlFieldEnum.modulePropertyKey == aqlField || AqlFieldEnum.modulePropertyValue == aqlField) {
             Criteria criteria = createSimplePropertyCriteria(subDomains, aqlField, name2, comparatorEnum, context);
             addCriteria(context, criteria);
         } else {
@@ -354,8 +365,15 @@ public class ParserToAqlAdapter extends AqlAdapter {
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(context.getElement().getSecond());
         // Remove element from parser result elements
         context.decrementIndex(1);
+        AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size()-1);
+        AqlFieldEnum propKeyField=null;
+        switch (aqlDomainEnum){
+            case properties:propKeyField=propertyKey;break;
+            case moduleProperties:propKeyField=modulePropertyKey;break;
+            case buildProperties:propKeyField=buildPropertyKey;break;
+        }
         // Create criteria
-        Criteria criteria = createSimplePropertyCriteria(subDomains, propertyKey, name1, comparatorEnum, context);
+        Criteria criteria = createSimplePropertyCriteria(subDomains, propKeyField, name1, comparatorEnum, context);
         addCriteria(context, criteria);
     }
 
@@ -373,8 +391,15 @@ public class ParserToAqlAdapter extends AqlAdapter {
         context.decrementIndex(1);
         // Get the criteria second variable
         String name2 = context.getElement().getSecond();
+        AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size()-1);
+        AqlFieldEnum propValueField=null;
+        switch (aqlDomainEnum){
+            case properties:propValueField=propertyValue;break;
+            case moduleProperties:propValueField=modulePropertyValue;break;
+            case buildProperties:propValueField=buildPropertyValue;break;
+        }
         // Create criteria
-        Criteria criteria = createSimplePropertyCriteria(subDomains, propertyValue, name2, comparatorEnum, context);
+        Criteria criteria = createSimplePropertyCriteria(subDomains, propValueField, name2, comparatorEnum, context);
         addCriteria(context, criteria);
     }
 
@@ -407,8 +432,15 @@ public class ParserToAqlAdapter extends AqlAdapter {
         String name1 = context.getElement().getSecond();
         // Remove element from parser result elements
         context.decrementIndex(1);
+        AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size()-1);
+        AqlFieldEnum propKeyField=null;
+        switch (aqlDomainEnum){
+            case properties:propKeyField=propertyKey;break;
+            case moduleProperties:propKeyField=modulePropertyKey;break;
+            case buildProperties:propKeyField=buildPropertyKey;break;
+        }
         // Create equals criteria
-        Criteria criteria = createSimplePropertyCriteria(subDomains, propertyKey, name1, AqlComparatorEnum.equals,
+        Criteria criteria = createSimplePropertyCriteria(subDomains, propKeyField, name1, AqlComparatorEnum.equals,
                 context);
         addCriteria(context, criteria);
     }
@@ -424,8 +456,15 @@ public class ParserToAqlAdapter extends AqlAdapter {
         context.decrementIndex(1);
         // Get the criteria second variable
         String name2 = context.getElement().getSecond();
+        AqlDomainEnum aqlDomainEnum = subDomains.get(subDomains.size()-1);
+        AqlFieldEnum propValueField=null;
+        switch (aqlDomainEnum){
+            case properties:propValueField=propertyValue;break;
+            case moduleProperties:propValueField=modulePropertyValue;break;
+            case buildProperties:propValueField=buildPropertyValue;break;
+        }
         // Create equals criteria
-        Criteria criteria = createSimplePropertyCriteria(subDomains, propertyValue, name2, AqlComparatorEnum.equals,
+        Criteria criteria = createSimplePropertyCriteria(subDomains, propValueField, name2, AqlComparatorEnum.equals,
                 context);
         addCriteria(context, criteria);
     }

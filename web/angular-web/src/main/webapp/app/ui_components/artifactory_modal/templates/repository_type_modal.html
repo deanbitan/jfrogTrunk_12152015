@@ -11,6 +11,7 @@
                 class="inline-block package-type"
                 jf-disable-feature="{{ type.value }}"
                 ng-click="selectRepoType(type)"
+                id="repository-select-package-type-{{ type.value }}"
                 ng-mouseover="RepositoryForm.currentDesc = type.description">
                 <div class="repotype iconrepo iconrepo-{{type.value}}"></div>
                 <div class="repotitle">{{ type.text }}</div>

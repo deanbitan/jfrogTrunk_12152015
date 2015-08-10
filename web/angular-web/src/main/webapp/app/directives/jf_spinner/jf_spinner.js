@@ -1,8 +1,9 @@
 import EVENTS from '../../constants/artifacts_events.constants';
 class jfSpinnerController {
 
-    constructor($scope, ArtifactoryEventBus) {
+    constructor($scope, $state, ArtifactoryEventBus) {
         this.$scope = $scope;
+        this.$state = $state;
         this.show = false;
         this.artifactoryEventBus = ArtifactoryEventBus;
 
@@ -15,8 +16,7 @@ class jfSpinnerController {
     }
 
     showSpinner() {
-        this.show = true;
-
+        if ((this.domain === 'body' && this.$state.current.name === 'login') || (this.domain === 'content' && this.$state.current.name !== 'login')) this.show = true;
     }
 
     hideSpinner() {
@@ -30,7 +30,9 @@ export function jfSpinner() {
 
     return {
         restrict: 'E',
-        scope: {},
+        scope: {
+            domain: '@'
+        },
         replace: true,
         controller: jfSpinnerController,
         controllerAs: 'jfSpinner',

@@ -31,6 +31,7 @@ public class SqlQueryBuilder {
         sqlGeneratorMap.put(AqlDomainEnum.artifacts, new BuildArtifactSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.dependencies, new BuildDependenciesSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.modules, new BuildModuleSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.moduleProperties, new BuildModulePropertySqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.buildProperties, new BuildPropertySqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.builds, new BuildSqlGenerator());
     }

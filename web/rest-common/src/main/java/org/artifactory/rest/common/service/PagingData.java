@@ -13,9 +13,11 @@ public class PagingData {
     public PagingData(ArtifactoryRestRequest restRequest) {
         this.orderBy = restRequest.getQueryParamByKey("orderBy");
         limit = restRequest.getQueryParamByKey("numOfRows");
-        int numOfRows = Integer.parseInt(limit);
-        int startRowNumber = ((Integer.parseInt(restRequest.getQueryParamByKey("pageNum")) - 1) * numOfRows);
-        this.startOffset = new Integer(startRowNumber).toString();
+        if (!limit.isEmpty()) {
+            int numOfRows = Integer.parseInt(limit);
+            int startRowNumber = ((Integer.parseInt(restRequest.getQueryParamByKey("pageNum")) - 1) * numOfRows);
+            this.startOffset = new Integer(startRowNumber).toString();
+        }
         this.direction = restRequest.getQueryParamByKey("direction");
     }
 

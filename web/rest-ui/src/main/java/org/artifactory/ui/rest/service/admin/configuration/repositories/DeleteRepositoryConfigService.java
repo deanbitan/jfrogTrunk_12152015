@@ -31,7 +31,7 @@ public class DeleteRepositoryConfigService<T extends RepositoryConfigModel> impl
         MutableCentralConfigDescriptor configDescriptor = centralConfigService.getMutableDescriptor();
         String repoKey = request.getPathParamByKey("repoKey");
         if (!configDescriptor.isRepositoryExists(repoKey)) {
-            response.error("Repository '" + repoKey + "' does not exist.").responseCode(HttpStatus.SC_NOT_FOUND);
+            response.error("Repository '" + repoKey + "' does not exist").responseCode(HttpStatus.SC_NOT_FOUND);
         } else if (configDescriptor.getLocalRepositoriesMap().keySet().contains(repoKey)
                 && configDescriptor.getLocalRepositoriesMap().size() == 1) {
             //Don't allow deleting the last local repo
@@ -41,7 +41,7 @@ public class DeleteRepositoryConfigService<T extends RepositoryConfigModel> impl
                 log.info("Deleting repository {}", repoKey);
                 configDescriptor.removeRepository(repoKey);
                 centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                response.info("Repository '" + repoKey + "' and all its content has been removed successfully.")
+                response.info("Successfully deleted '" + repoKey + "' repository")
                         .responseCode(HttpStatus.SC_OK);
             } catch (Exception e) {
                 log.debug("Descriptor save failed: ", e);

@@ -124,7 +124,7 @@ public class UpdateUserService<T extends User> implements RestService<T> {
             artifactoryRestResponse.error("User '" + user.getName() + " already exists");
             return;
         }else{
-            artifactoryRestResponse.info("User '" + user.getName() + "' successfully updated");
+            artifactoryRestResponse.info("Successfully updated user '" + user.getName() + "'");
         }
         // update successful user creation data
         if(create) {

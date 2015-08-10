@@ -28,7 +28,9 @@ import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.md.Properties;
 import org.artifactory.rest.common.model.RestModel;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.codehaus.jackson.annotate.JsonTypeName;
 
 import java.util.ArrayList;
@@ -48,43 +50,46 @@ import java.util.List;
 public class RootNode implements RestTreeNode {
 
     @Override
-    public List<? extends INode> getChildren(AuthorizationService authService, boolean isCompact) {
+    public List<? extends INode> getChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request) {
         List<INode> repoNodes = new ArrayList<>();
         //Add a tree node for each file repository and local cache repository
         RepositoryService repositoryService = ContextHelper.get().getRepositoryService();
         // get local repo descriptors
         addLocalRepoNodes(repoNodes, repositoryService);
         // add remote repo
-        addRemoteRepoNodes(repoNodes, repositoryService);
+        addRemoteRepoNodes(repoNodes, repositoryService, request);
         // add virtual repo
-        addVirtualRepoNodes(repoNodes, repositoryService);
+        addVirtualRepoNodes(repoNodes, repositoryService, request);
         return repoNodes;
     }
 
     /**
      * add virtual repo nodes to repo list
-     *
-     * @param repoNodes         - repository nodes list
+     *  @param repoNodes         - repository nodes list
      * @param repositoryService - repository service
+     * @param request
      */
-    private void addVirtualRepoNodes(List<INode> repoNodes, RepositoryService repositoryService) {
+    private void addVirtualRepoNodes(List<INode> repoNodes, RepositoryService repositoryService,
+            ArtifactoryRestRequest request) {
         List<VirtualRepoDescriptor> virtualDescriptors = repositoryService.getVirtualRepoDescriptors();
         removeNonPermissionRepositories(virtualDescriptors);
         Collections.sort(virtualDescriptors, new RepoComparator());
-        repoNodes.addAll(getVirtualNodes(virtualDescriptors));
+        repoNodes.addAll(getVirtualNodes(virtualDescriptors, request));
     }
 
     /**
      * add remote repo nodes to repo list
-     *
-     * @param repoNodes         - repository nodes list
+     *  @param repoNodes         - repository nodes list
      * @param repositoryService - repository service
+     * @param request
      */
-    private void addRemoteRepoNodes(List<INode> repoNodes, RepositoryService repositoryService) {
+    private void addRemoteRepoNodes(List<INode> repoNodes, RepositoryService repositoryService,
+            ArtifactoryRestRequest request) {
         List<RemoteRepoDescriptor> remoteDescriptors = repositoryService.getRemoteRepoDescriptors();
         removeNonPermissionRepositories(remoteDescriptors);
         Collections.sort(remoteDescriptors, new RepoComparator());
-        repoNodes.addAll(getRemoteNodes(remoteDescriptors));
+        repoNodes.addAll(getRemoteNodes(remoteDescriptors, request));
     }
 
     /**
@@ -119,14 +124,15 @@ public class RootNode implements RestTreeNode {
     /**
      * get Root Node items
      * @param repos - list of repositories
+     * @param request
      * @return - list of root node items
      */
-    private List<INode> getRemoteNodes(List<RemoteRepoDescriptor> repos) {
+    private List<INode> getRemoteNodes(List<RemoteRepoDescriptor> repos, ArtifactoryRestRequest request) {
         List<INode> items = Lists.newArrayListWithCapacity(repos.size());
         repos.forEach(repo -> {
             if (repo.isListRemoteFolderItems()) {
                 String repoType = "remote";
-                VirtualRemoteRepositoryNode itemNodes = new VirtualRemoteRepositoryNode(repo, repoType);
+                VirtualRemoteRepositoryNode itemNodes = new VirtualRemoteRepositoryNode(repo, repoType, request);
                 items.add(itemNodes);
             }
         });
@@ -137,20 +143,21 @@ public class RootNode implements RestTreeNode {
      * get Root Node items
      *
      * @param repos - list of repositories
+     * @param request
      * @return - list of root node items
      */
-    private List<INode> getVirtualNodes(List<VirtualRepoDescriptor> repos) {
+    private List<INode> getVirtualNodes(List<VirtualRepoDescriptor> repos, ArtifactoryRestRequest request) {
         List<INode> items = Lists.newArrayListWithCapacity(repos.size());
         repos.forEach(repo -> {
             String repoType = "virtual";
-            VirtualRemoteRepositoryNode itemNodes = new VirtualRemoteRepositoryNode(repo, repoType);
+            VirtualRemoteRepositoryNode itemNodes = new VirtualRemoteRepositoryNode(repo, repoType, request);
             items.add(itemNodes);
         });
         return items;
     }
 
     /**
-     * remove reposiroties which user not permit to access
+     * remove repositories which user not permit to access
      *
      * @param repositories
      */
@@ -166,8 +173,9 @@ public class RootNode implements RestTreeNode {
     }
 
     @Override
-    public List<RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact, org.artifactory.md.Properties props) {
-        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact);
+    public List<RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact,
+            Properties props, ArtifactoryRestRequest request) {
+        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact, request);
         List<RestModel> treeModel = new ArrayList<>();
         items.forEach(item -> {
             ((INode) item).populateActions(authService);

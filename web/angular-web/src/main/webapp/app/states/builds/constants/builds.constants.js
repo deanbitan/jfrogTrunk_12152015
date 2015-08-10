@@ -14,7 +14,7 @@ export default {
         buildName: 'Name',
         buildNumber: 'Number',
         agent: 'Agent',
-        buildAgent: 'Build Agnet',
+        buildAgent: 'Build Agent',
         lastBuildTime: 'Started',
         duration: 'Duration',
         principal: 'Principal',

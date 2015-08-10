@@ -4,13 +4,14 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminConfigurationGeneralController {
 
-    constructor($scope, $q, $timeout, FileUploader, ArtifactoryNotifications, GeneralConfigDao, ArtifactoryEventBus) {
+    constructor($scope, $q, $timeout, FileUploader, ArtifactoryNotifications, GeneralConfigDao, FooterDao, ArtifactoryEventBus) {
         this.$scope = $scope;
         this.$q = $q;
         this.$timeout = $timeout;
         this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.generalConfigDao = GeneralConfigDao;
+        this.footerDao = FooterDao;
         this.FileUploader = FileUploader;
         this.logoType = 'File';
         this.defaultLogoUrl = 'images/artifactory_logo.png';
@@ -30,13 +31,11 @@ export class AdminConfigurationGeneralController {
     }
 
     _getCurrentImage() {
-        this._imageExists(this.logoEndPoint).then(()=>{
-//            this.generalConfigData.logoUrl = this.logoEndPoint;
+        this._userLogoExists().then(()=>{
             $(".artifactory-logo img")[0].src = this.logoEndPoint;
 
         })
             .catch(() => {
-//                console.log(this.generalConfigData.logoUrl);
                 if (this.generalConfigData.logoUrl) {
                     this.logoUrlInput = this.generalConfigData.logoUrl;
                     $(".artifactory-logo img")[0].src = this.generalConfigData.logoUrl;
@@ -167,6 +166,19 @@ export class AdminConfigurationGeneralController {
             .catch((err)=>console.log(err));
 
         }
+    }
+
+    _userLogoExists() {
+        let deferred = this.$q.defer();
+        this.footerDao.get(true).then(footerData => {
+            if (footerData.userLogo) {
+                deferred.resolve();
+            }
+            else {
+                deferred.reject();
+            }
+        });
+        return deferred.promise;
     }
 
     _imageExists(url) {

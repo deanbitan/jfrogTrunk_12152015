@@ -90,6 +90,7 @@ import org.artifactory.common.wicket.property.PropertyItem;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
@@ -855,6 +856,16 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public String getListBrowsingVersion() {
         VersionInfo versionInfo = centralConfigService.getVersionInfo();
         return format("Artifactory/%s", versionInfo.getVersion());
+    }
+
+    @Override
+    public String getArtifactoryUrl() {
+        MutableCentralConfigDescriptor mutableCentralConfigDescriptor = centralConfigService.getMutableDescriptor();
+        MailServerDescriptor mailServer = mutableCentralConfigDescriptor.getMailServer();
+        if (mailServer != null && StringUtils.isNotBlank(mailServer.getArtifactoryUrl())) {
+            return mailServer.getArtifactoryUrl();
+        }
+        return null;
     }
 
     @Override

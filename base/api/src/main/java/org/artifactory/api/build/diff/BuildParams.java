@@ -8,8 +8,8 @@ public class BuildParams {
     private String currBuildNum;
     private String buildName;
     private String comperedBuildNum;
-    private String currBuildDate;
-    private String comperedBuildDate;
+    private Long currBuildDate;
+    private Long comperedBuildDate;
     private String buildModuleId;
     boolean allArtifact = false;
     boolean allDependencies = false;
@@ -25,8 +25,12 @@ public class BuildParams {
                        String comparedDate, String buildStarted, String buildName) {
         this.currBuildNum = buildNumber;
         this.comperedBuildNum = comparedBuildNum;
-        this.currBuildDate = buildStarted;
-        this.comperedBuildDate = comparedDate;
+        if (buildStarted != null) {
+            this.currBuildDate = Long.parseLong(buildStarted);
+        }
+        if (comparedBuildNum != null) {
+            this.comperedBuildDate = Long.parseLong(comparedDate);
+        }
         this.buildModuleId = moduleId;
         this.buildName = buildName;
     }
@@ -47,19 +51,19 @@ public class BuildParams {
         this.comperedBuildNum = comperedBuildNum;
     }
 
-    public String getCurrBuildDate() {
+    public Long getCurrBuildDate() {
         return currBuildDate;
     }
 
-    public void setCurrBuildDate(String currBuildDate) {
+    public void setCurrBuildDate(Long currBuildDate) {
         this.currBuildDate = currBuildDate;
     }
 
-    public String getComperedBuildDate() {
+    public Long getComperedBuildDate() {
         return comperedBuildDate;
     }
 
-    public void setComperedBuildDate(String comperedBuildDate) {
+    public void setComperedBuildDate(Long comperedBuildDate) {
         this.comperedBuildDate = comperedBuildDate;
     }
 

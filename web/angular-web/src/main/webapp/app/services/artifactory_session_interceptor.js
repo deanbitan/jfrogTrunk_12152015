@@ -1,4 +1,4 @@
-window._sessionExpire = function() {
+window._sessionExpire = function () {
     localStorage._forceSessionExpire = true;
 }
 
@@ -57,13 +57,15 @@ export function artifactorySessionInterceptor($injector) {
 
     function verifySession(res) {
         initInjectables();
-        if (bypass(res)) return true;
+        if (bypass(res)) {
+            return true;
+        }
 
         User.loadUser(); // Refresh from localstorage (parallel tab support)
         if (isApiRequest(res) && isSessionInvalid(res) && isLoggedIn() || localStorage._forceSessionExpire) {
             // if the user is not logged in but is in a bypassed request
             // let the request go through but log out the user.
-
+            if ($location.path() !== '/login') ArtifactoryState.setState('urlAfterLogin', $location.path());
             return handleExpiredSession();
         }
         return true;
@@ -78,10 +80,17 @@ export function artifactorySessionInterceptor($injector) {
                    } else {
                         $window.open(res.data.ssoProviderLink, "_self");
                    }
-               }else{
-                $state.go('login');
-                 }
+               } else {
+                   setUrlAfterLogin();
+                   $state.go('login');
+               }
             });
+        }
+    }
+
+    function setUrlAfterLogin() {
+        if ($state.current !== 'login' && $location.path() !== '/login') {
+            ArtifactoryState.setState('urlAfterLogin', $location.path());
         }
     }
 
@@ -99,7 +108,7 @@ export function artifactorySessionInterceptor($injector) {
         checkAuthorization(res);
         return $q.reject(res);
     }
-    
+
     return {
         response: response,
         responseError: responseError

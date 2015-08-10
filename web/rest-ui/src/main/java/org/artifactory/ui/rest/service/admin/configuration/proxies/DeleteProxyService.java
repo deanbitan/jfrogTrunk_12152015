@@ -34,7 +34,7 @@ public class DeleteProxyService<T extends DeleteProxiesModel> implements RestSer
         if(model.getProxyKeys().size()>1){
             response.info("Successfully removed "+model.getProxyKeys().size()+" proxies");
         }else if(model.getProxyKeys().size()==1){
-            response.info("Proxy " + model.getProxyKeys().get(0) + " successfully removed");
+            response.info("Successfully removed proxy '" + model.getProxyKeys().get(0) + "'");
         }
     }
 

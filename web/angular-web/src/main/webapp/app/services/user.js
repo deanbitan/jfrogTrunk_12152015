@@ -144,7 +144,13 @@ class User {
                 return this.http.post(this.RESOURCE.AUTH_LOGOUT, null, {bypassSessionInterceptor: true})
                         .then((res) => {
                             this.artifactoryState.clearAll();
+
+                            if (this.$state.current.name === 'home') {
+                                this.$state.go(this.$state.current, this.$stateParams, {reload: true});
+                            }
+
                             return this.loadUser(true);
+
                         }
                 );
             }
@@ -208,7 +214,7 @@ class User {
 }
 
 
-export function UserFactory(ArtifactoryHttpClient, ArtifactoryStorage, RESOURCE, $q, $window, ArtifactoryEventBus,
+export function UserFactory(ArtifactoryHttpClient, ArtifactoryStorage, RESOURCE, $q, $window, $state, $stateParams, ArtifactoryEventBus,
         ArtifactoryState) {
     // Set static members on class:
     User.http = ArtifactoryHttpClient;
@@ -216,6 +222,8 @@ export function UserFactory(ArtifactoryHttpClient, ArtifactoryStorage, RESOURCE,
     User.RESOURCE = RESOURCE;
     User.$q = $q;
     User.$window = $window;
+    User.$state = $state;
+    User.$stateParams = $stateParams;
     User.artifactoryState = ArtifactoryState;
     User.ArtifactoryEventBus = ArtifactoryEventBus;
     User.currentUser = new User();

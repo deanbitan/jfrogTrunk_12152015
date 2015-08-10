@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.general;
 
+import org.artifactory.ui.rest.service.admin.configuration.general.GetUploadLogoService;
 import org.artifactory.ui.rest.service.home.GetHomePageService;
 import org.artifactory.ui.rest.service.setmeup.GetGradleSettingSnippetService;
 import org.artifactory.ui.rest.service.setmeup.GetIvySettingSnippetService;
@@ -46,6 +47,9 @@ public abstract class GeneralServiceFactory {
 
     @Lookup
     public abstract GetMavenDistributionMgntService getMavenDistributionMgnt();
+
+    @Lookup
+    public abstract GetUploadLogoService getUploadLogo();
 
 
 }

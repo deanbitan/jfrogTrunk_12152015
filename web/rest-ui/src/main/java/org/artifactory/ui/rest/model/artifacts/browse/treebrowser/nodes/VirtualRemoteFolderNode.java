@@ -25,6 +25,7 @@ import org.artifactory.fs.FolderInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.model.RestModel;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.IAction;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.RefreshArtifact;
@@ -112,7 +113,8 @@ public class VirtualRemoteFolderNode extends BaseNode {
     }
 
     @Override
-    public List<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact) {
+    public List<? extends RestTreeNode> getChildren(AuthorizationService authService, boolean isCompact,
+            ArtifactoryRestRequest request) {
         List<INode> childNodeList = new ArrayList<>();
         childNodeList.add(this);
         return childNodeList;
@@ -154,8 +156,9 @@ public class VirtualRemoteFolderNode extends BaseNode {
     }
 
     @Override
-    public List<RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact, Properties props) {
-        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact);
+    public List<RestModel> fetchItemTypeData(AuthorizationService authService, boolean isCompact, Properties props,
+            ArtifactoryRestRequest request) {
+        Collection<? extends RestTreeNode> items = getChildren(authService, isCompact, request);
         List<RestModel> treeModel = new ArrayList<>();
         items.forEach(item -> {
             ((INode) item).populateActions(authService);

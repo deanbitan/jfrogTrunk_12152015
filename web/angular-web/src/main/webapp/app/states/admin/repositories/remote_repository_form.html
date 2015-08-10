@@ -5,7 +5,8 @@
             <ul class="list-unstyled">
                 <li class="inline-block package-type"
                     ng-class="{typeValidation: !RepositoryForm.repoInfo.typeSpecific.repoType, 'not-clickable': !RepositoryForm.newRepository}"
-                    ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()">
+                    ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()"
+                    id="remote-repository-package-type-button">
                     <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType">No Type</span>
                     <div ng-if="RepositoryForm.repoInfo.typeSpecific.repoType"
                          class="repotype iconrepo iconrepo-{{RepositoryForm.repoInfo.typeSpecific.repoType.toLowerCase()}}">
@@ -35,7 +36,7 @@
                            ng-model-options="{debounce: { 'default': 500 } }"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                    <div ng-message-exp="'repoKeyValidator'">{{ RepositoryForm.repoKeyValidatorMessage }}
+                    <div ng-message-exp="'repoKeyValidator'" id="remote-repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}
                     </div>
                 </ng-messages>
             </div>
@@ -85,12 +86,14 @@
                             <jf-field>
                                 <label>Repository Layout</label>
                                 <ui-select ng-model="RepositoryForm.repoInfo.basic.layout">
-                                    <ui-select-match placeholder="Select Repository Layout">
+                                    <ui-select-match placeholder="Select Repository Layout"
+                                            id="remote-repository-layout-dropdown">
                                         {{$select.selected}}
                                     </ui-select-match>
                                     <ui-select-choices
                                             repeat="item in RepositoryForm.repositoryLayouts | filter: $select.search track by $index">
-                                        <div ng-bind-html="item | highlight: $select.search"></div>
+                                        <div ng-bind-html="item | highlight: $select.search"
+                                             id="remote-repository-layout-item"></div>
                                     </ui-select-choices>
                                 </ui-select>
                             </jf-field>
@@ -135,7 +138,7 @@
                     <div class="form-group">
                         <div class="form-group-cell">
                             <jf-field>
-                                <label for="includesPattern">Includes Pattern</label>
+                                <label for="includesPattern">Include Patterns</label>
                                 <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.includesPattern"></jf-help-tooltip>
                                 <input type="text" class="input-text"
                                        id="includesPattern"
@@ -145,7 +148,7 @@
                         </div>
                         <div class="form-group-cell">
                             <jf-field>
-                                <label for="excludesPattern">Exclude Pattern</label>
+                                <label for="excludesPattern">Exclude Patterns</label>
                                 <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.excludedPattern"></jf-help-tooltip>
                                 <input type="text" class="input-text"
                                        id="excludesPattern"
@@ -371,6 +374,12 @@
                             </jf-checkbox>
                             <jf-help-tooltip
                                     html="RepositoryForm.TOOLTIP.remoteForm.dockerEnableTokenAuthentication"></jf-help-tooltip>
+                            <jf-checkbox text="Force Authentication">
+                                <input type="checkbox"
+                                       id="forceDockerAuth"
+                                       ng-model="RepositoryForm.repoInfo.typeSpecific.forceDockerAuthentication">
+                            </jf-checkbox>
+                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.forceDockerAuth"></jf-help-tooltip>
                         </div>
                     </div>
                 </jf-panel>
@@ -670,6 +679,7 @@
                                   exclude-list="RepositoryForm.propertiesList"
                                   include-display-field="name"
                                   exclude-display-field="name"
+                                  objects-name="Property Sets"
                                   headers="{leftTitle:'Available',
                       rightTitle:'Selected'}"></jf-drag-drop>
                 </jf-panel>

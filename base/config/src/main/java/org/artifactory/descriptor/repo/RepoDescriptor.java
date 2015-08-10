@@ -61,4 +61,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     boolean isMavenRepoLayout();
 
     DockerApiVersion getDockerApiVersion();
+
+    boolean isForceDockerAuthentication();
 }

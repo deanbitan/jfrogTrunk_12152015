@@ -32,7 +32,7 @@ public class DeleteArtifactLicenseService<T extends DeleteLicensesModel> impleme
         if(model.getLicenseskeys().size()>1){
             response.info("Successfully removed "+model.getLicenseskeys().size()+" licenses");
         }else if(model.getLicenseskeys().size()==1){
-            response.info("License " + model.getLicenseskeys().get(0) + " successfully removed");
+            response.info("Successfully removed license '" + model.getLicenseskeys().get(0) + "'");
         }
     }
 }

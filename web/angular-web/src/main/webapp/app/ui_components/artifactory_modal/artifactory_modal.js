@@ -25,11 +25,13 @@ export class ArtifactoryModal {
         if (!size) size = 'lg';
 
         let templateUrl = this.templatesBaseUrl + template + '.html';
-        return this.modal.open({
+        let modalInstance =  this.modal.open({
             templateUrl: templateUrl,
             scope: scope,
             size: size
         });
+
+        return modalInstance;
     }
 
     /**

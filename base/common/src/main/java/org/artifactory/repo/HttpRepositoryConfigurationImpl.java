@@ -28,8 +28,8 @@ import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.descriptor.repo.RepoLayout;
 import org.artifactory.descriptor.repo.VcsConfiguration;
-import org.artifactory.descriptor.repo.VcsGitProvider;
-import org.artifactory.descriptor.repo.VcsType;
+import org.artifactory.descriptor.repo.vcs.VcsGitProvider;
+import org.artifactory.descriptor.repo.vcs.VcsType;
 import org.artifactory.util.RepoLayoutUtils;
 
 import javax.annotation.Nonnull;

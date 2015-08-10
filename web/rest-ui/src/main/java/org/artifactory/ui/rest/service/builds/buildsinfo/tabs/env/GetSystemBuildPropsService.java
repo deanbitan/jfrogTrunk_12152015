@@ -40,10 +40,9 @@ public class GetSystemBuildPropsService implements RestService {
         List<BuildProps> buildPropsData = buildService.getBuildPropsData(buildParams, pagingData.getStartOffset(),
                 pagingData.getLimit(), buildPropsMap.get(pagingData.getOrderBy()));
         if (!buildPropsData.isEmpty()) {
-            long buildPropsCounts = buildService.getBuildPropsCounts(buildParams);
             List<BuildPropsModel> buildPropsModels = new ArrayList<>();
             buildPropsData.forEach(buildProps -> buildPropsModels.add(new BuildPropsModel(buildProps)));
-            PagingModel pagingModel = new PagingModel(buildPropsCounts, buildPropsModels);
+            PagingModel pagingModel = new PagingModel(0, buildPropsModels);
             response.iModel(pagingModel);
         }
     }

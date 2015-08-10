@@ -110,7 +110,8 @@ export function jfGridFilter() {
             filterField: '@',
             filterField2: '@',
             grid: '=filterGrid',
-            filterOnChange: '@'
+            filterOnChange: '@',
+            autoFocus: '@'
         },
         controller: jfGridFilterController,
         controllerAs: 'jfGridFilter',

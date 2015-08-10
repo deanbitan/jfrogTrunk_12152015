@@ -26,6 +26,8 @@ export class AdminAdvancedStorageSummaryController {
     sortByteSizes(a,b) {
 
         let res = 0;
+        if (a===undefined || b===undefined) return res;
+
         if (!a.isTotal && !b.isTotal) {
             var gb = [a.value.match('GB'), b.value.match('GB')],
                     mb = [a.value.match('MB'), b.value.match('MB')],
@@ -39,7 +41,7 @@ export class AdminAdvancedStorageSummaryController {
         else if (a.isTotal) res = -1;
         else if (b.isTotal) res = 1;
 
-        return res
+        return res;
     }
 
     getColumns() {

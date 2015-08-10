@@ -38,12 +38,15 @@ public class GetEffectivePermissionService implements RestService {
         String path = artifactoryRequest.getQueryParamByKey("path");
         String repoKey = artifactoryRequest.getQueryParamByKey("repoKey");
         RepoPath repoPath = InternalRepoPathFactory.create(repoKey, path);
-        // fetch principals effective permission
-        List<RestPaging> effectivePermissionsArtifactInfos = fetchEffectivePermission(
-                repoPath);
-        // update response with model
-        PagingModel pagingModel = new PagingModel(0, effectivePermissionsArtifactInfos);
-        artifactoryResponse.iModel(pagingModel);
+        boolean canManage = authService.canManage(repoPath);
+        if (canManage) {
+            // fetch principals effective permission
+            List<RestPaging> effectivePermissionsArtifactInfos = fetchEffectivePermission(
+                    repoPath);
+            // update response with model
+            PagingModel pagingModel = new PagingModel(0, effectivePermissionsArtifactInfos);
+            artifactoryResponse.iModel(pagingModel);
+        }
     }
 
     /**
