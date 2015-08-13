@@ -19,6 +19,7 @@
 package org.artifactory.webapp.servlet;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.artifactory.api.context.ArtifactoryContext;
@@ -204,7 +205,7 @@ public class RepoFilter extends DelayedFilterBase {
             } else {
                 // TODO: [by dan] this is a workaround for the Git LFS bug in 0.5.1 - see RTFACT-7587 remove this ugly
                 // TODO: hack when we decide we can drop support for versions < 0.5.2 or when Jersey is updated above 2.0
-                chain.doFilter(wrapLfsRequestIfNeeded(request), response);
+                chain.doFilter(wrapRequestIfNeeded(request), response);
             }
         }
         if (log.isDebugEnabled()) {
@@ -405,11 +406,16 @@ public class RepoFilter extends DelayedFilterBase {
         return false;
     }
 
-    private HttpServletRequest wrapLfsRequestIfNeeded(HttpServletRequest request) {
+    private HttpServletRequest wrapRequestIfNeeded(HttpServletRequest request) {
         if (isGitLfsRequest(request)) {
             log.debug("Identified '/api/lfs' in incoming ServletRequest path. " +
                     "Wrapping it with a GitLfsMalformedRequestWrapper");
             return new GitLfsMalformedRequestWrapper(request);
+        }
+        if (isDockerRequest(request)) {
+            log.debug("Identified '/api/lfs' in incoming ServletRequest path. " +
+                    "Wrapping it with a GitLfsMalformedRequestWrapper");
+            return new DockerMalformedRequestWrapper(request);
         }
         return request;
     }
@@ -418,6 +424,12 @@ public class RepoFilter extends DelayedFilterBase {
         String lfsApiPath = "/api/" + GitLfsResourceConstants.PATH_ROOT;
         String joinedRequestPath = request.getServletPath() + request.getPathInfo();
         return joinedRequestPath.contains(lfsApiPath) || request.getRequestURL().toString().contains(lfsApiPath);
+    }
+
+    private boolean isDockerRequest(HttpServletRequest request) {
+        String dockerApiPath = "/api/docker";
+        String joinedRequestPath = request.getServletPath() + request.getPathInfo();
+        return joinedRequestPath.contains(dockerApiPath) || request.getRequestURL().toString().contains(dockerApiPath);
     }
 
     private static class GitLfsMalformedRequestWrapper extends HttpServletRequestWrapper {
@@ -430,6 +442,22 @@ public class RepoFilter extends DelayedFilterBase {
             if (name.equalsIgnoreCase(HttpHeaders.ACCEPT) || name.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE)) {
                 log.debug("Returning fixed Git LFS header {}", name);
                 return Collections.enumeration(Lists.newArrayList(GitLfsResourceConstants.LFS_JSON));
+            } else {
+                return super.getHeaders(name);
+            }
+        }
+    }
+
+    private static class DockerMalformedRequestWrapper extends HttpServletRequestWrapper {
+        public DockerMalformedRequestWrapper(HttpServletRequest request) {
+            super(request);
+        }
+
+        @Override
+        public Enumeration getHeaders(String name) {
+            if (name.equalsIgnoreCase(HttpHeaders.CONTENT_TYPE) && StringUtils.isBlank(getRequest().getContentType())) {
+                log.debug("Returning fixed Docker Content-Type header {}", name);
+                return Collections.enumeration(Lists.newArrayList("application/octet-stream"));
             } else {
                 return super.getHeaders(name);
             }

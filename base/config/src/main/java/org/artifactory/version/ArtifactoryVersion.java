@@ -122,13 +122,14 @@ public enum ArtifactoryVersion {
     v392("3.9.2", 30204),
     v393("3.9.3", 30224),
     v400("4.0.0", 40005),
-    v401("4.0.1", Integer.MAX_VALUE);
+    v401("4.0.1", 40008),
+    v402("4.0.2", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();
         return versions[versions.length - 1];
     }
-
+/home/matank/work/artifactory/artifactory/open/base/config/src/main/java/org/artifactory/version/ArtifactoryVersion.java
     private final String value;
     private final int revision;
     private final Map<String, SubConfigElementVersion> subConfigElementVersionsByClass =
