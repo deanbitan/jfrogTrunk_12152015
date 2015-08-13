@@ -35,9 +35,6 @@ public class DynamicField extends DomainSensitiveParserElement {
             case modules: {
                 return AqlParser.buildModuleFields;
             }
-            case moduleProperties: {
-                return AqlParser.buildModulePropertiesFields;
-            }
             case buildProperties: {
                 return AqlParser.buildPropertiesFields;
             }

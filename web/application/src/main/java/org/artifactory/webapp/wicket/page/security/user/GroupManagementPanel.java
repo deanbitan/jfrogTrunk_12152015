@@ -74,7 +74,7 @@ public class GroupManagementPanel extends FieldSetPanel {
                     try {
                         userGroupService.addUsersToGroup(
                                 selectedGroup.getGroupName(), selectedUsernames);
-                        info("Successfully added selected users to group '" + selectedGroup + "'");
+                        info("Successfully added selected users  to group '" + selectedGroup + "'.");
                         // refresh the users table
                         usersListPanel.refreshUsersList(target);
                     } catch (GroupNotFoundException gnfe) {
@@ -92,7 +92,7 @@ public class GroupManagementPanel extends FieldSetPanel {
                 if (selectedGroup != null && !selectedUsernames.isEmpty()) {
                     userGroupService.removeUsersFromGroup(
                             selectedGroup.getGroupName(), selectedUsernames);
-                    info("Successfully removed selected users from group '" + selectedGroup + "'");
+                    info("Successfully removed selected users from group '" + selectedGroup + "'.");
                     // refresh the users table
                     usersListPanel.refreshUsersList(target);
                     AjaxUtils.refreshFeedback(target);

@@ -98,7 +98,7 @@ public class BintrayProfilePanel<T> extends TitledPanel {
                     Map<String, String> headersMap = WicketUtils.getHeadersMap();
                     BintrayUser bintrayUser = bintrayService.getBintrayUser(getBintrayUser(),
                             getBintrayApiKey(), headersMap);
-                    info("Successfully authenticated '" + bintrayUser.getFullName() + "'");
+                    info("Successfully authenticated '" + bintrayUser.getFullName() + "' with Bintray.");
                 } catch (IOException e) {
                     error("Connection failed with exception: " + e.getMessage());
                 } catch (BintrayException e) {

@@ -136,7 +136,7 @@ public class GeneralConfigPage extends AuthenticatedPage {
             target.add(page.get("logo"));
             target.add(page.get("footer"));
 
-            info("Successfully updated settings");
+            info("Settings successfully updated.");
             AjaxUtils.refreshFeedback(target);
         }
 

@@ -147,9 +147,9 @@ public class ProxyCreateUpdatePanel extends CreateUpdatePanel<ProxyDescriptor> {
                 mutableCentralConfig.proxyChanged(entity, defaultForAllRemotRepo);
                 if (isCreate()) {
                     mutableCentralConfig.addProxy(entity, defaultForAllRemotRepo);
-                    getPage().info("Successfully created proxy '" + entity.getKey() + "'");
+                    getPage().info("Proxy '" + entity.getKey() + "' successfully created.");
                 } else {
-                    getPage().info("Successfully updated proxy '" + entity.getKey() + "'");
+                    getPage().info("Proxy '" + entity.getKey() + "' successfully updated.");
                 }
                 centralConfigService.saveEditedDescriptorAndReload(mutableCentralConfig);
                 AjaxUtils.refreshFeedback(target);

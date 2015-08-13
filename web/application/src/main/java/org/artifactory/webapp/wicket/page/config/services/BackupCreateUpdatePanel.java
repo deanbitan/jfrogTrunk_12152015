@@ -245,12 +245,12 @@ public class BackupCreateUpdatePanel extends CreateUpdatePanel<BackupDescriptor>
                 if (isCreate()) {
                     configDescriptor.addBackup(entity);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    String message = "Successfully created backup '" + entity.getKey() + "'";
+                    String message = "Backup '" + entity.getKey() + "' successfully created.";
                     AccessLogger.created(message);
                     getPage().info(message);
                 } else {
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    String message = "Successfully created backup '" + entity.getKey() + "'";
+                    String message = "Backup '" + entity.getKey() + "' successfully updated.";
                     AccessLogger.updated(message);
                     getPage().info(message);
                 }
