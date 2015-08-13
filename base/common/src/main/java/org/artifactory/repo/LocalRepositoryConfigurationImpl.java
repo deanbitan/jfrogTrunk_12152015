@@ -50,6 +50,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
     private boolean archiveBrowsingEnabled = false;
     private boolean calculateYumMetadata = false;
     private int yumRootDepth = 0;
+    private String yumGroupFileNames;
 
     public LocalRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -84,9 +85,7 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
         setArchiveBrowsingEnabled(localRepoDescriptor.isArchiveBrowsingEnabled());
         setCalculateYumMetadata(localRepoDescriptor.isCalculateYumMetadata());
         setYumRootDepth(localRepoDescriptor.getYumRootDepth());
-        setEnableDebianSupport(localRepoDescriptor.isEnableDebianSupport());
         setDebianTrivialLayout(localRepoDescriptor.isDebianTrivialLayout());
-        setEnableGemsSupport(localRepoDescriptor.isEnableGemsSupport());
     }
 
     @Override
@@ -186,6 +185,15 @@ public class LocalRepositoryConfigurationImpl extends RepositoryConfigurationBas
 
     public void setYumRootDepth(int yumRootDepth) {
         this.yumRootDepth = yumRootDepth;
+    }
+
+    @Override
+    public String getYumGroupFileNames() {
+        return yumGroupFileNames;
+    }
+
+    public void setYumGroupFileNames(String yumGroupFileNames) {
+        this.yumGroupFileNames = yumGroupFileNames;
     }
 
 }

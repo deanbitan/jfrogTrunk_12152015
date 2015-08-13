@@ -1,6 +1,7 @@
 package org.artifactory.storage.db.itest;
 
 import com.google.common.collect.Maps;
+import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.ArtifactoryRunningMode;
 import org.artifactory.addon.OssAddonsManager;
@@ -20,9 +21,12 @@ import org.artifactory.converters.VersionProvider;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.spring.SpringConfigPaths;
+import org.artifactory.storage.db.servers.model.ArtifactoryServer;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationContext;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
@@ -183,6 +187,21 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         }
 
         @Override
+        public List<ArtifactoryServer> getAllArtifactoryServers() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public boolean deleteArtifactoryServer(String id) {
+            return false;
+        }
+
+        @Override
+        public boolean artifactoryServerHasHeartbeat(ArtifactoryServer artifactoryServer) {
+            return false;
+        }
+
+        @Override
         public boolean isDefault() {
             return false;
         }
@@ -192,6 +211,11 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
 
         private DummyOssAddonsManager() {
             context = ContextHelper.get();
+        }
+
+        @Override
+        public boolean isAddonSupported(AddonType addonType) {
+            return false;
         }
 
         @Override

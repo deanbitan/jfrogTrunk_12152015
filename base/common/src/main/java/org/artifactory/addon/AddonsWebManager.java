@@ -27,7 +27,7 @@ public interface AddonsWebManager {
 
     String getFooterMessage(boolean admin);
 
-    String getLicenseFooterMessage();
+    FooterMessage getLicenseFooterMessage();
 
     String getLicenseRequiredMessage(String licensePageUrl);
 

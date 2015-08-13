@@ -25,6 +25,7 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
@@ -130,7 +131,7 @@ public class NuGetCalculationInterceptor extends StorageInterceptorAdapter imple
             if (repoPath.getPath().endsWith(".nupkg")) {
                 String repoKey = repoPath.getRepoKey();
                 RepoDescriptor repoDescriptor = repositoryService.repoDescriptorByKey(repoKey);
-                return ((repoDescriptor != null) && repoDescriptor.isEnableNuGetSupport());
+                return ((repoDescriptor != null) && repoDescriptor.getType().equals(RepoType.NuGet));
             }
         }
 

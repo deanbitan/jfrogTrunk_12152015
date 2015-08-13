@@ -125,7 +125,7 @@ public abstract class BaseModuleDependenciesListPanel extends TitledPanel {
             item = new ModuleDependencyActionableItem(item.getRepoPath(), item.getDependency(), item.getStatus()) {
                 public Object getRepoPathOrMissingMessage() {
                     if (super.getRepoPath() == null) {
-                        return "Not in repository (externally resolved or deleted/overwritten)";
+                        return "No path found (externally resolved or deleted/overwritten)";
                     } else {
                         return super.getRepoPath();
                     }

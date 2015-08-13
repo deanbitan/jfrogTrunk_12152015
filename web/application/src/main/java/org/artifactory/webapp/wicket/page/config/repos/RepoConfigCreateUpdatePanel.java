@@ -176,10 +176,10 @@ public abstract class RepoConfigCreateUpdatePanel<E extends RepoDescriptor> exte
                 }
                 if (isCreate()) {
                     addAndSaveDescriptor(repoDescriptor);
-                    getPage().info("Repository '" + repoDescriptor.getKey() + "' successfully created.");
+                    getPage().info("Successfully created repository '" + repoDescriptor.getKey() + "'");
                 } else {
                     saveEditDescriptor(repoDescriptor);
-                    getPage().info("Repository '" + repoDescriptor.getKey() + "' successfully updated.");
+                    getPage().info("Successfully updated repository '" + repoDescriptor.getKey() + "'");
                     updateRepositoryReplicationProperties();
                 }
 

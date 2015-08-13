@@ -23,9 +23,16 @@ public class AqlNullUsageTest extends AqlAbstractServiceTest {
     }
 
     @Test
-    public void findNotNullProperties() {
+    public void findNotStarProperties() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"type\" :\"any\",\"property.key\":{\"$ne\":null}})");
-        assertSize(queryResult, 5);
+                "items.find({\"type\" :\"any\",\"property.key\":{\"$nmatch\":\"*\"}})");
+        assertSize(queryResult, 21);
+    }
+
+    @Test
+    public void findNotAntProperties() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "items.find({\"type\" :\"any\",\"property.key\":{\"$Nmatch\":\"yossis\"}})");
+        assertSize(queryResult, 24);
     }
 }

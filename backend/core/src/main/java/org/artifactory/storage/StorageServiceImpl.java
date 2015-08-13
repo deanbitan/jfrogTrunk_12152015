@@ -180,8 +180,15 @@ public class StorageServiceImpl implements InternalStorageService {
                     @Override
                     public RepoStorageSummaryInfo apply(RepoStorageSummary r) {
                         RepositoryType repoType = getRepoType(r.getRepoKey(), reposMap);
-                        return new RepoStorageSummaryInfo(
-                                r.getRepoKey(), repoType, r.getFoldersCount(), r.getFilesCount(), r.getUsedSpace());
+                        RepoDescriptor repoDescriptor = reposMap.get(r.getRepoKey());
+                        String repoTypeName = "UnKnown";
+                        if (repoDescriptor != null) {
+                            repoTypeName = repoDescriptor.getType().name();
+                        }
+                        RepoStorageSummaryInfo repoStorageSummaryInfo = new RepoStorageSummaryInfo(
+                                r.getRepoKey(), repoType, r.getFoldersCount(), r.getFilesCount(), r.getUsedSpace(),
+                                repoTypeName);
+                        return repoStorageSummaryInfo;
                     }
 
                     private RepositoryType getRepoType(String repoKey,

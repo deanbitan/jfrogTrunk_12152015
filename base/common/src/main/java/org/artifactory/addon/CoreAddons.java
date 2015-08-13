@@ -76,4 +76,13 @@ public interface CoreAddons extends Addon {
     void validateTargetHasDifferentLicenseKeyHash(String targetLicenseHash, List<String> addons);
 
     void validateMultiPushReplicationSupportedForTargetLicense(String targetLicenseKey,boolean isMultiPushConfigureForThisRepo,String targetUrl);
+
+    String getBuildNum();
+
+    /**
+     * @return Artifactory version string for list browsing
+     */
+    String getListBrowsingVersion();
+
+    String getArtifactoryUrl();
 }

@@ -14,6 +14,7 @@ import org.artifactory.fs.MutableFileInfo;
 import org.artifactory.fs.MutableFolderInfo;
 import org.artifactory.repo.RepoPath;
 
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -32,6 +33,10 @@ public abstract class AqlConverts {
                 folderInfo.setCreated(input.getCreated().getTime());
                 folderInfo.setLastUpdated(input.getUpdated().getTime());
                 folderInfo.setCreatedBy(input.getCreatedBy());
+                Date modified = input.getModified();
+                if (modified != null) {
+                    folderInfo.setLastModified(modified.getTime());
+                }
                 folderInfo.setModifiedBy(input.getModifiedBy());
                 return folderInfo;
             } else {
@@ -40,6 +45,10 @@ public abstract class AqlConverts {
                 fileInfo.setCreated(input.getCreated().getTime());
                 fileInfo.setLastUpdated(input.getUpdated().getTime());
                 fileInfo.setCreatedBy(input.getCreatedBy());
+                Date modified = input.getModified();
+                if (modified != null) {
+                    fileInfo.setLastModified(modified.getTime());
+                }
                 fileInfo.setModifiedBy(input.getModifiedBy());
                 Set<ChecksumInfo> checksums = Sets.newHashSet();
                 checksums.add(new ChecksumInfo(ChecksumType.md5, input.getOriginalMd5(), input.getActualMd5()));

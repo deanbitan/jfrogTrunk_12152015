@@ -24,7 +24,9 @@ public enum AqlDomainEnum {
             buildDependencyType,
             buildDependencyScope),
     modules("module", new String[]{"modules"}, buildModuleName),
-    buildProperties("property", new String[]{"build", "properties"}, buildPropertyKey, buildPropertyValue);
+    buildProperties("property", new String[]{"build", "properties"}, buildPropertyKey, buildPropertyValue),
+    moduleProperties("property", new String[]{ "module","properties"}, modulePropertyKey,
+            modulePropertyValue);
 
     public String signatue;
     public String[] subDomains;

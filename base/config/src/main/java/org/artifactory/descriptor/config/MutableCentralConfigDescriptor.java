@@ -248,4 +248,6 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setExternalProvidersDescriptor(ExternalProvidersDescriptor externalProvidersDescriptor);
 
     void setBintrayConfig(BintrayConfigDescriptor bintrayConfigDescriptor);
+
+    BackupDescriptor getBackup(String backupKey);
 }
