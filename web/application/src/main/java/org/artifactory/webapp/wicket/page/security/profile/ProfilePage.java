@@ -145,7 +145,7 @@ public class ProfilePage extends AuthenticatedPage {
                     }
                     userGroupService.updateUser(mutableUser, !mutableUser.hasSameAuthorizationContext(userInfo));
                     AccessLogger.updated("User " + mutableUser.getUsername() + " has updated his profile successfully");
-                    info("Profile successfully updated.");
+                    info("Successfully updated profile '" + mutableUser.getUsername() + "'");
                 }
                 form.clearInput();
                 target.add(profilePanel);

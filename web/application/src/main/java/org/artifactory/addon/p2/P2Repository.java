@@ -28,6 +28,7 @@ import java.io.Serializable;
  *
  * @author Shay Yaakov
  */
+// TODO: [by dan] delete this when wicket dies
 public class P2Repository implements Serializable {
 
     private String repoKey;
@@ -85,12 +86,20 @@ public class P2Repository implements Serializable {
         return repoKey;
     }
 
+    public void setRepoKey(String repoKey) {
+        this.repoKey = repoKey;
+    }
+
     public String getRepoUrl() {
         return repoUrl;
     }
 
     public boolean isAlreadyIncluded() {
         return alreadyIncluded;
+    }
+
+    public void setAlreadyIncluded(boolean alreadyIncluded) {
+        this.alreadyIncluded = alreadyIncluded;
     }
 
     public boolean isExists() {
@@ -111,13 +120,5 @@ public class P2Repository implements Serializable {
 
     public void setSelected(boolean selected) {
         this.selected = selected;
-    }
-
-    public void setRepoKey(String repoKey) {
-        this.repoKey = repoKey;
-    }
-
-    public void setAlreadyIncluded(boolean alreadyIncluded) {
-        this.alreadyIncluded = alreadyIncluded;
     }
 }

@@ -53,6 +53,11 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public RepoType getType() {
+        return remoteRepo.getType();
+    }
+
+    @Override
     public boolean isBlackedOut() {
         return remoteRepo.isBlackedOut();
     }
@@ -118,41 +123,6 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
-    public boolean isEnableNuGetSupport() {
-        return remoteRepo.isEnableNuGetSupport();
-    }
-
-    @Override
-    public boolean isEnableGemsSupport() {
-        return remoteRepo.isEnableGemsSupport();
-    }
-
-    @Override
-    public boolean isEnableNpmSupport() {
-        return remoteRepo.isEnableNpmSupport();
-    }
-
-    @Override
-    public boolean isEnableBowerSupport() {
-        return remoteRepo.isEnableBowerSupport();
-    }
-
-    @Override
-    public boolean isEnableDebianSupport() {
-        return remoteRepo.isEnableDebianSupport();
-    }
-
-    @Override
-    public boolean isEnablePypiSupport() {
-        return remoteRepo.isEnablePypiSupport();
-    }
-
-    @Override
-    public boolean isEnableDockerSupport() {
-        return remoteRepo.isEnableDockerSupport();
-    }
-
-    @Override
     public boolean isArchiveBrowsingEnabled() {
         return remoteRepo.isArchiveBrowsingEnabled();
     }
@@ -160,6 +130,16 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     @Override
     public void setArchiveBrowsingEnabled(boolean archiveBrowsingEnabled) {
         remoteRepo.setArchiveBrowsingEnabled(archiveBrowsingEnabled);
+    }
+
+    @Override
+    public boolean isForceDockerAuthentication() {
+        return remoteRepo.isForceDockerAuthentication();
+    }
+
+    @Override
+    public void setForceDockerAuthentication(boolean forceDockerAuthentication) {
+        remoteRepo.setForceDockerAuthentication(forceDockerAuthentication);
     }
 
     @Override

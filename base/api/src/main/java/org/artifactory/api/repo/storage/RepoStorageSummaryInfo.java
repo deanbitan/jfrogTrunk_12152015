@@ -43,6 +43,7 @@ public class RepoStorageSummaryInfo implements Serializable {
     private final long filesCount;
     private final long usedSpace;
     private long itemsCount;
+    private String type;
 
     /**
      * Creates a new empty repository summary.
@@ -54,13 +55,14 @@ public class RepoStorageSummaryInfo implements Serializable {
      * @param usedSpace    Space, in bytes, used by the files in this repository
      */
     public RepoStorageSummaryInfo(@Nonnull String repoKey, RepositoryType repoType, long foldersCount, long filesCount,
-            long usedSpace) {
+            long usedSpace, String type) {
         this.repoKey = repoKey;
         this.repoType = repoType;
 
         this.filesCount = filesCount;
         this.foldersCount = foldersCount;
         this.usedSpace = usedSpace;
+        this.type = type;
     }
 
     /**
@@ -105,6 +107,10 @@ public class RepoStorageSummaryInfo implements Serializable {
         return getFoldersCount() + getFilesCount();
     }
 
+    public String getType() {
+        return type;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -139,4 +145,5 @@ public class RepoStorageSummaryInfo implements Serializable {
         sb.append('}');
         return sb.toString();
     }
+
 }

@@ -29,9 +29,9 @@ import java.io.Serializable;
  */
 public class ArchiveFileContent implements Serializable {
 
-    private final String content;
-    private final RepoPath sourceArchive;
-    private final String sourcePath;
+    private String content;
+    private RepoPath sourceArchive;
+    private String sourcePath;
     private String reason;
 
     public ArchiveFileContent(String content, RepoPath sourceArchive, String sourcePath) {
@@ -74,4 +74,7 @@ public class ArchiveFileContent implements Serializable {
         return notFound;
     }
 
+    public void setContent(String content) {
+        this.content = content;
+    }
 }

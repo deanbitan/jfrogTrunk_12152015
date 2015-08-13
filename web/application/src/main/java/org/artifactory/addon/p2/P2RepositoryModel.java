@@ -25,6 +25,7 @@ import java.io.Serializable;
  *
  * @author Yossi Shaul
  */
+// TODO: [by dan] kill this when wicket dies
 public class P2RepositoryModel implements Serializable {
 
     private P2Repository p2Repository;

@@ -90,10 +90,9 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
                 ((ArtifactoryHome) filterConfig.getServletContext().getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR))
                         .getArtifactoryProperties();
         ConstantValues idleTimeSecsProp = ConstantValues.securityAuthenticationCacheIdleTimeSecs;
-        long cacheIdleSecs = properties.getLongProperty(idleTimeSecsProp.getPropertyName(),
-                idleTimeSecsProp.getDefValue());
+        long cacheIdleSecs = properties.getLongProperty(idleTimeSecsProp);
         ConstantValues initSizeProp = ConstantValues.securityAuthenticationCacheInitSize;
-        long initSize = properties.getLongProperty(initSizeProp.getPropertyName(), initSizeProp.getDefValue());
+        long initSize = properties.getLongProperty(initSizeProp);
         nonUiAuthCache = CacheBuilder.newBuilder().softValues()
                 .initialCapacity((int) initSize)
                 .expireAfterWrite(cacheIdleSecs, TimeUnit.SECONDS)
@@ -159,7 +158,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         if ((servletPath == null || "/".equals(servletPath) || servletPath.length() == 0) &&
                 "get".equalsIgnoreCase(method)) {
             //We were called with an empty path - redirect to the app main page
-            response.sendRedirect(HttpUtils.WEBAPP_URL_PATH_PREFIX);
+            response.sendRedirect(HttpUtils.ANGULAR_WEBAPP);
             return;
         }
         //Reuse the authentication if it exists
@@ -189,6 +188,16 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
             log.debug("Using authentication {} from Http session.", authentication);
             useAuthentication(request, response, chain, authentication, securityContext);
         }
+    }
+
+    /**
+     * check if angular routing pattern match
+     * @param servletPath - servlet path
+     * @param method - method type
+     * @return if true match angular pattern
+     */
+    private boolean isAngularRoutingPatternMatch(String servletPath, String method) {
+        return servletPath.startsWith("/web/app/") && "get".equalsIgnoreCase(method);
     }
 
     private boolean reAuthenticationRequired(HttpServletRequest request, Authentication authentication) {
@@ -263,7 +272,9 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
     private void useAnonymousIfPossible(HttpServletRequest request, HttpServletResponse response,
             FilterChain chain, SecurityContext securityContext) throws IOException, ServletException {
         boolean anonAccessEnabled = context.getAuthorizationService().isAnonAccessEnabled();
-        if (anonAccessEnabled) {
+        if (anonAccessEnabled || request.getRequestURI().indexOf("auth") != -1 ||
+                request.getRequestURI().indexOf("saml/loginResponse") != -1/*||
+                request.getRequestURI().indexOf("webapp") != -1*/) {
             log.debug("Using anonymous");
             Authentication authentication = getNonUiCachedAuthentication(request);
             if (authentication == null) {
@@ -292,7 +303,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
             if (authFilter.acceptEntry(request)) {
                 log.debug("Sending request requiring authentication");
                 authFilter.commence(request, response,
-                        new InsufficientAuthenticationException("Authentication is required."));
+                        new InsufficientAuthenticationException("Authentication is required"));
             } else {
                 log.debug("No filter or entry just chain");
                 chain.doFilter(request, response);

@@ -40,13 +40,7 @@ import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
-import org.apache.wicket.markup.html.form.Radio;
-import org.apache.wicket.markup.html.form.RadioGroup;
-import org.apache.wicket.markup.html.form.TextArea;
-import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.LoopItem;
@@ -56,18 +50,10 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
-import org.artifactory.addon.AddonInfo;
-import org.artifactory.addon.AddonType;
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.CoreAddons;
-import org.artifactory.addon.OssAddonsManager;
+import org.artifactory.addon.*;
 import org.artifactory.addon.p2.P2Repository;
 import org.artifactory.addon.p2.P2WebAddon;
-import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonMenuNode;
-import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
+import org.artifactory.addon.wicket.disabledaddon.*;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
@@ -104,6 +90,7 @@ import org.artifactory.common.wicket.property.PropertyItem;
 import org.artifactory.common.wicket.util.SetEnableVisitor;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.property.PredefinedValue;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
@@ -185,16 +172,12 @@ import org.artifactory.webapp.wicket.panel.export.ExportResultsPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
-import org.jfrog.build.api.Artifact;
-import org.jfrog.build.api.BaseBuildFileBean;
-import org.jfrog.build.api.Build;
-import org.jfrog.build.api.BuildRetention;
-import org.jfrog.build.api.Dependency;
-import org.jfrog.build.api.Module;
+import org.jfrog.build.api.*;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -225,6 +208,9 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
         PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon, VagrantWebAddon, GitLfsWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
+
+    @Autowired
+    CentralConfigService centralConfigService;
 
     private static String buildLatestVersionLabel(VersionHolder latestVersion) {
         return String.format("(latest release is <a href=\"%s\" target=\"_blank\">%s</a>)",
@@ -676,7 +662,6 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         List<String> enabledAddonNames = addonsManager.getEnabledAddonNames();
         return new AddonsInfoPanel(panelId, installedAddons, enabledAddonNames.isEmpty());
     }
-
     @Override
     public ITab getBuildsTab(final RepoAwareActionableItem item) {
         return new DisabledBuildsTab(item);
@@ -869,8 +854,18 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
 
     @Override
     public String getListBrowsingVersion() {
-        VersionInfo versionInfo = getCentralConfig().getVersionInfo();
+        VersionInfo versionInfo = centralConfigService.getVersionInfo();
         return format("Artifactory/%s", versionInfo.getVersion());
+    }
+
+    @Override
+    public String getArtifactoryUrl() {
+        MutableCentralConfigDescriptor mutableCentralConfigDescriptor = centralConfigService.getMutableDescriptor();
+        MailServerDescriptor mailServer = mutableCentralConfigDescriptor.getMailServer();
+        if (mailServer != null && StringUtils.isNotBlank(mailServer.getArtifactoryUrl())) {
+            return mailServer.getArtifactoryUrl();
+        }
+        return null;
     }
 
     @Override
@@ -953,6 +948,12 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         }
     }
 
+    @Override
+    public String getBuildNum() {
+        VersionInfo versionInfo = centralConfigService.getVersionInfo();
+        return format("%s rev %s", versionInfo.getVersion(), versionInfo.getRevision());
+    }
+
     private boolean isTrial(AddonsManager addonsManager) {
         return addonsManager.isLicenseInstalled() && "Trial".equalsIgnoreCase(addonsManager.getLicenseDetails()[2]);
     }
@@ -994,7 +995,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     }
 
     @Override
-    public void createAndAddLocalRepoYumSection(Form<LocalRepoDescriptor> form, String repoKey, boolean isCreate) {
+    public void createAndAddLocalRepoYumSection(Form<LocalRepoDescriptor> form, LocalRepoDescriptor descriptor, boolean isCreate) {
         WebMarkupContainer calculationBorder = new WebMarkupContainer("yumCalculationBorder");
         calculationBorder.setOutputMarkupId(true);
         calculationBorder.add(new TitledBorderBehavior("fieldset-border", "YUM Calculation"));
@@ -1248,8 +1249,8 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
             dockerApiVersion.add(new HelpBubble("v2.help", "Support Docker V2 API"));
             dockerSection.add(dockerApiVersion);
         } else if (repoDescriptor instanceof RemoteRepoDescriptor) {
-            dockerSection.add(new StyledCheckbox("enableTokenAuthentication").setTitle("Enable Token Authentication").setEnabled(false));
-            dockerSection.add(new SchemaHelpBubble("enableTokenAuthentication.help"));
+            dockerSection.add(new StyledCheckbox("dockerTokenAuthentication").setTitle("Enable Token Authentication").setEnabled(false));
+            dockerSection.add(new SchemaHelpBubble("dockerTokenAuthentication.help"));
         }
         form.add(dockerSection);
     }

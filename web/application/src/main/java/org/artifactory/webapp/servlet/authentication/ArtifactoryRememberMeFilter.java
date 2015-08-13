@@ -52,8 +52,7 @@ public class ArtifactoryRememberMeFilter implements ArtifactoryAuthenticationFil
                 ((ArtifactoryHome) filterConfig.getServletContext().getAttribute(ArtifactoryHome.SERVLET_CTX_ATTR))
                         .getArtifactoryProperties();
         ConstantValues disableRememberMeProp = ConstantValues.securityDisableRememberMe;
-        Boolean disableRememberMe = properties.getBooleanProperty(disableRememberMeProp.getPropertyName(),
-                disableRememberMeProp.getDefValue());
+        Boolean disableRememberMe = properties.getBooleanProperty(disableRememberMeProp);
         if (!disableRememberMe) {
             ServletContext servletContext = filterConfig.getServletContext();
             ArtifactoryContext context = RequestUtils.getArtifactoryContext(servletContext);

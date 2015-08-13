@@ -28,7 +28,7 @@ public class BuildPropertyValuesElement extends LazyParserElement implements Dom
     }
 
     private void fillWithDomainFields(List<ParserElement> list) {
-        list.add(forward(new InternalSignElement("@"), AqlParser.value));
+        list.add(AqlParser.value);
     }
 
     private void fillWithSubDomains(List<ParserElement> list) {

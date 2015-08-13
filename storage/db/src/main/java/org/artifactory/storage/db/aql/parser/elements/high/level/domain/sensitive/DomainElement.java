@@ -18,6 +18,7 @@ public class DomainElement extends DomainSensitiveParserElement {
                 fork(empty, forward(dot, provide(FindElement.class), new SectionEndElement())),
                 fork(empty, forward(dot, provide(IncludeExtensionElement.class), new SectionEndElement())),
                 fork(empty, forward(dot, provide(SortExtensionElement.class), new SectionEndElement())),
+                fork(empty, forward(dot, offset), new SectionEndElement()),
                 fork(empty, forward(dot, limit), new SectionEndElement()));
         return createDomainParserElement(domain, tail);
     }

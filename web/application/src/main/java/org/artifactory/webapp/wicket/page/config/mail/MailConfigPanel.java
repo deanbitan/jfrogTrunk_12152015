@@ -150,7 +150,7 @@ public class MailConfigPanel extends TitledPanel {
                 MutableCentralConfigDescriptor cc = centralConfigService.getMutableDescriptor();
                 cc.setMailServer(((MailServerDescriptor) form.getDefaultModelObject()));
                 centralConfigService.saveEditedDescriptorAndReload(cc);
-                info("Mail server settings successfully updated.");
+                info("Successfully updated Mail server settings");
                 AjaxUtils.refreshFeedback(target);
             }
         };
@@ -170,7 +170,7 @@ public class MailConfigPanel extends TitledPanel {
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 String testRecipient = testRecipientTextField.getValue();
                 if (StringUtils.isEmpty(testRecipient)) {
-                    displayError(target, "Please specify a recipient for the test message.");
+                    displayError(target, "Please specify a recipient for the test message");
                     return;
                 }
                 MailServerDescriptor d = (MailServerDescriptor) form.getDefaultModelObject();
@@ -180,7 +180,7 @@ public class MailConfigPanel extends TitledPanel {
                         d.isTls(), d.isSsl(), d.getArtifactoryUrl());
                 if (!validateConfig(mailServerConfiguration)) {
                     displayError(target, "Sending a test message requires the configuration to be enabled with " +
-                            "defined host and port properties, at least.");
+                            "defined host and port properties");
                     return;
                 }
 
@@ -205,18 +205,18 @@ public class MailConfigPanel extends TitledPanel {
                     try {
                         mailService.sendMail(new String[]{testRecipient}, "Test", createTestMessage(configuration),
                                 configuration);
-                        String confirmMessage = "A test message has been sent successfully to '" + testRecipient + "'";
+                        String confirmMessage = "Successfully sent test message to '" + testRecipient + "'";
                         info(confirmMessage);
                         log.info(confirmMessage);
                         AjaxUtils.refreshFeedback(target);
                     } catch (EmailException e) {
                         String message = e.getMessage();
                         if (message == null) {
-                            message = "An error has occurred while sending an e-mail.";
+                            message = "Failed to send e-mail";
                         }
                         log.error(message, e);
                         String systemLogsPage = WicketUtils.absoluteMountPathForPage(SystemLogsPage.class);
-                        message += " Please review the <a href=\"" + systemLogsPage + "\">log</a> for further details.";
+                        message += " Please review <a href=\"" + systemLogsPage + "\">log</a> for further details";
                         displayError(target, message);
                     }
                 } else {

@@ -27,6 +27,8 @@ public interface RepositoryConfiguration {
 
     String getKey();
 
+    String getPackageType();
+
     String getType();
 
     String getDescription();
@@ -56,6 +58,8 @@ public interface RepositoryConfiguration {
     boolean isEnableDockerSupport();
 
     String getDockerApiVersion();
+
+    boolean isForceDockerAuthentication();
 
     boolean isEnableVagrantSupport();
 

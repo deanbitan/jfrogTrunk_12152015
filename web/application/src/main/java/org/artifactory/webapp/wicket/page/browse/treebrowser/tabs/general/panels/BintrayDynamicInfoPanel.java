@@ -25,6 +25,7 @@ import org.artifactory.common.wicket.component.panel.feedback.UnescapedFeedbackM
 import org.artifactory.common.wicket.util.WicketUtils;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.NamingUtils;
@@ -252,7 +253,7 @@ public class BintrayDynamicInfoPanel extends Panel {
 
     private boolean isLocalNonDockerRepo(RepoDescriptor repoDescriptor) {
         return repoDescriptor.getClass().equals(LocalRepoDescriptor.class)
-                && !repoDescriptor.isEnableDockerSupport();
+                && !repoDescriptor.getType().equals(RepoType.Docker);
     }
 
     private void showPushToButton() {

@@ -149,7 +149,7 @@ public class IndexerConfigPanel extends TitledActionPanel {
             @Override
             protected void onSubmit(AjaxRequestTarget target, Form form) {
                 centralConfigService.saveEditedDescriptorAndReload(centralConfig);
-                info("Indexer service settings successfully updated.");
+                info("Successfully updated Indexer service settings");
                 AjaxUtils.refreshFeedback(target);
                 target.add(this);
             }

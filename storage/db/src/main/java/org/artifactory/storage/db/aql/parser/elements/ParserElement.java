@@ -4,6 +4,8 @@ package org.artifactory.storage.db.aql.parser.elements;
 import org.artifactory.storage.db.aql.parser.AqlParserContext;
 import org.artifactory.storage.db.aql.parser.ParserElementResultContainer;
 
+import java.util.List;
+
 /**
  * The parser is actually group of parser elements that represent the language possibilities tree.
  * Each element represent intersection and its sub-tree in the possibilities tree.
@@ -27,4 +29,11 @@ public interface ParserElement {
      * TODO: should be internal only
      */
     void initialize();
+
+    /**
+     * Returns the next possibilities
+     *
+     * @return Possible parsing elements
+     */
+    List<String> next();
 }

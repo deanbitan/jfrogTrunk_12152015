@@ -200,13 +200,13 @@ public class LdapCreateUpdatePanel extends CreateUpdatePanel<LdapSetting> {
                 if (isCreate()) {
                     configDescriptor.getSecurity().addLdap(originalDescriptor);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    getPage().info("LDAP '" + originalDescriptor.getKey() + "' successfully created.");
+                    getPage().info("Successfully created LDAP '" + originalDescriptor.getKey() + "'");
                     ((LdapsListPage) getPage()).refresh(target);
                 } else {
                     LdapGroupWebAddon addon = addonsManager.addonByType(LdapGroupWebAddon.class);
                     addon.saveLdapSetting(configDescriptor, originalDescriptor);
                     centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-                    getPage().info("LDAP '" + originalDescriptor.getKey() + "' successfully updated.");
+                    getPage().info("Successfully created LDAP '" + originalDescriptor.getKey() + "'");
                     ((LdapsListPage) getPage()).refresh(target);
                 }
                 AjaxUtils.refreshFeedback(target);
