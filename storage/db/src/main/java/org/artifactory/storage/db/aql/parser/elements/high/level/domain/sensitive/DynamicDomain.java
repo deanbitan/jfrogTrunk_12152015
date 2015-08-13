@@ -35,9 +35,6 @@ public class DynamicDomain extends DomainSensitiveParserElement {
             case modules: {
                 return AqlParser.buildModuleDomains;
             }
-            case moduleProperties: {
-                return AqlParser.buildModulePropertiesDomains;
-            }
             case buildProperties: {
                 return AqlParser.buildPropertiesDomains;
             }

@@ -35,9 +35,6 @@ public class DynamicValue extends DomainSensitiveParserElement {
             case modules: {
                 return AqlParser.buildModuleValues;
             }
-            case moduleProperties: {
-                return AqlParser.buildModulePropertiesValues;
-            }
             case buildProperties: {
                 return AqlParser.buildPropertiesValues;
             }

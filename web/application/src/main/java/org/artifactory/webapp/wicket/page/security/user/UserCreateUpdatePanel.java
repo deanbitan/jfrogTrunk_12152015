@@ -311,7 +311,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 if (!created) {
                     error("User '" + username + "' already exists.");
                 } else {
-                    String successMessage = "Successfully created user '" + username + "'";
+                    String successMessage = "User '" + username + "' successfully created.";
                     boolean userHasPermissions = authorizationService.userHasPermissions(username);
                     if (!userHasPermissions) {
                         successMessage += "\nUser has no assigned permissions yet. You can directly assign " +
@@ -337,7 +337,7 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                     userInfo.setPassword(securityService.generateSaltedPassword(entity.getPassword()));
                 }
                 userGroupService.updateUser(userInfo, !userInfo.hasSameAuthorizationContext(origUser));
-                getPage().info("Successfully updated user '" + username + "'");
+                getPage().info("User '" + username + "' successfully updated.");
             }
         };
         form.add(submit);

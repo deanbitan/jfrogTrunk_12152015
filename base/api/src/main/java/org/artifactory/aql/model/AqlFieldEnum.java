@@ -49,8 +49,6 @@ public enum AqlFieldEnum {
     buildArtifactMd5("md5", "artifacts", string),
     buildPropertyKey("key", "buildProperties", string),
     buildPropertyValue("value", "buildProperties", string),
-    modulePropertyKey("key", "moduleProperties", string),
-    modulePropertyValue("value", "moduleProperties", string),
     buildUrl("url", "builds", string),
     buildName("name", "builds", string),
     buildNumber("number", "builds", string),
@@ -133,11 +131,6 @@ public enum AqlFieldEnum {
             case modules:
                 return new AqlFieldEnum[]{
                         buildModuleName
-                };
-            case moduleProperties:
-                return new AqlFieldEnum[]{
-                        modulePropertyKey,
-                        modulePropertyValue
                 };
             case buildProperties:
                 return new AqlFieldEnum[]{

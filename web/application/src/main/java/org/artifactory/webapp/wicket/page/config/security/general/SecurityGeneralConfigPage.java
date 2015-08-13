@@ -218,7 +218,7 @@ public class SecurityGeneralConfigPage extends AuthenticatedPage {
                 SecurityDescriptor editedDescriptor = (SecurityDescriptor) form.getModelObject();
                 centralConfig.setSecurity(editedDescriptor);
                 centralConfigService.saveEditedDescriptorAndReload(centralConfig);
-                info("Successfully updated security settings");
+                info("Security settings successfully updated.");
                 AjaxUtils.refreshFeedback(target);
             }
         });

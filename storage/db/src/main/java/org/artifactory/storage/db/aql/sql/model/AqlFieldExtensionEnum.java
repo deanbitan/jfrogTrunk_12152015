@@ -8,10 +8,6 @@ import static org.artifactory.storage.db.aql.sql.model.SqlTableEnum.*;
 
 /**
  * @author Gidi Shabat
- *
- * The Class extends the AqlFieldEnum.
- * The reason We split the AqlFiedEnumAnd into two parts  AqlFiedEnumAnd and AqlFieldExtensionEnum is to saparate the
- * database info from the common API.
  */
 public enum AqlFieldExtensionEnum {
     // node
@@ -54,8 +50,6 @@ public enum AqlFieldExtensionEnum {
     buildArtifactMd5(AqlFieldEnum.buildArtifactMd5, build_artifacts, md5, false),
     buildPropertyKey(AqlFieldEnum.buildPropertyKey, build_props, prop_key, false),
     buildPropertyValue(AqlFieldEnum.buildPropertyValue, build_props, prop_value, false),
-    modulePropertyKey(AqlFieldEnum.modulePropertyKey, module_props,prop_key,false),
-    modulePropertyValue(AqlFieldEnum.modulePropertyValue, module_props,prop_value,false),
     buildUrl(AqlFieldEnum.buildUrl, builds, ci_url, false),
     buildName(AqlFieldEnum.buildName, builds, build_name, false),
     buildNumber(AqlFieldEnum.buildNumber, builds, build_number, false),
@@ -64,9 +58,9 @@ public enum AqlFieldExtensionEnum {
     buildModified(AqlFieldEnum.buildModified, builds, modified, true),
     buildModifiedBy(AqlFieldEnum.buildModifiedBy, builds, modified_by, true);
 
+    private AqlFieldEnum aqlField;
     public SqlTableEnum table;
     public AqlTableFieldsEnum tableField;
-    private AqlFieldEnum aqlField;
     private boolean nullable;
 
     AqlFieldExtensionEnum(AqlFieldEnum aqlField, SqlTableEnum table, AqlTableFieldsEnum tableField,
@@ -77,6 +71,10 @@ public enum AqlFieldExtensionEnum {
         this.nullable = nullable;
     }
 
+    public boolean isNullable() {
+        return nullable;
+    }
+
     public static AqlFieldExtensionEnum getExtensionFor(AqlFieldEnum field) {
         for (AqlFieldExtensionEnum fieldExtensionEnum : values()) {
             if (fieldExtensionEnum.aqlField == field) {
@@ -84,9 +82,5 @@ public enum AqlFieldExtensionEnum {
             }
         }
         return null;
-    }
-
-    public boolean isNullable() {
-        return nullable;
     }
 }

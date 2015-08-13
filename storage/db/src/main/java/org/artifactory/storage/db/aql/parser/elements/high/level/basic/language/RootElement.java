@@ -26,7 +26,6 @@ public class RootElement extends LazyParserElement {
                 provider.provide(DomainElement.class, artifacts),
                 provider.provide(DomainElement.class, dependencies),
                 provider.provide(DomainElement.class, modules),
-                provider.provide(DomainElement.class, moduleProperties),
                 provider.provide(DomainElement.class, buildProperties),
                 provider.provide(DomainElement.class, builds));
     }

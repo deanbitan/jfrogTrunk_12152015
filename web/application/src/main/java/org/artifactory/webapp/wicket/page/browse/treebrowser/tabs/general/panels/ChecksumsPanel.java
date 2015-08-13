@@ -217,7 +217,7 @@ public class ChecksumsPanel extends Panel {
         public void onClick(AjaxRequestTarget target) {
             try {
                 repoService.fixChecksums(file.getRepoPath());
-                info("Successfully fixed checksum inconsistency");
+                info("Successfully fixed checksum inconsistency.");
                 // refresh the panel's content
                 ChecksumsPanel currentPanel = ChecksumsPanel.this;
                 ChecksumsPanel newPanel = new ChecksumsPanel(
@@ -225,7 +225,7 @@ public class ChecksumsPanel extends Panel {
                 currentPanel.replaceWith(newPanel);
                 target.add(newPanel);
             } catch (Exception e) {
-                error("Could not fix checksum inconsistency");
+                error("Could not fix checksum inconsistency: " + e.getMessage() + ".");
             }
             AjaxUtils.refreshFeedback(target);
         }

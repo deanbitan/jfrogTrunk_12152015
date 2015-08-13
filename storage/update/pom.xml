@@ -20,7 +20,7 @@
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.0.2</version>
+        <version>3.9.4</version>
     </parent>
 
     <artifactId>artifactory-update</artifactId>
