@@ -49,11 +49,14 @@ public class ClassSearchService implements RestService {
             for (ArchiveSearchResult archiveSearchResult : archiveSearchResults.getResults()) {
                 classSearchResults.add(new ClassSearchResult(archiveSearchResult));
             }
+            long resultsCount;
             int maxResults = ConstantValues.searchMaxResults.getInt();
             if (archiveSearchControl.isLimitSearchResults() && classSearchResults.size() > maxResults) {
                 classSearchResults = classSearchResults.subList(0, maxResults);
+                resultsCount = classSearchResults.size() == 0 ? 0 : archiveSearchResults.getFullResultsCount();
+            } else {
+                resultsCount = classSearchResults.size();
             }
-            long resultsCount = classSearchResults.size() == 0 ? 0 : archiveSearchResults.getFullResultsCount();
             SearchResult model = new SearchResult(classSearchResults, archiveSearchControl.getQueryDisplay(),
                     resultsCount, archiveSearchControl.isLimitSearchResults());
             model.addNotifications(response);

@@ -33,8 +33,11 @@ export function jfGrid($timeout,$compile) {
             $scope.noCount = $attrs.hasOwnProperty('noCount');
             $scope.noPagination = $attrs.hasOwnProperty('noPagination');
 
-            $($element).on('mouseenter','.ui-grid-cell-contents',(e)=>{
+            $($element).on('mouseenter', '.ui-grid-cell, .ui-grid-cell-contents, .btn-action', (e)=>{
                 let cellItem = $(e.target);
+
+                cellItem.parents('.ui-grid-row').addClass('hovered');
+                $scope.$apply();
 
                 if (cellItem.hasClass('ui-grid-cell-contents')) {
                     let cellItemContent = cellItem.text().trim();
@@ -60,6 +63,14 @@ export function jfGrid($timeout,$compile) {
                     }
                     else if (cellItem.hasClass('tooltipstered'))
                         cellItem.tooltipster('disable');
+                }
+            }).on('mouseleave', '.ui-grid-draggable-row, .ui-grid-cell, .ui-grid-cell-contents, .btn-action', (e)=>{
+                let currentRowElement = $(e.currentTarget).parents('.ui-grid-row'),
+                        toRowElement = $(e.relatedTarget).parents('.ui-grid-row');
+
+                if (!toRowElement || !currentRowElement.is(toRowElement)) {
+                    currentRowElement.removeClass('hovered');
+                    $scope.$apply();
                 }
             });
             $scope.$on('$destroy', () => {

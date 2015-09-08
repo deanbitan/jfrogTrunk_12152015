@@ -1,7 +1,11 @@
 package org.artifactory.ui.rest.model.admin.configuration.generalconfig;
 
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.descriptor.download.FolderDownloadConfigDescriptor;
+import org.artifactory.descriptor.message.SystemMessageDescriptor;
 import org.artifactory.rest.common.model.BaseModel;
+
+import java.util.Optional;
 
 /**
  * @author Chen Keinan
@@ -16,6 +20,19 @@ public class GeneralConfig extends BaseModel {
     private Boolean showAddonSettings;
     private String logoUrl;
     private int bintrayFilesUploadLimit;
+    private Boolean helpLinksEnabled;
+    //System message
+    private Boolean systemMessageEnabled;
+    private String systemMessageTitle;
+    private String systemMessageTitleColor;
+    private String systemMessage;
+    private Boolean showSystemMessageOnAllPages;
+    //Folder download
+    private Boolean folderDownloadEnabled;
+    private Integer folderDownloadMaxSizeMb;
+    private Long maxFolderDownloadFilesLimit;
+    private Integer FolderDownloadMaxConcurrentRequests;
+
 
     public GeneralConfig(){}
 
@@ -28,6 +45,21 @@ public class GeneralConfig extends BaseModel {
         showAddonSettings = mutableDescriptor.getAddons().isShowAddonsInfo();
         logoUrl = mutableDescriptor.getLogo();
         bintrayFilesUploadLimit = getBintrayFileUploadLimit(mutableDescriptor);
+        helpLinksEnabled = mutableDescriptor.isHelpLinksEnabled();
+        //System Message
+        SystemMessageDescriptor messageDescriptor = Optional.ofNullable(mutableDescriptor.getSystemMessageConfig())
+                .orElse(new SystemMessageDescriptor());
+        systemMessageEnabled = messageDescriptor.isEnabled();
+        systemMessageTitle = messageDescriptor.getTitle();
+        systemMessageTitleColor = messageDescriptor.getTitleColor();
+        systemMessage = messageDescriptor.getMessage();
+        showSystemMessageOnAllPages = messageDescriptor.isShowOnAllPages();
+        //Folder Download
+        FolderDownloadConfigDescriptor folderDownloadDescriptor = mutableDescriptor.getFolderDownloadConfig();
+        folderDownloadEnabled = folderDownloadDescriptor.isEnabled();
+        folderDownloadMaxSizeMb = folderDownloadDescriptor.getMaxDownloadSizeMb();
+        maxFolderDownloadFilesLimit = folderDownloadDescriptor.getMaxFiles();
+        FolderDownloadMaxConcurrentRequests = folderDownloadDescriptor.getMaxConcurrentRequests();
     }
 
     private int getBintrayFileUploadLimit(MutableCentralConfigDescriptor mutableDescriptor) {
@@ -101,5 +133,85 @@ public class GeneralConfig extends BaseModel {
 
     public void setBintrayFilesUploadLimit(int bintrayFilesUploadLimit) {
         this.bintrayFilesUploadLimit = bintrayFilesUploadLimit;
+    }
+
+    public Boolean isHelpLinksEnabled() {
+        return helpLinksEnabled;
+    }
+
+    public void setHelpLinksEnabled(Boolean helpLinksEnabled) {
+        this.helpLinksEnabled = helpLinksEnabled;
+    }
+
+    public boolean isSystemMessageEnabled() {
+        return systemMessageEnabled;
+    }
+
+    public void setSystemMessageEnabled(boolean systemMessageEnabled) {
+        this.systemMessageEnabled = systemMessageEnabled;
+    }
+
+    public String getSystemMessageTitle() {
+        return systemMessageTitle;
+    }
+
+    public void setSystemMessageTitle(String systemMessageTitle) {
+        this.systemMessageTitle = systemMessageTitle;
+    }
+
+    public String getSystemMessageTitleColor() {
+        return systemMessageTitleColor;
+    }
+
+    public void setSystemMessageTitleColor(String systemMessageTitleColor) {
+        this.systemMessageTitleColor = systemMessageTitleColor;
+    }
+
+    public String getSystemMessage() {
+        return systemMessage;
+    }
+
+    public void setSystemMessage(String systemMessage) {
+        this.systemMessage = systemMessage;
+    }
+
+    public boolean isShowSystemMessageOnAllPages() {
+        return showSystemMessageOnAllPages;
+    }
+
+    public void setShowSystemMessageOnAllPages(boolean showSystemMessageOnAllPages) {
+        this.showSystemMessageOnAllPages = showSystemMessageOnAllPages;
+    }
+
+    public Boolean isFolderDownloadEnabled() {
+        return folderDownloadEnabled;
+    }
+
+    public void setFolderDownloadEnabled(boolean folderDownloadEnabled) {
+        this.folderDownloadEnabled = folderDownloadEnabled;
+    }
+
+    public Integer getFolderDownloadMaxSizeMb() {
+        return folderDownloadMaxSizeMb;
+    }
+
+    public void setFolderDownloadMaxSizeMb(int folderDownloadMaxSizeMb) {
+        this.folderDownloadMaxSizeMb = folderDownloadMaxSizeMb;
+    }
+
+    public Long getMaxFolderDownloadFilesLimit() {
+        return maxFolderDownloadFilesLimit;
+    }
+
+    public void setMaxFolderDownloadFilesLimit(long maxFolderDownloadFilesLimit) {
+        this.maxFolderDownloadFilesLimit = maxFolderDownloadFilesLimit;
+    }
+
+    public Integer getFolderDownloadMaxConcurrentRequests() {
+        return FolderDownloadMaxConcurrentRequests;
+    }
+
+    public void setFolderDownloadMaxConcurrentRequests(int folderDownloadMaxConcurrentRequests) {
+        FolderDownloadMaxConcurrentRequests = folderDownloadMaxConcurrentRequests;
     }
 }

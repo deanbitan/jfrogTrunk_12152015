@@ -210,3 +210,4 @@ CodeMirror.commands.replaceAll = function (cm) {
     replace(cm, true);
 };
 
+export function search() {} //export nothing, prevent ide from marking import as error

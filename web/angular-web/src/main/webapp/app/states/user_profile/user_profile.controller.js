@@ -14,6 +14,12 @@ export class UserProfileController {
         this.showUserApiKey = false;
         this.showBintrayApiKey = false;
         this.profileLocked = true;
+
+        User.getLoginData().then((response) => {
+            this.oauthProviderLink = response.oauthProviderLink;
+        });
+
+
         if(this.currentUser.name=='anonymous'){
             $state.go('home');
         }

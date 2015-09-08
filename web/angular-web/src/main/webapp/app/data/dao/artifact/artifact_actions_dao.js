@@ -9,13 +9,19 @@ export function ArtifactActionsDao(RESOURCE, ArtifactoryDaoFactory) {
                     params: {action: '@action'},
                     notifications: true
                 },
+                performGet: {
+                    method: 'GET',
+                    params: {action: '@action'},
+                    notifications: true
+                },
                 dryRun: {
                     params: {action: '@action'}
                 },
                 getDeleteVersions: {
                     method: 'GET',
                     path: RESOURCE.ARTIFACT_ACTIONS + '/deleteversions',
-                    isArray: true
+                    isArray: false,
+                    notifications: true
                 }
         }).getInstance();
 }

@@ -2,16 +2,18 @@ import EVENTS from '../../../constants/artifacts_events.constants';
 import DICTIONARY from './../constants/artifact_general.constant';
 
 class jfArtifactInfoController {
-    constructor($element, $stateParams, $state, $scope, ArtifactoryEventBus, $timeout) {
+    constructor($element, $stateParams, $state, $scope, ArtifactoryEventBus, $timeout, User) {
         this.$element = $element;
         this.stateParams = $stateParams;
         this.state = $state;
         this.$timeout = $timeout;
+        this.user = User;
         this.DICTIONARY = DICTIONARY.tabs;
         this.isDropdownOpen = false;
         this.artifactoryEventBus = ArtifactoryEventBus;
         ArtifactoryEventBus.registerOnScope($scope, EVENTS.TREE_NODE_SELECT, node => this.selectNode(node));
         $scope.$on('ui-layout.resize', () => this._refreshTabs());
+
     }
 
     selectNode(node) {
@@ -24,7 +26,7 @@ class jfArtifactInfoController {
             this._transformInfoTabs();
             this.currentNode = node;
             // if current tab exists in the new node - dispatch an event:
-            if (_.findWhere(this.infoTabs, {name: this.stateParams.tab})) {
+            if (_.findWhere(this.infoTabs, {name: this.stateParams.tab}) && this.stateParams.tab !== 'StashInfo') {
                 this.artifactoryEventBus.dispatch(EVENTS.TAB_NODE_CHANGED, node);
             }
         }

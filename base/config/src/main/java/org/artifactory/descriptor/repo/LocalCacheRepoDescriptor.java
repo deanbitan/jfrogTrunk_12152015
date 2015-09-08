@@ -143,6 +143,16 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
     }
 
     @Override
+    public boolean isForceNugetAuthentication() {
+        return remoteRepo.isForceNugetAuthentication();
+    }
+
+    @Override
+    public void setForceNugetAuthentication(boolean forceNugetAuthentication) {
+        remoteRepo.setForceNugetAuthentication(forceNugetAuthentication);
+    }
+
+    @Override
     public boolean identicalCache(RepoDescriptor oldDescriptor) {
         if (!(oldDescriptor instanceof LocalCacheRepoDescriptor)) {
             return false;

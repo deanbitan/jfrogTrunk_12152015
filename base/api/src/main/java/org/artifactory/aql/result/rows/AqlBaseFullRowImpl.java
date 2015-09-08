@@ -13,7 +13,7 @@ import static org.artifactory.aql.model.AqlFieldEnum.*;
  * @author Gidi Shabat
  */
 @QueryTypes(value = items,
-        fields = {itemNodeId, itemType, itemRepo, itemPath, itemName, itemDepth, itemCreated, itemCreatedBy,
+        fields = {itemId, itemType, itemRepo, itemPath, itemName, itemDepth, itemCreated, itemCreatedBy,
                 itemModified, itemModifiedBy, itemUpdated, itemSize, itemActualSha1, itemOriginalSha1, itemActualMd5,
                 // stats
                 statDownloaded, statDownloads, statDownloadedBy,
@@ -22,13 +22,13 @@ import static org.artifactory.aql.model.AqlFieldEnum.*;
                 // archive entries
                 archiveEntryName, archiveEntryPath,
                 // builds
-                buildModuleName, buildDependencyName, buildDependencyScope, buildDependencyType, buildDependencySha1,
+                moduleName, buildDependencyName, buildDependencyScope, buildDependencyType, buildDependencySha1,
                 buildDependencyMd5, buildArtifactName, buildArtifactType, buildArtifactSha1, buildArtifactMd5, buildPropertyKey,
                 buildPropertyValue, buildUrl, buildName, buildNumber, buildCreated, buildCreatedBy, buildModified, buildModifiedBy
         })
 public class AqlBaseFullRowImpl
         implements AqlRowResult, FullRow, AqlItem, AqlBaseItem, AqlArchiveItem, AqlBuildArtifact, AqlBuildDependency,
-        AqlProperty, AqlBuild, AqlStatisticItem, AqlBuildProperty, AqlStatistics {
+        AqlProperty, AqlBuild, AqlStatisticItem, AqlBuildProperty, AqlStatistics,AqlBuildModule {
 
     Map<AqlFieldEnum, Object> map;
 
@@ -108,7 +108,7 @@ public class AqlBaseFullRowImpl
 
     @Override
     public long getNodeId() {
-        return (int) map.get(AqlFieldEnum.itemNodeId);
+        return (int) map.get(AqlFieldEnum.itemId);
     }
 
     @Override
@@ -153,7 +153,12 @@ public class AqlBaseFullRowImpl
 
     @Override
     public String getBuildModuleName() {
-        return (String) map.get(AqlFieldEnum.buildModuleName);
+        return (String) map.get(AqlFieldEnum.moduleName);
+    }
+
+    @Override
+    public Long getBuildModuleId() {
+        return (Long) map.get(AqlFieldEnum.moduleId);
     }
 
     @Override

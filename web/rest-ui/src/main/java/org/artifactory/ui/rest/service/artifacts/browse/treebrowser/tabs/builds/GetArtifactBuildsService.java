@@ -3,13 +3,9 @@ package org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.builds
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.build.ArtifactBuildAddon;
 import org.artifactory.api.build.BuildService;
-import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.search.SearchService;
-import org.artifactory.build.ArtifactoryBuildArtifact;
 import org.artifactory.build.BuildRun;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
@@ -34,7 +30,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Chen Keinan
@@ -125,30 +120,6 @@ public class GetArtifactBuildsService implements RestService {
         return Lists.newArrayList(searchService.findBuildsByDependencyChecksum(sha1, md5));
     }
 
- /*   *//**
-     * get Artifact build  Produce by data list
-     *
-     * @param run            - run build details
-     * @param sha1           - sha1 checksum
-     * @param md5            - md5 checksum
-     * @param producedByList - produce by list
-     * @return - list of produce by instances
-     *//*
-    protected List<ProduceBy> getArtifactProduceBy(BuildRun run, String sha1, String md5,
-            List<ProduceBy> producedByList) {
-        ArtifactBuildAddon buildAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
-                ArtifactBuildAddon.class);
-        Build build = buildService.getBuild(run);
-  *//*      List<Module> modules = build.getModules();
-        if (modules != null) {
-            modules.forEach(module ->
-                    addBuildProduceBy(run, sha1, md5, buildAddon, producedByList, build, module));
-        }*//*
-        List<Module> modules = build.getModules();
-        modules.forEach(module -> producedByList.add(new ProduceBy(run, module.getId())));
-        return producedByList;
-    }*/
-
     /**
      * get Artifact build  Produce by data list
      *
@@ -160,13 +131,11 @@ public class GetArtifactBuildsService implements RestService {
      */
     protected List<ProduceBy> getArtifactProduceBy(BuildRun run, String sha1, String md5,
             List<ProduceBy> producedByList) {
-        ArtifactBuildAddon buildAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
-                ArtifactBuildAddon.class);
         Build build = buildService.getBuild(run);
         List<Module> modules = build.getModules();
         if (modules != null) {
             modules.forEach(module ->
-                    addBuildProduceBy(run, sha1, md5, buildAddon, producedByList, build, module));
+                    addBuildProduceBy(run, sha1, md5, producedByList, module));
         }
         return producedByList;
     }
@@ -177,52 +146,53 @@ public class GetArtifactBuildsService implements RestService {
      * @param run            - build data
      * @param sha1           - sha1 checksum
      * @param md5            - md5 checksum
-     * @param buildAddon     - build add on
      * @param producedByList - list of produce by instance
-     * @param build          - build full data
      * @param module         - build module instance
      */
-    private void addBuildProduceBy(BuildRun run, String sha1, String md5, ArtifactBuildAddon buildAddon,
-            List<ProduceBy> producedByList, Build build, Module module) {
+    private void addBuildProduceBy(BuildRun run, String sha1, String md5,
+            List<ProduceBy> producedByList, Module module) {
         final String moduleId = module.getId();
         List<Artifact> artifacts = module.getArtifacts();
         if (artifacts != null) {
-            Set<RepoPath> artifactInfos = locateNonStrictModuleArtifact(buildAddon, build, module, sha1, md5);
-                    if (!artifactInfos.isEmpty()) {
+            boolean isMatchFound = locateNonStrictModuleArtifact(module, sha1, md5);
+            if (isMatchFound) {
                         producedByList.add(new ProduceBy(run, moduleId));
                     }
-            }
         }
+            }
 
     /**
      * Locates the given modules produced artifact
      *
-     * @param buildAddon Build addon
-     * @param build      The build
      * @param module     Module to extract artifact from
      * @return Repo path of produced artifact if found. Null if not
      */
-    private Set<RepoPath> locateNonStrictModuleArtifact(ArtifactBuildAddon buildAddon, Build build,
-            Module module, String sha1, String md5) {
-        Set<RepoPath> artifactRepoPaths = Sets.newHashSet();
-        Set<ArtifactoryBuildArtifact> buildFileArtifacts = buildAddon.getBuildArtifactsFileInfos(build);
+    private Boolean locateNonStrictModuleArtifact(Module module, String sha1, String md5) {
         List<Artifact> artifacts = module.getArtifacts();
         if (artifacts != null) {
-            artifacts.forEach(artifact -> {
+            for (Artifact artifact : artifacts) {
                 String artifactSha1 = artifact.getSha1();
                 String artifactMd5 = artifact.getMd5();
-                if ((StringUtils.isNotBlank(artifactSha1) && artifactSha1.equals(sha1)) ||
-                        (StringUtils.isNotBlank(artifactMd5) && (artifactMd5.equals(md5)))) {
-                    artifactRepoPaths.addAll(
-                            buildFileArtifacts.stream().filter(
-                                    buildArtifact -> buildArtifact.getArtifact().equals(
-                                            artifact) && buildArtifact.getFileInfo() != null)
-                                    .map(buildArtifact -> buildArtifact.getFileInfo().getRepoPath())
-                                    .collect(Collectors.toList()));
+                if (isArtifactMatch(sha1, md5, artifactSha1, artifactMd5)) {
+                    return true;
                 }
-            });
+            }
         }
-        return artifactRepoPaths;
+        return false;
+    }
+
+    /**
+     * is sha1 or md5 match between current artifact and produce by module artifact
+     *
+     * @param sha1         - current artifact sh1
+     * @param md5          - current artifact md5
+     * @param artifactSha1 - produce by sha1
+     * @param artifactMd5  - produce by md5
+     * @return - true if match found
+     */
+    private boolean isArtifactMatch(String sha1, String md5, String artifactSha1, String artifactMd5) {
+        return (StringUtils.isNotBlank(artifactSha1) && artifactSha1.equals(sha1)) ||
+                (StringUtils.isNotBlank(artifactMd5) && (artifactMd5.equals(md5)));
     }
 
     /**

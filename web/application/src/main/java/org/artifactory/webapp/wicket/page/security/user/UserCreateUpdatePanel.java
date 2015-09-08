@@ -287,10 +287,10 @@ public class UserCreateUpdatePanel extends CreateUpdatePanel<UserModel> {
                 boolean successful = true;
                 if (create) {
                     successful = createNewUser(username);
-                    AccessLogger.created("User " + username + " was created successfully");
+                    AccessLogger.created("Successfully created user '" + username + "'");
                 } else {
                     updateUser(username);
-                    AccessLogger.updated("User " + username + " was updated successfully");
+                    AccessLogger.updated("Successfully updated user '" + username + "'");
                 }
                 AjaxUtils.refreshFeedback(target);
                 if (successful) {

@@ -11,6 +11,7 @@ public class UserLogin extends BaseModel{
     private  String password;
     Boolean forgotPassword;
     private String ssoProviderLink;
+    private String oauthProviderLink;
 
     public UserLogin(){}
 
@@ -46,7 +47,15 @@ public class UserLogin extends BaseModel{
         return ssoProviderLink;
     }
 
+    public String getOauthProviderLink() {
+        return oauthProviderLink;
+    }
+
     public void setSsoProviderLink(String ssoProviderLink) {
         this.ssoProviderLink = ssoProviderLink;
+    }
+
+    public void setOauthProviderLink(String oauthProviderLink) {
+        this.oauthProviderLink = oauthProviderLink;
     }
 }

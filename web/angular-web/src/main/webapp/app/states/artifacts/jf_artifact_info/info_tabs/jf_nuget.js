@@ -33,7 +33,7 @@ class jfNugetController {
     _createGrid() {
         if (this.nugetData.dependencies) {
             if (!Object.keys(this.gridDependenciesOptions).length) {
-                this.gridDependenciesOptions = this.artifactoryGridFactory.getGridInstance()
+                this.gridDependenciesOptions = this.artifactoryGridFactory.getGridInstance(this.$scope)
                         .setRowTemplate('default')
                         .setColumns(this._getColumns('dependencies'))
                         .setGridData(this.nugetData.dependencies)
@@ -44,7 +44,7 @@ class jfNugetController {
         }
         if (this.nugetData.frameworkAssemblies) {
             if (!Object.keys(this.gridFrameworkAssembliesOptions).length) {
-                this.gridFrameworkAssembliesOptions = this.artifactoryGridFactory.getGridInstance()
+                this.gridFrameworkAssembliesOptions = this.artifactoryGridFactory.getGridInstance(this.$scope)
                         .setColumns(this._getColumns('frameworkAssemblies'))
                         .setRowTemplate('default')
                         .setGridData(this.nugetData.frameworkAssemblies)

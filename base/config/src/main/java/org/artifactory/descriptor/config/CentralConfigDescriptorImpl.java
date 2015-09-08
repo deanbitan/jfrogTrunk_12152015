@@ -28,11 +28,13 @@ import org.artifactory.descriptor.addon.AddonSettings;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.bintray.BintrayConfigDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
+import org.artifactory.descriptor.download.FolderDownloadConfigDescriptor;
 import org.artifactory.descriptor.external.BlackDuckSettingsDescriptor;
 import org.artifactory.descriptor.external.ExternalProvidersDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.index.IndexerDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
+import org.artifactory.descriptor.message.SystemMessageDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
@@ -72,11 +74,11 @@ import java.util.Map;
 
 @XmlRootElement(name = "config")
 @XmlType(name = "CentralConfigType",
-        propOrder = {"serverName", "offlineMode", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
+        propOrder = {"serverName", "offlineMode", "helpLinksEnabled", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "bintrayConfig", "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
                 "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
                 "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "virtualCacheCleanupConfig",
-                "quotaConfig", "externalProviders"},
+                "quotaConfig", "externalProviders", "systemMessageConfig", "folderDownloadConfig"},
         namespace = Descriptor.NS)
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CentralConfigDescriptorImpl implements MutableCentralConfigDescriptor {
@@ -116,12 +118,14 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElement
     private String serverName;
 
-
     /**
      * if this flag is set all the remote repos will work in offline mode
      */
     @XmlElement(defaultValue = "false", required = false)
     private boolean offlineMode;
+
+    @XmlElement
+    private boolean helpLinksEnabled = true;
 
     private AddonSettings addons = new AddonSettings();
 
@@ -142,6 +146,12 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
 
     @XmlElement
     private String logo;
+
+    @XmlElement
+    private SystemMessageDescriptor systemMessageConfig;
+
+    @XmlElement
+    private FolderDownloadConfigDescriptor folderDownloadConfig;
 
     @XmlElement
     private String footer;
@@ -562,6 +572,25 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     @Override
+    public SystemMessageDescriptor getSystemMessageConfig() {
+        return systemMessageConfig;
+    }
+
+    public void setSystemMessageConfig(SystemMessageDescriptor systemMessageConfig) {
+        this.systemMessageConfig = systemMessageConfig;
+    }
+
+    @Override
+    public FolderDownloadConfigDescriptor getFolderDownloadConfig() {
+        return folderDownloadConfig;
+    }
+
+    @Override
+    public void setFolderDownloadConfig(FolderDownloadConfigDescriptor folderDownloadConfig) {
+        this.folderDownloadConfig = folderDownloadConfig;
+    }
+
+    @Override
     public void addBackup(BackupDescriptor backupDescriptor) {
         String backupKey = backupDescriptor.getKey();
         if (isBackupExists(backupKey)) {
@@ -630,6 +659,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void setOfflineMode(boolean offlineMode) {
         this.offlineMode = offlineMode;
+    }
+
+    @Override
+    public boolean isHelpLinksEnabled() {
+        return helpLinksEnabled;
+    }
+
+    @Override
+    public void setHelpLinksEnabled(boolean helpLinksEnabled) {
+        this.helpLinksEnabled = helpLinksEnabled;
     }
 
     @Override

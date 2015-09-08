@@ -32,7 +32,7 @@ class jfBowerController {
     _createGrid() {
         if (this.bowerData.bowerDependencies) {
             if (!Object.keys(this.gridDependenciesOptions).length) {
-                this.gridDependenciesOptions = this.artifactoryGridFactory.getGridInstance()
+                this.gridDependenciesOptions = this.artifactoryGridFactory.getGridInstance(this.$scope)
                         .setRowTemplate('default')
                         .setColumns(this._getColumns())
                         .setGridData(this.bowerData.bowerDependencies)

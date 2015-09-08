@@ -1,7 +1,6 @@
 package org.artifactory.ui.rest.service.artifacts.search;
 
 import org.artifactory.ui.rest.model.artifacts.search.DeleteArtifactsModel;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.DeleteArtifactService;
 import org.artifactory.ui.rest.service.artifacts.search.checksumsearch.ChecksumSearchService;
 import org.artifactory.ui.rest.service.artifacts.search.classsearch.ClassSearchService;
 import org.artifactory.ui.rest.service.artifacts.search.gavcsearch.GavcSearchService;
@@ -9,6 +8,7 @@ import org.artifactory.ui.rest.service.artifacts.search.propertysearch.GetProper
 import org.artifactory.ui.rest.service.artifacts.search.propertysearch.PropertySearchService;
 import org.artifactory.ui.rest.service.artifacts.search.quicksearch.QuickSearchService;
 import org.artifactory.ui.rest.service.artifacts.search.remotesearch.RemoteSearchService;
+import org.artifactory.ui.rest.service.artifacts.search.searchresults.*;
 import org.springframework.beans.factory.annotation.Lookup;
 
 /**
@@ -30,6 +30,9 @@ public abstract class SearchServiceFactory {
     public abstract PropertySearchService propertySearchService();
 
     @Lookup
+    public abstract SaveSearchResultsService saveSearchResults();
+
+    @Lookup
     public abstract GetPropertySetsService getPropertySetsService();
 
     @Lookup
@@ -40,7 +43,32 @@ public abstract class SearchServiceFactory {
     @Lookup
     public abstract DeleteArtifactsService<DeleteArtifactsModel> deleteArtifactsService();
 
+    @Lookup
+    public abstract GetSearchResultsService getSearchResults();
 
+    @Lookup
+    public abstract RemoveSearchResultsService removeSearchResults();
+
+    @Lookup
+    public abstract SubtractSearchResultsService subtractSearchResults();
+
+    @Lookup
+    public abstract IntersectSearchResultsService intersectSearchResults();
+
+    @Lookup
+    public abstract AddSearchResultsService addSearchResults();
+
+    @Lookup
+    public abstract ExportSearchResultsService exportSearchResults();
+
+    @Lookup
+    public abstract CopySearchResultsService copySearchResults();
+
+    @Lookup
+    public abstract MoveSearchResultsService moveSearchResults();
+
+    @Lookup
+    public abstract DiscardFromResultsService discardResults();
 
 
 }

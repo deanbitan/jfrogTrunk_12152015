@@ -265,7 +265,7 @@ public class UploadServiceImpl implements UploadService {
         annotateWithRequestPropertiesIfPermitted(request, repoPath);
 
         sendSuccessfulResponse(request, response, repoPath, true);
-        log.info("Directory '{}' was created successfully.", request.getRepoPath());
+        log.info("Successfully created directory '{}'", request.getRepoPath());
     }
 
     private void annotateWithRequestPropertiesIfPermitted(ArtifactoryRequest request, RepoPath repoPath) {

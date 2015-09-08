@@ -18,31 +18,29 @@
 
 package org.artifactory.rest.resource.artifact;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import javax.annotation.Nonnull;
-import javax.annotation.security.RolesAllowed;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-
+import com.google.common.collect.Iterables;
+import com.sun.jersey.api.core.ExtendedUriInfo;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.rest.MissingRestAddonException;
 import org.artifactory.addon.rest.RestAddon;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryBrowsingService;
 import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.rest.artifact.*;
+import org.artifactory.api.rest.artifact.ItemLastModified;
+import org.artifactory.api.rest.artifact.ItemPermissions;
+import org.artifactory.api.rest.artifact.ItemProperties;
+import org.artifactory.api.rest.artifact.ItemStatsInfo;
+import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
+import org.artifactory.api.rest.artifact.RestFileInfo;
+import org.artifactory.api.rest.artifact.RestFolderInfo;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -78,8 +76,27 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.google.common.collect.Iterables;
-import com.sun.jersey.api.core.ExtendedUriInfo;
+import javax.annotation.Nonnull;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
 
@@ -88,12 +105,10 @@ import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
  */
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-@Path(PATH_ROOT + "/{" + ArtifactResource.PATH_PARAM + ": .+}")
+@Path(PATH_ROOT + "/{" + PATH_PARAM + ": .+}")
 @RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 public class ArtifactResource {
     private static final Logger log = LoggerFactory.getLogger(ArtifactResource.class);
-
-    public static final String PATH_PARAM = "path";
 
     private static final String LIST_PARAM = "list";
     private static final String DEEP_PARAM = "deep";
@@ -131,6 +146,8 @@ public class ArtifactResource {
 
     @Autowired
     private CentralConfigService centralConfig;
+
+
 
     @PathParam(PATH_PARAM)
     String path;
@@ -349,6 +366,7 @@ public class ArtifactResource {
     }
 
     private Response getPropertiesResponse() throws IOException {
+
         ItemProperties itemProperties = new ItemProperties();
         Properties propertiesAnnotatingItem = resolveProperties();
         if (propertiesAnnotatingItem != null) {
@@ -395,6 +413,9 @@ public class ArtifactResource {
             return properties;
         }
         if (repo.isLocal() || repo.isCache()) {
+            if (repo.isCache()) {
+                updateProperties(repoPath, repo);
+            }
             properties = repositoryService.getProperties(repoPathFromRequestPath());
         } else {
             VirtualRepo virtualRepo = repositoryService.virtualRepositoryByKey(repoPath.getRepoKey());
@@ -411,6 +432,18 @@ public class ArtifactResource {
             }
         }
         return properties;
+    }
+
+    /**
+     * Updates remote properties if cache has expired
+     *
+     * @param repoPath
+     * @param repo
+     */
+    private void updateProperties(RepoPath repoPath, Repo repo) {
+        PropertiesAddon propertiesAddon = ContextHelper.get().beanForType(AddonsManager.class)
+                .addonByType(PropertiesAddon.class);
+        propertiesAddon.updateRemoteProperties(repo, repoPath);
     }
 
     private void fixPathIfNeeded() {

@@ -10,7 +10,7 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.license.LicenseInfo;
-import org.artifactory.api.license.LicenseModuleModel;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.descriptor.property.PredefinedValue;
@@ -67,7 +67,7 @@ public class ChangeBuildLicenseService implements RestService {
             // get license-repo map
             Build build = getBuild(name, buildNumber, buildStarted, response);
             RepoPath repoPath = InternalRepoPathFactory.create(repoKey, path);
-            Multimap<RepoPath, LicenseModuleModel> repoPathLicenseMultimap = getRepoPathLicenseModuleModelMultimap(build);
+            Multimap<RepoPath, ModuleLicenseModel> repoPathLicenseMultimap = getRepoPathLicenseModuleModelMultimap(build);
             Map<String, LicenseInfo> currentValues = getCurrentValues(id, repoPath, repoPathLicenseMultimap);
             PreDefineValues preDefineValues = getLicenseValues(repoPath, currentValues);
             response.iModel(preDefineValues);
@@ -111,11 +111,11 @@ public class ChangeBuildLicenseService implements RestService {
      * @param build - license build
      * @return multi map with repo path and license
      */
-    private Multimap<RepoPath, LicenseModuleModel> getRepoPathLicenseModuleModelMultimap(Build build) {
+    private Multimap<RepoPath, ModuleLicenseModel> getRepoPathLicenseModuleModelMultimap(Build build) {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
-        Multimap<RepoPath, LicenseModuleModel> repoPathLicenseMultimap = licensesAddon.
-                licensePopulateSynchronously(build, false);
+        Multimap<RepoPath, ModuleLicenseModel> repoPathLicenseMultimap = licensesAddon.
+                populateLicenseInfoSynchronously(build, false);
         return repoPathLicenseMultimap;
     }
 
@@ -126,12 +126,12 @@ public class ChangeBuildLicenseService implements RestService {
      * @param repoPath The repo path of the model
      * @return The current values (licenses) for a specific id and repo path.
      */
-    private Map<String, LicenseInfo> getCurrentValues(String id, RepoPath repoPath, Multimap<RepoPath, LicenseModuleModel> LicenseMap) {
+    private Map<String, LicenseInfo> getCurrentValues(String id, RepoPath repoPath, Multimap<RepoPath, ModuleLicenseModel> LicenseMap) {
         List<LicenseInfo> licenseInfos = Lists.newArrayList();
         Map<String, LicenseInfo> licenseMap = new HashMap<>();
-        Iterable<LicenseModuleModel> modelsWithSameId =
+        Iterable<ModuleLicenseModel> modelsWithSameId =
                 Iterables.filter(LicenseMap.get(repoPath), new SameIdPredicate(id));
-        for (LicenseModuleModel moduleLicenseModel : modelsWithSameId) {
+        for (ModuleLicenseModel moduleLicenseModel : modelsWithSameId) {
             LicenseInfo licenseInfo = moduleLicenseModel.getLicense();
             if (licenseInfo.isValidLicense()) {
                 licenseInfos.add(licenseInfo);
@@ -141,7 +141,7 @@ public class ChangeBuildLicenseService implements RestService {
         return licenseMap;
     }
 
-    private static class SameIdPredicate implements Predicate<LicenseModuleModel> {
+    private static class SameIdPredicate implements Predicate<ModuleLicenseModel> {
 
         private String id;
 
@@ -150,7 +150,7 @@ public class ChangeBuildLicenseService implements RestService {
         }
 
         @Override
-        public boolean apply(@Nonnull LicenseModuleModel input) {
+        public boolean apply(@Nonnull ModuleLicenseModel input) {
             return input.getId().equals(id);
         }
     }

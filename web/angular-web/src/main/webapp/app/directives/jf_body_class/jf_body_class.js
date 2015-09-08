@@ -17,7 +17,9 @@ class jfBodyClassController {
     }
 
     _registerEvents() {
-        this.$scope.$on('$stateChangeSuccess', () => this._setBodyClass());
+        this.$scope.$on('$stateChangeSuccess', () => {
+            this._setBodyClass()
+        });
     }
 
     _setBodyClass() {
@@ -28,5 +30,7 @@ class jfBodyClassController {
         return stateName.replace(/\./g, '-');
     }
 
-
+    isLoadCompleted() {
+        return window.angular && angular.element(document.body).injector() && angular.element(document.body).injector().get("$http").pendingRequests == 0;
+    }
 }

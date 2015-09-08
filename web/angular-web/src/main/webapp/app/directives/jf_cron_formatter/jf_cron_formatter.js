@@ -9,6 +9,7 @@ export function jfCronFormatter(CronTimeDao, $q, $timeout) {
             ngModel.$formatters.push(formatCron);
             ngModel.$parsers.push(input => ngModel.$modelValue);
 
+            // Format the next scheduled time in the server
             function formatCron(input) {
                 if (input) {
                     return cronTimeDao.get({cron: input}).$promise

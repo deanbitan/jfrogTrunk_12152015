@@ -3,6 +3,8 @@ package org.artifactory.ui.rest.service.admin.configuration.repositories.util;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.descriptor.repo.DockerApiVersion;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
@@ -54,8 +56,24 @@ public class GetAvailableRepositories implements RestService {
     }
 
     private boolean filterByType(RepoType type, RepoDescriptor repo) {
-        return type.equals(RepoType.Generic) ||
-                (type.isMavenGroup() ? repo.getType().isMavenGroup() : repo.getType().equals(type));
+        boolean isGeneric = type.equals(RepoType.Generic);
+        if (isGeneric) {
+            return true;
+        }
+
+        if (type.isMavenGroup()) {
+            return repo.getType().isMavenGroup();
+        }
+
+        boolean isDocker = type.equals(RepoType.Docker) && repo.getType().equals(RepoType.Docker);
+        if (isDocker) {
+            boolean isLocal = repo instanceof LocalRepoDescriptor;
+            if (isLocal) {
+                return DockerApiVersion.V2.equals(repo.getDockerApiVersion());
+            }
+        }
+
+        return repo.getType().equals(type);
     }
 
     /**

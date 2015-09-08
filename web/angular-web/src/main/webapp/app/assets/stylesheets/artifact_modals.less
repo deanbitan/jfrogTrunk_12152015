@@ -10,6 +10,7 @@
 
 label.snippet {
   color: @greenBGDark;
+  margin: 5px 0 0;
 
   .icon {
     position: relative;
@@ -26,7 +27,11 @@ label.snippet {
 }
 
 .property-modal {
-  min-height: 400px;
+  overflow: hidden !important;
+
+  .dropdown-min-height {
+    min-height: 250px;
+  }
 }
 
 .modal-sm{

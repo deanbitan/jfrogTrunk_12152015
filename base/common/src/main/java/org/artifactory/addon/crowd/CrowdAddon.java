@@ -76,7 +76,7 @@ public interface CrowdAddon extends Addon {
      * @return A set of Crowd groups that the user belongs to, if the username is blank, all groups configured in Crowd
      *         will be returned.
      */
-    Set findCrowdExtGroups(String username, CrowdSettings currentCrowdSettings);
+    Set<CrowdExtGroup> findCrowdExtGroups(String username, CrowdSettings currentCrowdSettings);
 
     void testCrowdConnection(CrowdSettings crowdSettings) throws Exception;
 }

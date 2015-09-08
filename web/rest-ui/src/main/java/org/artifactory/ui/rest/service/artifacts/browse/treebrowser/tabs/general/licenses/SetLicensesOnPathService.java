@@ -50,9 +50,7 @@ public class SetLicensesOnPathService implements RestService {
         }
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
         List<GeneralTabLicenseModel> newLicensesNames = request.getModels();
-        // TODO: [by dan] Maybe transformation to LicenseInfo is unneeded? the UI sends from a list of the existing licenses
         Set<LicenseInfo> newLicenses = newLicensesNames.stream()
-                .parallel()
                 .map(newLicense -> licensesAddon.getLicenseByName(newLicense.getName()))
                 .collect(Collectors.toSet());
         if (CollectionUtils.isNullOrEmpty(newLicenses)) {

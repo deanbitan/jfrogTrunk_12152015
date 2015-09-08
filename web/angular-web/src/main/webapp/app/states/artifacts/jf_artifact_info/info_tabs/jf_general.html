@@ -7,15 +7,17 @@
 </div>
 <jf-panel jf-panel-heading="Info"
           ng-if="jfGeneral.generalData.info">
-    <div ng-if="jfGeneral.generalData.info.repoType.length"
-         class="repotype iconrepo iconrepo-{{jfGeneral.generalData.info.repoType.toLowerCase()}}"></div>
+    <div ng-if="jfGeneral.generalData.info.repoType.length" class="repository-type">
+        <div class="repotype iconrepo iconrepo-{{jfGeneral.generalData.info.repoType.toLowerCase()}}"></div>
+        <div ng-if="jfGeneral.generalData.info['smartRepo']"><span class="icon-logo-circle"></span>Smart Repository</div>
+    </div>
     <table class="jf-data-table">
         <tr ng-repeat="(key,value) in jfGeneral.generalData.info">
 
-            <td ng-if="key != 'licenses' && key != 'filtered' && key != 'showFilteredResourceCheckBox' && key != 'artifactsCount'">
+            <td ng-if="key != 'licenses' && key != 'filtered' && key != 'smartRepo' && key != 'showFilteredResourceCheckBox' && key != 'artifactsCount'">
                 {{jfGeneral.DICTIONARY[key]}}:
             </td>
-            <td ng-if="key != 'licenses' && key != 'filtered' && key != 'showFilteredResourceCheckBox' && key != 'signingKeyLink' && key != 'artifactsCount'">
+            <td ng-if="key != 'licenses' && key != 'filtered' && key != 'smartRepo' && key != 'showFilteredResourceCheckBox' && key != 'signingKeyLink' && key != 'artifactsCount'">
                 {{value}}
                 <jf-clip-copy ng-if="key === 'repositoryPath'"
                               text-to-copy="value" object-name="Path"></jf-clip-copy>
@@ -61,9 +63,8 @@
                                ng-model="jfGeneral.generalData.info.filtered"
                                ng-click="jfGeneral.onFilteredResourceCB()">
                     </jf-checkbox>
-
-                    <jf-help-tooltip ng-if="jfGeneral.TOOLTIP[key]" html="jfGeneral.TOOLTIP[key]"></jf-help-tooltip>
                 </label>
+                <jf-help-tooltip ng-if="jfGeneral.TOOLTIP[key]" html="jfGeneral.TOOLTIP[key]"></jf-help-tooltip>
             </td>
 
             <td ng-if="key == 'artifactsCount' && jfGeneral.artifactsCountEnabled()">{{jfGeneral.DICTIONARY[key]}}:</td>
@@ -129,6 +130,10 @@
             ng-click="jfGeneral.selectDeclaration(item)"> {{item}}
         </li>
     </ul>
+
+    <jf-clip-copy text-to-copy="jfGeneral.generalData.dependencyDeclaration.dependencyData"
+                  class="code-mirror-copy"
+                  object-name="Snippet"></jf-clip-copy>
 
     <jf-code-mirror mime-type="text/xml"
                     model="jfGeneral.generalData.dependencyDeclaration.dependencyData">

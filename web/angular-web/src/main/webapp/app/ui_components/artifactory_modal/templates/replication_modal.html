@@ -123,11 +123,12 @@
     <div class="modal-footer">
         <div class="pull-right">
             <button class="btn btn-default"
+                    jf-clear-errors
                     type="button"
                     ng-click="closeModal()">Cancel</button>
             <button class="btn btn-primary"
                     type="submit"
-                    ng-disabled="!(replicationForm.timeOut.$valid && replicationForm.url.$valid &&
+                    ng-disabled="!(replicationForm.timeOut.$valid && replicationForm.path.$valid &&
                     replicationForm.username.$valid && replicationForm.password.$valid)">Save
             </button>
         </div>

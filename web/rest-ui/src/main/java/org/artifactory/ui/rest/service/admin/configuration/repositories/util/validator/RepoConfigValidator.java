@@ -262,6 +262,11 @@ public class RepoConfigValidator {
                 maven.setSuppressPomConsistencyChecks(Optional.ofNullable(maven.getSuppressPomConsistencyChecks())
                         .orElse(DEFAULT_SUPPRESS_POM_CHECKS));
                 break;
+            case NuGet:
+                NugetTypeSpecificConfigModel nuget = ((NugetTypeSpecificConfigModel) model);
+                nuget.setForceNugetAuthentication(
+                        Optional.ofNullable(nuget.isForceNugetAuthentication()).orElse(DEFAULT_FORCE_NUGET_AUTH));
+                break;
         }
     }
 
@@ -411,7 +416,6 @@ public class RepoConfigValidator {
                     break;
                 }
             case Debian:
-            case Docker:
             case Vagrant:
             case GitLfs:
             case YUM:

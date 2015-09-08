@@ -53,7 +53,7 @@ public class CreatePermissionsTargetService extends BasePermissionsTargetService
             updateAcesPermissions(permissionTarget, infoFactory, mutableAclInfo);
             // update acl
             aclService.createAcl(mutableAclInfo);
-            response.info("Permission target '" + permissionTarget.getName() + "' created successfully.");
+            response.info("Successfully Created permission target '" + permissionTarget.getName() + "'");
         }
         catch (Exception e) {
             if (e instanceof AlreadyExistsException) {

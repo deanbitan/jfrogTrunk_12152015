@@ -29,10 +29,10 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.RestCoreAddon;
 import org.artifactory.addon.plugin.PluginsAddon;
+import org.artifactory.addon.plugin.ResourceStreamCtx;
 import org.artifactory.addon.plugin.download.AltRemoteContentAction;
 import org.artifactory.addon.plugin.download.AltRemotePathAction;
 import org.artifactory.addon.plugin.download.PathCtx;
-import org.artifactory.addon.plugin.download.ResourceStreamCtx;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ContextHelper;
@@ -45,6 +45,7 @@ import org.artifactory.checksum.ChecksumType;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.common.StatusHolder;
+import org.artifactory.descriptor.delegation.ContentSynchronisation;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
@@ -74,6 +75,7 @@ import org.artifactory.resource.RepoResourceInfo;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.resource.UnfoundRepoResourceReason;
+import org.artifactory.resource.UnfoundRepoResourceReason.Reason;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryStore;
@@ -84,8 +86,7 @@ import org.artifactory.util.CollectionUtils;
 import org.artifactory.util.ExceptionUtils;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.HttpUtils;
-import org.artifactory.resource.UnfoundRepoResourceReason.Reason;
-
+import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -406,7 +407,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private RepoResource getRemoteResource(RequestContext context, RepoPath repoPath, boolean foundExpiredInCache) {
         String path = repoPath.getPath();
         boolean folder = repoPath.isFolder();
-        if (!getDescriptor().isSynchronizeProperties() && context.getProperties().hasMandatoryProperty()) {
+        if (!isSynchronizeProperties() && context.getProperties().hasMandatoryProperty()) {
             RepoRequests.logToContext("Repository doesn't sync properties and the request contains " +
                     "mandatory properties - returning unfound resource");
             return new UnfoundRepoResource(repoPath, this + ": does not synchronize remote properties and request " +
@@ -710,8 +711,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
                             remoteResource);
                 }
             }
-
-            boolean synchronizeProperties = getDescriptor().isSynchronizeProperties();
+            boolean synchronizeProperties =isSynchronizeProperties();
 
             RepoRequests.logToContext("Remote property synchronization enabled = %s", synchronizeProperties);
 
@@ -760,6 +760,15 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         } finally {
             Closeables.close(handle, false);
         }
+    }
+
+    private boolean isSynchronizeProperties() {
+        boolean synchronizeProperties = getDescriptor().isSynchronizeProperties();
+        ContentSynchronisation contentSynchronisation = getDescriptor().getContentSynchronisation();
+        if(contentSynchronisation!=null){
+            synchronizeProperties = synchronizeProperties || contentSynchronisation.getProperties().isEnabled();
+        }
+        return synchronizeProperties;
     }
 
     private void setExceptionOnHandle(ResourceStreamHandle handle, Exception e) {
@@ -905,7 +914,11 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
         }
 
         List<RemoteItem> urls = null;
-        String fullDirectoryUrl = appendAndGetUrl(directoryPath);
+        String fullDirectoryUrl = directoryPath;
+        if (!HttpUtils.isAbsolute(directoryPath)) {
+            fullDirectoryUrl = removeApiFromUrlAndAppend(directoryPath);
+        }
+
         try {
             urls = getChildUrls(fullDirectoryUrl);
         } catch (IOException e) {
@@ -927,12 +940,30 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     }
 
     protected String appendAndGetUrl(String pathToAppend) {
-        if (HttpUtils.isAbsolute(pathToAppend)) {
+        boolean isPropertiesRequest = pathToAppend.endsWith(":properties");
+        if (HttpUtils.isAbsolute(pathToAppend) && !isPropertiesRequest) {
             return pathToAppend;
+        }
+
+        if (isPropertiesRequest) {
+            return removeApiFromUrlAndAppend(pathToAppend);
         }
 
         String remoteUrl = getUrl();
         StringBuilder baseUrlBuilder = new StringBuilder(remoteUrl);
+        if (!remoteUrl.endsWith("/")) {
+            baseUrlBuilder.append("/");
+        }
+        baseUrlBuilder.append(pathToAppend);
+        return baseUrlBuilder.toString();
+    }
+
+    private String removeApiFromUrlAndAppend(String pathToAppend) {
+        //If remote url ends with / it messes up the path builder, since we already add it below it's safe to remove
+        String remoteUrl = PathUtils.trimTrailingSlashes(getUrl());
+        ArtifactoryStandardUrlResolver artifactoryStandardUrlResolver = new ArtifactoryStandardUrlResolver(remoteUrl);
+        StringBuilder baseUrlBuilder = new StringBuilder(artifactoryStandardUrlResolver.getBaseUrl())
+                .append("/").append(artifactoryStandardUrlResolver.getRepoKey());
         if (!remoteUrl.endsWith("/")) {
             baseUrlBuilder.append("/");
         }

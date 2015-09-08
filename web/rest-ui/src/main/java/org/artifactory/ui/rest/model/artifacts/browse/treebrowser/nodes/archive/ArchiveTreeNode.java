@@ -1,5 +1,8 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes.archive;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.OssAddonsManager;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.fs.ZipEntryInfo;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.rest.common.model.RestModel;
@@ -104,14 +107,17 @@ public class ArchiveTreeNode implements Serializable, Comparable<ArchiveTreeNode
     }
 
     public String getType() {
-        return hasChildren() ? "folder" : "file";
+        return isDirectory() ? "folder" : "file";
     }
 
     public List<IAction> getActions(){
         List<IAction> actions = null;
-        if (!isLeaf()){
+        if (!isDirectory()) {
             actions = new ArrayList<>();
-            actions.add(new DownloadArtifact("Download"));
+            AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+            if (!(addonsManager instanceof OssAddonsManager)) {
+                actions.add(new DownloadArtifact("Download"));
+            }
         }
         return actions;
     }

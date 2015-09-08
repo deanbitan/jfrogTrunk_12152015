@@ -6,6 +6,6 @@ export class NativeBrowser {
     pathFor(node) {
     	let path = '../list/' + node.fullpath;
     	if (!_.endsWith(path, '/')) path = path + '/'; // add '/' in the end
-        return path;
+      return path;
     }    
 }

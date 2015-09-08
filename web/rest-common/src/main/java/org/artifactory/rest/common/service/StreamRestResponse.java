@@ -2,6 +2,7 @@ package org.artifactory.rest.common.service;
 
 import java.io.File;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import org.artifactory.rest.common.model.FileData;
 import org.artifactory.rest.common.model.FileModel;
@@ -27,8 +28,10 @@ public class StreamRestResponse extends ArtifactoryRestResponse implements Strea
         if (super.getIModel() != null && super.getIModel() instanceof FileModel) {
             fileEntity = true;
             return ResponseHandler.buildFileResponse(this, isDownload);
-        }
-        else {
+        } else if (super.getIModel() != null && super.getIModel() instanceof StreamingOutput) {
+            fileEntity = false;
+            return ResponseHandler.buildFileResponse(this, isDownload);
+        } else {
             fileEntity = false;
             return super.buildResponse();
         }

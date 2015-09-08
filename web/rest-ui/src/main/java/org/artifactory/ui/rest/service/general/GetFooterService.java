@@ -8,6 +8,7 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.descriptor.message.SystemMessageDescriptor;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.time.LocalDate;
+import java.util.Optional;
 
 /**
  * @author Chen Keinan
@@ -31,13 +33,15 @@ public class GetFooterService implements RestService {
     CentralConfigService centralConfigService;
     @Autowired
     private AuthorizationService authorizationService;
+    private boolean helpLinksEnabled;
 
     @Override
     public void execute(ArtifactoryRestRequest request, RestResponse response) {
         String versionInfo = getVersionInfo();
         String versionID = getVersionID(versionInfo);
         Footer footer = new Footer(getFooterLicenseInfo(), versionInfo, getCopyrights(), getCopyRightsUrl(),
-                getBuildNum(), isAol(), isGlobalRepoEnabled(), versionID, isUserLogo(), getLogoUrl(), getServer());
+                getBuildNum(), isAol(), isGlobalRepoEnabled(), versionID, isUserLogo(), getLogoUrl(), getServer(),
+                getSystemMessage(), isHelpLinksEnabled());
         response.iModel(footer);
     }
 
@@ -169,5 +173,17 @@ public class GetFooterService implements RestService {
      */
     private String getServer() {
         return centralConfigService.getDescriptor().getServerName();
+    }
+
+    /**
+     *  System message descriptor
+     */
+    private SystemMessageDescriptor getSystemMessage() {
+        return Optional.ofNullable(centralConfigService.getDescriptor().getSystemMessageConfig())
+                .orElse(new SystemMessageDescriptor());
+    }
+
+    public boolean isHelpLinksEnabled() {
+        return centralConfigService.getDescriptor().isHelpLinksEnabled();
     }
 }

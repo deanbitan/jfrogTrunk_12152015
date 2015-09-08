@@ -56,7 +56,7 @@ class jfGeneralController {
         this.generalScope = this.$scope.$new();
         this.generalScope.closeModal = () => this.modalInstance.close();
         this.generalScope.saveLicenses = (licenses)=>this.saveLicenses(licenses);
-        this.generalScope.modalTitle = 'Add Artifactory License property';
+        this.generalScope.modalTitle = 'Add Artifactory License Property';
     }
 
     getGeneralTab() {
@@ -64,11 +64,12 @@ class jfGeneralController {
     }
 
     _getGeneralData() {
+
         let generalTab = this.getGeneralTab();
         if (generalTab && generalTab.info) { // If general data already exists on the node (for archive children)
             this.generalData = generalTab;
         }
-        else {
+        else if (this.currentNode.data.className === 'TreeNode') {
             this.artifactGeneralDao.fetch({
                 "type": this.currentNode.data.type,
                 "repoKey": this.currentNode.data.repoKey,

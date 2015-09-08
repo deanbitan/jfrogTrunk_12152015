@@ -7,7 +7,8 @@ export default angular.module('artifactory_grid', [
 	    'ui.grid.edit',
 	    'ui.grid.selection',
 	    'ui.grid.pagination',
-	    'ui.grid.grouping'
+	    'ui.grid.grouping',
+		'ui.grid.resizeColumns'
 	])
     .service('ArtifactoryGridFactory', ArtifactoryGridFactory)
     .constant('ARTIFACTORY_GRID', ARTIFACTORY_GRID);

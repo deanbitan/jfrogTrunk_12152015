@@ -115,7 +115,7 @@ class JfSimpleBrowserController extends JFCommonBrowser {
                 <a onclick="event.stopImmediatePropagation()"
                    class="view-in-simple-mode"
                    target="_blank"
-                   jf-tooltip="Directory Browsing"
+                   title="Directory Browsing"
                    href="${ this.nativeBrowser.pathFor(node) }">
                     <i class="icon icon-simple-browser"></i>
                 </a>`;
@@ -161,6 +161,8 @@ class JfSimpleBrowserController extends JFCommonBrowser {
                 this._dispatchEvent();
             }
         });
+
+
     }
     
     _dispatchEvent() {
@@ -173,6 +175,8 @@ class JfSimpleBrowserController extends JFCommonBrowser {
     }
 
     _onReady() {
+        if (!this.selectedNode.parent && this.activeFilter) this._searchTree(this.searchText);
+
         this.jstree().show_dots();
         this._focusOnTree();
     }
@@ -198,7 +202,12 @@ class JfSimpleBrowserController extends JFCommonBrowser {
             this.treeBrowserDao.findRepo(repoKey)
                 .then((repoNode) => this._loadNodeIntoView(repoNode));
         });
-        this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_REFRESH, (node) => this._loadNodeIntoView(this.currentParentNode));
+        this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_REFRESH, (node) => {
+            if (node.data != this.currentParentNode) return;
+            if (node.data) node.data.invalidateChildren();
+            else this.treeBrowserDao.invalidateRoots();
+            this._loadNodeIntoView(node.data);
+        });
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_DELETE, (node) => {
             this.$timeout(() => this._loadNodeIntoView(this.currentParentNode.parent), 500);
         });
@@ -235,9 +244,7 @@ class JfSimpleBrowserController extends JFCommonBrowser {
         TreeConfig.contextmenu.items = this._getContextMenuItems.bind(this);
 
         // Search by node text only (otherwise searches the whole HTML)
-        TreeConfig.search.search_callback = (str, jsTreeNode) => {
-            return jsTreeNode.data && jsTreeNode.data.text && jsTreeNode.data.text.indexOf(str) != -1;
-        };
+        TreeConfig.search.search_callback = this._searchCallback.bind(this);
 
         if (this.built) this.jstree().destroy();
         $(this.treeElement).jstree(TreeConfig);
@@ -258,6 +265,9 @@ class JfSimpleBrowserController extends JFCommonBrowser {
 
 export function jfSimpleBrowser() {
     return {
+        scope: {
+            browserController: '='
+        },
         restrict: 'E',
         controller: JfSimpleBrowserController,
         controllerAs: 'SimpleBrowser',

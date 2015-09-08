@@ -18,6 +18,7 @@
 
 package org.artifactory.descriptor.repo;
 
+import org.artifactory.descriptor.delegation.ContentSynchronisation;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.util.PathUtils;
 
@@ -29,7 +30,7 @@ import javax.xml.bind.annotation.XmlType;
         "fetchJarsEagerly", "fetchSourcesEagerly", "retrievalCachePeriodSecs", "assumedOfflinePeriodSecs",
         "missedRetrievalCachePeriodSecs", "checksumPolicyType",
         "unusedArtifactsCleanupPeriodHours", "shareConfiguration", "synchronizeProperties", "listRemoteFolderItems",
-        "remoteRepoLayout", "rejectInvalidJars", "nuget", "pypi", "bower", "p2OriginalUrl", "vcs"},
+        "remoteRepoLayout", "rejectInvalidJars", "nuget", "pypi", "bower", "p2OriginalUrl", "vcs", "contentSynchronisation"},
         namespace = Descriptor.NS)
 public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
 
@@ -47,19 +48,18 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     private boolean hardFail;
     @XmlElement(defaultValue = "false", required = false)
     private boolean offline;
-    @XmlElement(defaultValue = "43200", required = false)
-    private long retrievalCachePeriodSecs = 43200;//12hrs
+    @XmlElement(defaultValue = "600", required = false)
+    private long retrievalCachePeriodSecs = 600;//10 min.
     @XmlElement(defaultValue = "300", required = false)
     private long assumedOfflinePeriodSecs = 300;   //5 minutes
-    @XmlElement(defaultValue = "7200", required = false)
-    private long missedRetrievalCachePeriodSecs = 7200;//2 hours
+    @XmlElement(defaultValue = "1800", required = false)
+    private long missedRetrievalCachePeriodSecs = 1800;//30 min.
     @XmlElement(name = "remoteRepoChecksumPolicyType", defaultValue = "generate-if-absent", required = false)
     private ChecksumPolicyType checksumPolicyType = ChecksumPolicyType.GEN_IF_ABSENT;
     @XmlElement(defaultValue = "0", required = false)
     private int unusedArtifactsCleanupPeriodHours = 0;
     @XmlElement(defaultValue = "false", required = false)
     private boolean synchronizeProperties;
-
     @XmlElement(defaultValue = "true", required = false)
     private boolean listRemoteFolderItems = true;
 
@@ -80,6 +80,9 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
     private VcsConfiguration vcs;
 
     private BowerConfiguration bower;
+
+    @XmlElement(name = "contentSynchronisation", required = false)
+    private ContentSynchronisation contentSynchronisation;
 
     public String getUrl() {
         return url;
@@ -273,5 +276,24 @@ public abstract class RemoteRepoDescriptor extends RealRepoDescriptor {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Returns ContentForwarding configuration
+     *
+     * @return {@link ContentSynchronisation}
+     */
+    public ContentSynchronisation getContentSynchronisation() {
+        if(contentSynchronisation == null) {
+            contentSynchronisation = new ContentSynchronisation();
+        }
+        return contentSynchronisation;
+    }
+
+    /**
+     * Sets {@link ContentSynchronisation} configuration (used for UI mapping purposes)
+     */
+    public void setContentSynchronisation(ContentSynchronisation contentSynchronisation) {
+        this.contentSynchronisation = contentSynchronisation;
     }
 }

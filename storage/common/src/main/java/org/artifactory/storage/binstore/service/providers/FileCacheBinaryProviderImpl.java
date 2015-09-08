@@ -25,6 +25,7 @@ import org.apache.commons.io.IOUtils;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.storage.StorageUnit;
 import org.artifactory.binstore.BinaryInfo;
+import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
@@ -72,6 +73,12 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
         maxTotalSize = getLongParam("maxSize", getStorageProperties().getBinaryProviderCacheMaxSize());
         cacheCleanerSemaphore = new Semaphore(1);
         syncCacheEntries();
+    }
+
+    @Override
+    protected File getBaseDataDir() {
+        // For cachedFS/fullDb we want the cache to be per node and not in the HA cluster
+        return ArtifactoryHome.get().getDataDir();
     }
 
     private void syncCacheEntries() {

@@ -33,6 +33,11 @@ export default function GridApiMock(gridOptions) {
       on: {
         paginationChanged: jasmine.createSpy('paginationChanged')
       }
+    },
+    colResizable: {
+      on: {
+        columnSizeChanged: jasmine.createSpy('columnSizeChanged')
+      }
     }
   }
 }

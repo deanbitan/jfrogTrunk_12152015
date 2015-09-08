@@ -91,10 +91,10 @@ public class GroupCreateUpdatePanel extends CreateUpdatePanel<GroupInfo> {
                 boolean hasError = false;
                 if (isCreate()) {
                     hasError = onCreate();
-                    AccessLogger.created("Group " + getGroupInfo().getGroupName() + " was created successfully");
+                    AccessLogger.created("Successfully created group '" + getGroupInfo().getGroupName() + "'");
                 } else {
                     onUpdate();
-                    AccessLogger.updated("Group " + getGroupInfo().getGroupName() + " was updated successfully");
+                    AccessLogger.updated("Successfully updated group '" + getGroupInfo().getGroupName() + "'");
                 }
                 AjaxUtils.refreshFeedback(target);
                 if (!hasError) {

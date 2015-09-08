@@ -18,8 +18,12 @@
 
 package org.artifactory.webapp.servlet.authentication;
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.wicket.PluginsWebAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -38,19 +42,10 @@ import java.util.List;
  * @date Mar 10, 2009
  */
 public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenticationFilter {
-    private boolean serveAll = false;
-    private final List<ArtifactoryAuthenticationFilter> chain = new ArrayList<>();
+    private final List<ArtifactoryAuthenticationFilter> authenticationFilters = new ArrayList<>();
 
-    public boolean isServeAll() {
-        return serveAll;
-    }
-
-    public void setServeAll(boolean serveAll) {
-        this.serveAll = serveAll;
-    }
-
-    public List<ArtifactoryAuthenticationFilter> getChain() {
-        return chain;
+    public List<ArtifactoryAuthenticationFilter> getAuthenticationFilters() {
+        return authenticationFilters;
     }
 
     public void addFilters(Collection<ArtifactoryAuthenticationFilter> filters) {
@@ -66,23 +61,23 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
                 // Other Hack! The CAS should be after other SSO filter
                 beforeLast = filter;
             } else {
-                this.chain.add(filter);
+                this.authenticationFilters.add(filter);
             }
         }
         if (beforeLast != null) {
-            this.chain.add(beforeLast);
+            this.authenticationFilters.add(beforeLast);
         }
         if (last != null) {
-            this.chain.add(last);
+            this.authenticationFilters.add(last);
         }
     }
 
     public void addFilter(ArtifactoryAuthenticationFilter filter) {
-        this.chain.add(filter);
+        this.authenticationFilters.add(filter);
     }
 
     public boolean requiresReAuthentication(ServletRequest request, Authentication authentication) {
-        for (ArtifactoryAuthenticationFilter filter : chain) {
+        for (ArtifactoryAuthenticationFilter filter : authenticationFilters) {
             if (filter.requiresReAuthentication(request, authentication)) {
                 return true;
             }
@@ -92,7 +87,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
 
     @Override
     public boolean acceptFilter(ServletRequest request) {
-        for (ArtifactoryAuthenticationFilter filter : chain) {
+        for (ArtifactoryAuthenticationFilter filter : authenticationFilters) {
             if (filter.acceptFilter(request)) {
                 return true;
             }
@@ -102,7 +97,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
 
     @Override
     public boolean acceptEntry(ServletRequest request) {
-        for (ArtifactoryAuthenticationFilter filter : chain) {
+        for (ArtifactoryAuthenticationFilter filter : authenticationFilters) {
             if (filter.acceptEntry(request)) {
                 return true;
             }
@@ -113,7 +108,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
     @Override
     public String getCacheKey(ServletRequest request) {
         String result;
-        for (ArtifactoryAuthenticationFilter filter : chain) {
+        for (ArtifactoryAuthenticationFilter filter : authenticationFilters) {
             result = filter.getCacheKey(request);
             if (result != null && result.trim().length() > 0) {
                 return result;
@@ -124,30 +119,38 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        for (ArtifactoryAuthenticationFilter filter : chain) {
+        for (ArtifactoryAuthenticationFilter filter : authenticationFilters) {
             filter.init(filterConfig);
         }
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, final FilterChain servletChain)
             throws IOException, ServletException {
+        FilterChain chainWithAdditive = (request, response) -> {
+            try {
+                AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+                addonsManager.addonByType(PluginsWebAddon.class).executeAdditiveRealmPlugins();
+                servletChain.doFilter(request, response);
+            } catch (AuthenticationException e) {
+                ContextHelper.get().beanForType(BasicAuthenticationEntryPoint.class).commence(
+                        (HttpServletRequest) request, (HttpServletResponse) response, e);
+            }
+        };
+
         // First one that accepts
-        for (ArtifactoryAuthenticationFilter filter : this.chain) {
-            if (filter.acceptFilter(request)) {
-                filter.doFilter(request, response, chain);
+        for (ArtifactoryAuthenticationFilter filter : this.authenticationFilters) {
+            if (filter.acceptFilter(servletRequest)) {
+                filter.doFilter(servletRequest, servletResponse, chainWithAdditive);
                 // TODO: May be check that the response was done
                 return;
             }
-        }
-        if (serveAll) {
-            chain.doFilter(request, response);
         }
     }
 
     @Override
     public void destroy() {
-        for (ArtifactoryAuthenticationFilter filter : chain) {
+        for (ArtifactoryAuthenticationFilter filter : authenticationFilters) {
             filter.destroy();
         }
     }
@@ -157,16 +160,12 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
             AuthenticationException authException)
             throws IOException, ServletException {
         // First one that accepts
-        for (ArtifactoryAuthenticationFilter filter : this.chain) {
+        for (ArtifactoryAuthenticationFilter filter : this.authenticationFilters) {
             if (filter.acceptEntry(request)) {
                 filter.commence(request, response, authException);
                 // TODO: May be check that the response was done
                 return;
             }
-        }
-        if (serveAll) {
-            throw new IllegalStateException(
-                    "Could not find any authentication entry point valid for request " + request);
         }
     }
 }

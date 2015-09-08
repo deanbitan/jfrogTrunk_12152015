@@ -47,6 +47,18 @@ public interface StatsService {
     void fileDownloaded(RepoPath repoPath, String downloadedBy, long downloadedTime);
 
     /**
+     * Update the download (performed at remote artifactory instance) stats and increment the count by one.
+     * The storage update is not immediate.
+     *
+     * @param origin         The origin hosts
+     * @param repoPath       The file repo path to set/update stats
+     * @param downloadedBy   User who downloaded the file
+     * @param downloadedTime Time the file was downloaded
+     * @param count          Amount of performed downloads
+     */
+    void fileDownloadedRemotely(String origin, RepoPath repoPath, String downloadedBy, long downloadedTime, long count);
+
+    /**
      * Sets the stats details on the given node. Existing statistics on this node are overridden.
      *
      * @param nodeId    The node id to set stats on.

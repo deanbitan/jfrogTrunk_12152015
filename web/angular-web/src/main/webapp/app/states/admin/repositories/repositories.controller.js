@@ -27,42 +27,20 @@ export class AdminRepositoriesController {
      * NOTE: Multi select and batch actions are commented until batch delete repos is approved for prod.
      */
     _createGrid() {
-        this.gridOption.local = this.artifactoryGridFactory.getGridInstance(this.$scope)
-            .setColumns(this._getLocalColumns());
+        this.gridOption = this.artifactoryGridFactory.getGridInstance(this.$scope)
+            .setColumns(this._getColumns());
             //.setMultiSelect()
             //.setBatchActions(this._getBatchActions())
         if(this.features.isGlobalRepoEnabled()) {
-            this.gridOption.local.setDraggable(this.reorderRepositories.bind(this));
+            this.gridOption.setDraggable(this.reorderRepositories.bind(this));
         }
         else {
-            this.gridOption.local.setRowTemplate('default');
+            this.gridOption.setRowTemplate('default');
         }
-        this.gridOption.remote = this.artifactoryGridFactory.getGridInstance(this.$scope)
-            .setColumns(this._getRemoteColumns());
-            //.setMultiSelect()
-            //.setBatchActions(this._getBatchActions());
-        if(this.features.isGlobalRepoEnabled()) {
-            this.gridOption.remote.setDraggable(this.reorderRepositories.bind(this));
-        }
-        else {
-            this.gridOption.remote.setRowTemplate('default');
-        }
-        this.gridOption.virtual = this.artifactoryGridFactory.getGridInstance(this.$scope)
-            .setColumns(this._getVirtualColumns());
-            //.setMultiSelect()
-            //.setBatchActions(this._getBatchActions());
-        if(this.features.isGlobalRepoEnabled()) {
-            this.gridOption.virtual.setDraggable(this.reorderRepositories.bind(this));
-        }
-        else {
-            this.gridOption.virtual.setRowTemplate('default');
-        }
-
     }
 
     _initRepos() {
-        let currentRepoType = this.currentRepoType;
-        this.repositoriesDao.getRepositories({type: currentRepoType}).$promise
+        this.repositoriesDao.getRepositories({type: this.currentRepoType}).$promise
                 .then((data) => {
                     _.forEach(data, (row) => {
                         row.displayType = _.find(FIELD_OPTIONS.repoPackageTypes, (type) => {
@@ -70,7 +48,7 @@ export class AdminRepositoriesController {
                         }).text;
                     });
                     this.gridData = data;
-                    this.gridOption[currentRepoType].setGridData(data);
+                    this.gridOption.setGridData(data);
                 });
     }
 
@@ -109,7 +87,7 @@ export class AdminRepositoriesController {
     }
 
     _deleteSelectedRepos() {
-        let selectedRows = this.gridOption[this.currentRepoType].api.selection.getSelectedGridRows();
+        let selectedRows = this.gridOption.api.selection.getSelectedGridRows();
     }
 
     _editSelected(row) {
@@ -139,6 +117,17 @@ export class AdminRepositoriesController {
                 this.repoInfo).$promise.then((result)=> {
 
                 });
+    }
+
+    _getColumns() {
+        switch(this.currentRepoType) {
+            case 'local':
+                return this._getLocalColumns();
+            case 'remote':
+                return this._getRemoteColumns();
+            case 'virtual':
+                return this._getVirtualColumns();
+        }
     }
 
     _getLocalColumns() {
@@ -187,7 +176,7 @@ export class AdminRepositoriesController {
         return [
             {
                 name: 'Repository Key',
-                displayName: 'Repository key',
+                displayName: 'Repository Key',
                 field: 'repoKey',
                 cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'remote\',repoKey: row.entity.repoKey})" id="repositories-remote-key">{{COL_FIELD}}</a></div>',
                 width: '20%',
@@ -233,7 +222,7 @@ export class AdminRepositoriesController {
         return [
             {
                 name: 'Repository Key',
-                displayName: 'Repository key',
+                displayName: 'Repository Key',
                 field: 'repoKey',
                 cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="^.list.edit({repoType:\'virtual\',repoKey: row.entity.repoKey})" id="repositories-virtual-key">{{COL_FIELD}}</a></div>',
                 width: '20%',
@@ -257,7 +246,9 @@ export class AdminRepositoriesController {
                 name: 'Selected Repositories',
                 displayName: 'Selected Repositories',
                 field: 'selectedRepos',
-                cellTemplate: '<div class="ui-grid-cell-contents" id="repositories-virtual-selected">{{row.entity.selectedRepos.join(";")}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents" id="repositories-virtual-selected" ng-if="row.entity.selectedRepos.length">{{row.entity.selectedRepos.length}} | {{row.entity.selectedRepos.join(", ")}}</a></div>' +
+                              '<div class="ui-grid-cell-contents" id="repositories-virtual-selected" ng-if="!row.entity.selectedRepos.length">-</a></div>',
+                cellClass: 'tooltip-show-list',
                 width: '40%',
                 enableSorting: false
             },

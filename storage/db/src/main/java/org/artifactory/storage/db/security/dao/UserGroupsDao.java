@@ -37,7 +37,14 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Date: 8/26/12
@@ -143,6 +150,7 @@ public class UserGroupsDao extends BaseDao {
             return 0;
         }
         int res = jdbcHelper.executeUpdate("DELETE FROM users_groups WHERE user_id = ?", userId);
+        res += jdbcHelper.executeUpdate("DELETE FROM user_props WHERE user_id = ?", userId);
         res += jdbcHelper.executeUpdate("DELETE FROM users WHERE user_id = ?", userId);
         return res;
     }
@@ -497,6 +505,7 @@ public class UserGroupsDao extends BaseDao {
     public int deleteAllGroupsAndUsers() throws SQLException {
         int res = jdbcHelper.executeUpdate("DELETE FROM users_groups");
         res += jdbcHelper.executeUpdate("DELETE FROM groups");
+        res += jdbcHelper.executeUpdate("DELETE FROM user_props");
         res += jdbcHelper.executeUpdate("DELETE FROM users");
         return res;
     }

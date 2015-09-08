@@ -105,21 +105,21 @@ class jfBuildsController {
             displayName: 'Build ID',
             name: 'Build ID',
             field: "number",
-            cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="builds.info({buildName:\'{{row.entity.name}}\',buildNumber:\'{{row.entity.number}}\',tab:\'general\',startTime:\'{{row.entity.started}}\'})" >{{row.entity.number}}</a></div>'
+            cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="builds.info({buildName:row.entity.name,buildNumber:row.entity.number,tab:\'general\',startTime:row.entity.started})" >{{row.entity.number}}</a></div>'
         }, {
             name: 'Module ID',
             displayName: 'Module ID',
             headerCellTemplate: headerCellGroupingTemplate,
             grouped: true,
             field: "moduleID",
-            cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="builds.info({buildName:\'{{row.entity.name}}\',buildNumber:\'{{row.entity.number}}\',tab:\'published\',startTime:\'{{row.entity.started}}\',moduleID:\'{{row.entity.moduleID}}\'})" >{{row.entity.moduleID}}</a></div>'
+            cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="builds.info({buildName:row.entity.name,buildNumber:row.entity.number,tab:\'published\',startTime:row.entity.started,moduleID:row.entity.moduleID})" >{{row.entity.moduleID}}</a></div>'
         }, {
             displayName: 'CI Server',
             name: 'CI Server',
             headerCellTemplate: headerCellGroupingTemplate,
             grouped: true,
             field: "ciUrl",
-            cellTemplate: '<div class="ui-grid-cell-contents"><a href="{{row.entity.ciUrl}}" target="_blank">{{row.entity.ciUrl}}</a></div>'
+            cellTemplate: '<div class="ui-grid-cell-contents"><a ng-href="{{row.entity.ciUrl}}" target="_blank">{{row.entity.ciUrl}}</a></div>'
         }];
     }
 

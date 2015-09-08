@@ -32,6 +32,7 @@ import org.artifactory.addon.bower.BowerAddon;
 import org.artifactory.addon.bower.BowerMetadataInfo;
 import org.artifactory.addon.build.ArtifactBuildAddon;
 import org.artifactory.addon.crowd.CrowdAddon;
+import org.artifactory.addon.crowd.CrowdExtGroup;
 import org.artifactory.addon.debian.DebianAddon;
 import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.addon.gems.ArtifactGemsInfo;
@@ -47,6 +48,7 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.addon.npm.NpmAddon;
 import org.artifactory.addon.npm.NpmMetadataInfo;
 import org.artifactory.addon.nuget.UiNuGetAddon;
+import org.artifactory.addon.oauth.OAuthSsoAddon;
 import org.artifactory.addon.pypi.PypiAddon;
 import org.artifactory.addon.pypi.PypiPkgMetadata;
 import org.artifactory.addon.replication.LocalReplicationSettings;
@@ -54,6 +56,7 @@ import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.ReplicationAddon;
 import org.artifactory.addon.saml.SamlSsoAddon;
 import org.artifactory.addon.search.ArtifactSearchAddon;
+import org.artifactory.addon.smartrepo.SmartRepoAddon;
 import org.artifactory.addon.watch.ArtifactWatchAddon;
 import org.artifactory.addon.webstart.ArtifactWebstartAddon;
 import org.artifactory.addon.yum.ArtifactRpmMetadata;
@@ -72,8 +75,8 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.governance.BlackDuckApplicationInfo;
 import org.artifactory.api.governance.GovernanceRequestInfo;
 import org.artifactory.api.license.LicenseInfo;
-import org.artifactory.api.license.LicenseModuleModel;
 import org.artifactory.api.license.LicensesInfo;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.build.diff.BuildsDiff;
 import org.artifactory.api.rest.compliance.FileComplianceInfo;
@@ -107,6 +110,7 @@ import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.RepoResource;
+import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.WatchersInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.nuget.NuMetaData;
@@ -179,7 +183,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
         GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon, GitLfsAddon,
         ArtifactWatchAddon, ArtifactBuildAddon, UiNuGetAddon, LdapUserGroupAddon,
-        ArtifactWebstartAddon, ArtifactSearchAddon, SamlSsoAddon {
+        ArtifactWebstartAddon, ArtifactSearchAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -209,7 +213,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public Set findCrowdExtGroups(String username, CrowdSettings currentCrowdSettings) {
+    public Set<CrowdExtGroup> findCrowdExtGroups(String username, CrowdSettings currentCrowdSettings) {
         return null;
     }
 
@@ -274,7 +278,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public List findLicensesInRepos(Set<String> repoKeys, LicenseStatus status) {
+    public List<ModuleLicenseModel> findLicensesInRepos(Set<String> repoKeys, LicenseStatus status) {
         return Lists.newArrayList();
     }
 
@@ -312,12 +316,12 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public Multimap<RepoPath, LicenseModuleModel> licensePopulateSynchronously(Build build, boolean autoDiscover) {
+    public Multimap<RepoPath, ModuleLicenseModel> populateLicenseInfoSynchronously(Build build, boolean autoDiscover) {
         return HashMultimap.create();
     }
 
     @Override
-    public String generateLicenseCsv(Collection<LicenseModuleModel> models) {
+    public String generateLicenseCsv(Collection<ModuleLicenseModel> models) {
         return null;
     }
 
@@ -357,8 +361,18 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public void setProperties(RepoPath repoPath, Properties properties) {
+        //nop
+    }
+
+    @Override
     public RepoResource assembleDynamicMetadata(InternalRequestContext context, RepoPath metadataRepoPath) {
         return new FileResource(ContextHelper.get().getRepositoryService().getFileInfo(metadataRepoPath));
+    }
+
+    @Override
+    public void updateRemoteProperties(Repo repo, RepoPath repoPath) {
+        // nop
     }
 
     @Override
@@ -1055,6 +1069,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public String[] retrieveUserLdapGroups(String userName, LdapGroupSetting ldapGroupSetting) {
+        return null;
+    }
+
+    @Override
     public KeyStore loadKeyStore(File keyStoreFile, String password) {
         return null;
     }
@@ -1105,6 +1124,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public String getOAuthLoginPageUrl(HttpServletRequest request) {
+        return null;
+    }
+
+    @Override
     public void createCertificate(String certificate) throws Exception {
 
     }
@@ -1112,6 +1136,16 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public Boolean isSamlAuthentication(HttpServletRequest servletRequest, HttpServletResponse servletResponse) {
         return false;
+    }
+
+    @Override
+    public boolean supportRemoteStats() {
+        return false;
+    }
+
+    @Override
+    public void fileDownloadedRemotely(StatsInfo statsInfo, String remoteHost, RepoPath repoPath) {
+
     }
 }
 

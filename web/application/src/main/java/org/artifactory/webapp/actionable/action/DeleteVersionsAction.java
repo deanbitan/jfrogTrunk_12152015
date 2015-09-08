@@ -30,6 +30,7 @@ import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.common.wicket.component.help.HelpBubble;
 import org.artifactory.common.wicket.component.modal.panel.BaseModalPanel;
 import org.artifactory.common.wicket.component.modal.panel.bordered.nesting.PanelNestingBorderedModal;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.webapp.actionable.RepoAwareActionableItem;
 import org.artifactory.webapp.actionable.event.ItemEventTargetComponents;
 import org.artifactory.webapp.actionable.event.RepoAwareItemEvent;
@@ -52,8 +53,12 @@ public class DeleteVersionsAction extends RepoAwareItemAction {
     public void onAction(RepoAwareItemEvent event) {
         RepoAwareActionableItem source = event.getSource();
         org.artifactory.fs.ItemInfo info = source.getItemInfo();
+        RepoPath itemPath = info.getRepoPath();
+        if(!info.isFolder() && itemPath.getParent() != null) {
+            itemPath = itemPath.getParent();
+        }
         RepositoryService repositoryService = getRepoService();
-        ItemSearchResults<VersionUnitSearchResult> results = repositoryService.getVersionUnitsUnder(info.getRepoPath());
+        ItemSearchResults<VersionUnitSearchResult> results = repositoryService.getVersionUnitsUnder(itemPath);
 
         List<VersionUnit> versionUnits = Lists.newArrayList();
         for (VersionUnitSearchResult result : results.getResults()) {

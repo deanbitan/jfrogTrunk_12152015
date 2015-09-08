@@ -77,8 +77,7 @@ public class FileGeneralArtifactInfo extends GeneralArtifactInfo implements Rest
         // update virtual repositories
         super.populateVirtualRepositories(HttpUtils.getServletContextUrl(artifactoryRestRequest.getServletRequest()));
         // update file info checksum
-        boolean isLocalRepo = localRepoDescriptor(repoPath) != null;
-        updateFileInfoCheckSum((org.artifactory.fs.FileInfo) itemInfo, isLocalRepo, authService);
+        updateFileInfoCheckSum((org.artifactory.fs.FileInfo) itemInfo, localRepoDescriptor, authService);
         //update Dependency Declaration
         updateDependencyDeclaration(artifactoryRestRequest, repoService, itemInfo, localRepoDescriptor);
     }
@@ -150,17 +149,11 @@ public class FileGeneralArtifactInfo extends GeneralArtifactInfo implements Rest
         }
     }
 
-    /**
-     * update file info checksum
-     *
-     * @param itemInfo    - item info
-     * @param isLocalRepo - signifies if the storing repo is local
-     */
-    private void updateFileInfoCheckSum(org.artifactory.fs.FileInfo itemInfo, boolean isLocalRepo,
+    private void updateFileInfoCheckSum(org.artifactory.fs.FileInfo itemInfo, LocalRepoDescriptor localRepoDescriptor,
                                         AuthorizationService authService) {
         boolean hasPermissions = authService.canDeploy(itemInfo.getRepoPath()) && !authService.isAnonymous();
         checksums = new Checksums();
-        checksums.updateFileInfoCheckSum(itemInfo, isLocalRepo, hasPermissions);
+        checksums.updateFileInfoCheckSum(itemInfo, localRepoDescriptor, hasPermissions);
         checksums.updatePropertiesChecksums(itemInfo);
     }
 

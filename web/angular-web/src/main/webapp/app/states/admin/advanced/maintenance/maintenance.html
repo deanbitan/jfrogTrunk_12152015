@@ -6,7 +6,7 @@
             <div class="card stretch card-pole-pad card-side-pad">
                 <div class="content-with-footer">
                     <jf-panel jf-panel-heading="Garbage Collection">
-                        <div class="form-group">
+                        <div class="form-group half-margin-bottom">
                             <div class="form-group-cell">
                                 <jf-field validations="maintenance" autofocus="true">
                                     <label for="garbageCollectorCron" class="mandatory">Cron Expression</label>
@@ -37,10 +37,10 @@
                         </div>
                         <div class="form-group">
                             <div class="form-group-cell">
-                                <button type="button"
-                                        ng-click="Maintenance.runGarbageCollection()"
-                                        class="btn btn-primary">Run Now
-                                </button>
+                                <div ng-click="Maintenance.runGarbageCollection()"
+                                     class="text-button">
+                                    <span class="icon icon-run"></span>Run Now
+                                </div>
                             </div>
                         </div>
                     </jf-panel>
@@ -96,7 +96,7 @@
                     </jf-panel>
 
                     <jf-panel jf-panel-heading="Cleanup Unused Cached Artifacts">
-                        <div class="form-group">
+                        <div class="form-group half-margin-bottom">
                             <div class="form-group-cell">
                                 <jf-field validations="maintenance">
                                     <label for="cleanUnusedCached" class="mandatory">Cron Expression</label>
@@ -126,15 +126,16 @@
                         </div>
                         <div class="form-group">
                             <div class="form-group-cell">
-                                <button type="button" ng-click="Maintenance.runUnusedCachedArtifactsCleanup()"
-                                        class="btn btn-primary">Run Unused Cached Artifacts Cleanup
-                                </button>
+                                <div ng-click="Maintenance.runUnusedCachedArtifactsCleanup()"
+                                     class="text-button">
+                                    <span class="icon icon-run"></span>Run Unused Cached Artifacts Cleanup
+                                </div>
                             </div>
                         </div>
                     </jf-panel>
 
                     <jf-panel jf-panel-heading="Cleanup Virtual Repositories">
-                        <div class="form-group">
+                        <div class="form-group half-margin-bottom">
                             <div class="form-group-cell">
                                 <jf-field validations="maintenance">
                                     <label for="cronExpression" class="mandatory">Cron Expression</label>
@@ -149,7 +150,6 @@
                                            ng-model="Maintenance.maintenanceSettings.cleanVirtualRepoCron"/>
                                 </jf-field>
                             </div>
-
                             <div class="form-group-cell">
                                 <jf-field>
                                     <label for="nextCleanVirtualTime">Next Run Time</label>
@@ -165,9 +165,10 @@
                         </div>
                         <div class="form-group">
                             <div class="form-group-cell">
-                                <button type="button" ng-click="Maintenance.cleanVirtualRepositories()"
-                                        class="btn btn-primary">Clean Virtual Repositories Now
-                                </button>
+                                <div ng-click="Maintenance.cleanVirtualRepositories()"
+                                     class="text-button">
+                                    <span class="icon icon-run"></span>Clean Virtual Repositories Now
+                                </div>
                             </div>
                         </div>
                     </jf-panel>
@@ -175,16 +176,14 @@
                     <jf-panel jf-panel-heading="Storage">
                         <div class="form-group">
                             <div class="form-group-cell">
-                                <button type="button" ng-click="Maintenance.compressInternalDatabase()"
-                                        class="btn btn-primary">Compress the Internal Database
-                                </button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-group-cell">
-                                <button type="button" ng-click="Maintenance.pruneUnreferencedData()"
-                                        class="btn btn-primary">Prune Unreferenced Data
-                                </button>
+                                <div ng-click="Maintenance.compressInternalDatabase()"
+                                     class="text-button">
+                                    <span class="icon icon-run"></span>Compress the Internal Database
+                                </div>
+                                <div ng-click="Maintenance.pruneUnreferencedData()"
+                                     class="text-button">
+                                    <span class="icon icon-run"></span>Prune Unreferenced Data
+                                </div>
                             </div>
                         </div>
                     </jf-panel>

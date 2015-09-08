@@ -1,6 +1,10 @@
 <div ng-if="jfDocker.dockerData">
     <jf-panel jf-panel-heading="Package Info"
               ng-if="jfDocker.dockerData.dockerInfo">
+        <div class="artifact-file-icon"
+             ng-if="jfDocker.dockerData.dockerConfig['iconUrl']">
+            <img ng-src="{{jfDocker.dockerData.dockerConfig['iconUrl']}}" alt="logo"/>
+        </div>
         <table class="jf-data-table">
             <tr ng-repeat="(key,value) in jfDocker.dockerData.dockerInfo" ng-if="jfDocker.DICTIONARY[key]">
                 <td>{{jfDocker.DICTIONARY[key]}}:</td>
@@ -14,12 +18,6 @@
     
     <jf-panel jf-panel-heading="Config"
               ng-if="jfDocker.dockerData.dockerConfig">
-
-        <div ng-repeat="(key,value) in jfDocker.dockerData.nugetGeneralInfo"
-             class="artifact-file-icon"
-             ng-if="key == 'iconUrl'">
-            <img ng-src="{{value}}" alt="logo"/>
-        </div>
 
         <table class="jf-data-table">
             <tr ng-repeat="(key,value) in jfDocker.dockerData.dockerConfig" ng-if="key != 'iconUrl'">

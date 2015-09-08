@@ -18,14 +18,14 @@
                            ng-required="true"></selectize>
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-group" ng-if="action !== 'copyStash' && action !== 'moveStash'">
             <div class="form-group-cell">
-            <jf-checkbox text="{{action | splitWords}} to a Custom Path">
-                <input type="checkbox" id="custom-path" ng-model="target.isCustomPath">
-            </jf-checkbox>
-                </div>
+                <jf-checkbox text="{{action | splitWords}} to a Custom Path">
+                    <input type="checkbox" id="custom-path" ng-model="target.isCustomPath">
+                </jf-checkbox>
+            </div>
         </div>
-        <div  class="form-group">
+        <div  class="form-group" ng-if="action !== 'copyStash' && action !== 'moveStash'">
             <div class="form-group-cell">
             <label for="target-path">Target Path</label>
             <input type="text"

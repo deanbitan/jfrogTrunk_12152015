@@ -23,10 +23,4 @@ export class ArtifactoryHttpClient {
     get(api, config = {}) {
         return this.http.get(this.baseUrl + api, angular.extend(this.config, config));
     }
-
-    getString(api) {
-        return this.http(this.baseUrl + api, {
-            headers: {'Content-Type': 'text/plain'}
-        })
-    }
 }

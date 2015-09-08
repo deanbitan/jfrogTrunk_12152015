@@ -1,15 +1,22 @@
+
+import EVENTS     from '../../constants/artifacts_events.constants';
+
 /**
  * @desc wrapper around the $modal service
  * @url http://angular-ui.github.io/bootstrap/#/modal
  */
 export class ArtifactoryModal {
 
-    constructor($modal, $rootScope, $q, $sce) {
+    constructor($modal, $rootScope, $q, $sce, ArtifactoryEventBus) {
         this.modal = $modal;
         this.$rootScope = $rootScope;
         this.$q = $q;
         this.$sce = $sce;
         this.templatesBaseUrl = 'ui_components/artifactory_modal/templates/';
+        this.artifactoryEventBus = ArtifactoryEventBus;
+
+
+
     }
 
     /**
@@ -29,6 +36,9 @@ export class ArtifactoryModal {
             templateUrl: templateUrl,
             scope: scope,
             size: size
+        });
+        this.artifactoryEventBus.registerOnScope(this.$rootScope, EVENTS.CLOSE_MODAL, () => {
+            modalInstance.dismiss();
         });
 
         return modalInstance;

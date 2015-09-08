@@ -166,6 +166,10 @@
                         </form>
                     </div>
                 </jf-panel>
+                <div ng-if="UserProfile.oauthProviderLink">
+                    <a ui-sref="login_request" ng-if="!UserProfile.profileLocked">OAuth2 Login</a>
+                </div>
+
             </div>
         </div>
 

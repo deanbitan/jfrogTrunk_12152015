@@ -9,12 +9,6 @@ class jfIvyViewController {
     }
 
     _initIvyView() {
-        this.editorOptions = {
-            lineNumbers: true,
-            readOnly: 'nocursor',
-            mode: 'xml',
-            viewportMargin: Infinity
-        };
         this._registerEvents();
         this._getIvyViewData();
     }

@@ -8,7 +8,7 @@ import TOOLTIPS from '../../../constants/artifact_tooltip.constant';
  * @returns promise - resolved with Object({targetRepoKey: String, targetPath: String}) if the user confirmed, rejected otherwise
  */
 export function selectTargetPathFactory(ArtifactActionsDao, $q, $rootScope, ArtifactoryModal, RepoDataDao) {
-    return function selectTargetPath(action, node, useNodePath) {
+    return function selectTargetPath(action, node, useNodePath, customDryRun) {
 
         if (useNodePath === undefined) useNodePath = true;
 
@@ -28,8 +28,8 @@ export function selectTargetPathFactory(ArtifactActionsDao, $q, $rootScope, Arti
         modalScope.tooltips = TOOLTIPS.selectTargetPathModal;
 
         // get local repo list
-        RepoDataDao.get({local: true}).$promise.then((result)=> {
-            modalScope.target.repoList = result.repoList.map(repo => {return {value: repo, text: repo}});
+        RepoDataDao.get({user: true}).$promise.then((result)=> {
+            modalScope.target.repoList = result.repoTypesList.map(repo => {return {value: repo.repoKey, text: repo.repoKey}});
         });
 
         // scope functions for modal
@@ -60,7 +60,7 @@ export function selectTargetPathFactory(ArtifactActionsDao, $q, $rootScope, Arti
         modalScope.getTargetPath = () => {
             return modalScope.target.isCustomPath && modalScope.target.path || modalScope.target.path
         };
-        modalScope.dryRun = () => {
+        modalScope.dryRun = customDryRun || (() => {
             var data = {
                 repoKey: node.data.repoKey,
                 path: node.data.path,
@@ -77,7 +77,9 @@ export function selectTargetPathFactory(ArtifactActionsDao, $q, $rootScope, Arti
                         modalScope.resultError = true;
                         modalScope.dryRunResults = response.data.errors;
                     });
-        };
+        });
+
+        if (customDryRun) customDryRun.scope = modalScope;
 
         // Launch modal
         modalInstance = ArtifactoryModal.launchModal('select_target_path', modalScope);

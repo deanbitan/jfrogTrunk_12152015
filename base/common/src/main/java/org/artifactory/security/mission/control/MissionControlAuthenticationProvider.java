@@ -27,7 +27,7 @@ public interface MissionControlAuthenticationProvider {
     /**
      * Generate Mission Control authentication for success Mission Control token authentication
      */
-    Authentication getFullAuthentication();
+    Authentication getFullAuthentication(String UserName);
 
     /**
      * Generate Anonymous authentication for invalid Mission Control token authentication

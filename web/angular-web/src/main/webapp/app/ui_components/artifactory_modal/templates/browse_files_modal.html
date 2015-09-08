@@ -4,7 +4,6 @@
 </div>
 <div class="modal-body artifactory-browser noselect">
     <div class="form-group">
-
         <div class="form-group-cell root-select-cell">
             <label>{{mountLabel}}</label>
             <jf-ui-select jf-select-model="folder.currentRoot"
@@ -15,12 +14,17 @@
             <label>{{pathLabel}}</label>
             <input type="text"
                    class="input-text"
-                   ng-model = "folder.selectedFolder"
+                   ng-model="folder.selectedFolder"
                    ng-keypress="onPathKeyPress($event)"
                    jf-auto-complete ui-items="pathAutoComplete" on-select="onPathAutoCompleteSelect(selection)">
         </div>
         <div class="form-group-cell form-button form-link">
-            <i ng-click="upperFolder()" class="glyphicon glyphicon-arrow-up" jf-tooltip="Up"></i>
+            <a href class="up-folder"
+               ng-click="upperFolder()"
+               ng-disabled="folderList.length == 0">
+                <i class="icon icon-folder"
+                   jf-tooltip="Up"></i>
+            </a>
         </div>
     </div>
 
@@ -34,25 +38,19 @@
                  ng-dblclick="getDataList(item.fileSystemItemName)"
                  class="file-wrapper browse-item"
                  ng-if="item.folder">
-                    <span class="icon icon-general"
-                          ng-if="item && !item.folder"></span>
-                    <span class="glyphicon glyphicon-folder-close"
-                          ng-if="item && item.folder"></span>
+                    <span class="icon icon-folder"></span>
                 <span>{{item.fileSystemItemName}}</span>
             </div>
 
             <div ng-click="setSelectedItem(item)"
                  class="file-wrapper browse-item"
                  ng-if="!item.folder">
-                    <span class="icon icon-general"
-                          ng-if="item && !item.folder"></span>
-                    <span class="glyphicon glyphicon-folder-close"
-                          ng-if="item && item.folder"></span>
+                    <span class="icon icon-general"></span>
                 <span>{{item.fileSystemItemName}}</span>
             </div>
         </div>
     </div>
-    <div class="form-group" ng-if="showSelectedItem">
+    <div class="form-group no-margin-bottom" ng-if="showSelectedItem">
         <div class="form-group-cell">
             <label for="description">{{selectionLabel}}</label>
             <jf-help-tooltip ng-if="enableSelectedItem" html="createDirHelp"></jf-help-tooltip>

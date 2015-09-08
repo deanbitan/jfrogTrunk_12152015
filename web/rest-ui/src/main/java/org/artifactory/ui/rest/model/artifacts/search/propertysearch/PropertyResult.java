@@ -2,7 +2,7 @@ package org.artifactory.ui.rest.model.artifacts.search.propertysearch;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.property.PropertySearchResult;
@@ -23,6 +23,9 @@ public class PropertyResult extends BaseSearchResult {
     private String relativePath;
     private String relativeDirPath;
     private String resultType;
+
+    public PropertyResult() {
+    }
 
     public PropertyResult(PropertySearchResult propertyResult) {
         super.setRepoKey(propertyResult.getRepoKey());
@@ -86,9 +89,13 @@ public class PropertyResult extends BaseSearchResult {
 
     @Override
     public ItemSearchResult getSearchResult() {
+        ItemInfo itemInfo;
         RepoPath repoPath = InternalRepoPathFactory.create(getRepoKey(), getRelativePath());
-        RepositoryService repositoryService = ContextHelper.get().beanForType(RepositoryService.class);
-        ItemInfo itemInfo = repositoryService.getItemInfo(repoPath);
+        try {
+            itemInfo = ContextHelper.get().getRepositoryService().getItemInfo(repoPath);
+        } catch (ItemNotFoundRuntimeException e) {
+            itemInfo = getItemInfo(repoPath);
+        }
         return new ArtifactSearchResult(itemInfo);
     }
 }

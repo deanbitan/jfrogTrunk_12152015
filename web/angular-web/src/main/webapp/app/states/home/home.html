@@ -1,9 +1,16 @@
 <div class="content-layout-container home-page">
-
     <div class="home-page-head">
         <div class="home-page-intro">
-            <h3>JFrog Artifactory is happily serving <span class="number-artifacts">{{Home.homepageData.artifactsFormatted}}</span>
-                artifacts</h3>
+            <div class="jfrog-news" ng-show="Home.showNews">
+                <div class="headline">
+                    JFrog News<i class="icon icon-megaphone-on"></i>
+
+                    <div class="twitter-follow"><a href="https://twitter.com/jfrog" class="twitter-follow-button" data-show-count="false"></a></div>
+                </div>
+                <div class="news-content" ng-bind-html="Home.updateHTML"></div>
+            </div>
+
+            <h3>JFrog Artifactory is happily serving <span class="number-artifacts">{{Home.homepageData.artifacts | number}}</span> artifacts</h3>
             <p jf-hide-for-aol class="artifactory-version">
                 You are running Artifactory version {{Home.homepageData.version}} <a ng-if="Home.homepageData.latestRelease" target="_blank" ng-href="{{Home.homepageData.latestReleaseLink}}">(latest release is
                 {{Home.homepageData.latestRelease}})</a>
@@ -17,15 +24,6 @@
                     <i class="icon icon-padlock"></i>Log in to account management
                 </a>
             </p>
-            <div class="jfrog-news" ng-show="Home.showNews">
-                <div class="headline">
-                    JFrog News<i class="icon icon-megaphone-on"></i>
-
-                    <div class="twitter-follow"><a href="https://twitter.com/jfrog" class="twitter-follow-button" data-show-count="false">Follow @jfrog</a></div>
-                </div>
-                <div class="news-content" ng-bind-html="Home.updateHTML">
-                </div>
-            </div>
         </div>
     </div>
 
@@ -50,14 +48,10 @@
                         <span>&middot;</span>
                         <a ng-href="{{addon.configurationUrl}}" target="_blank">User Guide</a>
                     </div>
-
                 </li>
             </ul>
-
-
         </div>
     </div>
-
 </div>
 
 <div id="home-disclaimer">

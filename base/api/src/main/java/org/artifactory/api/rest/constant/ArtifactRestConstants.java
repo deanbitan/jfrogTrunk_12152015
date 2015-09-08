@@ -22,7 +22,9 @@ package org.artifactory.api.rest.constant;
  * @author Eli Givoni
  */
 public interface ArtifactRestConstants {
+    String PATH_PARAM = "path";
     String PATH_ROOT = "storage";
+    String PATH_STATISTICS = "statistics";
     String MT_FOLDER_INFO = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".FolderInfo+json";
     String MT_FILE_INFO = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".FileInfo+json";
     String MT_ITEM_PROPERTIES = RestConstants.MT_ARTIFACTORY_APP + PATH_ROOT + ".ItemProperties+json";

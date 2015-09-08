@@ -2,6 +2,7 @@
   width: 100%;
   left: 0;
   position: relative;
+  z-index: 200;
 
   > li {
     position: relative;
@@ -20,7 +21,9 @@
         color: @greenBGDark;
         cursor: pointer;
         z-index: 3;
+      }
 
+      &.active > a, &.active > a:hover, .active > a:focus {
         &::before {
           content: '';
           width: 0;

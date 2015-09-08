@@ -65,9 +65,23 @@ public class MissionControlProperties {
     public String getUrl() {
         return props.getProperty("url", null);
     }
+    public String getCreatedBy() {
+        return props.getProperty("created.by", null);
+    }
+    public String getCreatedDate() {
+        return props.getProperty("created.date", null);
+    }
 
     public void setUrl(String url) {
         props.setProperty("url", url);
+    }
+
+    public void setCreatedBy(String userName) {
+        props.setProperty("created.by", userName);
+    }
+
+    public void setCreatedDate(long date) {
+        props.setProperty("created.date", ""+date);
     }
 
     public String getToken() {

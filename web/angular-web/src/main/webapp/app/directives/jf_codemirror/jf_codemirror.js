@@ -8,7 +8,8 @@ export function jfCodeMirror() {
             model: '=',
             allowEdit: '@',
             height: '@?',
-            apiAccess: '='
+            apiAccess: '=',
+            autofocus: '@'
         },
         controller: jfCodeController,
         controllerAs: 'jfCodeMirror',
@@ -26,13 +27,18 @@ class jfCodeController {
 
         this.editorOptions = {
             lineNumbers: true,
-            readOnly: this.allowEdit ? false : 'nocursor',
+            readOnly: !this.allowEdit, // Don't use nocursor - it disables search
             lineWrapping: true,
             mode: 'links',
             viewportMargin: 65,
+            autofocus: this.autofocus,
             mimeType: this.mimeType,
             onLoad: this._codeMirrorLoaded.bind(this)
         };
+        // Hide cursor in readonly mode
+        if (!this.allowEdit) {
+            this.editorOptions.cursorBlinkRate = -1;
+        }
     }
 
     // register click handlers on code mirror links

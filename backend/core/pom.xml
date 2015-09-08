@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-backend-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.0.2</version>
+        <version>4.1.0</version>
     </parent>
 
     <dependencies>
@@ -70,13 +70,18 @@
         <dependency>
             <groupId>org.artifactory</groupId>
             <artifactId>artifactory-storage-db</artifactId>
-            <scope>runtime</scope>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.artifactory</groupId>
             <artifactId>artifactory-config</artifactId>
             <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
 
         <dependency>

@@ -66,6 +66,7 @@ import {SystemLogsDao}           from './dao/system_logs_dao';
 import {RepositoriesDao}         from './dao/repositories_dao';
 import {RepositoriesLayoutsDao}  from './dao/repositories_layouts_dao';
 import {HaDao}                   from './dao/ha_dao';
+import {StashResultsDao}       from './dao/stash_results_dao';
 
 angular.module('artifactory.dao', ['ngResource', 'artifactory.services'])
     .factory('artifactoryNotificationsInterceptor', artifactoryNotificationsInterceptor)
@@ -138,4 +139,5 @@ angular.module('artifactory.dao', ['ngResource', 'artifactory.services'])
     .service('SystemLogsDao', SystemLogsDao)
     .service('RepositoriesDao', RepositoriesDao)
         .service('RepositoriesLayoutsDao', RepositoriesLayoutsDao)
+        .service('StashResultsDao', StashResultsDao)
         .factory('HaDao', HaDao);

@@ -9,6 +9,7 @@ import org.artifactory.aql.result.rows.AqlBaseItem;
 import org.artifactory.aql.result.rows.AqlBuild;
 import org.artifactory.aql.result.rows.AqlBuildArtifact;
 import org.artifactory.aql.result.rows.AqlBuildDependency;
+import org.artifactory.aql.result.rows.AqlBuildModule;
 import org.artifactory.aql.result.rows.AqlProperty;
 import org.artifactory.aql.result.rows.AqlStatisticItem;
 import org.artifactory.repo.RepoPath;
@@ -111,6 +112,17 @@ public class AqlAbstractServiceTest extends DbBaseTest {
             AqlBuild row = (AqlBuild) queryResult.getResult(j);
             if (row.getBuildName().equals(buildName) &&
                     row.getBuildNumber().equals(buildNumber)) {
+                found = true;
+            }
+        }
+        Assert.assertTrue(found);
+    }
+
+    protected void assertModule(AqlEagerResult queryResult, String moduleName) {
+        boolean found = false;
+        for (int j = 0; j < queryResult.getSize(); j++) {
+            AqlBuildModule row = (AqlBuildModule) queryResult.getResult(j);
+            if ( row.getBuildModuleName().equals(moduleName)) {
                 found = true;
             }
         }

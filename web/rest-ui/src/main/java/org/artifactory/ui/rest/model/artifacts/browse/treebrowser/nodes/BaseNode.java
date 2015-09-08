@@ -38,6 +38,8 @@ public abstract class BaseNode implements INode {
     private String text;
     private boolean local = true;
     String repoType;
+    private String icon;
+
     public String getText() {
         return text;
     }
@@ -348,5 +350,13 @@ public abstract class BaseNode implements INode {
 
     public void setLocal(boolean local) {
         this.local = local;
+    }
+
+    public String getIcon() {
+        return icon;
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
     }
 }

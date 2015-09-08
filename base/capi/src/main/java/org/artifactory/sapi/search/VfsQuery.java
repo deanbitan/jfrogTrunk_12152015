@@ -48,6 +48,8 @@ public interface VfsQuery {
 
     VfsQuery endGroup(@Nullable VfsBoolType bool);
 
+    VfsQuery endGroup();
+
     VfsQuery addPathFilters(String... folderNames);
 
     VfsQuery addPathFilter(String pathSearch);

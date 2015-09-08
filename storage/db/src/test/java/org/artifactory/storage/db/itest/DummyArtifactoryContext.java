@@ -10,6 +10,7 @@ import org.artifactory.addon.ha.message.HaMessage;
 import org.artifactory.addon.ha.message.HaMessageTopic;
 import org.artifactory.addon.ha.semaphore.JVMSemaphoreWrapper;
 import org.artifactory.addon.ha.semaphore.SemaphoreWrapper;
+import org.artifactory.addon.smartrepo.SmartRepoAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -18,6 +19,8 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.converters.ConverterManager;
 import org.artifactory.converters.VersionProvider;
+import org.artifactory.fs.StatsInfo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
 import org.artifactory.spring.SpringConfigPaths;
@@ -62,6 +65,25 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         }
         if (type.equals(RepositoryService.class)) {
             return (T) Mockito.mock(RepositoryService.class);
+        }
+        if (type.equals(SmartRepoAddon.class)) {
+            return (T) new SmartRepoAddon(){
+
+                @Override
+                public boolean isDefault() {
+                    return false;
+                }
+
+                @Override
+                public boolean supportRemoteStats() {
+                    return true;
+                }
+
+                @Override
+                public void fileDownloadedRemotely(StatsInfo statsInfo, String remoteHost, RepoPath repoPath) {
+
+                }
+            };
         }
         if (beans.containsKey(type)) {
             return (T) beans.get(type);
@@ -215,6 +237,11 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
 
         @Override
         public boolean isAddonSupported(AddonType addonType) {
+            return false;
+        }
+
+        @Override
+        public boolean isProLicensed(String licenseKeyHash) {
             return false;
         }
 

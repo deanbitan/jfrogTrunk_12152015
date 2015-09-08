@@ -88,6 +88,8 @@ public interface AddonsManager {
      */
     String getLicenseKeyHash();
 
+    boolean isProLicensed(String licenseKeyHash);
+
     /**
      * check if license key hash is HA based on last Digit
      * @param licenseKeyHash - license key hash

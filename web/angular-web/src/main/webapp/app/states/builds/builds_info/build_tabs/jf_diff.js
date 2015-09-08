@@ -1,4 +1,5 @@
 let headerCellGroupingTemplate = require("raw!../../../../ui_components/artifactory_grid/templates/headerCellTemplate.html");
+let headerCellDefaultTemplate = require("raw!../../../../ui_components/artifactory_grid/templates/headerCellDefaultTemplate.html");
 import EVENTS     from '../../../../constants/artifacts_events.constants';
 class jfDiffController {
     constructor($scope, $stateParams, $state, $window, BuildsDao, ArtifactoryGridFactory, uiGridConstants,
@@ -92,6 +93,7 @@ class jfDiffController {
 
     showInTree(row) {
         let browser = this.artifactoryStorage.getItem('BROWSER') || 'tree';
+        if (browser === 'stash') browser = 'tree';
         let artifactPath = row.repoKey + "/" + (row.path);
         let archivePath = '';
         this.$state.go('artifacts.browsers.path', {
@@ -127,7 +129,7 @@ class jfDiffController {
             {
                 name: "Name (Current Build)",
                 field: "name",
-                cellTemplate: this.commonGridColumns.downloadableColumn(),
+                cellTemplate: this.commonGridColumns.downloadableColumn('status-{{(row.entity.status).toLowerCase()}}'),
                 width: '20%',
                 actions: {
                     download: {
@@ -139,7 +141,7 @@ class jfDiffController {
             {
                 name: "Name",
                 field: "prevName",
-                headerCellTemplate: '<div class = "ui-grid-cell-contents">Name (Build #{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}})</div>',
+                headerCellTemplate: headerCellDefaultTemplate.replace('{{ col.displayName CUSTOM_FILTERS }}','Name (Build #{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}})'),
                 width: '20%'
             },
             {
@@ -160,7 +162,7 @@ class jfDiffController {
             {
                 name: "Repo path",
                 field: "downloadLink",
-                cellTemplate: this.commonGridColumns.repoPathColumn(),
+                cellTemplate: this.commonGridColumns.repoPathColumn('status-{{(row.entity.status).toLowerCase()}}'),
                 width: '30%',
                 customActions: [{
                     icon: 'icon icon-show-in-tree',
@@ -178,7 +180,7 @@ class jfDiffController {
                 name: "Dependency ID (Current Build)",
                 displayName: "Dependency ID (Current Build)",
                 field: "name",
-                cellTemplate: this.commonGridColumns.downloadableColumn(),
+                cellTemplate: this.commonGridColumns.downloadableColumn('status-{{(row.entity.status).toLowerCase()}}'),
                 width: '20%',
                 actions: {
                     download: {
@@ -190,7 +192,7 @@ class jfDiffController {
             {
                 name: "Id",
                 field: "prevName",
-                headerCellTemplate: '<div class = "ui-grid-cell-contents">Id (Build #{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}})</div>',
+                headerCellTemplate: headerCellDefaultTemplate.replace('{{ col.displayName CUSTOM_FILTERS }}','Id (Build #{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}})'),
                 width: '20%'
             },
             {
@@ -211,7 +213,7 @@ class jfDiffController {
             {
                 name: "Repo path",
                 field: "downloadLink",
-                cellTemplate: this.commonGridColumns.repoPathColumn(),
+                cellTemplate: this.commonGridColumns.repoPathColumn('status-{{(row.entity.status).toLowerCase()}}'),
                 width: '30%',
                 customActions: [{
                     icon: 'icon icon-show-in-tree',
@@ -241,14 +243,14 @@ class jfDiffController {
                 name: "Prev Key",
                 field: 'prevKey',
                 cellTemplate: '<div class="ui-grid-cell-contents status-{{(row.entity.status).toLowerCase()}}">{{row.entity.prevKey}}</div>',
-                headerCellTemplate: '<div class = "ui-grid-cell-contents">Build#{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}} Key</div>',
+                headerCellTemplate: headerCellDefaultTemplate.replace('{{ col.displayName CUSTOM_FILTERS }}','Build#{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}} Key'),
                 width: '20%'
             },
             {
                 name: "Prev Value",
                 field: 'prevValue',
                 cellTemplate: '<div class="ui-grid-cell-contents status-{{(row.entity.status).toLowerCase()}}">{{row.entity.prevValue}}</div>',
-                headerCellTemplate: '<div class = "ui-grid-cell-contents">Build#{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}} Value</div>',
+                headerCellTemplate: headerCellDefaultTemplate.replace('{{ col.displayName CUSTOM_FILTERS }}','Build#{{grid.appScope.jfDiff.selectedBuildNumber.buildNumber}} Value'),
                 width: '20%'
             },
             {

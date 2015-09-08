@@ -6,7 +6,8 @@
                 <ul class="list-unstyled">
                     <li class="inline-block package-type"
                         ng-class="{typeValidation: !RepositoryForm.repoInfo.typeSpecific.repoType, 'not-clickable': !RepositoryForm.newRepository}"
-                        ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()">
+                        ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()"
+                        id="repository-package-type-button">
                         <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType">No Type</span>
 
                         <div ng-if="RepositoryForm.repoInfo.typeSpecific.repoType"
@@ -20,7 +21,7 @@
                        name="repoType"
                        required
                        ng-change="RepositoryForm.setRepoLayout()"/>
-                <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen" class="repository-error">You must specify a package type</span>
+                <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen" class="repository-error" id="repository-package-type-validator">You must specify a package type</span>
             </div>
             <div class="form-group">
                 <div class="form-group-cell"
@@ -38,7 +39,7 @@
                                 />
                     </jf-field>
                     <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                        <div ng-message-exp="'repoKeyValidator'">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
+                        <div ng-message-exp="'repoKeyValidator'" id="repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                     </ng-messages>
                 </div>
             </div>
@@ -58,7 +59,7 @@
                                            ng-disabled="!RepositoryForm.newRepository"/>
                                 </jf-field>
                                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                                    <div ng-message-exp="'repoKeyValidator'">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
+                                    <div ng-message-exp="'repoKeyValidator'" id="repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                                 </ng-messages>
                             </div>
                             <div class="form-group-cell">
@@ -67,12 +68,14 @@
                                     <ui-select ng-model="RepositoryForm.repoInfo.basic.layout">
                                         <ui-select-match
                                                 placeholder="Select Repository Layout"
-                                                allow-clear="true">
+                                                allow-clear="true"
+                                                id="virtual-repository-layout-dropdown">
                                             {{$select.selected}}
                                         </ui-select-match>
                                         <ui-select-choices
                                                 repeat="item in RepositoryForm.repositoryLayouts | filter: $select.search track by $index">
-                                            <div ng-bind-html="item | highlight: $select.search"></div>
+                                            <div ng-bind-html="item | highlight: $select.search"
+                                                    id="virtual-repository-layout-item"></div>
                                         </ui-select-choices>
                                     </ui-select>
                                 </jf-field>
@@ -128,6 +131,34 @@
                                 </jf-field>
                             </div>
                         </div>
+                        <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
+                                  ng-if="RepositoryForm.repoInfo.isType('docker')">
+                            <div class="form-group no-margin-bottom">
+                                <div class="form-group-cell">
+                                    <jf-checkbox text="Force Authentication">
+                                        <input type="checkbox"
+                                               id="forceDockerAuth"
+                                               ng-model="RepositoryForm.repoInfo.typeSpecific.forceDockerAuthentication">
+                                    </jf-checkbox>
+                                    <jf-help-tooltip
+                                            html="RepositoryForm.TOOLTIP.localForm.forceDockerAuth"></jf-help-tooltip>
+                                </div>
+                            </div>
+                        </jf-panel>
+                        <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
+                                  ng-if="RepositoryForm.repoInfo.isType('nuget')">
+                            <div class="form-group no-margin-bottom">
+                                <div class="form-group-cell">
+                                    <jf-checkbox text="Force Authentication">
+                                        <input type="checkbox"
+                                               id="forceNuGetAuth"
+                                               ng-model="RepositoryForm.repoInfo.typeSpecific.forceNugetAuthentication">
+                                    </jf-checkbox>
+                                    <jf-help-tooltip
+                                            html="RepositoryForm.TOOLTIP.localForm.forceNugetAuth"></jf-help-tooltip>
+                                </div>
+                            </div>
+                        </jf-panel>
                     </jf-panel>
                 </div>
                 <div class="col-lg-6">
@@ -146,12 +177,14 @@
                         </jf-panel>
                         <jf-panel jf-panel-heading="Included Repositories"
                                   ng-if="RepositoryForm.repoInfo.basic.resolvedRepositories.length">
-                            <ul class="list-group">
-                                <li ng-repeat="item in RepositoryForm.repoInfo.basic.resolvedRepositories"
-                                    class="list-group-item"
-                                    ng-disabled="true">{{item}}
-                                </li>
-                            </ul>
+                            <div class="group-list-wrapper">
+                                <ul class="group-list">
+                                    <li ng-repeat="item in RepositoryForm.repoInfo.basic.resolvedRepositories"
+                                        class="group-list-item"
+                                        ng-disabled="true">{{item}}
+                                    </li>
+                                </ul>
+                            </div>
                         </jf-panel>
                     </div>
 
@@ -162,7 +195,8 @@
                                     <jf-field>
                                         <label>Local Repository</label>
                                         <jf-ui-select jf-select-model="VirtualRepository.virtualRepo.localRepoKey"
-                                                      jf-select-options="RepositoryForm.fields.availableLocalRepos"></jf-ui-select>
+                                                      jf-select-options="RepositoryForm.fields.availableLocalRepos"
+                                                      id="localRepository"></jf-ui-select>
                                     </jf-field>
                                 </div>
                             </div>
@@ -172,7 +206,7 @@
                                         <label id="pathSuffix">Path Suffix</label>
                                         <jf-help-tooltip html="RepositoryForm.TOOLTIP.virtualForm.pathSuffix"></jf-help-tooltip>
                                         <input type="text"
-                                               id="pathSuffix"
+                                               id="pathSuffixTxt"
                                                ng-model="VirtualRepository.virtualRepo.pathSuffix"
                                                class="input-text">
                                     </jf-field>

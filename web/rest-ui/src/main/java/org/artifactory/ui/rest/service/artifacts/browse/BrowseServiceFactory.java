@@ -3,17 +3,9 @@ package org.artifactory.ui.rest.service.artifacts.browse;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.properties.DeletePropertyModel;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.watchers.DeleteWatchersModel;
 import org.artifactory.ui.rest.service.artifacts.browse.generic.BrowseNativeService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.CopyArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.DeleteArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.DownloadArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.MoveArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.RecalculateIndexService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.ViewArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.WatchArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.ZapArtifactService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.ZapCachesVirtualService;
+import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.*;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.deleteversions.DeleteVersionService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.deleteversions.GetDeleteVersionsService;
+import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.deleteversions.GetVersionUnitsService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.blackduck.GetBlackDuckArtifactService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.blackduck.UpdateBlackDuckComponentIdService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.bower.BowerViewService;
@@ -21,6 +13,7 @@ import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.builds.
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.builds.GetArtifactBuildsService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.checksums.FixChecksumsService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.docker.DockerAncestryViewService;
+import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.docker.DockerV2ViewService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.docker.DockerViewService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.gemsview.GemsViewService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.GetArtifactsCount;
@@ -110,6 +103,12 @@ public abstract class BrowseServiceFactory {
     public abstract DownloadArtifactService downloadArtifactService();
 
     @Lookup
+    public abstract GetDownloadFolderInfoService getDownloadFolderInfo();
+
+    @Lookup
+    public abstract DownloadFolderArchiveService downloadFolder();
+
+    @Lookup
     public abstract WatchArtifactService watchArtifactService();
 
     @Lookup
@@ -134,7 +133,7 @@ public abstract class BrowseServiceFactory {
     public abstract WatchStatusService watchStatusService();
     // delete versions
     @Lookup
-    public abstract GetDeleteVersionsService getDeleteVersionsService();
+    public abstract GetVersionUnitsService getDeleteVersionsService();
 
     @Lookup
     public abstract DeleteVersionService deleteVersionService();
@@ -156,6 +155,9 @@ public abstract class BrowseServiceFactory {
 
     @Lookup
     public abstract DockerViewService dockerViewService();
+
+    @Lookup
+    public abstract DockerV2ViewService dockerV2ViewService();
 
     @Lookup
     public abstract DockerAncestryViewService dockerAncestryViewService();

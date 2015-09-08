@@ -15,6 +15,14 @@ export function ArtifactDeployDao(RESOURCE, ArtifactoryDaoFactory) {
                 'cancelUpload': {
                     method: 'POST',
                     path: RESOURCE.ARTIFACT + "/cancelupload"
+                },
+                postBundle: {
+                    method: 'POST',
+                    path: RESOURCE.ARTIFACT + "/:action/bundle",
+                    params: {
+                        action: '@action'
+                    },
+                    notifications: true
                 }
             })
             .getInstance();

@@ -11,16 +11,19 @@ export default {
     'licenses': 'Licenses',
     'filtered': 'Filtered',
     'downloaded': 'Downloaded',
+    'remoteDownloaded': 'Remote Downloaded',
     'moduleID': 'Module ID',
     'size': 'Size',
     'lastModified': 'Last Modified',
     'lastDownloaded': 'Last Downloaded',
+    'lastRemoteDownloaded': 'Remote Last Downloaded',
     'compressed': 'Compressed',
     'crc': 'CRC',
     'modificationTime': 'Modification Time',
     'path': 'Path',
     'watchingSince': 'Watching Since',
     'lastDownloadedBy': 'Last Downloaded By',
+    'lastRemoteDownloadedBy': 'Remote Last Downloaded By',
     'lastReplicationStatus': 'Last Replication Status',
     'signingKeyLink': 'Signing Key',
     tabs: {
@@ -41,7 +44,9 @@ export default {
         'BowerInfo': 'Bower Info',
         'DockerInfo': 'Docker Info',
         'DockerAncestryInfo': 'Docker Ancestry',
-        'Rpm': 'Rpm Info'
+        'DockerV2Info': 'Docker Info',
+        'Rpm': 'Rpm Info',
+        'StashInfo': 'Stash Info'
     },
     nuget: {
         authors: 'Authors',
@@ -101,7 +106,13 @@ export default {
     dockerAncestry: {
         size: 'Virtual Size'
     },
-
+    dockerV2: {
+        title: 'Title',
+        digest: 'Digest',
+        ports: 'Ports',
+        totalSize: 'Total Size',
+        volumes: 'Volumes'
+    },
     pyPi: {
         name: 'Name',
         author: 'Author',

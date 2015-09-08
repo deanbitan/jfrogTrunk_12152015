@@ -27,6 +27,7 @@ function TreeNodeMock(data) {
     });
   };
   treeNodeMock.expectLoad = function(data) {
+    data = data || [{tabs: [], actions: []}];
     inject(function ($httpBackend, RESOURCE) {
       $httpBackend.expectPOST(RESOURCE.API_URL + RESOURCE.TREE_BROWSER,
           {type: treeNodeMock.type, repoKey: treeNodeMock.repoKey, path: treeNodeMock.path, text: treeNodeMock.text})

@@ -13,6 +13,8 @@
                                         <label for="groupName" class="mandatory">Group Name</label>
                                         <input name="groupName"
                                                type="text"
+                                               jf-validator-name
+                                               ng-model-options="{debounce: { 'default': 500 } }"
                                                ng-model="GroupForm.groupdata.name"
                                                class="input-text"
                                                ng-disabled="GroupForm.mode==='edit'"

@@ -32,7 +32,7 @@ public class DeletePropertySetService<T extends DeletePropertySetModel> implemen
                     .filter(prop -> prop.getName().equals(toDelete))
                     .findFirst())
                     .ifPresent(foundProp -> deleteProp(descriptor, foundProp.getName()))
-                    .ifNotPresent(() -> response.error("Property set '" + toDelete + "' does not exists.")
+                    .ifNotPresent(() -> response.error("Property set '" + toDelete + "' does not exist.")
                             .responseCode(HttpStatus.SC_NOT_FOUND));
         }
         if(model.getPropertySetNames().size()>1){

@@ -32,7 +32,8 @@ import java.util.stream.Collectors;
     {
         "name", "repositoryPath",
         "moduleID","deployedBy", "size", "created", "lastModified", "licenses", "downloaded",
-        "lastDownloadedBy", "lastDownloaded", "watchingSince", "showFilteredResourceCheckBox","filtered"
+        "lastDownloadedBy", "lastDownloaded", "remoteDownloaded", "lastRemoteDownloadedBy", "lastRemoteDownloaded",
+        "watchingSince", "showFilteredResourceCheckBox","filtered"
     }
 )
 public class FileInfo extends BaseInfo {
@@ -43,9 +44,15 @@ public class FileInfo extends BaseInfo {
     private String created;
     private String lastModified;
     Set<GeneralTabLicenseModel> licenses = Sets.newHashSet();
+
     private Long downloaded;
     private String lastDownloaded;
     private String lastDownloadedBy;
+
+    private Long remoteDownloaded;
+    private String lastRemoteDownloaded;
+    private String lastRemoteDownloadedBy;
+
     private String watchingSince;
     private String lastReplicationStatus;
     private Boolean filtered;
@@ -205,12 +212,25 @@ public class FileInfo extends BaseInfo {
         if (statsInfo == null) {
             statsInfo = InfoFactoryHolder.get().createStats();
         }
+
+        // local stats
         this.setDownloaded(statsInfo.getDownloadCount());
         this.setLastDownloadedBy(statsInfo.getLastDownloadedBy());
         if (statsInfo.getLastDownloaded() != 0) {
             String lastDownloadedString = centralConfigService.format(statsInfo.getLastDownloaded());
             this.setLastDownloaded(lastDownloadedString);
         }
+
+
+        // disable smart repo stats for release 4.1
+
+       /* // remote stats
+        this.setRemoteDownloaded(statsInfo.getRemoteDownloadCount());
+        this.setLastRemoteDownloadedBy(statsInfo.getRemoteLastDownloadedBy());
+        if (statsInfo.getRemoteLastDownloaded() != 0) {
+            String lastRemoteDownloadedString = centralConfigService.format(statsInfo.getRemoteLastDownloaded());
+            this.setLastRemoteDownloaded(lastRemoteDownloadedString);
+        }*/
     }
 
     /**
@@ -281,7 +301,6 @@ public class FileInfo extends BaseInfo {
                 hasLicenses = true;
                 List<GeneralTabLicenseModel> licenseModels = pathLicensesFromProperties
                         .stream()
-                        .parallel()
                         .map(GeneralTabLicenseModel::blackDuckOf)
                         .collect(Collectors.toList());
                 licenses.addAll(licenseModels);
@@ -294,7 +313,6 @@ public class FileInfo extends BaseInfo {
                 hasLicenses = true;
                 licenses.addAll(pathLicensesByProps
                         .stream()
-                        .parallel()
                         .map(GeneralTabLicenseModel::new)
                         .collect(Collectors.toList()));
 
@@ -325,5 +343,29 @@ public class FileInfo extends BaseInfo {
             this.setLastModified(centralConfig.format(item.getLastModified()));
             this.setSize(StorageUnit.toReadableString(item.getSize()));
         }
+    }
+
+    public Long getRemoteDownloaded() {
+        return remoteDownloaded;
+    }
+
+    public void setRemoteDownloaded(Long remoteDownloaded) {
+        this.remoteDownloaded = remoteDownloaded;
+    }
+
+    public String getLastRemoteDownloaded() {
+        return lastRemoteDownloaded;
+    }
+
+    public void setLastRemoteDownloaded(String lastRemoteDownloaded) {
+        this.lastRemoteDownloaded = lastRemoteDownloaded;
+    }
+
+    public String getLastRemoteDownloadedBy() {
+        return lastRemoteDownloadedBy;
+    }
+
+    public void setLastRemoteDownloadedBy(String lastRemoteDownloadedBy) {
+        this.lastRemoteDownloadedBy = lastRemoteDownloadedBy;
     }
 }

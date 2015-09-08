@@ -21,7 +21,7 @@ package org.artifactory.addon.license;
 import com.google.common.collect.Multimap;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.license.LicenseInfo;
-import org.artifactory.api.license.LicenseModuleModel;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.api.license.LicensesInfo;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.RealRepoDescriptor;
@@ -70,7 +70,7 @@ public interface LicensesAddon extends Addon {
      */
     void exportLicenses(ExportSettings exportSettings);
 
-    List findLicensesInRepos(Set<String> repoKeys, LicenseStatus status);
+    List<ModuleLicenseModel> findLicensesInRepos(Set<String> repoKeys, LicenseStatus status);
 
     LicensesInfo getArtifactsLicensesInfo();
 
@@ -86,9 +86,9 @@ public interface LicensesAddon extends Addon {
 
     void reloadLicensesCache();
 
-    Multimap<RepoPath, LicenseModuleModel> licensePopulateSynchronously(Build build, boolean autoDiscover);
+    Multimap<RepoPath, ModuleLicenseModel> populateLicenseInfoSynchronously(Build build, boolean autoDiscover);
 
-    String generateLicenseCsv(Collection<LicenseModuleModel> models);
+    String generateLicenseCsv(Collection<ModuleLicenseModel> models);
 
     boolean setLicensePropsOnPath(RepoPath path, Set<LicenseInfo> licenses);
 

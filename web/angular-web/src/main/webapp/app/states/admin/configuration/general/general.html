@@ -83,7 +83,7 @@
                                 </jf-field>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group form-checkbox">
                             <div class="form-group-cell">
                                 <jf-checkbox text="Global Offline Mode">
                                     <input id="offlineMode"
@@ -92,6 +92,70 @@
                                            name="offlineMode">
                                 </jf-checkbox>
                                 <jf-help-tooltip html="AdminConfiguration.TOOLTIP.globalOfflineMode"></jf-help-tooltip>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Enable Help Component">
+                                    <input id="disableHelp"
+                                           type="checkbox"
+                                           ng-model="AdminConfiguration.generalConfigData.helpLinksEnabled"
+                                           name="disableHelp">
+                                </jf-checkbox>
+                            </div>
+                        </div>
+                    </jf-panel>
+                    <jf-panel jf-panel-heading="Folder Download Settings">
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Enable Folder Download">
+                                    <input id="enableFolderDownload"
+                                           type="checkbox"
+                                           ng-model="AdminConfiguration.generalConfigData.folderDownloadEnabled"
+                                           name="enableFolderDownload">
+                                </jf-checkbox>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-field validations="adminGeneral">
+                                    <label for="maxFolderSize">Max Size</label>
+                                    <jf-help-tooltip html="AdminConfiguration.TOOLTIP.folderDownloadMaxSize"></jf-help-tooltip>
+                                    <input type="number"
+                                           min = "0"
+                                           class="input-text"
+                                           name="maxFolderSize"
+                                           id="maxFolderSize"
+                                           ng-model="AdminConfiguration.generalConfigData.folderDownloadMaxSizeMb"/>
+                                </jf-field>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-field validations="adminGeneral">
+                                    <label for="maxFolderFiles">Max Number of Files</label>
+                                    <jf-help-tooltip html="AdminConfiguration.TOOLTIP.folderDownloadMaxFiles"></jf-help-tooltip>
+                                    <input type="number"
+                                           min = "0"
+                                           class="input-text"
+                                           name="maxFolderFiles"
+                                           id="maxFolderFiles"
+                                           ng-model="AdminConfiguration.generalConfigData.maxFolderDownloadFilesLimit"/>
+                                </jf-field>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-field validations="folderDownload">
+                                    <label for="maxConcurrent">Max Parallel Folder Downloads</label>
+                                    <jf-help-tooltip html="AdminConfiguration.TOOLTIP.folderDownloadMaxParallel"></jf-help-tooltip>
+                                    <input type="number"
+                                           min = "1"
+                                           class="input-text"
+                                           name="maxConcurrent"
+                                           id="maxConcurrent"
+                                           ng-model="AdminConfiguration.generalConfigData.folderDownloadMaxConcurrentRequests"/>
+                                </jf-field>
                             </div>
                         </div>
                     </jf-panel>
@@ -136,19 +200,59 @@
                         </div>
                     </jf-panel>
 
-                    <!-- <jf-panel jf-panel-heading="Add-on Settings">
-                         <div class="form-group no-margin-bottom">
-                             <div class="form-group-cell">
-                                 <jf-checkbox text="Show Available Add-ons Info">
-                                     <input id="showAddonsInfo"
-                                            type="checkbox"
-                                            ng-model="AdminConfiguration.generalConfigData.showAddonSettings"
-                                            name="showAddonsInfo">
-                                 </jf-checkbox>
-                                 <jf-help-tooltip html="AdminConfiguration.TOOLTIP.showAvailableAddonsInfo"></jf-help-tooltip>
-                             </div>
-                         </div>
-                     </jf-panel>-->
+                    <jf-panel jf-panel-heading="Custom Message">
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Enabled">
+                                    <input type="checkbox"
+                                           ng-model="AdminConfiguration.generalConfigData.systemMessageEnabled"
+                                           name="modEnabled">
+                                </jf-checkbox>
+                            </div>
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Show Only in Home Page">
+                                    <input id="modAllPages"
+                                           type="checkbox"
+                                           ng-model="AdminConfiguration.generalConfigData.showSystemMessageOnAllPages"
+                                           ng-true-value="false"
+                                           ng-false-value="true"
+                                           name="modAllPages">
+                                </jf-checkbox>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-field validations="common">
+                                    <label for="modTitle">Title</label>
+                                    <input type="text"
+                                           class="input-text"
+                                           name="modTitle"
+                                           id="modTitle"
+                                           ng-model="AdminConfiguration.generalConfigData.systemMessageTitle"/>
+                                </jf-field>
+                            </div>
+                            <div class="form-group-cell">
+                                <label>Title Color</label>
+                                <color-picker ng-model="AdminConfiguration.generalConfigData.systemMessageTitleColor"
+                                              color-picker-format="'hex'"
+                                              color-picker-alpha="false"></color-picker>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell double">
+                                <jf-field validations="common">
+                                    <label for="modMessage">Message</label>
+                                    <textarea name="modMessage"
+                                              id="modMessage"
+                                              class="input-text monospaced"
+                                              rows="11"
+                                              cols="18"
+                                              ng-model="AdminConfiguration.generalConfigData.systemMessage"></textarea>
+                                </jf-field>
+                                <div class="field-bottom-remark"><i class="icon icon-info"></i>To embed a link inside the message use : [http://example.com, text]</div>
+                            </div>
+                        </div>
+                    </jf-panel>
                 </div>
             </div>
 

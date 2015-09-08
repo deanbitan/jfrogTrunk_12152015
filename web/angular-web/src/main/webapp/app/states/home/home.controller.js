@@ -21,7 +21,6 @@ export class HomeController {
         if (!this.offlineMode) this.readUpdateHTML();
         this.homePageDao.get().$promise.then((data)=> {
             this.homepageData = data;
-            this.homepageData.artifactsFormatted = this.homepageData.artifacts.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
             this.allAddons = data.addons;
 
             this.sortByCurrentType();
@@ -66,15 +65,18 @@ export class HomeController {
 
             //twitter button javascript !
             !function(d,s,id){
-                var js,
-                        fjs=d.getElementsByTagName(s)[0],
-                        p=/^http:/.test(d.location)?'http':'https';
-                //                if(!d.getElementById(id)){
-                js=d.createElement(s);
-                js.id=id;js.src=p+'://platform.twitter.com/widgets.js';
-                fjs.parentNode.insertBefore(js,fjs);
-                //              }
+                var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';
+                if(!d.getElementById(id)){
+                    js=d.createElement(s);
+                    js.id=id;js.src=p+'://platform.twitter.com/widgets.js';
+                    fjs.parentNode.insertBefore(js,fjs);
+                }
             }(document, 'script', 'twitter-wjs');
+
+            this.$scope.$on('$destroy', () => {
+                let twitter = document.getElementById('twitter-wjs');
+                if (twitter) twitter.remove();
+            });
 
             if(xhr.response) {
                 this.$timeout(()=>{

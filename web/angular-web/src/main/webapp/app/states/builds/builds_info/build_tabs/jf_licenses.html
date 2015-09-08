@@ -2,12 +2,12 @@
     <div class="general-summary licenses-summary">
         <i class="icon"
            ng-class="{'icon-notif-success': jfLicenses.summary.ok,'icon-notif-warning': !jfLicenses.summary.ok}"></i>
-        <span ng-class="{'summary-ok': jfLicenses.summary.ok,'summary-warn': !jfLicenses.summary.ok}">Summary:</span>
-        <span>Unapproved: {{jfLicenses.summary.notApproved}}</span>
-        <span>Not Found: {{jfLicenses.summary.notFound}}</span>
+        <span>Summary:</span>
+        <span class="license-unapproved">Unapproved: {{jfLicenses.summary.notApproved}}</span>
+        <span class="license-notfound">Not Found: {{jfLicenses.summary.notFound}}</span>
         <span>Unknown: {{jfLicenses.summary.unknown}}</span>
-        <span>Neutral: {{jfLicenses.summary.neutral}}</span>
-        <span>Approved: {{jfLicenses.summary.approved}}</span>
+        <span class="license-neutral">Neutral: {{jfLicenses.summary.neutral}}</span>
+        <span class="license-approved">Approved: {{jfLicenses.summary.approved}}</span>
     </div>
 
     <jf-panel jf-panel-heading="Includes">
@@ -58,7 +58,7 @@
         </form>
     </div>
 
-    <button class="btn btn-secondary" ng-click="jfLicenses.autoLink()" ng-disabled="!jfLicenses.filteredData.length">Auto-find Licenses</button>
+    <button class="btn btn-secondary" ng-click="jfLicenses.autoLink()" ng-disabled="!jfLicenses.filteredData.length">Auto Find Licenses</button>
 
     <div ng-if="jfLicenses.showExtendedGrid && jfLicenses.canOverride" class="pull-right">
         <button class="btn btn-primary" ng-click="jfLicenses.overrideSelected()">Override Selected Licenses</button>

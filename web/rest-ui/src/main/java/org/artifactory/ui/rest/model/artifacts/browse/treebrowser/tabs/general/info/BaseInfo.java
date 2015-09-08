@@ -28,6 +28,7 @@ public class BaseInfo {
     private String name;
     private String repoType;
     private String repositoryPath;
+    private Boolean smartRepo;
 
     public String getName() {
         return name;
@@ -134,5 +135,13 @@ public class BaseInfo {
 
     public void setRepoType(String repoType) {
         this.repoType = repoType;
+    }
+
+    public void setSmartRepo(Boolean smartRepo) {
+        this.smartRepo = smartRepo;
+    }
+
+    public Boolean isSmartRepo() {
+        return smartRepo;
     }
 }

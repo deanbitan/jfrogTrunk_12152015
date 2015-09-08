@@ -45,16 +45,16 @@ public class StatsDaoTest extends DbBaseTest {
     }
 
     public void getFileStats() throws SQLException {
-        Stat stat = statsDao.getStats(6);
+        Stat stat = statsDao.getStats(6, false);
         assertNotNull(stat);
         assertEquals(stat.getNodeId(), 6L);
-        assertEquals(stat.getDownloadCount(), 15);
-        assertEquals(stat.getLastDownloaded(), 1340283207850L);
-        assertEquals(stat.getLastDownloadedBy(), "yossis");
+        assertEquals(stat.getLocalDownloadCount(), 15);
+        assertEquals(stat.getLocalLastDownloaded(), 1340283207850L);
+        assertEquals(stat.getLocalLastDownloadedBy(), "yossis");
     }
 
     public void getFileStatsWithNoDownloads() throws SQLException {
-        assertNull(statsDao.getStats(11));
+        assertNull(statsDao.getStats(11, false));
     }
 
     public void hasStatsFileWithStats() throws SQLException {
@@ -75,51 +75,51 @@ public class StatsDaoTest extends DbBaseTest {
 
     public void createStatsFileWithoutStats() throws SQLException {
         long lastDownloaded = System.currentTimeMillis();
-        int updateCount = statsDao.createStats(new Stat(12, 3, lastDownloaded, "yoyo"));
+        int updateCount = statsDao.createStats(new Stat(12, 3, lastDownloaded, "yoyo"), false);
         assertEquals(updateCount, 1);
-        Stat stats = statsDao.getStats(12);
+        Stat stats = statsDao.getStats(12, false);
         assertNotNull(stats);
         assertEquals(stats.getNodeId(), 12L);
-        assertEquals(stats.getDownloadCount(), 3);
-        assertEquals(stats.getLastDownloaded(), lastDownloaded);
-        assertEquals(stats.getLastDownloadedBy(), "yoyo");
+        assertEquals(stats.getLocalDownloadCount(), 3);
+        assertEquals(stats.getLocalLastDownloaded(), lastDownloaded);
+        assertEquals(stats.getLocalLastDownloadedBy(), "yoyo");
     }
 
     @Test(dependsOnMethods = "createStatsFileWithoutStats", expectedExceptions = SQLException.class)
     public void createStatsFileWithStats() throws SQLException {
-        statsDao.createStats(new Stat(12, 5, System.currentTimeMillis(), "lolo"));
+        statsDao.createStats(new Stat(12, 5, System.currentTimeMillis(), "lolo"), false);
     }
 
     @Test(dependsOnMethods = "getFileStats")
     public void updateStatsFileWithStats() throws SQLException {
         long time = System.currentTimeMillis();
-        int updateCount = statsDao.updateStats(new Stat(6, 23, time, "yoyo"));
+        int updateCount = statsDao.updateStats(new Stat(6, 23, time, "yoyo"), false);
 
         assertEquals(updateCount, 1);
-        Stat stat = statsDao.getStats(6);
+        Stat stat = statsDao.getStats(6, false);
         assertNotNull(stat);
         assertEquals(stat.getNodeId(), 6L);
-        assertEquals(stat.getDownloadCount(), 23);
-        assertEquals(stat.getLastDownloaded(), time);
-        assertEquals(stat.getLastDownloadedBy(), "yoyo");
+        assertEquals(stat.getLocalDownloadCount(), 23);
+        assertEquals(stat.getLocalLastDownloaded(), time);
+        assertEquals(stat.getLocalLastDownloadedBy(), "yoyo");
     }
 
     public void updateStatsFileWithoutStats() throws SQLException {
-        int updateCount = statsDao.updateStats(new Stat(11, 23, System.currentTimeMillis(), "yoyo"));
+        int updateCount = statsDao.updateStats(new Stat(11, 23, System.currentTimeMillis(), "yoyo"), false);
         assertEquals(updateCount, 0);
-        assertNull(statsDao.getStats(11));
+        assertNull(statsDao.getStats(11, false));
     }
 
     @Test(dependsOnMethods = "createStatsFileWithStats")
     public void deleteStatsFileWithStats() throws SQLException {
-        assertEquals(statsDao.deleteStats(12), 1);
+        assertEquals(statsDao.deleteStats(12, false), 1);
     }
 
     public void deleteStatsFileWithoutStats() throws SQLException {
-        assertEquals(statsDao.deleteStats(13), 0);
+        assertEquals(statsDao.deleteStats(13, false), 0);
     }
 
     public void deleteStatsNonExistingNode() throws SQLException {
-        assertEquals(statsDao.deleteStats(343434), 0);
+        assertEquals(statsDao.deleteStats(343434, false), 0);
     }
 }

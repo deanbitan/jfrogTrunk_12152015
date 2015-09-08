@@ -19,16 +19,14 @@ export class JFGridElement {
 	getGridPagination() {
 		return $('.grid-pagination');
 	}
+	getCounter() {
+		return $('.grid-counter');
+	}
 
 	applyFilter(text) {
 		let input = $('jf-grid-filter input[type=text]');
 		input.val(text);
 		let ngModelController = angular.element(input).controller('ngModel');
   		ngModelController.$setViewValue(text);
-
-		// jfGridFilter.gridFilter = text;
-		// jfGridFilter.onChange();
-		// angular.element(input).scope().$apply();
-
 	}
 }

@@ -72,7 +72,7 @@ public class FileUtils {
         }
     }
 
-    public static long bytesToMB(int sizeInBytes) {
+    public static long bytesToMB(long sizeInBytes) {
         return sizeInBytes / (1024 * 1024);
     }
 

@@ -16,8 +16,8 @@ const commonMessages = {
     "invalidCron": "The cron expression is invalid",
     "pastCron": "The next run time is in the past",
     "uniqueId": "Key is already used",
-    "name": "Invalid name",
-    "xmlName": "Invalid name",
+    "name": "Name cannot be blank or contain /\\:|?*\"<>",
+    "xmlName": "Name cannot be blank or contain spaces & special characters",
     "integerValue": "Value must be an integer number"
 };
 
@@ -26,6 +26,9 @@ const customMessages = {
         "min": "Value must be between 0 and 2,147,483,647",
         "max": "Value must be between 0 and 2,147,483,647",
         "dateFormatExpression": "Please enter a valid date format"
+    },
+    "folderDownload": {
+      "min": "Number of downloads must 1 or more"
     },
     "adminBackup": {
         "name": "Invalid backup name",
@@ -71,5 +74,9 @@ const customMessages = {
     },
     "licenses": {
         "validateLicense": "License name contains illegal characters"
+    },
+    "propertySet": {
+        "name": "Property set name should start with a letter and contain only letters, digits, '-' and '_'. no spaces allowed.",
+        "xmlName": "Property set name should start with a letter and contain only letters, digits, '-' and '_'. no spaces allowed."
     }
 };

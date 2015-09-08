@@ -34,6 +34,7 @@ public class ProLicenseResource extends BaseResource {
     }
 
     @GET
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN})
     @Produces(MediaType.APPLICATION_JSON)
     public Response getLicense()
             throws Exception {

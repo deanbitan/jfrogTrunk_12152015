@@ -1,6 +1,10 @@
 class jfSwitchController {
     constructor() {
         if (!this.options) throw 'Must supply options';
+        // Supports 2 methods of options:
+        // array of strings
+        // array of objects of type {'value': ..., 'text': ...}
+        // The model is assigned the value, and the text is displayed
         this.optionObjects = this.options.map((option) => {
             if (typeof(option) === 'string') {
                 return {value: option, text: option};

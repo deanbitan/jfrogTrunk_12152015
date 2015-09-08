@@ -19,6 +19,8 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.BaseBrowsableItem;
@@ -51,8 +53,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * @author Chen  Keinan
@@ -184,20 +184,20 @@ public class JunctionNode implements RestTreeNode {
     private ArchiveEntriesTree buildArchiveEntriesTree() {
         ArchiveEntriesTree tree = new ArchiveEntriesTree();
         String repoKey = getRepoKey();
-        ZipInputStream zipInputStream = null;
+        ArchiveInputStream archiveInputStream = null;
         try {
-            ZipEntry zipEntry;
+            ArchiveEntry archiveEntry;
             // create repo path
             RepoPath repositoryPath = InternalRepoPathFactory.create(repoKey, getPath());
-            zipInputStream = getRepoService().zipInputStream(repositoryPath);
-            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                tree.insert(InfoFactoryHolder.get().createZipEntry(zipEntry), repoKey, getPath());
+            archiveInputStream = getRepoService().archiveInputStream(repositoryPath);
+            while ((archiveEntry = archiveInputStream.getNextEntry()) != null) {
+                tree.insert(InfoFactoryHolder.get().createArchiveEntry(archiveEntry), repoKey, getPath());
             }
         } catch (IOException e) {
             log.error("Failed to get  zip Input Stream: " + e.getMessage());
         } finally {
-            if (zipInputStream != null) {
-                IOUtils.closeQuietly(zipInputStream);
+            if (archiveInputStream != null) {
+                IOUtils.closeQuietly(archiveInputStream);
             }
             return tree;
         }
@@ -250,7 +250,8 @@ public class JunctionNode implements RestTreeNode {
             ((FolderNode) child).setHasChild(getRepoService().hasChildren(repoPath));
         } else {
             MimeType mimeType = NamingUtils.getMimeType(relativePath);
-            if (mimeType.isArchive()) {
+            if (mimeType.isArchive() /*|| relativePath.endsWith("tar") || relativePath.endsWith("tar.gz")
+                    || relativePath.endsWith("tgz")*/) {
                 child =  new ZipFileNode((FileInfo) pathItem,pathItem.getName());
                 ((FileNode) child).setHasChild(true);
             } else {
@@ -323,7 +324,8 @@ public class JunctionNode implements RestTreeNode {
     @Override
     public Collection<? extends RestModel> fetchItemTypeData(AuthorizationService authService,
             boolean isCompact, Properties props, ArtifactoryRestRequest request) {
-        if ((repoType.equals("local") || repoType.equals("cached")) && isArchive()) {
+        if ((repoType.equals("local") || repoType.equals("cached")) && isArchive() /*|| getPath().endsWith("tar") ||
+                getPath().endsWith("tar.gz") || getPath().endsWith("tgz")*/) {
             // get all archive children
             return getArchiveChildren(authService, isCompact);
         } else {

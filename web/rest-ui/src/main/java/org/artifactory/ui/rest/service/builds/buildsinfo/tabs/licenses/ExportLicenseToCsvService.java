@@ -4,7 +4,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.license.LicenseModuleModel;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
@@ -36,7 +36,7 @@ public class ExportLicenseToCsvService implements RestService {
 
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
             LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
-        Collection<LicenseModuleModel> models = ((BuildLicenseModel) request.getImodel()).getLicenses();
+        Collection<ModuleLicenseModel> models = ((BuildLicenseModel) request.getImodel()).getLicenses();
         if (models != null && !models.isEmpty()) {
                 String licenseCsv = licensesAddon.generateLicenseCsv(models);
                 ((StreamRestResponse) response).setDownloadFile("licenses.csv");

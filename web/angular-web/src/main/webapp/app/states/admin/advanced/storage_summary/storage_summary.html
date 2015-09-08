@@ -8,7 +8,10 @@
                     <jf-panel jf-panel-heading="Binaries">
                         <table class="jf-data-table">
                             <tr ng-repeat="(key,value) in StorageSummaryController.storageSummary.binariesSummary">
-                                <td>{{key | splitWords}}</td>
+                                <td>
+                                    {{key | splitWords}}:
+                                    <jf-help-tooltip ng-if="StorageSummaryController.TOOLTIP[key]" html="StorageSummaryController.TOOLTIP[key]"></jf-help-tooltip>
+                                </td>
                                 <td>{{value}}</td>
                             </tr>
                         </table>
@@ -18,7 +21,10 @@
                     <jf-panel jf-hide-for-aol jf-panel-heading="File Store">
                         <table class="jf-data-table">
                             <tr ng-repeat="(key,value) in StorageSummaryController.storageSummary.fileStoreSummary">
-                                <td>{{key | splitWords}}</td>
+                                <td>
+                                    {{key | splitWords}}:
+                                    <jf-help-tooltip ng-if="StorageSummaryController.TOOLTIP[key]" html="StorageSummaryController.TOOLTIP[key]"></jf-help-tooltip>
+                                </td>
                                 <td>{{value}}</td>
                             </tr>
                         </table>
@@ -28,7 +34,8 @@
             <jf-grid grid-options="StorageSummaryController.gridOption"
                      filter-field="repoKey"
                      filter-on-change="true"
-                     auto-focus="true">
+                     auto-focus="true"
+                     object-name="Repository/Repositories">
             </jf-grid>
         </div>
     </div>

@@ -2,6 +2,7 @@ package org.artifactory.ui.rest.service.admin.configuration.repositories.util;
 
 
 import com.google.common.base.Charsets;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -35,10 +36,13 @@ public class TestMethodFactory {
         HttpRequestBase request;
         switch (repoType) {
             case NuGet:
-                request = createNugetTestMethod(repoUrl, advancedRepository.getQueryParams());
+                request = createNuGetTestMethod(repoUrl, advancedRepository.getQueryParams());
                 break;
             case Gems:
                 request = createGemsTestMethod(repoUrl);
+                break;
+            case Docker:
+                request = createDockerTestMethod(repoUrl);
                 break;
             default:
                 request = new HttpHead(HttpUtils.encodeQuery(repoUrl));
@@ -55,17 +59,28 @@ public class TestMethodFactory {
         return new HttpGet(path);
     }
 
-    private static HttpRequestBase createNugetTestMethod(String repoUrl, String queryParams) {
+    private static HttpRequestBase createNuGetTestMethod(String repoUrl, String queryParams) {
         try {
             URIBuilder uriBuilder = new URIBuilder(repoUrl);
             HttpRequestBase request = new HttpGet();
-            List<NameValuePair> queryParamsMap = URLEncodedUtils.parse(queryParams, Charsets.UTF_8);
-            uriBuilder.setParameters(queryParamsMap);
+            if(StringUtils.isNotBlank(queryParams)) {
+                List<NameValuePair> queryParamsMap = URLEncodedUtils.parse(queryParams, Charsets.UTF_8);
+                uriBuilder.setParameters(queryParamsMap);
+            }
             request.setURI(uriBuilder.build());
             return request;
         } catch (URISyntaxException e) {
             throw new RuntimeException("Failed to build test URI", e);
         }
+    }
+
+    private static HttpRequestBase createDockerTestMethod(String repoUrl) {
+        String path = repoUrl;
+        if (path.endsWith("/")) {
+            path = PathUtils.trimTrailingSlashes(path);
+        }
+        path += "/v2/";
+        return new HttpGet(path);
     }
 
     private TestMethodFactory() {

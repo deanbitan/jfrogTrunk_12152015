@@ -64,4 +64,6 @@ public interface RepositoryConfiguration {
     boolean isEnableVagrantSupport();
 
     boolean isEnableGitLfsSupport();
+
+    boolean isForceNugetAuthentication();
 }

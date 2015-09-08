@@ -29,7 +29,7 @@
         syntax - The UI highlighter syntax to for this mime type (only relevant if this is a viewable type)
         css - The css class of a display icon for this mime type
 -->
-<mimetypes version="7">
+<mimetypes version="8">
 
     <mimetype type="text/plain" extensions="txt, properties, mf, asc" viewable="true" syntax="plain"/>
     <mimetype type="text/html" extensions="htm, html" viewable="true" syntax="xml"/>
@@ -50,8 +50,8 @@
     <mimetype type="application/x-java-pack200" extensions="jar.pack.gz" archive="true" index="true" css="jar"/>
     <mimetype type="application/x-java-archive-diff" extensions="jardiff" archive="false"/>
     <mimetype type="application/zip" extensions="zip" archive="true" index="true" css="jar"/>
-    <mimetype type="application/x-tar" extensions="tar" archive="false" index="false"/>
-    <mimetype type="application/x-gzip" extensions="tgz, tar.gz, gz" archive="false" index="false"/>
+    <mimetype type="application/x-tar" extensions="tar" archive="true" index="false"/>
+    <mimetype type="application/x-gzip" extensions="tgz, tar.gz, gz" archive="true" index="false"/>
     <mimetype type="application/x-nupkg" extensions="nupkg" archive="true" index="true" css="nupkg"/>
     <mimetype type="application/x-rar-compressed" extensions="rar" archive="false" css="jar"/>
     <mimetype type="application/vnd.android.package-archive" extensions="apk" archive="true" index="true" css="apk"/>

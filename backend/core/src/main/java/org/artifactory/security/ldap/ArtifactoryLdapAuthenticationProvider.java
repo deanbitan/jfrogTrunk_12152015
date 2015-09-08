@@ -197,9 +197,6 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             log.debug("Loading LDAP groups");
             ldapGroupAddon.populateGroups(user, userInfo);
             log.debug("Finished Loading LDAP groups");
-            if (!userInfo.isTransientUser()) {
-                userGroupService.updateUser(userInfo, false);
-            }
             SimpleUser simpleUser = new SimpleUser(userInfo);
             // create new authentication response containing the user and it's authorities
             return new LdapRealmAwareAuthentication(simpleUser, authentication.getCredentials(),

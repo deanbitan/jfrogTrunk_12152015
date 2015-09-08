@@ -247,7 +247,7 @@ public class AqlApiDynamicFieldsDomains {
         }
 
         public AqlApiComparator<T> name() {
-            return new AqlApiComparator(AqlFieldEnum.buildModuleName, domains);
+            return new AqlApiComparator(AqlFieldEnum.moduleName, domains);
         }
 
         public AqlApiBuildDynamicFieldsDomains<T> build() {

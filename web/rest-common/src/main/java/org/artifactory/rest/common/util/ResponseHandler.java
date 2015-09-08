@@ -30,8 +30,7 @@ public class ResponseHandler {
     public static Response buildFileResponse(RestResponse response, boolean downloadFile) {
         Response.ResponseBuilder responseBuilder;
         if (downloadFile) {
-            responseBuilder = getFileDownloadResponseBuilder(
-                    ((StreamRestResponse) response).getFileName());
+            responseBuilder = getFileDownloadResponseBuilder(((StreamRestResponse) response).getFileName());
         } else {
             responseBuilder = getResponseBuilder();
         }

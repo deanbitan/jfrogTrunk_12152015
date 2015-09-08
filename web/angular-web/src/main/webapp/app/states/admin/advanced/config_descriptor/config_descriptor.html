@@ -2,6 +2,9 @@
     <h1>Config Descriptor <jf-clip-copy text-to-copy="ConfigDescriptorController.configDescriptor"
                                         object-name="XML"></jf-clip-copy>
     </h1>
+    <div class="field-bottom-remark">
+        <i class="icon icon-notif-warning"></i>Warning: Updating the configuration through direct manipulation of the XML descriptors can be harmful.
+    </div>
 
     <div class="content-wrapper">
         <div class="card stretch card-pole-pad card-side-pad">
@@ -12,6 +15,7 @@
                         allow-edit="true"
                         height="flexible"
                         model="ConfigDescriptorController.configDescriptor"
+                        autofocus="true"
                         api-access="ConfigDescriptorController.apiAccess">
                 </jf-code-mirror>
             </div>

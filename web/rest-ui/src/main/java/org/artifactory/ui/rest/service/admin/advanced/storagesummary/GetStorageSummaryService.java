@@ -122,7 +122,7 @@ public class GetStorageSummaryService implements RestService {
         binariesSummary.setOptimization(NumberFormatter.formatPercentage(storageSummaryInfo.getOptimization()));
         binariesSummary.setArtifactsSize(StorageUnit.toReadableString(storageSummaryInfo.getTotalSize()));
         binariesSummary.setItemsCount(NumberFormatter.formatLong((storageSummaryInfo.getTotalItems())));
-        binariesSummary.setArtifactCounts(NumberFormatter.formatLong((storageSummaryInfo.getTotalFiles())));
+        binariesSummary.setArtifactsCount(NumberFormatter.formatLong((storageSummaryInfo.getTotalFiles())));
 
         storageSummary.setBinariesSummary(binariesSummary);
     }

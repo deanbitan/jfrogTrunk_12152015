@@ -9,7 +9,7 @@ import org.artifactory.rest.common.model.RestModel;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifactVersions;
+import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifactVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -48,6 +48,8 @@ public class DeleteVersionService implements RestService {
         StatusHolder statusHolder = repositoryService.undeployVersionUnits(versionUnitSet);
         if (statusHolder.isError()) {
             response.error(statusHolder.getLastError().getMessage());
+        } else if (statusHolder.getLastWarning() != null) {
+            response.warn("The operation finished with warnings, check the log for more information.");
         } else {
             response.info("Selected versions deleted successfully");
         }
@@ -58,7 +60,7 @@ public class DeleteVersionService implements RestService {
         if (deleteArtifactVersionsList != null && !deleteArtifactVersionsList.isEmpty()) {
             deleteArtifactVersionsList.forEach(deleteArtifactVersion -> {
                 VersionUnit versionUnit = new VersionUnit(null, new HashSet<RepoPath>());
-                ((DeleteArtifactVersions) deleteArtifactVersion).getRepoPaths().forEach(repoKeyPath -> {
+                ((DeleteArtifactVersion) deleteArtifactVersion).getRepoPaths().forEach(repoKeyPath -> {
                     String repoKey = repoKeyPath.getRepoKey();
                     String path = repoKeyPath.getPath();
                     RepoPath repoPath = InternalRepoPathFactory.create(repoKey, path);

@@ -4,6 +4,8 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.fs.FileInfo;
 import org.artifactory.md.Properties;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
@@ -69,14 +71,9 @@ public class Checksums {
         this.message = message;
     }
 
-    /**
-     * update file info checksum
-     *
-     * @param itemInfo    - item info
-     * @param isLocalRepo - signifies if the storing repo is local
-     */
-    public void updateFileInfoCheckSum(org.artifactory.fs.FileInfo itemInfo, boolean isLocalRepo,
+    public void updateFileInfoCheckSum(FileInfo itemInfo, LocalRepoDescriptor localRepoDescriptor,
                                        boolean userHasPermissionsToFix) {
+        boolean isLocalRepo = localRepoDescriptor.isLocal();
         String md5 = "";
         boolean checksumsMatch = true;
         ChecksumInfo md5Info = getChecksumOfType(itemInfo, ChecksumType.md5);
@@ -98,7 +95,7 @@ public class Checksums {
         if (checksumsMatch || isOneMissingOtherMatches(sha1Info, md5Info)) {
             showFixChecksums = false;
         } else {
-            if (userHasPermissionsToFix) {
+            if (userHasPermissionsToFix && !RepoType.Docker.equals(localRepoDescriptor.getType())) {
                 showFixChecksums = true;
             }
             message = prepareFixChecksumsMessage(userHasPermissionsToFix, isLocalRepo, md5Info, sha1Info);

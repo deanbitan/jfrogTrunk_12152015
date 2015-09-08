@@ -11,17 +11,24 @@ export class BrowsersController {
         this.hotkeys = hotkeys;
         this._setupKeyHints();
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_NODE_SELECT, node => this.selectedNode = node);
+
+        let activeFilter = this.artifactoryState.getState('activeFilter');
+        this.activeFilter = activeFilter ? true : false;
+        this.searchText = activeFilter || '';
     }
 
     toggleCompactFolders() {
         this.treeBrowserDao.setCompactFolders(this.compactFolders);
         this.artifactoryEventBus.dispatch(EVENTS.TREE_COMPACT, this.compactFolders);
     }
-    showFilter() {
+
+    showTreeSearch() {
         this.artifactoryEventBus.dispatch(EVENTS.ACTIVATE_TREE_SEARCH);
     }
 
-    switchBrowser(browser) {        
+    switchBrowser(browser) {
+        this.artifactoryState.setState('activeFilter', this.activeFilter ? this.searchText : undefined);
+
         // Reclicking simple browser when we are already in simple browser - go to root
         if (browser === 'simple' && this.stateParams.browser === 'simple') {
             let repo = this.selectedNode.data.getRoot();
@@ -55,5 +62,9 @@ export class BrowsersController {
             combo: 'Left',
             description: 'Collapse folder'
         });
+    }
+
+    clearFilter() {
+        this.artifactoryEventBus.dispatch(EVENTS.TREE_SEARCH_CANCEL);
     }
 }

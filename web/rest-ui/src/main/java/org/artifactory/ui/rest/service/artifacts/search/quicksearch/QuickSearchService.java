@@ -46,11 +46,14 @@ public class QuickSearchService implements RestService {
         for (ArtifactSearchResult artifactSearchResult : artifactSearchResults.getResults()) {
             quickSearchResults.add(new QuickSearchResult(artifactSearchResult));
         }
+        long resultsCount;
         int maxResults = ConstantValues.searchMaxResults.getInt();
         if (artifactSearchControl.isLimitSearchResults() && quickSearchResults.size() > maxResults) {
             quickSearchResults = quickSearchResults.subList(0, maxResults);
+            resultsCount = quickSearchResults.size() == 0 ? 0 : artifactSearchResults.getFullResultsCount();
+        }else{
+            resultsCount = quickSearchResults.size();
         }
-        long resultsCount = quickSearchResults.size() == 0 ? 0 : artifactSearchResults.getFullResultsCount();
         SearchResult model = new SearchResult(quickSearchResults, quickSearch.getQuery(),
                 resultsCount, artifactSearchControl.isLimitSearchResults());
         model.addNotifications(response);

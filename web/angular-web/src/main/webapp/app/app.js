@@ -45,19 +45,21 @@ angular.module('artifactory.ui', [
     // Vendor modules
     'ngMessages',
     'ui.utils',
-    'angularFileUpload',
     'ui.select',
     'selectize',
     'ui.codemirror',
     'cfp.hotkeys',
     'artifactory.templates',
     'ui.router',
+/* --- MOVED TO artifactory_grid module
     'ui.grid',
     'ui.grid.autoResize',
     'ui.grid.edit',
     'ui.grid.selection',
     'ui.grid.pagination',
     'ui.grid.grouping',
+    'ui.grid.resizeColumns',
+*/
     'ngCookies',
     'toaster',
     'ngSanitize',
@@ -67,6 +69,7 @@ angular.module('artifactory.ui', [
     'ngClipboard',
     'ngPasswordStrength',
     'angular-capitalize-filter',
+    'angularFileUpload',
     // Application modules
     'artifactory.services',
     'artifactory.directives',
@@ -75,6 +78,7 @@ angular.module('artifactory.ui', [
     'artifactory.states',
     'artifactory.filters',
     'ui.grid.draggable-rows',
+    'color.picker',
     Models.name
 ])
     .config(appConfig)

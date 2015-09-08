@@ -9,12 +9,6 @@ class jfPomViewController {
     }
 
     _initPomView() {
-        this.editorOptions = {
-            lineNumbers: true,
-            readOnly: 'nocursor',
-            mode: 'xml',
-            viewportMargin: Infinity
-        };
         this._registerEvents();
         this._getPomViewData();
     }

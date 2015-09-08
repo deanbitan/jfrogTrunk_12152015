@@ -15,6 +15,9 @@
                                         <label for="userA" class="mandatory">User Name</label>
                                         <input name="username"
                                                type="text"
+                                               jf-validator-name
+                                               jf-validator-max-text-length="100"
+                                               ng-model-options="{debounce: { 'default': 500 } }"
                                                ng-model="UserForm.userdata.name"
                                                class="input-text"
                                                ng-disabled="UserForm.mode==='edit'"
@@ -31,7 +34,9 @@
                                     <jf-field validations="users" autofocus="true">
                                         <label for="username" class="mandatory">User Name</label>
                                         <input name="username"
-                                               jf-validator-max-text-length="64"
+                                               jf-validator-name
+                                               jf-validator-max-text-length="100"
+                                               ng-model-options="{debounce: { 'default': 500 } }"
                                                type="text"
                                                ng-model="UserForm.userdata.name"
                                                class="input-text"

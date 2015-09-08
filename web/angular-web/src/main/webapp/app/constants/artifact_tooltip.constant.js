@@ -38,7 +38,17 @@ can result in unreferenced binary files and empty folders present in the filesto
 removes unreferenced files and empty folders.`
 
             },
-
+            storageSummary: {
+                itemsCount: `The total number of items (both files and folders) in your system.`,
+                optimization: `The ratio of Binaries Size to Artifacts Size.
+                This reflects how much the usage of storage in your system has been reduced by Artifactory using checksum storage.`,
+                artifactsCount: `The total number of artifacts pointing to the physical binaries stored on your system.`,
+                storageDirectory: `If Storage Type is "filesystem" then this is the path to the physical file store.
+If Storage Type is "fullDb" then this is the path to the directory that caches binaries when they are extracted from the database.
+If Storage Type is "S3" then this is the path to the directory that caches binaries from S3.`,
+                centralConfigurationDescriptor: ``,
+                securityConfigurationDescriptor: ``
+            }
         },
         configuration: {
             general: {
@@ -51,7 +61,10 @@ Set to '0' for unlimited size.`,
 For a detailed explanation see: <a href="http://joda-time.sourceforge.net/apidocs/org/joda/time/format/DateTimeFormat.html" target="_blank">Joda DateTimeFormat</a>`,
                 globalOfflineMode: `If set, Artifactory does not try to access remote resources to fetch artifacts.
 Only cached and local artifacts are served`,
-                showAvailableAddonsInfo: `When set, Artifactory displays information about available Add-ons. This overrides any user-specific setting to hide information.`
+                showAvailableAddonsInfo: `When set, Artifactory displays information about available Add-ons. This overrides any user-specific setting to hide information.`,
+                folderDownloadMaxFiles: 'The maximum amount of artifacts that can be downloaded under one folder.',
+                folderDownloadMaxSize: 'The maximum size (in MB) of a folder that is allowed to be downloaded.',
+                folderDownloadMaxParallel: 'The maximum amount of folder download requests Artifactory will allow to run together.'
             },
             licenseForm: {
                 licenseKey: `A unique short name identifying the license.`,
@@ -135,8 +148,14 @@ To import, select the Target Local Repository, upload the archive and click Impo
                 excludeBuilds: `Exclude all builds from the export.`,
                 createM2CompatibleExport: `Include Maven 2 repository metadata and checksum files as part of the export`,
                 outputVerboseLog: `Lowers the log level to debug and redirects the output from the standard log to the import-export log.
-You can monitor the log in the <a href="./#/admin/advanced/system_logs">'System Logs'</a> page.`,
+You can monitor the log in the <a href="./#/admin/advanced/system_logs">'System Logs'</a> page.`
 
+            },
+            stash: {
+                createM2CompatibleExport: `Include Maven 2 repository metadata and checksum files as part of the export`,
+                outputVerboseLog: `Lowers the log level to debug and redirects the output from the standard log to the import-export log.
+You can monitor the log in the <a href="./#/admin/advanced/system_logs">'System Logs'</a> page.`,
+                createArchive: `Export the results as a zip archive.`
             }
         },
         repositories: {
@@ -191,7 +210,8 @@ see:<a href="http://www.quartz-scheduler.org/documentation/quartz-1.x/tutorials/
                 nextReplicationTime: `The next replication time based on the Cron expression`,
                 enableEventReplication: `When set, additions and modifications are replicated as they occur.`,
                 trivialLayout: `When set, the repository will use the deprecated trivial layout.`,
-                forceDockerAuth:'Force basic authentication credentials in order to use this repository.'
+                forceDockerAuth:'Force basic authentication credentials in order to use this repository.',
+                forceNugetAuth:'Force basic authentication credentials in order to use this repository.'
 
             },
             remoteForm: {
@@ -299,9 +319,11 @@ be configured as 'https://nuget.org' and the feed context path should be configu
                 nugetDownloadContextPath: `The context path prefix through which NuGet downloads are served.
 For example, the NuGet Gallery download URL is 'https://nuget.org/api/v2/package', so the repository
 URL should be configured as 'https://nuget.org' and the download context path should be configured
-as 'api/v2/package'.`
-
-
+as 'api/v2/package'.`,
+                smartSyncStatistics: `If set, download statistics for the artifact at the remote Artifactory instance will be updated each time a cached item is downloaded from your repository.`,
+                smartSyncProperties: `If set, properties for artifacts that have been cached in this repository will be updated if they are modified in the artifact hosted at the remote Artifactory instance.`,
+                smartListRemoteFolderItems: `If set, Artifactory lets you navigate the contents of the repository at the remote Artifactory instance,
+for all package types, even if the artifacts have not been cached in this repository.`
             },
             virtualForm: {
                 publicDescription: `Textual description of the repository.
@@ -340,8 +362,8 @@ they are included in an active profile or not.
 
             },
             layoutsForm: {
-                artifactPathPattern: `Please refer to: <a href="http://www.jfrog.com/confluence/display/RTF4/Repository+Layouts#RepositoryLayouts-ModulesandPathPatternsusedbyRepositoryLayouts" target="_blank">Path Patterhs</a> in the Artifactory Wiki documentation.`,
-                distinctiveDescriptorPathPattern: `Please refer to: <a href="http://www.jfrog.com/confluence/display/RTF4/Repository+Layouts#RepositoryLayouts-DescriptorPathPatterns" target="_blank">Descriptor Path Patterhs</a> in the Artifactory Wiki documentation.`,
+                artifactPathPattern: `Please refer to: <a href="http://www.jfrog.com/confluence/display/RTF/Repository+Layouts#RepositoryLayouts-ModulesandPathPatternsusedbyRepositoryLayouts" target="_blank">Path Patterns</a> in the Artifactory Wiki documentation.`,
+                distinctiveDescriptorPathPattern: `Please refer to: <a href="http://www.jfrog.com/confluence/display/RTF/Repository+Layouts#RepositoryLayouts-DescriptorPathPatterns" target="_blank">Descriptor Path Patterns</a> in the Artifactory Wiki documentation.`,
                 folderIntegrationRevisionRegExp: `A regular expression matching the integration revision string appearing in a folder name
 as part of the artifact's path. For example, 'SNAPSHOT', in Maven.
 Note! Take care not to introduce any regexp capturing groups within this expression.
@@ -398,7 +420,7 @@ Possible examples are:
 Authentication to LDAP is performed from the DN found if successful.`,
                 searchBase: `(Optional) A context name to search in relative to the base DN of the LDAP URL. For example, 'ou=users'
 With the LDAP Group Add-on enabled, it is possible to enter multiple search base entries
-separated by a pipe ('|') character. For example, 'ou=internalUsers,ou=hq|ou=externalUsers'.`,
+separated by a pipe ('|') character.`,
                 manageDN: `The full DN of the user that binds to the LDAP server to perform user searches.
 Only used with "search" authentication.
 `,
@@ -500,7 +522,7 @@ If you want to specify the target deployment path manually, unset this option.`,
         },
         pushToBintray: {
             bintrayPackageName: `A target package name under the repository.You must create the package in Bintray first if it does not exist.`,
-            bintrayPackageVersion: `A target version under the package.If the version does not yet exist in Bintray, it is automatically created.`,
+            bintrayPackageVersion: `A target version under the package.If the version does not yet exist in Bintray, it is automatically created.`
         },
         browse: {
             created: `The time this artifact was deployed to or cached in Artifactory.`,
@@ -524,6 +546,10 @@ Inconsistent: Replication status cannot be interpreted.`,
             recursive: `Add the property to all children of the current node.`
         },
         search: {
+            stash: `The Stash lets you store search results for later use.
+Once it is populated, you can add, subtract or intersect new search results to assemble just the right set of artifacts you need.
+The Stash Browser displays all the artifacts in your stash and provides a convenient way to perform bulk operations.
+You can copy or move the entire Stash to a repository, or perform actions on individual items.`
         },
 
 
@@ -533,7 +559,7 @@ Inconsistent: Replication status cannot be interpreted.`,
             filtered: `Set this to have Artifactory serve the file as a filtered resource.
 A filtered textual resource is processed by the <a href="http://freemarker.org/" target="_blank">FreeMarker</a> engine before being returned to clients.
 The context accessible to the template includes:
-Properties ,Security and Request. Javadocs can be found in the <a href="http://repo.jfrog.org/artifactory/libs-releases-local/org/artifactory/artifactory-papi/%5BRELEASE%5D/artifactory-papi-%5BRELEASE%5D-javadoc.jar!/index.html" target="_blank">Artifactory Public API</a>.`,
+Properties ,Security and Request. Javadocs can be found in the <a href="http://repo.jfrog.org/artifactory/libs-releases-local/org/artifactory/artifactory-papi/%5BRELEASE%5D/artifactory-papi-%5BRELEASE%5D-javadoc.jar!/index.html" target="_blank">Artifactory Public API</a>.`
 
         },
         selectTargetPathModal: {

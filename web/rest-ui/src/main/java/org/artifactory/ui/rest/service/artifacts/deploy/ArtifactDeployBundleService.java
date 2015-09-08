@@ -10,7 +10,8 @@ import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
 import org.artifactory.ui.rest.model.artifacts.deploy.UploadArtifactInfo;
-import org.artifactory.ui.utils.MultiPartUtils;
+import org.artifactory.ui.rest.model.artifacts.deploy.UploadedArtifactInfo;
+import org.artifactory.ui.utils.TreeUtils;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +21,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author Chen Keinan
@@ -43,7 +42,7 @@ public class ArtifactDeployBundleService implements RestService {
         String uploadDir = ContextHelper.get().getArtifactoryHome().getTempUploadDir().getAbsolutePath();
         // get upload model
         UploadArtifactInfo uploadArtifactInfo = (UploadArtifactInfo) request.getImodel();
-        String repoKey = request.getQueryParamByKey("repoKey");
+        String repoKey = uploadArtifactInfo.getRepoKey();
         // deploy bundle
         deployBundle(response, uploadDir, uploadArtifactInfo, repoKey);
     }
@@ -60,19 +59,20 @@ public class ArtifactDeployBundleService implements RestService {
             String repoKey) {
         try {
             LocalRepoDescriptor localRepoDescriptor = repositoryService.localOrCachedRepoDescriptorByKey(repoKey);
-            // save file data tto temp
-            List<String> fileNames = new ArrayList<>();
-            // save file to temp folder
-            MultiPartUtils.saveFileDataToTemp(centralConfigService, uploadArtifactInfo.fetchFormDataMultiPart(),
-                    uploadDir, fileNames, false);
             BasicStatusHolder statusHolder = new BasicStatusHolder();
             // deploy file to repository
-            File bundleFile = new File(uploadDir, fileNames.get(0));
+            File bundleFile = new File(uploadDir, uploadArtifactInfo.getFileName());
             deployService.deployBundle(bundleFile, localRepoDescriptor, statusHolder, false);
             // update feedback message
-            updateFeedbackMsg(artifactoryResponse, statusHolder, fileNames.get(0));
+            updateFeedbackMsg(artifactoryResponse, statusHolder);
             // delete tmp file
             Files.removeFile(bundleFile);
+            String artifactPath = uploadArtifactInfo.getUnitInfo().getPath();
+            UploadedArtifactInfo uploadedArtifactInfo = new UploadedArtifactInfo(
+                    TreeUtils.shouldProvideTreeLink(localRepoDescriptor, artifactPath),
+                    localRepoDescriptor.getKey(), artifactPath);
+            artifactoryResponse.iModel(uploadedArtifactInfo);
+
         } catch (Exception e) {
             artifactoryResponse.error(e.getMessage());
             log.error(e.toString());
@@ -84,15 +84,14 @@ public class ArtifactDeployBundleService implements RestService {
      *
      * @param artifactoryResponse - encapsulate data related to response
      * @param statusHolder        - msg status holder
-     * @param fileName            - deployed file name
      */
-    private void updateFeedbackMsg(RestResponse artifactoryResponse, BasicStatusHolder statusHolder, String fileName) {
+    private void updateFeedbackMsg(RestResponse artifactoryResponse, BasicStatusHolder statusHolder) {
         if (statusHolder.hasErrors()) {
             artifactoryResponse.error(statusHolder.getErrors().get(0).getMessage());
         } else if (statusHolder.hasWarnings()) {
             artifactoryResponse.warn(statusHolder.getWarnings().get(0).getMessage());
         } else {
-            artifactoryResponse.info("Successfully deployed X artifacts from archive: " + fileName);
+            artifactoryResponse.info(statusHolder.getStatusMsg());
         }
     }
 }

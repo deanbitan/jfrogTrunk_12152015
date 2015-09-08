@@ -31,7 +31,7 @@ public class GetConfigPropertySetService implements RestService {
                 .map(AdminPropertySetModel::new)
                 .findFirst())
                 .ifPresent(response::iModel)
-                .ifNotPresent(() -> response.error("Property set '" + propName + "' does not exists.")
+                .ifNotPresent(() -> response.error("Property set '" + propName + "' does not exists")
                         .responseCode(HttpStatus.SC_NOT_FOUND));
     }
 }

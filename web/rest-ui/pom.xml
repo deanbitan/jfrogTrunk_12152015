@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.0.2</version>
+        <version>4.1.0</version>
     </parent>
     <dependencies>
         <dependency>
@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
+            <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <!-- for cron expressions validation -->
         <dependency>

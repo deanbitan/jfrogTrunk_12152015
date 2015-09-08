@@ -2,7 +2,7 @@ package org.artifactory.ui.rest.model.artifacts.search.classsearch;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.search.archive.ArchiveSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
@@ -21,6 +21,9 @@ public class ClassSearchResult extends BaseSearchResult {
 
     private String archiveName;
     private String archivePath;
+
+    public ClassSearchResult() {
+    }
 
     public ClassSearchResult(ArchiveSearchResult archiveSearchResult) {
         super.setRepoKey(archiveSearchResult.getRepoKey());
@@ -61,8 +64,12 @@ public class ClassSearchResult extends BaseSearchResult {
     @Override
     public ItemSearchResult getSearchResult() {
         RepoPath repoPath = InternalRepoPathFactory.create(getRepoKey(), archivePath);
-        RepositoryService repositoryService = ContextHelper.get().beanForType(RepositoryService.class);
-        ItemInfo itemInfo = repositoryService.getItemInfo(repoPath);
+        ItemInfo itemInfo;
+        try {
+            itemInfo = ContextHelper.get().getRepositoryService().getItemInfo(repoPath);
+        } catch (ItemNotFoundRuntimeException e) {
+            itemInfo = getItemInfo(repoPath);
+        }
         return new ArtifactSearchResult(itemInfo);
     }
 }

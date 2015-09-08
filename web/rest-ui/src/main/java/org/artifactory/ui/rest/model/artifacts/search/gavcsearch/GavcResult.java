@@ -1,7 +1,7 @@
 package org.artifactory.ui.rest.model.artifacts.search.gavcsearch;
 
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchResult;
@@ -24,6 +24,8 @@ public class GavcResult extends BaseSearchResult {
     private String artifactID;
     private String groupID;
 
+    public GavcResult() {
+    }
 
     public GavcResult(GavcSearchResult gavcSearchResult) {
         super.setRepoKey(gavcSearchResult.getRepoKey());
@@ -85,8 +87,12 @@ public class GavcResult extends BaseSearchResult {
     @Override
     public ItemSearchResult getSearchResult() {
         RepoPath repoPath = InternalRepoPathFactory.create(getRepoKey(), getRelativePath());
-        RepositoryService repositoryService = ContextHelper.get().beanForType(RepositoryService.class);
-        ItemInfo itemInfo = repositoryService.getItemInfo(repoPath);
+        ItemInfo itemInfo;
+        try {
+            itemInfo = ContextHelper.get().getRepositoryService().getItemInfo(repoPath);
+        } catch (ItemNotFoundRuntimeException e) {
+            itemInfo = getItemInfo(repoPath);
+        }
         return new ArtifactSearchResult(itemInfo);
     }
 }

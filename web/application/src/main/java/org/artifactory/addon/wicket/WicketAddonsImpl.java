@@ -40,7 +40,13 @@ import org.apache.wicket.markup.html.WebComponent;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.markup.html.form.*;
+import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.IFormSubmittingComponent;
+import org.apache.wicket.markup.html.form.Radio;
+import org.apache.wicket.markup.html.form.RadioGroup;
+import org.apache.wicket.markup.html.form.TextArea;
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.link.ExternalLink;
 import org.apache.wicket.markup.html.list.LoopItem;
@@ -50,10 +56,18 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.util.time.Duration;
-import org.artifactory.addon.*;
+import org.artifactory.addon.AddonInfo;
+import org.artifactory.addon.AddonType;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
+import org.artifactory.addon.OssAddonsManager;
 import org.artifactory.addon.p2.P2Repository;
 import org.artifactory.addon.p2.P2WebAddon;
-import org.artifactory.addon.wicket.disabledaddon.*;
+import org.artifactory.addon.wicket.disabledaddon.AddonNeededBehavior;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonBehavior;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonHelpBubble;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonMenuNode;
+import org.artifactory.addon.wicket.disabledaddon.DisabledAddonTab;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
@@ -172,7 +186,12 @@ import org.artifactory.webapp.wicket.panel.export.ExportResultsPanel;
 import org.artifactory.webapp.wicket.panel.tabbed.tab.BaseTab;
 import org.artifactory.webapp.wicket.util.ItemCssClass;
 import org.artifactory.webapp.wicket.util.validation.UriValidator;
-import org.jfrog.build.api.*;
+import org.jfrog.build.api.Artifact;
+import org.jfrog.build.api.BaseBuildFileBean;
+import org.jfrog.build.api.Build;
+import org.jfrog.build.api.BuildRetention;
+import org.jfrog.build.api.Dependency;
+import org.jfrog.build.api.Module;
 import org.jfrog.build.api.dependency.BuildPatternArtifacts;
 import org.jfrog.build.api.dependency.BuildPatternArtifactsRequest;
 import org.slf4j.Logger;
@@ -206,7 +225,7 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
         WatchAddon, WebstartWebAddon, HttpSsoAddon, CrowdWebAddon, SamlAddon, SamlWebAddon, LdapGroupWebAddon,
         BuildAddon, LicensesWebAddon, LayoutsWebAddon, FilteredResourcesWebAddon, ReplicationWebAddon, YumWebAddon,
         P2WebAddon, NuGetWebAddon, BlackDuckWebAddon, GemsWebAddon, HaWebAddon, NpmWebAddon, DebianWebAddon,
-        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon, VagrantWebAddon, GitLfsWebAddon {
+        PypiWebAddon, DockerWebAddon, VcsWebAddon, BowerWebAddon, VagrantWebAddon, GitLfsWebAddon, PluginsWebAddon {
     private static final Logger log = LoggerFactory.getLogger(WicketAddonsImpl.class);
 
     @Autowired
@@ -1397,6 +1416,11 @@ public final class WicketAddonsImpl implements CoreAddons, WebApplicationAddon, 
     public ItemCssClass getFileCssClass(RepoPath path) {
         //null falls back to default in FileActionableItem
         return null;
+    }
+
+    @Override
+    public void executeAdditiveRealmPlugins() {
+
     }
 
     private static class UpdateNewsFromCache extends AbstractAjaxTimerBehavior {

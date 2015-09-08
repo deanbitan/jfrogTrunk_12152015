@@ -67,7 +67,7 @@ public class UpdatePermissionsTargetService<T extends PermissionTargetModel> ext
         updateAcesPermissions(permissionTarget, infoFactory, mutableAclInfo);
         // update acl
         aclService.updateAcl(mutableAclInfo);
-        artifactoryResponse.info("Permission target '" + permissionTarget.getName() + "' updated successfully.");
+        artifactoryResponse.info("Successfully updated permission target '" + permissionTarget.getName() + "'");
     }
 
 

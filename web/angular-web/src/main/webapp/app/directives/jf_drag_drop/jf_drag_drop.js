@@ -52,6 +52,7 @@ class jfDragDropController {
         this.$element = $element;
         this.$scope = $scope;
         this.$timeout = $timeout;
+        this.$interval = $interval;
         this.draggedObject = null;
         this.PLACEHOLDER = {'@@@DNDPH@@@': '@@@DNDPH@@@'};
 
@@ -448,6 +449,8 @@ class jfDragDropController {
                 this.draggedObject.dataObject["__fixed__"] = undefined;
             }
 
+            this._stopScrollInterval();
+
             this.$scope.$apply();
 
             this._undragAdditionals(ph.index+1);
@@ -458,6 +461,40 @@ class jfDragDropController {
 
             this._clearSelectedItems();
             if (this.onChange) this.onChange();
+        }
+    }
+
+    _dragMove (event,ui) {
+        //console.log(event.toElement);
+        this.$scope.$apply(()=> {
+            let list_element = $(event.toElement);
+
+            if (!list_element.hasClass('dnd-list-wrapper'))
+                list_element = list_element.parents('.dnd-list-wrapper');
+
+            if (list_element && list_element.hasClass('dnd-list-wrapper')) {
+                let dragOffsetY = event.pageY - list_element.offset().top;
+
+                if (list_element.scrollTop() > 0 && dragOffsetY > 0 && dragOffsetY < 20 && !this.scrollInterval)
+                    //this.scrollInterval = this.$interval(() => {
+                        list_element.scrollTop(list_element.scrollTop() - 5);
+                    //}, 50);
+                 else if (dragOffsetY > list_element.outerHeight() - 20 && dragOffsetY < list_element.outerHeight() && !this.scrollInterval)
+                    //this.scrollInterval = this.$interval(() => {
+                        list_element.scrollTop(list_element.scrollTop() + 5);
+                    //}, 50);
+                //else
+                //    this._stopScrollInterval();
+            }
+            //else
+            //    this._stopScrollInterval();
+        });
+    }
+
+    _stopScrollInterval() {
+        if (this.scrollInterval) {
+            this.$interval.cancel(this.scrollInterval);
+            this.scrollInterval = null;
         }
     }
 
@@ -493,9 +530,11 @@ class jfDragDropController {
         elem.draggable({
             helper: 'clone',
             cursorAt: {left:-5, top:-5},
+            scroll: false,
             distance: 10,
             start: (event, ui) => this._dragStart(event,ui),
-            stop: (event, ui) => this._dragStop(event,ui)
+            stop: (event, ui) => this._dragStop(event,ui),
+            drag: (event, ui) => this._dragMove(event,ui)
         });
         elem.addClass('drag-enabled');
     }
@@ -548,6 +587,9 @@ class jfDragDropController {
         if (this.mouseInExclude) this.mouseInInclude = false;
         if (isIn && this.draggedObject && this.draggedObject.phArray !== this.excludeList) {
             this._insertPlaceHolder(this.excludeList,this.excludeList.length);
+
+            //let list_element = $('#dnd-' + (iexc >= 0 ? 'exclude' : 'include'));
+
         }
     }
 
@@ -568,9 +610,8 @@ class jfDragDropController {
             let array = iexc >= 0 ? this.excludeList : (iinc >= 0 ? this.includeList : null);
             let index = iexc >= 0 ? iexc : (iinc >= 0 ? iinc : -1);
 
-            if (array) {
+            if (array)
                 this._insertPlaceHolder(array,index);
-            }
 
         }
         else if (item != null) {

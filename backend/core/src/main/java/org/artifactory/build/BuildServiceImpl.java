@@ -482,7 +482,7 @@ public class BuildServiceImpl implements InternalBuildService {
             }
         });
         results.add(new ArtifactoryBuildArtifact(idMatch, (FileInfo) AqlConverts.toFileInfo.apply(result)));
-        log.debug("Matched artifact {} to path {}", idMatch.getName(), AqlUtils.repoPathFromAql(result));
+        log.debug("Matched artifact {} to path {}", idMatch.getName(), AqlUtils.fromAql(result));
         artifacts.remove(idMatch);
     }
 
@@ -491,7 +491,7 @@ public class BuildServiceImpl implements InternalBuildService {
         Iterator<Artifact> artifactsIter = artifacts.iterator();
         Artifact matchedArtifact = artifactsIter.next();
         results.add(new ArtifactoryBuildArtifact(matchedArtifact, (FileInfo) AqlConverts.toFileInfo.apply(result)));
-        log.debug("Matched artifact {} to path {}", matchedArtifact.getName(), AqlUtils.repoPathFromAql(result));
+        log.debug("Matched artifact {} to path {}", matchedArtifact.getName(), AqlUtils.fromAql(result));
         //Remove artifact from list to ensure that we match everything
         artifactsIter.remove();
     }
@@ -541,18 +541,13 @@ public class BuildServiceImpl implements InternalBuildService {
     }
 
     @Override
-    public Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build, String sourceRepo) {
+    public Map<Dependency, FileInfo> getBuildDependenciesFileInfos(Build build) {
         AqlBase.AndClause<AqlApiBuild> and = AqlApiBuild.and(
                 AqlApiBuild.name().equal(build.getName()),
                 AqlApiBuild.number().equal(build.getNumber())
         );
         log.debug("Executing dependencies search for build {}:{}", build.getName(), build.getNumber());
-        if (StringUtils.isNotBlank(sourceRepo)) {
-            log.debug("Search limited to repo: {}", sourceRepo);
-            and.append(
-                    AqlApiBuild.module().dependecy().item().repo().equal(sourceRepo)
-            );
-        }
+
         AqlBase buildDependenciesQuery = AqlApiBuild.create().filter(and);
         buildDependenciesQuery.include(
                 AqlApiBuild.module().dependecy().name(),

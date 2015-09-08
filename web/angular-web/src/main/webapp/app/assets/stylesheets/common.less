@@ -206,6 +206,11 @@ jf-help-tooltip {
   }
 }
 
+.back-link-icon {
+  font-size: 20px;
+  margin-right: 5px;
+}
+
 .list-group-item:first-child, .list-group-item:last-child {
   -webkit-border-radius: 0;
   -moz-border-radius: 0;
@@ -244,42 +249,54 @@ h1 {
   .root-select-cell {
     width: 100px !important;
   }
-  .folder-select-cell {
-    width: 400px !important;
-//    margin-top: 25px;
-  }
-  .glyphicon {
-    font-size: 25px;
-    cursor: pointer;
-  }
-  .browse-item-row {
-    outline: none;
 
-    &.selected {
-      background-color: lightblue;
+  .folder-select-cell {
+    width: 350px !important;
+  }
+
+  .browse-container {
+    padding: 10px 0;
+    height: 225px;
+    overflow-y: scroll;
+    border: 1px solid @grayBorderLighter;
+    margin-bottom: 20px;
+  }
+
+  .up-folder {
+    i {
+      font-size: 24px;
+    }
+
+    &[disabled] {
+      cursor: default;
+
+      i:before {
+        color: @grayBorderDark;
+      }
     }
   }
-}
 
-.browse-container {
-  padding: 10px 10px;
-  height: 225px;
-  overflow-y: scroll;
-  border: 1px solid @grayFontLighter;
-  margin-bottom: 20px;
-}
+  .browse-item-row {
+    cursor: pointer;
+    line-height: 30px;
+    padding-left: 15px;
+    outline: none;
+    clear: both;
 
-.browse-item-row {
-  cursor: pointer;
-  line-height: 24px;
-  padding-left: 5px;
-
-  &:hover {
-    background-color: @grayGridRowHover;
+    &:hover {
+      background-color: #f4f4f4;
+    }
+    &.selected {
+      background-color: #e8f3f7;
+      color: @blueMain;
+    }
   }
-  
-  span:first-child {
-    margin-right: 4px;
+
+  .browse-item {
+    .icon {
+      float: left;
+      margin: 2px 7px -2px 0;
+    }
   }
 }
 
@@ -780,7 +797,7 @@ form.ng-pending {
 .form-group {
   margin-bottom: 27px;
 
-  &.form-checkbox {
+  &.form-checkbox, &.half-margin-bottom {
     margin-bottom: 14px;
   }
 }
@@ -835,6 +852,7 @@ label.mandatory {
 
 .input-text {
   border: transparent;
+  border-radius: 0;
   outline: none;
   box-shadow: none;
 
@@ -886,6 +904,13 @@ label.mandatory {
   &:-ms-input-placeholder {
     .jf-placeholder();
   }
+}
+
+.color-picker-input {
+  .input-text;
+}
+.color-picker-swatch {
+  border-radius: 0;
 }
 
 //----------------Checkbox---------------------//
@@ -946,10 +971,6 @@ jf-checkbox + jf-checkbox {
 
     .icon-hourglass {
       margin-top: 5px;
-
-      background-size: 20px 20px;
-      width: 20px;
-      height: 20px;
     }
   }
 }
@@ -984,8 +1005,8 @@ h5 {
 
   .toast {
     display: table;
-    min-height: 100px;
-    background: #fff;
+    height: 100px;
+    background: #eee !important;
     border-radius: 0;
     color: @grayFontGeneral;
     padding: 0;
@@ -994,6 +1015,7 @@ h5 {
     filter: alpha(opacity=100);
     float: right;
     clear: both;
+    cursor: auto;
 
     position: relative;
     animation: toaster-in 0.5s ease, toaster-out 0.5s ease 4.5s;
@@ -1003,6 +1025,7 @@ h5 {
       vertical-align: middle;
       font-size: 14px;
       padding: 20px;
+      background-color: #fff;
     }
 
     .toast-close-button {
@@ -1086,30 +1109,118 @@ h5 {
   }
 }
 
+//----------------------------- licenses -------------------------//
+
+.license-approved {
+  &, a {
+    color: @greenFontHeader !important;
+  }
+}
+.license-unapproved {
+  &, a {
+    color: @redError !important;
+  }
+}
+.license-notfound {
+  &, a {
+    color: orange !important;
+  }
+}
+.license-neutral {
+  &, a {
+    color: @blueMain !important;
+  }
+}
+.license-found-same-or-notfound {
+  &, a {
+    color: @grayFontLighter !important;
+  }
+}
+
 //------------------------permanent notifications-----------------//
 
 .constant-messages-container {
   width: 100%;
-  color: black;
-  
+  color: #000;
+  z-index: 100;
+  position: relative;
+
   .constant-message {
-    color: #fff;
-    font-weight: 600;
     text-align: center;
-    font-size: 13px;
-    height: 25px;
-    line-height: 25px;
 
     a {
-      color: #fff;
       text-decoration: underline;
 
       &:hover {
         text-decoration: none;
       }
     }
+
+    &.default {
+      a {
+        color: #fff;
+      }
+
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      height: 25px;
+      line-height: 25px;
+    }
+
+    &.system {
+      position: relative;
+      box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37);
+      background-color: #fff;
+
+      font-size: 14px;
+      font-weight: 400;
+      color: @grayFontGeneral;
+      height: 40px;
+      line-height: 40px;
+      white-space: nowrap;
+
+      .message-container {
+        margin: 0 20px;
+        overflow: hidden;
+
+        & div {
+          display: inline-block;
+          white-space: nowrap;
+          vertical-align: top;
+        }
+
+        &:hover {
+          .message-text.marqueed {
+            text-overflow: clip;
+
+            span {
+              position: relative;
+              animation: marquee 140s linear;
+            }
+          }
+        }
+
+        &.pause-animation .message-text.marqueed span {
+          -webkit-animation-play-state: paused;
+          -moz-animation-play-state: paused;
+          -o-animation-play-state: paused;
+          animation-play-state: paused;
+        }
+      }
+
+      .message-title {
+        font-weight: 700;
+        margin-right: 2px;
+      }
+      .message-text {
+        position: relative;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
   }
-  
+
   .error {
     background-color: @redError;
   }
@@ -1506,6 +1617,15 @@ h5 {
   max-height: 50px;
 }
 
+.smart-repo-ind {
+  width: 26px;
+  height: 32px;
+  background-size: 100%;
+
+  position: absolute;
+  z-index: 10;
+}
+
 .jf-spinner {
   position: fixed;
   width: 100%;
@@ -1542,6 +1662,10 @@ h5 {
 .icon-hourglass {
   .icon-hourglass();
   .spinning();
+
+  background-size: 20px 20px;
+  width: 20px;
+  height: 20px;
 }
 
 @keyframes spin {

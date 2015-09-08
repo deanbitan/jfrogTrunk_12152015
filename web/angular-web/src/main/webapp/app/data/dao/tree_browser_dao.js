@@ -13,7 +13,6 @@ export class TreeBrowserDao {
     }
 
     setCompactFolders(value) {
-        // TODO: save to local storage
         this.compactFolders = value;
         this.artifactoryStorage.setItem(COMPACT_FOLDERS_KEY, this.compactFolders);
     }
@@ -22,6 +21,8 @@ export class TreeBrowserDao {
         return this.compactFolders;
     }
 
+    // get all repositories (roots) and cache them
+    // or return the cached promise
     getRoots(force = false) {
         if (force || !this.roots) {
             this.roots = this._loadChildren({type: 'root'});
@@ -29,14 +30,15 @@ export class TreeBrowserDao {
         return this.roots;
     }
 
+    // invalidate the cached promise
+    invalidateRoots() {
+        this.roots = null;
+    }
+
     findRepo(repoKey) {
         return this.getRoots().then((roots) => {
             return _.findWhere(roots, {repoKey: repoKey});
         });
-    }
-
-    invalidateRoots() {
-        this.roots = null;
     }
 
     findNodeByFullPath(path, includeArchives = true) {
@@ -62,6 +64,8 @@ export class TreeBrowserDao {
     }
 
     // Wrap with TreeNode
+    // Recursively go over children if exist
+    // Assign the parent node
     _transformData(data, parent) {
         return data.map((node) => {
             node = new this.TreeNode(node);

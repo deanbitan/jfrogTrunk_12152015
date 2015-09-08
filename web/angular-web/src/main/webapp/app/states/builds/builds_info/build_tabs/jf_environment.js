@@ -1,7 +1,8 @@
 import DICTIONARY from './../../constants/builds.constants';
 
 class jfEnvironmentController {
-    constructor(BuildsDao, ArtifactoryGridFactory, $stateParams, uiGridConstants) {
+    constructor($scope, BuildsDao, ArtifactoryGridFactory, $stateParams, uiGridConstants) {
+        this.$scope = $scope;
         this.$stateParams = $stateParams;
         this.buildsDao = BuildsDao;
         this.uiGridConstants = uiGridConstants;

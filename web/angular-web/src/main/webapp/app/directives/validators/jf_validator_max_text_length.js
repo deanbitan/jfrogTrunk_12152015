@@ -13,7 +13,6 @@ export function jfValidatorMaxTextLength() {
             }
 
             function validateTextLength(modelValue, viewValue) {
-                window.model = ngModel;
                 let ok  = !viewValue || viewValue.length <= parseInt(limitTo);
                 return ok;
             }

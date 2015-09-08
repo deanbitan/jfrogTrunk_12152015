@@ -19,6 +19,7 @@
 package org.artifactory.factory.xstream;
 
 import com.thoughtworks.xstream.XStream;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.factory.common.AbstractInfoFactory;
 import org.artifactory.fs.*;
@@ -270,6 +271,11 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
     @Override
     public ZipEntryInfo createZipEntry(ZipEntry... zipEntries) {
         return new ZipEntryImpl(zipEntries);
+    }
+
+    @Override
+    public ZipEntryInfo createArchiveEntry(ArchiveEntry... archiveEntries) {
+        return new ArchiveEntryImpl(archiveEntries);
     }
 
     @Override

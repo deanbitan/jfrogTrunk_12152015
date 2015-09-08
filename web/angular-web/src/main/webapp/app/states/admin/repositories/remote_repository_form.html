@@ -2,11 +2,13 @@
     <div ng-show="RepositoryForm.isCurrentTab('basic')">
         <div class="form-group">
             <label class="input-label-weight label-type-box mandatory">Package Type</label>
+            <div class="icon-logo-circle smart-repo-ind"
+                 ng-if="RepositoryForm.repoInfo.basic.contentSynchronisation.enabled"></div>
             <ul class="list-unstyled">
                 <li class="inline-block package-type"
                     ng-class="{typeValidation: !RepositoryForm.repoInfo.typeSpecific.repoType, 'not-clickable': !RepositoryForm.newRepository}"
                     ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()"
-                    id="remote-repository-package-type-button">
+                    id="repository-package-type-button">
                     <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType">No Type</span>
                     <div ng-if="RepositoryForm.repoInfo.typeSpecific.repoType"
                          class="repotype iconrepo iconrepo-{{RepositoryForm.repoInfo.typeSpecific.repoType.toLowerCase()}}">
@@ -18,7 +20,7 @@
                    ng-model="RepositoryForm.repoInfo.typeSpecific.repoType"
                    name="repoType"
                    required/>
-            <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen" class="repository-error">You must specify a package type</span>
+            <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen" class="repository-error" id="repository-package-type-validator">You must specify a package type</span>
         </div>
 
         <div class="form-group">
@@ -36,8 +38,7 @@
                            ng-model-options="{debounce: { 'default': 500 } }"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                    <div ng-message-exp="'repoKeyValidator'" id="remote-repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}
-                    </div>
+                    <div ng-message-exp="'repoKeyValidator'" id="repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                 </ng-messages>
             </div>
             <div class="form-group-cell"
@@ -51,7 +52,7 @@
                            ng-disabled="!RepositoryForm.newRepository"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                    <div ng-message-exp="'repoKeyValidator'">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
+                    <div ng-message-exp="'repoKeyValidator'" id="repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                 </ng-messages>
             </div>
 
@@ -62,7 +63,9 @@
                            id="url"
                            name="url"
                            required
-                           ng-model="RepositoryForm.repoInfo.basic.url"/>
+                           ng-model="RepositoryForm.repoInfo.basic.url"
+                           ng-change="RepositoryForm._detectSmartRepository()"
+                           ng-model-options="{updateOn: 'blur'}" />
                 </jf-field>
                 <ng-messages for="repositoriesForm.field.$error" class="jf-validation">
                     <div ng-message-exp="repoKeyValidator">{{ repoKeyValidatorMessage }}</div>
@@ -103,8 +106,7 @@
                                 <label>Remote Layout Mapping</label>
                                 <ui-select ng-model="RepositoryForm.repoInfo.basic.remoteLayoutMapping">
                                     <ui-select-match
-                                            placeholder="Select Remote Layout"
-                                            allow-clear="true">
+                                            placeholder="Select Remote Layout">
                                         {{$select.selected}}
                                     </ui-select-match>
                                     <ui-select-choices
@@ -170,6 +172,41 @@
                     </div>
                 </jf-panel>
             </div>
+            <div class="col-lg-6" ng-if="RepositoryForm.repoInfo.basic.contentSynchronisation.enabled">
+                <jf-panel jf-panel-heading="Smart Remote Repository">
+<!--
+                    <div class="form-group form-checkbox">
+                        <div class="form-group-cell">
+                            <jf-checkbox text="Sync Statistics">
+                                <input type="checkbox"
+                                       ng-model="RepositoryForm.repoInfo.basic.contentSynchronisation.statistics.enabled">
+                            </jf-checkbox>
+                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.smartSyncStatistics"></jf-help-tooltip>
+                        </div>
+                    </div>
+-->
+                    <div class="form-group form-checkbox">
+                        <div class="form-group-cell">
+                            <jf-checkbox text="Sync Properties">
+                                <input type="checkbox"
+                                       ng-model="RepositoryForm.repoInfo.basic.contentSynchronisation.properties.enabled">
+                            </jf-checkbox>
+                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.smartSyncProperties"></jf-help-tooltip>
+                        </div>
+                    </div>
+                    <div class="form-group form-checkbox">
+                        <div class="form-group-cell">
+                            <jf-checkbox text="List Remote Folder Items">
+                                <input type="checkbox"
+                                       id="listRemoteFolderItems"
+                                       ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
+                            </jf-checkbox>
+                            <jf-help-tooltip
+                                    html="RepositoryForm.TOOLTIP.remoteForm.smartListRemoteFolderItems"></jf-help-tooltip>
+                        </div>
+                    </div>
+                </jf-panel>
+            </div>
             <div class="col-lg-6">
                 <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
                           ng-if="RepositoryForm.repoInfo.isType('maven','gradle','ivy','sbt')">
@@ -180,12 +217,14 @@
                                 <jf-help-tooltip
                                         html="RepositoryForm.TOOLTIP.remoteForm.checksumPolicy"></jf-help-tooltip>
                                 <ui-select ng-model="RepositoryForm.repoInfo.typeSpecific.remoteChecksumPolicy">
-                                    <ui-select-match placeholder="Select Checksum Policy...">
+                                    <ui-select-match placeholder="Select Checksum Policy..."
+                                            id="remote-repository-checksum-dropdown">
                                         {{RepositoryForm.remoteChecksumPolicies[$select.selected]}}
                                     </ui-select-match>
                                     <ui-select-choices
                                             repeat="item in RepositoryForm.remoteChecksumPoliciesKeys | filter: $select.search track by $index">
-                                        <div ng-bind-html="RepositoryForm.remoteChecksumPolicies[item] | highlight: $select.search"></div>
+                                        <div ng-bind-html="RepositoryForm.remoteChecksumPolicies[item] | highlight: $select.search"
+                                                id="remote-repository-checksum-item"></div>
                                     </ui-select-choices>
                                 </ui-select>
                             </jf-field>
@@ -234,18 +273,7 @@
                             </jf-checkbox>
                             <jf-help-tooltip
                                     html="RepositoryForm.TOOLTIP.remoteForm.eagerlyFetchSources"></jf-help-tooltip>
-                        </div>
-                    </div>
-                    <div class="form-group form-checkbox">
-                        <div class="form-group-cell">
-                            <jf-checkbox text="List Remote Folder Items">
-                                <input type="checkbox"
-                                       id="listRemoteFolderItems"
-                                       ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
-                            </jf-checkbox>
-                            <jf-help-tooltip
-                                    html="RepositoryForm.TOOLTIP.remoteForm.listRemoteFolderItems"></jf-help-tooltip>
-                        </div>
+                            </div>
                     </div>
                     <div class="form-group form-checkbox">
                         <div class="form-group-cell">
@@ -268,12 +296,12 @@
                 </jf-panel>
 
                 <jf-panel jf-panel-heading="Generic"
-                          ng-if="RepositoryForm.repoInfo.isType('generic')">
+                          ng-if="RepositoryForm.repoInfo.isType('generic') && !RepositoryForm.repoInfo.basic.contentSynchronisation.enabled">
                     <div class="form-group no-margin-bottom">
                         <div class="form-group-cell">
                             <jf-checkbox text="List Remote Folder Items ">
                                 <input type="checkbox"
-                                       id="listRemoteFolderItems6"
+                                       id="listRemoteFolderItems2"
                                        ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
                             </jf-checkbox>
                             <jf-help-tooltip
@@ -289,12 +317,14 @@
                             <jf-field>
                                 <label>Git Provider</label>
                                 <ui-select ng-model="RepositoryForm.repoInfo.typeSpecific.gitProvider">
-                                    <ui-select-match placeholder="Select Git provider...">
+                                    <ui-select-match placeholder="Select Git provider..."
+                                            id="remote-repository-git-provider-dropdown">
                                         {{RepositoryForm.vcsGitProviderOptions[$select.selected] }}
                                     </ui-select-match>
                                     <ui-select-choices
                                             repeat="item in RepositoryForm.vcsGitProviderOptionsKeys | filter: $select.search track by $index">
-                                        <div ng-bind-html="RepositoryForm.vcsGitProviderOptions[item] | highlight: $select.search"></div>
+                                        <div ng-bind-html="RepositoryForm.vcsGitProviderOptions[item] | highlight: $select.search"
+                                                id="remote-repository-git-provider-item"></div>
                                     </ui-select-choices>
                                 </ui-select>
                             </jf-field>
@@ -336,36 +366,10 @@
                             </jf-field>
                         </div>
                     </div>
-                    <div class="form-group form-checkbox">
-                        <div class="form-group-cell">
-                            <jf-checkbox text="List Remote Folder Items">
-                                <input type="checkbox"
-                                       id="listRemoteFolderItems4"
-                                       ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
-                            </jf-checkbox>
-                            <jf-help-tooltip
-                                    html="RepositoryForm.TOOLTIP.remoteForm.listRemoteFolderItems"></jf-help-tooltip>
-                        </div>
-                    </div>
                 </jf-panel>
-                <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
-                          ng-if="RepositoryForm.repoInfo.isType('npm')">
-                    <div class="form-group form-checkbox">
-                        <div class="form-group-cell">
-                            <jf-checkbox text="List Remote Folder Items">
-                                <input type="checkbox"
-                                       id="listRemoteFolderItems3"
-                                       ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
-                            </jf-checkbox>
-                            <jf-help-tooltip
-                                    html="RepositoryForm.TOOLTIP.remoteForm.listRemoteFolderItems"></jf-help-tooltip>
-                        </div>
-                    </div>
-                </jf-panel>
-
                 <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
                           ng-if="RepositoryForm.repoInfo.isType('docker')">
-                    <div class="form-group no-margin-bottom">
+                    <div class="form-group form-checkbox">
                         <div class="form-group-cell">
                             <jf-checkbox text="Enable Token Authentication">
                                 <input type="checkbox"
@@ -374,6 +378,10 @@
                             </jf-checkbox>
                             <jf-help-tooltip
                                     html="RepositoryForm.TOOLTIP.remoteForm.dockerEnableTokenAuthentication"></jf-help-tooltip>
+                        </div>
+                    </div>
+                    <div class="form-group form-checkbox">
+                        <div class="form-group-cell">
                             <jf-checkbox text="Force Authentication">
                                 <input type="checkbox"
                                        id="forceDockerAuth"
@@ -414,24 +422,23 @@
                     </div>
                     <div class="form-group form-checkbox">
                         <div class="form-group-cell">
-                            <jf-checkbox text="List Remote Folder Items">
+                            <jf-checkbox text="Force Authentication">
                                 <input type="checkbox"
-                                       id="listRemoteFolderItems2"
-                                       ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
+                                       id="forceNuGetAuth"
+                                       ng-model="RepositoryForm.repoInfo.typeSpecific.forceNugetAuthentication">
                             </jf-checkbox>
-                            <jf-help-tooltip
-                                    html="RepositoryForm.TOOLTIP.remoteForm.listRemoteFolderItems"></jf-help-tooltip>
+                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.forceNugetAuth"></jf-help-tooltip>
                         </div>
                     </div>
                 </jf-panel>
 
                 <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
-                          ng-if="RepositoryForm.repoInfo.isType('debian')">
+                          ng-if="RepositoryForm.repoInfo.isType('debian') && !RepositoryForm.repoInfo.basic.contentSynchronisation.enabled">
                     <div class="form-group no-margin-bottom">
                         <div class="form-group-cell">
                             <jf-checkbox text="List Remote Folder Items">
                                 <input type="checkbox"
-                                       id="listRemoteFolderItems "
+                                       id="listRemoteFolderItems3"
                                        ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
                             </jf-checkbox>
                             <jf-help-tooltip
@@ -441,12 +448,12 @@
                 </jf-panel>
 
                 <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
-                          ng-if="RepositoryForm.repoInfo.isType('yum')">
+                          ng-if="RepositoryForm.repoInfo.isType('yum') && !RepositoryForm.repoInfo.basic.contentSynchronisation.enabled">
                     <div class="form-group form-checkbox">
                         <div class="form-group-cell">
                             <jf-checkbox text="List Remote Folder Items">
                                 <input type="checkbox"
-                                       id="listRemoteFolderItems"
+                                       id="listRemoteFolderItems4"
                                        ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
                             </jf-checkbox>
                             <jf-help-tooltip
@@ -456,12 +463,12 @@
                 </jf-panel>
 
                 <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
-                          ng-if="RepositoryForm.repoInfo.isType('p2')">
+                          ng-if="RepositoryForm.repoInfo.isType('p2') && !RepositoryForm.repoInfo.basic.contentSynchronisation.enabled">
                     <div class="form-group form-checkbox">
                         <div class="form-group-cell">
                             <jf-checkbox text="List Remote Folder Items">
                                 <input type="checkbox"
-                                       id="listRemoteFolderItems"
+                                       id="listRemoteFolderItems5"
                                        ng-model="RepositoryForm.repoInfo.typeSpecific.listRemoteFolderItems">
                             </jf-checkbox>
                             <jf-help-tooltip
@@ -563,7 +570,7 @@
 
     <div ng-show="RepositoryForm.isCurrentTab('advanced')">
         <div class="row">
-            <div class="col-lg-6">
+            <div class="col-lg-12">
                 <jf-panel jf-panel-heading="Remote Credentials">
                     <div class="form-group">
                         <div class="form-group-cell">
@@ -588,6 +595,14 @@
                                        name="password"
                                        ng-model="RepositoryForm.repoInfo.advanced.network.password"/>
                             </jf-field>
+                        </div>
+                        <div class="form-group-cell form-button"
+                             ng-if="RepositoryForm.isCurrentRepoType('remote')">
+                            <button class="btn btn-secondary"
+                                    type="button"
+                                    ng-disabled="!RepositoryForm.repoInfo.typeSpecific.repoType"
+                                    ng-click="RepositoryForm.testRemoteUrl()">Test
+                            </button>
                         </div>
                     </div>
                 </jf-panel>
@@ -706,7 +721,7 @@
                                 <input type="text" class="input-text"
                                        id="retrievalCache"
                                        name="retrievalCache"
-                                       ng-model="RepositoryForm.repoInfo.advanced.cache.missedRetrievalCachePeriodSecs"/>
+                                       ng-model="RepositoryForm.repoInfo.advanced.cache.retrievalCachePeriodSecs"/>
                             </jf-field>
                         </div>
                     </div>
@@ -728,7 +743,7 @@
                                 <input type="text" class="input-text"
                                        id="MissedRetrievalCache"
                                        name="MissedRetrievalCache"
-                                       ng-model="RepositoryForm.repoInfo.advanced.cache.retrievalCachePeriodSecs"/>
+                                       ng-model="RepositoryForm.repoInfo.advanced.cache.missedRetrievalCachePeriodSecs"/>
                             </jf-field>
                         </div>
                     </div>

@@ -51,11 +51,14 @@ public class ChecksumSearchService implements RestService {
         // update model search
         List<QuickSearchResult> checksumResultList = updateSearchModels(checksumResults);
         int maxResults = ConstantValues.searchMaxResults.getInt();
+        long resultsCount;
         if (checksumSearchControl.isLimitSearchResults() && checksumResultList.size() > maxResults) {
             checksumResultList = checksumResultList.subList(0, maxResults);
+            resultsCount = checksumResultList.size() == 0 ? 0 : checksumResults.getFullResultsCount();
+        } else {
+            resultsCount = checksumResultList.size();
         }
         // update response
-        long resultsCount = checksumResultList.size() == 0 ? 0 : checksumResults.getFullResultsCount();
         SearchResult model = new SearchResult(checksumResultList, checksumSearch.getChecksum(),
                 resultsCount, checksumSearchControl.isLimitSearchResults());
         model.addNotifications(response);

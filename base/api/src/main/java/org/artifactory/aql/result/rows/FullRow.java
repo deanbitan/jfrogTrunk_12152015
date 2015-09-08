@@ -56,6 +56,8 @@ public interface FullRow {
 
     String getBuildModuleName();
 
+    Long getBuildModuleId();
+
     String getBuildDependencyName();
 
     String getBuildDependencyScope();

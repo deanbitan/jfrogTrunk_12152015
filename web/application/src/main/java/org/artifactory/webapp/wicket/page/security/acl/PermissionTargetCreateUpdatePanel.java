@@ -211,11 +211,11 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                 if (isCreate()) {
                     try {
                         aclService.createAcl(aclInfo);
-                        AccessLogger.created("Permission target " + name + " was created successfully");
+                        AccessLogger.created("Successfully created permission target '" + name + "'");
                     } catch (Exception e) {
                         String msg;
                         if (e instanceof AlreadyExistsException) {
-                            msg = "Permission target '" + name + "' already exists.";
+                            msg = "Permission target '" + name + "' already exists";
                         } else {
                             msg = "Failed to create permissions target: " + e.getMessage();
                             log.error(msg, e);
@@ -224,12 +224,12 @@ public class PermissionTargetCreateUpdatePanel extends CreateUpdatePanel<Mutable
                         AjaxUtils.refreshFeedback(target);
                         return;
                     }
-                    getPage().info("Permission target '" + name + "' created successfully.");
+                    getPage().info("Successfully created permission target '" + name + "'");
                 } else {
                     try {
                         aclService.updateAcl(aclInfo);
                         reloadData();
-                        String message = "Permission target '" + name + "' updated successfully.";
+                        String message = "Successfully updated permission target '" + name + "'";
                         AccessLogger.updated(message);
                         getPage().info(message);
                         target.add(PermissionTargetCreateUpdatePanel.this);

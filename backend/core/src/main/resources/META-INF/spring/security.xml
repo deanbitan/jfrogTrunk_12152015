@@ -32,6 +32,9 @@
     <bean class="org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationFilter"/>
     <bean class="org.artifactory.webapp.servlet.authentication.ArtifactoryRememberMeFilter"/>
 
+    <!-- register artifactory authentication interceptors -->
+    <bean class="org.artifactory.webapp.servlet.authentication.interceptor.anonymous.AnonymousLoginInterceptor"/>
+
     <!-- create the spring basic authentication filter (will be used as a delegate) -->
     <bean id="basicAuthenticationFilter"
           class="org.springframework.security.web.authentication.www.BasicAuthenticationFilter">
@@ -60,14 +63,14 @@
     <!-- authentication providers order is important. keep internal provider after ldap and sso -->
     <bean id="authenticationManager" class="org.artifactory.security.RealmAwareAuthenticationManager">
         <property name="eraseCredentialsAfterAuthentication" value="false"/>
-        <property name="providers">
+        <constructor-arg>
             <list>
                 <ref bean="ldapAuthenticationProvider"/>
                 <ref bean="crowdAuthenticationProviderAdapter"/>
                 <ref bean="dbAuthenticationProvider"/>
                 <ref bean="rememberMeAuthenticationProvider"/>
             </list>
-        </property>
+        </constructor-arg>
     </bean>
 
     <bean id="passwordEncoder"

@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.1"
-           xmlns="http://artifactory.jfrog.org/xsd/1.6.1"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.2"
+           xmlns="http://artifactory.jfrog.org/xsd/1.6.2"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -40,6 +40,13 @@
                     <xs:documentation source="description">
                         If marked, Artifactory never tries to fetch artifacts remotely.
                         Only cached and local artifacts are served.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="helpLinksEnabled" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether help links are shown in the UI.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -214,6 +221,8 @@
             <xs:element name="virtualCacheCleanupConfig" type="CleanupConfigType" minOccurs="1"/>
             <xs:element name="quotaConfig" type="QuotaConfigType" minOccurs="0"/>
             <xs:element name="externalProviders" type="ExternalProvidersType" minOccurs="0"/>
+            <xs:element name="systemMessageConfig" type="SystemMessageType" minOccurs="0"/>
+            <xs:element name="folderDownloadConfig" type="FolderDownloadConfigType" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
 
@@ -463,6 +472,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="forceNugetAuthentication" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Force basic authentication credentials in order to use this repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -609,7 +625,7 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
-                    <xs:element name="retrievalCachePeriodSecs" type="xs:long" default="43200" minOccurs="0">
+                    <xs:element name="retrievalCachePeriodSecs" type="xs:long" default="600" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
                                 The number of seconds to cache artifact look-up results.
@@ -627,7 +643,7 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
-                    <xs:element name="missedRetrievalCachePeriodSecs" type="xs:long" default="7200" minOccurs="0">
+                    <xs:element name="missedRetrievalCachePeriodSecs" type="xs:long" default="1800" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation source="description">
                                 The number of seconds to cache artifact retrieval misses (artifact not found).
@@ -755,9 +771,46 @@
                         </xs:annotation>
                     </xs:element>
                     <xs:element name="vcs" type="VcsType" minOccurs="0"/>
+                    <xs:element name="contentSynchronisation" type="ContentSynchronisation" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Content synchronisation to another artifactory repository
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
             </xs:sequence>
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ContentSynchronisation">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" form="qualified" default="false"  minOccurs="1" maxOccurs="1"/>
+            <xs:element name="statistics" type="StatisticsContent" form="qualified"  minOccurs="1" maxOccurs="1"/>
+            <xs:element name="properties" type="PropertiesContent" form="qualified"  minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="StatisticsContent">
+        <xs:complexContent>
+            <xs:extension base="AbstractRemoteRepoDelegate">
+                <xs:sequence/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="PropertiesContent">
+        <xs:complexContent>
+            <xs:extension base="AbstractRemoteRepoDelegate">
+                <xs:sequence/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="AbstractRemoteRepoDelegate" abstract="true">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" form="qualified" default="false"  minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="VirtualRepositoriesType">
@@ -2465,6 +2518,89 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
                     </xs:annotation>
                 </xs:element>
             </xs:sequence>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SystemMessageType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Configuration for the system message that can be displayed in the Artifactory UI.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether the system message is displayed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="title" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Title for the system message.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="titleColor" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Color for the system message's title, in rgb format (i.e. #00ec00)
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="message" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The message that will be displayed
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="showOnAllPages" type="xs:boolean" default="false" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether the system message is displayed in all pages or just the home page.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="FolderDownloadConfigType">
+        <xs:annotation>
+            <xs:documentation source="description">
+                Configuration for the ability to download folders from the UI.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" default="false" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Determines whether downloading folders is allowed.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="maxDownloadSizeMb" type="xs:int" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Max allowed size of all uncompressed files under a tree to download in a single request, in MB.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="maxFiles" type="xs:long" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Max allowed number of files to download in a single request.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="maxConcurrentRequests" type="xs:int" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Maximum number of folder download requests that will be treated concurrently before being queued.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 

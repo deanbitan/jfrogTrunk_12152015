@@ -98,10 +98,24 @@
   .artifact-details {
     padding: 15px 0;
 
-    .iconrepo {
+    .repository-type {
       float: right;
       margin: 0;
       background-position: center top;
+      text-align: center;
+
+      .repotype {
+        display: inline-block;
+      }
+      .icon-logo-circle {
+        display: inline-block;
+        width: 18px;
+        height: 22px;
+        background-size: 100%;
+        position: relative;
+        top: 7px;
+        margin-right: 4px;
+      }
     }
 
     .artifact-details-header {
@@ -136,7 +150,7 @@
 
         &:hover {
           text-decoration: none;
-          color: #39843c;
+          color: #327535;
 
           &:not(.no-separator)::before {
             color: @greenFontHeader;
@@ -186,11 +200,18 @@
     }
   }
 
+  .tree-head-expansion {
+    display: none;
+    padding: 0 20px;
+    height: 40px;
+    line-height: 40px;
+    border-bottom: 1px solid #e9e9e9;
+  }
+
   #tree-element {
     bottom: 0;
     overflow-y: auto;
-    padding-top: 12px;
-    padding-bottom: 10px;
+    padding: 12px 0 10px;
     top: 41px;
     position: absolute;
     right: 0;
@@ -199,6 +220,20 @@
     [class^="icon-"]:before,
     [class*=" icon-"]:before {
       line-height: 2.2em;
+    }
+  }
+  .expanded {
+    #tree-element {
+      top: 80px;
+    }
+
+    .tree-head-expansion {
+      display: block;
+      background-color: #fafafa;
+
+      .labeled-item {
+        background: #fff;
+      }
     }
   }
 
@@ -213,7 +248,7 @@
       padding: 0px 15px;
       margin-bottom: 8px;
       display: table-cell;
-      width: 160px;
+      width: 230px;
 
       .tree-browser-tab {
         color: @grayFontGeneral;
@@ -519,10 +554,17 @@
   .virtual-repo-item {
     display: inline-block;
     margin-right: 40px;
+    line-height: 28px;
+
+    a {
+      &:hover .icon:before {
+        color: @blueLinkBasic;
+      }
+    }
 
     .icon {
       float: left;
-      margin: 1px 8px 0 0;
+      margin: 2px 8px 0 0;
     }
   }
 
@@ -544,6 +586,13 @@
     //transition: 1s height cubic-bezier(0.68, -0.55, 0.27, 1.55);
   }
 
+  .back-to-repository-browser {
+    font-size: 14px;
+    margin-left: 15px;
+    position: absolute;
+    right: 30px;
+    margin-top: 8px;
+  }
 }
 
 //-----------deploy modal-------------------------//
@@ -627,6 +676,10 @@
     &:hover {
       text-decoration: none;
     }
+  }
+
+  .jf-switch li a {
+    font-weight: 700;
   }
 
   .alert {
@@ -764,9 +817,22 @@
     font-size: 16px;
   }
 
+  .CodeMirror {
+    margin-bottom: 15px;
+  }
+
   .settings-view {
     position: relative;
     margin-bottom: 20px;
+
+    p {
+      margin-bottom: 5px;
+      line-height: 22px;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+    }
 
     .copy-to-clip {
       right: 4px;
@@ -781,21 +847,22 @@
 //------------------simple browser-----------------------//
 
 .simple-browser {
-  .highlight {
-    vertical-align: top;
-  }
-
   .view-in-simple-mode {
     visibility: hidden;
-    position: relative;
+    position: absolute;
     margin-left: 20px;
-    margin-right: 10px;
+    width: 20px;
+    text-align: center;
   }
   .no-simple-browsing {
     padding-right: 30px;
   }
-  .jstree-anchor:hover > .view-in-simple-mode {
-    visibility: visible;
+  .jstree-anchor:hover {
+    padding-right: 40px !important;
+
+    & > .view-in-simple-mode {
+      visibility: visible;
+    }
   }
   &.has-parent { // When viewing simple browser with parent folder
     > .jstree-children > .jstree-node:first-child { // The go up node (..)
@@ -838,4 +905,161 @@
 
 .settings-view.preline {
   white-space: pre-line;
+}
+
+.docker-v2-layers-visualization {
+  position: relative;
+
+  .docker-v2-layer-container {
+    position: relative;
+    width: 280px;
+    height: 100px;
+
+    .left-view {
+      height: 100%;
+      width: 50%;
+      border-right: 1px @grayDocker solid;
+    }
+
+    .layer-id {
+      position: absolute;
+      color: @grayFontGeneral;
+      top: 40px;
+      width: 130px;
+      text-align: center;
+
+      .layer-id-display {
+        cursor: pointer;
+      }
+
+      &.selected {
+        color: @blueMain;
+      }
+
+      .current-node-name {
+        display: inline-block;
+        font-size: 12px;
+        color: @grayFontGeneral;
+        border: 1px solid #aaa;
+        border-radius: 3px;
+        padding: 0px 6px;
+      }
+    }
+
+    .cmd {
+      position: absolute;
+      top: 35px;
+      left: 165px;
+
+      width: 120px;
+      height: 30px;
+
+      padding-top: 5px;
+      text-align: center;
+      color: @white;
+      background-color: @grayDocker;
+      cursor: pointer;
+
+      .cmd-color-bar {
+        position: absolute;
+        height: 100%;
+        width: 4px;
+        top: 0;
+      }
+    }
+
+    .timestamp {
+      position: absolute;
+      font-size: 12px;
+      width: 200px;
+      color: @grayFontGeneral;
+      top: 70px;
+      left: 165px;
+    }
+
+    .hider {
+      position: absolute;
+      background-color: white;
+      width: 20px;
+      height: 50px;
+      top: 50px;
+      left: 129px;
+    }
+
+    .up-arrow {
+      position: absolute;
+      color: @grayDocker;
+      font-size: 24px;
+      top: -15px;
+      left: 127px;
+      &:before {
+        content: '\25B2';
+      }
+    }
+
+    .dot {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1px solid @blueFontDark;
+      background-color: #fff;
+      cursor: pointer;
+
+      left: 134px;
+      top: 45px;
+
+      &.dot-full {
+        background-color: @blueFontDark;
+      }
+    }
+
+    .layer-id, .dot {
+      transition: 0.3s all;
+    }
+
+    &.first-layer {
+      .hider {
+        top: 0;
+      }
+
+      .dot {
+        width: 13px;
+        height: 13px;
+        top: 44px;
+        left: 133px;
+      }
+    }
+  }
+
+  .layer-details {
+    width: 50%;
+    position: absolute;
+    right: 20px;
+    margin: 30px 0;
+    float: right;
+
+    h3 {
+      font-size: 22px;
+      margin: 0 0 18px;
+    }
+
+    td {
+      height: 50px;
+      border: 1px @grayDocker solid;
+      padding: 15px 15px;
+      vertical-align: top;
+      word-break: break-all;
+    }
+
+    .icon-cell {
+      min-width: 50px;
+      text-align: center;
+      font-size: 22px;
+    }
+
+    @media screen and (max-width: 1679px) {
+      width: 40%;
+    }
+  }
 }

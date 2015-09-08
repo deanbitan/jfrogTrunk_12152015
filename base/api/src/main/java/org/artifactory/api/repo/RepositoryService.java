@@ -18,6 +18,7 @@
 
 package org.artifactory.api.repo;
 
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.common.MoveMultiStatusHolder;
 import org.artifactory.api.config.ExportSettingsImpl;
@@ -28,9 +29,8 @@ import org.artifactory.api.module.VersionUnit;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SavedSearchResults;
-import org.artifactory.api.search.deployable.VersionUnitSearchResult;
+import org.artifactory.api.search.VersionSearchResults;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.StatusHolder;
@@ -322,6 +322,9 @@ public interface RepositoryService extends ImportableExportable {
 
     void exportRepo(String repoKey, ExportSettings settings);
 
+    ArchiveFileContent getGenericArchiveFileContent(RepoPath archivePath, String sourceEntryPath) throws IOException;
+
+
     /**
      * Export the selected search result into a target directory
      *
@@ -337,7 +340,7 @@ public interface RepositoryService extends ImportableExportable {
      * @param repoPath The repository path (might be repository root with no sub-path)
      * @return ItemSearchResults containing version units under a certain path
      */
-    ItemSearchResults<VersionUnitSearchResult> getVersionUnitsUnder(RepoPath repoPath);
+    VersionSearchResults getVersionUnitsUnder(RepoPath repoPath);
 
     /**
      * @return the number of artifacts currently being served, including virtual repo cached files
@@ -406,6 +409,8 @@ public interface RepositoryService extends ImportableExportable {
      */
     Tree<ZipEntryInfo> zipEntriesToTree(RepoPath zipPath) throws IOException;
 
+
+    ArchiveInputStream archiveInputStream(RepoPath zipPath) throws IOException;
 
     ZipInputStream zipInputStream(RepoPath zipPath) throws IOException;
     /**

@@ -57,10 +57,14 @@ public class PropertySearchService implements RestService {
                 .map(PropertyResult::new)
                 .collect(Collectors.toList()));
         int maxResults = ConstantValues.searchMaxResults.getInt();
+        long resultsCount;
         if (propertySearchControls.isLimitSearchResults() && results.size() > maxResults) {
             results = results.subList(0, maxResults);
+            resultsCount = results.size() == 0 ? 0 : propertyResults.getFullResultsCount();
+        }else{
+            resultsCount = results.size();
         }
-        long resultsCount = results.size() == 0 ? 0 : propertyResults.getFullResultsCount();
+
         SearchResult model = new SearchResult(results, propertySearchControls.getValue(),
                 resultsCount, propertySearchControls.isLimitSearchResults());
         model.addNotifications(response);

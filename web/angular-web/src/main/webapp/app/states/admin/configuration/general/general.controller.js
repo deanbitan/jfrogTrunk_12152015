@@ -14,7 +14,7 @@ export class AdminConfigurationGeneralController {
         this.footerDao = FooterDao;
         this.FileUploader = FileUploader;
         this.logoType = 'File';
-        this.defaultLogoUrl = 'images/artifactory_logo.png';
+        this.defaultLogoUrl = 'images/artifactory_logo.svg';
         this.logoEndPoint = `${API.API_URL}/generalConfig/logo`;
         this.TOOLTIP = TOOLTIP.admin.configuration.general;
 
@@ -95,12 +95,13 @@ export class AdminConfigurationGeneralController {
             let buffer = reader.result;
             let uInt8View = new Uint8Array(buffer);
             let int32Sample = uInt8View[3] + uInt8View[2] * 256 + uInt8View[1] * (256 * 256) + uInt8View[0] * (256 * 256 * 256);
+
             switch (int32Sample) {
                 case 2303741511: //png
                 case 1195984440: //gif
                 case 1112360694: //bmp
-                case 4292411360: //jpg
-                case 4292411361: //jpg
+                case 4292411360: case 4292411361: //jpg
+                //case 1010792557: case 1014199911: //svg
                     deferred.resolve();
                     break;
                 default:

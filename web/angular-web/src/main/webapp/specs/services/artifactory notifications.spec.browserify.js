@@ -7,18 +7,6 @@ let timeout;
 describe('Unit test: ArtifactoryNotifications', () => {
 
 
-    let tempHtml = {
-        type: 'success',
-        body: 'test content',
-        timeout: 60 * 60000
-    };
-    let tempHtmlOptions = {
-        type: tempHtml.type,
-        body: tempHtml.body,
-        bodyOutputType: 'trustedHtml',
-        timeout: tempHtml.timeout,
-        showCloseButton: true
-    };
     beforeEach(m('artifactory.services'));
     beforeEach(inject(($timeout, ArtifactoryNotifications, toaster) => {
         toast = toaster;
@@ -32,7 +20,8 @@ describe('Unit test: ArtifactoryNotifications', () => {
             type: 'success',
             timeout: 5000,
             body: 'my message success',
-            showCloseButton: true
+            showCloseButton: true,
+            clickHandler: artifactoryNotifications.notifClickHandle
         };
         let message = {
             info: 'my message success'
@@ -47,7 +36,8 @@ describe('Unit test: ArtifactoryNotifications', () => {
             type: 'error',
             timeout: 10000,
             body: 'my error message',
-            showCloseButton: true
+            showCloseButton: true,
+            clickHandler: artifactoryNotifications.notifClickHandle
         };
         artifactoryNotifications.create(message);
         expect(toast.pop).toHaveBeenCalledWith(messageOptions);
@@ -58,7 +48,8 @@ describe('Unit test: ArtifactoryNotifications', () => {
             type: 'warning',
             timeout: 4000,
             body: 'my message warn',
-            showCloseButton: true
+            showCloseButton: true,
+            clickHandler: artifactoryNotifications.notifClickHandle
         };
         let message = {
             warn: 'my message warn'
@@ -68,7 +59,20 @@ describe('Unit test: ArtifactoryNotifications', () => {
     });
 
     it('should pop message with html template', ()=> {
+        let tempHtml = {
+            type: 'success',
+            body: 'test content',
+            timeout: 60 * 60000
+        };
         artifactoryNotifications.createMessageWithHtml(tempHtml);
+        let tempHtmlOptions = {
+            type: tempHtml.type,
+            body: tempHtml.body,
+            bodyOutputType: 'trustedHtml',
+            timeout: tempHtml.timeout,
+            showCloseButton: true,
+            clickHandler: artifactoryNotifications.notifClickHandle
+        };
         expect(toast.pop).toHaveBeenCalledWith(tempHtmlOptions);
     });
 

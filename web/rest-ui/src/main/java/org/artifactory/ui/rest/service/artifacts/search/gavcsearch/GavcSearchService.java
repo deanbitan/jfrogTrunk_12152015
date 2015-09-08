@@ -45,12 +45,15 @@ public class GavcSearchService implements RestService {
             gavcResults.add(new GavcResult(gavcSearchResult));
         }
         int maxResults = ConstantValues.searchMaxResults.getInt();
+        long resultsCount;
         if (gavcSearchControls.isLimitSearchResults() && gavcResults.size() > maxResults) {
             gavcResults = gavcResults.subList(0, maxResults);
+            resultsCount = gavcResults.size() == 0 ? 0 : searchControls.getFullResultsCount();
+        } else {
+            resultsCount = gavcResults.size();
         }
 
         // update response data
-        long resultsCount = gavcResults.size() == 0 ? 0 : searchControls.getFullResultsCount();
         SearchResult model = new SearchResult(gavcResults, gavcSearchControls.getSearchExpression(),
                 resultsCount, gavcSearchControls.isLimitSearchResults());
         model.addNotifications(response);

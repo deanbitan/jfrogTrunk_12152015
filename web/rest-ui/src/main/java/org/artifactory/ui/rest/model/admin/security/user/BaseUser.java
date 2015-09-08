@@ -20,6 +20,9 @@ public class BaseUser extends UserConfigurationImpl implements RestModel {
     private Boolean preventAnonAccessBuild;
     private List<UserPermissions> permissionsList;
     private String externalRealmLink;
+    private Boolean anonAccessEnabled;
+
+
     public void setProWithoutLicense(boolean proWithoutLicense) {
         this.proWithoutLicense = proWithoutLicense;
     }
@@ -72,6 +75,14 @@ public class BaseUser extends UserConfigurationImpl implements RestModel {
 
     public void setExternalRealmLink(String externalRealmLink) {
         this.externalRealmLink = externalRealmLink;
+    }
+
+    public Boolean getAnonAccessEnabled() {
+        return anonAccessEnabled;
+    }
+
+    public void setAnonAccessEnabled(Boolean anonAccessEnabled) {
+        this.anonAccessEnabled = anonAccessEnabled;
     }
 
     @Override

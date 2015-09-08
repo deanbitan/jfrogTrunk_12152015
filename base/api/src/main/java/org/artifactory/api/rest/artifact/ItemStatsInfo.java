@@ -14,6 +14,10 @@ public class ItemStatsInfo implements StatsInfo, Serializable {
     private long lastDownloaded;
     private String lastDownloadedBy;
 
+    private long remoteDownloadCount;
+    private long remoteLastDownloaded;
+    private String remoteLastDownloadedBy;
+
     public ItemStatsInfo() {
     }
 
@@ -58,5 +62,20 @@ public class ItemStatsInfo implements StatsInfo, Serializable {
     @Override
     public String getLastDownloadedBy() {
         return lastDownloadedBy;
+    }
+
+    @Override
+    public long getRemoteDownloadCount() {
+        return remoteDownloadCount;
+    }
+
+    @Override
+    public long getRemoteLastDownloaded() {
+        return remoteLastDownloaded;
+    }
+
+    @Override
+    public String getRemoteLastDownloadedBy() {
+        return remoteLastDownloadedBy;
     }
 }

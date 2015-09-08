@@ -37,9 +37,9 @@ export function selectDeleteVersionsFactory(ArtifactActionsDao, $rootScope, Arti
 
         ArtifactActionsDao.getDeleteVersions({repoKey: node.data.repoKey, path: node.data.path})
                 .$promise.then((versions) => {
-                    modalScope.versions = versions
-                    modalScope.versionsGridOptions.setGridData(versions)
-                    if (versions.length == 0) {
+                    modalScope.versions = versions.data.versions;
+                    modalScope.versionsGridOptions.setGridData(versions.data.versions);
+                    if (versions.data.versions.length == 0) {
                         modalScope.noData = true;
                     }
                 });
@@ -49,7 +49,12 @@ export function selectDeleteVersionsFactory(ArtifactActionsDao, $rootScope, Arti
             return (modalScope.versions && modalScope.versionsGridOptions.api) && modalScope.versionsGridOptions.api.selection.getSelectedRows() || [];
         };
 
+        modalScope.close = (version) => {
+            modalInstance.close(version);
+        };
+
         // Launch modal
-        return ArtifactoryModal.launchModal('select_delete_versions', modalScope).result;
+        modalInstance = ArtifactoryModal.launchModal('select_delete_versions', modalScope);
+        return modalInstance.result;
     }
 }

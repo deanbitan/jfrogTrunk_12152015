@@ -57,7 +57,7 @@ public class CreateDefaultJcenterRepoService implements RestService {
         }
         RemoteRepositoryConfigModel model = createDefaultModel(repoKey);
         if (createRepoService.createRepo(response, model)) {
-            response.info("Repository '" + repoKey + "' created successfully.");
+            response.info("Successfully created repository '" + repoKey + "'");
         }
     }
 

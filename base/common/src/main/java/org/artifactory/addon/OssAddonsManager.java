@@ -141,6 +141,11 @@ public class OssAddonsManager implements AddonsManager, AddonsWebManager {
     }
 
     @Override
+    public boolean isProLicensed(String licenseKeyHash) {
+        return false;
+    }
+
+    @Override
     public boolean isLicenseKeyHashHAType(String licenseKeyHash) {
         return false;
     }

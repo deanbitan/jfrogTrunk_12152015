@@ -111,6 +111,15 @@ public class ViewsResource extends BaseResource {
     }
 
     @POST
+    @Path("dockerv2")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response viewDockerV2(DockerArtifactInfo dockerArtifactInfo)
+            throws Exception {
+        return runService(browseFactory.dockerV2ViewService(), dockerArtifactInfo);
+    }
+
+    @POST
     @Path("dockerancestry")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)

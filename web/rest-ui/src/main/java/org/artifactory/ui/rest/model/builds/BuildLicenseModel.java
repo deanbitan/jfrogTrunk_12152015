@@ -3,7 +3,7 @@ package org.artifactory.ui.rest.model.builds;
 import java.util.Collection;
 import java.util.Set;
 
-import org.artifactory.api.license.LicenseModuleModel;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.rest.common.model.BaseModel;
 
 /**
@@ -11,33 +11,33 @@ import org.artifactory.rest.common.model.BaseModel;
  */
 public class BuildLicenseModel extends BaseModel {
 
-    private Collection<LicenseModuleModel> licenses;
-    private Set<LicenseModuleModel> publishedModules;
+    private Collection<ModuleLicenseModel> licenses;
+    private Set<ModuleLicenseModel> publishedModules;
     private Set<String> scopes;
 
     public BuildLicenseModel() {
     }
 
-    public BuildLicenseModel(Collection<LicenseModuleModel> values,
-                             Set<LicenseModuleModel> publishedModules, Set<String> scopes) {
+    public BuildLicenseModel(Collection<ModuleLicenseModel> values,
+                             Set<ModuleLicenseModel> publishedModules, Set<String> scopes) {
         this.licenses = values;
         this.publishedModules = publishedModules;
         this.scopes = scopes;
     }
 
-    public Collection<LicenseModuleModel> getLicenses() {
+    public Collection<ModuleLicenseModel> getLicenses() {
         return licenses;
     }
 
-    public void setLicenses(Collection<LicenseModuleModel> licenses) {
+    public void setLicenses(Collection<ModuleLicenseModel> licenses) {
         this.licenses = licenses;
     }
 
-    public Set<LicenseModuleModel> getPublishedModules() {
+    public Set<ModuleLicenseModel> getPublishedModules() {
         return publishedModules;
     }
 
-    public void setPublishedModules(Set<LicenseModuleModel> publishedModules) {
+    public void setPublishedModules(Set<ModuleLicenseModel> publishedModules) {
         this.publishedModules = publishedModules;
     }
 

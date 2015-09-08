@@ -53,7 +53,7 @@ public class UpdateConfigDescriptorService implements RestService {
                 artifactoryResponse.info("Central configuration successfully saved.");
             } catch (Exception e) {
                 log.error("Error while manually saving the central configuration.", e);
-                artifactoryResponse.error("Unable to save configuration. Please verify the validity of your input.");
+                artifactoryResponse.error("Unable to save configuration, Please verify the validity of your input");
             }
         }
     }

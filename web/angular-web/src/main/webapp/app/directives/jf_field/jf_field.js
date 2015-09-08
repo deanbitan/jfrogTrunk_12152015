@@ -23,16 +23,23 @@ export function jfField($timeout, ArtifactoryEventBus, $rootScope) {
             let inputName = inputElement.attr('name');
 
             scope.formField = form[inputName];
+            if (scope.formField) scope.formField.initialValue = true;
             scope.form = form;
             scope.$watch(()=>scope.autofocus, ()=>focusInput());
             ArtifactoryEventBus.registerOnScope(scope, EVENTS.FORM_SUBMITTED, _onFormSubmitted);
-            ArtifactoryEventBus.registerOnScope(scope, EVENTS.FORM_CLEAR_FIELD_VALIDATION, force => _onBlur(force));
+            ArtifactoryEventBus.registerOnScope(scope, EVENTS.FORM_CLEAR_FIELD_VALIDATION, force => {
+                _onBlur(force);
+                if (scope.formField) scope.formField.preventShowErrors = true;
+            });
 
             scope.$on('$destroy', () => {
                 inputElement.off('blur');
                 inputElement.off('keyup');
+                inputElement.off('keydown');
                 inputElement.off('focus');
             });
+
+            inputElement.on('keydown', () => _onKeyDown());
 
             if (!scope.invalidateOnSubmit && scope.validations) {
                 inputElement.on('blur', () => _onBlur());
@@ -78,13 +85,13 @@ export function jfField($timeout, ArtifactoryEventBus, $rootScope) {
                     if (scope.formField) {
                         if (force) {
                             scope.formField.showErrors = false;
-                        } else {
+                        } else if (!scope.formField.preventShowErrors){
                             scope.formField.showErrors = true;
                         }
                     }
                 });
 
-                if (force || scope.formField && scope.formField.$valid) {
+                if (force || (scope.formField && scope.formField.$valid) || (scope.formField && scope.formField.preventShowErrors)) {
                     inputElement.removeClass('invalid');
                 } else {
                     inputElement.addClass('invalid');
@@ -95,11 +102,15 @@ export function jfField($timeout, ArtifactoryEventBus, $rootScope) {
                 $timeout(function () {
                     if (scope.formField) {
                         scope.formField.showErrors = false;
+                        scope.formField.preventShowErrors = false;
                         inputElement.removeClass('invalid');
                     }
 
                     scope.form.$setPristine();
                 });
+            }
+            function _onKeyDown() {
+                scope.formField.initialValue = false;
             }
 
             function _onKeyUp() {

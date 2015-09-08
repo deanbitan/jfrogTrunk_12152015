@@ -221,6 +221,11 @@ public class VfsQueryDbImpl implements VfsQuery {
         }
     }
 
+    @Override
+    public VfsQuery endGroup() {
+        return endGroup(null);
+    }
+
     private void internalAddCriterion(BaseVfsQueryCriterion criterion) {
         if (!groups.isEmpty()) {
             groups.peek().addCriterion(criterion);

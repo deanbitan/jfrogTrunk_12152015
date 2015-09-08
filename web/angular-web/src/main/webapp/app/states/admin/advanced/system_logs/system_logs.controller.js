@@ -9,10 +9,13 @@ export class AdminAdvancedSystemLogsController {
         this.$timeout = $timeout;
 
         this.intervalPromise = null;
+        this.timeoutSpinner = null;
+        this.timeCount = 5;
 
         this._getInitialData();
 
         $scope.$on('$destroy', ()=> {
+            this.stopTimeout();
             this.stopInterval();
         });
     }
@@ -28,7 +31,11 @@ export class AdminAdvancedSystemLogsController {
     }
 
     _getLogData() {
+        this.stopInterval();
+
         this.logsDao.getLogData({id: this.selectedLog, fileSize: this.data.fileSize, $no_spinner: true}).$promise.then((data)=> {
+            this.stopTimeout();
+
             if (this.data.fileSize === 0) {
                 this.$timeout(()=> {
                     var textarea = document.getElementById('textarea');
@@ -36,14 +43,17 @@ export class AdminAdvancedSystemLogsController {
                 });
             }
 
-            if (data.fileSize) {
+            if (data.fileSize)
                 this.data = data;
-            }
-            if (!this.intervalPromise) {
-                this.startInterval();
-            }
 
+            this.timeCount = this.refreshRateSecs;
+            if (!this.intervalPromise)
+                this.startInterval();
         });
+
+        this.timeoutSpinner = this.$timeout(() => {
+            this.timeCount--;
+        }, 400);
     }
 
     download() {
@@ -59,9 +69,11 @@ export class AdminAdvancedSystemLogsController {
 
     startInterval() {
         this.intervalPromise = this.$interval(()=> {
-//                console.log('poling....');
-            this._getLogData();
-        }, this.refreshRateSecs * 1000);
+            if (this.timeCount == 0)
+                this._getLogData();
+            else
+                this.timeCount--;
+        }, 1000);
     }
 
     stopInterval() {
@@ -69,7 +81,12 @@ export class AdminAdvancedSystemLogsController {
             this.$interval.cancel(this.intervalPromise);
             this.intervalPromise = null;
         }
-
     }
 
+    stopTimeout() {
+        if (this.timeoutSpinner) {
+            this.$timeout.cancel(this.timeoutSpinner);
+            this.timeoutSpinner = null;
+        }
+    }
 }

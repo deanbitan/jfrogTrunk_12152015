@@ -46,7 +46,7 @@ public class AqlServiceImpl implements AqlService {
     private SqlQueryBuilder sqlQueryBuilder;
     private AqlQueryOptimizer optimizer;
     private AqlQueryValidator validator;
-    private AqlQueryRestrictor restrictor;
+    private AqlQueryDecorator decorator;
     private AqlPermissionProvider permissionProvider=new AqlPermissionProviderImpl();
 
     @PostConstruct
@@ -60,7 +60,7 @@ public class AqlServiceImpl implements AqlService {
         aqlApiToAqlAdapter = new AqlApiToAqlAdapter();
         optimizer = new AqlQueryOptimizer(storageProperties.getDbType());
         validator = new AqlQueryValidator();
-        restrictor = new AqlQueryRestrictor();
+        decorator = new AqlQueryDecorator();
     }
 
     /**
@@ -110,10 +110,9 @@ public class AqlServiceImpl implements AqlService {
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
         optimizer.optimize(aqlQuery);
         validator.validate(aqlQuery,permissionProvider);
-        restrictor.restrict(aqlQuery, permissionProvider);
+        decorator.decorate(aqlQuery);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
-        AqlEagerResult aqlQueryResult = getAqlQueryResult(aqlQuery);
-        return aqlQueryResult;
+        return getAqlQueryResult(aqlQuery);
     }
 
     /**
@@ -124,7 +123,7 @@ public class AqlServiceImpl implements AqlService {
         AqlQuery aqlQuery = parserToAqlAdapter.toAqlModel(parserResult);
         optimizer.optimize(aqlQuery);
         validator.validate(aqlQuery,permissionProvider);
-        restrictor.restrict(aqlQuery, permissionProvider);
+        decorator.decorate(aqlQuery);
         log.trace("Successfully finished to convert the parser result into AqlApi query");
         return getAqlQueryStreamResult(aqlQuery);
     }

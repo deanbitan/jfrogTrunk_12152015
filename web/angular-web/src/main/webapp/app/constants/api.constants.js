@@ -22,6 +22,7 @@ export default {
     "HIGH_AVAILABILITY": "/highAvailability",
     "SAML_CONFIG": "/saml/config",
     "SAML_LOGOUT": "/saml/logoutRequest",
+    "OAUTH_LOGIN": "/oauth2/loginRequest",
     "BINTRAY_SETTING": "/bintraysetting",
     "BLACK_DUCK": "/blackduck",
     "PROPERTY_SETS": "/propertysets",
@@ -83,6 +84,7 @@ export default {
     "SET_ME_UP_GRADLE_SNIPPET": "/setMeUp/gradleSnippet",
     "SET_ME_UP_IVY_SNIPPET": "/setMeUp/ivySnippet",
     "REPOSITORIES":"/admin/repositories",
-    "REPOSITORIES_LAYOUTS":"/admin/repolayouts"
+    "REPOSITORIES_LAYOUTS":"/admin/repolayouts",
+    "STASH_RESULTS":"/stashResults"
 
 }

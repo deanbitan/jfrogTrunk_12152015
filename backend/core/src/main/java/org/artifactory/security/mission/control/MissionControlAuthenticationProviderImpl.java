@@ -32,10 +32,10 @@ public class MissionControlAuthenticationProviderImpl implements MissionControlA
     private static final Logger log = LoggerFactory.getLogger(MissionControlAuthenticationProviderImpl.class);
 
     @Override
-    public Authentication getFullAuthentication() {
+    public Authentication getFullAuthentication(String userName) {
         log.debug("Starting to generate Mission control authentication");
         UserGroupService userGroupService = ContextHelper.get().beanForType(UserGroupService.class);
-        UserInfo userInfo = userGroupService.findOrCreateExternalAuthUser(UserInfo.MISSION_CONTROLL, true);
+        UserInfo userInfo = userGroupService.findOrCreateExternalAuthUser(userName, true);
         MutableUserInfo mutableUserInfo = InfoFactoryHolder.get().copyUser(userInfo);
         mutableUserInfo.setRealm(MissionControlAuthenticationProvider.REALM);
         mutableUserInfo.setAdmin(true);

@@ -38,7 +38,7 @@ public class UpdatePropertySetService implements RestService<AdminPropertySetMod
                 .filter(prop -> prop.getName().equals(newSet.getName()))
                 .findFirst())
                 .ifPresent(toUpdate -> updatePropertySet(descriptor, toUpdate, newSet, response))
-                .ifNotPresent(() -> response.error("Property set '" + newSet.getName() + "' does not exist.")
+                .ifNotPresent(() -> response.error("Property set '" + newSet.getName() + "' does not exist")
                         .responseCode(HttpStatus.SC_NOT_FOUND));
     }
 
@@ -49,6 +49,6 @@ public class UpdatePropertySetService implements RestService<AdminPropertySetMod
                 .map(AdminPropertiesModel::toProperty)
                 .collect(Collectors.toList()));
         configService.saveEditedDescriptorAndReload(descriptor);
-        artifactoryResponse.info("Property set '" + toUpdate.getName() + "' updated successfully");
+        artifactoryResponse.info("Successfully updated property set '" + toUpdate.getName() + "'");
     }
 }

@@ -54,6 +54,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
     private boolean enableDockerSupport = false;
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
     private boolean forceDockerAuthentication = false;
+    private boolean forceNugetAuthentication = false;
     private boolean enableVagrantSupport = false;
     private boolean enableGitLfsSupport = false;
 
@@ -97,6 +98,7 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
                 break;
             case NuGet:
                 setEnableNuGetSupport(true);
+                setForceNugetAuthentication(repoDescriptor.isForceNugetAuthentication());
                 break;
             case Gems:
                 setEnableGemsSupport(true);
@@ -297,6 +299,15 @@ public abstract class RepositoryConfigurationBase implements RepositoryConfigura
 
     public void setForceDockerAuthentication(boolean forceDockerAuthentication) {
         this.forceDockerAuthentication = forceDockerAuthentication;
+    }
+
+    @Override
+    public boolean isForceNugetAuthentication() {
+        return forceNugetAuthentication;
+    }
+
+    public void setForceNugetAuthentication(boolean forceNugetAuthentication) {
+        this.forceNugetAuthentication = forceNugetAuthentication;
     }
 
     @Override

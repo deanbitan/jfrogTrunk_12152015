@@ -200,6 +200,7 @@ public class
         RemoteBasicRepositoryConfigModel basic = new RemoteBasicRepositoryConfigModel();
         addSharedBasicConfigModel(basic, descriptor);
         basic.setUrl(descriptor.getUrl());
+        basic.setContentSynchronisation(descriptor.getContentSynchronisation());
         RepoLayout remoteRepoLayout = descriptor.getRemoteRepoLayout();
         if (remoteRepoLayout != null) {
             basic.setRemoteLayoutMapping(remoteRepoLayout.getName());
@@ -283,6 +284,7 @@ public class
                 break;
             case NuGet:
                 NugetTypeSpecificConfigModel nugetType = new NugetTypeSpecificConfigModel();
+                populateSharedNuGetValues(nugetType, descriptor);
                 nugetType.setMaxUniqueSnapshots(descriptor.getMaxUniqueSnapshots());
                 model = nugetType;
                 break;
@@ -365,10 +367,12 @@ public class
                 DockerTypeSpecificConfigModel dockerType = new DockerTypeSpecificConfigModel();
                 dockerType.setEnableTokenAuthentication(descriptor.isEnableTokenAuthentication());
                 dockerType.setForceDockerAuthentication(descriptor.isForceDockerAuthentication());
+                dockerType.setListRemoteFolderItems(descriptor.isListRemoteFolderItems());
                 model = dockerType;
                 break;
             case NuGet:
                 NugetTypeSpecificConfigModel nugetType = new NugetTypeSpecificConfigModel();
+                populateSharedNuGetValues(nugetType, descriptor);
                 NuGetConfiguration nuget = descriptor.getNuget();
                 if (nuget != null) {
                     nugetType.setDownloadContextPath(nuget.getDownloadContextPath());
@@ -383,7 +387,9 @@ public class
                 model = npmType;
                 break;
             case Pypi:
-                model = new PypiTypeSpecificConfigModel();
+                PypiTypeSpecificConfigModel pypiType = new PypiTypeSpecificConfigModel();
+                pypiType.setListRemoteFolderItems(descriptor.isListRemoteFolderItems());
+                model = pypiType;
                 break;
             case VCS:
                 VcsTypeSpecificConfigModel vcsType = new VcsTypeSpecificConfigModel();
@@ -400,7 +406,9 @@ public class
                 model = bowerType;
                 break;
             case Gems:
-                model = new GemsTypeSpecificConfigModel();
+                GemsTypeSpecificConfigModel gemsType = new GemsTypeSpecificConfigModel();
+                gemsType.setListRemoteFolderItems(descriptor.isListRemoteFolderItems());
+                model = gemsType;
                 break;
             case Generic:
                 GenericTypeSpecificConfigModel genericType = new GenericTypeSpecificConfigModel();
@@ -455,9 +463,15 @@ public class
                 break;
             case NuGet:
                 typeSpecific = new NugetTypeSpecificConfigModel();
+                populateSharedNuGetValues((NugetTypeSpecificConfigModel) typeSpecific, descriptor);
                 break;
             case Pypi:
                 typeSpecific = new PypiTypeSpecificConfigModel();
+                break;
+            case Docker:
+                DockerTypeSpecificConfigModel dockerType = new DockerTypeSpecificConfigModel();
+                dockerType.setForceDockerAuthentication(descriptor.isForceDockerAuthentication());
+                typeSpecific = dockerType;
                 break;
             case Generic:
                 typeSpecific = new GenericTypeSpecificConfigModel();
@@ -555,5 +569,9 @@ public class
                 .forEach(remoteDescriptor ->
                         mapping.put(((HttpRepoDescriptor) remoteDescriptor).getUrl(), remoteDescriptor.getKey()));
         return mapping;
+    }
+
+    private void populateSharedNuGetValues(NugetTypeSpecificConfigModel nuget, RepoBaseDescriptor descriptor) {
+        nuget.setForceNugetAuthentication(descriptor.isForceNugetAuthentication());
     }
 }

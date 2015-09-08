@@ -60,11 +60,10 @@ public class DeployArtifactResource extends BaseResource {
 
     @POST
     @Path("deploy/bundle")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response uploadBundleArtifact(FormDataMultiPart formParams)
+    public Response uploadBundleArtifact(UploadArtifactInfo uploadArtifactInfo)
             throws Exception {
-        UploadArtifactInfo uploadArtifactInfo = new UploadArtifactInfo(formParams);
         return runService(deployFactory.artifactDeployBundle(), uploadArtifactInfo);
     }
 

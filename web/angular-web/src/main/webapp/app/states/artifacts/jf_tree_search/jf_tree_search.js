@@ -34,7 +34,7 @@ class TreeSearchController {
     }
     onKeydown($event) {
         // Send events to tree on key down / up / enter
-        if (_.include([KEYS.ENTER, KEYS.DOWN_ARROW, KEYS.UP_ARROW, KEYS.RIGHT_ARROW, KEYS.LEFT_ARROW, KEYS.ESC], $event.keyCode)) {
+        if (_.include([KEYS.ENTER, KEYS.DOWN_ARROW, KEYS.UP_ARROW, KEYS.ESC], $event.keyCode)) {
             $event.preventDefault();
             // Deactivate on enter press
             if (_.include([KEYS.ENTER, KEYS.ESC], $event.keyCode)) {
@@ -51,6 +51,7 @@ class TreeSearchController {
     }
 
     _activateSearch(key) {
+        this.artifactoryEventBus.dispatch(EVENTS.TREE_SEARCH_CANCEL);
         this.showSearch = true;
         this.$timeout(()=>{
             if (!this.term) { //fix for firefox not showing the first key

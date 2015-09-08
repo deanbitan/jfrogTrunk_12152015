@@ -91,6 +91,7 @@ public class UpdateRepoConfigHelper {
         if (replication != null) {
             replicationConfigService.updateRemoteReplication(replication, repoDescriptor, configDescriptor);
         }
+
         configDescriptor.getRemoteRepositoriesMap().put(repoKey, repoDescriptor);
         configService.saveEditedDescriptorAndReload(configDescriptor);
     }

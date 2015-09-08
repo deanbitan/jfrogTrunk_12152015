@@ -5,7 +5,7 @@
         <form class="form" ng-submit="AdminConfigurationRegister.save(AdminConfigurationRegister.registerDetails)" novalidate>
             <div class="card stretch card-pole-pad card-side-pad">
                 <div class="content-with-footer">
-                    <jf-panel jf-panel-heading="License Details">
+                    <jf-panel ng-if="!AdminConfigurationRegister.User.currentUser.isProWithoutLicense()" jf-panel-heading="License Details">
                         <table class="jf-data-table">
                             <tr>
                                 <td>Licensed to:</td>

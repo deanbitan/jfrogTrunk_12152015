@@ -1,6 +1,7 @@
 package org.artifactory.ui.rest.resource.artifacts.browse.treebrowser.actions;
 
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.CopyArtifact;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifact;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DownloadArtifact;
@@ -12,12 +13,14 @@ import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.recalcu
 import org.artifactory.ui.rest.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.browse.BrowseServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -35,6 +38,12 @@ public class ArtifactActionsResource extends BaseResource {
 
     @Autowired
     BrowseServiceFactory browseFactory;
+
+    @Autowired
+    @Qualifier("streamingRestResponse")
+    public void setArtifactoryResponse(RestResponse artifactoryResponse) {
+        this.artifactoryResponse = artifactoryResponse;
+    }
 
     @POST
     @Path("copy")
@@ -61,6 +70,20 @@ public class ArtifactActionsResource extends BaseResource {
     public Response downloadArtifact(DownloadArtifact downloadArtifact)
             throws Exception {
         return runService(browseFactory.downloadArtifactService(), downloadArtifact);
+    }
+
+    @GET
+    @Path("downloadfolderinfo")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getFolderDownloadInfo() throws Exception {
+        return runService(browseFactory.getDownloadFolderInfo());
+    }
+
+    @GET
+    @Path("downloadfolder")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public Response downloadFolder() throws Exception {
+        return runService(browseFactory.downloadFolder());
     }
 
     @POST

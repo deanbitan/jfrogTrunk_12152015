@@ -91,6 +91,12 @@ public class PropertiesServiceImpl implements PropertiesService {
         }
     }
 
+    /**
+     * Sets properties
+     *
+     * @param nodeId     Id of the node to set properties on
+     * @param properties The properties to set
+     */
     @Override
     public void setProperties(long nodeId, Properties properties) {
         try {

@@ -13,6 +13,7 @@ import org.artifactory.sapi.common.Lock;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,4 +98,6 @@ public interface PropertiesService {
      */
     Map<RepoPath, Properties> getProperties(Set<RepoPath> repoPaths, String... mandatoryKeys);
 
+    @Lock
+    void setProperties(RepoPath repoPath,Properties newProperties);
 }

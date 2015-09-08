@@ -68,6 +68,7 @@ class jfLicensesController {
 
     showInTree(row) {
         let browser = this.artifactoryStorage.getItem('BROWSER') || 'tree';
+        if (browser === 'stash') browser = 'tree';
         let path = row.repoKey + '/' + row.path;
         this.$state.go('artifacts.browsers.path',{
             tab: "General",
@@ -105,21 +106,18 @@ class jfLicensesController {
 
             if (this.showExtendedGrid && row.extractedLicense.name !== 'Not Found') {
                 modalScope.foundLicense = row.extractedLicense.name;
-                if (row.extractedLicense.found && row.extractedLicense.name !== row.license.name) {
-                    modalScope.foundLicenseClass = 'license-found-different';
-                }
-                else if (!row.extractedLicense.found || row.extractedLicense.name === row.license.name) {
+
+                if (row.extractedLicense.found && row.extractedLicense.name !== row.license.name)
+                    modalScope.foundLicenseClass = row.extractedLicense.approved ? 'license-approved' : 'license-unapproved';
+                else if (!row.extractedLicense.found || row.extractedLicense.name === row.license.name)
                     modalScope.foundLicenseClass = 'license-found-same-or-notfound';
-                }
+
                 if (row.overridable) {
                     modalScope.overridable = true;
                     modalScope.override = () => {
                         modalScope.selectedLicenses = [row.extractedLicense.name];
                     }
-
                 }
-
-
             }
             modalScope.modalTitle = "Edit 'artifactory.licenses' Property";
             modalScope.licenses = data.predefinedValues;
@@ -134,7 +132,6 @@ class jfLicensesController {
     }
 
     overrideSelected() {
-
         if (this.toOverride.length) {
             let requestObject = {
                 name: this.$stateParams.buildName,
@@ -147,7 +144,6 @@ class jfLicensesController {
                 this.cancel();
             });
         }
-
     }
 
     cancel() {
@@ -176,7 +172,6 @@ class jfLicensesController {
         this._filterData();
     }
 
-
     _getLicensesPredefineValues(row) {
         return this.buildsDao.getData({
             name: this.$stateParams.buildName,
@@ -188,9 +183,7 @@ class jfLicensesController {
             path: row.path,
             action: 'changeLicenses'
         }).$promise;
-
     }
-
 
     _getLicensesData() {
         this.buildsDao.getData({
@@ -208,11 +201,9 @@ class jfLicensesController {
                 this.allData = data;
                 this._filterData();
             });
-
     }
 
     _filterData() {
-
         let relevantData = this.allData.licenses;
 
         if (this.includePublished) {
@@ -243,7 +234,6 @@ class jfLicensesController {
     }
 
     _calculateSummary() {
-
         this.summary = {
             notApproved: _.filter(this.filteredData, (license) => {return license.license.found && !license.license.approved}).length,
             notFound: _.filter(this.filteredData, (license) => {return license.license.notFound}).length,
@@ -253,7 +243,6 @@ class jfLicensesController {
         };
 
         this.summary.ok = this.summary.notApproved === 0 && this.summary.notFound === 0 && this.summary.unknown === 0;
-
     }
 
     _createGrids() {
@@ -270,14 +259,15 @@ class jfLicensesController {
                                '<div ng-if="!row.entity.repoKey" class="ui-grid-cell-contents">{{row.entity.id}}</div>';
 
         let licenseCellTemplate = '<div class="ui-grid-cell-contents"' +
-                                        'ng-class="{\'license-unapproved\': row.entity.license.found && !row.entity.license.approved,' +
-                                                   '\'license-approved\': row.entity.license.approved,'+
-                                                   '\'license-notfound\': row.entity.license.notFound}"'+
-                                                    '><div ng-if="row.groupHeader">{{row.entity[\'license.name\']}}</div>' +
-                                                    '<div ng-if="!row.groupHeader">' +
-                                                    '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') !== -1"><a href="" ng-click="grid.appScope.jfLicenses.changeLicense(row.entity)">{{row.entity.license.name}}</a></span>' +
-                                                    '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') === -1">{{row.entity.license.name}}</span>' +
-                                                    '</div></div>';
+                'ng-class="{\'license-unapproved\': row.entity.license.found && !row.entity.license.approved,' +
+                '\'license-approved\': row.entity.license.approved,'+
+                '\'license-notfound\': row.entity.license.notFound,' +
+                '\'license-neutral\': row.entity.license.notSearched}"'+
+                '><div ng-if="row.groupHeader">{{row.entity[\'license.name\']}}</div>' +
+                '<div ng-if="!row.groupHeader">' +
+                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') !== -1"><a href="" ng-click="grid.appScope.jfLicenses.changeLicense(row.entity)">{{row.entity.license.name}}</a></span>' +
+                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') === -1">{{row.entity.license.name}}</span>' +
+                '</div></div>';
         return [
             {
                 name: "Artifact ID",
@@ -288,7 +278,7 @@ class jfLicensesController {
                 actions: {
                     download: {
                         callback: row => this.downloadArtifact(row),
-                        visibleWhen: row => row.repoKey != ""
+                        visibleWhen: row => row.actions.indexOf('Download') !== -1
                     }
                 }
             },
@@ -310,7 +300,7 @@ class jfLicensesController {
                     icon: 'icon icon-show-in-tree',
                     tooltip: 'Show In Tree',
                     callback: row => this.showInTree(row),
-                    visibleWhen: row => row.repoKey != ""
+                    visibleWhen: row => row.actions.indexOf('ShowInTree') !== -1
                 }]
             },
             {
@@ -326,7 +316,6 @@ class jfLicensesController {
     }
 
     _getExtendedColumns() {
-
         let nameCellTemplate = '<div ng-if="row.entity.repoKey" class="ui-grid-cell-contents">{{row.entity.id}}</div>' +
                 '<div ng-if="!row.entity.repoKey" class="ui-grid-cell-contents">{{row.entity.id}}</div>';
 
@@ -341,9 +330,10 @@ class jfLicensesController {
                 '</div></div>';
 
         let foundLicenseCellTemplate = '<div class="ui-grid-cell-contents"' +
-            'ng-class="{\'license-found-different\': row.entity.extractedLicense.found && row.entity.extractedLicense.name !== row.entity.license.name,' +
-            '\'license-found-same-or-notfound\': !row.entity.extractedLicense.found || row.entity.extractedLicense.name === row.entity.license.name}"' +
-            '>{{row.entity.extractedLicense.name}}</div>';
+            'ng-class="{\'license-approved\': row.entity.extractedLicense.found && row.entity.extractedLicense.name !== row.entity.license.name && row.entity.extractedLicense.approved,' +
+                '\'license-unapproved\': row.entity.extractedLicense.found && row.entity.extractedLicense.name !== row.entity.license.name && !row.entity.extractedLicense.approved,' +
+                '\'license-found-same-or-notfound\': !row.entity.extractedLicense.found || row.entity.extractedLicense.name === row.entity.license.name}"' +
+                '>{{row.entity.extractedLicense.name}}</div>';
 
         return [
             {
@@ -355,7 +345,7 @@ class jfLicensesController {
                 actions: {
                     download: {
                         callback: row => this.downloadArtifact(row),
-                        visibleWhen: row => row.repoKey != ""
+                        visibleWhen: row => row.actions.indexOf('Download') !== -1
                     }
                 }
             },
@@ -373,7 +363,7 @@ class jfLicensesController {
                     icon: 'icon icon-show-in-tree',
                     tooltip: 'Show In Tree',
                     callback: row => this.showInTree(row),
-                    visibleWhen: row => row.repoKey != ""
+                    visibleWhen: row => row.actions.indexOf('ShowInTree') !== -1
                 }]
             },
             {
@@ -398,7 +388,6 @@ class jfLicensesController {
     }
 
     setSelected(row) {
-        //console.log(row);
         if (row.selected) {
             this.toOverride.push(row);
         }

@@ -131,6 +131,7 @@ class jfPropertiesController {
             this._savePropertySetValues(this.repoPropertySetSelected);
         }
         this.repoPropertySetSelected = '';
+        this.propertyValuesOptions = [];
     }
 
     /**
@@ -231,15 +232,14 @@ class jfPropertiesController {
         this.user.canAnnotate(this.currentNode.data.repoKey, this.currentNode.data.path).then((response) => {
             this.canAnnotate = response.data;
         });
-        let self = this;
         this.artifactPropertyDao.query({
-            path: self.currentNode.data.path,
-            repoKey: self.currentNode.data.repoKey
+            path: this.currentNode.data.path,
+            repoKey: this.currentNode.data.repoKey
         }).$promise.then((properties) => {
                 this.properties = properties.artifactProperties ? properties.artifactProperties.map(this._formatToArray) : [];
                 this.propertyGridOption.setGridData(this.properties);
 
-                self._getPopertySetData();
+                this._getPopertySetData();
             });
     }
 
@@ -308,7 +308,7 @@ class jfPropertiesController {
     }
 
     _propertyFormModal() {
-        this.modalInstance = this.modal.launchModal("property_modal", this.modalScope);
+        this.modalInstance = this.modal.launchModal("property_modal", this.modalScope, (this.modalScope.property.propertyType != 'MULTI_SELECT' ? 'sm' : 'lg'));
     }
 
     _savePropertyValues(property) {

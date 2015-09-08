@@ -24,6 +24,8 @@ public interface ArtifactoryRequest extends Request {
 
     String ARTIFACTORY_ORIGINATED = "X-Artifactory-Originated";
 
+    String ARTIFACTORY_OVERRIDE_BASE_URL = "X-Artifactory-Override-Base-Url";
+
     String CHECKSUM_SHA1 = "X-Checksum-Sha1";
 
     String CHECKSUM_MD5 = "X-Checksum-Md5";

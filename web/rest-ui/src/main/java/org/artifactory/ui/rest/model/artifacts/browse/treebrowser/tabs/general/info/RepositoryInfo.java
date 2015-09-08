@@ -96,6 +96,7 @@ public class RepositoryInfo extends BaseInfo {
     public void populateRepositoryInfo(RepositoryService repoService ,
             LocalRepoDescriptor repoDescriptor,RepoPath repoPath,
             CentralConfigService centralConfigService, String userName) {
+
         // set repository description
         setRepositoryDescription(repoDescriptor);
         // repository name
@@ -150,6 +151,15 @@ public class RepositoryInfo extends BaseInfo {
         setRemoteRepositoryUrl(repoDescriptor);
 
         setRepoType(repoDescriptor.getType().name());
+
+        setIsSmart(repoDescriptor);
+    }
+
+    private void setIsSmart(RepoBaseDescriptor repoDescriptor) {
+        if (repoDescriptor != null) {
+            this.setSmartRepo(((RemoteRepoDescriptor) repoDescriptor)
+                    .getContentSynchronisation().isEnabled());
+        }
     }
 
     private void setRemoteRepositoryUrl(RepoBaseDescriptor repoDescriptor) {

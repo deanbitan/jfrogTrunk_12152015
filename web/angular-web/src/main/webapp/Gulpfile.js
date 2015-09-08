@@ -21,13 +21,17 @@ var uglify = require('gulp-uglify');
 var minifyCss = require('gulp-minify-css');
 var RevAll = require('gulp-rev-all');
 var revReplace = require("gulp-rev-replace");
+var revNapkin = require('gulp-rev-napkin');
 
 var rimraf = require('gulp-rimraf');
 
 // default task runs the development tasks seq
 gulp.task('default',['build', 'watch']);
-gulp.task('build',
-    function() {
+
+
+// Build tasks common to dev and production
+gulp.task('build:common',
+    function(callback) {
         runSequence(
             'clean',
             [
@@ -42,11 +46,36 @@ gulp.task('build',
                 'fonts',
                 'images'
             ],
-            'revreplace'
+            callback
         );
     }
 );
 
+
+// Build the client. This is run by Jenkins
+gulp.task('build',
+    function(callback) {
+        delete webpackConfig.devtool; //don't generate source maps on production build
+        runSequence(
+            'build:common',
+            'revreplace',
+            callback
+        );
+    }
+);
+
+// Same as build:common just copy styleguide
+gulp.task("build:dev", 
+    function(callback) {
+        runSequence(
+            'build:common',
+            'copyStyleguide',
+            callback
+        );
+    }
+);
+
+// Clean up
 gulp.task('clean', function() { 
     return gulp.src(CONFIG.DESTINATIONS.TARGET, { read: false })
         .pipe(rimraf({ force: true }));
@@ -68,10 +97,9 @@ function sequence() {
 }
 
 // Run browserSync that proxies to Artifactory REST Server
-gulp.task("serve:dev", ["build", "watch"], connectTo('http://10.100.1.110:8081'));
-gulp.task("serve:local", ["build", "watch"], connectTo('http://localhost:8081'));//10.0.0.127:8081'));
-gulp.task("serve:dan", ["build", "watch"], connectTo('http://10.0.0.112:8080'));
-//gulp.task("serve:local", ["build", "watch"], connectTo('http://10.0.0.127:8081'));
+gulp.task("serve:dev", ["build:dev", "watch:dev"], connectTo('http://10.100.1.110:8081'));
+gulp.task("serve:local", ["build:dev", "watch:dev"], connectTo('http://localhost:8081'));
+gulp.task("serve:8080", ["build:dev", "watch:dev"], connectTo('http://localhost:8080'));
 gulp.task("serve", ["serve:local"]);
 
 function connectTo(url) {
@@ -103,8 +131,12 @@ gulp.task('watch', function () {
     gulp.watch(CONFIG.SOURCES.VENDOR_JS, sequence(['vendorScripts', 'vendorStyles', 'vendorStylesAssets', 'vendorFonts'], 'reload'));
     gulp.watch(CONFIG.SOURCES.VENDOR_CSS, sequence(['vendorStyles'], 'reloadCss'));
     gulp.watch(CONFIG.SOURCES.FONTS, sequence('fonts', 'reload'));
-    //gulp.watch(CONFIG.SOURCES.MEDIUM_SVG_ICONS, sequence('iconfonts', 'reload'));
     gulp.watch(CONFIG.SOURCES.INDEX, sequence('copyHtml', 'reload'));
+});
+
+// Watch the styleguide
+gulp.task('watch:dev', ["watch"], function () {
+    gulp.watch(CONFIG.SOURCES.STYLEGUIDE, sequence('copyStyleguide', 'reload'));
 });
 
 // install bower dependedencies
@@ -203,6 +235,12 @@ gulp.task('copyHtml', function () {
         .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
 });
 
+// copy styleguide file to dest - for development only
+gulp.task('copyStyleguide', function () {
+    return gulp.src(CONFIG.SOURCES.STYLEGUIDE)
+        .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
+});
+
 //copy fonts
 gulp.task('fonts', function () {
     return gulp.src(CONFIG.SOURCES.FONTS)
@@ -217,7 +255,7 @@ gulp.task('images', function () {
 
 function transformFilename(file, hash) {
     var ext = path.extname(file.path);
-    return path.basename(file.path, ext) + '.' + process.env.BUILD_NUMBER + ext; // 3410c.filename.ext
+    return path.basename(file.path, ext) + '.' + process.env.BUILD_NUMBER + ext; // filename.<BUILD_NUMBER>.ext
 }
 
 gulp.task("revision", function(){
@@ -225,6 +263,7 @@ gulp.task("revision", function(){
         var revAll = new RevAll({transformFilename: transformFilename});
         return gulp.src(CONFIG.DESTINATIONS.TARGET_REV)
             .pipe(revAll.revision())
+            .pipe(revNapkin({force:true}))
             .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
             .pipe(revAll.manifestFile())
             //     .pipe(revDel({ dest: CONFIG.DESTINATIONS.TARGET, force: true }))
@@ -237,6 +276,6 @@ gulp.task("revreplace", ['revision'], function() {
         var manifest = gulp.src(CONFIG.DESTINATIONS.TARGET + "/rev-manifest.json");
         return gulp.src(CONFIG.SOURCES.INDEX)
             .pipe(revReplace({manifest: manifest}))
-            .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET));
+            .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
     }
 });

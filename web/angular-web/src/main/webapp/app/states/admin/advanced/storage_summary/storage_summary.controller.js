@@ -1,10 +1,14 @@
+import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
+
 export class AdminAdvancedStorageSummaryController {
-    constructor(StorageSummaryDao, ArtifactoryGridFactory, uiGridConstants) {
+    constructor($scope,StorageSummaryDao, ArtifactoryGridFactory, uiGridConstants) {
+        this.$scope = $scope;
         this.storageSummary = {};
         this.gridOption = {};
         this.uiGridConstants = uiGridConstants;
         this.storageSummaryDao = StorageSummaryDao.getInstance();
         this.artifactoryGridFactory = ArtifactoryGridFactory;
+        this.TOOLTIP = TOOLTIP.admin.advanced.storageSummary;
         this.storageSummaryDao.get().$promise.then((result) => {
             this.storageSummary = result;
             this.storageSummary.repositoriesSummaryList = _.map(this.storageSummary.repositoriesSummaryList,(row)=>{
@@ -17,7 +21,7 @@ export class AdminAdvancedStorageSummaryController {
     }
 
     createGrid() {
-        this.gridOption = this.artifactoryGridFactory.getGridInstance()
+        this.gridOption = this.artifactoryGridFactory.getGridInstance(this.$scope)
                 .setColumns(this.getColumns())
                 .setGridData(this.storageSummary.repositoriesSummaryList)
                 .setRowTemplate('default');

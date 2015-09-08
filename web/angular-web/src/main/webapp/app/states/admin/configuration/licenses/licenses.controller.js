@@ -37,7 +37,10 @@ export class AdminConfigurationLicensesController {
 
     deleteLicense(license) {
         let json = {licenseskeys: [license.name]}
-        this.licensesDao.delete(json).$promise.then(()=>this.updateListTable());
+        this.modal.confirm(`Are you sure you want to delete ${license.name}?`)
+                .then(()=> {
+                    this.licensesDao.delete(json).$promise.then(()=>this.updateListTable());
+                });
     }
 
     deleteSelectedLicenses() {
@@ -112,7 +115,7 @@ export class AdminConfigurationLicensesController {
                 name: "Status",
                 displayName: "Status",
                 field: "status",
-                cellTemplate: '<div class="ui-grid-cell-contents"><a href="" ng-click="grid.appScope.AdminConfigurationLicenses.setStatus(row.entity)">{{row.entity.status}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents"><a href="" ng-click="grid.appScope.AdminConfigurationLicenses.setStatus(row.entity)" ng-class="{\'license-approved\': row.entity.approved, \'license-unapproved\': !row.entity.approved}">{{row.entity.status}}</a></div>',
                 width: '10%'
             }
         ]

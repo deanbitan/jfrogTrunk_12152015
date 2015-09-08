@@ -26,7 +26,7 @@ public abstract class AqlConverts {
     public static final Function<AqlItem, ItemInfo> toFileInfo = new Function<AqlItem, ItemInfo>() {
         @Override
         public ItemInfo apply(AqlItem input) {
-            RepoPath repoPath = AqlUtils.repoPathFromAql((AqlBaseFullRowImpl) input);
+            RepoPath repoPath = AqlUtils.fromAql((AqlBaseFullRowImpl) input);
             AqlItemTypeEnum type = input.getType();
             if (AqlItemTypeEnum.folder == type) {
                 MutableFolderInfo folderInfo = InfoFactoryHolder.get().createFolderInfo(repoPath);

@@ -6,7 +6,7 @@
                 <li class="inline-block package-type"
                     ng-class="{typeValidation: !RepositoryForm.repoInfo.typeSpecific.repoType, 'not-clickable': !RepositoryForm.newRepository}"
                     ng-click="!RepositoryForm.newRepository || RepositoryForm.openRepoTypeModal()"
-                    id="local-repository-package-type-button">
+                    id="repository-package-type-button">
                     <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType">No Type</span>
 
                     <div ng-if="RepositoryForm.repoInfo.typeSpecific.repoType"
@@ -23,7 +23,7 @@
                    required
                    ng-change="RepositoryForm.setRepoLayout()"/>
             <span ng-if="!RepositoryForm.repoInfo.typeSpecific.repoType && !RepositoryForm.isTypeModalOpen"
-                  class="repository-error">You must specify a package type</span>
+                  class="repository-error" id="repository-package-type-validator">You must specify a package type</span>
         </div>
 
         <div class="form-group">
@@ -41,7 +41,7 @@
                            ng-model-options="{debounce: { 'default': 500 } }"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                    <div ng-message-exp="'repoKeyValidator'" id="local-repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
+                    <div ng-message-exp="'repoKeyValidator'" id="repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                 </ng-messages>
             </div>
             <div class="form-group-cell"
@@ -56,7 +56,7 @@
                            ng-disabled="!RepositoryForm.newRepository"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
-                    <div ng-message-exp="'repoKeyValidator'">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
+                    <div ng-message-exp="'repoKeyValidator'" id="repository-key-validator">{{ RepositoryForm.repoKeyValidatorMessage }}</div>
                 </ng-messages>
             </div>
         </div>
@@ -146,12 +146,14 @@
                                     <jf-help-tooltip
                                             html="RepositoryForm.TOOLTIP.localForm.checksumPolicy"></jf-help-tooltip>
                                     <ui-select ng-model="RepositoryForm.repoInfo.typeSpecific.localChecksumPolicy">
-                                        <ui-select-match placeholder="Select Checksum Policy...">
+                                        <ui-select-match placeholder="Select Checksum Policy..."
+                                                         id="local-repository-checksum-dropdown">
                                             {{ RepositoryForm.localChecksumPolicies[$select.selected] }}
                                         </ui-select-match>
                                         <ui-select-choices
                                                 repeat="item in RepositoryForm.localChecksumPoliciesKeys | filter: $select.search track by $index">
-                                            <div ng-bind-html="RepositoryForm.localChecksumPolicies[item] | highlight: $select.search"></div>
+                                            <div ng-bind-html="RepositoryForm.localChecksumPolicies[item] | highlight: $select.search"
+                                                 id="local-repository-checksum-item"></div>
                                         </ui-select-choices>
                                     </ui-select>
                                 </jf-field>
@@ -165,12 +167,14 @@
                                             html="RepositoryForm.TOOLTIP.localForm.mavenSnapshotVersionBehavior"></jf-help-tooltip>
                                     <ui-select ng-model="RepositoryForm.repoInfo.typeSpecific.snapshotVersionBehavior"
                                                ng-change="RepositoryForm.setSnapshotVersionBehavior()">
-                                        <ui-select-match placeholder="Select Maven Snapshot Version Behavior...">
+                                        <ui-select-match placeholder="Select Maven Snapshot Version Behavior..."
+                                                         id="local-repository-behavior-dropdown">
                                             {{RepositoryForm.mavenSnapshotRepositoryBehaviors[$select.selected] }}
                                         </ui-select-match>
                                         <ui-select-choices
                                                 repeat="item in RepositoryForm.mavenSnapshotRepositoryBehaviorsKeys | filter: $select.search track by $index">
-                                            <div ng-bind-html="RepositoryForm.mavenSnapshotRepositoryBehaviors[item] | highlight: $select.search"></div>
+                                            <div ng-bind-html="RepositoryForm.mavenSnapshotRepositoryBehaviors[item] | highlight: $select.search"
+                                                 id="local-repository-behavior-item"></div>
                                         </ui-select-choices>
                                     </ui-select>
                                 </jf-field>
@@ -223,6 +227,7 @@
                                     <input type="number"
                                            min="0"
                                            name="metadataFolderDepth"
+                                           id="metadataFolderDepth"
                                            ng-model="RepositoryForm.repoInfo.typeSpecific.metadataFolderDepth"
                                            class="input-text">
                                 </jf-field>
@@ -235,6 +240,7 @@
                                     <textarea type="text"
                                               class="input-text"
                                               name="yumGroupFilenames"
+                                              id="yumGroupFilenames"
                                               ng-model="RepositoryForm.repoInfo.typeSpecific.groupFileNames">
                                     </textarea>
                                 </jf-field>
@@ -268,26 +274,32 @@
                 </div>
                 <div ng-if="RepositoryForm.repoInfo.isType('docker')">
                     <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings">
+                        <div class="form-group form-checkbox">
+                            <div class="form-group-cell">
+                                <label class="input-label-weight">API Version</label>
+                                <ul class="radio-select-list">
+                                    <li>
+                                        <input type="radio" id="v1" value="V1"
+                                               ng-model="RepositoryForm.repoInfo.typeSpecific.dockerApiVersion"/>
+                                        <label for="v1" class="input-label-weight">V1</label>
+                                    </li>
+                                    <li>
+                                        <input type="radio" id="v2" value="V2"
+                                               ng-model="RepositoryForm.repoInfo.typeSpecific.dockerApiVersion"/>
+                                        <label for="v2" class="input-label-weight">V2</label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                         <div class="form-group">
-                            <label class="input-label-weight">API Version</label>
-                            <ul class="radio-select-list">
-                                <li>
-                                    <input type="radio" id="v1" value="V1"
-                                           ng-model="RepositoryForm.repoInfo.typeSpecific.dockerApiVersion"/>
-                                    <label for="v1" class="input-label-weight">V1</label>
-                                </li>
-                                <li>
-                                    <input type="radio" id="v2" value="V2"
-                                           ng-model="RepositoryForm.repoInfo.typeSpecific.dockerApiVersion"/>
-                                    <label for="v2" class="input-label-weight">V2</label>
-                                </li>
-                            </ul>
-                            <jf-checkbox text="Force Authentication">
-                                <input type="checkbox"
-                                       id="forceDockerAuth"
-                                       ng-model="RepositoryForm.repoInfo.typeSpecific.forceDockerAuthentication">
-                            </jf-checkbox>
-                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.forceDockerAuth"></jf-help-tooltip>
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Force Authentication">
+                                    <input type="checkbox"
+                                           id="forceDockerAuth"
+                                           ng-model="RepositoryForm.repoInfo.typeSpecific.forceDockerAuthentication">
+                                </jf-checkbox>
+                                <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.forceDockerAuth"></jf-help-tooltip>
+                            </div>
                         </div>
                     </jf-panel>
                 </div>
@@ -302,9 +314,20 @@
                                     <input type="text"
                                            class="input-text"
                                            name="maxUniqueSnapshots"
+                                           id="nugetMaxUniqueSnapshots"
                                            ng-model="RepositoryForm.repoInfo.typeSpecific.maxUniqueSnapshots"
                                            ng-disabled="RepositoryForm.disableMaxUniqueSnapshots"/>
                                 </jf-field>
+                            </div>
+                        </div>
+                        <div class="form-group form-checkbox">
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Force Authentication">
+                                    <input type="checkbox"
+                                           id="forceNuGetAuth"
+                                           ng-model="RepositoryForm.repoInfo.typeSpecific.forceNugetAuthentication">
+                                </jf-checkbox>
+                                <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.forceNugetAuth"></jf-help-tooltip>
                             </div>
                         </div>
                     </jf-panel>

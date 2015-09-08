@@ -31,4 +31,6 @@ public interface LdapUserGroupAddon extends Addon {
      * @return number group imported
      */
     int importLdapGroupsToArtifactory(List ldapGroups, LdapGroupPopulatorStrategies strategy);
+
+    String[] retrieveUserLdapGroups(String userName, LdapGroupSetting ldapGroupSetting);
 }

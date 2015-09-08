@@ -19,6 +19,7 @@
 package org.artifactory.factory;
 
 import com.thoughtworks.xstream.XStream;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.artifactory.checksum.ChecksumsInfo;
 import org.artifactory.fs.*;
 import org.artifactory.md.MutableMetadataInfo;
@@ -115,6 +116,8 @@ public interface InfoFactory {
     Tree<ZipEntryInfo> createZipEntriesTree();
 
     ZipEntryInfo createZipEntry(ZipEntry... zipEntry);
+
+    ZipEntryInfo createArchiveEntry(ArchiveEntry... archiveEntries);
 
     ZipEntryResourceInfo createZipEntryResource(FileInfo info, ZipEntryInfo zipEntryInfo, Long first,
             ChecksumsInfo checksumsInfo);

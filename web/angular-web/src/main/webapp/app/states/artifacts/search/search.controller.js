@@ -1,17 +1,21 @@
 import EVENTS     from '../../../constants/artifacts_events.constants';
+import TOOLTIP  from '../../../constants/artifact_tooltip.constant';
+
 let headerCellGroupingTemplate = require("raw!../../../ui_components/artifactory_grid/templates/headerCellTemplate.html");
 export class SearchController {
     constructor($scope, $stateParams, $window, $state, ArtifactoryGridFactory, ArtifactSearchDao, ArtifactoryEventBus,
                 ArtifactActionsDao, artifactoryDownload, RepoDataDao, ArtifactoryState, uiGridConstants,
-            commonGridColumns,ArtifactoryModal, ArtifactViewSourceDao) {
-        let self = this;
+            commonGridColumns,ArtifactoryModal, ArtifactViewSourceDao, StashResultsDao, ArtifactoryNotifications, User) {
         this.$window = $window;
         this.repoDataDao = RepoDataDao;
         this.artifactSearchDao = ArtifactSearchDao;
+        this.stashResultsDao = StashResultsDao;
+        this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.artifactoryState = ArtifactoryState;
         this.$stateParams = $stateParams;
+        this.user = User;
         this.currentSearch = $stateParams.searchType || "";
         this.download = artifactoryDownload;
         this.artifactActionsDao = ArtifactActionsDao;
@@ -25,6 +29,7 @@ export class SearchController {
         this.repoList = [];
         this.isOpenRepoList = true;
         this.resultsMsg = 'Search Results';
+        this.TOOLTIP = TOOLTIP.artifacts.search;
         this.modal=ArtifactoryModal;
         this.query = {
             selectedRepositories: []
@@ -41,6 +46,11 @@ export class SearchController {
         ArtifactoryEventBus.registerOnScope($scope, EVENTS.SEARCH_COLLAPSE, (collapse) => {
             this.closeSearchPanel(collapse);
         });
+
+        this.results = [];
+        this.savedToStash = false;
+
+        this._updateStashStatus();
     }
 
 
@@ -53,10 +63,10 @@ export class SearchController {
             }
             archivePath = row.repoKey + "/" + row.archivePath + row.archiveName;
         }
-        let self = this;
         let path = (archivePath || artifactPath );
 
         this.$state.go('artifacts.browsers.path', {
+            "browser": "tree",
             "tab": "General",
             "artifact": path
         });
@@ -196,12 +206,16 @@ export class SearchController {
             }).$promise.then((result)=> {
                     this.resultsMsg = result.data.message;
                     this.gridOptions.setGridData(result.data.results);
+                    this.results = result.data.results;
+                    this.savedToStash = false;
                 });
         }
         else {
             this.artifactSearchDao.fetch(this.query).$promise.then((result)=> {
                 this.resultsMsg = result.data.message;
                 this.gridOptions.setGridData(result.data.results);
+                this.results = result.data.results;
+                this.savedToStash = false;
             });
         }
     }
@@ -259,6 +273,142 @@ export class SearchController {
         return this.$stateParams.searchType !== 'remote';
     }
 
+
+    _buildPayloadForStash() {
+        let searchType = this.$stateParams.searchType;
+        if (searchType === 'checksum') searchType='quick';
+        let selectedRows = this.gridOptions.api.selection.getSelectedRows();
+        let rawResults = selectedRows.length ? selectedRows : this.results;
+
+        rawResults = _.filter(rawResults, (result)=> {
+            return !result.resultType || result.resultType == 'File';
+        });
+
+        let payload = _.map(rawResults, (result)=>{
+            let retObj = {};
+            retObj.type = searchType;
+            retObj.repoKey = result.repoKey;
+
+            if (searchType === 'class') {
+                if (result.archivePath==='[root]') result.archivePath = '';
+                retObj.name = result.name;
+                retObj.archivePath = result.archivePath + result.archiveName;
+            }
+            else {
+                if (result.relativePath==='[root]') result.relativePath = '';
+                retObj.relativePath = result.relativePath;
+            }
+
+            return retObj;
+        });
+
+        return payload;
+    }
+
+    _doStashAction(action) {
+
+        let payload = this._buildPayloadForStash();
+        this.stashResultsDao[action]({name: 'stash'},payload).$promise.then((response)=>{
+            if (action === 'save' && response.status === 200) {
+                this.savedToStash = true;
+                this.duringStashAnimation = false;
+            }
+            this._updateStashStatus();
+        });
+    }
+    saveToStash() {
+        let stashBox = $('#stash-box span'),
+                stashedFly = $('#stash-animation'),
+                stashResultsButton = $('#stash-results-button'),
+                cssScale = 0,
+                cssTop = stashResultsButton.offset().top - stashBox.offset().top,
+                cssRight = stashBox.offset().left - stashResultsButton.offset().left,
+                animationDuration = 800;
+
+        this.duringStashAnimation = true;
+
+        stashedFly.css('right', cssRight + 'px').css('top', cssTop + 'px').show().animate({
+            right: (cssRight / 2) + 'px', top: (cssTop / 2)
+        },{
+            duration: animationDuration,
+            easing: 'linear',
+            step: () => {
+                cssScale = cssScale + 0.015;
+                stashedFly.css('transform', 'scale(' + cssScale + ')');
+            },
+            complete: () => {
+                stashedFly.animate({right: 0, top: 0},{
+                    duration: animationDuration,
+                    easing: 'linear',
+                    step: () => {
+                        cssScale = cssScale - 0.015;
+                        stashedFly.css('transform', 'scale(' + cssScale + ')');
+                    },
+                    complete: () => {
+                        stashedFly.hide();
+
+                        cssScale = 0;
+                        stashBox.animate({'text-indent': 100},{
+                            duration: 500,
+                            easing: 'linear',
+                            step: function(now) {
+                                cssScale = cssScale + (now < 50 ? 0.008 : -0.008);
+                                stashBox.css('transform', 'scale(' + (1 + cssScale) + ')');
+                            },
+                            complete: () => {
+                                stashBox.css('text-indent', 0);
+
+                                this._doStashAction('save');
+
+                            }});
+                    }});
+            }});
+
+    }
+
+    addToStash() {
+        this._doStashAction('add');
+    }
+
+    subtractFromStash() {
+        this._doStashAction('subtract');
+    }
+
+    intersectWithStash() {
+        this._doStashAction('intersect');
+    }
+
+    gotoStash() {
+        this._clearSearchTab();
+        this.artifactoryEventBus.dispatch(EVENTS.ACTION_REFRESH_STASH);
+        this.$state.go('artifacts.browsers.path', {browser: 'stash', artifact: '', tab: 'StashInfo'});
+    }
+
+    clearStash() {
+        this.modal.confirm('Are you sure you want to clear stashed results? All items will be removed from stash.','Clear Stashed Results', {confirm: 'Clear'})
+                .then(() => {
+                    this.stashResultsDao.delete({name: 'stash'}).$promise.then((response)=> {
+                        this.artifactoryEventBus.dispatch(EVENTS.ACTION_DISCARD_STASH);
+                        if (response.status === 200) {
+                            this.savedToStash = false;
+                            this._updateStashStatus();
+                        }
+                    });
+                });
+    }
+
+    _updateStashStatus() {
+        this.stashResultsDao.get({name:'stash'}).$promise.then((data)=>{
+            this.stashedItemsCount = data.length;
+            if (data.length === 0) {
+                this.savedToStash = false;
+            }
+        });
+    }
+
+    hasStashPerms() {
+        return this.user.currentUser.getCanDeploy();
+    }
     _getColumns() {
         switch (this.currentSearch) {
             case 'quick':

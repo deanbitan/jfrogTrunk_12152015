@@ -28,6 +28,6 @@ public class CreateArtifactLicenseService implements RestService {
         ArtifactLicenseModel artifactLicenseModel = (ArtifactLicenseModel) request.getImodel();
         licensesAddon.addLicenseInfo(artifactLicenseModel.buildLicenseInfo());
         response.responseCode(HttpServletResponse.SC_CREATED);
-        response.info("License " + artifactLicenseModel.getName() + " created successfully");
+        response.info("Successfully created license '" + artifactLicenseModel.getName() + "'");
     }
 }

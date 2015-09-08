@@ -202,6 +202,19 @@ public abstract class BaseRepoPathMover {
     protected void moveFile(VfsFile sourceFile, RepoRepoPath<LocalRepo> targetRrp) {
         assertNotDryRun();
         LocalRepo targetRepo = targetRrp.getRepo();
+        RepoPath targetRepoPath = targetRrp.getRepoPath();
+        StatusEntry lastError = status.getLastError();
+        if(copy) {
+            storageInterceptors.beforeCopy(sourceFile, targetRepoPath, status, properties);
+            if (status.getCancelException(lastError) != null) {
+                return;
+            }
+        } else {
+            storageInterceptors.beforeMove(sourceFile, targetRepoPath, status, properties);
+            if (status.getCancelException(lastError) != null) {
+                return;
+            }
+        }
 
         MutableVfsItem targetItem = targetRepo.getMutableFsItem(targetRrp.getRepoPath());
         if (targetItem != null) {
@@ -212,23 +225,11 @@ public abstract class BaseRepoPathMover {
         }
 
         MutableVfsFile targetFile = targetRepo.createOrGetFile(targetRrp.getRepoPath());
-
-        RepoPath targetRepoPath = targetRrp.getRepoPath();
         if (copy) {
-            StatusEntry lastError = status.getLastError();
-            storageInterceptors.beforeCopy(sourceFile, targetRepoPath, status, properties);
-            if (status.getCancelException(lastError) != null) {
-                return;
-            }
             log.debug("Copying file {} to {}", sourceFile, targetFile);
             copyVfsFile(sourceFile, targetFile);
             storageInterceptors.afterCopy(sourceFile, targetFile, status, properties);
         } else {
-            StatusEntry lastError = status.getLastError();
-            storageInterceptors.beforeMove(sourceFile, targetRepoPath, status, properties);
-            if (status.getCancelException(lastError) != null) {
-                return;
-            }
             log.debug("Moving file from {} to {}", sourceFile, targetFile);
             moveVfsFile(sourceFile, targetFile);
             storageInterceptors.afterMove(sourceFile, targetFile, status, properties);

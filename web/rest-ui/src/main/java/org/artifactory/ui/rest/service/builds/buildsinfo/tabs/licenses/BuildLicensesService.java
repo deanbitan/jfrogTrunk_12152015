@@ -9,7 +9,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.license.LicenseModuleModel;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.build.BuildRun;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
@@ -57,11 +57,11 @@ public class BuildLicensesService implements RestService {
             Boolean authFind = Boolean.valueOf(request.getQueryParamByKey("autoFind"));
             Build build = getBuild(name, buildNumber, buildStarted, response);
             // fetch license
-            Multimap<RepoPath, LicenseModuleModel> repoPathLicenseModuleModel = getRepoPathLicenseModuleModelMultimap(build, authFind);
+            Multimap<RepoPath, ModuleLicenseModel> repoPathLicenseModuleModel = getRepoPathLicenseModuleModelMultimap(build, authFind);
             if (repoPathLicenseModuleModel != null && !repoPathLicenseModuleModel.isEmpty()) {
-                Collection<LicenseModuleModel> values = repoPathLicenseModuleModel.values();
+                Collection<ModuleLicenseModel> values = repoPathLicenseModuleModel.values();
                 // fetch published modules
-                Set<LicenseModuleModel> publishedModules = getPublishedModulesFromModelList(values, build.getModules());
+                Set<ModuleLicenseModel> publishedModules = getPublishedModulesFromModelList(values, build.getModules());
                 // filter published modules from licenses
                 publishedModules.forEach(published -> values.remove(published));
                 // fetch build license summary
@@ -83,11 +83,11 @@ public class BuildLicensesService implements RestService {
      * @param build - license build
      * @return multi map with repo path and license
      */
-    private Multimap<RepoPath, LicenseModuleModel> getRepoPathLicenseModuleModelMultimap(Build build, boolean autoFind) {
+    private Multimap<RepoPath, ModuleLicenseModel> getRepoPathLicenseModuleModelMultimap(Build build, boolean autoFind) {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
-        Multimap<RepoPath, LicenseModuleModel> repoPathLicenseMultimap = licensesAddon.
-                licensePopulateSynchronously(build, autoFind);
+        Multimap<RepoPath, ModuleLicenseModel> repoPathLicenseMultimap = licensesAddon.
+                populateLicenseInfoSynchronously(build, autoFind);
         return repoPathLicenseMultimap;
     }
 
@@ -152,9 +152,9 @@ public class BuildLicensesService implements RestService {
         response.responseCode(HttpServletResponse.SC_NOT_FOUND);
     }
 
-    public static Set<String> getScopeMapping(Collection<LicenseModuleModel> models) {
+    public static Set<String> getScopeMapping(Collection<ModuleLicenseModel> models) {
         Set<String> scopeSet = new HashSet();
-        for (LicenseModuleModel model : models) {
+        for (ModuleLicenseModel model : models) {
             scopeSet.addAll(model.getScopes().stream().collect(Collectors.toList()));
         }
         return scopeSet;
@@ -166,7 +166,7 @@ public class BuildLicensesService implements RestService {
      * @param models  models to filter
      * @param modules build modules to filter by
      */
-    public static Set<LicenseModuleModel> getPublishedModulesFromModelList(Collection<LicenseModuleModel> models,
+    public static Set<ModuleLicenseModel> getPublishedModulesFromModelList(Collection<ModuleLicenseModel> models,
                                                                            final Collection<Module> modules) {
         if (CollectionUtils.isNullOrEmpty(models) || CollectionUtils.isNullOrEmpty(modules)) {
             return Sets.newHashSet();
@@ -175,7 +175,7 @@ public class BuildLicensesService implements RestService {
     }
 
 
-    private static class PublishedModuleFilterPredicate implements Predicate<LicenseModuleModel> {
+    private static class PublishedModuleFilterPredicate implements Predicate<ModuleLicenseModel> {
         private Set<Artifact> moduleArtifacts = Sets.newHashSet();
 
         private PublishedModuleFilterPredicate(Collection<Module> modules) {
@@ -187,7 +187,7 @@ public class BuildLicensesService implements RestService {
         }
 
         @Override
-        public boolean apply(@Nonnull LicenseModuleModel input) {
+        public boolean apply(@Nonnull ModuleLicenseModel input) {
             // filter published artifacts based on the checksum
             for (Artifact artifact : moduleArtifacts) {
                 if (StringUtils.isNotBlank(artifact.getSha1()) && artifact.getSha1().equals(input.getSha1())) {

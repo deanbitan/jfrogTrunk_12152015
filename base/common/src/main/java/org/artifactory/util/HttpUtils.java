@@ -134,6 +134,11 @@ public abstract class HttpUtils {
     }
 
     public static String getServletContextUrl(HttpServletRequest httpRequest) {
+        String origUrl = httpRequest.getHeader(ArtifactoryRequest.ARTIFACTORY_OVERRIDE_BASE_URL);
+        if (StringUtils.isNotBlank(origUrl)) {
+            // original artifactory request url overrides request and base url
+            return origUrl;
+        }
         CentralConfigService centralConfigService = ContextHelper.get().getCentralConfig();
         String baseUrl = centralConfigService.getDescriptor().getUrlBase();
         if (!StringUtils.isEmpty(baseUrl)) {

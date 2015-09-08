@@ -39,6 +39,7 @@ import org.springframework.security.core.Authentication;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -283,5 +284,17 @@ public abstract class RequestUtils {
     public static String getWicketServletContextUrl() {
         final HttpServletRequest httpRequest = WicketUtils.getHttpServletRequest();
         return HttpUtils.getServletContextUrl(httpRequest);
+    }
+
+    /**
+     * add no cache and no store header to response in order to avoid java script caching on browser
+     *
+     * @param servletPath - http servlet path
+     * @param response    - http servlet response
+     */
+    public static void addNoCacheToWebAppRequest(String servletPath, HttpServletResponse response) {
+        if (servletPath.indexOf(HttpUtils.ANGULAR_WEBAPP) != -1) {
+            response.setHeader("Cache-Control", "no-cache, no-store");
+        }
     }
 }

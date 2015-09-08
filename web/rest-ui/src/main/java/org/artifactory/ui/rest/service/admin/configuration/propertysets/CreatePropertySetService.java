@@ -41,13 +41,13 @@ public class CreatePropertySetService implements RestService<AdminPropertySetMod
             RestResponse artifactoryResponse) {
         descriptor.addPropertySet(propertySet.getPropertySetFromModel());
         configService.saveEditedDescriptorAndReload(descriptor);
-        String msg = "Property Set '" + propertySet.getName() + "' added.";
+        String msg = "Successfully add property Set '" + propertySet.getName() + "'";
         log.info(msg);
         artifactoryResponse.info(msg).responseCode(HttpStatus.SC_CREATED);
     }
 
     private void error(RestResponse response, String propName) {
-        String msg = "Property set '" + propName + "' already exists.";
+        String msg = "Property set '" + propName + "' already exists";
         log.debug(msg + " canceling create operation");
         response.responseCode(HttpStatus.SC_BAD_REQUEST).error(msg);
     }

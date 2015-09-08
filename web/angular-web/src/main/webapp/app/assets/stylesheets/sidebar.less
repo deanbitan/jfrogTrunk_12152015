@@ -52,6 +52,12 @@
         }
       }
 
+      &.disabled {
+        a {
+          color: @grayFontDark;
+        }
+      }
+
       a {
         color: #bdbdbd;
         font-size: 16px;
@@ -77,6 +83,9 @@
           float: left;
           margin-right: 12px;
           line-height: 58px;
+        }
+        &.icon-builds:before {
+          font-size: 28px;
         }
       }
     }
@@ -362,6 +371,10 @@
         background: none;
         cursor: not-allowed;
       }
+
+      .subitem-style div {
+        color: @grayFontDark;
+      }
     }
 
     &:hover:not(.license-required) {
@@ -435,10 +448,16 @@
   .accordion-header {
     &.disabled {
       background: transparent !important;
+
+      a span {
+        color: @grayFontDark !important;
+      }
+
       * {
         cursor: not-allowed !important;
       }
     }
+
     &.active {
       .panel-heading a {
         background: #1a1a1a;

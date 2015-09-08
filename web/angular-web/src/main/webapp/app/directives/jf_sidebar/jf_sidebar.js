@@ -69,7 +69,11 @@ class jfSidebarController {
             this.ArtifactoryEventBus.dispatch(EVENTS.CLEAR_SEARCH);
         }
         // Fix browser param according to user preference
-        if (item.stateParams && item.stateParams.browser) item.stateParams.browser = this.storage.getItem('BROWSER') || 'tree';
+        if (item.stateParams && item.stateParams.browser) {
+            let storedBrowser = this.storage.getItem('BROWSER');
+            item.stateParams.browser = storedBrowser || 'tree';
+            item.stateParams.tab = storedBrowser === 'stash' ? 'StashInfo' : 'General';
+        }
 
         // If we're going into admin - save the state
         if (item.state == 'admin' && this.$state.current.name.indexOf('admin') === -1) {

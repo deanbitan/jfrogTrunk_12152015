@@ -34,6 +34,19 @@ export class AdminRepositoryFormController {
             this.repoInfo = new RepositoriesDao();
             this.title = "New " + _.capitalize(this.repoType) + " Repository";
             this._initNewRepositoryTypeConfig();
+
+            if (this.repoType == fieldsValuesDictionary.REPO_TYPE.REMOTE) {
+                if (!this.repoInfo.basic) {
+                    this.repoInfo.basic = {};
+                    this.repoInfo.basic.contentSynchronisation = {};
+                    this.repoInfo.basic.contentSynchronisation.statistics = {};
+                    this.repoInfo.basic.contentSynchronisation.properties = {};
+                }
+
+                this.repoInfo.basic.contentSynchronisation.enabled = false;
+                this.repoInfo.basic.contentSynchronisation.statistics.enabled = false;
+                this.repoInfo.basic.contentSynchronisation.properties.enabled = false;
+            }
         }
         this.packageType = fieldsValuesDictionary.repoPackageTypes;
     }
@@ -76,6 +89,9 @@ export class AdminRepositoryFormController {
                     }
                     this._getFieldsOptions();
 
+                    this.lastSmartRemoteURL = this.repoInfo.basic.url;
+                    if (this.repoType == fieldsValuesDictionary.REPO_TYPE.REMOTE && !this.repoInfo.basic.contentSynchronisation.enabled)
+                        this._detectSmartRepository();
                 });
 
     }
@@ -117,7 +133,45 @@ export class AdminRepositoryFormController {
 
     testRemoteUrl() {
         this.repositoriesDao.testRemoteUrl(this.repoInfo).$promise.then((result)=> {
+            //console.log(result);
         });
+
+        this._detectSmartRepository();
+    }
+
+    _detectSmartRepository() {
+
+        if (this.features.isOss()) {
+            return this.$q.when();
+        }
+
+        let defer = this.$q.defer();
+
+        this.repositoriesDao.detectSmartRepository(this.repoInfo).$promise.then((result)=> {
+            if (result.info == 'true') {
+                if (!this.repoInfo.basic.contentSynchronisation.enabled || this.repoInfo.basic.url != this.lastSmartRemoteURL) {
+                    this.repoInfo.basic.contentSynchronisation.enabled = true;
+                    this.lastSmartRemoteURL = this.repoInfo.basic.url;
+
+                    let modalInstance;
+                    let modalScope = this.$scope.$new();
+                    modalScope.smartRepo = this.repoInfo.basic.contentSynchronisation;
+                    modalScope.smartRepo.typeSpecific = this.repoInfo.typeSpecific;
+                    modalScope.closeModal = () => modalInstance.close();
+                    modalInstance = this.modal.launchModal('smart_remote_repository', modalScope);
+
+                    defer.resolve(true);
+                }
+                else
+                    defer.resolve(false);
+            }
+            else {
+                this.repoInfo.basic.contentSynchronisation.enabled = false;
+                defer.resolve(false);
+            }
+        });
+
+        return defer.promise;
     }
 
     testRemoteReplication() {
@@ -184,6 +238,7 @@ export class AdminRepositoryFormController {
             fields.proxies.unshift('');
             this.repositoryLayouts = fields.repositoryLayouts;
             this.remoteLayoutMapping = angular.copy(fields.repositoryLayouts);
+            this.remoteLayoutMapping.unshift('');
             this.mavenSnapshotRepositoryBehaviors = fieldsValuesDictionary['snapshotRepositoryBehavior'];
             this.mavenSnapshotRepositoryBehaviorsKeys = Object.keys(fieldsValuesDictionary['snapshotRepositoryBehavior']);
             this.pomCleanupPolicies = fieldsValuesDictionary['pomCleanupPolicy'];
@@ -222,36 +277,53 @@ export class AdminRepositoryFormController {
     }
 
     /**
-     * save or update wizard form
+     * handle save or update click
      */
     save() {
-        if (this.repoType == fieldsValuesDictionary.REPO_TYPE.REMOTE) {
-            //Add replication if exists:
-            if (this.repoInfo.replication) {
-                if (this.repoInfo.cronExp && this.repoInfo.replication.enabled
-                        && (!this.repoInfo.advanced.network.username || !this.repoInfo.advanced.network.password)) {
-                    this.notifications.create({error: 'Pull replication requires non-anonymous authentication to the ' +
-                        'remote repository.\nPlease make sure to fill the \'Username\' and \'Password\' fields in the '
-                        + 'Advanced settings tab or remove the fields you filled in the replication tab.'});
-                    return false;
-                }
-                this.addReplication(this.repoInfo.replication);
-            }
-            if (this.repoInfo.advanced.network.proxy === '') {
-                delete this.repoInfo.advanced.network.proxy;
-            }
-        }
         if (this.repoType == fieldsValuesDictionary.REPO_TYPE.LOCAL) {
             if (this.repoInfo.replications && this.repoInfo.replications.length) {
                 this.saveCronAndEventFlagToAllReplicationsAndValidateHa();
             }
             //Warn user if saving cron expression without any replication config
-            if (this.repoInfo.cronExp && !this.repoInfo.replications) {
+            if (this.repoInfo.cronExp && (!this.repoInfo.replications || !this.repoInfo.replications.length)) {
                 this.notifications.create({warn: 'A cron expression was entered without any replication configuration.'
-                    + '\nThe expression will not be saved.'
+                + '\nThe expression will not be saved.'
                 });
             }
         }
+
+        if (this.repoType == fieldsValuesDictionary.REPO_TYPE.REMOTE) {
+            this._detectSmartRepository().then((result) => {
+                if (!result) {
+                    //Add replication if exists:
+                    if (this.repoInfo.replication) {
+                        if (this.repoInfo.cronExp && this.repoInfo.replication.enabled
+                                && (!this.repoInfo.advanced.network.username || !this.repoInfo.advanced.network.password)) {
+                            this.notifications.create({error: 'Pull replication requires non-anonymous authentication to the ' +
+                            'remote repository.\nPlease make sure to fill the \'Username\' and \'Password\' fields in the '
+                            + 'Advanced settings tab or remove the fields you filled in the replication tab.'});
+                            return false;
+                        }
+                        this.addReplication(this.repoInfo.replication);
+                    }
+                    if (this.repoInfo.advanced.network.proxy === '') {
+                        delete this.repoInfo.advanced.network.proxy;
+                    }
+
+                    this.save_update();
+                }
+            });
+
+            return false;
+        }
+        else
+            this.save_update();
+    }
+
+    /**
+     * save or update wizard form
+     */
+    save_update() {
         if (this.newRepository) {
             this.repositoriesDao.save(this.repoInfo).$promise.then((result)=> {
                 this.$state.go('^.list', {repoType: this.repoType});

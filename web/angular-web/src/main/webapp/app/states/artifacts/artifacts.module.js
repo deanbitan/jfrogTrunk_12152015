@@ -4,6 +4,7 @@ import {BrowsersController} from './browsers/browsers.controller';
 import {SearchController} from './search/search.controller';
 import {jfTreeSearch}        from './jf_tree_search/jf_tree_search';
 import {jfTreeBrowser}   from './jf_tree_browser/jf_tree_browser';
+import {jfStashBrowser}   from './jf_stash_browser/jf_stash_browser';
 import {jfSimpleBrowser}   from './jf_simple_browser/jf_simple_browser';
 import {selectTargetPathFactory}   from './services/select_target_path';
 import {commonGridColumns}   from './services/common_grid_columns';
@@ -47,7 +48,7 @@ function artifactsConfig($stateProvider, $urlMatcherFactoryProvider) {
                 templateUrl: 'states/artifacts/browsers/browsers.html',
                 controller: 'BrowsersController as Browsers',
                 onEnter: (ArtifactoryStorage, $stateParams) => {
-                    ArtifactoryStorage.setItem('BROWSER', $stateParams.browser);
+                    if ($stateParams.browser !== 'stash') ArtifactoryStorage.setItem('BROWSER', $stateParams.browser);
                 }
             })
             .state('artifacts.browsers.search', {
@@ -62,6 +63,7 @@ function artifactsConfig($stateProvider, $urlMatcherFactoryProvider) {
                         controller: 'SearchController as Search'
                     }
                 }
+
             })
             .state('artifacts.browsers.path', {
                 url: '/{tab}/{artifact:pathParam}',
@@ -84,6 +86,7 @@ export default angular.module('artifacts', ['infoTabs'])
         .directive('jfTreeSearch', jfTreeSearch)
         .directive('jfTreeBrowser', jfTreeBrowser)
         .directive('jfSimpleBrowser', jfSimpleBrowser)
+        .directive('jfStashBrowser', jfStashBrowser)
         .directive('jfArtifactInfo', jfArtifactInfo)
         .factory('selectTargetPath', selectTargetPathFactory)
         .factory('commonGridColumns', commonGridColumns)

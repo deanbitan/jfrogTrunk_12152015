@@ -78,7 +78,6 @@ class jfGridFilterController {
 
         this.grid.setGridData(data);
         this.$timeout(()=>{
-            this.grid.api.core.refresh();
             if (this.grid.api.grid.getVisibleRows().length === 0) {
                 this.grid.setGridData(data.concat([{_emptyRow:true}]));
             }
@@ -87,6 +86,9 @@ class jfGridFilterController {
                     return !row._emptyRow;
                 }));
             }
+            this.$timeout(()=> {
+                this.grid.api.core.refresh();
+            });
         });
 
     }

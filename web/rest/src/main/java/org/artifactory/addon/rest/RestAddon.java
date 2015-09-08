@@ -22,6 +22,7 @@ import com.sun.istack.internal.NotNull;
 import org.artifactory.addon.Addon;
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
+import org.artifactory.api.archive.ArchiveType;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.repo.Async;
 import org.artifactory.api.repo.exception.BlackedOutException;
@@ -52,6 +53,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -337,6 +339,18 @@ public interface RestAddon extends Addon {
      * @see BuildArtifactsRequest
      */
     File getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) throws IOException;
+
+    /**
+     * Sends back an {@link InputStream} that streams the entire content of the folder or repo, archived according to
+     * {@param archiveType} and filtered by the user's authentication.
+     *
+     * @param pathToDownload - path to download (folder or repo)
+     * @param archiveType - how to archive the path
+     * @return an {@link InputStream} that serves the archived path
+     * @throws IOException
+     */
+    InputStream downloadFolderOrRepo(RepoPath pathToDownload, ArchiveType archiveType, BasicStatusHolder status)
+            throws IOException;
 
     /**
      * Invokes a user plugin based build promotion action

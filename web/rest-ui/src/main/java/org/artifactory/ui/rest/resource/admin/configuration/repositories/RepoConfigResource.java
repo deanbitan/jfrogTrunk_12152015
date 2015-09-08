@@ -115,6 +115,13 @@ public class RepoConfigResource extends BaseResource {
     }
 
     @POST
+    @Path("isartifactory")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response isArtifactoryInstance(RemoteRepositoryConfigModel remoteRepositoryModel) {
+        return runService(configServiceFactory.isArtifactoryInstance(), remoteRepositoryModel);
+    }
+
+    @POST
     @Path("validatelocalreplication")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response validateLocalReplicationConfig(LocalReplicationConfigModel localReplication) {

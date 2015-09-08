@@ -51,6 +51,9 @@
             <jf-tab name="DockerAncestryInfo">
                 <jf-docker-ancestry current-node="jfArtifactInfo.currentNode"></jf-docker-ancestry>
             </jf-tab>
+            <jf-tab name="DockerV2Info">
+                <jf-docker-v2 current-node="jfArtifactInfo.currentNode"></jf-docker-v2>
+            </jf-tab>
             <jf-tab name="RubyGems">
                 <jf-ruby-gems current-node="jfArtifactInfo.currentNode"></jf-ruby-gems>
             </jf-tab>
@@ -59,6 +62,10 @@
             </jf-tab>
             <jf-tab name="Rpm">
                 <jf-rpm current-node="jfArtifactInfo.currentNode"></jf-rpm>
+            </jf-tab>
+            <jf-tab name="StashInfo">
+                <jf-stash-info current-node="jfArtifactInfo.currentNode"
+                               allow-export="jfArtifactInfo.user.currentUser.isAdmin()"></jf-stash-info>
             </jf-tab>
         </div>
     </jf-tabs>

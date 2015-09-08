@@ -8,7 +8,7 @@ body {
   background: @greenBGLight;
   color: @grayFontGeneral;
 
-  &.login, &.reset-password, &.forgot-password {
+  &.login, &.reset-password, &.forgot-password, &.login_request {
     background: @grayBGLogin;
   }
 }
@@ -55,6 +55,11 @@ ul, ol {
     .wrapper-footer-data {
       padding-top: 5px;
       text-align: center;
+    }
+
+    .icon-jfrog-logo {
+      height: 50px;
+      background-position: top center;
     }
   }
 
@@ -107,6 +112,7 @@ jf-header {
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, .37);
   position: absolute;
   width: 100%;
+  padding-left: 15px;
 
   .navbar-brand {
     padding-top: 0;
@@ -120,35 +126,20 @@ jf-header {
 
   .log-out {
     color: @greenFontLight;
+    font-weight: 100;
   }
 
   .username-header {
-    font-weight: 500;
     text-transform: capitalize;
   }
 
-  .welcome-header {
-    color: white !important;
-    margin: 0;
-
-    .welcome-header-text {
-      margin: 20px 35px;
-      display: inline-block;
-      font-weight: 100;
-    }
-  }
-
-  .help-header-text {
-    margin: 19px 21px;
-    font-size: 15px;
-    display: inline-block;
-    font-weight: 200;
-  }
-
-  .header-separator {
+  .header-section {
     border-left: 1px solid @greenSeparatorBorder;
     position: relative;
+    line-height: 60px;
     height: 60px;
+    color: #fff;
+    padding: 0 30px;
 
     &::before {
       content: '';
@@ -159,7 +150,62 @@ jf-header {
       position: absolute;
       top: 0;
       left: 0;
+    }
 
+    &.header-help {
+      padding: 0;
+
+      &:not([disabled]) {
+        &:hover, &.open {
+          &, &::before {
+            background-color: #fff;
+          }
+          .dropdown-toggle {
+            color: @greenFontHeader !important;
+            cursor: pointer;
+          }
+        }
+      }
+
+      &[disabled] {
+        .dropdown-toggle {
+          color: @grayFontLighter !important;
+        }
+      }
+
+      .dropdown-toggle {
+        display: block;
+        line-height: 60px;
+        padding: 0 20px;
+        cursor: default;
+      }
+      &.open .dropdown-toggle {
+        border-bottom: 1px solid #eaeaea;
+      }
+
+      .dropdown-menu {
+        margin-top: 0;
+        border-radius: 0;
+        border: 0 none;
+        padding: 0;
+
+        a {
+          height: 46px;
+          line-height: 46px;
+          color: @grayFontGeneral !important;
+          font-size: 14px;
+          padding: 0 35px 0 35px;
+
+          &:hover {
+            background-color: @grayBGLight !important;
+            color: @greenFontHeader !important;
+          }
+        }
+
+        li {
+          border-top: 1px solid #eaeaea;
+        }
+      }
     }
   }
 
@@ -214,6 +260,11 @@ jf-header {
       z-index: 999;
       margin: 2px 5px 3px 25px;
       display: inline-block;
+
+      &:before {
+        position: relative;
+        top: 4px;
+      }
     }
     .glyphicon-remove-circle {
       opacity: 0;

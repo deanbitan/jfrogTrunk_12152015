@@ -117,7 +117,7 @@ export class BuildsHistoryController {
                 name: "Build ID",
                 displayName: "Build ID",
                 field: "buildNumber",
-                cellTemplate: '<div ng-click="grid.appScope.BuildsHistory.onClick(row.entity.build_number)" class="ui-grid-cell-contents" ui-sref="builds.info({buildName:grid.appScope.BuildsHistory.$stateParams.buildName,buildNumber:row.entity.buildNumber,startTime:row.entity.time,tab:\'general\'})"><a href="">{{row.entity.buildNumber}}</a></div>',
+                cellTemplate: '<div class="ui-grid-cell-contents"><a href="" ng-click="grid.appScope.BuildsHistory.onClick(row.entity.build_number)" ui-sref="builds.info({buildName:grid.appScope.BuildsHistory.$stateParams.buildName,buildNumber:row.entity.buildNumber,startTime:row.entity.time,tab:\'general\'})">{{row.entity.buildNumber}}</a></div>',
                 width: '40%'
             },
             {

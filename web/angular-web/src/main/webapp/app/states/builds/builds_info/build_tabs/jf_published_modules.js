@@ -58,6 +58,7 @@ class jfPublishedModulesController {
 
     showArtifactInTree(row) {
         let browser = this.artifactoryStorage.getItem('BROWSER') || 'tree';
+        if (browser === 'stash') browser = 'tree';
         let path = row.repoKey + '/' + row.path;
         this.$state.go('artifacts.browsers.path', {
             tab: "General",

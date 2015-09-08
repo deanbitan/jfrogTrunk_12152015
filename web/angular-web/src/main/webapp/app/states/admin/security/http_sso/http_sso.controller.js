@@ -1,8 +1,10 @@
+import EVENTS     from '../../../../constants/common_events.constants';
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecurityHttpSSoController {
 
-    constructor(HttpSsoDao) {
+    constructor(HttpSsoDao,ArtifactoryEventBus) {
+        this.artifactoryEventBus = ArtifactoryEventBus;
         this.httpSsoDao = HttpSsoDao.getInstance();
         this.sso = this.getSsoData();
         this.TOOLTIP = TOOLTIP.admin.security.HTTPSSO;

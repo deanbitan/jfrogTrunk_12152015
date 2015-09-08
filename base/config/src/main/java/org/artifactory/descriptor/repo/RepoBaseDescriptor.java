@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlIDREF;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlType(name = "RepoType", propOrder = {"key", "type", "description", "notes", "includesPattern", "excludesPattern",
-        "repoLayout", "dockerApiVersion", "forceDockerAuthentication"},
+        "repoLayout", "dockerApiVersion", "forceDockerAuthentication", "forceNugetAuthentication"},
         namespace = Descriptor.NS)
 public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
@@ -59,6 +59,8 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
     private DockerApiVersion dockerApiVersion = DockerApiVersion.V1;
 
     private boolean forceDockerAuthentication;
+
+    private boolean forceNugetAuthentication;
 
     @Override
     public String getKey() {
@@ -139,6 +141,15 @@ public abstract class RepoBaseDescriptor implements RepoDescriptor {
 
     public void setForceDockerAuthentication(boolean forceDockerAuthentication) {
         this.forceDockerAuthentication = forceDockerAuthentication;
+    }
+
+    @Override
+    public boolean isForceNugetAuthentication() {
+        return forceNugetAuthentication;
+    }
+
+    public void setForceNugetAuthentication(boolean forceNugetAuthentication) {
+        this.forceNugetAuthentication = forceNugetAuthentication;
     }
 
     @Override

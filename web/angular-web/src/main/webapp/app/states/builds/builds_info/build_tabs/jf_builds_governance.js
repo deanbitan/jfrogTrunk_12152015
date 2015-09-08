@@ -36,6 +36,7 @@ class jfBuildsGovernanceController {
 
     showInTree(row) {
         let browser = this.artifactoryStorage.getItem('BROWSER') || 'tree';
+        if (browser === 'stash') browser = 'tree';
         let path = row.repoKey + '/' + row.path;
         this.$state.go('artifacts.browsers.path', {
             tab: "General",
@@ -142,7 +143,7 @@ class jfBuildsGovernanceController {
             time: this.$stateParams.startTime,
             action: 'buildGovernance'
         }).$promise.then((data) => {
-                    console.log(data);
+//                    console.log(data);
 
                     this.gotData = true;
                     if (data.feedbackMsg && data.feedbackMsg.warn) {

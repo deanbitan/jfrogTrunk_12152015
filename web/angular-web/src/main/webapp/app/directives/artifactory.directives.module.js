@@ -19,7 +19,9 @@ import {jfSwitch}        from './jf_switch/jf_switch';
 import {jfGrid} from './jf_grid/jf_grid';
 import {jfGridPagination} from './jf_grid_pagination/jf_grid_pagination';
 import {jfGridBatchActions}   from './jf_grid_batch_actions/jf_grid_batch_actions';
-import {jfDeploy}   from './jf_deploy/jf_deploy';
+import {ArtifactoryDeployModal}   from './jf_deploy/artifactory_deploy_modal';
+import {jfMultiDeploy}   from './jf_deploy/jf_multi_deploy';
+import {jfSingleDeploy}   from './jf_deploy/jf_single_deploy';
 import {jfPrint}   from './jf_print/jf_print';
 import {jfAutoFocus}   from './jf_autofocus/jf_autofocus';
 import {jfField}   from './jf_field/jf_field';
@@ -40,8 +42,11 @@ import {jfDisableFeature} from './jf_disable_feature/jf_disable_feature';
 import {jfHideForAol} from './jf_hide_for_aol/jf_hide_for_aol';
 import {jfFileDrop} from './jf_file_drop/jf_file_drop';
 import {jfAutoComplete} from './jf_auto_complete/jf_auto_complete';
+import {jfClearErrors} from './jf_clear_errors/jf_clear_errors';
 import {jfTooltipOnOverflow} from './jf_tooltip_on_overflow/jf_tooltip_on_overflow';
 import {jfClipCopy} from './jf_clip_copy/jf_clip_copy';
+import {jfDockerV2Layer} from './jf_docker_v2_layer/jf_docker_v2_layer';
+import {jfDockerV2Layers} from './jf_docker_v2_layers/jf_docker_v2_layers';
 
 // custom field validators
 import {jfValidation}   from './jf_validation/jf_validation';
@@ -58,7 +63,7 @@ import {jfRepokeyValidator}   from './jf_repokey_validator/jf_repokey_validtaor'
 import {jfValidatorDateFormat}   from './validators/jf_validator_date_format';
 
 
-angular.module('artifactory.directives', ['artifactory.services', 'searchTabs', 'ui.select', 'ngSanitize', 'ui.highlight'])
+angular.module('artifactory.directives', ['artifactory.services', 'artifactory.dao', 'searchTabs', 'ui.select', 'ngSanitize', 'ui.highlight'])
     .directive({
         'jfAccordion': jfAccordion,
         'jfCode': jfCode,
@@ -80,7 +85,8 @@ angular.module('artifactory.directives', ['artifactory.services', 'searchTabs', 
         'jfGrid': jfGrid,
         'jfGridPagination': jfGridPagination,
         'jfGridBatchActions': jfGridBatchActions,
-        'jfDeploy': jfDeploy,
+            'jfSingleDeploy': jfSingleDeploy,
+            'jfMultiDeploy': jfMultiDeploy,
         'jfPrint': jfPrint,
         'jfValidation': jfValidation,
         'jfAutoFocus': jfAutoFocus,
@@ -113,6 +119,10 @@ angular.module('artifactory.directives', ['artifactory.services', 'searchTabs', 
         'jfHideForAol': jfHideForAol,
         'jfFileDrop': jfFileDrop,
         'jfAutoComplete': jfAutoComplete,
+        'jfClearErrors': jfClearErrors,
         'jfTooltipOnOverflow': jfTooltipOnOverflow,
-        'jfClipCopy': jfClipCopy
-    });
+        'jfClipCopy': jfClipCopy,
+        'jfDockerV2Layer': jfDockerV2Layer,
+        'jfDockerV2Layers': jfDockerV2Layers
+        })
+        .service('ArtifactoryDeployModal', ArtifactoryDeployModal);

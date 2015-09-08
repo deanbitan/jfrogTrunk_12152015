@@ -34,6 +34,7 @@
     height: 20px;
     font-size: 13px;
     outline: none;
+    text-align: center;
   }
 }
 
@@ -183,13 +184,26 @@
       }
     }
 
-    .ui-grid-render-container-body .ui-grid-row:hover {
+    .ui-grid-render-container-body .ui-grid-row.hovered {
       .grid-actions, .grid-action-bar {
         display: block;
       }
 
       .ui-grid-cell, .ui-grid-viewport, .grid-action-bar {
         background: @grayGridRowHover;
+      }
+
+      .ui-grid-draggable-row {
+        &:before {
+          font-family: "artifactory" !important;
+          font-size: 26px;
+          content: "\\";
+          position: absolute;
+          z-index: 10;
+          top: 2px;
+          left: -7px;
+          color: #bbb;
+        }
       }
     }
 
@@ -218,6 +232,28 @@
       a::before {
         line-height: 40px;
       }
+
+      .group-button {
+        position: relative;
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        top: 7px;
+        left: 4px;
+      }
+    }
+
+    .ui-grid-group-header-row {
+      .ui-grid-cell {
+        background: #fff !important;
+        color: @greenBGDark;
+        border-left: 1px solid transparent !important;
+        border-top: 1px solid @grayGridHeader;
+
+        &.expandedRow {
+          background: @greenBGSmallHover !important;
+        }
+      }
     }
 
     .ui-grid-pinned-container {
@@ -225,6 +261,10 @@
         .ui-grid-cell:last-child {
           border-right: 0 none !important;
         }
+      }
+
+      .ui-grid-group-header-row .ui-grid-cell:first-child {
+        border-left-color: @grayGridHeader !important;
       }
 
       .ui-grid-cell-contents {
@@ -238,15 +278,6 @@
 
     .ui-grid-group-header-row .ui-grid-selection-row-header-buttons {
       visibility: hidden !important;
-    }
-
-    .ui-grid-group-header-row {
-      .ui-grid-cell {
-        background: @greenBGSmallHover !important;
-        color: @greenBGDark;
-        border-left: 1px solid transparent !important;
-        border-top: 1px solid @grayGridHeader;
-      }
     }
 
     &.grouped {
@@ -268,10 +299,6 @@
           .ui-grid-row-header-cell {
             background: @white !important;
             border-bottom: 1px solid @grayBorderDark;
-
-            &.expandedRow {
-
-            }
           }
         }
 
@@ -379,29 +406,26 @@
 
   .ui-grid-draggable-row {
     height: 40px;
-    opacity: 1 !important;
+    overflow: hidden;
 
     //.grid-action-bar + .ui-grid-cell .ui-grid-cell-contents {
     //  padding-left: 20px;
     //}
   }
-  .ui-grid-draggable-row:focus,
-  .ui-grid-draggable-row:hover {
-    &:before {
-      font-family: "artifactory" !important;
-      font-size: 26px;
-      content: "\\";
-      position: absolute;
-      z-index: 10;
-      top: 2px;
-      left: -7px;
-      color: #bbb;
-    }
-  }
 
   .ui-grid-draggable-row-over {
     position: relative;
-    border-top: 1px dashed #000000;
+
+    &.ui-grid-draggable-row-over--above {
+      border-top: 1px solid @blueMain;
+
+      .ui-grid-cell-contents {
+        line-height: 38px !important;
+      }
+    }
+    &.ui-grid-draggable-row-over--below {
+      border-bottom: 1px solid @blueMain;
+    }
   }
 
   .ui-grid-draggable-row-over:before {

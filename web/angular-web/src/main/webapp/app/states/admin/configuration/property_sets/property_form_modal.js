@@ -58,6 +58,7 @@ class PropertyFormModal {
     }
 
     addValue() {
+        this.newValue = $('#newPredefinedValueName').val();
         this.errorMessage = null;
 
         if (this._isValueEmpty(this.newValue)) {
@@ -69,6 +70,7 @@ class PropertyFormModal {
         else {
             this.property.addPredefinedValue(this.newValue);
             this.newValue = null;
+            $('#newPredefinedValueName').val('');
             this.invalidateType();
         }
     }

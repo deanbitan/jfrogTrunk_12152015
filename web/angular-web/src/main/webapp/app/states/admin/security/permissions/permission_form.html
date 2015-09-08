@@ -90,7 +90,7 @@
                                                class="input-text dnd-filter">
                                         <div class="group-list-wrapper">
                                             <ul class="group-list">
-                                                <li class="list-groups-item-permissions"
+                                                <li class="group-list-item"
                                                     ng-repeat="group in PermissionForm.availableGroups | filter:PermissionForm.filterList track by $index"
                                                     ng-click="PermissionForm.toggleSelection(group)"
                                                     ng-dblclick="PermissionForm.addGroup(group)"
@@ -119,7 +119,7 @@
                                                class="input-text dnd-filter">
                                         <div class="group-list-wrapper">
                                             <ul class="group-list">
-                                                <li class="list-groups-item-permissions"
+                                                <li class="group-list-item"
                                                     ng-repeat="user in PermissionForm.availableUsers | filter:PermissionForm.filterList track by $index"
                                                     ng-click="PermissionForm.toggleSelection(user)"
                                                     ng-dblclick="PermissionForm.addUser(user)"

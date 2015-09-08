@@ -64,6 +64,7 @@ import org.artifactory.resource.ChecksumResource;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.resource.UnfoundRepoResource;
 import org.artifactory.resource.UnfoundRepoResourceReason;
+import org.artifactory.service.RemotePropertiesService;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.storage.StorageException;
@@ -114,6 +115,9 @@ public class DownloadServiceImpl implements InternalDownloadService {
 
     @Autowired
     private AddonsManager addonsManager;
+
+    @Autowired
+    RemotePropertiesService remotePropertiesService;
 
     private RequestResponseHelper requestResponseHelper;
 
@@ -205,6 +209,7 @@ public class DownloadServiceImpl implements InternalDownloadService {
                 resource = repository.getInfo(requestContext);
             }
 
+            remotePropertiesService.update(resource);
             respond(requestContext, response, resource);
 
         } catch (IOException e) {

@@ -3,6 +3,7 @@ package org.artifactory.ui.rest.service.admin.security.auth.login;
 import org.artifactory.UiAuthenticationDetails;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.OssAddonsManager;
+import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AclService;
@@ -30,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -83,8 +83,11 @@ public class LoginService implements RestService {
                         artifactoryContext, authenticationToken, authentication);
                 //update response with user login data
                 updateResponseWithLoginUser(response, userLogin, artifactoryContext, securityConfig);
+                AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+                addonsManager.addonByType(PluginsAddon.class).executeAdditiveRealmPlugins();
+                // TODO: [chenk] fix this ^^^, not reachable without dependency to artifactory-core
             }
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             log.debug("Username or password are incorrect");
             response.error("Username or password are incorrect");
             response.responseCode(HttpServletResponse.SC_UNAUTHORIZED);

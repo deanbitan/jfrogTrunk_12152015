@@ -9,6 +9,9 @@ import JFCommonBrowser from '../jf_common_browser/jf_common_browser';
  */
 export function jfTreeBrowser() {
     return {
+        scope: {
+            browserController: '='
+        },
         restrict: 'E',
         controller: JFTreeBrowserController,
         controllerAs: 'jfTreeBrowser',
@@ -23,12 +26,13 @@ export function jfTreeBrowser() {
 const ARCHIVE_MARKER = '!';
 
 class JFTreeBrowserController extends JFCommonBrowser {
-    constructor($timeout, ArtifactoryEventBus, $element, $scope, TreeBrowserDao, $stateParams, $q, ArtifactoryState, ArtifactActions) {
+    constructor($timeout, ArtifactoryEventBus, $element, $scope, TreeBrowserDao, $stateParams, $q, ArtifactoryState, ArtifactActions, ArtifactoryNotifications) {
         super(ArtifactActions);
         this.$scope = $scope;
         this.$timeout = $timeout;
         this.$stateParams = $stateParams;
         this.$q = $q;
+        this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.treeBrowserDao = TreeBrowserDao;
         this.artifactoryState = ArtifactoryState;
@@ -86,6 +90,7 @@ class JFTreeBrowserController extends JFCommonBrowser {
     }
 
     _onReady() {
+
         this._openTreeNode(this.$stateParams.artifact);
         this.jstree().show_dots();
     }
@@ -106,7 +111,7 @@ class JFTreeBrowserController extends JFCommonBrowser {
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_SEARCH_KEYDOWN, key => this._searchTreeKeyDown(key));
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_DEPLOY, repoKey => this._refreshRepo(repoKey));
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_REFRESH, node => this._refreshFolder(node));
-        this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_REFRESH, (node) => this._refreshFolder(node));
+        this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_REFRESH, (node) => node ? this._refreshFolder(node) : this._refreshTree());
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_DELETE, (node) => {
             this._refreshParentFolder(node); // Refresh folder of node's parent
         });
@@ -115,14 +120,13 @@ class JFTreeBrowserController extends JFCommonBrowser {
             this._refreshFolderPath(options); // Refresh target folder where node was copied
         });
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.ACTION_COPY, (options) => {
-
             this._refreshFolderPath(options);
-
         });
 
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_NODE_OPEN, path => {
             this._openTreeNode(path)
         });
+        
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_COMPACT, () => this._toggleCompactFolders());
 
         // URL changed (like back button / forward button / someone input a URL)
@@ -131,7 +135,8 @@ class JFTreeBrowserController extends JFCommonBrowser {
             // Check if it's already the current selected node (to prevent opening the same tree node twice)
             let selectedNode = this._getSelectedTreeNode();
             if (selectedNode && selectedNode.fullpath === stateParams.artifact) return;
-            this._openTreeNode(stateParams.artifact);
+            this.treeBrowserDao.findNodeByFullPath(stateParams.artifact)
+                .then(() => this._openTreeNode(stateParams.artifact));
         });
     }
 
@@ -155,7 +160,12 @@ class JFTreeBrowserController extends JFCommonBrowser {
             if (args.event) { // User clicked / pressed enter
                 this.artifactoryState.setState('tree_touched', true);
             }
-            if (!args.node.data.isArchive()) this.jstree().open_node(args.node);
+
+            if (!args.node.data.isArchive() && args.node.data.icon !== 'docker') this.jstree().open_node(args.node);
+        });
+
+        $(this.treeElement).on("after_open.jstree",(node)=>{
+            if (this.activeFilter) this._searchTree(this.searchText);
         });
     }
 
@@ -189,6 +199,9 @@ class JFTreeBrowserController extends JFCommonBrowser {
 
         TreeConfig.core.data = asyncStateLoad;
         TreeConfig.contextmenu.items = this._getContextMenuItems.bind(this);
+
+                // Search by node text only (otherwise searches the whole HTML)
+        TreeConfig.search.search_callback = this._searchCallback.bind(this);
 
         $(this.treeElement).jstree(TreeConfig);
     }

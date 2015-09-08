@@ -1,6 +1,8 @@
-const TEMPLATES_FOLDER = "ui_components/artifactory_grid/templates/";
+const TEMPLATES_FOLDER = "ui_components/artifactory_grid/templates/",
+        MIN_COLUMN_WIDTH = 50;
 let headerCellTemplate = require("raw!./templates/headerCellDefaultTemplate.html");
-let $timeout;
+let $timeout, $window;
+
 const COMMON_ACTIONS = {
     delete: {
         icon: 'icon icon-clear',
@@ -39,6 +41,9 @@ class ArtifactoryGrid {
         this.enablePaginationControls = false;
         this.paginationPageSize = 25;
         this.resetPagination();
+        this._handleColumnResize();
+
+        this.scope.$on('$destroy', () => this._onDestroy());
     }
 
     resetPagination() {
@@ -49,7 +54,7 @@ class ArtifactoryGrid {
         let pagination = {
             pageNum: this.paginationCurrentPage,
             numOfRows: this.paginationPageSize
-        }
+        };
         let sortColumn = this.getSortColumn();
         if (sortColumn) {
             pagination.direction = sortColumn.sort.direction;
@@ -112,7 +117,8 @@ class ArtifactoryGrid {
 
     setColumns(columnDefs) {
         this.columnDefs = columnDefs;
-        this.columnDefs.forEach((item) => {
+
+        this.columnDefs.forEach((item, index) => {
             if (!item.headerCellTemplate) {
                 item.headerCellTemplate = headerCellTemplate;
             }
@@ -133,6 +139,8 @@ class ArtifactoryGrid {
                     item.customActions.push(action);
                 });
             }
+            if (!item.minWidth)
+                item.minWidth = MIN_COLUMN_WIDTH;
         });
         return this;
     }
@@ -145,6 +153,122 @@ class ArtifactoryGrid {
             action = angular.extend({visibleWhen: visibleWhen}, action);
         }
         return action;
+    }
+
+    // Recalculates and sets the width of every column when the window resizes
+    _calculateColumnsWidthByPercent(gridApi) {
+        let gridSize = $(gridApi.grid.element[0]).width(),
+                resizedColumns = [],
+                fieldColumnCounter = 0,
+                columnWidthCounter = 0;
+
+        // Resize the columns with percentage width
+        gridApi.grid.columns.forEach((item, index) => {
+            if (item.visible) {
+                if (item.colDef.field) {
+                    if (item.originalWidth && item.originalWidth.indexOf('%') != -1) {
+                        gridApi.grid.columns[index].width = gridApi.grid.columns[index].colDef.width = Math.floor(gridSize * (item.originalWidth.replace('%', '') / 100));
+
+                        columnWidthCounter = columnWidthCounter + gridApi.grid.columns[index].width;
+                        resizedColumns.push(index);
+                    }
+
+                    fieldColumnCounter++;
+                }
+                else
+                    gridSize = gridSize - item.width;
+            }
+        });
+
+        // Resize the columns that weren't set with percentage width with the remaining space
+        if (resizedColumns.length < fieldColumnCounter) {
+            let columnWidthDiff = Math.floor((gridSize - columnWidthCounter) / (fieldColumnCounter - resizedColumns.length));
+
+            gridApi.grid.columns.forEach((item, index) => {
+                if (item.visible && item.colDef.field && resizedColumns.indexOf(index) == -1)
+                    gridApi.grid.columns[index].width = gridApi.grid.columns[index].colDef.width = columnWidthDiff;
+            });
+        }
+
+        gridApi.grid.refreshCanvas(true);
+    }
+
+    // Set the columns width to a fixed pixel size, only on load, so the ui-grid itself won't resize them on window resize
+    _fixColumnsWidthFromPercentToPixel(gridApi) {
+        if (!this.firstRenderedIteration) {
+            let firstRun = false;
+
+            gridApi.grid.columns.forEach((item) => {
+                if (item.colDef.field && item.drawnWidth) {
+                    item.originalWidth = item.colDef.width;
+                    item.colDef.width = item.width;
+
+                    firstRun = true;
+                }
+            });
+
+            if (firstRun) {
+                this._calculateColumnsWidthByPercent(gridApi);
+                this.firstRenderedIteration = true;
+            }
+        }
+    }
+
+    // Resize the columns based on one column that is resized
+    _calculateColumnsWidthOnResize(gridApi, colDef, deltaChange) {
+        let indexChanged = -1,
+                indexIterate,
+                pixelsToDivide,
+                totalColumnWidth = 0;
+
+        // Check what column was actually resized
+        gridApi.grid.columns.forEach((item, index) => {
+            if (item.colDef === colDef)
+                indexChanged = index;
+
+            if (item.visible)
+                totalColumnWidth = totalColumnWidth + item.width;
+        });
+
+        indexIterate = indexChanged + 1;
+        pixelsToDivide = $(gridApi.grid.element[0]).width() - totalColumnWidth;
+        gridApi.grid.columns[indexChanged].colDef.width = gridApi.grid.columns[indexChanged].width;
+
+        // Resize the columns that follow the resized column
+        while (pixelsToDivide != 0 && indexIterate < gridApi.grid.columns.length) {
+            if (indexIterate == gridApi.grid.columns.length)
+                indexIterate = 0;
+            while (!gridApi.grid.columns[indexIterate].colDef.field)
+                indexIterate++;
+
+            if (gridApi.grid.columns[indexIterate].width + pixelsToDivide < MIN_COLUMN_WIDTH) {
+                pixelsToDivide = pixelsToDivide + (gridApi.grid.columns[indexIterate].width - MIN_COLUMN_WIDTH);
+                gridApi.grid.columns[indexIterate].width = gridApi.grid.columns[indexIterate].colDef.width = MIN_COLUMN_WIDTH;
+            }
+            else {
+                gridApi.grid.columns[indexIterate].width = gridApi.grid.columns[indexIterate].colDef.width = gridApi.grid.columns[indexIterate].width + pixelsToDivide;
+                pixelsToDivide = 0;
+            }
+
+            indexIterate++;
+        }
+
+        // If the column was resized too much, shorten it so the grid won't overflow
+        if (pixelsToDivide != 0)
+            gridApi.grid.columns[indexChanged].width = gridApi.grid.columns[indexChanged].colDef.width = gridApi.grid.columns[indexChanged].width + pixelsToDivide;
+
+        gridApi.grid.refreshCanvas(true);
+    }
+
+    _handleColumnResize() {
+        this.afterRegister((gridApi) => {
+            this.calculateFn = () => this._calculateColumnsWidthByPercent(gridApi);
+
+            angular.element($window).on('resize', this.calculateFn);
+            gridApi.core.on.rowsRendered(this.scope, () => this._fixColumnsWidthFromPercentToPixel(gridApi));
+            if (gridApi.colResizable)
+                gridApi.colResizable.on.columnSizeChanged(this.scope, (colDef, deltaChange) => this._calculateColumnsWidthOnResize(gridApi, colDef, deltaChange));
+        });
     }
 
     setButtons(buttons) {
@@ -207,6 +331,7 @@ class ArtifactoryGrid {
         if (this.scope === undefined) {
             this.scope = null;
         }
+
         this.api.core.on.rowsRendered(this.scope, () => {
             this._resize();
         });
@@ -279,12 +404,16 @@ class ArtifactoryGrid {
         $timeout(() => this.api.selection.selectRow(item));
     }
 
+    _onDestroy() {
+        angular.element($window).off('resize', this.calculateFn);
+    }
 }
 
 
 export class ArtifactoryGridFactory {
-    constructor(uiGridConstants, _$timeout_) {
+    constructor(uiGridConstants, _$timeout_, _$window_) {
         $timeout = _$timeout_;
+        $window = _$window_;
         this.uiGridConstants = uiGridConstants;
     }
 

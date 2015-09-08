@@ -13,6 +13,9 @@ export class LoginController {
         this.ArtifactoryState = ArtifactoryState;
         this.canResetPassword = false;
         this.loginForm = null;
+
+        this.canExit = (User.currentUser.name !== 'anonymous' || User.currentUser.anonAccessEnabled);
+
         this.checkResetPassword();
     }
 
@@ -51,11 +54,16 @@ export class LoginController {
         this.UserService.getLoginData().then((response) => {
             this.canResetPassword = response.forgotPassword;
             this.ssoProviderLink = response.ssoProviderLink;
+            this.oauthProviderLink = response.oauthProviderLink;
         });
     }
 
     gotoForgotPwd() {
         this.$state.go('forgot-password');
+    }
+
+    oauthLogin() {
+        this.$window.open(this.oauthProviderLink,'_self');
     }
 
     ssoLogin() {

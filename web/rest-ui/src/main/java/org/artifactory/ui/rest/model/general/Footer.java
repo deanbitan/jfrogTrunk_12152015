@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.model.general;
 
+import org.artifactory.descriptor.message.SystemMessageDescriptor;
 import org.artifactory.rest.common.model.BaseModel;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -18,10 +19,16 @@ public class Footer extends BaseModel {
     private boolean userLogo;
     private String logoUrl;
     private String serverName;
+    private boolean helpLinksEnabled;
+    private boolean systemMessageEnabled;
+    private String systemMessageTitle;
+    private String systemMessageTitleColor;
+    private String systemMessage;
+    private boolean showSystemMessageOnAllPages;
 
     public Footer(String licenseInfo, String versionInfo, String copyRights, String copyRightsUrl,
             String buildNumber, boolean isAol, boolean isGlobalRepoEnabled, String versionID, boolean userLogo,
-            String logoUrl,String serverName) {
+            String logoUrl, String serverName, SystemMessageDescriptor systemMessageDescriptor, boolean helpLinksEnabled) {
         this.licenseInfo = licenseInfo;
         this.versionInfo = versionInfo;
         this.copyRights = copyRights;
@@ -33,6 +40,12 @@ public class Footer extends BaseModel {
         this.userLogo = userLogo;
         this.logoUrl = logoUrl;
         this.serverName = serverName;
+        this.systemMessageEnabled = systemMessageDescriptor.isEnabled();
+        this.systemMessageTitle = systemMessageDescriptor.getTitle();
+        this.systemMessageTitleColor = systemMessageDescriptor.getTitleColor();
+        this.systemMessage = systemMessageDescriptor.getMessage();
+        this.showSystemMessageOnAllPages = systemMessageDescriptor.isShowOnAllPages();
+        this.helpLinksEnabled = helpLinksEnabled;
     }
 
     public String getLicenseInfo() {
@@ -114,5 +127,29 @@ public class Footer extends BaseModel {
 
     public void setServerName(String serverName) {
         this.serverName = serverName;
+    }
+
+    public boolean isSystemMessageEnabled() {
+        return systemMessageEnabled;
+    }
+
+    public String getSystemMessageTitle() {
+        return systemMessageTitle;
+    }
+
+    public String getSystemMessageTitleColor() {
+        return systemMessageTitleColor;
+    }
+
+    public String getSystemMessage() {
+        return systemMessage;
+    }
+
+    public boolean isShowSystemMessageOnAllPages() {
+        return showSystemMessageOnAllPages;
+    }
+
+    public boolean isHelpLinksEnabled() {
+        return helpLinksEnabled;
     }
 }

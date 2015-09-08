@@ -3,7 +3,7 @@
         <div class="search-panel" ng-style="Search.collapseStyle()">
             <div class="pull-right back-to-browse">
                 <a href=""
-                   ng-click="Search.backToBrowse()"><span>&lsaquo;</span> Back To Browse
+                   ng-click="Search.backToBrowse()"><span class="back-link-icon">&lsaquo;</span>Back To Browse
                 </a>
             </div>
             <form>
@@ -53,9 +53,35 @@
                     </div>
                 </div>
             </form>
-
+            <div id="stash-container" ng-if="Search.hasStashPerms() && Search.currentSearch !== 'remote'">
+                <i id="stash-animation" class="icon icon-copy"></i>
+                <div id="stash-menu" ng-if="Search.stashedItemsCount">
+                    <div id="calc-actions">
+                        <div><span class="icon-stash-add"
+                                   ng-click="Search.addToStash()"
+                                   jf-tooltip="Add"></span></div>
+                        <div><span class="icon-stash-subtract"
+                                   ng-click="Search.subtractFromStash()"
+                                   jf-tooltip="Subtract"></span></div>
+                        <div><span class="icon-stash-intersect"
+                                   ng-click="Search.intersectWithStash()"
+                                   jf-tooltip="Intersect"></span></div>
+                    </div>
+                    <div id="general-actions">
+                        <a ng-click="Search.gotoStash()"><i class="icon icon-show-in-tree"></i>View</a>
+                        <a ng-click="Search.clearStash()"><i class="icon icon-clear"></i>Clear</a>
+                    </div>
+                </div>
+                <div id="stash-box">
+                    <span ng-class="{'icon-stash-stash-empty': Search.stashedItemsCount === 0, 'icon-stash-stash-full': Search.stashedItemsCount}"></span>
+                    <br>{{Search.stashedItemsCount}} Items
+                </div>
+            </div>
             <div class="search-results-title">
                 {{Search.resultsMsg}}
+                <span ng-if="Search.gridOptions.data.length && !Search.gridOptions.data[0]._emptyRow && Search.hasStashPerms() && Search.stashedItemsCount === 0 && Search.currentSearch !== 'remote' && !Search.duringStashAnimation">
+                    <span>|</span><a href="" id="stash-results-button" ng-click="Search.saveToStash()">Stash Results</a><jf-help-tooltip html="Search.TOOLTIP.stash"></jf-help-tooltip>
+                </span>
             </div>
 
             <jf-grid

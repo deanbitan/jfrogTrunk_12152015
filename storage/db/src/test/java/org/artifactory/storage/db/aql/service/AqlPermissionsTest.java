@@ -2,9 +2,8 @@ package org.artifactory.storage.db.aql.service;
 
 import org.artifactory.aql.AqlException;
 import org.artifactory.aql.model.AqlPermissionProvider;
-import org.artifactory.aql.result.AqlJsonResult;
+import org.artifactory.aql.result.AqlJsonStreamer;
 import org.artifactory.aql.result.AqlLazyResult;
-import org.artifactory.aql.result.AqlStreamResultImpl;
 import org.artifactory.repo.RepoPath;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.Assert;
@@ -26,7 +25,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         ReflectionTestUtils.setField(aqlService, "permissionProvider", permissionProvider);
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy("items.find()");
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -50,7 +49,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         ReflectionTestUtils.setField(aqlService, "permissionProvider", permissionProvider);
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy("items.find()");
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -73,7 +72,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         ReflectionTestUtils.setField(aqlService, "permissionProvider", permissionProvider);
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy("items.find({\"type\":\"any\"})");
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -97,7 +96,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(
                 "items.find({\"type\":\"any\"}).include(\"property.*\")");
-        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -121,7 +120,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(
                 "items.find({\"type\":\"any\"}).include(\"property.*\")");
-        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -145,7 +144,7 @@ public class AqlPermissionsTest extends AqlAbstractServiceTest {
         // return only the properties with the key 'yossis' from repository 'repo1'
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(
                 "items.find({\"type\":\"any\"}).include(\"property.*\")");
-        AqlJsonResult streamResult = new AqlJsonResult(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();

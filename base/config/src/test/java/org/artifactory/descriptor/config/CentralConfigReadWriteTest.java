@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.backup.BackupDescriptor;
 import org.artifactory.descriptor.cleanup.CleanupConfigDescriptor;
+import org.artifactory.descriptor.download.FolderDownloadConfigDescriptor;
 import org.artifactory.descriptor.gc.GcConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.reader.CentralConfigReader;
@@ -164,6 +165,8 @@ public class CentralConfigReadWriteTest {
         virtualCleanupConfigDescriptor.setCronExp("0 12 5 * * ?");
         desc.setVirtualCacheCleanupConfig(virtualCleanupConfigDescriptor);
 
+        FolderDownloadConfigDescriptor folderDownloadConfigDescriptor = new FolderDownloadConfigDescriptor();
+        desc.setFolderDownloadConfig(folderDownloadConfigDescriptor);
 
         File outputConfig = new File(testDir, "central.config.test.xml");
         JaxbHelper.writeConfig(desc, outputConfig);
@@ -244,6 +247,9 @@ public class CentralConfigReadWriteTest {
         CleanupConfigDescriptor virtualCleanupConfigDescriptor = new CleanupConfigDescriptor();
         virtualCleanupConfigDescriptor.setCronExp("sdfsdf");
         cc.setVirtualCacheCleanupConfig(virtualCleanupConfigDescriptor);
+
+        FolderDownloadConfigDescriptor folderDownloadConfigDescriptor = new FolderDownloadConfigDescriptor();
+        cc.setFolderDownloadConfig(folderDownloadConfigDescriptor);
 
         File outputConfig = new File(testDir, "config.defaults.test.xml");
         JaxbHelper.writeConfig(cc, outputConfig);

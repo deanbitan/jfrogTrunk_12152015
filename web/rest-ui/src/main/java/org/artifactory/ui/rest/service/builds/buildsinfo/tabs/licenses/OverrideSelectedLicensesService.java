@@ -9,7 +9,7 @@ import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.build.BuildService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.license.LicenseInfo;
-import org.artifactory.api.license.LicenseModuleModel;
+import org.artifactory.api.license.ModuleLicenseModel;
 import org.artifactory.build.BuildRun;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
@@ -53,7 +53,7 @@ public class OverrideSelectedLicensesService implements RestService {
             String buildStarted = DateUtils.formatBuildDate(Long.parseLong(request.getPathParamByKey("date")));
             // get license-repo map
             Build build = getBuild(name, buildNumber, buildStarted, response);
-            Multimap<RepoPath, LicenseModuleModel> repoPathLicenseMultimap = getRepoPathLicenseModuleModelMultimap(build);
+            Multimap<RepoPath, ModuleLicenseModel> repoPathLicenseMultimap = getRepoPathLicenseModuleModelMultimap(build);
             // update licenses
             updateLicenses(buildLicenseModel.getLicenses(), repoPathLicenseMultimap, response);
         } catch (ParseException e) {
@@ -67,24 +67,19 @@ public class OverrideSelectedLicensesService implements RestService {
      * Takes into account other columns relating to the same path so that other existing licenses properties (which were
      * not marked with override) are also saved on the path.
      */
-    private void updateLicenses(Collection<LicenseModuleModel> viewableModels, Multimap<RepoPath,
-            LicenseModuleModel> repoPathLicenseMultimap, RestResponse response) {
+    private void updateLicenses(Collection<ModuleLicenseModel> viewableModels, Multimap<RepoPath,
+            ModuleLicenseModel> repoPathLicenseMultimap, RestResponse response) {
 
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
-        List<LicenseModuleModel> licenseModuleModels = new ArrayList<>();
+        List<ModuleLicenseModel> moduleLicenseModels = new ArrayList<>();
         // fetch license to override
-        fetchLicenseToOverride(viewableModels, repoPathLicenseMultimap, licenseModuleModels);
-
-        //Get only models that their corresponding column's override checkbox was checked
-      /*  Iterable<LicenseModuleModel> toOverride = Iterables.filter(viewableModels,
-                ModuleFilterHelper.SELECTED_LICENSES);*/
-        //LicenseInfos that were selected to be written (override existing licenses)
+        fetchLicenseToOverride(viewableModels, repoPathLicenseMultimap, moduleLicenseModels);
 
         Multimap<RepoPath, LicenseInfo> licensesToWrite = HashMultimap.create();
         //Holds all licenses that will be overridden per path - to help filter what licenses to persist on that path
         Multimap<RepoPath, LicenseInfo> overriddenLicenses = HashMultimap.create();
-        for (LicenseModuleModel checkedLicenseModel : licenseModuleModels) {
+        for (ModuleLicenseModel checkedLicenseModel : moduleLicenseModels) {
             RepoPath repoPath = InternalRepoPathFactory.create(checkedLicenseModel.getRepoKey(),checkedLicenseModel.getPath());
             checkedLicenseModel.setRepoPath(repoPath);
             RepoPath path = checkedLicenseModel.getRepoPath();
@@ -95,7 +90,7 @@ public class OverrideSelectedLicensesService implements RestService {
         //For each of the licenses that on this path check if it's already in the overridden map - if not, preserve it
         for (RepoPath path : licensesToWrite.keySet()) {
             //License already set on path differs from the license being overridden - preserve it.
-            for (LicenseModuleModel licenseExistingOnPath : repoPathLicenseMultimap.get(path)) {
+            for (ModuleLicenseModel licenseExistingOnPath : repoPathLicenseMultimap.get(path)) {
             //License already set on path differs from the license being overridden - preserve it.
                 if (!overriddenLicenses.get(path).contains(licenseExistingOnPath.getLicense())) {
                     licensesToWrite.put(path, licenseExistingOnPath.getLicense());
@@ -115,15 +110,15 @@ public class OverrideSelectedLicensesService implements RestService {
         }
     }
 
-    private void fetchLicenseToOverride(Collection<LicenseModuleModel> viewableModels, Multimap<RepoPath,
-            LicenseModuleModel> repoPathLicenseMultimap, List<LicenseModuleModel> licenseModuleModels) {
-        for (LicenseModuleModel license : viewableModels) {
+    private void fetchLicenseToOverride(Collection<ModuleLicenseModel> viewableModels, Multimap<RepoPath,
+            ModuleLicenseModel> repoPathLicenseMultimap, List<ModuleLicenseModel> moduleLicenseModels) {
+        for (ModuleLicenseModel license : viewableModels) {
             RepoPath repoPath = InternalRepoPathFactory.create(license.getRepoKey(), license.getPath());
-            Collection<LicenseModuleModel> licenses = repoPathLicenseMultimap.get(repoPath);
-            for (LicenseModuleModel subLicense : licenses) {
+            Collection<ModuleLicenseModel> licenses = repoPathLicenseMultimap.get(repoPath);
+            for (ModuleLicenseModel subLicense : licenses) {
                 if (subLicense.getLicense().getName().equals(license.getLicense().getName())) {
                     subLicense.setExtractedLicense(license.getExtractedLicense());
-                    licenseModuleModels.add(subLicense);
+                    moduleLicenseModels.add(subLicense);
                 }
             }
         }
@@ -135,11 +130,11 @@ public class OverrideSelectedLicensesService implements RestService {
      * @param build - license build
      * @return multi map with repo path and license
      */
-    private Multimap<RepoPath, LicenseModuleModel> getRepoPathLicenseModuleModelMultimap(Build build) {
+    private Multimap<RepoPath, ModuleLicenseModel> getRepoPathLicenseModuleModelMultimap(Build build) {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
-        Multimap<RepoPath, LicenseModuleModel> repoPathLicenseMultimap = licensesAddon.
-                licensePopulateSynchronously(build, false);
+        Multimap<RepoPath, ModuleLicenseModel> repoPathLicenseMultimap = licensesAddon.
+                populateLicenseInfoSynchronously(build, false);
         return repoPathLicenseMultimap;
     }
 

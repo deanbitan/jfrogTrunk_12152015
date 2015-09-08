@@ -78,6 +78,7 @@ class User {
         if (state != 'builds.info') {
             return true;
         }
+        // TODO: (Adam) this is not the place to change the tab!!!
         if (isChangeTab) {
             this.changeBuildInfoTab(stateParams);
         }
@@ -143,7 +144,9 @@ class User {
             else {
                 return this.http.post(this.RESOURCE.AUTH_LOGOUT, null, {bypassSessionInterceptor: true})
                         .then((res) => {
+                            let sysMsg = this.artifactoryState.getState('systemMessage'); //we want to keep this value after logout
                             this.artifactoryState.clearAll();
+                            this.artifactoryState.setState('systemMessage',sysMsg);
 
                             if (this.$state.current.name === 'home') {
                                 this.$state.go(this.$state.current, this.$stateParams, {reload: true});
@@ -178,6 +181,12 @@ class User {
     static getLoginData() {
         return this.http.post(this.RESOURCE.AUTH_LOGIN_DATA).then((response) => {
             return response.data;//!!response.data.forgotPassword;
+        });
+    }
+
+    static getOAuthLoginData() {
+        return this.http.get(this.RESOURCE.OAUTH_LOGIN).then((response) => {
+            return response.data;
         });
     }
 

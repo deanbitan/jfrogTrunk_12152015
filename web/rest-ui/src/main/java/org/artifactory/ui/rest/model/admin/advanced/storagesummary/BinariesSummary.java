@@ -10,7 +10,7 @@ public class BinariesSummary {
     private String artifactsSize;
     private String optimization;
     private String itemsCount;
-    private String artifactCounts;
+    private String artifactsCount;
     private String totalSize;
 
     public String getBinariesSize() {
@@ -53,12 +53,12 @@ public class BinariesSummary {
         this.itemsCount = itemsCount;
     }
 
-    public String getArtifactCounts() {
-        return artifactCounts;
+    public String getArtifactsCount() {
+        return artifactsCount;
     }
 
-    public void setArtifactCounts(String artifactCounts) {
-        this.artifactCounts = artifactCounts;
+    public void setArtifactsCount(String artifactsCount) {
+        this.artifactsCount = artifactsCount;
     }
 
     public String getTotalSize() {

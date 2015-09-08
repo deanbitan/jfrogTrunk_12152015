@@ -54,6 +54,7 @@ public class GetCurrentUserService implements RestService {
         baseUser.setCanManage(canManage || proWithoutLicense);
         baseUser.setPreventAnonAccessBuild(securityConfig.isAnonAccessToBuildInfosDisabled());
         baseUser.setProWithoutLicense(proWithoutLicense);
+        baseUser.setAnonAccessEnabled(securityConfig.isAnonAccessEnabled());
         baseUser.setOfflineMode(offlineMode);
         response.iModel(baseUser);
     }

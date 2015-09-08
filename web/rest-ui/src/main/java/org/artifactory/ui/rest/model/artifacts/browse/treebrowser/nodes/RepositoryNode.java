@@ -1,6 +1,8 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes;
 
 import org.apache.commons.io.IOUtils;
+import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoType;
@@ -133,14 +135,17 @@ public class RepositoryNode extends BaseNode {
         RepoPath repoPath = getRepoPath();
         boolean canDelete = authService.canDelete(repoPath);
         boolean canRead = authService.canRead(repoPath);
+        boolean canManage = authService.canManage(repoPath);
+        boolean isAnonymous = authService.isAnonymous();
         // add specific actions
+        addDownloadAction(actions, isAnonymous, canRead);
         addRefreshAction(actions);
         addCopyAction(authService, actions, repoPath);
         addMoveAction(authService, actions, repoPath, canDelete);
         addWatchAction(authService, actions, canRead);
         addZapAction(actions, repoPath, authService.canManage(repoPath));
         addPackageReindexAction(actions, authService.isAdmin());
-        addDeleteVersionAction(authService, actions);
+        addDeleteVersionAction(actions, repoPath, canRead, canDelete, canManage);
         addDeleteAction(actions, canDelete);
         setActions(actions);
     }
@@ -207,13 +212,15 @@ public class RepositoryNode extends BaseNode {
     }
 
     /**
-     * populate delete version action
+     * add delete version action
      *
-     * @param authService - authorization service
-     * @param actions     - list of actions
+     * @param path        - path
+     * @param canDelete   - user has delete permissions on path?
+     * @param actions     - actions list
      */
-    private void addDeleteVersionAction(AuthorizationService authService, List<IAction> actions) {
-        if (authService.isAdmin()) {
+    private void addDeleteVersionAction(List<IAction> actions, RepoPath path, boolean canRead, boolean canDelete,
+            boolean canManage) {
+        if ((canManage || canDelete) && canRead && localOrCachedRepoDescriptor(path).isLocal()) {
             actions.add(new BaseArtifact("DeleteVersions"));
         }
     }
@@ -228,6 +235,18 @@ public class RepositoryNode extends BaseNode {
     protected void addDeleteAction(List<IAction> actions, boolean canDelete) {
         if (canDelete) {
             actions.add(new BaseArtifact("DeleteContent"));
+        }
+    }
+
+    /**
+     * add download action
+     *
+     * @param actions - actions list
+     */
+    private void addDownloadAction(List<IAction> actions, boolean isAnonymous, boolean canRead) {
+        if(!isAnonymous && isLocal() && canRead && ContextHelper.get().beanForType(CentralConfigService.class)
+                .getDescriptor().getFolderDownloadConfig().isEnabled()) {
+            actions.add(new BaseArtifact("DownloadFolder"));
         }
     }
 

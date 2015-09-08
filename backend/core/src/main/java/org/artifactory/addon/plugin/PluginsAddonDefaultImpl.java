@@ -70,6 +70,11 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     }
 
     @Override
+    public void executeAdditiveRealmPlugins() {
+
+    }
+
+    @Override
     public boolean isDefault() {
         return true;
     }

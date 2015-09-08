@@ -4,19 +4,20 @@ module.exports = function (config) {
         basePath: '',
         frameworks: ['jasmine', 'browserify'],
         files: [
-            '../../../../war/src/main/webapp/webapp/vendorScripts.js',
-            '../../../../war/src/main/webapp/webapp/templates.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_core.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_services.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_dao.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_ui.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_directives.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_ui_components.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_views.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_filters.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_states.js',
-            '../../../../war/src/main/webapp/webapp/artifactory_main.js',
+            '../../../../war/src/main/webapp/webapp/vendorScripts*.js',
+            '../../../../war/src/main/webapp/webapp/templates*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_core*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_services*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_dao*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_ui*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_directives*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_ui_components*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_views*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_filters*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_states*.js',
+            '../../../../war/src/main/webapp/webapp/artifactory_main*.js',
             'specs/spec_helper.js',
+            'components/jasmine-jquery/lib/jasmine-jquery.js',
             'mocks/**/**.js',
             'specs/**/**.js'
         ],
@@ -44,7 +45,7 @@ module.exports = function (config) {
 
         browserStack: {
             project: 'Artifactory Karma',
-            build: process.env.BUILD_NUMBER,
+            build: process.env.BUILD_NUMBER
         },
 
         browserDisconnectTimeout: 20000,

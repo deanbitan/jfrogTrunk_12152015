@@ -101,7 +101,8 @@ to your /etc/security/limits.conf file."
         fi
         findShutdownPort
         nbSeconds=1
-        while [ $SHUTDOWN_PORT -eq 0 ] && [ $nbSeconds -lt 60 ]; do
+        START_TMO=${START_TMO:-60}
+        while [ $SHUTDOWN_PORT -eq 0 ] && [ $nbSeconds -lt $START_TMO ]; do
             sleep 1
             let "nbSeconds = $nbSeconds + 1"
             findShutdownPort
@@ -237,6 +238,10 @@ check() {
 #
 ARTIFACTORY_PID=""
 artDefaultFile="/etc/opt/jfrog/artifactory/default"
+
+if [ ! -e $artDefaultFile ]; then
+    sed '/ARTIFACTORY/s/^#//;/ARTIFACTORY_PID/s-$ARTIFACTORY_HOME-/var/opt/jfrog-' </opt/jfrog/artifactory/bin/artifactory.default >$artDefaultFile
+fi
 
 . $artDefaultFile || errorArtHome "ERROR: $artDefaultFile does not exist or not executable"
 

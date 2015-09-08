@@ -147,7 +147,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         return binaryProvidersMap;
     }
 
-    private Map<String, Class> loadProvidersMap() {
+    public static Map<String, Class> loadProvidersMap() {
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AnnotationTypeFilter(BinaryProviderClassInfo.class));
         Map<String, Class> providersMap = Maps.newHashMap();
@@ -165,7 +165,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
         return providersMap;
     }
 
-    private void updateMap(Map<String, Class> providersMap, BeanDefinition bd) {
+    private static void updateMap(Map<String, Class> providersMap, BeanDefinition bd) {
         try {
             String beanClassName = bd.getBeanClassName();
             Class<?> beanClass = Class.forName(beanClassName);

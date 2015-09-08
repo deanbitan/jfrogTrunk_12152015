@@ -23,9 +23,11 @@ class TreeNode {
         }
         this._initIconType();
         this._initFullpath();
+
+        this.className = 'TreeNode';
     }
     _initIconType() {
-        if (this.compacted && this.isLocalFolder()) {
+        if (!this.icon && this.compacted && this.isLocalFolder()) {
             this.iconType = 'compactedFolder';
         }
         else if (this.isRepo()) {
@@ -44,7 +46,7 @@ class TreeNode {
             }
         }
         else {
-            this.iconType = this.mimeType || this.type;            
+            this.iconType = this.mimeType || this.icon || this.type;
         }
     }
 
@@ -113,6 +115,7 @@ class TreeNode {
         return this.archivePath;
     }
 
+    // If tabs or actions don't exist already - fetch them from the server
     load() {
         if (this.tabs || this.actions) {
             return this.$q.when(this);
@@ -191,6 +194,8 @@ class TreeNode {
         }
     }
 
+    // Get the children of this node and cache the result
+    // or return the cached promise
     getChildren(force = false) {
         // Server errors if requesting children of file
         // (simple browser always requests getChildren of current node)
@@ -198,7 +203,7 @@ class TreeNode {
             return this.$q.when(null);
         }
 
-        if (!this.children || force && !this.isInsideArchive()) {
+        if (!this.children || (force && !this.isInsideArchive())) {
             // Load children from server, and cache them
             this.children = this.treeBrowserDao._loadChildren({type: "junction", repoType: this.repoType, repoKey: this.repoKey, path: this.path, text: this.text}, this);
         }

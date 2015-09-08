@@ -14,7 +14,7 @@
     <title></title>
 </head>
 
-<body jf-body-class>
+<body jf-body-class ng-class="{'load-complete':jfBodyClass.isLoadCompleted()}">
 <jf-spinner domain="body"></jf-spinner>
 <toaster-container></toaster-container>
 

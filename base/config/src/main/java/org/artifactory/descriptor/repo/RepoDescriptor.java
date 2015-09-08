@@ -63,4 +63,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     DockerApiVersion getDockerApiVersion();
 
     boolean isForceDockerAuthentication();
+
+    boolean isForceNugetAuthentication();
 }

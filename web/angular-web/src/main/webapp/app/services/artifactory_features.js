@@ -194,7 +194,7 @@ export const HIDDEN_AOL_FEATURES = [
     'mail'
 ];
 
-// Features that are hidden for AOL
+// Features that are hidden for OSS
 export const HIDDEN_OSS_FEATURES = [
     'register_pro'
 ];
@@ -229,9 +229,8 @@ export class ArtifactoryFeatures {
             return false;
         }
         feature = feature.toLowerCase();
-        let currentLicense = this.getCurrentLicense();
-        return (this.isAol() && _.contains(HIDDEN_AOL_FEATURES, feature)) || (_.contains(HIDDEN_OSS_FEATURES,
-                        feature) && LICENSES_LEVELS[currentLicense] == 1);
+        return (this.isAol() && _.contains(HIDDEN_AOL_FEATURES, feature)) ||
+               (this.isOss() && _.contains(HIDDEN_OSS_FEATURES, feature));
     }
 
 

@@ -22,6 +22,7 @@ import org.artifactory.api.security.SecurityService;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.rest.resource.mission.control.model.MissionControlSetupRequest;
 import org.artifactory.security.SaltedPassword;
+import org.artifactory.security.UserInfo;
 import org.artifactory.security.mission.control.MissionControlProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,9 +58,18 @@ public class MissionControlResource {
             log.debug("Starting to setup Mission Control properties");
             MissionControlProperties missionControlProperties = ContextHelper.get().beanForType(MissionControlProperties.class);
             SecurityService securityService = ContextHelper.get().beanForType(SecurityService.class);
-            SaltedPassword saltedPassword = securityService.generateSaltedPassword(setupRequest.getToken());
+            String token = setupRequest.getToken();
+            String userName= UserInfo.MISSION_CONTROLL;
+            int index = token.indexOf('@');
+            if(index>0){
+                userName=token.substring(0, index);
+                token=token.substring(index+1,token.length());
+            }
+            SaltedPassword saltedPassword = securityService.generateSaltedPassword(token);
             missionControlProperties.setToken(saltedPassword.getPassword());
             missionControlProperties.setUrl(setupRequest.getUrl());
+            missionControlProperties.setCreatedBy(userName);
+            missionControlProperties.setCreatedDate(System.currentTimeMillis());
             ArtifactoryHome artifactoryHome = ArtifactoryHome.get();
             missionControlProperties.updateMissionControlPropertiesFile(artifactoryHome.getMissionControlPropertiesFile());
             log.debug("Successfully finished  to setup Mission Control properties");

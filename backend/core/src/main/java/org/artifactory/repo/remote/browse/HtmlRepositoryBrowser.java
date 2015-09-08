@@ -101,8 +101,8 @@ public class HtmlRepositoryBrowser extends RemoteRepositoryBrowser {
                 href = href.substring("./".length());
             }
 
-            if (href.startsWith("#") && isBintray(baseUrl.getHost())) {
-                href = href.substring(1);
+            if (isBintray(baseUrl.getHost())) {
+                href = new String(text);
             }
 
             // exclude those where they do not match
@@ -141,7 +141,12 @@ public class HtmlRepositoryBrowser extends RemoteRepositoryBrowser {
     }
 
     private boolean isBintray(String url) {
-        return bintrayDomain.equals(InternetDomainName.from(url).topPrivateDomain());
+        try {
+            return bintrayDomain.equals(InternetDomainName.from(url).topPrivateDomain());
+        } catch (Exception e) {
+            log.debug("url : " + url + " is not under public domain");
+        }
+        return false;
     }
 
     private InternetDomainName getBintrayDomain() {

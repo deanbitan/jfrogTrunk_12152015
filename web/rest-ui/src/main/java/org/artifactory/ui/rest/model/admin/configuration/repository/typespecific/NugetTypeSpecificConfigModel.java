@@ -11,6 +11,8 @@ import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoC
  */
 public class NugetTypeSpecificConfigModel implements TypeSpecificConfigModel {
 
+    protected Boolean forceNugetAuthentication = DEFAULT_FORCE_NUGET_AUTH;
+
     //local
     protected Integer maxUniqueSnapshots = DEFAULT_MAX_UNIQUE_SNAPSHOTS;
 
@@ -49,6 +51,14 @@ public class NugetTypeSpecificConfigModel implements TypeSpecificConfigModel {
 
     public void setListRemoteFolderItems(Boolean listRemoteFolderItems) {
         this.listRemoteFolderItems = listRemoteFolderItems;
+    }
+
+    public Boolean isForceNugetAuthentication() {
+        return forceNugetAuthentication;
+    }
+
+    public void setForceNugetAuthentication(Boolean forceNugetAuthentication) {
+        this.forceNugetAuthentication = forceNugetAuthentication;
     }
 
     @Override

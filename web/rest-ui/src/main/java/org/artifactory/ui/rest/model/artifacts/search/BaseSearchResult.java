@@ -3,6 +3,8 @@ package org.artifactory.ui.rest.model.artifacts.search;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.fs.ItemInfo;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.model.BaseModel;
@@ -25,6 +27,7 @@ import java.util.List;
 @JsonSubTypes({@JsonSubTypes.Type(value = ClassSearchResult.class, name = "class"),
         @JsonSubTypes.Type(value = GavcResult.class, name = "gavc"),
         @JsonSubTypes.Type(value = PropertyResult.class, name = "property"),
+        @JsonSubTypes.Type(value = StashResult.class, name = "stash"),
         @JsonSubTypes.Type(value = QuickSearchResult.class, name = "quick")})
 public abstract class BaseSearchResult extends BaseModel {
 
@@ -90,4 +93,19 @@ public abstract class BaseSearchResult extends BaseModel {
     }
 
     public abstract ItemSearchResult getSearchResult();
+
+    /**
+     * return item info by repo key and path
+     *
+     * @return
+     */
+    protected ItemInfo getItemInfo(RepoPath repoPath) {
+        ItemInfo itemInfo;
+        if (repoPath.isFile()) {
+            itemInfo = InfoFactoryHolder.get().createFileInfo(repoPath);
+        } else {
+            itemInfo = InfoFactoryHolder.get().createFolderInfo(repoPath);
+        }
+        return itemInfo;
+    }
 }

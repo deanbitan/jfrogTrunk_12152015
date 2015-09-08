@@ -47,7 +47,6 @@ public class ScanArtifactForLicensesService implements RestService<GeneralTabLic
             response.iModelList(Lists.newArrayList());
         } else {
             response.iModel(foundLicenses.stream()
-                    .parallel()
                     .map(GeneralTabLicenseModel::new)
                     .collect(Collectors.toList()));
         }

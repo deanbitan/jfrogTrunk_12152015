@@ -13,9 +13,11 @@ import {jfPyPi}                from './jf_pypi';
 import {jfBower}                from './jf_bower';
 import {jfDocker}                from './jf_docker';
 import {jfDockerAncestry}                from './jf_docker_ancestry';
+import {jfDockerV2}                from './jf_docker_v2';
 import {jfRubyGems}                from './jf_ruby_gems';
 import {jfNpmInfo}                from './jf_npm_info';
 import {jfRpm}                from './jf_rpm_info';
+import {jfStashInfo}                from './jf_stash_info';
 
 export default angular.module('infoTabs', [])
         .directive({
@@ -34,7 +36,9 @@ export default angular.module('infoTabs', [])
             'jfBower': jfBower,
             'jfDocker': jfDocker,
             'jfDockerAncestry': jfDockerAncestry,
+            'jfDockerV2': jfDockerV2,
             'jfRubyGems': jfRubyGems,
             'jfNpmInfo': jfNpmInfo,
-            'jfRpm': jfRpm
+            'jfRpm': jfRpm,
+            'jfStashInfo': jfStashInfo
         });

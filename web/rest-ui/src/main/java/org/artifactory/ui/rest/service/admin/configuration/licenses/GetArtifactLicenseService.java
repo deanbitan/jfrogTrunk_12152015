@@ -1,6 +1,5 @@
 package org.artifactory.ui.rest.service.admin.configuration.licenses;
 
-import com.google.common.collect.Lists;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.license.LicensesAddon;
 import org.artifactory.api.context.ContextHelper;
@@ -33,21 +32,20 @@ public class GetArtifactLicenseService implements RestService {
     /**
      * fetch single or multi license info objects
      *
-     * @param artifactoryResponse - encapsulate all data require for response
-     * @param artifactoryRequest  - encapsulate data related to request
+     * @param response - encapsulate all data require for response
+     * @param request  - encapsulate data related to request
      */
-    private void fetchSingleOrMultiArtifactLicense(RestResponse artifactoryResponse,
-            ArtifactoryRestRequest artifactoryRequest) {
-        String licenseName = artifactoryRequest.getPathParamByKey("id");
+    private void fetchSingleOrMultiArtifactLicense(RestResponse response, ArtifactoryRestRequest request) {
+        String licenseName = request.getPathParamByKey("id");
         // get license addon
         LicensesAddon licensesAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(
                 LicensesAddon.class);
         if (isMultiLicense(licenseName)) {
             List<LicenseInfo> licenseInfos = licensesAddon.getArtifactsLicensesInfo().getLicenses();
             // update response with license info data
-            updateResponseWithMultiLicensesInfo(artifactoryResponse, licenseInfos);
+            updateResponseWithMultiLicensesInfo(response, licenseInfos);
         } else {
-            updateResponseWithSingleArtifactLicenseInfo(artifactoryResponse, licenseName, licensesAddon);
+            updateResponseWithSingleArtifactLicenseInfo(response, licenseName, licensesAddon);
         }
     }
 
@@ -93,7 +91,7 @@ public class GetArtifactLicenseService implements RestService {
     }
 
     /**
-     * get user from DB by name
+     * get license from addon by name
      *
      * @param licenseName - license name
      * @return - license info instance for specific license name

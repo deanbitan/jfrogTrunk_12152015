@@ -20,6 +20,7 @@
                      ui-sref="{{ subitem.state }} ({{ subitem.stateParams }})"
                      ng-class="{selected: jfAccordion.isItemActive(subitem)}"
                      ng-click="jfAccordion.saveState()"
+                     jf-clear-errors
                      class="subitem-style">
                     <div>{{subitem.label}}</div>
                 </div>

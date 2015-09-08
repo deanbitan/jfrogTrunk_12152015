@@ -5,8 +5,6 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.bower.BowerAddon;
 import org.artifactory.addon.pypi.PypiAddon;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.module.ModuleInfo;
-import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.fs.FileInfo;
@@ -124,19 +122,18 @@ public class FileNode extends BaseNode {
         updateFileInfo();
         List<IAction> actions = new ArrayList<>();
         // add actions
+        addDownloadAction(actions);
+        addViewAction(actions);
         addCopyAction(authService, actions, repoPath);
         addMoveAction(authService, actions, repoPath, canDelete);
         addWatchAction(authService, actions, canRead);
-        setUploadToBintrayAction(getRepoService(), fileInfo, actions);
+        setUploadToBintrayAction(fileInfo, actions);
         addDeleteAction(actions, canDelete);
-        addViewAction(actions);
-        addDownloadAction(actions);
         setActions(actions);
     }
 
-    private void setUploadToBintrayAction(RepositoryService repoService, ItemInfo itemInfo, List<IAction> actions) {
-         ModuleInfo moduleInfo = repoService.getItemModuleInfo(itemInfo.getRepoPath());
-        if (!itemInfo.isFolder() && !moduleInfo.isIntegration() && BintrayRestHelper.isPushToBintrayAllowed()) {
+    private void setUploadToBintrayAction(ItemInfo itemInfo, List<IAction> actions) {
+        if (!itemInfo.isFolder() && BintrayRestHelper.isPushToBintrayAllowed()) {
             actions.add(new BaseArtifact("UploadToBintray"));
         }
     }

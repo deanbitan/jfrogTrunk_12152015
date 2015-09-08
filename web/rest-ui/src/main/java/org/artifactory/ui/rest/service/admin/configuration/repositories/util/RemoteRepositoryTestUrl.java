@@ -4,7 +4,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -36,13 +35,8 @@ import java.io.IOException;
  */
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-public class RemoteRepositoryTestUrl<T extends RemoteRepositoryConfigModel> implements RestService<T> {
+public class RemoteRepositoryTestUrl<T extends RemoteRepositoryConfigModel> extends RemoteRepositoryProvider implements RestService<T> {
     protected static final Logger log = LoggerFactory.getLogger(RemoteRepositoryTestUrl.class);
-    protected static final int RETRY_COUNT = 1;
-    protected static final int DEFAULT_TIMEOUT = 15000;
-
-    @Autowired
-    private CentralConfigService configService;
 
     @Override
     public void execute(ArtifactoryRestRequest<T> artifactoryRequest, RestResponse artifactoryResponse) {
@@ -75,7 +69,8 @@ public class RemoteRepositoryTestUrl<T extends RemoteRepositoryConfigModel> impl
             HttpRequestBase request = TestMethodFactory.createTestMethod(remoteRepoUrl, remoteRepoAdvancedModel,
                     repoTypeModel);
             response = client.execute(request);
-            boolean success = testSucceeded(response.getStatusLine());
+            int statusCode = response.getStatusLine().getStatusCode();
+            boolean success = testSucceeded(statusCode);
             if (!success) {
                 IOUtils.closeQuietly(response);
                 // S3 hosted repositories are not hierarchical and does not have a notion of "collection" (folder, directory)
@@ -86,12 +81,17 @@ public class RemoteRepositoryTestUrl<T extends RemoteRepositoryConfigModel> impl
                     remoteRepoUrl = networkModel.getUrl();
                     request = TestMethodFactory.createTestMethod(remoteRepoUrl, remoteRepoAdvancedModel, repoTypeModel);
                     response = client.execute(request);
-                    success = testSucceeded(response.getStatusLine());
+                    success = testSucceeded(statusCode);
+                }
+                // Docker Hub is stupid
+                Header dockerHeader = response.getFirstHeader("Docker-Distribution-Api-Version");
+                if (dockerHeader != null && dockerHeader.getValue().contains("registry")) {
+                    success = true;
                 }
             }
             if (!success) {
                 artifactoryResponse.error(
-                        "Connection failed: Error " + response.getStatusLine().getStatusCode() + ": " +
+                        "Connection failed: Error " + statusCode + ": " +
                                 response.getStatusLine().getReasonPhrase());
             } else {
                 artifactoryResponse.info("Successfully connected to server");
@@ -105,30 +105,7 @@ public class RemoteRepositoryTestUrl<T extends RemoteRepositoryConfigModel> impl
         }
     }
 
-    private boolean testSucceeded(StatusLine status) {
-        return status != null && (status.getStatusCode() == HttpStatus.SC_OK || status.getStatusCode() == HttpStatus.SC_NO_CONTENT);
-    }
-
-    private CloseableHttpClient getRemoteRepoTestHttpClient(String remoteUrl,
-            RemoteNetworkRepositoryConfigModel networkConfig) {
-        // In case network model was not sent in the request we are using the default values
-        if (networkConfig == null) {
-            networkConfig = new RemoteNetworkRepositoryConfigModel();
-        }
-        ProxyDescriptor proxyDescriptor = configService.getDescriptor().getProxy(networkConfig.getProxy());
-        int socketTimeout =
-                networkConfig.getSocketTimeout() == null ? DEFAULT_TIMEOUT : networkConfig.getSocketTimeout();
-        return new HttpClientConfigurator()
-                .hostFromUrl(remoteUrl)
-                .connectionTimeout(socketTimeout)
-                .soTimeout(socketTimeout)
-                .staleCheckingEnabled(true)
-                .retry(RETRY_COUNT, false)
-                .localAddress(networkConfig.getLocalAddress())
-                .proxy(proxyDescriptor)
-                .authentication(networkConfig.getUsername(), CryptoHelper.decryptIfNeeded(networkConfig.getPassword()),
-                        networkConfig.getLenientHostAuth() != null)
-                .enableCookieManagement(networkConfig.getCookieManagement() != null)
-                .getClient();
+    private boolean testSucceeded(int statusCode) {
+        return (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_NO_CONTENT);
     }
 }

@@ -21,6 +21,7 @@ package org.artifactory.repo;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.descriptor.delegation.ContentSynchronisation;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.repo.BowerConfiguration;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
@@ -61,9 +62,9 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private boolean storeArtifactsLocally = true;
     private int socketTimeoutMillis = 15000;
     private String localAddress = "";
-    private long retrievalCachePeriodSecs = 43200L;
+    private long retrievalCachePeriodSecs = 600L;
     private long assumedOfflinePeriodSecs = 300L;
-    private long missedRetrievalCachePeriodSecs = 7200L;
+    private long missedRetrievalCachePeriodSecs = 1800L;
     private int unusedArtifactsCleanupPeriodHours = 0;
     private boolean fetchJarsEagerly = false;
     private boolean fetchSourcesEagerly = false;
@@ -81,6 +82,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
     private String queryParams;
     private BowerConfiguration bowerConfiguration = new BowerConfiguration();
     private VcsConfiguration vcsConfiguration = new VcsConfiguration();
+    private ContentSynchronisation contentSynchronisation;
 
     public HttpRepositoryConfigurationImpl() {
         setRepoLayoutRef(RepoLayoutUtils.MAVEN_2_DEFAULT_NAME);
@@ -136,6 +138,7 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
         setShareConfiguration(repoDescriptor.isShareConfiguration());
         setMaxUniqueSnapshots(repoDescriptor.getMaxUniqueSnapshots());
         setSynchronizeProperties(repoDescriptor.isSynchronizeProperties());
+        setContentSynchronisation(repoDescriptor.getContentSynchronisation());
         List<PropertySet> propertySets = repoDescriptor.getPropertySets();
         if (propertySets != null && !propertySets.isEmpty()) {
             setPropertySets(Lists.transform(propertySets, new Function<PropertySet, String>() {
@@ -481,5 +484,13 @@ public class HttpRepositoryConfigurationImpl extends RepositoryConfigurationBase
 
     public void setVcsGitDownloadUrl(String vcsGitDownloadUrl) {
         this.vcsConfiguration.getGit().setDownloadUrl(vcsGitDownloadUrl);
+    }
+
+    public ContentSynchronisation getContentSynchronisation() {
+        return contentSynchronisation;
+    }
+
+    public void setContentSynchronisation(ContentSynchronisation contentSynchronisation) {
+        this.contentSynchronisation = contentSynchronisation;
     }
 }

@@ -18,87 +18,39 @@
 
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
-import org.artifactory.api.module.VersionUnit;
-import org.artifactory.mime.MavenNaming;
-import org.artifactory.ui.rest.model.common.RepoKeyPath;
+import org.artifactory.rest.common.model.BaseModel;
+import org.artifactory.rest.common.util.JsonUtil;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * @author Chen Keinan
+ * Holder for multiple {@link DeleteArtifactVersion}, needed for sending back warnings about the search operation.
+ *
+ * @author Dan Feldman
  */
-public class DeleteArtifactVersions extends BaseArtifact {
-    private String groupId;
-    private String version;
-    private Integer directoriesCount;
-    private String folderIntegrationRevision = "";
-    private Set<RepoKeyPath> repoPaths = new HashSet<>();
+public class DeleteArtifactVersions extends BaseModel {
 
-    DeleteArtifactVersions() {
+    Collection<DeleteArtifactVersion> versions;
+
+    public DeleteArtifactVersions() {
+
     }
 
-    public DeleteArtifactVersions(String name)
-    {
-        super(name);
+    public DeleteArtifactVersions(Collection<DeleteArtifactVersion> versions) {
+        this.versions = versions;
     }
 
-    public DeleteArtifactVersions(VersionUnit result) {
-        groupId = result.getModuleInfo().getOrganization();
-        version = buildVersion(result);
-        result.getRepoPaths().forEach(repoPath ->
-                repoPaths.add(new RepoKeyPath(repoPath.getPath(), repoPath.getRepoKey())));
+    public Collection<DeleteArtifactVersion> getVersions() {
+        return versions;
     }
 
-    /**
-     * build version full name
-     *
-     * @param result - version unit result
-     * @return full version name
-     */
-    private String buildVersion(VersionUnit result) {
-        StringBuilder groupVersionKeyBuilder =
-                new StringBuilder(result.getModuleInfo().getBaseRevision());
-        if (result.getModuleInfo().isIntegration()) {
-            groupVersionKeyBuilder.append("-");
-            if (MavenNaming.SNAPSHOT.equals(result.getModuleInfo().getFolderIntegrationRevision())) {
-                groupVersionKeyBuilder.append(MavenNaming.SNAPSHOT);
-            } else {
-                groupVersionKeyBuilder.append("INTEGRATION");
-            }
-        }
-        return groupVersionKeyBuilder.toString();
+    public void setVersions(List<DeleteArtifactVersion> versions) {
+        this.versions = versions;
     }
 
-    public String getGroupId() {
-        return groupId;
-    }
-
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
-
-    public String getVersion() {
-        return version + folderIntegrationRevision;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public Integer getDirectoriesCount() {
-        return directoriesCount;
-    }
-
-    public void setDirectoriesCount(Integer directoriesCount) {
-        this.directoriesCount = directoriesCount;
-    }
-
-    public Set<RepoKeyPath> getRepoPaths() {
-        return repoPaths;
-    }
-
-    public void setRepoPaths(Set<RepoKeyPath> repoPaths) {
-        this.repoPaths = repoPaths;
+    @Override
+    public String toString() {
+        return JsonUtil.jsonToString(this);
     }
 }

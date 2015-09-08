@@ -11,9 +11,8 @@ import org.artifactory.aql.api.domain.sensitive.AqlApiStatistic;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.model.AqlItemTypeEnum;
 import org.artifactory.aql.result.AqlEagerResult;
-import org.artifactory.aql.result.AqlJsonResult;
+import org.artifactory.aql.result.AqlJsonStreamer;
 import org.artifactory.aql.result.AqlLazyResult;
-import org.artifactory.aql.result.AqlStreamResultImpl;
 import org.artifactory.aql.result.rows.AqlBaseItem;
 import org.artifactory.aql.result.rows.AqlBuild;
 import org.artifactory.aql.result.rows.AqlBuildArtifact;
@@ -329,9 +328,15 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         );
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlJsonResult aqlJsonResult = new AqlJsonResult(aqlLazyResult);
+        AqlJsonStreamer aqlJsonStreamer = new AqlJsonStreamer(aqlLazyResult);
 
-        String string = new String(aqlJsonResult.read());
+        byte[] read;
+        StringBuilder builder=new StringBuilder();
+        while((read= aqlJsonStreamer.read())!=null){
+            builder.append(new String(read));
+        }
+        aqlJsonStreamer.close();
+        String string = builder.toString();
         Assert.assertTrue(string.contains("\"size\" : 43434"));
         Assert.assertTrue(string.contains("\"repo\" : \"repo1\""));
         Assert.assertTrue(string.contains("\"actual_md5\" : \"302a360ecad98a34b59863c1e65bcf71\""));
@@ -352,7 +357,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         ).limit(2000);
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();
@@ -384,7 +389,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                 //)
         ).limit(2);
         AqlLazyResult aqlLazyResult = aqlService.executeQueryLazy(item);
-        AqlStreamResultImpl streamResult = new AqlStreamResultImpl(aqlLazyResult);
+        AqlJsonStreamer streamResult = new AqlJsonStreamer(aqlLazyResult);
 
         byte[] read = streamResult.read();
         StringBuilder builder = new StringBuilder();

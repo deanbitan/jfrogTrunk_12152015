@@ -393,7 +393,7 @@ public class ConfigXmlConversionTest /** Don't extend ArtHomeBoundTest */
         XmlConverter[] currentConversions = getCurrentVersion().getConverters();
         boolean noConversionsLeft = (currentConversions != null) && (currentConversions.length > 0);
         assertFalse(noConversionsLeft, "The last config version " + configVersionTest +
-                " should have any conversions declared");
+                " should not have any conversions declared");
     }
 
     /**

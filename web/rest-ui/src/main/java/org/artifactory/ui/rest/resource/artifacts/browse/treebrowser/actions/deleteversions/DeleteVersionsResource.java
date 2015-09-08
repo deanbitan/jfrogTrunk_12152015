@@ -1,7 +1,7 @@
 package org.artifactory.ui.rest.resource.artifacts.browse.treebrowser.actions.deleteversions;
 
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifactVersions;
+import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifactVersion;
 import org.artifactory.ui.rest.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.browse.BrowseServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ public class DeleteVersionsResource extends BaseResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteVersionList(List<DeleteArtifactVersions> deleteArtifactVersions)
+    public Response deleteVersionList(List<DeleteArtifactVersion> deleteArtifactVersions)
             throws Exception {
         return runService(browseFactory.deleteVersionService(), deleteArtifactVersions);
     }

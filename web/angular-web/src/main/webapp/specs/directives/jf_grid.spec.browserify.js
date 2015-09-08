@@ -11,7 +11,7 @@ describe('jf_grid', () => {
 
     function compileDirective() {
         actionMock = jasmine.createSpy('actionMock');
-        let data = [{name: 'user', role: 'admin'}];
+        let data = [{name: 'user', role: 'admin'},{name: 'another user', role: 'worker'}];
         let columns = [
             {
                 field: 'name',
@@ -25,7 +25,7 @@ describe('jf_grid', () => {
                 }
             }
         ];
-        let options = artifactoryGrid.getGridInstance($scope)
+        window.options = artifactoryGrid.getGridInstance($scope)
             .setGridData(data)
             .setColumns(columns)
             .setRowTemplate('default')
@@ -45,6 +45,12 @@ describe('jf_grid', () => {
         expect(jfGridElement.getCellData(1)).toEqual('admin');
     });
 
+    it ('should display counter with number of records', () => {
+        let counterElement = jfGridElement.getCounter();
+        expect(counterElement).toBeDefined();
+        expect(counterElement.text()).toEqual('2 Records');
+    });
+
     it ('should display pagination', () =>{
         expect(jfGridElement.getGridPagination().length).toEqual(1);
     });
@@ -58,21 +64,31 @@ describe('jf_grid', () => {
         it ('should filter matching data', () => {
             jfGridElement.applyFilter('se');
             timeout.flush();
+            expect(options.api.grid.getVisibleRows().length).toEqual(2);
             expect(jfGridElement.getCellData(0)).toEqual('user');
             expect(jfGridElement.getCellData(1)).toEqual('admin');
         });
 
         it ('should filter out non matching data', () => {
+            jfGridElement.applyFilter('noth');
+            timeout.flush();
+            expect(options.api.grid.getVisibleRows().length).toEqual(1);
+            expect(jfGridElement.getCellData(0)).toEqual('another user');
+            expect(jfGridElement.getCellData(1)).toEqual('worker');
+
             jfGridElement.applyFilter('asdfasdf');
             timeout.flush();
+            expect(options.api.grid.getVisibleRows().length).toEqual(1);
+            expect(options.api.grid.getVisibleRows()[0].entity).toEqual(jasmine.objectContaining({_emptyRow: true}));
+
             expect(jfGridElement.getCellData(0)).toEqual('');
             expect(jfGridElement.getCellData(1)).toEqual('');
         });
     });
 
     it ('should call the actions on click', () => {
-        jfGridElement.getActions(1).click();
-        // expect(actionMock).toHaveBeenCalled();
+        jfGridElement.getActions(1)[0].click();
+        expect(actionMock).toHaveBeenCalled();
     });
 
 });

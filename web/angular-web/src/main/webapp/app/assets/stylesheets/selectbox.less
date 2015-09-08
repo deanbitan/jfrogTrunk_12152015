@@ -209,24 +209,34 @@
       border-width: 0 4px 4px 4px;
     }
   }
+}
 
-  &.multi .selectize-input > div,
-  &.multi .selectize-input > div.active {
-    background: transparent;
-    padding: 0px 24px 0 8px !important;
-    margin: 0 8px 0 0;
-    border: 1px solid @blueMain;
-    color: @grayFontGeneral;
-    height: 26px;
-    line-height: 24px;
+.labeled-item,
+.selectize-control.multi .selectize-input > div,
+.selectize-control.multi .selectize-input > div.active {
+  position: relative;
+  display: inline-block;
+  background: transparent;
+  padding: 0px 24px 0 8px !important;
+  margin: 0 8px 0 0;
+  border: 1px solid @blueMain;
+  border-radius: 3px;
+  color: @grayFontGeneral;
+  height: 26px;
+  line-height: 24px;
 
-    .remove, .remove:hover {
-      background: @white;
-      font-weight: 400;
-      font-size: 22px;
-      color: @blueMain;
-      width: 24px;
-    }
+  .remove, .remove:hover {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    background: @white;
+    font-weight: 400;
+    font-size: 22px;
+    color: @blueMain;
+    width: 24px;
+    text-align: center;
   }
 }
 

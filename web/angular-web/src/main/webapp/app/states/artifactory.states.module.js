@@ -3,6 +3,7 @@ import ArtifactState    from './artifacts/artifacts.module';
 import BuildsState      from './builds/builds.module';
 import HomeModule       from './home/home.module';
 import Login            from './login/login.module';
+import OAuthRequest     from './oauth/login_request/login_request.module';
 import ForgotPassword   from './forgot_password/forgot_password.module';
 import UserProfile      from './user_profile/user_profile.module';
 import ServerError      from './server_error/server_error.module';
@@ -15,6 +16,7 @@ angular.module('artifactory.states', [
     BuildsState.name,
     HomeModule.name,
     Login.name,
+    OAuthRequest.name,
     ForgotPassword.name,
     UserProfile.name,
     ServerError.name,
@@ -34,7 +36,7 @@ function preventAccessToPagesByPermission(User, $rootScope, ArtifactoryNotificat
             ArtifactoryEventBus.dispatch(EVENTS.CANCEL_SPINNER);
         }
 
-        if (toState.name === 'login' && $location.path() !== '/login') {
+        if (toState.name === 'login' && $location.path() !== '/login' && $location.path() !== '/oauth2/loginRequest') {
             let afterLogin = ArtifactoryState.getState('urlAfterLogin');
             if (!afterLogin) ArtifactoryState.setState('urlAfterLogin', $location.path());
         }
@@ -60,6 +62,10 @@ function preventAccessToPagesByPermission(User, $rootScope, ArtifactoryNotificat
                     $timeout(() => $location.path('/home'));
                 }
             });
+        }
+
+        if (!e.defaultPrevented) {
+            ArtifactoryEventBus.dispatch(EVENTS.CLOSE_MODAL);
         }
     })
 }

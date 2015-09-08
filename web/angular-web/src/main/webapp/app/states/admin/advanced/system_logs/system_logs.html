@@ -11,6 +11,10 @@
                                config="{maxItems:1, create: true, labelField: 'logName', valueField: 'logName'}"
                                options="SystemLogsController.logs"></selectize>
                 </div>
+                <div class="form-group-cell form-button form-link">
+                    <div ng-if="SystemLogsController.timeCount >= 0">Refreshing logs in {{SystemLogsController.timeCount}} seconds</div>
+                    <div ng-if="SystemLogsController.timeCount < 0" class="icon-hourglass"></div>
+                </div>
             </div>
 
             <div>

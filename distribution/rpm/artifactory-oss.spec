@@ -283,6 +283,10 @@ else
   echo "User %{username} exists."
 fi
 
+/sbin/chkconfig --list artifactory 2>&1 1>/dev/null || \
+( /sbin/chkconfig --add artifactory && \
+echo "Adding the artifactory service to auto-start" )
+
 exit 0
 
 %triggerpostun -- artifactory

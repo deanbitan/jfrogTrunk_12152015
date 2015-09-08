@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.model.admin.configuration.repository;
 
+import org.artifactory.descriptor.delegation.ContentSynchronisation;
 import org.artifactory.descriptor.repo.ChecksumPolicyType;
 import org.artifactory.descriptor.repo.DockerApiVersion;
 import org.artifactory.descriptor.repo.LocalRepoChecksumPolicyType;
@@ -23,6 +24,7 @@ public interface RepoConfigDefaultValues {
 
     //remote basic
     boolean DEFAULT_OFFLINE = false;
+    ContentSynchronisation DEFAULT_DELEGATION_CONTEXT = null;
 
     //remote advanced
     boolean DEFAULT_HARD_FAIL = false;
@@ -40,9 +42,9 @@ public interface RepoConfigDefaultValues {
 
     //cache
     int DEFAULT_KEEP_UNUSED_ARTIFACTS = 0;
-    long DEFAULT_RETRIEVAL_CACHE_PERIOD = 43200;
+    long DEFAULT_RETRIEVAL_CACHE_PERIOD = 600;
     long DEFAULT_ASSUMED_OFFLINE = 300;
-    long DEFAULT_MISSED_RETRIEVAL_PERIOD = 7200;
+    long DEFAULT_MISSED_RETRIEVAL_PERIOD = 1800;
 
     //replication
     boolean DEFAULT_LOCAL_REPLICATION_ENABLED = true;
@@ -81,6 +83,7 @@ public interface RepoConfigDefaultValues {
     //nuget
     String DEFAULT_NUGET_FEED_PATH = "api/v2";
     String DEFAULT_NUGET_DOWNLOAD_PATH = "api/v2/package";
+    boolean DEFAULT_FORCE_NUGET_AUTH = false;
 
     //vcs
     VcsType DEFAULT_VCS_TYPE = VcsType.GIT;

@@ -20,6 +20,9 @@ export default {
     "remoteRepository": {
         "icon": "icon icon-remote-repo"
     },
+    "stash": {
+        "icon": "icon icon-search"
+    },
     "folder": {
         "icon": "icon icon-folder"
     },
@@ -88,5 +91,8 @@ export default {
     },
     "application/octet-stream": {
         "icon": "icon icon-general"
+    },
+    "docker": {
+        "icon": "icon icon-docker"
     }
 }

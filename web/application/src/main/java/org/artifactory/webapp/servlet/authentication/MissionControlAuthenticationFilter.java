@@ -19,6 +19,7 @@ import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.SecurityService;
 import org.artifactory.security.SaltedPassword;
+import org.artifactory.security.UserInfo;
 import org.artifactory.security.mission.control.MissionControlAuthenticationProvider;
 import org.artifactory.security.mission.control.MissionControlProperties;
 import org.artifactory.util.PathUtils;
@@ -85,16 +86,23 @@ public class MissionControlAuthenticationFilter implements ArtifactoryAuthentica
         log.trace("Starting to validate authentication");
         String missionControlToken = ((HttpServletRequest) request).getHeader(HEADER_NAME);
         SecurityService securityService = ContextHelper.get().beanForType(SecurityService.class);
+        int index = missionControlToken.indexOf('@');
+        String userName= UserInfo.MISSION_CONTROLL;
+        if(index>0){
+            userName=missionControlToken.substring(0, index)+"-from-MC";
+            missionControlToken=missionControlToken.substring(index+1,missionControlToken.length());
+        }
         SaltedPassword saltedPassword = securityService.generateSaltedPassword(missionControlToken);
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         String path = httpRequest.getRequestURI();
         String contextPrefix = RequestUtils.getContextPrefix((HttpServletRequest) request);
         path = PathUtils.trimLeadingSlashes(path);
         String token = missionControlProperties.getToken();
+
         if (token.equals(saltedPassword.getPassword()) && path.startsWith(contextPrefix + "/mc")) {
             MissionControlAuthenticationProvider provider = ContextHelper.get()
                     .beanForType(MissionControlAuthenticationProvider.class);
-            Authentication auth = provider.getFullAuthentication();
+            Authentication auth = provider.getFullAuthentication(userName);
             RequestUtils.setAuthentication((HttpServletRequest) request, auth, true);
             SecurityContextHolder.getContext().setAuthentication(auth);
             log.trace("Successful Mission Control Authentication ");

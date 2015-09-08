@@ -14,6 +14,9 @@ import org.artifactory.storage.db.aql.sql.model.AqlFieldExtensionEnum;
 
 import java.util.List;
 
+import static org.artifactory.storage.db.aql.sql.model.SqlTableEnum.build_props;
+import static org.artifactory.storage.db.aql.sql.model.SqlTableEnum.node_props;
+
 /**
  * Abstract class that represent single criteria (field comparator and value).
  *
@@ -28,7 +31,7 @@ public abstract class Criteria implements AqlQueryElement {
     private SqlTable table2;
 
     public Criteria(List<AqlDomainEnum> subDomains, AqlVariable variable1, SqlTable table1, String comparatorName,
-            AqlVariable variable2,SqlTable table2) {
+            AqlVariable variable2, SqlTable table2) {
         this.subDomains = subDomains;
         this.variable1 = variable1;
         this.table1 = table1;
@@ -68,9 +71,9 @@ public abstract class Criteria implements AqlQueryElement {
         return false;
     }
 
-    protected String a(AqlVariable variable1, SqlTable table1, AqlVariable variable2, SqlTable table2, boolean not) {
+    protected String a(AqlVariable variable1, SqlTable table1, boolean not) {
         String nullRelation = not ? " is null " : " is not null ";
-            return " " + table1.getAlias() + toSql(variable1) + nullRelation;
+        return " " + table1.getAlias() + toSql(variable1) + nullRelation;
     }
 
     private String toSql(AqlVariable variable) {
@@ -83,7 +86,7 @@ public abstract class Criteria implements AqlQueryElement {
         }
     }
 
-    protected Object resolveParam(List<Object> params, AqlVariable variable) throws AqlException {
+    protected Object resolveParam(AqlVariable variable) throws AqlException {
         AqlValue value = (AqlValue) variable;
         Object param = value.toObject();
         AqlComparatorEnum comparatorEnum = AqlComparatorEnum.value(getComparatorName());
@@ -100,7 +103,7 @@ public abstract class Criteria implements AqlQueryElement {
 
     public String createSqlCriteria(AqlComparatorEnum comparatorEnum, AqlVariable variable1, SqlTable table1,
             AqlVariable variable2, List<Object> params) {
-        Object param = resolveParam(params, variable2);
+        Object param = resolveParam(variable2);
         String index1 = table1 != null && variable1 instanceof AqlField ? table1.getAlias() : "";
         switch (comparatorEnum) {
             case equals: {
@@ -138,8 +141,8 @@ public abstract class Criteria implements AqlQueryElement {
             AqlVariable variable2, List<Object> params) {
         AqlVariable key = AqlFieldResolver.resolve(AqlFieldEnum.propertyKey.signature);
         AqlVariable value = AqlFieldResolver.resolve(AqlFieldEnum.propertyValue.signature);
-        Object param1 = resolveParam(params, variable1);
-        Object param2 = resolveParam(params, variable2);
+        Object param1 = resolveParam(variable1);
+        Object param2 = resolveParam(variable2);
         String index1 = table1 != null ? table1.getAlias() : "";
         switch (comparatorEnum) {
             case equals: {
@@ -153,7 +156,10 @@ public abstract class Criteria implements AqlQueryElement {
             case notMatches: {
                 params.add(param1);
                 params.add(param2);
-                return "(" + index1 + "node_id is null or not exists (select 1 from node_props where "+index1 + "node_id =node_id and prop_key = " + toSql(
+                String tableName = table1.getTable().name();
+                String fieldName = node_props == table1.getTable() ? "node_id" :
+                        build_props == table1.getTable() ? "build_id" : "module_id";
+                return "(" + index1 + fieldName + " is null or not exists (select 1 from " + tableName + " where " + index1 + fieldName + " = " + fieldName + " and prop_key = " + toSql(
                         variable1) + " and prop_value like  " + toSql(variable2) + "))";
             }
             case less: {
@@ -175,7 +181,10 @@ public abstract class Criteria implements AqlQueryElement {
             case notEquals: {
                 params.add(param1);
                 params.add(param2);
-                return "(" + index1 + "node_id is null or not exists (select 1 from node_props where "+ index1 + "node_id = node_id and prop_key = " + toSql(
+                String tableName = table1.getTable().name();
+                String fieldName = node_props == table1.getTable() ? "node_id" :
+                        build_props == table1.getTable() ? "build_id" : "module_id";
+                return "(" + index1 + fieldName + " is null or not exists (select 1 from " + tableName + " where " + index1 + fieldName + " = " + fieldName + " and prop_key = " + toSql(
                         variable1) + " and prop_value = " + toSql(variable2) + "))";
             }
             default:
@@ -196,7 +205,7 @@ public abstract class Criteria implements AqlQueryElement {
 
     public String createSqlPropertyCriteria(AqlComparatorEnum comparatorEnum, AqlVariable variable1, SqlTable table1,
             AqlVariable variable2, List<Object> params) {
-        Object param = resolveParam(params, variable2);
+        Object param = resolveParam(variable2);
         String index1 = table1 != null && variable1 instanceof AqlField ? table1.getAlias() : "";
         switch (comparatorEnum) {
             case equals: {
@@ -297,18 +306,24 @@ public abstract class Criteria implements AqlQueryElement {
             throw new AqlToSqlQueryBuilderException(
                     "Illegal syntax the 'not match' operator is allowed only with 'value' in right side of the criteria.");
         }
-        return "(" + index1 + "node_id is null or not exists (select 1 from node_props where "+index1 + "node_id = node_id and " + toSql(
+        String tableName = table1.getTable().name();
+        String fieldName = node_props == table1.getTable() ? "node_id" :
+                build_props == table1.getTable() ? "build_id" : "module_id";
+        return "(" + index1 + fieldName + " is null or not exists (select 1 from " + tableName + " where " + index1 + "node_id = " + fieldName + " and " + toSql(
                 variable1) + " like " + toSql(variable2) + "))";
     }
 
     private String generatePropertyNotEqualsQuery(AqlVariable variable1, AqlVariable variable2, List<Object> params,
             Object param, String index1) {
+        String tableName = table1.getTable().name();
+        String fieldName = node_props == table1.getTable() ? "node_id" :
+                build_props == table1.getTable() ? "build_id" : "module_id";
         if (param != null) {
             params.add(param);
-            return "(" + index1 + "node_id is null or not exists (select 1 from node_props where "+index1 + "node_id = node_id and " + toSql(
+            return "(" + index1 + fieldName + " is null or not exists (select 1 from " + tableName + " where " + index1 + fieldName + " = " + fieldName + " and " + toSql(
                     variable1) + " = " + toSql(variable2) + "))";
         } else {
-            return "(" + index1 + "node_id is null or not exists ( select 1 from node_props where " + index1 + "node_id = node_id and " + toSql(
+            return "(" + index1 + "node_id is null or not exists ( select 1 from node_props where " + index1 + fieldName + " = " + fieldName + " and " + toSql(
                     variable1) + " is  null))";
         }
     }

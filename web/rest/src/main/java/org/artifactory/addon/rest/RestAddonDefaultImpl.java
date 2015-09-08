@@ -20,6 +20,7 @@ package org.artifactory.addon.rest;
 
 import org.artifactory.addon.license.LicenseStatus;
 import org.artifactory.addon.plugin.ResponseCtx;
+import org.artifactory.api.archive.ArchiveType;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.rest.artifact.ItemPermissions;
 import org.artifactory.api.rest.artifact.PromotionResult;
@@ -48,6 +49,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
@@ -257,6 +260,12 @@ public class RestAddonDefaultImpl implements RestAddon {
 
     @Override
     public File getBuildArtifactsArchive(BuildArtifactsRequest buildArtifactsRequest) {
+        throw new MissingRestAddonException();
+    }
+
+    @Override
+    public InputStream downloadFolderOrRepo(RepoPath pathToDownload, ArchiveType archiveType, BasicStatusHolder status)
+            throws IOException {
         throw new MissingRestAddonException();
     }
 

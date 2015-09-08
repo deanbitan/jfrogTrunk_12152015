@@ -76,8 +76,7 @@ public class ArchiveViewSourceService implements RestService {
     private ArchiveFileContent getArchiveFileContent(String sourcePath, RepoPath archiveRepoPath) {
         ArchiveFileContent archiveFileContent = null;
         try {
-            archiveFileContent = repositoryService.getArchiveFileContent(archiveRepoPath,
-                    sourcePath);
+            archiveFileContent = repositoryService.getGenericArchiveFileContent(archiveRepoPath, sourcePath);
         } catch (IOException e) {
             log.error(e.toString());
         }

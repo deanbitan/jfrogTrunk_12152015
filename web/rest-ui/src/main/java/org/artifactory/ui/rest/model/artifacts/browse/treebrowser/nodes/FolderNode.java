@@ -20,6 +20,7 @@ package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.nodes;
 
 import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
@@ -53,7 +54,6 @@ public class FolderNode extends BaseNode {
     private FolderInfo folderInfo;
     private String type = "folder";
     private boolean compacted;
-    boolean isDockerSupported = false;
 
     public String getType() {
         return type;
@@ -77,6 +77,7 @@ public class FolderNode extends BaseNode {
 
     public void setCompacted(boolean compacted) {
         this.compacted = compacted;
+        updateNodeIcon();
     }
 
     FolderNode() {
@@ -89,6 +90,19 @@ public class FolderNode extends BaseNode {
         setRepoType("local");
         // update node display name
         updateNodeDisplayName(text);
+        updateNodeIcon();
+    }
+
+    private void updateNodeIcon() {
+        if (compacted) {
+            if (isDockerCompactedFolder()) {
+                super.setIcon("docker");
+            }
+        } else {
+            if (isDockerManifestFolder()) {
+                super.setIcon("docker");
+            }
+        }
     }
 
     /**
@@ -119,15 +133,17 @@ public class FolderNode extends BaseNode {
             boolean canRead = authService.canRead(repoPath);
             boolean canDelete = authService.canDelete(repoPath);
             boolean canAdmin = authService.canManage(repoPath);
+            boolean isAnonymous = authService.isAnonymous();
             createFolderInfo();
             List<IAction> actions = new ArrayList<>();
             // add specific actions
+            addDownloadAction(actions, isAnonymous, canRead);
             addRefreshAction(actions);
             addCopyAction(authService, actions, repoPath);
             addMoveAction(authService, actions, repoPath, canDelete);
             addWatchAction(authService, actions, canRead);
             addZapAction(actions, repoPath, canAdmin);
-            addDeleteVersionAction(authService, actions);
+            addDeleteVersionAction(actions, repoPath, canRead, canDelete, canAdmin);
             addDeleteAction(actions, canDelete);
             setActions(actions);
         }
@@ -140,6 +156,7 @@ public class FolderNode extends BaseNode {
             boolean canAdminRepoPath = authService.canManage(getRepoPath());
             addGeneralTab(tabs);
             addDockerTab(tabs);
+            addDockerV2Tab(tabs);
             addEffectivePermissionTab(tabs, canAdminRepoPath);
             addPropertiesTab(tabs);
             addWatchTab(tabs, canAdminRepoPath);
@@ -161,6 +178,12 @@ public class FolderNode extends BaseNode {
         }
     }
 
+    private void addDockerV2Tab(List<IArtifactInfo> tabs) {
+        if (isDockerManifestFolder()) {
+            tabs.add(new BaseArtifactInfo("DockerV2Info"));
+        }
+    }
+
     /**
      * if true docker file is supported
      *
@@ -172,13 +195,25 @@ public class FolderNode extends BaseNode {
         if (localRepoDescriptor == null) {
             return false;
         }
-        boolean isDockerEnabled = localRepoDescriptor.getType().equals(RepoType.Docker) && addonsManager.isAddonSupported(
-                AddonType.DOCKER);
-        if (isDockerEnabled) {
-            boolean isDockerFolder = getRepoService().getChildrenNames(folderInfo.getRepoPath()).contains("json.json");
-            return isDockerFolder;
+        boolean isDockerEnabled = RepoType.Docker.equals(localRepoDescriptor.getType()) &&
+                addonsManager.isAddonSupported(AddonType.DOCKER);
+        return isDockerEnabled && getRepoService().getChildrenNames(folderInfo.getRepoPath()).contains("json.json");
+    }
+
+    private boolean isDockerCompactedFolder() {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        LocalRepoDescriptor localRepoDescriptor = localOrCachedRepoDescriptor(getRepoPath());
+        if (localRepoDescriptor == null) {
+            return false;
         }
-        return false;
+        boolean isDockerEnabled = RepoType.Docker.equals(localRepoDescriptor.getType()) &&
+                addonsManager.isAddonSupported(AddonType.DOCKER);
+        return isDockerEnabled && getRepoService().getChildrenNames(folderInfo.getRepoPath()).contains("manifest.json");
+    }
+
+    private boolean isDockerManifestFolder() {
+        return isDockerCompactedFolder() &&
+                getRepoService().getChildrenNames(folderInfo.getRepoPath()).contains("manifest.json");
     }
 
 
@@ -200,11 +235,13 @@ public class FolderNode extends BaseNode {
     /**
      * add delete version action
      *
-     * @param authService -authorization service
+     * @param path        - path
+     * @param canDelete   - user has delete permissions on path?
      * @param actions     - actions list
      */
-    private void addDeleteVersionAction(AuthorizationService authService, List<IAction> actions) {
-        if (authService.isAdmin()) {
+    private void addDeleteVersionAction(List<IAction> actions, RepoPath path, boolean canRead, boolean canDelete,
+            boolean canManage) {
+        if ((canManage || canDelete) && canRead && localOrCachedRepoDescriptor(path).isLocal()) {
             actions.add(new BaseArtifact("DeleteVersions"));
         }
     }
@@ -216,6 +253,18 @@ public class FolderNode extends BaseNode {
      */
     private void addRefreshAction(List<IAction> actions) {
         actions.add(new RefreshArtifact("Refresh"));
+    }
+
+    /**
+     * add download action
+     *
+     * @param actions - actions list
+     */
+    private void addDownloadAction(List<IAction> actions, boolean isAnonymous, boolean canRead) {
+        if(!isAnonymous && isLocal() && canRead && ContextHelper.get().beanForType(CentralConfigService.class)
+                .getDescriptor().getFolderDownloadConfig().isEnabled()) {
+            actions.add(new BaseArtifact("DownloadFolder"));
+        }
     }
 
     public String toString() {

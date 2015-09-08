@@ -3,7 +3,6 @@ export class FooterDao {
 	constructor(RESOURCE, ArtifactoryDaoFactory, ArtifactoryStorage) {
 		this.storage = ArtifactoryStorage;
     	this._resource = ArtifactoryDaoFactory()
-            .setDefaults({method: 'GET'})
             .setPath(RESOURCE.FOOTER)
             .getInstance();
     }

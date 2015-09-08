@@ -43,7 +43,7 @@ public class MultiPartUtils {
         int fileUploadMaxSizeMb = centralConfigService.getMutableDescriptor().getFileUploadMaxSizeMb();
         // get uploaded file map
         Map<String, List<FormDataBodyPart>> fields = formDataMultiPart.getFields();
-        int sizeInBytes = getContentLengthFromMultiPart(formDataMultiPart);
+        long sizeInBytes = getContentLengthFromMultiPart(formDataMultiPart);
         fields.forEach((name, dataBody) -> {
             List<FormDataBodyPart> formDataBodyParts = fields.get(name);
             formDataBodyParts.forEach(formDataBodyPart -> {
@@ -75,8 +75,8 @@ public class MultiPartUtils {
      * @param formDataMultiPart - form data multi part
      * @return - content length in bytes
      */
-    private static int getContentLengthFromMultiPart(FormDataMultiPart formDataMultiPart) {
-        return Integer.parseInt(String.valueOf(formDataMultiPart.getHeaders().get("Content-Length").get(0)));
+    private static long getContentLengthFromMultiPart(FormDataMultiPart formDataMultiPart) {
+        return Long.parseLong(String.valueOf(formDataMultiPart.getHeaders().get("Content-Length").get(0)));
     }
 
 

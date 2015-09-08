@@ -48,7 +48,7 @@ public class UpdateSecurityDescriptorService implements RestService {
                 artifactoryResponse.info("Security configuration successfully saved.");
             } catch (Exception e) {
                 log.error("Error while manually saving the security configuration.", e);
-                artifactoryResponse.error("Unable to save configuration. Please verify the validity of your input.");
+                artifactoryResponse.error("Unable to save configuration, Please verify the validity of your input");
             }
         }
     }

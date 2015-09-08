@@ -19,7 +19,8 @@ export class ArtifactoryNotifications {
                 type: 'success',
                 timeout: message.timeout || 5000,
                 body: message.info,
-                showCloseButton: true
+                showCloseButton: true,
+                clickHandler: this.notifClickHandle
             });
             this.lastNotification = message.info;
             this.$timeout(() => {
@@ -36,7 +37,8 @@ export class ArtifactoryNotifications {
                 type: 'error',
                 timeout: message.timeout || 10000,
                 body: message.error,
-                showCloseButton: true
+                showCloseButton: true,
+                clickHandler: this.notifClickHandle
             });
             this.lastNotification = message.error;
             this.$timeout(() => {
@@ -52,13 +54,18 @@ export class ArtifactoryNotifications {
                 type: 'warning',
                 timeout: message.timeout || 4000,
                 body: message.warn,
-                showCloseButton: true
+                showCloseButton: true,
+                clickHandler: this.notifClickHandle
             });
             this.lastNotification = message.warn;
             this.$timeout(() => {
                 this.lastNotification = null
             }, message.timeout || 1000);
         }
+    }
+
+    notifClickHandle(toast, isCloseButton) {
+        return isCloseButton;
     }
 
     /**
@@ -72,7 +79,8 @@ export class ArtifactoryNotifications {
             body: message.body,
             bodyOutputType: 'trustedHtml',
             timeout: message.timeout,
-            showCloseButton: true
+            showCloseButton: true,
+            clickHandler: this.notifClickHandle
         });
     }
 

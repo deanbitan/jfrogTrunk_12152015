@@ -22,10 +22,16 @@ import org.artifactory.api.security.GroupNotFoundException;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.common.Info;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.security.*;
+import org.artifactory.security.GroupInfo;
+import org.artifactory.security.MutableGroupInfo;
+import org.artifactory.security.MutableUserInfo;
+import org.artifactory.security.SaltedPassword;
+import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserInfo;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.security.dao.UserGroupsDao;
+import org.artifactory.storage.db.security.dao.UserPropertiesDao;
 import org.artifactory.storage.db.security.entity.Group;
 import org.artifactory.storage.db.security.entity.User;
 import org.artifactory.storage.db.security.entity.UserGroup;
@@ -38,7 +44,11 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Date: 8/27/12
@@ -56,6 +66,9 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
 
     @Autowired
     private UserGroupsDao userGroupsDao;
+
+    @Autowired
+    private UserPropertiesDao userPropertiesDao;
 
     @Override
     public void deleteAllGroupsAndUsers() {
@@ -307,6 +320,49 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
             return null;
         } catch (SQLException e) {
             throw new StorageException("Could not search for group with name='" + groupName + "'", e);
+        }
+    }
+
+    @Override
+    @Nullable
+    public UserInfo findUserByProperty(String key, String val) {
+        try {
+            long userId = userPropertiesDao.getUserIdByProperty(key, val);
+            if (userId == 0L) {
+                return null;
+            } else {
+                return userToUserInfo(userGroupsDao.findUserById(userId));
+            }
+        } catch (SQLException e) {
+            throw new StorageException("Could not search for user with property " + key + ":" + val, e);
+        }
+    }
+
+    @Override
+    @Nullable
+    public String findUserProperty(String username, String key) {
+        try {
+            return userPropertiesDao.getUserProperty(username, key);
+        } catch (SQLException e) {
+            throw new StorageException("Could not search for datum " + key + " of user " + username, e);
+        }
+    }
+
+    @Override
+    public boolean addUserProperty(String username, String key, String val) {
+        try {
+            return userPropertiesDao.addUserProperty(userGroupsDao.findUserIdByUsername(username), key, val);
+        } catch (SQLException e) {
+            throw new StorageException("Could not add external data " + key + ":" + val + " to user " + username, e);
+        }
+    }
+
+    @Override
+    public boolean deleteUserProperty(String username, String key) {
+        try {
+            return userPropertiesDao.deleteProperty(userGroupsDao.findUserIdByUsername(username), key);
+        } catch (SQLException e) {
+            throw new StorageException("Could not delete external data " + key + " from user " + username, e);
         }
     }
 

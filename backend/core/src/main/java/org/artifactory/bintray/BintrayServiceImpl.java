@@ -68,10 +68,12 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.aql.AqlService;
 import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
+import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlItem;
 import org.artifactory.aql.util.AqlSearchablePath;
+import org.artifactory.aql.util.AqlUtils;
 import org.artifactory.build.ArtifactoryBuildArtifact;
 import org.artifactory.build.BuildServiceUtils;
 import org.artifactory.build.InternalBuildService;
@@ -86,7 +88,6 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.md.PropertiesFactory;
-import org.artifactory.mime.MavenNaming;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
@@ -609,11 +610,6 @@ public class BintrayServiceImpl implements BintrayService {
     private void validatePushRequestParams(String subject, List<FileInfo> artifactsToPush, BasicStatusHolder status)
             throws BintrayCallException {
 
-        if (snapshotArtifactsExistInArtifactsToPush(artifactsToPush)) {
-            status.error("Snapshot artifacts were detected in the build artifacts, Bintray does not accept snapshots" +
-                    " - aborting", SC_BAD_REQUEST, log);
-            throw new BintrayCallException(SC_BAD_REQUEST, status.getLastError().getMessage(), "");
-        }
         int fileUploadLimit = getFileUploadLimit();
         if (fileUploadLimit != 0 && artifactsToPush.size() > fileUploadLimit) { //0 is unlimited
             status.error(String.format("The amount of artifacts that are about to be pushed(%s) exceeds the maximum" +
@@ -1408,7 +1404,7 @@ public class BintrayServiceImpl implements BintrayService {
                 status.status("The descriptor doesn't contain file paths, pushing everything under "
                         + jsonFile.getRepoPath().getParent() + " , filtered by the properties specified.", log);
             }
-            artifactPaths = searchablePathsFromDescriptorLocaltion(jsonFile.getRepoPath());
+            artifactPaths = AqlUtils.getSearchablePathForCurrentFolderAndSubfolders(jsonFile.getRepoPath().getParent());
         } else {
             try {
                 if (descriptorHasPaths) {
@@ -1435,32 +1431,6 @@ public class BintrayServiceImpl implements BintrayService {
     }
 
     /**
-     * Returns a list of {@link org.artifactory.aql.util.AqlSearchablePath} pointing to all files contained in the
-     * parent folder of the descriptor as wll as all file under all subdirectories of that folder
-     *
-     * @param descriptorPath RepoPath of the descriptor file to construct the paths from
-     */
-    List<AqlSearchablePath> searchablePathsFromDescriptorLocaltion(RepoPath descriptorPath) {
-        List<AqlSearchablePath> artifactPaths = Lists.newArrayList();
-        //All files in the folder containing the json file
-        AqlSearchablePath jsonRoot = new AqlSearchablePath(descriptorPath);
-        jsonRoot.setFileName("*.*");
-        artifactPaths.add(jsonRoot);
-
-        //All files in all subfolders of folder containing json file
-        AqlSearchablePath jsonRootSubfolders = new AqlSearchablePath(descriptorPath);
-        jsonRootSubfolders.setFileName("*.*");
-        if (".".equals(jsonRootSubfolders.getPath())) {  //Special case for root folder
-            jsonRootSubfolders.setPath("**");
-        } else {
-            jsonRootSubfolders.setPath(jsonRootSubfolders.getPath() + "/**");
-        }
-        artifactPaths.add(jsonRoot);
-        artifactPaths.add(jsonRootSubfolders);
-        return artifactPaths;
-    }
-
-    /**
      * Searches for all Files defined in the supplied params.
      * The relation between each path is OR, and between each parameter is AND
      * The relation between parameters and paths is AND
@@ -1476,20 +1446,9 @@ public class BintrayServiceImpl implements BintrayService {
             return null;
         }
         AqlApiItem.AndClause rootFilterClause = AqlApiItem.and();
-        AqlApiItem.OrClause artifactsPathOrClause = AqlApiItem.or();
         AqlApiItem.AndClause propertiesAndClause = AqlApiItem.and();
-
         //Resolve patterned path or patterned file names, as well as direct paths
-        for (AqlSearchablePath path : aqlSearchablePaths) {
-            log.debug("Adding path '{}' to artifact search", path.toRepoPath().toString());
-            artifactsPathOrClause.append(
-                    and(
-                            AqlApiItem.repo().matches(path.getRepo()),
-                            AqlApiItem.path().matches(path.getPath()),
-                            AqlApiItem.name().matches(path.getFileName())
-                    )
-            );
-        }
+        AqlBase.OrClause artifactsPathOrClause = AqlUtils.getSearchClauseForPaths(aqlSearchablePaths);
 
         //Filter results by property key and value
         for (String key : propertiesFilterList.keySet()) {
@@ -1529,16 +1488,6 @@ public class BintrayServiceImpl implements BintrayService {
     //0 is unlimited
     private int getFileUploadLimit() {
         return getBintrayGlobalConfig().getFileUploadLimit();
-    }
-
-    private boolean snapshotArtifactsExistInArtifactsToPush(List<FileInfo> artifactsToPush) {
-        for (FileInfo info : artifactsToPush) {
-            if (MavenNaming.isSnapshot(info.getRepoPath().getPath())) {
-                log.debug("Found snapshot artifact: " + info.getRepoPath());
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

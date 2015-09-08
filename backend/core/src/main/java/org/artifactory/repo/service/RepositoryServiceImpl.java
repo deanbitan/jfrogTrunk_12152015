@@ -23,6 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
@@ -57,10 +58,9 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
-import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SavedSearchResults;
+import org.artifactory.api.search.VersionSearchResults;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
-import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
@@ -141,17 +141,19 @@ import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.fs.service.ItemMetaInfo;
 import org.artifactory.storage.fs.service.NodeMetaInfoService;
 import org.artifactory.storage.fs.service.PropertiesService;
-import org.artifactory.storage.fs.service.StatsService;
-import org.artifactory.storage.fs.stats.StatsFlushJob;
+import org.artifactory.storage.jobs.InternalStatsFlushJob;
 import org.artifactory.storage.fs.tree.ItemNode;
 import org.artifactory.storage.fs.tree.ItemTree;
 import org.artifactory.storage.fs.tree.TreeBrowsingCriteria;
 import org.artifactory.storage.fs.tree.TreeBrowsingCriteriaBuilder;
+import org.artifactory.storage.jobs.RemoteStatsFlushJob;
+import org.artifactory.storage.service.StatsServiceImpl;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.artifactory.util.RepoPathUtils;
 import org.artifactory.util.Tree;
+import org.artifactory.util.ZipUtils;
 import org.artifactory.version.CompoundVersionDetails;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
@@ -214,7 +216,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     private StorageService storageService;
 
     @Autowired
-    private StatsService statsService;
+    private StatsServiceImpl statsService;
 
     @Autowired
     private FileService fileService;
@@ -255,11 +257,18 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
             log.warn("Failed dumping system info", e);
         }
 
-        // register statistics flushing job
-        TaskBase statsFlushTask = TaskUtils.createRepeatingTask(StatsFlushJob.class,
+        // register internal statistics flushing job
+        TaskBase localStatsFlushTask = TaskUtils.createRepeatingTask(InternalStatsFlushJob.class,
                 TimeUnit.SECONDS.toMillis(ConstantValues.statsFlushIntervalSecs.getLong()),
                 TimeUnit.SECONDS.toMillis(ConstantValues.statsFlushIntervalSecs.getLong()));
-        taskService.startTask(statsFlushTask, false);
+
+        // register remote statistics flushing job
+        TaskBase remoteFlushTask = TaskUtils.createRepeatingTask(RemoteStatsFlushJob.class,
+                TimeUnit.SECONDS.toMillis(ConstantValues.statsRemoteFlushIntervalSecs.getLong()),
+                TimeUnit.SECONDS.toMillis(ConstantValues.statsRemoteFlushIntervalSecs.getLong()));
+
+        taskService.startTask(localStatsFlushTask, false);
+        taskService.startTask(remoteFlushTask, false);
     }
 
     /**
@@ -801,6 +810,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         return new ArchiveContentRetriever().getArchiveFileContent(repo, archivePath, sourceEntryPath);
     }
 
+    @Override
+    public ArchiveFileContent getGenericArchiveFileContent(RepoPath archivePath, String sourceEntryPath)
+            throws IOException {
+        LocalRepo repo = localOrCachedRepositoryByKey(archivePath.getRepoKey());
+        return new ArchiveContentRetriever().getGenericArchiveFileContent(repo, archivePath, sourceEntryPath);
+    }
+
     /**
      * Import all the repositories under the passed folder which matches local or cached repository declared in the
      * configuration. Having empty directory for each repository is allowed and not an error. Nothing will be imported
@@ -1243,17 +1259,22 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
 
     @Override
     public StatusHolder undeployVersionUnits(Set<VersionUnit> versionUnits) {
-        BasicStatusHolder multiStatusHolder = new BasicStatusHolder();
+        BasicStatusHolder status = new BasicStatusHolder();
         InternalRepositoryService transactionalMe = getTransactionalMe();
 
         Set<RepoPath> pathsForMavenMetadataCalculation = Sets.newHashSet();
 
         for (VersionUnit versionUnit : versionUnits) {
             Set<RepoPath> repoPaths = versionUnit.getRepoPaths();
+            if (repoPaths.stream().filter(authService::canDelete).count() != repoPaths.size()) {
+                status.warn("User " + authService.currentUsername() + "doesn't have permission to delete one or more " +
+                        "the paths associated with module '" + versionUnit.getModuleInfo().getPrettyModuleId()
+                        + "', it will not be removed.", log);
+                continue;
+            }
             for (RepoPath repoPath : repoPaths) {
                 BasicStatusHolder holder = transactionalMe.undeploy(repoPath, false, true);
-                multiStatusHolder.merge(holder);
-
+                status.merge(holder);
                 if (NamingUtils.isPom(repoPath.getPath())) {
                     // We need to re-calculate the artifact id folder (which is the grandparent of the pom file)
                     RepoPath grandparentFolder = RepoPathUtils.getAncestor(repoPath, 2);
@@ -1263,15 +1284,11 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
                 }
             }
         }
-
-        for (RepoPath path : pathsForMavenMetadataCalculation) {
-            // Check to make sure of existence, might have been removed through the iterations of the version units
-            if (exists(path)) {
-                mavenMetadataService.calculateMavenMetadataAsync(path, true);
-            }
-        }
-
-        return multiStatusHolder;
+        // Check to make sure of existence, might have been removed through the iterations of the version units
+        pathsForMavenMetadataCalculation.stream()
+                .filter(this::exists)
+                .forEach(path -> mavenMetadataService.calculateMavenMetadataAsync(path, true));
+        return status;
     }
 
     @Override
@@ -1631,10 +1648,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
     }
 
     @Override
-    public ItemSearchResults<VersionUnitSearchResult> getVersionUnitsUnder(RepoPath repoPath) {
+    public VersionSearchResults getVersionUnitsUnder(RepoPath repoPath) {
         VersionUnitSearchControls controls = new VersionUnitSearchControls(repoPath);
-        ItemSearchResults<VersionUnitSearchResult> searchResults = searchService.searchVersionUnits(controls);
-        return searchResults;
+        return searchService.searchVersionUnits(controls);
     }
 
     @Override
@@ -1789,6 +1805,14 @@ public class RepositoryServiceImpl implements InternalRepositoryService {
         LocalRepo localRepo = getLocalOrCachedRepository(zipPath);
         VfsFile file = localRepo.getImmutableFile(zipPath);
              return new ZipInputStream(file.getStream());
+    }
+
+    @Override
+    public ArchiveInputStream archiveInputStream(RepoPath zipPath) throws IOException {
+        LocalRepo localRepo = getLocalOrCachedRepository(zipPath);
+        VfsFile file = localRepo.getImmutableFile(zipPath);
+        String zipSuffix = zipPath.getPath().toLowerCase();
+        return ZipUtils.returnArchiveInputStream(file.getStream(), zipSuffix);
     }
 
     @Override

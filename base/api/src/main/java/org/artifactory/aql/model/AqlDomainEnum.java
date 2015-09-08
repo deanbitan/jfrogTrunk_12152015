@@ -23,7 +23,7 @@ public enum AqlDomainEnum {
     dependencies("dependency", new String[]{"dependencies"}, buildDependencyName,
             buildDependencyType,
             buildDependencyScope),
-    modules("module", new String[]{"modules"}, buildModuleName),
+    modules("module", new String[]{"modules"}, moduleName),
     buildProperties("property", new String[]{"build", "properties"}, buildPropertyKey, buildPropertyValue),
     moduleProperties("property", new String[]{ "module","properties"}, modulePropertyKey,
             modulePropertyValue);

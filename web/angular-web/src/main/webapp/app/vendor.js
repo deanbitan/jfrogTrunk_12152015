@@ -42,7 +42,9 @@ module.exports = {
         'components/ng-password-strength/dist/scripts/ng-password-strength.js',
         'components/tooltipster/js/jquery.tooltipster.min.js',
         'components/angular-capitalize-filter/capitalize.js',
-        'components/ui-grid-draggable-rows/js/draggable-rows.js'
+        'components/tinycolor/tinycolor.js',
+        'components/angularjs-color-picker/angularjs-color-picker.min.js',
+        'vendor/draggable-rows.js'
     ],
 
     CSS: [
@@ -50,6 +52,7 @@ module.exports = {
         'components/bootstrap/dist/css/bootstrap.css',
         'components/angular-ui-layout/ui-layout.css',
         'components/angular-ui-grid/ui-grid.css',
+        'components/angularjs-color-picker/angularjs-color-picker.min.css',
         'components/animate.css/animate.css',
         'components/angularjs-toaster/toaster.css',
         'components/codemirror/lib/codemirror.css',

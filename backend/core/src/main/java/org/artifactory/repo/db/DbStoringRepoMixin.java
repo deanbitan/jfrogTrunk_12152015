@@ -104,6 +104,7 @@ import org.artifactory.storage.fs.service.FileService;
 import org.artifactory.storage.fs.service.StatsService;
 import org.artifactory.storage.fs.session.StorageSession;
 import org.artifactory.storage.fs.session.StorageSessionHolder;
+import org.artifactory.storage.service.StatsServiceImpl;
 import org.artifactory.util.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,7 +152,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
         interceptors = context.beanForType(StorageInterceptors.class);
         addonsManager = context.beanForType(AddonsManager.class);
         fileService = context.beanForType(FileService.class);
-        statsService = context.beanForType(StatsService.class);
+        statsService = context.beanForType(StatsServiceImpl.class);
         repositoryService = context.beanForType(InternalRepositoryService.class);
         vfsItemProviderFactory = context.beanForType(VfsItemProviderFactory.class);
         mavenMetadataService = context.beanForType(MavenMetadataService.class);

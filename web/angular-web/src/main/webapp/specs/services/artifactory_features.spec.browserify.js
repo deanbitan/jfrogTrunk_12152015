@@ -1,39 +1,103 @@
+'use strict';
+import FooterMock from '../../mocks/footer_mock.browserify';
 describe('ArtifactoryFeatures', () => {
 	let ArtifactoryFeatures;
 
 	beforeEach(m('artifactory.services', 'artifactory.dao'));
-	function setup(versionID, isOnline) {	
-		beforeEach(inject((_ArtifactoryFeatures_, FooterDao) => {
-			ArtifactoryFeatures = _ArtifactoryFeatures_;
-			spyOn(FooterDao, 'getInfo').and.returnValue({
-				versionID: versionID,
-				isAol: isOnline
-			});			
-		}));
+	function setup(_ArtifactoryFeatures_) {
+		ArtifactoryFeatures = _ArtifactoryFeatures_;
 	}
+  function getFooterData(FooterDao, $httpBackend) {
+  	FooterDao.get(true);
+  	$httpBackend.flush();
+  }
+	beforeEach(inject(setup));
 
-	describe('OSS on-premise', () => {
-		setup("OSS", false);
+	describe('OSS', () => {
+		new FooterMock().mockOss();
+		beforeEach(inject(getFooterData));
+		it('isDisabled should return false for OSS feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('Ruby')).toBeFalsy();
+		});
+		it('isDisabled should return true for PRO feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('NuGet')).toBeTruthy();
+		});
+		it('isDisabled should return true for ENT feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('highAvailability')).toBeTruthy();
+		});
+		it('isHidden should return true for hidden OSS feature', () => {
+			expect(ArtifactoryFeatures.isHidden('register_pro')).toBeTruthy();
+		});
+		it('isHidden should return false for non hidden OSS feature', () => {
+			expect(ArtifactoryFeatures.isHidden('highAvailability')).toBeFalsy();
+		});
 	});
 
-	describe('PRO on-premise', () => {
-		setup("PRO", false);
+	describe('PRO', () => {
+		new FooterMock().mockPro()
+		beforeEach(inject(getFooterData));
+		it('isDisabled should return false for OSS feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('Ruby')).toBeFalsy();
+		});
+		it('isDisabled should return false for PRO feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('NuGet')).toBeFalsy();
+		});
+		it('isDisabled should return true for ENT feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('highAvailability')).toBeTruthy();
+		});
+		it('isHidden should return false for hidden OSS feature', () => {
+			expect(ArtifactoryFeatures.isHidden('register_pro')).toBeFalsy();
+		});
+		it('isHidden should return false for non hidden OSS feature', () => {
+			expect(ArtifactoryFeatures.isHidden('highAvailability')).toBeFalsy();
+		});
 	});
 
-	describe('ENT on-premise', () => {
-		setup("ENT", false);
+	describe('ENT', () => {
+		new FooterMock().mockEnt();
+		beforeEach(inject(getFooterData));
+		it('isDisabled should return false for OSS feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('Ruby')).toBeFalsy();
+		});
+		it('isDisabled should return false for PRO feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('NuGet')).toBeFalsy();
+		});
+		it('isDisabled should return false for ENT feature', () => {
+			expect(ArtifactoryFeatures.isDisabled('highAvailability')).toBeFalsy();
+		});
+		it('isHidden should return false for hidden OSS feature', () => {
+			expect(ArtifactoryFeatures.isHidden('register_pro')).toBeFalsy();
+		});
+		it('isHidden should return false for non hidden OSS feature', () => {
+			expect(ArtifactoryFeatures.isHidden('highAvailability')).toBeFalsy();
+		});
 	});
 
-	describe('PRO online', () => {
-		setup("PRO", false);
+	describe('offline', () => {
+		new FooterMock();
+		beforeEach(inject(getFooterData));
+		it('isHidden should return false for hidden AOL feature', () => {
+			expect(ArtifactoryFeatures.isHidden('backups')).toBeFalsy();
+		});
+		it('isHidden should return false for non-hidden AOL feature', () => {
+			expect(ArtifactoryFeatures.isHidden('properties')).toBeFalsy();
+		});
 	});
 
-	describe('ENT online', () => {
-		setup("ENT", false);
+	describe('online', () => {
+		new FooterMock().mockAol();
+		beforeEach(inject(getFooterData));
+		it('isHidden should return true for hidden AOL feature', () => {
+			expect(ArtifactoryFeatures.isHidden('backups')).toBeTruthy();
+		});
+		it('isHidden should return false for non-hidden AOL feature', () => {
+			expect(ArtifactoryFeatures.isHidden('properties')).toBeFalsy();
+		});
 	});
 
 	describe('getAllowedLicense', () => {
-		setup("ENT", false);
+		new FooterMock();
+		beforeEach(inject(getFooterData));
 		it ('should return OSS', () => {
 			expect(ArtifactoryFeatures.getAllowedLicense('Ruby')).toEqual("OSS");
 		});
@@ -43,25 +107,5 @@ describe('ArtifactoryFeatures', () => {
 		it ('should return ENT', () => {
 			expect(ArtifactoryFeatures.getAllowedLicense('highAvailability')).toEqual("ENT");
 		});
-	});
-
-	describe('isAllowed', () => {
-		// TBD
-	});
-
-	describe('isDisabled', () => {
-		// TBD
-	});
-
-	describe('isHidden', () => {
-		// TBD
-	});
-
-	describe('isAol', () => {
-		// TBD
-	});
-
-	describe('getCurrentLicense', () => {
-		// TBD
 	});
 });

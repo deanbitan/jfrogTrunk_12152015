@@ -62,7 +62,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     public void findPropertiesUsingNotMach() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "items.find({\"type\" : \"any\",\"property.key\" : {\"$nmatch\" : \"a\"}})." +
-                        "include(\"property.key\",\"property.value\",\"node\")");
+                        "include(\"property.key\",\"property.value\",\"id\")");
         assertSize(queryResult, 31);
     }
 
@@ -761,7 +761,53 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
                 "modules.find({\"build.@start\" :\"1\"})");
         assertSize(queryResult, 2);
+        assertModule(queryResult,"bb:modb1");
+        assertModule(queryResult,"bb:modb2");
     }
+
+    @Test
+    public void findModulesBuildsPropertiesNotMatch() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"build.@start\" :{\"$nmatch\":\"1\"}})");
+        assertSize(queryResult, 1);
+        assertModule(queryResult, "ba:moda1");
+        assertModule(queryResult,"ba:moda1");
+    }
+
+    @Test
+    public void findBuildsWithPropertiesNotMatch() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "builds.find({\"@start\" :{\"$nmatch\":\"1\"}})");
+        assertSize(queryResult, 4);
+    }
+
+    @Test
+    public void findModulesWithPropertiesNotMatch() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"@start\" :{\"$nmatch\":\"1\"}})");
+        assertSize(queryResult, 2);
+        assertModule(queryResult,  "ba:moda1");
+        assertModule(queryResult,"ba:moda1");
+    }
+
+    @Test
+    public void buildPropertiesWithInclude() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"@start\" :{\"$nmatch\":\"1\"}}).include(\"@start\")");
+        assertSize(queryResult, 2);
+        assertModule(queryResult,  "ba:moda1");
+        assertModule(queryResult,"ba:moda1");
+    }
+
+    @Test
+    public void spm() {
+        AqlEagerResult queryResult = aqlService.executeQueryEager(
+                "modules.find({\"$msp\":[{\"@start\" :{\"$nmatch\":\"1\"}},{\"build.@*\" :{\"$match\":\"*\"}}]})");
+        assertSize(queryResult, 2);
+        assertModule(queryResult, "ba:moda1");
+        assertModule(queryResult,"ba:moda1");
+    }
+
 
     @Test
     public void findBuildsFilteringByItemProperties() {

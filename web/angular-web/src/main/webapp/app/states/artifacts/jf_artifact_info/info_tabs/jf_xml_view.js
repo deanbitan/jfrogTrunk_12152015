@@ -9,12 +9,6 @@ class jfXmlViewController {
     }
 
     _initXmlView() {
-        this.editorOptions = {
-            lineNumbers: true,
-            readOnly: 'nocursor',
-            mode: 'xml',
-            viewportMargin: Infinity
-        };
         this._registerEvents();
         this._getXmlViewData();
     }

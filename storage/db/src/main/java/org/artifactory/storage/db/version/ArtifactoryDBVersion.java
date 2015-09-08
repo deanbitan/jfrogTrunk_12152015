@@ -18,7 +18,8 @@ import java.util.List;
 public enum ArtifactoryDBVersion {
     v100(ArtifactoryVersion.v300, ArtifactoryVersion.v304),
     v101(ArtifactoryVersion.v310, ArtifactoryVersion.v310, new DBSqlConverter("v310")),
-    v102(ArtifactoryVersion.v311, ArtifactoryVersion.getCurrent(), new DBSqlConverter("v311"));
+    v102(ArtifactoryVersion.v311, ArtifactoryVersion.v402, new DBSqlConverter("v311")),
+    v103(ArtifactoryVersion.v410, ArtifactoryVersion.getCurrent(), new DBSqlConverter("v410"));
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryDBVersion.class);
 
 
@@ -33,10 +34,6 @@ public enum ArtifactoryDBVersion {
     public static ArtifactoryDBVersion getLast() {
         ArtifactoryDBVersion[] versions = ArtifactoryDBVersion.values();
         return versions[versions.length - 1];
-    }
-
-    public DBConverter[] getConverters() {
-        return converters;
     }
 
     public static void convert(ArtifactoryVersion from, JdbcHelper jdbcHelper, DbType dbType) {
@@ -59,6 +56,10 @@ public enum ArtifactoryDBVersion {
             }
             log.info("Finished database conversion from {} to {}", from, ArtifactoryVersion.getCurrent());
         }
+    }
+
+    public DBConverter[] getConverters() {
+        return converters;
     }
 
     public VersionComparator getComparator() {

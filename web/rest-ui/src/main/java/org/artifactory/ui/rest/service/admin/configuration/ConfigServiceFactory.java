@@ -182,6 +182,9 @@ public abstract class ConfigServiceFactory {
     public abstract RemoteRepositoryTestUrl<RemoteRepositoryConfigModel> remoteRepositoryTestUrl();
 
     @Lookup
+    public abstract IsArtifactoryInstanceService<RemoteRepositoryConfigModel> isArtifactoryInstance();
+
+    @Lookup
     public abstract GetAvailableRepositoryFields getAvailableRepositoryFieldChoices();
 
     @Lookup

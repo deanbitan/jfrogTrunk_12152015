@@ -113,6 +113,7 @@ public class RepoConfigDescriptorBuilder {
             descriptor.setRemoteRepoLayout(centralConfig.getDescriptor().getRepoLayout(model.getRemoteLayoutMapping()));
         }
         descriptor.setOffline(model.isOffline());
+        descriptor.setContentSynchronisation(model.getContentSynchronisation());
     }
 
     private void populateVirtualBasicDescriptorValues(VirtualBasicRepositoryConfigModel model,
@@ -195,6 +196,9 @@ public class RepoConfigDescriptorBuilder {
                 descriptor.setHandleReleases(maven.getHandleReleases());
                 descriptor.setHandleSnapshots(maven.getHandleSnapshots());
                 descriptor.setSuppressPomConsistencyChecks(maven.getSuppressPomConsistencyChecks());
+                break;
+            case NuGet:
+                descriptor.setForceNugetAuthentication(((NugetTypeSpecificConfigModel) type).isForceNugetAuthentication());
                 break;
         }
     }
@@ -312,6 +316,11 @@ public class RepoConfigDescriptorBuilder {
         switch (type.getRepoType()) {
             case P2:
                 buildAndSetVirtualP2Config(descriptor, (P2TypeSpecificConfigModel) type);
+                break;
+            case Docker:
+                DockerTypeSpecificConfigModel docker = (DockerTypeSpecificConfigModel) type;
+                descriptor.setForceDockerAuthentication(docker.isForceDockerAuthentication());
+                break;
             case Maven: //P2 reaches maven also
             case Gradle:
             case Ivy:
