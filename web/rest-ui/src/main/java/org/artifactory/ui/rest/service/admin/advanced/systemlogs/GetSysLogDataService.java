@@ -1,6 +1,7 @@
 package org.artifactory.ui.rest.service.admin.advanced.systemlogs;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
@@ -31,30 +32,41 @@ public class GetSysLogDataService implements RestService {
     public void execute(ArtifactoryRestRequest request, RestResponse response) {
         SystemLogData sys = new SystemLogData();
         String selectedLog = request.getQueryParamByKey("id");
-        File systemLogFile = new File(logDir, selectedLog);
-
+        // Check log file exists. Protect against LFI security RTFACT-8215
+        File[] logFiles = logDir.listFiles();
+        File systemLogFile = null;
+        for (File logFile : logFiles) {
+            if (logFile.getName().equalsIgnoreCase(selectedLog)) {
+                systemLogFile = logFile;
+                break;
+            }
+        }
+        if (systemLogFile == null) {
+            response.responseCode(HttpStatus.SC_NOT_FOUND).error("Log named " + selectedLog + " not found!");
+            return;
+        }
         readLogFile(request, systemLogFile, sys);
         setLogInfo(systemLogFile, sys);
 
         response.iModel(sys);
     }
 
-    private void readLogFile(ArtifactoryRestRequest artifactoryRequest, File systemLogFile, SystemLogData sys){
+    private void readLogFile(ArtifactoryRestRequest artifactoryRequest, File systemLogFile, SystemLogData sys) {
         StringBuilder sb = new StringBuilder();
-        if(StringUtils.isNotBlank(artifactoryRequest.getQueryParamByKey("fileSize"))){
+        if (StringUtils.isNotBlank(artifactoryRequest.getQueryParamByKey("fileSize"))) {
             lastPointer = Long.parseLong(artifactoryRequest.getQueryParamByKey("fileSize"));
         }
 
         long fileSize = systemLogFile.length();
 
         //The file didn't changed, return zero to the client
-        if (!systemLogFile.exists() || fileSize == lastPointer){
+        if (!systemLogFile.exists() || fileSize == lastPointer) {
             sys.setLogContent(StringUtils.EMPTY);
             lastPointer = 0;
             return;
         }
 
-        try(RandomAccessFile logRandomAccessFile = new RandomAccessFile(systemLogFile, "r")) {
+        try (RandomAccessFile logRandomAccessFile = new RandomAccessFile(systemLogFile, "r")) {
             String line;
             //If the log file is larger than 100K
             if (logRandomAccessFile.length() > FIRST_READ_BLOCK_SIZE) {
@@ -77,7 +89,7 @@ public class GetSysLogDataService implements RestService {
         sys.setLogContent(sb.toString());
     }
 
-    private void setLogInfo(File systemLogFile, SystemLogData sys){
+    private void setLogInfo(File systemLogFile, SystemLogData sys) {
         Date logLastModified = new Date(systemLogFile.lastModified());
         Date viewLastUpdate = new Date(System.currentTimeMillis());
         sys.setLastUpdateLabel(viewLastUpdate);

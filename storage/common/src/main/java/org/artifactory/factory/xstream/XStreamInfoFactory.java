@@ -54,6 +54,10 @@ import java.util.zip.ZipEntry;
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class XStreamInfoFactory extends AbstractInfoFactory {
+
+    private XStream securityXStream;
+    private XStream fileSystemXStream;
+
     @Override
     public RepoPath createRepoPathFromId(String repoPathId) {
         return InternalRepoPathFactory.createRepoPath(repoPathId);
@@ -211,26 +215,32 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
 
     @Override
     public XStream getSecurityXStream() {
-        return XStreamFactory.create(SecurityDataImpl.class,
-                PermissionTargetImpl.class,
-                AclImpl.class,
-                AceImpl.class,
-                UserImpl.class,
-                UserGroupImpl.class,
-                GroupImpl.class
-        );
+        if (securityXStream == null) {
+            securityXStream = XStreamFactory.create(SecurityDataImpl.class,
+                    PermissionTargetImpl.class,
+                    AclImpl.class,
+                    AceImpl.class,
+                    UserImpl.class,
+                    UserGroupImpl.class,
+                    GroupImpl.class
+            );
+        }
+        return securityXStream;
     }
 
     @Override
     public XStream getFileSystemXStream() {
-        return XStreamFactory.create(FileInfoImpl.class,
-                FileAdditionalInfo.class,
-                FolderInfoImpl.class,
-                FolderAdditionalInfo.class,
-                StatsImpl.class,
-                PropertiesImpl.class,
-                WatchersImpl.class,
-                WatcherImpl.class);
+        if (fileSystemXStream == null) {
+            fileSystemXStream = XStreamFactory.create(FileInfoImpl.class,
+                    FileAdditionalInfo.class,
+                    FolderInfoImpl.class,
+                    FolderAdditionalInfo.class,
+                    StatsImpl.class,
+                    PropertiesImpl.class,
+                    WatchersImpl.class,
+                    WatcherImpl.class);
+        }
+        return fileSystemXStream;
     }
 
     @Override

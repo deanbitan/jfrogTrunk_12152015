@@ -4,6 +4,7 @@ import org.artifactory.rest.common.model.BaseModel;
 import org.artifactory.rest.common.model.FeedbackMsg;
 import org.artifactory.rest.common.model.RestModel;
 import org.artifactory.rest.common.util.ResponseHandler;
+import org.artifactory.util.UiRequestUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -215,7 +216,7 @@ public class ArtifactoryRestResponse<T> implements RestResponse<T> {
 
     public void setServletRequest(HttpServletRequest servletRequest) {
         this.servletRequest = servletRequest;
-        if (servletRequest.getRequestURI().indexOf("/ui/") != -1) {
+        if (UiRequestUtils.isUiRestRequest(servletRequest)) {
             setUiCall(true);
         }
     }

@@ -22,17 +22,15 @@ import org.apache.http.HttpStatus;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.ErrorResponse;
+import org.artifactory.util.UiRequestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
@@ -58,6 +56,9 @@ public class ArtifactoryRestExceptionMapper implements ExceptionMapper<WebApplic
 
     @Context
     UriInfo uriInfo;
+
+    @Context
+    HttpServletRequest servletRequest;
 
 
     @Override
@@ -114,7 +115,7 @@ public class ArtifactoryRestExceptionMapper implements ExceptionMapper<WebApplic
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new ErrorResponse(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"));
         // ui related request do not require chanllange message
-        if (!(uriInfo.getBaseUri().getPath().indexOf("/ui/") != -1)) {
+        if (!UiRequestUtils.isUiRestRequest(servletRequest)) {
             responseBuilder.header("WWW-Authenticate", "Basic realm=\"" + authenticationEntryPoint.getRealmName() + "\"");
         }
         return responseBuilder.build();

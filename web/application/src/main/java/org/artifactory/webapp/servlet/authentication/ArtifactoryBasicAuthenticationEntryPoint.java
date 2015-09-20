@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.util.HttpUtils;
+import org.artifactory.util.UiRequestUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
@@ -31,8 +32,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static javax.servlet.http.HttpServletResponse.SC_UNAUTHORIZED;
 
 /**
  * Intercept spring security exceptions and transforms the response into a JSON object.
@@ -83,7 +84,7 @@ public class ArtifactoryBasicAuthenticationEntryPoint extends BasicAuthenticatio
     private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException, int responseStatusCode)
             throws IOException {
-        if (request.getRequestURI().indexOf("/ui/") == -1) {
+        if (!UiRequestUtils.isUiRestRequest(request)) {
             response.addHeader("WWW-Authenticate", "Basic realm=\"" + getRealmName() + "\"");
         }
         HttpUtils.sendErrorResponse(response, responseStatusCode, authException.getMessage());

@@ -67,6 +67,14 @@ public abstract class UiRequestUtils {
         UI_PATH_PREFIXES.addAll(uriPathPrefixes);
     }
 
+    public static boolean isUiRestRequest(HttpServletRequest request) {
+        String requestAgent = request.getHeader("Request-Agent");
+        if (requestAgent != null && requestAgent.equals("artifactoryUI")) {
+            return true;
+        }
+        return false;
+    }
+
     @SuppressWarnings({"IfMayBeConditional"})
     public static String getContextPrefix(HttpServletRequest request) {
         String contextPrefix;

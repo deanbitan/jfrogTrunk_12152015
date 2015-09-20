@@ -56,6 +56,7 @@ public class AccessFilterTest {
         printWriter.write(anyObject(String.class));
         expect(response.getWriter()).andReturn(printWriter);
         expect(request.getRequestURI()).andReturn("testuri");
+        expect(request.getHeader("Request-Agent")).andStubReturn("xx");
         replay(request, response, printWriter);
         authenticationEntryPoint.commence(request, response,
                 new InsufficientAuthenticationException("Authentication required"));

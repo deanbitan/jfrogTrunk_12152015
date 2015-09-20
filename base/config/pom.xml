@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-base-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.1.0</version>
+        <version>4.1.2</version>
     </parent>
 
     <properties>
@@ -40,6 +40,11 @@
         <dependency>
             <groupId>org.artifactory</groupId>
             <artifactId>artifactory-capi</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>net.java.dev.stax-utils</groupId>
+            <artifactId>stax-utils</artifactId>
         </dependency>
 
         <dependency>
