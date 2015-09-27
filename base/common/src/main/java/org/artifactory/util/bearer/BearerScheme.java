@@ -18,6 +18,12 @@ import org.artifactory.api.context.ContextHelper;
  * @author Shay Yaakov
  */
 public class BearerScheme extends RFC2617Scheme {
+    private Credentials realCredentials;
+
+    public BearerScheme(Credentials credentials) {
+        this.realCredentials = credentials;
+    }
+
     @Override
     public String getSchemeName() {
         return "bearer";
@@ -34,14 +40,18 @@ public class BearerScheme extends RFC2617Scheme {
     }
 
     @Override
-    public Header authenticate(Credentials credentials, HttpRequest request) throws AuthenticationException {
-        return authenticate(credentials, request, new BasicHttpContext());
+    public Header authenticate(Credentials dummyCredentials, HttpRequest request) throws AuthenticationException {
+        return authenticate(dummyCredentials, request, new BasicHttpContext());
     }
 
     @Override
-    public Header authenticate(Credentials credentials, HttpRequest request, HttpContext context)
+    public Header authenticate(Credentials dummyCredentials, HttpRequest request, HttpContext context)
             throws AuthenticationException {
-        String token = ContextHelper.get().beanForType(TokenProvider.class).getToken(getParameters());
+        TokenProvider tokenProvider = ContextHelper.get().beanForType(TokenProvider.class);
+        String token = tokenProvider.getToken(getParameters(),
+                request.getRequestLine().getMethod(),
+                request.getRequestLine().getUri(),
+                realCredentials);
         final CharArrayBuffer buffer = new CharArrayBuffer(32);
         buffer.append(AUTH.WWW_AUTH_RESP);
         buffer.append(": Bearer ");

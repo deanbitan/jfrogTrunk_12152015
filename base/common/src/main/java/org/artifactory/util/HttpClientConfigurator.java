@@ -82,9 +82,7 @@ public class HttpClientConfigurator {
     public HttpClientConfigurator() {
         builder.setUserAgent(HttpUtils.getArtifactoryUserAgent());
         credsProvider = new BasicCredentialsProvider();
-        if (!ConstantValues.httpAcceptEncodingGzip.getBoolean()) {
-            builder.disableContentCompression();
-        }
+        handleGzipResponse(ConstantValues.httpAcceptEncodingGzip.getBoolean());
         config.setMaxRedirects(20);
         config.setCircularRedirectsAllowed(true);
     }
@@ -147,6 +145,17 @@ public class HttpClientConfigurator {
      */
     public HttpClientConfigurator connectionMgr(PoolingHttpClientConnectionManager connectionManager) {
         builder.setConnectionManager(connectionManager);
+        return this;
+    }
+
+    /**
+     * Disable the automatic gzip compression on read.
+     * Once disabled cannot be activated.
+     */
+    public HttpClientConfigurator handleGzipResponse(boolean handleGzipResponse) {
+        if (!handleGzipResponse) {
+            builder.disableContentCompression();
+        }
         return this;
     }
 
@@ -291,7 +300,8 @@ public class HttpClientConfigurator {
         return this;
     }
 
-    public HttpClientConfigurator enableTokenAuthentication(boolean enableTokenAuthentication) {
+    public HttpClientConfigurator enableTokenAuthentication(boolean enableTokenAuthentication,
+            String username, String password) {
         if (enableTokenAuthentication) {
             if (StringUtils.isBlank(host)) {
                 throw new IllegalStateException("Cannot configure authentication when host is not set.");
@@ -301,10 +311,17 @@ public class HttpClientConfigurator {
 
             // We need dummy credentials otherwise we won't respond to a challenge properly
             AuthScope authScope = new AuthScope(host, AuthScope.ANY_PORT, AuthScope.ANY_REALM);
-            credsProvider.setCredentials(authScope, new UsernamePasswordCredentials("dummy", "dummy"));
+            // Dummy:dummy is the specification for forcing token authentication
+            UsernamePasswordCredentials dummyCredentials = new UsernamePasswordCredentials("dummy", "dummy");
+            credsProvider.setCredentials(authScope, dummyCredentials);
 
+            // The real credentials are passed to the Bearer that will get the token with them
+            UsernamePasswordCredentials realCredentials = null;
+            if (StringUtils.isNotBlank(username)) {
+                realCredentials = new UsernamePasswordCredentials(username, password);
+            }
             Registry<AuthSchemeProvider> bearerRegistry = RegistryBuilder.<AuthSchemeProvider>create()
-                    .register("Bearer", new BearerSchemeFactory())
+                    .register("Bearer", new BearerSchemeFactory(realCredentials))
                     .build();
 
             builder.setDefaultAuthSchemeRegistry(bearerRegistry);
