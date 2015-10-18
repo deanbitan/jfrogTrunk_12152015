@@ -339,6 +339,8 @@ public abstract class BasicSqlGenerator {
     private SqlTableEnum domainToTable(AqlDomainEnum domainEnum) {
         switch (domainEnum) {
             case archives:
+                return SqlTableEnum.indexed_archives;
+            case entries:
                 return SqlTableEnum.archive_names;
             case items:
                 return SqlTableEnum.nodes;

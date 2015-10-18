@@ -1,5 +1,6 @@
 package org.artifactory.rest.common.service;
 
+import org.artifactory.repo.RepoPath;
 import org.artifactory.util.UiRequestUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -129,6 +130,14 @@ public class ArtifactoryRestRequest<T> {
             numOfPages = numOfPages + 1;
         }
         return numOfPages;
+    }
+
+    public String getDownloadLink(RepoPath repoPath){
+        if (repoPath != null) {
+            return servletRequest.getContextPath() + "/" + repoPath.getRepoKey() + "/" + repoPath.getPath();
+        }else{
+            return  "";
+        }
     }
 
     public static class RequestBuilder<T> {

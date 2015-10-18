@@ -3,7 +3,7 @@ import TOOLTIP from '../../../constants/artifact_tooltip.constant';
 
 export class AdminRepositoryFormController {
     constructor($q, $scope, $stateParams, $state, RepositoriesDao, PropertySetsDao, ArtifactoryGridFactory,
-            ArtifactoryModal, ArtifactoryFeatures, ArtifactoryNotifications, commonGridColumns) {
+            ArtifactoryModal, ArtifactoryFeatures, ArtifactoryNotifications, commonGridColumns,ArtifactoryModelSaver) {
         this.$scope = $scope;
         this.$q = $q;
         this.currentTab = 'basic';
@@ -20,6 +20,8 @@ export class AdminRepositoryFormController {
         this.replicationsGridOption = {};
         this.replicationScope = $scope.$new();
         this.TOOLTIP = TOOLTIP.admin.repositories;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['repoInfo'],['replications.*.proxies']);
+
 
         this._createGrid();
         this.initRepoForm();
@@ -89,9 +91,17 @@ export class AdminRepositoryFormController {
                     }
                     this._getFieldsOptions();
 
-                    this.lastSmartRemoteURL = this.repoInfo.basic.url;
-                    if (this.repoType == fieldsValuesDictionary.REPO_TYPE.REMOTE && !this.repoInfo.basic.contentSynchronisation.enabled)
-                        this._detectSmartRepository();
+                    if (this.repoType == fieldsValuesDictionary.REPO_TYPE.REMOTE) { // && !this.repoInfo.basic.contentSynchronisation.enabled)
+                        this._detectSmartRepository(false).then(()=>{
+                            this.lastSmartRemoteURL = this.repoInfo.basic.url;
+                        })
+                    }
+                    this.repoInfo.basic.selectedLocalRepositories = _.pluck(_.filter(this.repoInfo.basic.resolvedRepositories, (repo)=>{
+                        return repo.type === 'local';
+                    }),'repoName');
+
+                    this.artifactoryModelSaver.save();
+
                 });
 
     }
@@ -139,26 +149,39 @@ export class AdminRepositoryFormController {
         this._detectSmartRepository();
     }
 
-    _detectSmartRepository() {
-
+    _detectSmartRepository(showModal=true) {
         if (this.features.isOss()) {
             return this.$q.when();
         }
 
         let defer = this.$q.defer();
+        this.smartRepoUnknownCapabilities = false;
 
-        this.repositoriesDao.detectSmartRepository(this.repoInfo).$promise.then((result)=> {
-            if (result.info == 'true') {
+        let repoInfoCopy = angular.copy(this.repoInfo);
+        if (!repoInfoCopy.typeSpecific.repoType) {
+            repoInfoCopy.typeSpecific.repoType = "Generic";
+        }
+
+        this.repositoriesDao.detectSmartRepository(repoInfoCopy).$promise.then((result)=> {
+            if (result.artifactory && result.version && result.features.length) {
                 if (!this.repoInfo.basic.contentSynchronisation.enabled || this.repoInfo.basic.url != this.lastSmartRemoteURL) {
                     this.repoInfo.basic.contentSynchronisation.enabled = true;
                     this.lastSmartRemoteURL = this.repoInfo.basic.url;
+                    this.smartRepoFeatures = result.features;
 
-                    let modalInstance;
-                    let modalScope = this.$scope.$new();
-                    modalScope.smartRepo = this.repoInfo.basic.contentSynchronisation;
-                    modalScope.smartRepo.typeSpecific = this.repoInfo.typeSpecific;
-                    modalScope.closeModal = () => modalInstance.close();
-                    modalInstance = this.modal.launchModal('smart_remote_repository', modalScope);
+                    if (localStorage.disableSmartRepoPopup !== "true" && showModal) {
+                        let modalInstance;
+                        let modalScope = this.$scope.$new();
+                        modalScope.smartRepo = this.repoInfo.basic.contentSynchronisation;
+                        modalScope.smartRepo.typeSpecific = this.repoInfo.typeSpecific;
+                        modalScope.closeModal = () => modalInstance.close();
+                        modalScope.options = {dontShowAgain: false};
+                        modalScope.isSmartRepoSupportFeature = (featureName) => this.isSmartRepoSupportFeature(featureName);
+                        modalScope.onDontShowAgain = () => {
+                            localStorage.disableSmartRepoPopup = modalScope.options.dontShowAgain;
+                        };
+                        modalInstance = this.modal.launchModal('smart_remote_repository', modalScope);
+                    }
 
                     defer.resolve(true);
                 }
@@ -166,12 +189,19 @@ export class AdminRepositoryFormController {
                     defer.resolve(false);
             }
             else {
+                if (result.artifactory && result.version === null) {
+                    this.smartRepoUnknownCapabilities = true;
+                }
                 this.repoInfo.basic.contentSynchronisation.enabled = false;
                 defer.resolve(false);
             }
         });
 
         return defer.promise;
+    }
+
+    isSmartRepoSupportFeature(featureName) {
+        return _.findWhere(this.smartRepoFeatures,{name: featureName}) !== undefined;
     }
 
     testRemoteReplication() {
@@ -237,6 +267,11 @@ export class AdminRepositoryFormController {
             fields.proxies = fields.proxies || [];
             fields.proxies.unshift('');
             this.repositoryLayouts = fields.repositoryLayouts;
+
+            if (this.repoType.toLowerCase() == fieldsValuesDictionary.REPO_TYPE.VIRTUAL) {
+                this.repositoryLayouts.unshift('');
+            }
+
             this.remoteLayoutMapping = angular.copy(fields.repositoryLayouts);
             this.remoteLayoutMapping.unshift('');
             this.mavenSnapshotRepositoryBehaviors = fieldsValuesDictionary['snapshotRepositoryBehavior'];
@@ -326,10 +361,12 @@ export class AdminRepositoryFormController {
     save_update() {
         if (this.newRepository) {
             this.repositoriesDao.save(this.repoInfo).$promise.then((result)=> {
+                this.artifactoryModelSaver.save();
                 this.$state.go('^.list', {repoType: this.repoType});
             });
         } else {
             this.repositoriesDao.update(this.repoInfo).$promise.then((result)=> {
+                this.artifactoryModelSaver.save();
                 this.$state.go('^.list', {repoType: this.repoType});
             });
         }
@@ -444,6 +481,8 @@ export class AdminRepositoryFormController {
 
                     this.repositoriesList = [];
                     this.repositoriesList = repos.availableLocalRepos.concat(repos.availableRemoteRepos).concat(repos.availableVirtualRepos);
+                    this.artifactoryModelSaver.save();
+
                 });
     }
 
@@ -481,25 +520,25 @@ export class AdminRepositoryFormController {
                 this.repoInfo.basic = {};
                 this.repoInfo.basic.repositoryLayout = {};
             }
+            this.repositoryLayouts = _.filter(this.repositoryLayouts, (layout)=>{return layout !== ''});
             if (this.repoType.toLowerCase() == fieldsValuesDictionary.REPO_TYPE.VIRTUAL) {
-                this.repoInfo.basic.layout = "";
+                this.repositoryLayouts.unshift('');
+            }
+
+            let defaultLayout = defaultLayouts[type];
+            if (defaultLayout && _.includes(this.repositoryLayouts, defaultLayout)) {
+                this.repoInfo.basic.layout = defaultLayout;
                 foundLayout = true;
             } else {
-                let defaultLayout = defaultLayouts[type];
-                if (defaultLayout && _.includes(this.repositoryLayouts, defaultLayout)) {
-                    this.repoInfo.basic.layout = defaultLayout;
-                    foundLayout = true;
-                } else {
-                    this.repositoryLayouts.forEach((layout)=> {
-                        if (layout.indexOf(type) != -1) {
-                            this.repoInfo.basic.layout = layout;
-                            foundLayout = true;
-                        }
-                    });
-                }
-                if (!foundLayout) {
-                    this.repoInfo.basic.layout = "simple-default";
-                }
+                this.repositoryLayouts.forEach((layout)=> {
+                    if (layout.indexOf(type) != -1) {
+                        this.repoInfo.basic.layout = layout;
+                        foundLayout = true;
+                    }
+                });
+            }
+            if (!foundLayout) {
+                this.repoInfo.basic.layout = "simple-default";
             }
         }
     }
@@ -755,9 +794,6 @@ export class AdminRepositoryFormController {
     }
 
     cancel() {
-        this.modal.confirm("You have unsaved changes. Leaving this page will discard changes.", "Discard Changes", { confirm: "Discard" }).then(()=> {
-                    this.$state.go('^.list', {repoType: this.repoType});
-                });
-
+        this.$state.go('^.list', {repoType: this.repoType});
     }
 }

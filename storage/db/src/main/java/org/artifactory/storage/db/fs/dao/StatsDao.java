@@ -46,20 +46,49 @@ public class StatsDao extends BaseDao {
         super(jdbcHelper);
     }
 
+    /**
+     * Fetches all stats for specific nodeId
+     *
+     * @param nodeId - artifact identifier
+     * @param supportRemoteStats
+     *
+     * @return {@link Stat}
+     *
+     * @throws SQLException
+     */
     @Nullable
     public Stat getStats(long nodeId, boolean supportRemoteStats) throws SQLException {
-        ResultSet resultSet = null;
         Stat stat;
+
+        stat = getLocalStats(nodeId);
+        if (supportRemoteStats) {
+            stat = updateRemoteDownloadStats(nodeId, stat);
+        }
+
+        return stat;
+    }
+
+    /**
+     * Fetches local or remote stats for specific nodeId,
+     * (remote stats fetched by specific origin)
+     *
+     * @param nodeId - artifact identifier
+     * @param origin - host initiated download
+     * @param supportRemoteStats
+     *
+     * @return {@link Stat}
+     *
+     * @throws SQLException
+     */
+    @Nullable
+    public Stat getStats(long nodeId, String origin, boolean supportRemoteStats) throws SQLException {
+        ResultSet resultSet = null;
+        Stat stat = null;
         try {
-            resultSet = jdbcHelper.executeSelect("SELECT * FROM stats WHERE node_id = ?", nodeId);
-            if (resultSet.next()) {
-                stat = statFromResultSet(resultSet);
-                if (supportRemoteStats) {
-                    // disable feature for 4.1
-                    //   updateRemoteDownloadStats(nodeId, stat);
-                }
-            }else {
-                return null;
+            if(Strings.isNullOrEmpty(origin)) { // get local stats
+                return getLocalStats(nodeId);
+            } else if (supportRemoteStats) { // get remote stats
+                return getRemoteStats(nodeId, origin);
             }
         } finally {
             DbUtils.close(resultSet);
@@ -70,22 +99,96 @@ public class StatsDao extends BaseDao {
     /**
      * update remote Download stats
      * @param nodeId - node id
-     * @param stat - stats
+     * @param localStats - stats
      * @throws SQLException
      */
-    private void updateRemoteDownloadStats(long nodeId, Stat stat) throws SQLException {
+    private Stat updateRemoteDownloadStats(long nodeId, Stat localStats) throws SQLException {
         Stat remoteStat = remoteStatsDownload(nodeId);
-        if (remoteStat != null) {
-            stat.setRemoteDownloadCount(remoteStat.getRemoteDownloadCount());
-            stat.setRemoteLastDownloadedBy(remoteStat.getRemoteLastDownloadedBy());
-            stat.setRemoteLastDownloaded(remoteStat.getRemoteLastDownloaded());
-        }
+        Stat mergedStat = merge(localStats, remoteStat);
+        if (localStats == null && mergedStat.getRemoteDownloadCount() == 0)
+            return localStats;
+        return mergedStat;
     }
 
     /**
+     * Merges local and remote stats
+     *
+     * @param localStats
+     * @param remoteStat
+     */
+    private Stat merge(Stat localStats, Stat remoteStat) {
+        if(localStats == null) {
+            return remoteStat;
+        }
+        if (remoteStat != null) {
+            localStats.setRemoteDownloadCount(remoteStat.getRemoteDownloadCount());
+            localStats.setRemoteLastDownloadedBy(remoteStat.getRemoteLastDownloadedBy());
+            localStats.setRemoteLastDownloaded(remoteStat.getRemoteLastDownloaded());
+            localStats.setOrigin(remoteStat.getOrigin());
+            localStats.setPath(remoteStat.getPath());
+        }
+        return localStats;
+    }
+
+    /**
+     * Fetches local stats for the given nodeId
      *
      * @param nodeId - node id
-     * @return num of downloads
+
+     * @return {@link Stat}
+     *
+     * @throws SQLException
+     */
+    private Stat getLocalStats(long nodeId) throws SQLException {
+        ResultSet resultSet = null;
+        Stat stat = null;
+
+        try {
+            resultSet = jdbcHelper.executeSelect("SELECT * FROM stats WHERE node_id = ?", nodeId);
+            if (resultSet.next()) {
+                stat = statFromLocalResultSet(resultSet);
+
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return stat;
+    }
+
+    /**
+     * Fetches remote stats for the given nodeId and origin
+     *
+     * @param nodeId - node id
+     * @param origin - host initiated download
+
+     * @return {@link Stat}
+     *
+     * @throws SQLException
+     */
+    private Stat getRemoteStats(long nodeId, String origin) throws SQLException {
+        ResultSet resultSet = null;
+        Stat stat = null;
+
+        try {
+            resultSet = jdbcHelper.executeSelect("SELECT download_count, last_downloaded, last_downloaded_by " +
+                    "FROM stats_remote WHERE node_id = ? and origin = ?", nodeId, origin);
+            if (resultSet.next()) {
+                stat = statFromRemoteResultSet(resultSet);
+            }else {
+                return null;
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return stat;
+    }
+
+    /**
+     * Fetches remote part of the stats
+     *
+     * @param nodeId - node id
+     * @return {@link Stat}
+     *
      * @throws SQLException
      */
     private Stat remoteStatsDownload(long nodeId) throws SQLException {
@@ -97,10 +200,12 @@ public class StatsDao extends BaseDao {
                     "FROM stats_remote WHERE node_id = ?", nodeId);
             if (resultSetCount.next()) {
                 stat = remoteStatDownloadResultSet(resultSetCount);
-                resultSet = jdbcHelper.executeSelect("SELECT last_downloaded_by FROM stats_remote WHERE node_id = ?" +
+                resultSet = jdbcHelper.executeSelect("SELECT last_downloaded_by, origin, path FROM stats_remote WHERE node_id = ?" +
                         " and last_downloaded = ?", nodeId,stat.getRemoteLastDownloaded());
                 if (resultSet.next()) {
                     stat.setRemoteLastDownloadedBy(resultSet.getString(1));
+                    stat.setOrigin(resultSet.getString(2));
+                    stat.setPath(resultSet.getString(3));
                 }
             }else {
                 return null;
@@ -111,6 +216,7 @@ public class StatsDao extends BaseDao {
         }
         return stat;
     }
+
     /**
      * check if this node had data from this specific origin (on remote_stats),
      * this check require to determine if an update or create is require
@@ -134,7 +240,6 @@ public class StatsDao extends BaseDao {
         }
     }
 
-
     /**
      * insert new remote stats if not exist
      * @param stats - stats to insert
@@ -143,8 +248,8 @@ public class StatsDao extends BaseDao {
      */
     private int createRemoteStats(Stat stats) throws SQLException {
         log.debug("Creating stats {}", stats);
-        return jdbcHelper.executeUpdate("INSERT INTO stats_remote VALUES (?,?,?,?,?)", stats.getNodeId(),stats.getOrigin(),
-                stats.getRemoteDownloadCount(), stats.getRemoteLastDownloaded(), stats.getRemoteLastDownloadedBy()
+        return jdbcHelper.executeUpdate("INSERT INTO stats_remote VALUES (?,?,?,?,?,?)", stats.getNodeId(),stats.getOrigin(),
+                stats.getRemoteDownloadCount(), stats.getRemoteLastDownloaded(), stats.getRemoteLastDownloadedBy(), stats.getPath()
         );
     }
 
@@ -168,26 +273,34 @@ public class StatsDao extends BaseDao {
     private int updateRemoteStats(Stat stats) throws SQLException {
         log.debug("Updating stats {}", stats);
         return jdbcHelper.executeUpdate("UPDATE stats_remote SET " +
-                        "download_count = ?, last_downloaded = ?, last_downloaded_by = ? " +
+                        "download_count = ?, last_downloaded = ?, last_downloaded_by = ?, path = ? " +
                         "WHERE node_id = ? and origin = ?",
                 stats.getRemoteDownloadCount(), stats.getRemoteLastDownloaded(), stats.getRemoteLastDownloadedBy(),
-                stats.getNodeId(),stats.getOrigin()
+                stats.getPath(), stats.getNodeId(),stats.getOrigin()
         );
     }
 
+    /**
+     * Updates stats in DB
+     *
+     * @param stats {@link Stat} to write to DB
+     * @param supportRemoteStats is SmartRepo feature on
+     *
+     * @return -1 : failure, 0 : nothing changed, 1 : success
+     * @throws SQLException
+     */
     public int updateStats(Stat stats, boolean supportRemoteStats) throws SQLException {
         log.debug("Updating stats {}", stats);
-        // update local stats
-        int status = jdbcHelper.executeUpdate("UPDATE stats SET " +
-                        "download_count = ?, last_downloaded = ?, last_downloaded_by = ? WHERE node_id = ?",
-                stats.getLocalDownloadCount(), stats.getLocalLastDownloaded(), stats.getLocalLastDownloadedBy(),
-                stats.getNodeId()
-        );
-        if (!Strings.isNullOrEmpty(stats.getOrigin()) && supportRemoteStats) {
-            // create or update remote stats data
+        if (!stats.isRemote()) { // update local stats
+            return jdbcHelper.executeUpdate("UPDATE stats SET " +
+                            "download_count = ?, last_downloaded = ?, last_downloaded_by = ? WHERE node_id = ?",
+                    stats.getLocalDownloadCount(), stats.getLocalLastDownloaded(), stats.getLocalLastDownloadedBy(),
+                    stats.getNodeId()
+            );
+        } else if (supportRemoteStats) { // create or update remote stats data
             return createUpdateRemoteStatData(stats);
         }
-        return status;
+        return 0;
     }
 
     /**
@@ -208,16 +321,17 @@ public class StatsDao extends BaseDao {
 
     public int createStats(Stat stats, boolean supportRepoStats) throws SQLException {
         log.debug("Creating stats {}", stats);
-        int status = jdbcHelper.executeUpdate("INSERT INTO stats VALUES (?, ?, ?, ?)", stats.getNodeId(),
-                stats.getLocalDownloadCount(), stats.getLocalLastDownloaded(), stats.getLocalLastDownloadedBy()
-        );
 
-        if (!Strings.isNullOrEmpty(stats.getOrigin()) && supportRepoStats) {
-            if (!isOriginExistForThisNodeId(stats.getNodeId(), stats.getOrigin())) {
-                status = createRemoteStats(stats);
+        if (stats.isRemote()) {
+            if (supportRepoStats && !isOriginExistForThisNodeId(stats.getNodeId(), stats.getOrigin())) {
+                return createRemoteStats(stats);
             }
+        } else {
+            return jdbcHelper.executeUpdate("INSERT INTO stats VALUES (?, ?, ?, ?)", stats.getNodeId(),
+                    stats.getLocalDownloadCount(), stats.getLocalLastDownloaded(), stats.getLocalLastDownloadedBy()
+            );
         }
-        return status;
+        return 0; // no change
     }
 
     public int deleteStats(long nodeId, boolean supportRemoteStats) throws SQLException {
@@ -244,13 +358,17 @@ public class StatsDao extends BaseDao {
         }
     }
 
-    private Stat statFromResultSet(ResultSet rs) throws SQLException {
+    private Stat statFromLocalResultSet(ResultSet rs) throws SQLException {
         return new Stat(rs.getLong(1), rs.getLong(2), rs.getLong(3),
                 rs.getString(4), 0, 0, null
         );
     }
 
     private Stat remoteStatDownloadResultSet(ResultSet rs) throws SQLException {
-        return new Stat(0,0,0,null,rs.getLong(1),rs.getLong(2), null, null);
+        return new Stat(0,0,0,null,rs.getLong(1),rs.getLong(2), null, null, null);
+    }
+
+    private Stat statFromRemoteResultSet(ResultSet rs) throws SQLException {
+        return new Stat(0,0,0,null,rs.getLong(1),rs.getLong(2), rs.getString(3), null, null);
     }
 }

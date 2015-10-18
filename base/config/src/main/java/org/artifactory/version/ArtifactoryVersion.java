@@ -128,12 +128,14 @@ public enum ArtifactoryVersion {
     v410("4.1.0", 40011),
     v411("4.1.1", 40016),
     v412("4.1.2", 40017),
-    v413("4.1.3", Integer.MAX_VALUE);
+    v413("4.1.3", 40020),
+    v420("4.2.0", Integer.MAX_VALUE);
 
     public static ArtifactoryVersion getCurrent() {
         ArtifactoryVersion[] versions = ArtifactoryVersion.values();
         return versions[versions.length - 1];
     }
+
     private final String value;
     private final int revision;
     private final Map<String, SubConfigElementVersion> subConfigElementVersionsByClass =

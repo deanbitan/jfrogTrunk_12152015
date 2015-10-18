@@ -258,10 +258,6 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             log.warn("Failed to detect edition {}", e.getMessage());
             log.debug("Failed to detect edition {}", e.getMessage(), e);
         }
-        if (message == null) {
-            // build the generic version string (no edition details
-            buildNoEditionMessage(versionDetails);
-        }
 
         // artifactory home location
         message += " Artifactory Home: '" + artifactoryHome.getHomeDir().getAbsolutePath() + "'\n";
@@ -311,19 +307,5 @@ public class ArtifactoryContextConfigListener implements ServletContextListener 
             }
         }
         throw new IllegalArgumentException("Couldn't find matching art for " + runningEdition);
-    }
-
-    private String buildNoEditionMessage(CompoundVersionDetails versionDetails) {
-        String msg =
-                "\n" +
-                        "               _   _  __           _\n" +
-                        "    /\\        | | (_)/ _|         | |\n" +
-                        "   /  \\   _ __| |_ _| |_ __ _  ___| |_ ___  _ __ _   _\n" +
-                        "  / /\\ \\ | '__| __| |  _/ _` |/ __| __/ _ \\| '__| | | |\n" +
-                        " / ____ \\| |  | |_| | || (_| | (__| || (_) | |  | |_| |\n" +
-                        "/_/    \\_\\_|   \\__|_|_| \\__,_|\\___|\\__\\___/|_|   \\__, |\n" +
-                        String.format(" Version:  %-39s__/ |\n", versionDetails.getVersionName()) +
-                        String.format(" Revision: %-38s|___/\n", versionDetails.getRevision());
-        return msg;
     }
 }

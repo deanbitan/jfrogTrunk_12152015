@@ -151,10 +151,13 @@ class jfMultiDeployController {
             this.deployMultiUploader.clearQueue();
             this.errorQueue = [];
         }
-        else if (this.onSuccess && typeof this.onSuccess === 'function') {
+        else {
             this.artifactoryNotifications.createMessageWithHtml({type: 'success', body: `Successfully deployed ${this.multiSuccessMessageCount} files`});
+        }
+        if (this.onSuccess && typeof this.onSuccess === 'function') {
             this.onSuccess();
         }
+
     }
 
     /**
@@ -189,7 +192,7 @@ class jfMultiDeployController {
         if (this.deployFile.unitInfo && this.deployFile.unitInfo.debianArtifact) {
             ok = this.deployFile.unitInfo.distribution && this.deployFile.unitInfo.component && this.deployFile.unitInfo.architecture;
         }
-        return ok && this.uploadCompleted;
+        return ok && this.uploadCompleted && this.deployFile.repoDeploy;
     }
 
     onAfterAddingFile(fileItem) {
@@ -206,14 +209,24 @@ class jfMultiDeployController {
         }
     }
 
-    onProgressAll() {
+    onProgressAll(progressPercent) {
         if (!this.progress) {
             this.progress = true;
             this.artifactoryNotifications.createMessageWithHtml({
                 type: 'success',
-                body: 'Deploy in progress...',
-                timeout: 60 * 60000
+                body: '<div id="deploy-progress-percent">Deploy in progress... (0%)</div>' +
+                      '<div id="deploy-progress-frame"><div id="deploy-progress-line"></div></div>',
+                timeout: 60 * 60000 * 10
             });
+            if (this.onSuccess && typeof this.onSuccess === 'function') {
+                this.onSuccess();
+            }
+        }
+        else {
+            let percElem = $('#deploy-progress-percent');
+            let lineElem = $('#deploy-progress-line');
+            percElem.text(`Deploy in progress... (${progressPercent}%)`)
+            lineElem.css('width',`${progressPercent}%`);
         }
     }
 

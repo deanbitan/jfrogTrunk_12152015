@@ -3,7 +3,7 @@ package org.artifactory.ui.rest.resource.admin.security.permissions;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ui.rest.model.admin.security.permissions.DeletePermissionTargetModel;
 import org.artifactory.ui.rest.model.admin.security.permissions.PermissionTargetModel;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.security.SecurityServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

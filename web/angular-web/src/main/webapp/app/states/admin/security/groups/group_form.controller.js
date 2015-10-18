@@ -1,17 +1,20 @@
 export class AdminSecurityGroupFormController {
-    constructor($scope, $state, $stateParams, ArtifactoryGridFactory, GroupsDao, UserDao, GroupPermissionsDao,
-            commonGridColumns) {
-
+    constructor($scope, $state, $stateParams, $timeout, $q, ArtifactoryGridFactory, GroupsDao, UserDao, GroupPermissionsDao,
+            commonGridColumns,ArtifactoryModelSaver,RepositoriesDao) {
         this.DEFAULT_REALM = "artifactory";
         this.$scope = $scope;
         this.$state = $state;
         this.$stateParams = $stateParams;
+        this.$timeout = $timeout;
+        this.$q = $q;
+        this.repositoriesDao = RepositoriesDao;
         this.userDao = UserDao.getInstance();
         this.groupsDao = GroupsDao.getInstance();
         this.groupPermissionsDao = GroupPermissionsDao.getInstance();
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.permissionsGridOptions = {};
         this.commonGridColumns = commonGridColumns;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['groupdata']);
         this.input = {};
 
 
@@ -29,14 +32,28 @@ export class AdminSecurityGroupFormController {
             this.groupdata = {};
         }
 
+        this._getAllRepos();
         this._getAllUsers();
 
+    }
+
+    _getAllRepos() {
+        this.reposData = {};
+        this.repositoriesDao.getRepositories({type:'local'}).$promise
+                .then((data) => {
+                    this.reposData.locals = _.map(data,(r)=>{return r.repoKey;});
+                });
+        this.repositoriesDao.getRepositories({type:'remote'}).$promise
+                .then((data) => {
+                    this.reposData.remotes = _.map(data,(r)=>{return r.repoKey;});
+                });
     }
 
     _getGroupData() {
         this.groupsDao.getSingle({name: this.groupname}).$promise.then((data) => {
             //console.log(data);
             this.groupdata = data;
+            this.artifactoryModelSaver.save();
         });
     }
 
@@ -61,14 +78,48 @@ export class AdminSecurityGroupFormController {
     _getPermissions() {
         this.groupPermissionsDao.get({groups: [this.groupname]}).$promise.then((data)=> {
             //console.log(data);
-            this.permissionsGridOptions.setGridData(data);
+            this._fixDataFormat(data).then((fixedData)=>{
+                this.permissionsGridOptions.setGridData(fixedData);
+            });
         });
+    }
+
+    _fixDataFormat(data,defer = null) {
+        let defer = defer || this.$q.defer();
+        if (this.reposData.locals && this.reposData.remotes) {
+            data.forEach((record)=>{
+                if (record.repoKeys.length === 1 && record.repoKeys[0] === 'ANY LOCAL') {
+                    record.repoKeysView = 'ANY LOCAL';
+                    record.reposList = angular.copy(this.reposData.locals);
+                }
+                else if (record.repoKeys.length === 1 && record.repoKeys[0] === 'ANY REMOTE') {
+                    record.repoKeysView = 'ANY REMOTE';
+                    record.reposList = angular.copy(this.reposData.remotes);
+                }
+                else if (record.repoKeys.length === 1 && record.repoKeys[0] === 'ANY') {
+                    record.repoKeysView = 'ANY';
+                    record.reposList = angular.copy(this.reposData.remotes).concat(this.reposData.locals);
+                }
+                else {
+                    record.repoKeysView = record.repoKeys.join(', ');
+                    record.reposList = angular.copy(record.repoKeys);
+                }
+            });
+            defer.resolve(data);
+        }
+        else {
+            this.$timeout(()=>{
+                this._fixDataFormat(data,defer);
+            })
+        }
+        return defer.promise;
     }
 
     updateGroup() {
         let payload = angular.copy(this.groupdata);
         _.extend(payload, this.input);
         this.groupsDao.update({name: this.groupdata.groupName}, payload).$promise.then((data) => {
+            this.artifactoryModelSaver.save();
             this.$state.go('^.groups');
         });
     }
@@ -78,6 +129,7 @@ export class AdminSecurityGroupFormController {
         payload.realm = this.DEFAULT_REALM;
         _.extend(payload, this.input);
         this.groupsDao.create(payload).$promise.then((data) => {
+            this.artifactoryModelSaver.save();
             this.$state.go('^.groups');
         });
     }
@@ -120,7 +172,7 @@ export class AdminSecurityGroupFormController {
                 field: "repoKeys",
                 name: "Repositories",
                 displayName: "Repositories",
-                cellTemplate: '<div class="ui-grid-cell-contents">{{row.entity.numOfRepos}} | {{row.entity.repoKeys.join(\', \')}}</div>',
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.reposList','row.entity.permissionName','row.entity.repoKeysView',true),
                 width:'25%'
             },
             {

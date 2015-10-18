@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.db.binstore.entity;
 
+import org.artifactory.storage.binstore.service.BinaryData;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;

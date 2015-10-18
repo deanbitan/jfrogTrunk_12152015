@@ -49,6 +49,7 @@ public class AqlParser {
     public static final BuildDependenciesDomainsElement buildDependenciesDomains = new BuildDependenciesDomainsElement();
     public static final BuildArtifactDomainsElement buildArtifactDomains = new BuildArtifactDomainsElement();
     public static final PropertyDomainsElement propertiesDomains = new PropertyDomainsElement();
+    public static final ArchiveEntriesDomainsElement entriesDomains = new ArchiveEntriesDomainsElement();
     public static final ArchiveDomainsElement archiveDomains = new ArchiveDomainsElement();
     public static final ItemDomainsElement itemDomains = new ItemDomainsElement();
 
@@ -60,6 +61,7 @@ public class AqlParser {
     public static final BuildDependenciesStarElement buildDependenciesStar = new BuildDependenciesStarElement();
     public static final BuildArtifactStarElement buildArtifactStar = new BuildArtifactStarElement();
     public static final PropertyStarElement propertiesStar = new PropertyStarElement();
+    public static final ArchiveEntriesStarElement entriesStar = new ArchiveEntriesStarElement();
     public static final ArchiveStarElement archiveStar = new ArchiveStarElement();
     public static final ItemStarElement itemStar = new ItemStarElement();
 
@@ -71,6 +73,7 @@ public class AqlParser {
     public static final BuildDependenciesValuesElement buildDependenciesValues = new BuildDependenciesValuesElement();
     public static final BuildArtifactValuesElement buildArtifactValues = new BuildArtifactValuesElement();
     public static final PropertyValuesElement propertiesValues = new PropertyValuesElement();
+    public static final ArchiveEntriesValuesElement entriesValues = new ArchiveEntriesValuesElement();
     public static final ArchiveValuesElement archiveValues = new ArchiveValuesElement();
     public static final ItemValuesElement itemValues = new ItemValuesElement();
 
@@ -82,6 +85,7 @@ public class AqlParser {
     public static final BuildDependenciesFieldsElement buildDependenciesFields = new BuildDependenciesFieldsElement();
     public static final BuildArtifactFieldsElement buildArtifactFields = new BuildArtifactFieldsElement();
     public static final PropertyFieldsElement propertiesFields = new PropertyFieldsElement();
+    public static final ArchiveEntryFieldsElement entriesFields = new ArchiveEntryFieldsElement();
     public static final ArchiveFieldsElement archiveFields = new ArchiveFieldsElement();
     public static final ItemFieldsElement itemFields = new ItemFieldsElement();
 

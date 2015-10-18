@@ -44,7 +44,7 @@ public class QuickSearchService implements RestService {
         List<QuickSearchResult> quickSearchResults = Lists.newArrayList();
         ItemSearchResults<ArtifactSearchResult> artifactSearchResults = searchService.searchArtifacts(artifactSearchControl);
         for (ArtifactSearchResult artifactSearchResult : artifactSearchResults.getResults()) {
-            quickSearchResults.add(new QuickSearchResult(artifactSearchResult));
+            quickSearchResults.add(new QuickSearchResult(artifactSearchResult,request));
         }
         long resultsCount;
         int maxResults = ConstantValues.searchMaxResults.getInt();

@@ -26,10 +26,10 @@ import org.apache.maven.artifact.repository.metadata.Metadata;
 import org.apache.maven.artifact.repository.metadata.SnapshotVersion;
 import org.apache.maven.artifact.repository.metadata.Versioning;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.PropertiesAddon;
 import org.artifactory.addon.RestCoreAddon;
+import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
@@ -38,6 +38,7 @@ import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.repo.exception.RepoRejectException;
+import org.artifactory.api.request.InternalArtifactoryRequest;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.checksum.ChecksumInfo;
@@ -71,9 +72,10 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.SaveResourceContext;
 import org.artifactory.repo.cache.expirable.CacheExpiry;
 import org.artifactory.repo.interceptor.StorageInterceptors;
-import org.artifactory.repo.local.LocalNonCacheOverridable;
+import org.artifactory.repo.local.LocalNonCacheOverridables;
 import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.service.InternalRepositoryService;
+import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.InternalRequestContext;
 import org.artifactory.request.RepoRequests;
 import org.artifactory.request.Request;
@@ -114,6 +116,7 @@ import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -736,15 +739,35 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
             handle = new SimpleResourceStreamHandle(file.getStream(), file.length());
         }
 
-        updateDownloadStats(file);
+        if(!request.isHeadOnly())
+            updateDownloadStats(file, isFromAnotherArtifactory(request));
 
         return handle;
     }
 
-    private void updateDownloadStats(VfsFile file) {
+    /**
+     * Checks if original request came from another origin
+     *
+     * @param request
+     *
+     * @return boolean
+     */
+    private final boolean isFromAnotherArtifactory(Request request) {
+        if(request.isFromAnotherArtifactory()) return true;
+        if(request instanceof InternalArtifactoryRequest) {
+            Enumeration origins = request.getHeaders(ArtifactoryRequest.ARTIFACTORY_ORIGINATED);
+            if (origins == null) {
+                 origins = request.getHeaders(ArtifactoryRequest.ORIGIN_ARTIFACTORY);
+            }
+            return origins != null && origins.hasMoreElements();
+        }
+        return false;
+    }
+
+    private void updateDownloadStats(VfsFile file, boolean fromAnotherArtifactory) {
         if (descriptor.isReal() && ConstantValues.downloadStatsEnabled.getBoolean()) {  // stats only for real repos, if enabled
             statsService.fileDownloaded(file.getRepoPath(), authorizationService.currentUsername(),
-                    System.currentTimeMillis());
+                    System.currentTimeMillis(), fromAnotherArtifactory);
         }
     }
 
@@ -770,7 +793,7 @@ public class DbStoringRepoMixin<T extends RepoBaseDescriptor> /*implements Stori
                     return false;
                 }
             } else {
-                if (ContextHelper.get().beanForType(LocalNonCacheOverridable.class)
+                if (ContextHelper.get().beanForType(LocalNonCacheOverridables.class)
                         .isOverridable(((LocalRepo) owningRepo), path)) {
                     return false;
                 }

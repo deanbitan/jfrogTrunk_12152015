@@ -54,14 +54,29 @@ public class LastDownloadedSearcher extends SearcherBase<StatsSearchControls, St
             createdBefore = controls.getCreatedBefore();
         }
 
-        // TODO: [by dan] reverted this until smart remote is stable again
         VfsQuery repoQuery = createQuery(controls)
                 .expectedResult(FILE)
-                .prop("last_downloaded").comp(LOWER_THAN).val(since).nextBool(OR)
+
+                .startGroup()
+                .prop("last_downloaded").comp(LOWER_THAN).val(since).nextBool(AND)
+                .prop("remote_last_downloaded").comp(LOWER_THAN).val(since)
+                .endGroup(OR)
+
+                .startGroup()
+                .prop("last_downloaded").comp(LOWER_THAN).val(since).nextBool(AND)
+                .prop("remote_last_downloaded").comp(NONE).nextBool(AND)
+                .endGroup(OR)
+
                 .startGroup()
                 .prop("last_downloaded").comp(NONE).nextBool(AND)
+                .prop("remote_last_downloaded").comp(LOWER_THAN).val(since).nextBool(OR)
+                .endGroup(OR)
+
+                .startGroup()
+                .prop("last_downloaded").comp(NONE).nextBool(AND)
+                .prop("remote_last_downloaded").comp(NONE).nextBool(AND)
                 .prop("created").comp(LOWER_THAN).val(createdBefore)
-                .endGroup(null);
+                .endGroup();
 
         VfsQueryResult queryResult = repoQuery.execute(getLimit(controls));
 

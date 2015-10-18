@@ -1,193 +1,270 @@
+/*
+ * Artifactory is a binaries repository manager.
+ * Copyright (C) 2012 JFrog Ltd.
+ *
+ * Artifactory is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Artifactory is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.artifactory.rest.common.service;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.CoreAddons;
+import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.jackson.JacksonFactory;
+import org.artifactory.api.jackson.JacksonReader;
+import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.search.result.VersionRestResult;
+import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.features.VersionFeature;
+import org.artifactory.features.matrix.SmartRepoVersionFeatures;
+import org.artifactory.repo.HttpRepositoryConfiguration;
+import org.artifactory.repo.HttpRepositoryConfigurationImpl;
+import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.util.HttpClientConfigurator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.artifactory.util.PathUtils;
 import org.codehaus.jackson.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
+import java.util.List;
 
 /**
- * Service used to discover capabilities of another resources
+ * Service used to discover capabilities of another artifactory
  *
  * @author michaelp
  */
 @Component
-public class ResearchService {
+public class ResearchService extends AbstractResearchService {
 
     private static final Logger log = LoggerFactory.getLogger(ResearchService.class);
-
-    private static final String VERSION_FOUR_ONE = "4.1";
     private static final String ARTIFACTORY_SYSTEM_VERSION_PATH = "/api/system/version";
+    private static final String ARTIFACTORY_REPOSITORIES_PATH = "/api/repositories";
     private static final String ARTIFACTORY_APP_PATH = "/artifactory";
-    private static final String SNAPSHOT = "-SNAPSHOT";
 
-    /**
-     * Checks whether given target is another artifactory instance,
-     * logic to achieve positive answer is:
-     *
-     * 1. path starts ARTIFACTORY_APP_PATH + 200-OK on GET ARTIFACTORY_APP_PATH + ARTIFACTORY_SYSTEM_VERSION_PATH
-     *
-     * or
-     *
-     * 2. 200-OK on GET ARTIFACTORY_SYSTEM_VERSION_PATH
-     *
-     * @return boolean
-     */
-    public boolean isArtifactory(String url) {
-        if(!Strings.isNullOrEmpty(url)) {
-            URI uri = URI.create(url);
+    @Lazy(true)
+    @Autowired
+    private SmartRepoVersionFeatures smartRepoVersionFeatures;
+
+    @Autowired
+    private CentralConfigService configService;
+
+    public ResearchResponse getSmartRepoCapabilities(HttpRepositoryConfigurationImpl configuration) {
+        if(!Strings.isNullOrEmpty(configuration.getUrl())) {
+            URI uri = URI.create(configuration.getUrl());
             if (uri != null) {
-                if (uri.getPath().startsWith(ARTIFACTORY_APP_PATH))
-                    return doCheck(getDefaultHttpClient(), uri, true);
-                return doCheck(getDefaultHttpClient(), uri, false);
+                if (uri.getPath().startsWith(ARTIFACTORY_APP_PATH)) {
+                    return getArtifactoryCapabilities(getHttpClient(configuration), uri, true);
+                } else {
+                    return getArtifactoryCapabilities(getHttpClient(configuration), uri, false);
+                }
             } else {
                 log.debug("Url is malformed.");
             }
         } else {
             log.debug("Url is a mandatory (query) parameter.");
         }
-        return false;
+        return ResearchResponse.notArtifactory();
     }
 
     /**
-     * Checks whether given target is another artifactory instance,
-     * logic to achieve positive answer is:
+     * Checks whether given target is another artifactory instance
+     * and if true, retrieves SmartRepo capabilities based on artifactory
+     * version
      *
-     * 1. path starts ARTIFACTORY_APP_PATH + 200-OK on GET ARTIFACTORY_APP_PATH + ARTIFACTORY_SYSTEM_VERSION_PATH
+     * @param httpRepoDescriptor {@link HttpRepoDescriptor}
      *
-     * or
-     *
-     * 2. 200-OK on GET ARTIFACTORY_SYSTEM_VERSION_PATH
-     *
+     * @return {@link ResearchResponse}
+     */
+    public ResearchResponse getSmartRepoCapabilities(HttpRepoDescriptor httpRepoDescriptor) {
+        if(!Strings.isNullOrEmpty(httpRepoDescriptor.getUrl())) {
+            URI uri = URI.create(httpRepoDescriptor.getUrl());
+            if (uri != null) {
+                if (uri.getPath().startsWith(ARTIFACTORY_APP_PATH)) {
+                    return getArtifactoryCapabilities(getHttpClient(httpRepoDescriptor), uri, true);
+                } else {
+                    return getArtifactoryCapabilities(getHttpClient(httpRepoDescriptor), uri, false);
+                }
+            } else {
+                log.debug("Url is malformed.");
+            }
+        } else {
+            log.debug("Url is a mandatory (query) parameter.");
+        }
+        return ResearchResponse.notArtifactory();
+    }
+
+    /**
+     * Checks whether given target is another artifactory instance
+     * and if true, retrieves SmartRepo capabilities based on artifactory
+     * version
      *
      * @param url url to test against
      * @param client http client to be used
      *
+     * @return {@link ResearchResponse}
+     *
      * @return boolean
      */
-    public boolean isArtifactory(String url, CloseableHttpClient client) {
+    public ResearchResponse getSmartRepoCapabilities(String url, CloseableHttpClient client) {
         assert client != null : "HttpClient cannot be empty";
 
         if(!Strings.isNullOrEmpty(url)) {
             URI uri = URI.create(url);
+            VersionInfo versionInfo;
             if (uri != null) {
-                if (uri.getPath().startsWith(ARTIFACTORY_APP_PATH))
-                    return doCheck(client, uri, true);
-                return doCheck(client, uri, false);
+                if (uri.getPath().startsWith(ARTIFACTORY_APP_PATH)){
+                    return getArtifactoryCapabilities(client, uri, true);
+                } else {
+                    return getArtifactoryCapabilities(client, uri, false);
+                }
             } else {
                 log.debug("Url is malformed.");
             }
         } else {
             log.debug("Url is a mandatory (query) parameter.");
         }
-        return false;
+        return ResearchResponse.notArtifactory();
     }
 
     /**
-     * Performs actual check
+     * Fetches artifactory capabilities (if target is artifactory)
      *
      * @param client http client to use
      * @param uri remote uri to test against
      * @param inArtifactoryContext whether given app deployed
      *                             in /artifactory context or not
      *
-     * @return boolean
+     * @return {@link VersionInfo} if target is artifactory or null
      */
-    private boolean doCheck(CloseableHttpClient client, URI uri, boolean inArtifactoryContext) {
+    private ResearchResponse getArtifactoryCapabilities(CloseableHttpClient client, URI uri,
+            boolean inArtifactoryContext) {
         assert client != null : "HttpClient cannot be empty";
 
         CloseableHttpResponse response;
-        if (uri.getPath().startsWith(ARTIFACTORY_APP_PATH)) {
-            String newUri = produceTestUrl(uri, inArtifactoryContext);
-            HttpGet getMethod = new HttpGet(newUri);
+        String requestUrl = produceVersionUrl(uri, inArtifactoryContext);
+        HttpGet getMethod = new HttpGet(requestUrl);
 
-            try {
-                response = client.execute(getMethod);
-                String returnedInfo = null;
-                AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-                if (response != null && response.getStatusLine().getStatusCode()
-                        == HttpStatus.SC_OK) {
+        try {
+            response = client.execute(getMethod);
+            String returnedInfo = null;
+            if (response != null ) {
+                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                     returnedInfo = EntityUtils.toString(response.getEntity());
                     if (!Strings.isNullOrEmpty(returnedInfo)) {
                         VersionRestResult vrr = parseVersionRestResult(returnedInfo);
                         if (vrr != null && !Strings.isNullOrEmpty(vrr.version) &&
-                                (compareVersion(vrr.version, VERSION_FOUR_ONE) >= 0) && addonsManager.isProLicensed(
-                                vrr.license)) {
-                            return true;
+                                validateLicense(vrr.license, getArtifactoryId(response))) {
+
+                            Boolean isRealRepo = isRealRepo(client, uri, // make sure it not a virt repo
+                                    PathUtils.getLastPathElement(uri.getPath()),
+                                    inArtifactoryContext
+                            );
+
+                            if (isRealRepo == null) {
+                                                    // we were unable to check repoType
+                                                    // what may happen if config doesn't
+                                                    // have credentials or has insufficient permissions
+                                                    // (api requires it even if anonymous login is on)
+                                log.debug("We were unable to check repoType, it may happen if config doesn't have " +
+                                        "credentials or user permissions insufficient");
+                            }
+
+                            if (isRealRepo == null || isRealRepo.booleanValue()) {
+                                log.debug("Repo '{}' is artifactory repository (not virtual) and has supported version for SmartRepo");
+                                VersionInfo versionInfo =  vrr.toVersionInfo();
+                                return ResearchResponse.artifactoryMeta(
+                                        true,
+                                        versionInfo,
+                                        smartRepoVersionFeatures.getFeaturesByVersion(versionInfo)
+                                );
+                            } else {
+                                log.debug("Virtual repository is not supported in this version of SmartRepo");
+                            }
                         } else {
-                            log.debug("Unsupported version: {}.", vrr);
+                            log.debug("Unsupported version: {}", vrr);
                         }
                     }
+                } else if (response.getStatusLine().getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+                    return ResearchResponse.artifactory();
                 }
-            } catch (IOException | IllegalArgumentException e) {
-                log.debug("Checking whether remote instance is an artifactory, has failed: {}.",
-                        e.getMessage()
-                );
             }
+        } catch (IOException | IllegalArgumentException e) {
+            log.debug("Checking remote artifactory version has failed: {}.", e);
         }
-        return false;
+        return ResearchResponse.notArtifactory();
     }
 
     /**
-     * Performs version compare
+     * Validates that remote Artifactory uses different license and it is PRO license
      *
-     * @param version1
-     * @param version2
+     * @param license remote license
+     * @param artifactoryId remote artifactory id
      *
-     * @exception  NumberFormatException if the {@code Version}
-     *             does not contain a parsable {@code int}.
-     *
-     * @return int (-1/0/1)
+     * @return true if both constraints are true otherwise false
      */
-    private int compareVersion(String version1, String version2) {
+    private boolean validateLicense(String license, String artifactoryId) {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        CoreAddons coreAddons = addonsManager.addonByType(CoreAddons.class);
 
-        // used for development env. only!
-        if (version1.endsWith(SNAPSHOT)) {
-            log.warn("Found development version, assuming equal versions");
-            return 0;
+        boolean isDifferentLicense = coreAddons.validateTargetHasDifferentLicense(license, artifactoryId);
+        boolean isProLicensed = addonsManager.isProLicensed(license);
+
+        boolean result = isDifferentLicense && isProLicensed;
+        if(!result) {
+            if (!isDifferentLicense)
+                log.warn("License uniqueness validation against target repository " +
+                        "has failed, SmartRepo capabilities won't be enabled");
+            if (!isProLicensed)
+                log.warn("License PRO validation against target repository has failed, " +
+                        "SmartRepo capabilities won't be enabled");
         }
+        return result;
+    }
 
-        String[] arrLeft = version1.split("\\.");
-        String[] arrRight = version2.split("\\.");
-
-        int i=0;
-        while(i<arrLeft.length || i<arrRight.length){
-            if(i<arrLeft.length && i<arrRight.length){
-                if(Integer.parseInt(arrLeft[i]) < Integer.parseInt(arrRight[i])){
-                    return -1;
-                }else if(Integer.parseInt(arrLeft[i]) > Integer.parseInt(arrRight[i])){
-                    return 1;
-                }
-            } else if(i<arrLeft.length){
-                if(Integer.parseInt(arrLeft[i]) != 0){
-                    return 1;
-                }
-            } else if(i<arrRight.length){
-                if(Integer.parseInt(arrRight[i]) != 0){
-                    return -1;
-                }
-            }
-
-            i++;
+    /**
+     * Fetches ARTIFACTORY_ID header from {@link CloseableHttpResponse}
+     *
+     * @param response
+     *
+     * @return ArtifactoryId if present or null
+     */
+    @Nullable
+    private String getArtifactoryId(CloseableHttpResponse response) {
+        assert response != null : "HttpResponse cannot be empty";
+        Header artifactoryIdHeader = response.getFirstHeader(ArtifactoryResponse.ARTIFACTORY_ID);
+        if (artifactoryIdHeader != null && !Strings.isNullOrEmpty(artifactoryIdHeader.getValue())) {
+            return artifactoryIdHeader.getValue();
         }
-
-        return 0;
+        return null;
     }
 
     /**
@@ -198,7 +275,7 @@ public class ResearchService {
      *
      * @return url to be used
      */
-    private String produceTestUrl(URI uri, boolean inArtifactoryContext) {
+    private String produceVersionUrl(URI uri, boolean inArtifactoryContext) {
         return new StringBuilder()
                 .append(uri.getScheme())
                 .append("://")
@@ -216,60 +293,235 @@ public class ResearchService {
     /**
      * Produces CloseableHttpClient
      *
+     * @param configuration {@link HttpRepositoryConfigurationImpl}
+     *
      * @return CloseableHttpClient
      */
-    private CloseableHttpClient getDefaultHttpClient() {
-        CloseableHttpClient client;
-
-        //ProxyDescriptor proxy =
-        //        InternalContextHelper.get().getCentralConfig()
-        //                .getDescriptor().getDefaultProxy();
-
-        // TODO: [MP] generate client outside and pass it here rather than
-        //            creating it manually as it requires adding artifactory-core
-        //            dependency (for InternalContextHelper) to ../open/web/rest-common/pom.xml
-
-        client = new HttpClientConfigurator()
-                .soTimeout(15000)
-                .connectionTimeout(1500)
+    private CloseableHttpClient getHttpClient(HttpRepositoryConfigurationImpl configuration) {
+        ProxyDescriptor proxyDescriptor = configService.getDescriptor().getProxy(configuration.getProxy());
+        return new HttpClientConfigurator()
+                .hostFromUrl(configuration.getUrl())
+                .connectionTimeout(configuration.getSocketTimeoutMillis())
+                .soTimeout(configuration.getSocketTimeoutMillis())
+                .staleCheckingEnabled(true)
                 .retry(0, false)
-                //.proxy(proxy)
+                .localAddress(configuration.getLocalAddress())
+                .proxy(proxyDescriptor)
+                .authentication(
+                        configuration.getUsername(),
+                        CryptoHelper.decryptIfNeeded(configuration.getPassword()),
+                        configuration.isAllowAnyHostAuth())
+                .enableCookieManagement(configuration.isEnableCookieManagement())
                 .getClient();
-
-        return client;
     }
 
     /**
-     * Creates a JSON parser for the given bytes to parse
+     * Produces CloseableHttpClient
      *
-     * @param bytesToParse Byte[] to parse
-     * @return JSON Parser
-     * @throws java.io.IOException
-     */
-    private JsonParser getJsonParser(byte[] bytesToParse) throws IOException {
-        return JacksonFactory.createJsonParser(bytesToParse);
-    }
-
-    /**
-     * Creates a Jackson object mapper
+     * @param httpRepoDescriptor {@link HttpRepoDescriptor}
      *
-     * @return Object mapper
+     * @return CloseableHttpClient
      */
-    private ObjectMapper getObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return mapper;
+    private CloseableHttpClient getHttpClient(HttpRepoDescriptor httpRepoDescriptor) {
+        return new HttpClientConfigurator()
+                .hostFromUrl(httpRepoDescriptor.getUrl())
+                .connectionTimeout(httpRepoDescriptor.getSocketTimeoutMillis())
+                .soTimeout(httpRepoDescriptor.getSocketTimeoutMillis())
+                .staleCheckingEnabled(true)
+                .retry(0, false)
+                .localAddress(httpRepoDescriptor.getLocalAddress())
+                .proxy(httpRepoDescriptor.getProxy())
+                .authentication(
+                        httpRepoDescriptor.getUsername(),
+                        CryptoHelper.decryptIfNeeded(httpRepoDescriptor.getPassword()),
+                        httpRepoDescriptor.isAllowAnyHostAuth())
+                .enableCookieManagement(httpRepoDescriptor.isEnableCookieManagement())
+                .getClient();
     }
 
     /**
      * Unmarshals VersionRestResult from string response
      *
      * @param versionRestResult
-     * @return
-     * @throws IOException
+     * @return {@link VersionRestResult}
+     *
+     * @throws IOException if conversion fails
      */
     private VersionRestResult parseVersionRestResult(String versionRestResult) throws IOException {
-        return getObjectMapper().readValue(getJsonParser(versionRestResult.getBytes()), new TypeReference<VersionRestResult>() {
-        });
+        return getObjectMapper().readValue(
+                getJsonParser(versionRestResult.getBytes()),
+                new TypeReference<VersionRestResult>() {}
+        );
+    }
+
+    /**
+     * Checks if target repository is Virtual
+     *
+     * @param client
+     * @param repoKey
+     * @param inArtifactoryContext
+     *
+     * @return true if not virtual, otherwise false
+     */
+    private final Boolean isRealRepo(CloseableHttpClient client, URI uri, String repoKey,
+            boolean inArtifactoryContext) {
+
+        assert client != null : "HttpClient cannot be empty";
+
+        CloseableHttpResponse response;
+        String requestUrl = produceRepoInfoUrl(uri, repoKey, inArtifactoryContext);
+        HttpGet getMethod = new HttpGet(requestUrl);
+
+        try {
+            response = client.execute(getMethod);
+            if (response != null ) {
+                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                    HttpRepositoryConfiguration httpRepositoryConfiguration =
+                            JacksonReader.streamAsClass(
+                                    response.getEntity().getContent(),
+                                    HttpRepositoryConfigurationImpl.class
+                            );
+                    if (httpRepositoryConfiguration != null) {
+                        if(httpRepositoryConfiguration.getType().equals("virtual")) {
+                            log.debug("Found virtual repository '{}'", repoKey);
+                            return false;
+                        } else {
+                            log.debug("Found real repository '{}'", repoKey);
+                            return true;
+                        }
+                    } else {
+                        log.warn("Cannot fetch \"" + repoKey + "\" metadata, no response received");
+                    }
+                } else {
+                    log.warn("Cannot fetch \"" + repoKey + "\" metadata, cause: " + response);
+                }
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            log.debug(
+                    "Checking remote artifactory type has failed: {}.",
+                    e.getMessage()
+            );
+        }
+        return null;
+    }
+
+    /**
+     * Generates repository info URL
+     *
+     * @param uri default target URI
+     * @param repoKey
+     * @param inArtifactoryContext
+     *
+     * @return url
+     */
+    private String produceRepoInfoUrl(URI uri, String repoKey, boolean inArtifactoryContext) {
+        return new StringBuilder()
+                .append(uri.getScheme())
+                .append("://")
+                .append(uri.getHost())
+                .append(uri.getPort() != -1 ?
+                                ":" + uri.getPort()
+                                :
+                                ""
+                )
+                .append(inArtifactoryContext ? ARTIFACTORY_APP_PATH : "")
+                .append(ARTIFACTORY_REPOSITORIES_PATH)
+                .append("/")
+                .append(repoKey)
+                .toString();
+    }
+
+    /**
+     * ResearchResponse
+     */
+    @XStreamAlias("researchResponse")
+    public static class ResearchResponse implements Serializable {
+
+        private final boolean isArtifactory;
+        private final VersionInfo versionInfo;
+        private final List<VersionFeature> features;
+
+        /**
+         * Produces response with artifactory=false
+         *
+         * @return {@link ResearchResponse}
+         */
+        private ResearchResponse() {
+            this.isArtifactory = false;
+            this.versionInfo = null;
+            this.features = Lists.newLinkedList();
+        }
+
+        /**
+         * Produces response with metadata describing remote
+         * artifactory instance
+         *
+         * @param isArtifactory
+         * @param versionInfo
+         * @param features
+         *
+         * @return {@link ResearchResponse}
+         */
+        private ResearchResponse(boolean isArtifactory, VersionInfo versionInfo,
+                List<VersionFeature> features) {
+            this.isArtifactory = isArtifactory;
+            this.versionInfo = versionInfo;
+            this.features = features;
+        }
+
+        /**
+         * @return definition of remote host being artifactory or not
+         */
+        public boolean isArtifactory() {
+            return isArtifactory;
+        }
+
+        /**
+         * @return remote artifactory version
+         */
+        public VersionInfo getVersion() {
+            return versionInfo;
+        }
+
+        /**
+         * @return available features for remote artifactory
+         *         (based on its version)
+         */
+        public List<VersionFeature> getFeatures() {
+            return features;
+        }
+
+        /**
+         * Produces response with artifactory=false
+         *
+         * @return {@link ResearchResponse}
+         */
+        public static ResearchResponse notArtifactory () {
+            return new ResearchResponse();
+        }
+
+        /**
+         * Produces response with metadata describing remote
+         * artifactory instance
+         *
+         * @param isArtifactory
+         * @param versionInfo
+         * @param features
+         *
+         * @return {@link ResearchResponse}
+         */
+        public static ResearchResponse artifactoryMeta (boolean isArtifactory, VersionInfo versionInfo,
+                List<VersionFeature> features) {
+            return new ResearchResponse(isArtifactory, versionInfo, features);
+        }
+
+        /**
+         * Produces response without any metadata, but implies artifactory=true
+         *
+         * @return {@link ResearchResponse}
+         */
+        public static ResearchResponse artifactory () {
+            return new ResearchResponse(true, null, Lists.newLinkedList());
+        }
     }
 }

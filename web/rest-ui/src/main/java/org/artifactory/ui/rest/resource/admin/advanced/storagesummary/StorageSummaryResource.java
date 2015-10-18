@@ -1,7 +1,7 @@
 package org.artifactory.ui.rest.resource.admin.advanced.storagesummary;
 
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.advanced.AdvancedServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

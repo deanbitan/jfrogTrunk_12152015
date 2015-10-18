@@ -61,26 +61,11 @@
         </init-param>
         <init-param>
             <param-name>UiPathPrefixes</param-name>
-            <param-value>webapp,favicon.ico,wicket</param-value>
+            <param-value>webapp,favicon.ico</param-value>
         </init-param>
         <init-param>
             <param-name>usePathInfo</param-name>
             <param-value>false</param-value>
-        </init-param>
-    </filter>
-
-    <filter>
-        <filter-name>WicketFilter</filter-name>
-        <filter-class>org.artifactory.webapp.servlet.DelayedWicketFilter</filter-class>
-        <!--<filter-class>org.artifactory.webapp.servlet.ArtifactoryReloadingFilter</filter-class>-->
-        <init-param>
-            <description>Wicket run mode</description>
-            <param-name>configuration</param-name>
-            <param-value>deployment</param-value>
-        </init-param>
-        <init-param>
-            <param-name>applicationClassName</param-name>
-            <param-value>org.artifactory.webapp.wicket.application.ArtifactoryApplication</param-value>
         </init-param>
     </filter>
 
@@ -110,13 +95,6 @@
     <filter-mapping>
         <filter-name>RepoFilter</filter-name>
         <url-pattern>/*</url-pattern>
-        <dispatcher>FORWARD</dispatcher>
-        <dispatcher>REQUEST</dispatcher>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>WicketFilter</filter-name>
-        <url-pattern>/wicket/*</url-pattern>
         <dispatcher>FORWARD</dispatcher>
         <dispatcher>REQUEST</dispatcher>
     </filter-mapping>

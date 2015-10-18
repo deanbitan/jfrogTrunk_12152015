@@ -28,8 +28,6 @@ public interface DebianAddon extends Addon {
 
     void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password, boolean delayed);
 
-    String getPublicKeyDownloadTarget();
-
      void onInstallKey(String key,boolean isPublic) throws Exception;
 
     void removeKey(boolean isPublic);

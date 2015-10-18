@@ -2,7 +2,11 @@ package org.artifactory.aql.api.internal;
 
 import com.google.common.collect.Lists;
 import org.artifactory.aql.api.AqlApiElement;
-import org.artifactory.aql.model.*;
+import org.artifactory.aql.model.AqlComparatorEnum;
+import org.artifactory.aql.model.AqlDomainEnum;
+import org.artifactory.aql.model.AqlFieldEnum;
+import org.artifactory.aql.model.AqlSortTypeEnum;
+import org.artifactory.aql.model.DomainSensitiveField;
 import org.artifactory.aql.result.rows.AqlRowResult;
 import org.artifactory.aql.result.rows.QueryTypes;
 
@@ -84,8 +88,8 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
         return (T) this;
     }
 
-    public T sortBy(AqlFieldEnum... fields) {
-        this.sortApiElement.setFields(fields);
+    public T addSortElement(AqlApiDynamicFieldsDomains.AqlApiComparator<T> fields) {
+        this.sortApiElement.addSortElement(fields);
         return (T) this;
     }
 
@@ -207,7 +211,7 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
 
     public static class SortApiElement implements AqlApiElement {
         private AqlSortTypeEnum sortType = AqlSortTypeEnum.desc;
-        private AqlFieldEnum[] fields;
+        private List<DomainSensitiveField> fields=new ArrayList<>();
 
         public AqlSortTypeEnum getSortType() {
             return sortType;
@@ -217,12 +221,12 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
             this.sortType = sortType;
         }
 
-        public AqlFieldEnum[] getFields() {
+        public List<DomainSensitiveField> getFields() {
             return fields;
         }
 
-        public void setFields(AqlFieldEnum[] fields) {
-            this.fields = fields;
+        public void addSortElement(AqlApiDynamicFieldsDomains.AqlApiComparator field) {
+            this.fields.add(new DomainSensitiveField(field.fieldEnum,field.domains));
         }
 
         @Override
@@ -232,7 +236,7 @@ public class AqlBase<T extends AqlBase, Y extends AqlRowResult> implements AqlAp
 
         @Override
         public boolean isEmpty() {
-            return sortType == null || fields == null || fields.length == 0;
+            return sortType == null || fields == null || fields.size() == 0;
         }
     }
 

@@ -56,7 +56,6 @@ import org.artifactory.aql.api.domain.sensitive.AqlApiBuild;
 import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
 import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.model.AqlComparatorEnum;
-import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlBaseFullRowImpl;
 import org.artifactory.aql.util.AqlUtils;
@@ -532,7 +531,7 @@ public class BuildServiceImpl implements InternalBuildService {
                 AqlApiBuild.module().artifact().item().name()
                 //Ordering by the last updated field, in case of duplicates with the same checksum
                 //Since this is match any checksum mode
-        ).sortBy(AqlFieldEnum.itemUpdated).desc();
+        ).addSortElement(AqlApiBuild.module().artifact().item().updated()).desc();
 
 
         AqlEagerResult<AqlBaseFullRowImpl> aqlResult = aqlService.executeQueryEager(nonStrictQuery);
@@ -564,7 +563,7 @@ public class BuildServiceImpl implements InternalBuildService {
                 AqlApiBuild.module().dependecy().item().name(),
                 AqlApiBuild.module().dependecy().item().size()
                 //Ordering by the last updated field, in case of duplicates with the same checksum.
-        ).sortBy(AqlFieldEnum.itemUpdated).asc();
+        ).addSortElement(AqlApiBuild.module().dependecy().item().updated()).asc();
 
         AqlEagerResult<AqlBaseFullRowImpl> results = aqlService.executeQueryEager(buildDependenciesQuery);
         log.debug("Search returned {} dependencies", results.getSize());

@@ -259,7 +259,7 @@ public class SearchServiceImpl implements InternalSearchService {
                     query.endGroup(null);
                 }
             }
-            query.endGroup(null);
+            query.endGroup();
         }
         VfsQueryResult queryResult = query.execute(Integer.MAX_VALUE);
         // There are no limit here the the getCount is really the total amount
@@ -275,10 +275,10 @@ public class SearchServiceImpl implements InternalSearchService {
 
     private void addDateRangeFilter(VfsQuery query, Calendar from, Calendar to, RestDateFieldName dateField) {
         if (from != null) {
-            query.prop(FieldNameConverter.fromRest(dateField).propName).comp(GREATER_THAN).val(from);
+            query.prop(FieldNameConverter.fromRest(dateField).getPropName()).comp(GREATER_THAN).val(from);
         }
         if (to != null) {
-            query.prop(FieldNameConverter.fromRest(dateField).propName).comp(LOWER_THAN_EQUAL).val(to);
+            query.prop(FieldNameConverter.fromRest(dateField).getPropName()).comp(LOWER_THAN_EQUAL).val(to);
         }
     }
 

@@ -83,10 +83,14 @@ class jfHeaderController {
     }
 
     logout() {
+        this.artifactoryEventBus.dispatch(EVENTS.USER_LOGOUT,this.state.current.name.startsWith('admin.'));
+
+/*
         this.user.logout()
                 .then(() => {
                     this.state.go("home");
                 });
+*/
     }
 }
 

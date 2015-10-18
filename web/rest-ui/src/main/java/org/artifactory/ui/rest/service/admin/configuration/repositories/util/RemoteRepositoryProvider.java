@@ -6,7 +6,11 @@ import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteNetworkRepositoryConfigModel;
 import org.artifactory.util.HttpClientConfigurator;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.IOException;
 
 /**
  * @author Aviad Shikloshi
@@ -18,7 +22,7 @@ public class RemoteRepositoryProvider {
     @Autowired
     private CentralConfigService configService;
 
-    protected CloseableHttpClient getRemoteRepoTestHttpClient(String remoteUrl,
+    protected CloseableHttpClient getRemoteRepoHttpClient(String remoteUrl,
             RemoteNetworkRepositoryConfigModel networkConfig) {
         // In case network model was not sent in the request we are using the default values
         if (networkConfig == null) {
@@ -39,5 +43,29 @@ public class RemoteRepositoryProvider {
                         networkConfig.getLenientHostAuth() != null)
                 .enableCookieManagement(networkConfig.getCookieManagement() != null)
                 .getClient();
+    }
+
+    /**
+     * Creates a Jackson object mapper
+     *
+     * @return {@link org.codehaus.jackson.map.ObjectMapper}
+     */
+    private ObjectMapper getObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
+    }
+
+    /**
+     * Serializes given item to json
+     *
+     * @param item an object to serialize
+     *
+     * @return serialized json string
+     *
+     * @throws java.io.IOException
+     */
+    protected <T> String serialize(T item) throws IOException {
+        return getObjectMapper().writeValueAsString(item);
     }
 }

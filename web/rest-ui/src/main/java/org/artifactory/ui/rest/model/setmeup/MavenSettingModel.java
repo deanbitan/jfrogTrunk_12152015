@@ -17,6 +17,8 @@ public class MavenSettingModel extends BaseModel {
     private String pluginSnapshot;
     private String mirror;
     private String mavenSnippet;
+    private String settings;
+    private String savedSnippetName;
     private Set<String> releases = Sets.newTreeSet(
             (o1, o2) -> StringUtils.containsIgnoreCase(o1, "release") && !StringUtils.containsIgnoreCase(o1, "plugin") ?
                     -1 : 1);
@@ -34,6 +36,11 @@ public class MavenSettingModel extends BaseModel {
 
     public MavenSettingModel (String mavenSnippet){
         this.mavenSnippet = mavenSnippet;
+    }
+
+    public MavenSettingModel(String settings, String savedSnippetName) {
+        this.settings = settings;
+        this.savedSnippetName = savedSnippetName;
     }
 
     public Set<String> getReleases() {
@@ -122,6 +129,22 @@ public class MavenSettingModel extends BaseModel {
 
     public void setMavenSnippet(String mavenSnippet) {
         this.mavenSnippet = mavenSnippet;
+    }
+
+    public String getSettings() {
+        return settings;
+    }
+
+    public void setSettings(String settings) {
+        this.settings = settings;
+    }
+
+    public String getSavedSnippetName() {
+        return savedSnippetName;
+    }
+
+    public void setSavedSnippetName(String savedSnippetName) {
+        this.savedSnippetName = savedSnippetName;
     }
 
     public void clearProps(){

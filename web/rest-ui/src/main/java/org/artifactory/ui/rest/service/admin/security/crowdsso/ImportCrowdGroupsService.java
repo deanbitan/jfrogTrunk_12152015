@@ -1,7 +1,7 @@
 package org.artifactory.ui.rest.service.admin.security.crowdsso;
 
 import com.google.common.collect.Iterables;
-import org.artifactory.addon.crowd.CrowdAddon;
+import org.artifactory.addon.sso.crowd.CrowdAddon;
 import org.artifactory.api.security.UserGroupService;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;

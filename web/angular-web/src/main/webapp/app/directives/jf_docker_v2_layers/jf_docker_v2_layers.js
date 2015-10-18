@@ -14,10 +14,10 @@ class jfDockerV2LayersController {
                 this.layerDetailsTopOffset = $('.layer-details')[0].offsetTop + 20;
 
             let layerPanelTopOffset = $('.docker-layers-panel').position().top;
-            if (layerPanelTopOffset < this.layerDetailsTopOffset * -1 && $('.layers-container').offset().top + $('.layers-container').height() + 30 > $(window).height())
-                $('.layer-details').css('top',  Math.abs(layerPanelTopOffset) - this.layerDetailsTopOffset).css('position', 'absolute');
+            if (layerPanelTopOffset < this.layerDetailsTopOffset * -1 && $('.layers-container').offset().top + $('.layers-container').height() + 50 > $(window).height())
+                $('.layer-details').css('margin-top',  Math.abs(layerPanelTopOffset) - this.layerDetailsTopOffset + 30);
             else if ($('.layers-container').offset().top > 0)
-                $('.layer-details').css('top',  0).css('position', 'relative');
+                $('.layer-details').css('margin-top',  30);
         });
 
         $scope.$on('$destroy', () => {

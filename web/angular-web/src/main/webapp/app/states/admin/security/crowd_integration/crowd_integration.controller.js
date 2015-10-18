@@ -1,7 +1,7 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class CrowdIntegrationController {
-    constructor($scope, CrowdIntegrationDao, ArtifactoryGridFactory, commonGridColumns, uiGridConstants) {
+    constructor($scope, CrowdIntegrationDao, ArtifactoryGridFactory, commonGridColumns, uiGridConstants, ArtifactoryModelSaver) {
         this.crowdIntegrationDao = CrowdIntegrationDao;
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.$scope = $scope;
@@ -10,6 +10,7 @@ export class CrowdIntegrationController {
         this.groupsData = [];
         this.commonGridColumns = commonGridColumns;
         this.uiGridConstants = uiGridConstants;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['crowd']);
         this._createGrid();
         this.crowdGroupsError = null;
         this.batchActions = this._getBatchActions();
@@ -77,6 +78,7 @@ export class CrowdIntegrationController {
             // Keep enabled
             if (retainEnabled && this.crowd) data.enableIntegration = this.crowd.enableIntegration;
             this.crowd = data;
+            if (!retainEnabled) this.artifactoryModelSaver.save();
         });
     }
 
@@ -159,9 +161,17 @@ export class CrowdIntegrationController {
 
     saveCrowd() {
         this.crowdIntegrationDao.update(this.crowd)
-                .$promise.then(() => this.getCrowdGroups());
+                .$promise.then(() => {
+                    this.artifactoryModelSaver.save();
+                    this.getCrowdGroups()
+                });
     }
 
+    reset() {
+        this.artifactoryModelSaver.ask().then(()=>{
+            this.initCrowd();
+        });
+    }
     testCrowd() {
         this.crowd.action = 'test';
         this.crowdIntegrationDao.test({

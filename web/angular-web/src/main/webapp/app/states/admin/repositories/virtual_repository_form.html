@@ -68,7 +68,6 @@
                                     <ui-select ng-model="RepositoryForm.repoInfo.basic.layout">
                                         <ui-select-match
                                                 placeholder="Select Repository Layout"
-                                                allow-clear="true"
                                                 id="virtual-repository-layout-dropdown">
                                             {{$select.selected}}
                                         </ui-select-match>
@@ -111,23 +110,23 @@
                                 <jf-field>
                                     <label for="includesPattern">Include Patterns</label>
                                     <jf-help-tooltip html="RepositoryForm.TOOLTIP.virtualForm.includesPattern"></jf-help-tooltip>
-                        <textarea type="text"
-                                  class="input-text"
-                                  id="includesPattern"
-                                  name="includesPattern"
-                                  ng-model="RepositoryForm.repoInfo.basic.includesPattern"
-                                  cols="5"></textarea>
+                                    <textarea type="text"
+                                              class="input-text"
+                                              id="includesPattern"
+                                              name="includesPattern"
+                                              ng-model="RepositoryForm.repoInfo.basic.includesPattern"
+                                              cols="5"></textarea>
                                 </jf-field>
                             </div>
                             <div class="form-group-cell">
                                 <jf-field>
                                     <label for="excludesPattern">Exclude Patterns</label>
                                     <jf-help-tooltip html="RepositoryForm.TOOLTIP.virtualForm.excludedPattern"></jf-help-tooltip>
-                        <textarea type="text" class="input-text"
-                                  id="excludesPattern"
-                                  name="excludesPattern"
-                                  ng-model="RepositoryForm.repoInfo.basic.excludesPattern"
-                                  cols="5"></textarea>
+                                <textarea type="text" class="input-text"
+                                          id="excludesPattern"
+                                          name="excludesPattern"
+                                          ng-model="RepositoryForm.repoInfo.basic.excludesPattern"
+                                          cols="5"></textarea>
                                 </jf-field>
                             </div>
                         </div>
@@ -181,11 +180,21 @@
                                 <ul class="group-list">
                                     <li ng-repeat="item in RepositoryForm.repoInfo.basic.resolvedRepositories"
                                         class="group-list-item"
-                                        ng-disabled="true">{{item}}
+                                        ng-disabled="true">{{item.repoName || item}}
                                     </li>
                                 </ul>
                             </div>
                         </jf-panel>
+                        <jf-panel jf-panel-heading="Default Deployment Repository">
+                            <div class="form-group">
+                                <div class="form-group-cell">
+                                    <jf-ui-select jf-select-model="RepositoryForm.repoInfo.basic.defaultDeploymentRepo"
+                                                  jf-select-options="RepositoryForm.repoInfo.basic.selectedLocalRepositories"
+                                                  id="defaultDeploymentRepo"></jf-ui-select>
+                                </div>
+                            </div>
+                        </jf-panel>
+
                     </div>
 
                     <div ng-if="RepositoryForm.repoInfo.isType('p2')">

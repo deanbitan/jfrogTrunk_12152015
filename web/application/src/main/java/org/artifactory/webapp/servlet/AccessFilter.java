@@ -175,7 +175,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         if (reAuthRequired) {
             /**
              * A re-authentication is required but we might still have data that needs to be invalidated (like the
-             * Wicket session)
+             * web session)
              */
             Map<String, LogoutHandler> logoutHandlers = ContextHelper.get().beansForType(LogoutHandler.class);
             for (LogoutHandler logoutHandler : logoutHandlers.values()) {
@@ -242,7 +242,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
             if (newAuthentication != null && newAuthentication.isAuthenticated()) {
                 // Add to user change cache the login state
                 addToUserChange(newAuthentication);
-                // Save authentication like in Wicket Session (if session exists)
+                // Save authentication (if session exists)
                 if (RequestUtils.setAuthentication(request, newAuthentication, false)) {
                     log.debug("Added authentication {} in Http session.", newAuthentication);
                 } else {
@@ -319,6 +319,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         // return cached authentication only if this is a non ui request (this guards the case when user accessed
         // Artifactory both from external tool and from the ui)
         AuthCacheKey authCacheKey = new AuthCacheKey(authFilter.getCacheKey(request), request.getRemoteAddr());
+        log.debug("'{}' Cached key has been found for request: '{}' with method: '{}'",authFilter.getCacheKey(request),request.getRequestURI(),request.getMethod());
         return RequestUtils.isUiRequest(request) ? null : nonUiAuthCache.get(authCacheKey);
     }
 

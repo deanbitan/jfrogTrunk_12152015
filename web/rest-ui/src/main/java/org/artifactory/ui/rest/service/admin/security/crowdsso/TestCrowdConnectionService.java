@@ -1,7 +1,7 @@
 package org.artifactory.ui.rest.service.admin.security.crowdsso;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.crowd.CrowdAddon;
+import org.artifactory.addon.sso.crowd.CrowdAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;

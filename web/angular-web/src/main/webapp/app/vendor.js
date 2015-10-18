@@ -17,6 +17,7 @@ module.exports = {
         'components/angular-resource/angular-resource.js',
         'components/angularjs-toaster/toaster.js',
         'components/jquery/dist/jquery.js',
+        'components/jQuery-contextMenu/dist/jquery.contextMenu.min.js',
         'components/jquery-ui/jquery-ui.js',
         'components/lodash/lodash.js',
         'components/codemirror/lib/codemirror.js',
@@ -44,14 +45,16 @@ module.exports = {
         'components/angular-capitalize-filter/capitalize.js',
         'components/tinycolor/tinycolor.js',
         'components/angularjs-color-picker/angularjs-color-picker.min.js',
+        'components/deep-diff/releases/deep-diff-0.3.2.min.js',
         'vendor/draggable-rows.js'
     ],
 
     CSS: [
         'components/jquery-ui/themes/smoothness/jquery-ui.css',
+        'components/jQuery-contextMenu/dist/jquery.contextMenu.min.css',
         'components/bootstrap/dist/css/bootstrap.css',
         'components/angular-ui-layout/ui-layout.css',
-        'components/angular-ui-grid/ui-grid.css',
+        'components/angular-ui-grid/ui-grid.min.css',
         'components/angularjs-color-picker/angularjs-color-picker.min.css',
         'components/animate.css/animate.css',
         'components/angularjs-toaster/toaster.css',

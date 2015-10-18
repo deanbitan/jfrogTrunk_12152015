@@ -31,18 +31,23 @@
                     </jf-field>
                 </div>
             </div>
-            <div class="form-group form-checkbox">
+            <div class="form-group form-checkbox" ng-if="Login.canRememberMe">
                 <div class="form-group-cell">
+                    <a href ng-click="Login.gotoForgotPwd()" jf-clear-errors class="pull-right" ng-if="Login.canResetPassword" id="forgot-password">Forgot Password?</a>
+
                     <jf-checkbox text="Remember me">
                         <input type="checkbox" id="remember-me" ng-model="Login.rememberMe">
                     </jf-checkbox>
                 </div>
             </div>
-            <div class="form-group form-checkbox" ng-if="Login.oauthProviderLink || Login.ssoProviderLink">
-                <div class="form-group-cell" ng-if="Login.oauthProviderLink">
-                    <a href
-                       ng-mousedown="Login.oauthLogin()"
-                       target="_blank">OAuth2 Login</a>
+            <div class="form-group oauth-login" ng-if="Login.isOAuthEnabled() || Login.ssoProviderLink">
+                <div class="form-group-cell" ng-if="Login.isOAuthEnabled()">
+                    <div class="oauth-login-title">Or sign in with:</div>
+                    <div class="oauth-login-links-container">
+                        <a ng-repeat="provider in Login.oauth.providers" ng-mousedown="Login.onGotoOAuth()" ng-href="{{provider.url}}" class="icon-oauth-{{provider.type.toLowerCase()}}" jf-clear-errors>
+                            <span jf-tooltip="Login to {{provider.name}}">{{provider.name}}</span>
+                        </a>
+                    </div>
                 </div>
                 <div class="form-group-cell" ng-if="Login.ssoProviderLink">
                     <a href
@@ -56,9 +61,6 @@
         </div>
 
         <div class="login-button-bar">
-            <div class="pull-left margin-top-10">
-                <a href ng-click="Login.gotoForgotPwd()" jf-clear-errors ng-if="Login.canResetPassword" id="forgot-password">Forgot Password?</a>
-            </div>
             <button type="submit" class="btn btn-primary pull-right" ng-disabled="!Login.loginForm.$valid" id="login">
                 Log In
             </button>

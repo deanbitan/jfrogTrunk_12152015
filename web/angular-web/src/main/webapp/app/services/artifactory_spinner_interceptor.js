@@ -20,6 +20,8 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
 
     function request(req) {
 
+        req.headers['Request-Agent'] = 'artifactoryUI';
+
         if (!req.params || !req.params.$no_spinner) {
 
             req.headers.serial = serial;

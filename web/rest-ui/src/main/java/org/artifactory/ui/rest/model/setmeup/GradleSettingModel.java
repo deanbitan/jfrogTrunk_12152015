@@ -25,6 +25,8 @@ public class GradleSettingModel extends BaseModel {
     private String pluginResolverLayout;
     private String libsResolverLayout;
     private String libsPublisherLayouts;
+    private String snippetName;
+    private String savedSnippetName;
 
     private Set<String> libsPublisher = Sets.newTreeSet((o1, o2) ->
             StringUtils.containsIgnoreCase(o1, "release") && !StringUtils.containsIgnoreCase(o1, "plugin") ? -1 : 1);
@@ -41,6 +43,12 @@ public class GradleSettingModel extends BaseModel {
     public GradleSettingModel(String gradleSnippet) {
         this.gradleSnippet=gradleSnippet;
     }
+
+    public GradleSettingModel(String snippetName, String savedSnippetName) {
+        this.snippetName = snippetName;
+        this.savedSnippetName = savedSnippetName;
+    }
+
 
     public Set<String> getLibsPublisher() {
         return libsPublisher;
@@ -176,6 +184,22 @@ public class GradleSettingModel extends BaseModel {
 
     public void setGradleSnippet(String gradleSnippet) {
         this.gradleSnippet = gradleSnippet;
+    }
+
+    public String getSnippetName() {
+        return snippetName;
+    }
+
+    public void setSnippetName(String snippetName) {
+        this.snippetName = snippetName;
+    }
+
+    public String getSavedSnippetName() {
+        return savedSnippetName;
+    }
+
+    public void setSavedSnippetName(String savedSnippetName) {
+        this.savedSnippetName = savedSnippetName;
     }
 
     public void clearProps(){

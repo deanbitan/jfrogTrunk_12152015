@@ -1,7 +1,7 @@
 package org.artifactory.ui.rest.service.admin.security.saml;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.saml.SamlSsoAddon;
+import org.artifactory.addon.sso.saml.SamlSsoAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;

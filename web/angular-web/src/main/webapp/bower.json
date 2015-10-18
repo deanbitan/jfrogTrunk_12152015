@@ -44,7 +44,9 @@
     "later": "*",
     "font-awesome": "4.3.0",
     "ng-password-strength": "0.2.1",
-    "tooltipster": "3.3.0"
+    "tooltipster": "3.3.0",
+    "jQuery-contextMenu": "~1.8.1",
+    "deep-diff": "~0.3.2"
   },
   "resolutions": {
     "angular": "1.4.0-rc.1",
@@ -52,8 +54,9 @@
     "bootstrap": "3.1.1"
   },
   "devDependencies": {
-    "angular-capitalize-filter": "~2.1.0",
-    "jasmine-jquery": "~2.1.0",
-    "angularjs-color-picker": "~0.6.5"
+    "angular-capitalize-filter": "2.1.0",
+    "jasmine-jquery": "2.1.0",
+    "angularjs-color-picker": "0.6.6",
+    "tinycolor": "1.2.1"
   }
 }

@@ -19,7 +19,8 @@ public enum ArtifactoryDBVersion {
     v100(ArtifactoryVersion.v300, ArtifactoryVersion.v304),
     v101(ArtifactoryVersion.v310, ArtifactoryVersion.v310, new DBSqlConverter("v310")),
     v102(ArtifactoryVersion.v311, ArtifactoryVersion.v402, new DBSqlConverter("v311")),
-    v103(ArtifactoryVersion.v410, ArtifactoryVersion.getCurrent(), new DBSqlConverter("v410"));
+    v103(ArtifactoryVersion.v410, ArtifactoryVersion.v412, new DBSqlConverter("v410")),
+    v104(ArtifactoryVersion.v420, ArtifactoryVersion.getCurrent(), new DBSqlConverter("v420"));
     private static final Logger log = LoggerFactory.getLogger(ArtifactoryDBVersion.class);
 
 

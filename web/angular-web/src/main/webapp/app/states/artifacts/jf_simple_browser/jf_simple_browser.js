@@ -239,6 +239,8 @@ class JfSimpleBrowserController extends JFCommonBrowser {
      * Build the JSTree from the nodes
      ****************************/
     _buildTree(data) {
+        this.artifactoryState.setState("hasArtifactsData", data.length > 0);
+
         TreeConfig.core.data = data;
 
         TreeConfig.contextmenu.items = this._getContextMenuItems.bind(this);

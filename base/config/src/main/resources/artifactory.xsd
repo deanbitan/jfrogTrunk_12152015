@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.2"
-           xmlns="http://artifactory.jfrog.org/xsd/1.6.2"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.3"
+           xmlns="http://artifactory.jfrog.org/xsd/1.6.3"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -874,6 +874,13 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="defaultDeploymentRepo" type="xs:IDREF" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Local repository reference (key).
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -1416,6 +1423,15 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="oauthSettings" type="oauthSettingsType" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation source="description">
+                            <![CDATA[
+                        Security settings specific to OAuth.
+                        ]]>
+                        </xs:documentation>
+                    </xs:annotation>
+            </xs:element>
             <xs:element name="debianSettings" type="DebianSettingsType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -1655,7 +1671,145 @@ If using mod_jk, ensure to use the "JkEnvVar REMOTE_USER" directive in Apache's 
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-
+    <xs:complexType name="oauthSettingsType">
+        <xs:sequence>
+            <xs:element name="enableIntegration" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Enable security integration with OAuth.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="persistUsers" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Persist new users.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="defaultNpm" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Default NPM provider.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="oauthProvidersSettings" type="oauthProvidersSettingsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                        Security settings specific to LDAP Groups.
+                        ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="oauthProvidersSettingsType">
+        <xs:sequence>
+            <xs:element name="oauthProvidersSettings" type="oauthProviderSettingsType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="oauthProviderSettingsType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider unique name.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider type.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="providerType" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider type.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="id" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider id.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="secret" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider secret.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="apiUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider url.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="authUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider authenticationUrl.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="tokenUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider token URL.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="basicUrl" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider basic URL.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="domain" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
+                                Provider domain.
+                                ]]>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="DebianSettingsType">
         <xs:sequence>
             <xs:element name="passphrase" type="xs:string" minOccurs="0" maxOccurs="1">

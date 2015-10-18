@@ -11,6 +11,15 @@ public interface SmartRepoAddon extends Addon {
 
     boolean supportRemoteStats();
 
-    void fileDownloadedRemotely(StatsInfo statsInfo, String remoteHost, RepoPath repoPath);
+    /**
+     * Triggered on remote download event
+     *
+     * Event queued for local stats update and potential delegation
+     *
+     * @param statsInfo The {@link StatsInfo} container
+     * @param origin    The remote host the download was triggered by
+     * @param repoPath  The file repo path to set/update stats
+     */
+    void fileDownloadedRemotely(StatsInfo statsInfo, String origin, RepoPath repoPath);
 
 }

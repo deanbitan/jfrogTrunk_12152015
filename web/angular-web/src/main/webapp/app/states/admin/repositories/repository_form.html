@@ -16,7 +16,8 @@
                             <li ng-click="RepositoryForm.setCurrentTab('replications')"
                                 ng-class="{active:RepositoryForm.isCurrentTab('replications')}"
                                 jf-disable-feature="replications"
-                                ng-if="!RepositoryForm.isCurrentRepoType('virtual')" id="repository-replications-tab">Replications
+                                ng-if="!RepositoryForm.isCurrentRepoType('virtual') && !(RepositoryForm.isCurrentRepoType('remote') && RepositoryForm.repoInfo.typeSpecific.repoType === 'Docker')"
+                                id="repository-replications-tab">Replications
                                 <span ng-if="RepositoryForm.features.isDisabled('replications')"
                                       class="license-required"></span>
                             </li>

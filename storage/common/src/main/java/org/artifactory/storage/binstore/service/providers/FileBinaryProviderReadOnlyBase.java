@@ -22,7 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
-import org.artifactory.storage.binstore.service.BinaryProviderBase;
+import org.artifactory.storage.binstore.service.base.BinaryProviderBase;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.FileProviderStrategy;

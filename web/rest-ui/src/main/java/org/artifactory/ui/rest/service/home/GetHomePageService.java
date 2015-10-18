@@ -1,11 +1,7 @@
 package org.artifactory.ui.rest.service.home;
 
 import org.apache.commons.lang.time.DurationFormatUtils;
-import org.artifactory.addon.AddonInfo;
-import org.artifactory.addon.AddonState;
-import org.artifactory.addon.AddonType;
-import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.CoreAddons;
+import org.artifactory.addon.*;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -28,11 +24,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author chen keinan
@@ -146,15 +138,20 @@ public class GetHomePageService implements RestService {
                 AddonType.BINTRAY_INTEGRATION.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.BUILD, addonInfoMap.get("build"), getAddonLearnMoreUrl("build"), getAddonConfigureUrl(AddonType.BUILD.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.DOCKER, addonInfoMap.get("docker"), getAddonLearnMoreUrl("docker"), getAddonConfigureUrl(AddonType.DOCKER.getConfigureUrlSuffix())));
-        addonModels.add(new AddonModel(AddonType.REPLICATION, addonInfoMap.get("replication"), getAddonLearnMoreUrl("replication"), getAddonConfigureUrl(AddonType.REPLICATION.getConfigureUrlSuffix())));
-        addonModels.add(new AddonModel(AddonType.MULTIPUSH, getAddonInfo(AddonType.MULTIPUSH), String.format(ConstantValues.addonsInfoUrl.getString(), "replication"), getAddonConfigureUrl(AddonType.MULTIPUSH.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.REPLICATION, addonInfoMap.get("replication"), getAddonLearnMoreUrl(
+                "replication"), getAddonConfigureUrl(AddonType.REPLICATION.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.MULTIPUSH, getAddonInfo(AddonType.MULTIPUSH), String.format(
+                ConstantValues.addonsInfoUrl.getString(), "replication"), getAddonConfigureUrl(AddonType.MULTIPUSH.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.AQL, getAqlAddonInfo(), getAddonLearnMoreUrl("aql"), getAddonConfigureUrl(AddonType.AQL.getConfigureUrlSuffix())));
-        addonModels.add(new AddonModel(AddonType.FILE_STORE, getAddonInfo(AddonType.FILE_STORE),
-                getAddonLearnMoreUrl("filestore"), getAddonConfigureUrl(AddonType.FILE_STORE.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.FILE_STORE, getAddonInfo(AddonType.FILE_STORE), getAddonLearnMoreUrl("filestore"), getAddonConfigureUrl(AddonType.FILE_STORE.getConfigureUrlSuffix())));
         AddonInfo aolAddonPlugin;
         aolAddonPlugin = getUserPluginAddonInfo(addonInfoMap);
         addonModels.add(new AddonModel(AddonType.PLUGINS, aolAddonPlugin, getAddonLearnMoreUrl("plugins"),
                 getAddonConfigureUrl(AddonType.PLUGINS.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.SMART_REPO,
+                getAddonInfoForPro(AddonType.SMART_REPO),
+                getAddonLearnMoreUrl("smart-remote-repository"),
+                getAddonConfigureUrl(AddonType.SMART_REPO.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.NUGET, addonInfoMap.get("nuget"), getAddonLearnMoreUrl("nuget"), getAddonConfigureUrl(AddonType.NUGET.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.NPM, addonInfoMap.get("npm"), getAddonLearnMoreUrl("npm"), getAddonConfigureUrl(AddonType.NPM.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.BOWER, addonInfoMap.get("bower"), getAddonLearnMoreUrl("bower"), getAddonConfigureUrl(AddonType.BOWER.getConfigureUrlSuffix())));
@@ -173,30 +170,38 @@ public class GetHomePageService implements RestService {
         addonModels.add(new AddonModel(AddonType.LAYOUTS, addonInfoMap.get("layouts"), getAddonLearnMoreUrl("layouts"), getAddonConfigureUrl(AddonType.LAYOUTS.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.LICENSES, addonInfoMap.get("license"), getAddonLearnMoreUrl("license"), getAddonConfigureUrl(AddonType.LICENSES.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.BLACKDUCK, addonInfoMap.get("blackduck"), getAddonLearnMoreUrl("blackduck"), getAddonConfigureUrl(AddonType.BLACKDUCK.getConfigureUrlSuffix())));
-        addonModels.add(
-                new AddonModel(AddonType.MAVEN_PLUGIN, getAddonInfo(AddonType.MAVEN_PLUGIN, AddonState.ACTIVATED),
-                        getAddonLearnMoreUrl("mavenPlugin"),
-                        getAddonConfigureUrl(AddonType.MAVEN_PLUGIN.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.MAVEN_PLUGIN,
+                getAddonInfo(AddonType.MAVEN_PLUGIN, AddonState.ACTIVATED),
+                getAddonLearnMoreUrl("maven"),
+                getAddonConfigureUrl(AddonType.MAVEN_PLUGIN.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.GRADLE_PLUGIN,
                 getAddonInfo(AddonType.GRADLE_PLUGIN, AddonState.ACTIVATED),
-                getAddonLearnMoreUrl("gradlePlugin"),
+                getAddonLearnMoreUrl("gradle"),
                 getAddonConfigureUrl(AddonType.GRADLE_PLUGIN.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.JENKINS_PLUGIN,
                 getAddonInfo(AddonType.JENKINS_PLUGIN, AddonState.ACTIVATED),
-                getAddonLearnMoreUrl("jenkinsPlugin"),
+                getAddonLearnMoreUrl("build"),
                 getAddonConfigureUrl(AddonType.JENKINS_PLUGIN.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.BAMBOO_PLUGIN,
                 getAddonInfo(AddonType.BAMBOO_PLUGIN, AddonState.ACTIVATED ),
-                getAddonLearnMoreUrl("bambooPlugin"),
+                getAddonLearnMoreUrl("build"),
                 getAddonConfigureUrl(AddonType.BAMBOO_PLUGIN.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.TC_PLUGIN,
                 getAddonInfo(AddonType.TC_PLUGIN, AddonState.ACTIVATED),
-                getAddonLearnMoreUrl("tcPlugin"),
+                getAddonLearnMoreUrl("build"),
                 getAddonConfigureUrl(AddonType.TC_PLUGIN.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.MSBUILD_PLUGIN,
-                getAddonInfo(AddonType.MSBUILD_PLUGIN, AddonState.ACTIVATED ),
+                getAddonInfo(AddonType.MSBUILD_PLUGIN, AddonState.ACTIVATED),
                 getAddonLearnMoreUrl("tfs-integration"),
                 getAddonConfigureUrl(AddonType.MSBUILD_PLUGIN.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.SBT,
+                getAddonInfo(AddonType.SBT, AddonState.ACTIVATED),
+                getAddonLearnMoreUrl("sbt"),
+                getAddonConfigureUrl(AddonType.SBT.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.IVY,
+                getAddonInfo(AddonType.IVY, AddonState.ACTIVATED),
+                getAddonLearnMoreUrl("ivy"),
+                getAddonConfigureUrl(AddonType.IVY.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.FILTERED_RESOURCES, addonInfoMap.get("filtered-resources"), getAddonLearnMoreUrl("filtered-resources"), getAddonConfigureUrl(AddonType.FILTERED_RESOURCES.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.P2, addonInfoMap.get("p2"), getAddonLearnMoreUrl("p2"), getAddonConfigureUrl(AddonType.P2.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.WEBSTART, addonInfoMap.get("webstart"), getAddonLearnMoreUrl("webstart"), getAddonConfigureUrl(AddonType.WEBSTART.getConfigureUrlSuffix())));
@@ -263,6 +268,19 @@ public class GetHomePageService implements RestService {
         return addonInfo;
     }
 
+    /**
+     * get addon info
+     *
+     * @param type - addon type
+     * @return
+     */
+    private AddonInfo getAddonInfoForPro(AddonType type) {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        AddonInfo addonInfo = new AddonInfo(type.getAddonName(),
+                type.getAddonDisplayName(), "",
+                (addonsManager.isLicenseInstalled()) ? AddonState.ACTIVATED : AddonState.NOT_LICENSED, new Properties(), 10);
+        return addonInfo;
+    }
     /**
      * get addon info
      * @param type - addon type

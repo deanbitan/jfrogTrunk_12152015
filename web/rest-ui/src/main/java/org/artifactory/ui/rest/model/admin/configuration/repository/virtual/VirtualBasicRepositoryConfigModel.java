@@ -12,7 +12,8 @@ import java.util.List;
 public class VirtualBasicRepositoryConfigModel extends LocalBasicRepositoryConfigModel {
 
     private List<VirtualSelectedRepository> selectedRepositories;
-    private List<String> resolvedRepositories;
+    private List<VirtualSelectedRepository> resolvedRepositories;
+    private String defaultDeploymentRepo;
 
     public List<VirtualSelectedRepository> getSelectedRepositories() {
         return selectedRepositories;
@@ -23,12 +24,21 @@ public class VirtualBasicRepositoryConfigModel extends LocalBasicRepositoryConfi
         this.selectedRepositories = selectedRepositories;
     }
 
-    public List<String> getResolvedRepositories() {
+    public List<VirtualSelectedRepository> getResolvedRepositories() {
         return resolvedRepositories;
     }
 
-    public void setResolvedRepositories(List<String> resolvedRepositories) {
+    public void setResolvedRepositories(
+            List<VirtualSelectedRepository> resolvedRepositories) {
         this.resolvedRepositories = resolvedRepositories;
+    }
+
+    public String getDefaultDeploymentRepo() {
+        return defaultDeploymentRepo;
+    }
+
+    public void setDefaultDeploymentRepo(String defaultDeploymentRepo) {
+        this.defaultDeploymentRepo = defaultDeploymentRepo;
     }
 
     @Override

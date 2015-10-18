@@ -14,6 +14,8 @@ class jfBuildsController {
         this.modal = ArtifactoryModal;
         this.mode = 'ProducedBy';
         this.builds = {};
+
+        this._generateViewBySwitch();
         this._registerEvents();
         this._createGrids();
         this._getBuildData();
@@ -31,15 +33,6 @@ class jfBuildsController {
             });
     }
 
-    setMode(mode) {
-        this.mode = mode;
-    }
-
-    isSelected(mode) {
-        return this.mode === mode;
-    }
-
-
     _getBuildData() {
         // if the node does not have a path the build cannot be loaded
         // this may occur in navigation to a node that does not have a path (repo node)
@@ -52,9 +45,28 @@ class jfBuildsController {
             repoKey: this.currentNode.data.repoKey
         }).$promise.then((builds) => {
                     this.builds = builds;
-                this.producedByGridOptions.setGridData(builds.producedBy);
-                this.usedByGridOptions.setGridData(builds.usedBy);
-            });
+                    this.producedByGridOptions.setGridData(builds.producedBy);
+                    this.usedByGridOptions.setGridData(builds.usedBy);
+                    this._generateViewBySwitch();
+                });
+    }
+
+    _generateViewBySwitch() {
+        this.viewBySwitch = [
+            {
+                text: 'Produced By' + (this.producedByGridOptions.data && this.producedByGridOptions.data.length ? ' (' + this.builds.producedBy.length + ')' : ''),
+                value: 'ProducedBy'
+            },
+            {
+                text: 'Used By' + (this.usedByGridOptions.data && this.usedByGridOptions.data.length ? ' (' + this.builds.usedBy.length + ')' : ''),
+                value: 'UsedBy'
+            }
+        ];
+
+        if (this.switchControl) {
+            this.switchControl.options = this.viewBySwitch;
+            this.switchControl.updateOptionObjects();
+        }
     }
 
     _registerEvents() {
@@ -104,6 +116,8 @@ class jfBuildsController {
         }, {
             displayName: 'Build ID',
             name: 'Build ID',
+            grouped: true,
+            headerCellTemplate: headerCellGroupingTemplate,
             field: "number",
             cellTemplate: '<div class="ui-grid-cell-contents"><a ui-sref="builds.info({buildName:row.entity.name,buildNumber:row.entity.number,tab:\'general\',startTime:row.entity.started})" >{{row.entity.number}}</a></div>'
         }, {
@@ -116,8 +130,6 @@ class jfBuildsController {
         }, {
             displayName: 'CI Server',
             name: 'CI Server',
-            headerCellTemplate: headerCellGroupingTemplate,
-            grouped: true,
             field: "ciUrl",
             cellTemplate: '<div class="ui-grid-cell-contents"><a ng-href="{{row.entity.ciUrl}}" target="_blank">{{row.entity.ciUrl}}</a></div>'
         }];

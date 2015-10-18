@@ -24,7 +24,7 @@
             <span ng-click="SystemLogsController.download()"><a href="">Download</a> ({{SystemLogsController.data.fileSize | filesize}})</span>
 
             <div class="fill-screen">
-                <textarea disabled
+                <textarea readonly
                           spellcheck="false"
                           id="textarea"
                           class="input-text monospaced">{{SystemLogsController.data.logContent}}</textarea>

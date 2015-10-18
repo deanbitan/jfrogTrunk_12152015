@@ -3,12 +3,16 @@ package org.artifactory.storage.db.aql.dao;
 import org.artifactory.aql.AqlException;
 import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.result.AqlLazyResult;
+import org.artifactory.common.ConstantValues;
+import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.db.aql.sql.builder.query.sql.SqlQuery;
 import org.artifactory.storage.db.aql.sql.result.AqlEagerResultImpl;
 import org.artifactory.storage.db.aql.sql.result.AqlLazyResultImpl;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.artifactory.storage.db.util.TxHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -20,6 +24,10 @@ import java.sql.SQLException;
  */
 @Repository
 public class AqlDao extends BaseDao {
+
+    @Autowired
+    private DbService dbService;
+
     @Autowired
     public AqlDao(JdbcHelper jdbcHelper) {
         super(jdbcHelper);
@@ -32,7 +40,11 @@ public class AqlDao extends BaseDao {
     public AqlEagerResultImpl executeQueryEager(SqlQuery sqlQuery) {
         ResultSet resultSet = null;
         try {
-            resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
+            if (allowReadCommitted()) {
+                resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
+            } else {
+                resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), true, sqlQuery.getQueryParams());
+            }
             AqlEagerResultImpl aqlQueryResult = new AqlEagerResultImpl(resultSet, sqlQuery);
             return aqlQueryResult;
         } catch (Exception e) {
@@ -40,6 +52,11 @@ public class AqlDao extends BaseDao {
         } finally {
             DbUtils.close(resultSet);
         }
+    }
+
+    private boolean allowReadCommitted() {
+        return dbService.getDatabaseType().equals(DbType.ORACLE) || dbService.getDatabaseType().equals(DbType.POSTGRESQL) ||
+                ConstantValues.enableAqlReadCommitted.getBoolean() || TxHelper.isInTransaction();
     }
 
     /**
@@ -51,7 +68,11 @@ public class AqlDao extends BaseDao {
     public AqlLazyResult executeQueryLazy(SqlQuery sqlQuery, AqlPermissionProvider aqlPermissionProvider) {
         ResultSet resultSet;
         try {
-            resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
+            if (allowReadCommitted()) {
+                resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), sqlQuery.getQueryParams());
+            } else {
+                resultSet = jdbcHelper.executeSelect(sqlQuery.getQueryString(), true, sqlQuery.getQueryParams());
+            }
         } catch (SQLException e) {
             throw new AqlException("Failed to execute the following sql query" + sqlQuery, e);
         }

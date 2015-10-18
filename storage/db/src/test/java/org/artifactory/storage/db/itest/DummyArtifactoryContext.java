@@ -80,7 +80,7 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
                 }
 
                 @Override
-                public void fileDownloadedRemotely(StatsInfo statsInfo, String remoteHost, RepoPath repoPath) {
+                public void fileDownloadedRemotely(StatsInfo statsInfo, String origin, RepoPath repoPath) {
 
                 }
             };
@@ -221,6 +221,11 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         @Override
         public boolean artifactoryServerHasHeartbeat(ArtifactoryServer artifactoryServer) {
             return false;
+        }
+
+        @Override
+        public String getCurrentMemberServerId() {
+            return null;
         }
 
         @Override

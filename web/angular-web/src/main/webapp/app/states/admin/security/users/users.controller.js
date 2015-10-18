@@ -18,6 +18,9 @@ export class AdminSecurityUserController {
     _initUsers() {
         this.userDao.getAll().$promise.then((users)=> {
             //console.log(users);
+            users.forEach((user)=>{
+                user.permissions = _.pluck(user.permissionsList,'permissionName');
+            });
             this.gridOption.setGridData(users);
         });
     }
@@ -97,19 +100,15 @@ export class AdminSecurityUserController {
                 field: "groups",
                 name: "Related Groups",
                 displayName: "Related Groups",
-                cellTemplate: '<div ng-if="row.entity.groups.length" class="ui-grid-cell-contents">{{row.entity.groups.length}} | {{row.entity.groups.join(\', \')}}</div>' +
-                '<div ng-if="!row.entity.groups.length" class="ui-grid-cell-contents">-</div>',
-                width: '20%',
-                cellClass: 'tooltip-show-list'
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.groups','row.entity.name'),
+                width: '20%'
             },
             {
                 field: "permissions",
                 name: "Related Permissions",
                 displayName: "Related Permissions",
-                cellTemplate: '<div ng-if="row.entity.permissionsList.length" class="ui-grid-cell-contents">{{row.entity.permissionsList.length}} | {{grid.appScope.AdminSecurityUser.getPermsNames(row.entity.permissionsList)}}</div>' +
-                '<div ng-if="!row.entity.permissionsList.length" class="ui-grid-cell-contents">-</div>',
-                width: '20%',
-                cellClass: 'tooltip-show-list'
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.permissions','row.entity.name'),
+                width: '20%'
             },
             {
                 name: "Admin",
@@ -126,12 +125,6 @@ export class AdminSecurityUserController {
                 width: '10%'
             }
         ]
-    }
-
-    getPermsNames(perms) {
-        return _.map(perms, (perm) => {
-            return perm.permissionName;
-        }).join(', ');
     }
 
     _getActions() {

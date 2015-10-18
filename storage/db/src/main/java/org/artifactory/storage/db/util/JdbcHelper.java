@@ -31,11 +31,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -63,7 +59,11 @@ public class JdbcHelper {
      * @return A transaction aware connection
      */
     private Connection getConnection() throws SQLException {
-        return DataSourceUtils.doGetConnection(dataSource);
+        Connection connection = DataSourceUtils.doGetConnection(dataSource);
+        if (Connection.TRANSACTION_READ_COMMITTED != connection.getTransactionIsolation()) {
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        }
+        return connection;
     }
 
     public DataSource getDataSource() {
@@ -71,7 +71,14 @@ public class JdbcHelper {
     }
 
     @Nonnull
-    public ResultSet executeSelect(String query, Object... params) throws SQLException {
+    public ResultSet
+
+    executeSelect(String query, Object... params) throws SQLException {
+        return executeSelect(query, false, params);
+    }
+
+    @Nonnull
+    public ResultSet executeSelect(String query, boolean allowDirtyReads, Object... params) throws SQLException {
         selectQueriesCounter.incrementAndGet();
         debugSql(query, params);
 
@@ -84,6 +91,9 @@ public class JdbcHelper {
         ResultSet rs = null;
         try {
             con = getConnection();
+            // allow dirty reads in case of non transactional aql query
+            //@Todo need to a fine better (elegant) way to force this
+            TxHelper.allowDirtyReads(allowDirtyReads, con);
             if (params == null || params.length == 0) {
                 stmt = con.createStatement();
                 rs = stmt.executeQuery(query);
@@ -93,18 +103,36 @@ public class JdbcHelper {
                 setParamsToStmt(pstmt, params);
                 rs = pstmt.executeQuery();
             }
+            if (!TxHelper.isInTransaction() && !con.getAutoCommit()) {
+                con.commit();
+            }
             if (timer != null && log.isDebugEnabled()) {
                 timer.stop();
                 log.debug("Query returned in {} : '{}'", timer, resolveQuery(query, params));
             }
             return ResultSetWrapper.newInstance(con, stmt, rs, dataSource);
         } catch (Exception e) {
+            // update isolation level back to read committed
+            updateConnectionIsolationLevelToReadCommitted(allowDirtyReads, con);
             DbUtils.close(con, stmt, rs, dataSource);
             if (e instanceof SQLException) {
                 throw (SQLException) e;
             } else {
                 throw new SQLException("Unexpected exception: " + e.getMessage(), e);
             }
+        }
+    }
+
+    /**
+     * return coneection isolation level back to read committed
+     *
+     * @param allowDirtyReads
+     * @param con             sql connection
+     * @throws SQLException
+     */
+    private void updateConnectionIsolationLevelToReadCommitted(boolean allowDirtyReads, Connection con) throws SQLException {
+        if (allowDirtyReads && con != null) {
+            con.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
         }
     }
 

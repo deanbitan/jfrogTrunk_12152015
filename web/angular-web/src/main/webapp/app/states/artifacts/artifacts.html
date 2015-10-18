@@ -1,4 +1,6 @@
-<div class="content-layout-container with-head-bar" id="jf-artifacts">
+<div ng-show="Artifact.hasData()"
+     class="content-layout-container with-head-bar"
+     id="jf-artifacts">
     <jf-search></jf-search>
 
     <div ui-view="search" class="ui-view-search"></div>
@@ -19,7 +21,7 @@
         <span class="icon icon-set-me-up"></span> Set Me Up
     </div>
 
-    <h1 ng-if="Artifact.$state.params.browser !== 'stash'">Artifact Repository Browser</h1>
+    <h1 id="artifacts-browser-header" ng-if="Artifact.$state.params.browser !== 'stash'">Artifact Repository Browser</h1>
     <h1 ng-if="Artifact.$state.params.browser === 'stash'">Stash Browser <a class="back-to-repository-browser" href="" ng-click="Artifact.exitStashState()"><span class="back-link-icon">&lsaquo;</span>Back to Repository Browser</a></h1>
 
     <div class="content-wrapper" ng-if="!Artifact.isSearchShown">
@@ -31,13 +33,13 @@
                     </div>
 
                     <div ui-layout-container class="artifact-details card" size="70.5%" min-size="30%">
-                        <div class="row artifact-details-header">
-                            <div class="col-md-7">
-                                <i class="jstree-icon jstree-themeicon jstree-themeicon-custom" ng-class="Artifact.getNodeIcon()" role="presentation"></i>
-                                <h2 class="artifact-name-heading" jf-tooltip-on-overflow>{{Artifact.node.data.text}}<span class="not-cached">{{(Artifact.node.data.cached===false?' (not cached)':'')}}</span></h2>
-                            </div>
-                            <div class="col-md-5 pull-right text-right">
+                        <div class="artifact-details-header">
+                            <div class="pull-right text-right">
                                 <jf-actions></jf-actions>
+                            </div>
+                            <div>
+                                <i class="jstree-icon jstree-themeicon jstree-themeicon-custom" ng-class="Artifact.getNodeIcon()" role="presentation"></i>
+                                <h2 class="artifact-name-heading" jf-tooltip-on-overflow>{{Artifact.node.data.text}}</h2>
                             </div>
                         </div>
                         <jf-artifact-info></jf-artifact-info>
@@ -46,4 +48,10 @@
             </div>
         </div>
     </div>
+</div>
+
+<div class="alert alert-warning"
+     ng-if="!Artifact.hasData()">
+    <div>Artifacts data is unavailable.</div>
+    <div>You have no read permissions to any repository.</div>
 </div>

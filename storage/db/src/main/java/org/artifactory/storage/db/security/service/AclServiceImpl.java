@@ -22,6 +22,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import edu.emory.mathcs.backport.java.util.concurrent.TimeUnit;
+import edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.AceInfo;
 import org.artifactory.security.AclInfo;
@@ -48,6 +51,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,7 +82,13 @@ public class AclServiceImpl implements AclStoreService {
     private PermissionTargetsDao permTargetsDao;
     @Autowired
     private UserGroupsDao userGroupsDao;
-    private AclsCache aclsCache = new AclsCache(new AclCacheLoader());
+    private AclsCache aclsCache;
+
+    @PostConstruct
+    private void init(){
+        long timeout = ConstantValues.aclDirtyReadsTimeout.getLong();
+        aclsCache = new AclsCache(timeout,new AclCacheLoader(aclsDao,userGroupsDao,permTargetsDao));
+    }
 
     @Override
     public Collection<AclInfo> getAllAcls() {
@@ -315,14 +325,17 @@ public class AclServiceImpl implements AclStoreService {
         return aclsCache.get();
     }
 
-    private static class AclsCache {
+    public static class AclsCache {
+        private ReentrantLock cacheLock = new ReentrantLock();
+        private long timeout;
         private final AclCacheLoader cacheLoader;
         private AtomicInteger aclsDbVersion = new AtomicInteger(
                 1);  // promoted on each DB change (permission change/add/delete)
         private volatile int aclsMapVersion = 0; // promoted each time we load the map from DB
         private volatile Map<String, AclInfo> aclsMap;
 
-        public AclsCache(AclCacheLoader cacheLoader) {
+        public AclsCache(long timeout,AclCacheLoader cacheLoader) {
+            this.timeout = timeout;
             this.cacheLoader = cacheLoader;
         }
 
@@ -340,30 +353,73 @@ public class AclServiceImpl implements AclStoreService {
             Map<String, AclInfo> tempMap = aclsMap;
             if (aclsDbVersion.get() > aclsMapVersion) {
                 // Need to update aclsMap (new version in aclsDbVersion).
-                synchronized (cacheLoader) {
-                    tempMap = aclsMap;
-                    // Double check after cacheLoader synchronization.
-                    if (aclsDbVersion.get() > aclsMapVersion) {
-                        // The map will be valid for version the current aclsDbVersion.
-                        int startingVersion = aclsDbVersion.get();
-                        tempMap = cacheLoader.call();
-                        aclsMap = tempMap;
-                        aclsMapVersion = startingVersion;
+                // Try to acquire acl lock
+                boolean lockAcquired = tryToWaitForAclLock();
+                if ( ! lockAcquired) {
+                    // Timeout occurred : Return the current aclMap without waiting to thew new map which is being reloaded.
+                    log.debug("Acl lock timeout occurred returning current aclMap instead the one that is being loaded");
+                    return aclsMap;
+                }else {
+                    // Lock was successfully acquired, now we can start reloading the map
+                    try {
+                        tempMap = aclsMap;
+                        // Double check after cacheLoader synchronization.
+                        if (aclsDbVersion.get() > aclsMapVersion) {
+                            // The map will be valid for version the current aclsDbVersion.
+                            int startingVersion = aclsDbVersion.get();
+                            tempMap = cacheLoader.call();
+                            aclsMap = tempMap;
+                            aclsMapVersion = startingVersion;
+                        }
+                    } finally {
+                        cacheLock.unlock();
                     }
                 }
             }
             return tempMap;
         }
+
+        private boolean tryToWaitForAclLock() {
+            boolean acquireLock=false;
+            try {
+                acquireLock = cacheLock.tryLock(timeout, TimeUnit.MILLISECONDS);
+                if( ! acquireLock && aclsMap==null){
+                    log.debug("Blocking thread while acl map is being processed for the first time");
+                    acquireLock=tryToWaitForAclLock();
+                }
+            } catch (InterruptedException e) {
+                if( aclsMap==null){
+                    log.debug("Blocking thread while acl map is being processed for the first time");
+                    acquireLock=tryToWaitForAclLock();
+                }
+            }
+            return acquireLock;
+        }
     }
 
-    private class AclCacheLoader implements Callable<Map<String, AclInfo>> {
+    public static class AclCacheLoader implements Callable<Map<String, AclInfo>> {
+
+        private AclsDao aclsDao;
+        private UserGroupsDao userGroupsDao;
+        private PermissionTargetsDao permTargetsDao;
+
+        public AclCacheLoader(AclsDao aclsDao,UserGroupsDao userGroupsDao,PermissionTargetsDao permissionTargetsDao) {
+            this.aclsDao = aclsDao;
+            this.userGroupsDao = userGroupsDao;
+            this.permTargetsDao = permissionTargetsDao;
+        }
+
         @Override
         public Map<String, AclInfo> call() {
             try {
+                log.debug("Starting acl-reload-process");
+                Map<Long, String> allUsernamePerIds = userGroupsDao.getAllUsernamePerIds();
+                Map<Long, String> allGroupNamePerIds = userGroupsDao.getAllGroupNamePerIds();
+                Map<Long, PermissionTarget> targetMap = permTargetsDao.getAllPermissionTargets();
                 Collection<Acl> allAcls = aclsDao.getAllAcls();
                 Map<String, AclInfo> result = Maps.newHashMapWithExpectedSize(allAcls.size());
                 for (Acl acl : allAcls) {
-                    PermissionTarget permTarget = permTargetsDao.findPermissionTarget(acl.getPermTargetId());
+                    PermissionTarget permTarget = targetMap.get(acl.getPermTargetId());
                     MutablePermissionTargetInfo permissionTarget = InfoFactoryHolder.get().createPermissionTarget(
                             permTarget.getName(), new ArrayList<>(permTarget.getRepoKeys()));
                     permissionTarget.setIncludes(permTarget.getIncludes());
@@ -371,19 +427,26 @@ public class AclServiceImpl implements AclStoreService {
                     ImmutableSet<Ace> dbAces = acl.getAces();
                     HashSet<AceInfo> aces = new HashSet<>(dbAces.size());
                     for (Ace dbAce : dbAces) {
-                        MutableAceInfo ace;
+                        MutableAceInfo ace = null;
                         if (dbAce.isOnGroup()) {
-                            Group group = userGroupsDao.findGroupById(dbAce.getGroupId());
-                            ace = InfoFactoryHolder.get().createAce(group.getGroupName(), true, dbAce.getMask());
+                            String groupName = allGroupNamePerIds.get(dbAce.getGroupId());
+                            if (groupName != null) {
+                                ace = InfoFactoryHolder.get().createAce(groupName, true, dbAce.getMask());
+                            }
                         } else {
-                            User user = userGroupsDao.findUserById(dbAce.getUserId());
-                            ace = InfoFactoryHolder.get().createAce(user.getUsername(), false, dbAce.getMask());
+                            String username = allUsernamePerIds.get(dbAce.getUserId());
+                            if (username != null) {
+                                ace = InfoFactoryHolder.get().createAce(username, false, dbAce.getMask());
+                            }
                         }
-                        aces.add(ace);
+                        if (ace != null) {
+                            aces.add(ace);
+                        }
                     }
                     result.put(permTarget.getName(),
                             InfoFactoryHolder.get().createAcl(permissionTarget, aces, acl.getLastModifiedBy()));
                 }
+                log.debug("Successfully finished acl-reload-process");
                 return result;
             } catch (SQLException e) {
                 throw new StorageException("Could not load all Access Control List from DB due to:" + e.getMessage(),

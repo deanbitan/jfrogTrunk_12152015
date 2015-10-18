@@ -25,10 +25,11 @@ public class Footer extends BaseModel {
     private String systemMessageTitleColor;
     private String systemMessage;
     private boolean showSystemMessageOnAllPages;
+    private String serverId;
 
     public Footer(String licenseInfo, String versionInfo, String copyRights, String copyRightsUrl,
             String buildNumber, boolean isAol, boolean isGlobalRepoEnabled, String versionID, boolean userLogo,
-            String logoUrl, String serverName, SystemMessageDescriptor systemMessageDescriptor, boolean helpLinksEnabled) {
+                  String logoUrl, String serverName, SystemMessageDescriptor systemMessageDescriptor, boolean helpLinksEnabled, String serverId) {
         this.licenseInfo = licenseInfo;
         this.versionInfo = versionInfo;
         this.copyRights = copyRights;
@@ -46,6 +47,7 @@ public class Footer extends BaseModel {
         this.systemMessage = systemMessageDescriptor.getMessage();
         this.showSystemMessageOnAllPages = systemMessageDescriptor.isShowOnAllPages();
         this.helpLinksEnabled = helpLinksEnabled;
+        this.serverId = serverId;
     }
 
     public String getLicenseInfo() {
@@ -151,5 +153,13 @@ public class Footer extends BaseModel {
 
     public boolean isHelpLinksEnabled() {
         return helpLinksEnabled;
+    }
+
+    public String getServerId() {
+        return serverId;
+    }
+
+    public void setServerId(String serverId) {
+        this.serverId = serverId;
     }
 }

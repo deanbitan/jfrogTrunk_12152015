@@ -48,24 +48,41 @@ class VfsQueryCriterionDbImpl extends BaseVfsQueryCriterion {
         if (StringUtils.isEmpty(propertyName)) {
             throw new IllegalArgumentException("Cannot accept null or empty property name!");
         }
-        this.propertyName = propertyName;
+        this.propertyName = getPropertyName(propertyName);
         if ("node_name".equals(propertyName)
                 || "node_path".equals(propertyName)
-                || VfsDateFieldName.LAST_MODIFIED.propName.equals(propertyName)
-                || VfsDateFieldName.CREATED.propName.equals(propertyName)) {
+                || VfsDateFieldName.LAST_MODIFIED.getPropName().equals(propertyName)
+                || VfsDateFieldName.CREATED.getPropName().equals(propertyName)) {
             fieldType = VfsQueryFieldType.BASE_NODE;
         } else if ("entry_path".equals(propertyName)) {
             fieldType = VfsQueryFieldType.ARCHIVE_PATH;
         } else if ("entry_name".equals(propertyName)) {
             fieldType = VfsQueryFieldType.ARCHIVE_NAME;
-        } else if (VfsDateFieldName.LAST_DOWNLOADED.propName.equals(propertyName)) {
+        } else if (VfsDateFieldName.LAST_DOWNLOADED.getPropName().equals(propertyName)) {
             fieldType = VfsQueryFieldType.STATISTIC;
+        } else if (VfsDateFieldName.LAST_REMOTE_DOWNLOADED.getPropName().equals(propertyName)) {
+            fieldType = VfsQueryFieldType.REMOTE_STATISTIC;
         } else if (propertyName.startsWith(ChecksumType.sha1.name())
                 || propertyName.startsWith(ChecksumType.md5.name())) {
             fieldType = VfsQueryFieldType.CHECKSUM;
         } else {
             fieldType = VfsQueryFieldType.PROPERTY;
         }
+    }
+
+    /**
+     * Retrieves actual name from VfsDateFieldName (if exist)
+     *
+     * @param propertyName the property name
+     *
+     * @return actual name of VfsDateFieldName
+     */
+    private String getPropertyName(String propertyName) {
+        VfsDateFieldName vfsDateFieldName = VfsDateFieldName.byPropertyName(propertyName);
+        if (vfsDateFieldName != null && vfsDateFieldName.hasPropAlias()) {
+            return vfsDateFieldName.getPropActualName();
+        }
+        return propertyName;
     }
 
     public VfsComparatorType getComparator() {
@@ -114,7 +131,7 @@ class VfsQueryCriterionDbImpl extends BaseVfsQueryCriterion {
 
     @Override
     public boolean hasStatisticFilter() {
-        return fieldType.isStatistic();
+        return fieldType.isStatistic() || fieldType.isRemoteStatistic();
     }
 
     @Override
@@ -153,6 +170,9 @@ class VfsQueryCriterionDbImpl extends BaseVfsQueryCriterion {
                 break;
             case STATISTIC:
                 query.append("stats.").append(propertyName);
+                break;
+            case REMOTE_STATISTIC:
+                query.append("stats_remote.").append(propertyName);
                 break;
         }
     }

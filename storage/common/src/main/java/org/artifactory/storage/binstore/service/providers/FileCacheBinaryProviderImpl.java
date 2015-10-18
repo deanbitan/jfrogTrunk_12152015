@@ -177,7 +177,7 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
         }
         for (File file : files) {
             String sha1 = file.getName();
-            if (getBinaryStore().isActivelyUsed(sha1)) {
+            if (getBinaryStoreServices().isActivelyUsed(sha1)) {
                 statusHolder.status("Skipping deletion for in-use artifact record: " + sha1, log);
             } else {
                 lruCache.remove(sha1);

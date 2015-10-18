@@ -122,6 +122,9 @@ public class RepoConfigDescriptorBuilder {
                 .map(configValidator::mapRepoKeyToDescriptor)
                 .filter(selectedDescriptor -> selectedDescriptor != null)
                 .collect(Collectors.toList()));
+        if (StringUtils.isNotBlank(model.getDefaultDeploymentRepo())) {
+            descriptor.setDefaultDeploymentRepo(repoService.localRepoDescriptorByKey(model.getDefaultDeploymentRepo()));
+        }
     }
 
     private void populateVirtualAdvancedDescriptorValues(VirtualAdvancedRepositoryConfigModel model,

@@ -49,7 +49,7 @@ public class ChecksumSearchService implements RestService {
         ItemSearchResults<ArtifactSearchResult> checksumResults = searchService.getArtifactsByChecksumResults(
                 checksumSearchControl);
         // update model search
-        List<QuickSearchResult> checksumResultList = updateSearchModels(checksumResults);
+        List<QuickSearchResult> checksumResultList = updateSearchModels(checksumResults,request);
         int maxResults = ConstantValues.searchMaxResults.getInt();
         long resultsCount;
         if (checksumSearchControl.isLimitSearchResults() && checksumResultList.size() > maxResults) {
@@ -71,11 +71,12 @@ public class ChecksumSearchService implements RestService {
      * @param checksumResults - checksum search result
      * @return list of search models
      */
-    private List<QuickSearchResult> updateSearchModels(ItemSearchResults<ArtifactSearchResult> checksumResults) {
+    private List<QuickSearchResult> updateSearchModels(ItemSearchResults<ArtifactSearchResult> checksumResults,
+                                                       ArtifactoryRestRequest request) {
         List<QuickSearchResult> checksumResultList = new ArrayList<>();
         checksumResults.getResults().stream()
                 .filter(this::filterNoReadResults)
-                .forEach(checksumResult -> checksumResultList.add(new QuickSearchResult(checksumResult)));
+                .forEach(checksumResult -> checksumResultList.add(new QuickSearchResult(checksumResult,request)));
         return checksumResultList;
     }
 

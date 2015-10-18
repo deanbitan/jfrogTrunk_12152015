@@ -1,11 +1,12 @@
 import TOOLTIP from '../../../constants/artifact_tooltip.constant';
 
 export class AdminRepositoryLayoutFormController {
-    constructor($state,$stateParams, RepositoriesLayoutsDao) {
+    constructor($state,$stateParams, RepositoriesLayoutsDao, ArtifactoryModelSaver) {
         this.$state = $state;
         this.$stateParams = $stateParams;
         this.layoutsDao = RepositoriesLayoutsDao;
         this.TOOLTIP = TOOLTIP.admin.repositories.layoutsForm;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['layoutData']);
 
         this.input = {};
         this.testReply = null;
@@ -50,6 +51,7 @@ export class AdminRepositoryLayoutFormController {
             delete (payload.repositoryAssociations);
 
             this.layoutsDao.update({},payload).$promise.then((data)=>{
+                this.artifactoryModelSaver.save();
                 this.$state.go('^.repo_layouts');
             });
         }
@@ -57,6 +59,7 @@ export class AdminRepositoryLayoutFormController {
         if (this.mode == 'create')
         {
             this.layoutsDao.save({},this.layoutData).$promise.then((data)=>{
+                this.artifactoryModelSaver.save();
                 this.$state.go('^.repo_layouts');
             });
         }
@@ -103,6 +106,7 @@ export class AdminRepositoryLayoutFormController {
     _getLayoutData(layoutName) {
         this.layoutsDao.getLayoutData({},{layoutName:layoutName}).$promise.then((data)=>{
             this.layoutData = data;
+            this.artifactoryModelSaver.save();
             if (this.$stateParams.copyFrom) {
                 this.layoutData.name = '';
             }

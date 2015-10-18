@@ -4,11 +4,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.api.maven.MavenService;
-import org.artifactory.api.maven.MavenSettings;
-import org.artifactory.api.maven.MavenSettingsMirror;
-import org.artifactory.api.maven.MavenSettingsRepository;
-import org.artifactory.api.maven.MavenSettingsServer;
+import org.artifactory.api.maven.*;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.factory.InfoFactoryHolder;
@@ -19,6 +15,7 @@ import org.artifactory.rest.common.service.RestService;
 import org.artifactory.rest.common.service.StreamRestResponse;
 import org.artifactory.ui.rest.model.setmeup.MavenSettingModel;
 import org.artifactory.ui.rest.model.setmeup.ScriptDownload;
+import org.artifactory.ui.utils.MultiPartUtils;
 import org.artifactory.util.HttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +51,7 @@ public class GetMavenSettingSnippetService implements RestService {
     @Override
     public void execute(ArtifactoryRestRequest request, RestResponse response) {
         boolean downloadScript = Boolean.valueOf(request.getQueryParamByKey("downloadScript"));
+        boolean deployMavenSettings = Boolean.valueOf(request.getQueryParamByKey("deploy"));
         MavenSettingModel mavenSettingModel = (MavenSettingModel) request.getImodel();
         String servletContextUrl = HttpUtils.getServletContextUrl(request.getServletRequest());
         // generate maven settings
@@ -66,6 +64,11 @@ public class GetMavenSettingSnippetService implements RestService {
             ((StreamRestResponse) response).setDownload(true);
             ((StreamRestResponse) response).setDownloadFile("settings.xml");
             response.iModel(scriptDownload);
+        } else if (deployMavenSettings) {
+            String savedSnippetName = MultiPartUtils.saveSettingToTempFolder(mavenSnippet);
+            MavenSettingModel mavenSettingsDeploy = new MavenSettingModel("settings.xml", savedSnippetName);
+            response.iModel(mavenSettingsDeploy);
+            return;
         } else {
             // update maven setting model
             MavenSettingModel mavenSnippetModel = new MavenSettingModel(mavenSnippet);

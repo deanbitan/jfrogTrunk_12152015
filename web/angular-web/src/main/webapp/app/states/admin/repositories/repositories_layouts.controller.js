@@ -1,11 +1,12 @@
 export class AdminRepositoriesLayoutController {
 
-    constructor($scope,$state, ArtifactoryGridFactory, RepositoriesLayoutsDao, uiGridConstants, ArtifactoryFeatures) {
+    constructor($scope,$state, ArtifactoryGridFactory, RepositoriesLayoutsDao, uiGridConstants, ArtifactoryFeatures, ArtifactoryModal) {
         this.$scope = $scope;
         this.$state = $state;
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.layoutsDao = RepositoriesLayoutsDao;
         this.gridOptions = {};
+        this.modal = ArtifactoryModal;
         this.uiGridConstants = uiGridConstants;
         this.enableNew = ArtifactoryFeatures.getCurrentLicense() !== 'OSS';
 
@@ -55,8 +56,10 @@ export class AdminRepositoriesLayoutController {
     }
 
     deleteLayout(row) {
-        this.layoutsDao.deleteLayout({},{layoutName: row.name}).$promise.then((data)=>{
-            this._getLayouts();
+        this.modal.confirm(`Are you sure you want to delete layout '${row.name}?'`).then(()=>{
+            this.layoutsDao.deleteLayout({},{layoutName: row.name}).$promise.then((data)=>{
+                this._getLayouts();
+            });
         });
     }
 

@@ -125,10 +125,10 @@ public class
         basic.setIncludesPattern(descriptor.getIncludesPattern());
         List<RepoDescriptor> repositories = descriptor.getRepositories();
         VirtualRepoResolver resolver = new VirtualRepoResolver(descriptor);
-        List<String> resolvedDesc = resolver.getOrderedRepos().stream().map(RealRepoDescriptor::getKey).collect(
-                Collectors.toList());
-        basic.setResolvedRepositories(resolvedDesc);
+        basic.setResolvedRepositories(resolver.getOrderedRepos().stream().map(VirtualSelectedRepository::new).collect(Collectors.toList()));
         basic.setSelectedRepositories(repositories.stream().map(VirtualSelectedRepository::new).collect(Collectors.toList()));
+        Optional.ofNullable(descriptor.getDefaultDeploymentRepo())
+                .ifPresent(localRepoDescriptor -> basic.setDefaultDeploymentRepo(localRepoDescriptor.getKey()));
         model.setBasic(basic);
 
         // Advanced

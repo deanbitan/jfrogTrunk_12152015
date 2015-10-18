@@ -38,10 +38,8 @@ public class MavenSettingGeneratorService implements RestService {
     public void execute(ArtifactoryRestRequest request, RestResponse response) {
         List<RepoDescriptor> readableVirtualRepoDescriptors = SettingsHelper.getReadableVirtualRepoDescriptors(
                 repositoryService, authorizationService);
-
         List<RepoDescriptor> readableVirtualAndRemote = Lists.newArrayList();
         readableVirtualAndRemote.addAll(readableVirtualRepoDescriptors);
-
         MavenSettingModel mavenSettingModel = new MavenSettingModel();
         readableVirtualAndRemote.forEach(repoDescriptor -> {
                     mavenSettingModel.getSnapshots().add(repoDescriptor.getKey());

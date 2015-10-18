@@ -30,6 +30,7 @@ public class ArtifactoryRestResponse<T> implements RestResponse<T> {
     private HttpServletResponse servletResponse;
     private HttpServletRequest servletRequest;
     private FeedbackMsg feedbackMsg = new FeedbackMsg();
+    private Object entity;
     private boolean hasModelList;
     private boolean hasModel;
     boolean uiCall;
@@ -195,6 +196,12 @@ public class ArtifactoryRestResponse<T> implements RestResponse<T> {
 
     public ArtifactoryRestResponse info(String info) {
         feedbackMsg.setInfo(info);
+        return this;
+    }
+
+    @Override
+    public ArtifactoryRestResponse entity(Object entity) {
+        this.entity = entity;
         return this;
     }
 

@@ -10,8 +10,8 @@ public class UserLogin extends BaseModel{
     private String user;
     private  String password;
     Boolean forgotPassword;
+    Boolean canRememberMe;
     private String ssoProviderLink;
-    private String oauthProviderLink;
 
     public UserLogin(){}
 
@@ -43,19 +43,20 @@ public class UserLogin extends BaseModel{
         this.forgotPassword = forgotPassword;
     }
 
-    public String getSsoProviderLink() {
-        return ssoProviderLink;
+    public Boolean getCanRememberMe() {
+        return canRememberMe;
     }
 
-    public String getOauthProviderLink() {
-        return oauthProviderLink;
+    public void setCanRememberMe(Boolean canRememberMe) {
+        this.canRememberMe = canRememberMe;
+    }
+
+    public String getSsoProviderLink() {
+        return ssoProviderLink;
     }
 
     public void setSsoProviderLink(String ssoProviderLink) {
         this.ssoProviderLink = ssoProviderLink;
     }
 
-    public void setOauthProviderLink(String oauthProviderLink) {
-        this.oauthProviderLink = oauthProviderLink;
-    }
 }

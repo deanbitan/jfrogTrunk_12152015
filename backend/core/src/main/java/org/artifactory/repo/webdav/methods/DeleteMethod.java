@@ -26,7 +26,7 @@ import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.LocalRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
-import org.artifactory.repo.webdav.LockableWebdavMethod;
+import org.artifactory.repo.webdav.WebdavMethod;
 import org.artifactory.request.ArtifactoryRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ import java.io.IOException;
  * @author Yoav Luft
  */
 @Component
-public class DeleteMethod implements LockableWebdavMethod {
+public class DeleteMethod implements WebdavMethod {
 
     private static final Logger log = LoggerFactory.getLogger(DeleteMethod.class);
 
@@ -61,11 +61,27 @@ public class DeleteMethod implements LockableWebdavMethod {
             response.setStatus(HttpStatus.SC_NOT_FOUND);
             return;
         }
-
         if (!NamingUtils.isProperties(repoPath.getPath())) {
-            deleteItem(response, repoPath);
+            deleteItems(request, response, repoPath);
         } else {
             deleteProperties(response, repoPath);
+        }
+    }
+
+    /**
+     * Delete items in single or multi trx
+     *
+     * @param request  - encapsulate data related to http servlet request
+     * @param response - encapsulate data related to http servlet response
+     * @param repoPath - repository path
+     * @throws IOException
+     */
+    private void deleteItems(ArtifactoryRequest request, ArtifactoryResponse response, RepoPath repoPath) throws IOException {
+        Boolean atomic = Boolean.valueOf(request.getParameter("atomic"));
+        if (atomic) {
+            deleteItem(response, repoPath);
+        } else {
+            deleteMultiTxItem(response, repoPath);
         }
     }
 
@@ -76,6 +92,22 @@ public class DeleteMethod implements LockableWebdavMethod {
 
     private void deleteItem(ArtifactoryResponse response, RepoPath repoPath) throws IOException {
         StatusHolder statusHolder = repoService.undeploy(repoPath);
+        if (statusHolder.isError()) {
+            response.sendError(statusHolder);
+        } else {
+            response.setStatus(HttpStatus.SC_NO_CONTENT);
+        }
+    }
+
+    /**
+     * delete file or folder in multi tx
+     *
+     * @param response - encapsulate data related to http servlet response
+     * @param repoPath - repository path
+     * @throws IOException
+     */
+    private void deleteMultiTxItem(ArtifactoryResponse response, RepoPath repoPath) throws IOException {
+        StatusHolder statusHolder = repoService.undeployMultiTransaction(repoPath);
         if (statusHolder.isError()) {
             response.sendError(statusHolder);
         } else {

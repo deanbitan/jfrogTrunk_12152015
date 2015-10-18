@@ -3,7 +3,7 @@ package org.artifactory.ui.rest.resource.artifacts.deploy;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ui.rest.model.artifacts.deploy.UploadArtifactInfo;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.deploy.DeployServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

@@ -3,7 +3,7 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 let $stateParams, LdapDao, $state, ArtifactoryGridFactory;
 
 export class LdapSettingFormController {
-    constructor(_$stateParams_, _$state_, _LdapDao_, _ArtifactoryGridFactory_, ArtifactoryNotifications) {
+    constructor(_$stateParams_, _$state_, _LdapDao_, _ArtifactoryGridFactory_, ArtifactoryNotifications, ArtifactoryModelSaver) {
         $state = _$state_;
         $stateParams = _$stateParams_;
         LdapDao = _LdapDao_;
@@ -12,6 +12,7 @@ export class LdapSettingFormController {
         this.testConnection = {};
         this.isNew = !$stateParams.ldapSettingKey;
         this.TOOLTIP = TOOLTIP.admin.security.LDAPSettingsForm;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['ldap']);
         this._initLdapSetting();
     }
 
@@ -26,7 +27,10 @@ export class LdapSettingFormController {
         }
         else {
             LdapDao.get({key: $stateParams.ldapSettingKey}).$promise
-                    .then((ldapSetting) => this.ldap = ldapSetting);
+                    .then((ldapSetting) => {
+                        this.ldap = ldapSetting
+                        this.artifactoryModelSaver.save();
+                    });
         }
     }
 
@@ -40,7 +44,10 @@ export class LdapSettingFormController {
                     this.ldap.search = undefined;
                 }
                 let whenSaved = this.isNew ? LdapDao.save(this.ldap) : LdapDao.update(this.ldap);
-                whenSaved.$promise.then(() => this._end());
+                whenSaved.$promise.then(() => {
+                    this.artifactoryModelSaver.save();
+                    this._end()
+                });
             }
         }
     }

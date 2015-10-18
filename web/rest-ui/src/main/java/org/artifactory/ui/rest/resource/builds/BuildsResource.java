@@ -6,7 +6,7 @@ import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.builds.BuildGovernanceInfo;
 import org.artifactory.ui.rest.model.builds.BuildLicenseModel;
 import org.artifactory.ui.rest.model.builds.DeleteBuildsModel;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.builds.BuildsServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;

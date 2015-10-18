@@ -17,6 +17,9 @@ public class DynamicStar extends DomainSensitiveParserElement {
             case archives: {
                 return AqlParser.archiveStar;
             }
+            case entries: {
+                return AqlParser.entriesStar;
+            }
             case properties: {
                 return AqlParser.propertiesStar;
             }

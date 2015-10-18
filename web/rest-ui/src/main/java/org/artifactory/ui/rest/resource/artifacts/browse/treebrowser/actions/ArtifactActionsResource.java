@@ -10,7 +10,7 @@ import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.ViewArt
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.WatchArtifact;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.ZapArtifact;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.recalculateindex.BaseIndexCalculator;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.browse.BrowseServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

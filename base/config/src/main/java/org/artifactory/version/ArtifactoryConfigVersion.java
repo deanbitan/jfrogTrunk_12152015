@@ -267,6 +267,10 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v162("http://artifactory.jfrog.org/xsd/1.6.2",
             "http://www.jfrog.org/xsd/artifactory-v1_6_2.xsd",
             ArtifactoryVersion.v410,
+            ArtifactoryVersion.v412),
+    v163("http://artifactory.jfrog.org/xsd/1.6.3",
+            "http://www.jfrog.org/xsd/artifactory-v1_6_3.xsd",
+            ArtifactoryVersion.v413,
             ArtifactoryVersion.getCurrent());
 
     private final String xsdUri;

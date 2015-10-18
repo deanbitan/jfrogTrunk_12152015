@@ -14,6 +14,12 @@ const GUEST_USER = {
 
 class User {
     constructor(data) {
+        User.ArtifactoryEventBus.register(EVENTS.USER_LOGOUT, (confirmDiscard) => {
+            if (!confirmDiscard) User.logout().then(() => {
+                User.$state.go("home");
+            });
+        });
+
         if (data) {
             this.setData(data);
         }

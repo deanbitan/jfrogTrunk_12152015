@@ -4,8 +4,9 @@ import TOOLTIP from '../../constants/artifact_tooltip.constant';
 
 export class ArtifactoryDeployModal {
 
-    constructor($rootScope, RepoDataDao, ArtifactoryEventBus, ArtifactoryModal) {
+    constructor($rootScope, RepoDataDao, ArtifactoryEventBus, ArtifactoryModal,$timeout) {
         this.$rootScope = $rootScope;
+        this.$timeout = $timeout;
         this.repoDataDao = RepoDataDao;
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.artifactoryModal = ArtifactoryModal;
@@ -95,6 +96,19 @@ export class ArtifactoryDeployModal {
      */
     dispatchSuccessEvent() {
         this.artifactoryEventBus.dispatch(EVENTS.ACTION_DEPLOY, this.deployFile.repoDeploy.repoKey);
+    }
+
+    onRepoChange() {
+        this.$timeout(()=>{
+            let repo = this.deployController.deployFile.repoDeploy;
+            if (repo.repoType !== 'Maven' && this.deployController.deployFile.unitInfo) {
+                delete this.deployController.deployFile.unitInfo.maven;
+                this.deployController.deployFile.unitInfo.mavenArtifact = false;
+                if (this.deployController.originalDeployPath) {
+                    this.deployController.deployFile.targetPath = angular.copy(this.deployController.originalDeployPath);
+                }
+            }
+        });
     }
 
 }

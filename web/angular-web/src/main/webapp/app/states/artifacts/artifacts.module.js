@@ -54,9 +54,13 @@ function artifactsConfig($stateProvider, $urlMatcherFactoryProvider) {
             .state('artifacts.browsers.search', {
                 url: '/search/{searchType}/{params}',
                 params: {searchParams: {}},
+/*
+//              MOVED TO artifactory.states.module.js to prevent error message (ui-router bug workaround)
+
                 onEnter: (ArtifactoryEventBus, $stateParams) => {
                     ArtifactoryEventBus.dispatch(EVENTS.SEARCH_URL_CHANGED, $stateParams);
                 },
+*/
                 views: {
                     'search@artifacts': {
                         templateUrl: 'states/artifacts/search/search.html',

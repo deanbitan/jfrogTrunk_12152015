@@ -5,33 +5,26 @@ import com.google.common.collect.Lists;
 import org.artifactory.aql.api.internal.AqlApiDynamicFieldsDomains;
 import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.model.AqlDomainEnum;
-import org.artifactory.aql.model.AqlFieldEnum;
-import org.artifactory.aql.result.rows.AqlArchiveItem;
+import org.artifactory.aql.result.rows.AqlArchiveEntryItem;
 
 import java.util.ArrayList;
 
 /**
  * @author Gidi Shabat
  */
-public class AqlApiArchive extends AqlBase<AqlApiArchive, AqlArchiveItem> {
+public class AqlApiArchive extends AqlBase<AqlApiArchive, AqlArchiveEntryItem> {
 
     public AqlApiArchive() {
-        super(AqlArchiveItem.class);
+        super(AqlArchiveEntryItem.class);
     }
 
-    public static AqlApiDynamicFieldsDomains.AqlApiComparator<AqlApiArchive> path() {
-        ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.archives);
-        return new AqlApiDynamicFieldsDomains.AqlApiComparator(AqlFieldEnum.archiveEntryPath, subDomains);
-    }
-
-    public static AqlApiDynamicFieldsDomains.AqlApiComparator<AqlApiArchive> name() {
-        ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.archives);
-        return new AqlApiDynamicFieldsDomains.AqlApiComparator(AqlFieldEnum.archiveEntryName, subDomains);
+    public static AqlApiDynamicFieldsDomains.AqlApiArchiveEntryDynamicFieldsDomains<AqlApiArchive> entry() {
+        ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.archives, AqlDomainEnum.entries);
+        return new AqlApiDynamicFieldsDomains.AqlApiArchiveEntryDynamicFieldsDomains(subDomains);
     }
 
     public static AqlApiDynamicFieldsDomains.AqlApiItemDynamicFieldsDomains<AqlApiArchive> item() {
         ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.archives, AqlDomainEnum.items);
-        subDomains.add(AqlDomainEnum.modules);
         return new AqlApiDynamicFieldsDomains.AqlApiItemDynamicFieldsDomains(subDomains);
     }
 

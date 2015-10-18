@@ -32,5 +32,7 @@ public interface VirtualRepositoryConfiguration extends RepositoryConfiguration 
 
     String getPomRepositoryReferencesCleanupPolicy();
 
+    String getDefaultDeploymentRepo();
+
     List<String> getRepositories();
 }

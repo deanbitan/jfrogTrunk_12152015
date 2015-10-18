@@ -3,9 +3,10 @@ import FIELD_OPTIONS from '../../../constants/field_options.constats';
 export class AdminRepositoriesController {
 
     constructor($scope, $state, ArtifactoryGridFactory, RepositoriesDao, ArtifactoryModal, uiGridConstants,
-            ArtifactActionsDao, ArtifactoryFeatures) {
+            ArtifactActionsDao, ArtifactoryFeatures, commonGridColumns) {
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.$state = $state;
+        this.commonGridColumns = commonGridColumns;
         this.repositoriesDao = RepositoriesDao;
         this.$scope = $scope;
         this.modal = ArtifactoryModal;
@@ -246,9 +247,7 @@ export class AdminRepositoriesController {
                 name: 'Selected Repositories',
                 displayName: 'Selected Repositories',
                 field: 'selectedRepos',
-                cellTemplate: '<div class="ui-grid-cell-contents" id="repositories-virtual-selected" ng-if="row.entity.selectedRepos.length">{{row.entity.selectedRepos.length}} | {{row.entity.selectedRepos.join(", ")}}</a></div>' +
-                              '<div class="ui-grid-cell-contents" id="repositories-virtual-selected" ng-if="!row.entity.selectedRepos.length">-</a></div>',
-                cellClass: 'tooltip-show-list',
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.selectedRepos','row.entity.repoKey', null, null, "repositories-virtual-selected"),
                 width: '40%',
                 enableSorting: false
             },

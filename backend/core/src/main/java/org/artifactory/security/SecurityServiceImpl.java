@@ -482,6 +482,21 @@ public class SecurityServiceImpl implements InternalSecurityService {
     }
 
     @Override
+    public org.artifactory.md.Properties findPropertiesForUser(String username) {
+        return userGroupStoreService.findPropertiesForUser(username);
+    }
+
+    @Override
+    public void deleteProperty(String userName, String propertyKey) {
+        userGroupStoreService.deleteUserProperty(userName,propertyKey);
+    }
+
+    @Override
+    public void deletePropertyFromAllUsers(String propertyKey) {
+        userGroupStoreService.deletePropertyFromAllUsers(propertyKey);
+    }
+
+    @Override
     public boolean createUser(MutableUserInfo user) {
         user.setUsername(user.getUsername().toLowerCase());
         boolean userCreated = userGroupStoreService.createUser(user);
@@ -524,6 +539,14 @@ public class SecurityServiceImpl implements InternalSecurityService {
             interceptors.onGroupAdd(groupInfo.getGroupName());
         }
         return groupCreated;
+    }
+
+    @Override
+    public void updateGroupUsers(MutableGroupInfo group, List<String> usersInGroup) {
+        // remove users from groups
+        removePrevGroupUsers(group);
+        // add users to group
+        addUserToGroup(usersInGroup, group.getGroupName());
     }
 
     @Override
@@ -626,6 +649,31 @@ public class SecurityServiceImpl implements InternalSecurityService {
             userInfo = autoCreateUser(userName, transientUser);
         }
         return userInfo;
+    }
+
+
+    /**
+     * remove group users before update
+     *
+     * @param group - group data
+     */
+    private void removePrevGroupUsers(MutableGroupInfo group) {
+        List<UserInfo> usersInGroup = findUsersInGroup(group.getGroupName());
+        if (usersInGroup != null && !usersInGroup.isEmpty()) {
+            List<String> userInGroupList = new ArrayList<>();
+            usersInGroup.forEach(userInGroup -> userInGroupList.add(userInGroup.getUsername()));
+            removeUsersFromGroup(group.getGroupName(), userInGroupList);
+        }
+    }
+
+    /**
+     * @param users     - user list to be added to group
+     * @param groupName - group name
+     */
+    protected void addUserToGroup(List<String> users, String groupName) {
+        if (users != null && !users.isEmpty()) {
+            addUsersToGroup(groupName, users);
+        }
     }
 
     private UserInfo autoCreateUser(String userName, boolean transientUser) {

@@ -63,10 +63,8 @@ export class AdminSecurityGroupsController {
                 field: "permissions",
                 name: "Permissions",
                 displayName: "Permissions",
-                cellTemplate: '<div ng-if="row.entity.permissions && row.entity.permissions.length" class="ui-grid-cell-contents">{{row.entity.permissions.length}} | {{row.entity.permissions.join(\', \')}}</div>' +
-                '<div ng-if="!row.entity.permissions || !row.entity.permissionsList.length" class="ui-grid-cell-contents">-</div>',
-                width: '60%',
-                cellClass: 'tooltip-show-list'
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.permissions','row.entity.groupName'),
+                width: '60%'
             },
             {
                 name: "External",

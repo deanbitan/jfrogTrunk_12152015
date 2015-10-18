@@ -5,7 +5,6 @@ import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DownloadArtifact;
-import org.artifactory.util.HttpUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -37,9 +36,8 @@ public class DownloadArtifactService implements RestService {
     private RestModel getArtifactDownloadModel(ArtifactoryRestRequest artifactoryRequest,
             String repoKey, String path) {
         HttpServletRequest httpRequest =artifactoryRequest.getServletRequest();
-        String servletContextUrl = HttpUtils.getServletContextUrl(httpRequest);
         DownloadArtifact downloadArtifact = new DownloadArtifact();
-        String downloadPath = servletContextUrl + "/" + repoKey + "/" + path;
+        String downloadPath = httpRequest.getContextPath() + "/" + repoKey + "/" + path;
         downloadArtifact.setPath(downloadPath);
         return downloadArtifact;
     }

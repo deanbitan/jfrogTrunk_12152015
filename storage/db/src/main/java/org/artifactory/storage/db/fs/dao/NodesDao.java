@@ -219,7 +219,7 @@ public class NodesDao extends BaseDao {
             // the child path must be the path+name of the parent
             String childPath = path.getPathName();
             resultSet = jdbcHelper.executeSelect("SELECT COUNT(1) FROM nodes " +
-                    "WHERE repo = ? AND node_path like ? AND depth = ?",
+                    "WHERE repo = ? AND node_path = ? AND depth = ?",
                     path.getRepo(), dotIfNullOrEmpty(childPath), path.getDepth() + 1);
             if (resultSet.next()) {
                 int childrenCount = resultSet.getInt(1);

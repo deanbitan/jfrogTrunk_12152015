@@ -21,8 +21,11 @@ package org.artifactory.storage.db.spring;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.artifactory.storage.StorageProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author Yossi Shaul
  */
 public class ArtifactoryTomcatDataSource extends DataSource implements ArtifactoryDataSource {
-
+    private static final Logger log = LoggerFactory.getLogger(ArtifactoryTomcatDataSource.class);
     public ArtifactoryTomcatDataSource(StorageProperties s) {
         // see org.apache.tomcat.jdbc.pool.DataSourceFactory.parsePoolProperties()
         PoolProperties p = new PoolProperties();
@@ -164,5 +167,20 @@ public class ArtifactoryTomcatDataSource extends DataSource implements Artifacto
             default:
                 return "SELECT 1";
         }
+    }
+
+    @Override
+    public Connection getConnection(String username, String password) throws SQLException {
+        log.debug("Acquiring connection from pool");
+        return super.getConnection(username, password);
+    }
+
+    public Connection getConnection() throws SQLException {
+        log.debug("Acquiring connection from pool");
+        Connection connection = super.getConnection();
+        if (Connection.TRANSACTION_READ_COMMITTED != connection.getTransactionIsolation()) {
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        }
+        return connection;
     }
 }

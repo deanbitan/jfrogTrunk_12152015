@@ -27,11 +27,7 @@ import org.artifactory.api.security.ldap.LdapService;
 import org.artifactory.api.security.ldap.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.factory.InfoFactoryHolder;
-import org.artifactory.security.MutableUserInfo;
-import org.artifactory.security.RealmAwareAuthenticationProvider;
-import org.artifactory.security.SimpleUser;
-import org.artifactory.security.UserGroupInfo;
-import org.artifactory.security.UserInfo;
+import org.artifactory.security.*;
 import org.artifactory.spring.InternalContextHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,12 +44,7 @@ import org.springframework.security.ldap.LdapUtils;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Custom LDAP authentication provider just for creating local users for newly ldap authenticated users.
@@ -168,6 +159,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
                 if (authenticationException != null) {
                     UserInfo userInfo = userGroupService.findUser(userName);
                     if (userInfo != null) {
+                        log.debug("user {} failed to perform ldap authentication (not bad credential)", userInfo.getUsername());
                         removeUserLdapRelatedGroups(userInfo);
                     }
                     throw authenticationException;
@@ -232,7 +224,6 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
      * remove user ldap related group as user no longer exist in ldap
      *
      * @param userInfo Artifactory User Data
-     * @param userName user name
      */
     private void removeUserLdapRelatedGroups(UserInfo userInfo) {
         MutableUserInfo mutableUserInfo = InfoFactoryHolder.get()
@@ -247,6 +238,8 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
         }
         mutableUserInfo.setGroups(updateUserGroup);
         if (!userInfo.isTransientUser()) {
+            log.debug("updating user {} after ldap login authentication failure (not bad credential) ,user groups for update are {}",
+                    mutableUserInfo.getUsername(), mutableUserInfo.getGroups());
             userGroupService.updateUser(mutableUserInfo, false);
         }
     }

@@ -45,16 +45,8 @@ public class ArchiveSearchResult extends ArtifactSearchResult {
         this.isRealEntry = isRealEntry;
     }
 
-    // Used by Wicket
-    @SuppressWarnings("UnusedDeclaration")
     public String getEntryName() {
         return entryName;
-    }
-
-    // Used by Wicket
-    @SuppressWarnings("UnusedDeclaration")
-    public String getLowerCaseEntryName() {
-        return entryName.toLowerCase();
     }
 
     /**

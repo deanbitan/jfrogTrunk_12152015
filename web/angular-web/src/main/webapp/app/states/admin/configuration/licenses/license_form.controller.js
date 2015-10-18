@@ -1,24 +1,32 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminConfigurationLicenseFormController {
-    constructor($stateParams, LicensesDao, $state, ArtifactoryState) {
+    constructor($stateParams, LicensesDao, $state, ArtifactoryState, ArtifactoryModelSaver) {
     	this.state = $state;
     	this.isNew = !$stateParams.licenseName;
     	this.licensesDao = LicensesDao;
 		this.artifactoryState = ArtifactoryState;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['license']);
+
         this.TOOLTIP = TOOLTIP.admin.configuration.licenseForm;
 
     	if (this.isNew) {
     		this.license = new LicensesDao();
     	}
     	else {
-    		this.license = LicensesDao.getSingleLicense({name: $stateParams.licenseName});
+    		LicensesDao.getSingleLicense({name: $stateParams.licenseName}).$promise.then((data)=>{
+                this.license = data.data;
+                this.artifactoryModelSaver.save();
+            });
     	}
     }
 
     save() {
 		let whenSaved = this.isNew ? this.license.$create() : this.license.$update();
-        whenSaved.then(() => this._end());
+        whenSaved.then(() => {
+            this.artifactoryModelSaver.save();
+            this._end()
+        });
 
     }
 	cancel() {

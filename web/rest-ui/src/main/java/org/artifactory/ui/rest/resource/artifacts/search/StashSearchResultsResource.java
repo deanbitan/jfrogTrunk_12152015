@@ -3,7 +3,7 @@ package org.artifactory.ui.rest.resource.artifacts.search;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ui.rest.model.admin.importexport.ImportExportSettings;
 import org.artifactory.ui.rest.model.artifacts.search.BaseSearchResult;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.search.SearchServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

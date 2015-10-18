@@ -31,8 +31,12 @@ export function jfTooltipOnOverflow() {
                         });
                         target.tooltipster('show');
                     }
-                    else
+                    else {
                         target.tooltipster('enable');
+
+                        if (target.tooltipster('content') != targetContent)
+                            target.tooltipster('content', targetContent);
+                    }
                 }
                 else if (target.hasClass('tooltipstered'))
                     target.tooltipster('disable');

@@ -58,11 +58,18 @@ class jfSingleDeployController {
      * @param response
      */
     onSuccessItem(fileDetails, response) {
+        if (this.deployFile.repoDeploy.repoType !== 'Maven') {
+            response.unitInfo.artifactType = "base";
+        }
         response.unitInfo.debianArtifact = response.unitInfo.artifactType==='debian';
         response.unitInfo.mavenArtifact = response.unitInfo.artifactType==='maven';
+//        response.unitInfo.originalMaven = response.unitInfo.artifactType==='maven';
 
+        let tempBundle = this.deployFile.unitInfo ? this.deployFile.unitInfo.bundle : false;
         this.deployFile.unitInfo = response.unitInfo;
-        this.deployFile.unitConfigFileContent = response.unitConfigFileContent;
+        this.deployFile.unitInfo.bundle = tempBundle;
+
+        this.deployFile.unitConfigFileContent = response.unitConfigFileContent || "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd\" xmlns=\"http://maven.apache.org/POM/4.0.0\"\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n  <modelVersion>4.0.0</modelVersion>\n  <groupId></groupId>\n  <artifactId></artifactId>\n  <version></version>\n  <description>Artifactory auto generated POM</description>\n</project>\n";
         //MavenArtifact causes 'deploy as' checkbox to be lit -> change deployment path according to GAVC
         if (this.deployFile.unitInfo && this.deployFile.unitInfo.mavenArtifact) {
             this.originalDeployPath = this.deployFile.targetPath;
@@ -196,7 +203,7 @@ class jfSingleDeployController {
         if (this.deployFile.unitInfo && this.deployFile.unitInfo.debianArtifact) {
             ok = this.deployFile.unitInfo.distribution && this.deployFile.unitInfo.component && this.deployFile.unitInfo.architecture;
         }
-        return ok && this.uploadCompleted;
+        return ok && this.uploadCompleted && this.deployFile.repoDeploy;
     }
 
     /**
@@ -282,6 +289,9 @@ class jfSingleDeployController {
         this.errorQueue.push({item: item, response: response});
         this.artifactoryNotifications.create(response);
         this.deploySingleUploader.removeFileFromQueue(item);
+
+        this.deployFile.unitInfo={};
+        this.clearPath();
     }
 
     /**
@@ -289,14 +299,15 @@ class jfSingleDeployController {
      * if not set artifactType = 'base'
      */
     changeMavenFileType() {
-        if (this.deployFile.unitInfo.artifactType == 'maven') {
+        if (!this.deployFile.unitInfo.mavenArtifact) {
+            this.deployFile.unitInfo.maven = false;
             this.deployFile.unitInfo.artifactType = 'base';
-            this.deployFile.unitInfo.maven = true;
             if (this.originalDeployPath) {
                 this.deployFile.targetPath = angular.copy(this.originalDeployPath);
             }
         }
         else {
+            this.deployFile.unitInfo.maven = true;
             this.deployFile.unitInfo.artifactType = 'maven';
             this.originalDeployPath = angular.copy(this.deployFile.targetPath);
             this.updateMavenTargetPath();
@@ -319,7 +330,6 @@ class jfSingleDeployController {
     }
 
     onCompleteAll() {
-        this.uploadCompleted = true;
         this.progress = false;
         let body = '<ul>';
         this.artifactoryNotifications.clear();
@@ -331,6 +341,9 @@ class jfSingleDeployController {
             this.artifactoryNotifications.createMessageWithHtml({type: 'error', body: body, timeout: 10000});
             this.deploySingleUploader.clearQueue();
             this.errorQueue = [];
+        }
+        else { //only when no errors
+            this.uploadCompleted = true;
         }
     }
 
@@ -392,6 +405,14 @@ class jfSingleDeployController {
         this.artifactoryNotifications.createMessageWithHtml(this.comm.createNotification(data));
         this.needToCancel = false;
         this.onSuccess();
+    }
+
+    isMavenCheckBoxVisible() {
+//        return this.deployFile.unitInfo && (this.deployFile.unitInfo.originalMaven || (this.deployFile.unitInfo.valid && this.deployFile.repoDeploy.repoType === 'Maven'));
+        return this.deployFile.unitInfo && (this.deployFile.unitInfo.valid && this.deployFile.repoDeploy.repoType === 'Maven');
+    }
+    isMavenSectionVisible() {
+        return this.deployFile.unitInfo && this.deployFile.unitInfo.mavenArtifact && this.isMavenCheckBoxVisible();// && (this.deployFile.unitInfo.maven || (this.deployFile.unitInfo.valid && this.deployFile.repoDeploy.repoType === 'Maven'));
     }
 }
 export function jfSingleDeploy() {

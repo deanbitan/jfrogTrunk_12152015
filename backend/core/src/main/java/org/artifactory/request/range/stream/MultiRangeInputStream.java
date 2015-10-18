@@ -50,6 +50,11 @@ public class MultiRangeInputStream extends InputStream {
             return result;
         }
         if (range == null) {
+            // Make sure to read the file until EOF
+            int result=inputStream.read();
+            while (result>=0){
+                result=inputStream.read();
+            }
             return -1;
         }
         streamPointer++;

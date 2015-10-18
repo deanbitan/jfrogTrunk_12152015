@@ -21,6 +21,7 @@ public class RootElement extends LazyParserElement {
         return fork(
                 provider.provide(DomainElement.class, items),
                 provider.provide(DomainElement.class, archives),
+                provider.provide(DomainElement.class, entries),
                 provider.provide(DomainElement.class, properties),
                 provider.provide(DomainElement.class, statistics),
                 provider.provide(DomainElement.class, artifacts),

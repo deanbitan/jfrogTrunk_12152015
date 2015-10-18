@@ -23,6 +23,7 @@ import org.artifactory.descriptor.Descriptor;
 import org.artifactory.descriptor.security.debian.DebianSettings;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupSetting;
+import org.artifactory.descriptor.security.oauth.OAuthSettings;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.descriptor.security.sso.HttpSsoSettings;
 import org.artifactory.descriptor.security.sso.SamlSettings;
@@ -40,7 +41,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "anonAccessToBuildInfosDisabled", "hideUnauthorizedResources", "passwordSettings",
-        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings", "debianSettings"},
+        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings","debianSettings","oauthSettings"},
         namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 
@@ -78,6 +79,9 @@ public class SecurityDescriptor implements Descriptor {
 
     @XmlElement(name = "debianSettings", required = false)
     private DebianSettings debianSettings;
+
+    @XmlElement(name = "oauthSettings", required = false)
+    private OAuthSettings oauthSettings;
 
     public static boolean equalLdapLists(@Nullable List<LdapSetting> l1, @Nullable List<LdapSetting> l2) {
         if (l1 == l2) {
@@ -342,6 +346,13 @@ public class SecurityDescriptor implements Descriptor {
         this.samlSettings = samlSettings;
     }
 
+    public OAuthSettings getOauthSettings() {
+        return oauthSettings;
+    }
+
+    public void setOauthSettings(OAuthSettings oauthSettings) {
+        this.oauthSettings = oauthSettings;
+    }
     public DebianSettings getDebianSettings() {
         return debianSettings;
     }

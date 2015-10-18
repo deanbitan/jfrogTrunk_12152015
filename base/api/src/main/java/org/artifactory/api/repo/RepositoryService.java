@@ -34,16 +34,8 @@ import org.artifactory.api.search.VersionSearchResults;
 import org.artifactory.checksum.ChecksumType;
 import org.artifactory.common.MutableStatusHolder;
 import org.artifactory.common.StatusHolder;
-import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
-import org.artifactory.fs.FileInfo;
-import org.artifactory.fs.FolderInfo;
-import org.artifactory.fs.ItemInfo;
-import org.artifactory.fs.StatsInfo;
-import org.artifactory.fs.ZipEntryInfo;
+import org.artifactory.descriptor.repo.*;
+import org.artifactory.fs.*;
 import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.ResourceStreamHandle;
@@ -198,6 +190,9 @@ public interface RepositoryService extends ImportableExportable {
     BasicStatusHolder undeploy(RepoPath repoPath, boolean calcMavenMetadata, boolean pruneEmptyFolders);
 
     @Request(aggregateEventsByTimeWindow = true)
+    StatusHolder undeployMultiTransaction(RepoPath repoPath);
+
+    @Request(aggregateEventsByTimeWindow = true)
     StatusHolder undeployVersionUnits(Set<VersionUnit> versionUnits);
 
     /**
@@ -240,7 +235,37 @@ public interface RepositoryService extends ImportableExportable {
             boolean dryRun, boolean failFast);
 
     /**
-     * Copies repository path to another absolute path. The copy will only copy paths the user has permissions to read
+     * Copies repository path to another absolute path in multi tx. The copy will only copy paths the user has permissions to read
+     * and paths that are accepted by the target repository. Maven metadata will be recalculated for both the source and
+     * target folders. Metadata is also copied.
+     *
+     * @param fromRepoPath    Repository path to copy. This path must represent a folder in a local repository.
+     * @param targetRepoPath  Path of the target local non-cached repository to copy the path to.
+     * @param dryRun          If true the method will just report the expected result but will not copy any file
+     * @param suppressLayouts If true, path translation across different layouts should be suppressed.
+     * @param failFast        If true, the operation should fail upon encountering an error.
+     * @return MoveMultiStatusHolder holding the errors and warnings
+     */
+    MoveMultiStatusHolder copyMultiTx(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts,
+                                      boolean failFast);
+
+    /**
+     * Move repository path to another absolute path in multi tx. The move will only move paths the user has permissions to read
+     * and paths that are accepted by the target repository. Maven metadata will be recalculated for both the source and
+     * target folders. Metadata is also moved.
+     *
+     * @param fromRepoPath    Repository path to move. This path must represent a folder in a local repository.
+     * @param targetRepoPath  Path of the target local non-cached repository to move the path to.
+     * @param dryRun          If true the method will just report the expected result but will not copy any file
+     * @param suppressLayouts If true, path translation across different layouts should be suppressed.
+     * @param failFast        If true, the operation should fail upon encountering an error.
+     * @return MoveMultiStatusHolder holding the errors and warnings
+     */
+    MoveMultiStatusHolder moveMultiTx(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts,
+                                      boolean failFast);
+
+    /**
+     * Copies repository path to another absolute path in single tx may case performance issues. The copy will only copy paths the user has permissions to read
      * and paths that are accepted by the target repository. Maven metadata will be recalculated for both the source and
      * target folders. Metadata is also copied.
      *
@@ -253,10 +278,10 @@ public interface RepositoryService extends ImportableExportable {
      */
     @Lock
     MoveMultiStatusHolder copy(RepoPath fromRepoPath, RepoPath targetRepoPath, boolean dryRun, boolean suppressLayouts,
-            boolean failFast);
+                               boolean failFast);
 
     /**
-     * Copies a set of paths to another local repository.
+     * Copies a set of paths to another local repository in single tx mode in order to prevent long db locking.
      * <p/>
      * This method will only copy paths the user has permissions to move and paths that are accepted by the target
      * repository.

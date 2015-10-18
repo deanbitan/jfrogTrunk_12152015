@@ -5,6 +5,9 @@
      ng-if="!jfGeneral.generalData.blackedOutMessage && jfGeneral.generalData.offlineMessage">
     {{ jfGeneral.generalData.offlineMessage }}
 </div>
+<div class="alert alert-warning" ng-if="jfGeneral.currentNode.data.cached === false">
+    This item is not cached.
+</div>
 <jf-panel jf-panel-heading="Info"
           ng-if="jfGeneral.generalData.info">
     <div ng-if="jfGeneral.generalData.info.repoType.length" class="repository-type">
@@ -21,6 +24,8 @@
                 {{value}}
                 <jf-clip-copy ng-if="key === 'repositoryPath'"
                               text-to-copy="value" object-name="Path"></jf-clip-copy>
+                <jf-clip-copy ng-if="key === 'name'"
+                              text-to-copy="jfGeneral.getFullFilePath()" object-name="full file path"></jf-clip-copy>
 
                 <jf-help-tooltip ng-if="jfGeneral.TOOLTIP[key]" html="jfGeneral.TOOLTIP[key]"></jf-help-tooltip>
             </td>

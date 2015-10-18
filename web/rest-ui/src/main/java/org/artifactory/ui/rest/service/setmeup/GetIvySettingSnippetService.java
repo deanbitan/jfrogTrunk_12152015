@@ -14,6 +14,7 @@ import org.artifactory.rest.common.service.RestService;
 import org.artifactory.rest.common.service.StreamRestResponse;
 import org.artifactory.ui.rest.model.setmeup.IvySettingModel;
 import org.artifactory.ui.rest.model.setmeup.ScriptDownload;
+import org.artifactory.ui.utils.MultiPartUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.jdom2.Comment;
@@ -52,6 +53,7 @@ public class GetIvySettingSnippetService implements RestService {
     @Override
     public void execute(ArtifactoryRestRequest request, RestResponse response) {
         boolean downloadScript = Boolean.valueOf(request.getQueryParamByKey("downloadScript"));
+        boolean deploySettings = Boolean.valueOf(request.getQueryParamByKey("deploy"));
         IvySettingModel ivySetting = (IvySettingModel) request.getImodel();
         String servletContextUrl = HttpUtils.getServletContextUrl(request.getServletRequest());
         String ivySnippet = generateSettings(servletContextUrl, response, ivySetting);
@@ -62,6 +64,11 @@ public class GetIvySettingSnippetService implements RestService {
             ((StreamRestResponse) response).setDownload(true);
             ((StreamRestResponse) response).setDownloadFile("ivysettings.xml");
             response.iModel(scriptDownload);
+        } else if (deploySettings) {
+            String savedSnippetName = MultiPartUtils.saveSettingToTempFolder(ivySnippet);
+            IvySettingModel ivySnippetDeploy = new IvySettingModel("ivysettings.xml", savedSnippetName);
+            response.iModel(ivySnippetDeploy);
+            return;
         } else {
             IvySettingModel ivySettingModel = new IvySettingModel(ivySnippet);
             ivySettingModel.clearProps();

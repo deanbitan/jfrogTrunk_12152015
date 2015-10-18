@@ -1,5 +1,7 @@
 package org.artifactory.storage.db.security.dao;
 
+import com.google.common.collect.Lists;
+import org.artifactory.storage.db.fs.entity.UserProperty;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
@@ -11,6 +13,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * A dao for the user_props table.
@@ -89,5 +92,33 @@ public class UserPropertiesDao extends BaseDao {
     public boolean deleteProperty(long uid, String key) throws SQLException {
         String del = "DELETE FROM user_props WHERE user_id = ? AND prop_key = ?";
         return jdbcHelper.executeUpdate(del, uid, key) == 1;
+    }
+
+    public List<UserProperty> getPropertiesForUser(String username) throws SQLException {
+        ResultSet rs = null;
+        List<UserProperty> results = Lists.newArrayList();
+        try {
+            String sel = "SELECT d.user_id,d.prop_key,d.prop_value FROM users u INNER JOIN user_props d USING (user_id) ";
+            sel += "WHERE u.username = ?";
+            rs = jdbcHelper.executeSelect(sel, username);
+            while (rs.next()) {
+                results.add(propertyFromResultSet(rs));
+            }
+            return results;
+        } finally {
+            DbUtils.close(rs);
+        }
+    }
+
+    private UserProperty propertyFromResultSet(ResultSet resultSet) throws SQLException {
+        long propId = resultSet.getLong(1);
+        String propKey = resultSet.getString(2);
+        String propValue = emptyIfNull(resultSet.getString(3));
+        return new UserProperty(propId, propKey, propValue);
+    }
+
+    public void deletePropertyFromAllUsers(String propertyKey) throws SQLException {
+        String del = "DELETE FROM user_props WHERE prop_key = ?";
+        jdbcHelper.executeUpdate(del, propertyKey);
     }
 }

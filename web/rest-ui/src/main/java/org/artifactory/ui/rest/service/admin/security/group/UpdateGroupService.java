@@ -6,6 +6,8 @@ import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.security.MutableGroupInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.ui.rest.model.admin.security.group.Group;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -22,6 +24,8 @@ import java.util.List;
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class UpdateGroupService extends BaseGroupService {
+    private static final Logger log = LoggerFactory.getLogger(UpdateGroupService.class);
+
     @Autowired
     protected UserGroupService userGroupService;
 
@@ -33,14 +37,16 @@ public class UpdateGroupService extends BaseGroupService {
             response.responseCode(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        // update group model changed data
-        updateGroupInfoData(group);
-        // remove old group users from db
-        removePrevGroupUsers(group);
-        // add users to group
-        addUsertoGroup(((Group) group).getUsersInGroup(), group.getGroupName(), response, userGroupService);
-        //update response
-        response.info("Successfully updated group '" + group.getGroupName() + "'");
+        try {
+            // update group model changed data
+            updateGroupInfoData(group);
+            // update users group
+            userGroupService.updateGroupUsers(group, ((Group) group).getUsersInGroup());
+            //update response
+            response.info("Successfully updated group '" + group.getGroupName() + "'");
+        } catch (Exception e) {
+            log.error("error updating group {} users", group.getGroupName());
+        }
     }
 
     /**

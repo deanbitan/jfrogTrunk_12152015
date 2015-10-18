@@ -20,6 +20,7 @@ package org.artifactory.storage.binstore.service;
 
 import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
+import org.artifactory.storage.binstore.service.base.BinaryProviderBase;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

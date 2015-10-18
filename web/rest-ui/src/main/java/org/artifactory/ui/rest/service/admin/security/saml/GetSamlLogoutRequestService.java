@@ -1,6 +1,6 @@
 package org.artifactory.ui.rest.service.admin.security.saml;
 
-import org.artifactory.addon.saml.SamlHandler;
+import org.artifactory.addon.sso.saml.SamlHandler;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;

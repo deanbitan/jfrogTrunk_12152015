@@ -467,6 +467,15 @@ and the permissions for these groups apply. Without automatic user creation, you
 user permissions not attached to their default groups.`
 
             },
+            OAuthSSO: {
+                id: `Your OAuth2 id, given by the provider.`,
+                secret: `Your OAuth2 shared secret, given by the provider.`,
+                domain: `Google App domain accepted for authentication.`,
+                basicUrl: `The url used to acquire a token via basic auth.`,
+                authUrl: `The url used for the initial authentication step.`,
+                apiUrl: `The url used for api access, if needed to get user data.`,
+                tokenUrl: `The url used to acquire a token from the provider.`
+            },
             HTTPSSO: {
                 artifactoryIsProxiedByASecureHTTPServer: `When set, Artifactory trusts incoming requests and reuses the remote user originally set on the request by the SSO of the HTTP server.
 This is useful if you want to use existing enterprise SSO integrations, such as the powerful authentication schemes provided by Apache (mod_auth_ldap, mod_auth_ntlm, mod_auth_kerb, etc.).

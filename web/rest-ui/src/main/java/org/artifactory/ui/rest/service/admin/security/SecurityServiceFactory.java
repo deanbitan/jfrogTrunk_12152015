@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.admin.security;
 
+import org.artifactory.ui.rest.model.admin.security.oauth.OAuthUserToken;
 import org.artifactory.ui.rest.model.admin.security.user.User;
 import org.artifactory.ui.rest.service.admin.security.auth.annotate.GetCanAnnotateService;
 import org.artifactory.ui.rest.service.admin.security.auth.currentuser.GetCurrentUserService;
@@ -37,6 +38,13 @@ import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.GetLdapS
 import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.ReorderLdapSettingsService;
 import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.TestLdapSettingsService;
 import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.UpdateLdapSettingsService;
+import org.artifactory.ui.rest.service.admin.security.oauth.AddOAuthProviderSettings;
+import org.artifactory.ui.rest.service.admin.security.oauth.DeleteOAuthProviderSettings;
+import org.artifactory.ui.rest.service.admin.security.oauth.DeleteOAuthUserToken;
+import org.artifactory.ui.rest.service.admin.security.oauth.GetOAuthSettings;
+import org.artifactory.ui.rest.service.admin.security.oauth.GetOAuthTokensForUser;
+import org.artifactory.ui.rest.service.admin.security.oauth.UpdateOAuthProviderSettings;
+import org.artifactory.ui.rest.service.admin.security.oauth.UpdateOrCreateOAuthSettings;
 import org.artifactory.ui.rest.service.admin.security.permissions.CreatePermissionsTargetService;
 import org.artifactory.ui.rest.service.admin.security.permissions.DeletePermissionsTargetService;
 import org.artifactory.ui.rest.service.admin.security.permissions.GetAllUsersAndGroupsService;
@@ -82,6 +90,23 @@ public abstract class SecurityServiceFactory {
     public abstract ForgotPasswordService forgotPassword();
     @Lookup
     public abstract IsSamlAuthentication isSamlAuthentication();
+    @Lookup
+    public abstract GetOAuthSettings getOAuthtSettings();
+    @Lookup
+    public abstract UpdateOrCreateOAuthSettings updateOAuthSettings();
+    @Lookup
+    public abstract AddOAuthProviderSettings addOAuthProviderSettings();
+    @Lookup
+    public abstract UpdateOAuthProviderSettings updateOAuthProviderSettings();
+    @Lookup
+    public abstract DeleteOAuthProviderSettings deleteOAuthProviderSettings();
+
+    @Lookup
+    public abstract GetOAuthTokensForUser getOAuthTokensForUser();
+
+    @Lookup
+    public abstract DeleteOAuthUserToken<OAuthUserToken> deleteOAuthUserToken();
+
     @Lookup
     public abstract ValidateResetTokenService validateToken();
 

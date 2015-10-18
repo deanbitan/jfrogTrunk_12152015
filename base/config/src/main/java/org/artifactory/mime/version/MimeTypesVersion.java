@@ -103,12 +103,33 @@ public enum MimeTypesVersion implements SubConfigElementVersion {
         }
 
         int versionStartIndex = versionIdx + VERSION_ATT.length();
-        //TODO: [by YS] this relies on single digit version number which will work up until version 9. Should instead parse the string until next quote
-        int version = Integer.parseInt(mimeTypesXmlAsString.substring(versionStartIndex, versionStartIndex + 1));
+        int versionEndIndex = getVersionEndIndex(mimeTypesXmlAsString, versionStartIndex);
+        int version = Integer.parseInt(mimeTypesXmlAsString.substring(versionStartIndex, versionEndIndex));
         if (MimeTypesVersion.values().length < version) {
             throw new IllegalArgumentException("Version " + version + " no found.");
         }
         return MimeTypesVersion.values()[version - 1];
+    }
+
+    /**
+     * Having version start index, locates version end index
+     * in mimeTypesXmlAsString
+     *
+     * @param mimeTypesXmlAsString
+     * @param pointer version start index
+     *
+     * @return version end index
+     *
+     * @throws IllegalArgumentException if pointer reaches size of mimeTypesXmlAsString
+     *                                  without finding version closing '>' character
+     */
+    private static int getVersionEndIndex(String mimeTypesXmlAsString, int pointer) {
+        while(mimeTypesXmlAsString.charAt(pointer) != '>') {
+            pointer++;
+            if (pointer >= mimeTypesXmlAsString.length())
+                throw new IllegalArgumentException("MimeTypes version in malformed");
+        }
+        return --pointer;
     }
 
     public static MimeTypesVersion getCurrent() {

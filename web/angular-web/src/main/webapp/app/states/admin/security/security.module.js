@@ -5,6 +5,7 @@ import Permissions       from './permissions/permissions.module';
 import Users             from './users/users.module';
 import Saml              from './saml_integration/saml_integration.module';
 import CrowdIntegration  from './crowd_integration/crowd_integration.module';
+import OAuth             from './oauth/oauth.module';
 import LdapSettings      from './ldap_settings/ldap_settings.module';
 import SigningKeys       from './signing_keys/signing_keys.module';
 
@@ -28,6 +29,7 @@ export default angular.module('admin.security', [
     Users.name,
     Saml.name,
     CrowdIntegration.name,
+    OAuth.name,
     LdapSettings.name,
     SigningKeys.name
 ])

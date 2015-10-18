@@ -18,12 +18,12 @@
 
 package org.artifactory.addon;
 
-import org.artifactory.api.bintray.docker.BintrayPushRequest;
+import org.artifactory.api.bintray.docker.BintrayDockerPushRequest;
 
 /**
  * @author Shay Yaakov
  */
 public interface DockerAddon extends Addon {
 
-    void pushTagToBintray(String repoKey, BintrayPushRequest request);
+    void pushTagToBintray(String repoKey, BintrayDockerPushRequest request);
 }

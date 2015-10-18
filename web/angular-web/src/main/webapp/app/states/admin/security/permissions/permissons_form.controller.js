@@ -2,7 +2,7 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecurityPermissionsFormController {
     constructor($scope, $state, $stateParams, $q, ArtifactoryModal, ArtifactoryGridFactory, RepoDataDao,
-            PermissionsDao, commonGridColumns, User) {
+            PermissionsDao, commonGridColumns, User, ArtifactoryModelSaver) {
         this.$scope = $scope;
         this.$q = $q;
         this.repoDataDao = RepoDataDao;
@@ -23,6 +23,7 @@ export class AdminSecurityPermissionsFormController {
         this.groupsGridOption = {};
         this.usersGridOption = {};
         this.TOOLTIP = TOOLTIP.admin.security.permissionsForm;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['permission']);
         this._createGroupsGrid();
         this._createUsersGrid();
         if (this.$stateParams.permission) {
@@ -98,6 +99,8 @@ export class AdminSecurityPermissionsFormController {
             this.groupsGridOption.setGridData(result.groups);
 
             this._getUsersAndGroups();
+
+            this.artifactoryModelSaver.save();
 
         });
     }
@@ -443,11 +446,13 @@ export class AdminSecurityPermissionsFormController {
 //        this.permission.groups = this.groupsGrid;
         if (this.newPermission) {
             this.permissionsDao.create(this.permission).$promise.then(()=> {
+                this.artifactoryModelSaver.save();
                 this.$state.go('^.permissions')
             });
         }
         else {
             this.permissionsDao.update(this.permission).$promise.then(()=> {
+                this.artifactoryModelSaver.save();
                 this.$state.go('^.permissions')
             });
         }

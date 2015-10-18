@@ -4,9 +4,9 @@
     </div>
     <div class="modal-body">
         <p>Since the remote repository at the URL you specified is hosted by another instance of Artifactory, you may configure some additional capabilities for your repository:</p>
-<!--
-        <div class="sync-checkbox">
-            <jf-checkbox text="Sync Statistics">
+        <div class="sync-checkbox"
+             ng-if="isSmartRepoSupportFeature('SYNC_STATISTICS')">
+            <jf-checkbox text="Report Statistics">
                 <input type="checkbox"
                        ng-model="smartRepo.statistics.enabled">
             </jf-checkbox>
@@ -14,8 +14,8 @@
                 If set, download statistics for the artifact at the remote Artifactory instance will be updated each time a cached item is downloaded from your repository.
             </p>
         </div>
--->
-        <div class="sync-checkbox">
+        <div class="sync-checkbox"
+             ng-if="isSmartRepoSupportFeature('SYNC_PROPERTIES')">
             <jf-checkbox text="Sync Properties">
                 <input type="checkbox"
                        ng-model="smartRepo.properties.enabled">
@@ -24,8 +24,9 @@
                 If set, properties for artifacts that have been cached in this repository will be updated if they are modified in the artifact hosted at the remote Artifactory instance.
             </p>
         </div>
-        <div class="sync-checkbox">
-            <jf-checkbox text="List Remote Folder Items">
+        <div class="sync-checkbox"
+             ng-if="isSmartRepoSupportFeature('LIST_CONTENT')">
+        <jf-checkbox text="List Remote Folder Items">
                 <input type="checkbox"
                        ng-model="smartRepo.typeSpecific.listRemoteFolderItems">
             </jf-checkbox>
@@ -42,6 +43,12 @@
         <p>These settings are also available in the Edit Repository screen.</p>
     </div>
     <div class="modal-footer">
+        <jf-checkbox class="pull-left"
+                     text="Do not show this message again">
+            <input type="checkbox"
+                   ng-change="onDontShowAgain()"
+                   ng-model="options.dontShowAgain">
+        </jf-checkbox>
         <button class="btn btn-primary" ng-click="closeModal()">OK</button>
     </div>
 </div>

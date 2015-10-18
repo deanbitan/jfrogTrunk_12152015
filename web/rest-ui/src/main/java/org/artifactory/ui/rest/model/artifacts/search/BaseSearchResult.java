@@ -13,6 +13,7 @@ import org.artifactory.ui.rest.model.artifacts.search.gavcsearch.GavcResult;
 import org.artifactory.ui.rest.model.artifacts.search.propertysearch.PropertyResult;
 import org.artifactory.ui.rest.model.artifacts.search.quicksearch.QuickSearchResult;
 import org.artifactory.util.PathUtils;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonSubTypes;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
 
@@ -29,6 +30,7 @@ import java.util.List;
         @JsonSubTypes.Type(value = PropertyResult.class, name = "property"),
         @JsonSubTypes.Type(value = StashResult.class, name = "stash"),
         @JsonSubTypes.Type(value = QuickSearchResult.class, name = "quick")})
+@JsonIgnoreProperties("searchResult")
 public abstract class BaseSearchResult extends BaseModel {
 
     private String repoKey;
@@ -37,6 +39,7 @@ public abstract class BaseSearchResult extends BaseModel {
     private long modifiedDate;
     private String modifiedString;
     private List<String> actions;
+    private String downloadLink;
 
     public String getRepoKey() {
         return repoKey;
@@ -76,6 +79,14 @@ public abstract class BaseSearchResult extends BaseModel {
 
     public void setActions(List<String> actions) {
         this.actions = actions;
+    }
+
+    public String getDownloadLink() {
+        return downloadLink;
+    }
+
+    public void setDownloadLink(String downloadLink) {
+        this.downloadLink = downloadLink;
     }
 
     protected void updateActions() {

@@ -67,7 +67,7 @@ export class AdminAdvancedStorageSummaryController {
             },
             {
                 field: "percentage",
-                cellTemplate: '<div class="ui-grid-cell-contents text-center">{{row.entity.displayPercentage}}</div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center">{{row.entity.percentage}}</div>',
                 name: "Percentage",
                 displayName: "Percentage"
             },

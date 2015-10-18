@@ -27,7 +27,7 @@ import static org.artifactory.aql.model.AqlFieldEnum.*;
                 buildPropertyValue, buildUrl, buildName, buildNumber, buildCreated, buildCreatedBy, buildModified, buildModifiedBy
         })
 public class AqlBaseFullRowImpl
-        implements AqlRowResult, FullRow, AqlItem, AqlBaseItem, AqlArchiveItem, AqlBuildArtifact, AqlBuildDependency,
+        implements AqlRowResult, FullRow, AqlItem, AqlBaseItem, AqlArchiveEntryItem, AqlBuildArtifact, AqlBuildDependency,
         AqlProperty, AqlBuild, AqlStatisticItem, AqlBuildProperty, AqlStatistics,AqlBuildModule {
 
     Map<AqlFieldEnum, Object> map;

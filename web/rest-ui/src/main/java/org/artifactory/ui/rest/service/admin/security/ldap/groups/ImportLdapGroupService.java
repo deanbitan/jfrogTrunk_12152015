@@ -48,8 +48,7 @@ public class ImportLdapGroupService implements RestService {
         AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
         LdapUserGroupAddon ldapGroupWebAddon = addonsManager.addonByType(LdapUserGroupAddon.class);
         try {
-            ldapGroupWebAddon
-                    .importLdapGroupsToArtifactory(importGroups, ldapGroupModel.getStrategy());
+            ldapGroupWebAddon.importLdapGroupsToArtifactory(importGroups, ldapGroupModel.getStrategy());
         } catch (Exception e) {
             String message = "An error occurred during group import" + e.getMessage();
             log.error(message);

@@ -542,3 +542,43 @@ div.ui-grid-cell input.ng-valid {
   font-weight: 600;
   line-height: 28px;
 }
+
+.ui-grid-cell-contents {
+  .gridcell-showall {
+    position: absolute;
+    right: 0px;
+    padding: 0 10px;
+  }
+  &.overflow:hover,
+  &.always-show:hover {
+    padding-right: 66px;
+  }
+  &:not(:hover) {
+    .gridcell-showall {
+      visibility: hidden !important;
+    }
+  }
+}
+
+//override non releveant icons defined in jQuery.contextMenu.css (vendor)
+.context-menu-item.icon-edit {
+  background-image: inherit;
+}
+.context-menu-item.icon-cut {
+  background-image: inherit;
+}
+.context-menu-item.icon-copy {
+  background-image: inherit;
+}
+.context-menu-item.icon-paste {
+  background-image: inherit;
+}
+.context-menu-item.icon-delete {
+  background-image: inherit;
+}
+.context-menu-item.icon-add {
+  background-image: inherit;
+}
+.context-menu-item.icon-quit {
+  background-image: inherit;
+}

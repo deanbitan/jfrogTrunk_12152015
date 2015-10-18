@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.1.3</version>
+        <version>4.2.0</version>
     </parent>
     <dependencies>
         <dependency>
@@ -49,8 +49,10 @@
                             <goal>install-node-and-npm</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v0.10.30</nodeVersion>
-                            <npmVersion>1.4.21</npmVersion>
+                            <nodeDownloadRoot>http://repo.jfrog.org/artifactory/node.dist/</nodeDownloadRoot>
+                            <npmDownloadRoot>http://repo.jfrog.org/artifactory/npmjs.org/npm/-/</npmDownloadRoot>
+                            <nodeVersion>v0.12.3</nodeVersion>
+                            <npmVersion>2.14.2</npmVersion>
                         </configuration>
                     </execution>
 
@@ -65,12 +67,12 @@
                     </execution>
 
                     <execution>
-                        <id>bower update</id>
+                        <id>bower install</id>
                         <goals>
                             <goal>bower</goal>
                         </goals>
                         <configuration>
-                            <arguments>update</arguments>
+                            <arguments>install</arguments>
                         </configuration>
                     </execution>
 

@@ -164,15 +164,16 @@
                             </button>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <jf-checkbox text="Output Verbose Log">
-                            <input type="checkbox"
-                                   id="zipOptionOutputVerboseLog"
-                                   ng-model="Repositories.zipOptions.verbose"
-                                   name="outputVerboseLog">
-                        </jf-checkbox>
-                        <jf-help-tooltip html="Repositories.TOOLTIP.outputVerboseLog"></jf-help-tooltip>
+                    <div class="form-group form-checkbox">
+                        <div class="form-group-cell">
+                            <jf-checkbox text="Output Verbose Log">
+                                <input type="checkbox"
+                                       id="zipOptionOutputVerboseLog"
+                                       ng-model="Repositories.zipOptions.verbose"
+                                       name="outputVerboseLog">
+                            </jf-checkbox>
+                            <jf-help-tooltip html="Repositories.TOOLTIP.outputVerboseLog"></jf-help-tooltip>
+                        </div>
                     </div>
                     <div class="pull-right admin-actions">
                         <button type="button" class="btn btn-primary"

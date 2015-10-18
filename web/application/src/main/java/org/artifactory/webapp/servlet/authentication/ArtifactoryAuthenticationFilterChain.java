@@ -19,7 +19,7 @@
 package org.artifactory.webapp.servlet.authentication;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.wicket.PluginsWebAddon;
+import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -130,7 +130,7 @@ public class ArtifactoryAuthenticationFilterChain implements ArtifactoryAuthenti
         FilterChain chainWithAdditive = (request, response) -> {
             try {
                 AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-                addonsManager.addonByType(PluginsWebAddon.class).executeAdditiveRealmPlugins();
+                addonsManager.addonByType(PluginsAddon.class).executeAdditiveRealmPlugins();
                 servletChain.doFilter(request, response);
             } catch (AuthenticationException e) {
                 ContextHelper.get().beanForType(BasicAuthenticationEntryPoint.class).commence(

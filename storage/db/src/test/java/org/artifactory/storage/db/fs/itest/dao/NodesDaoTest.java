@@ -110,7 +110,7 @@ public class NodesDaoTest extends DbBaseTest {
     public void getChildrenOfRoot() throws SQLException {
         NodePath path = new NodePath("repo1", "", "", false);
         List<? extends Node> children = nodesDao.getChildren(path);
-        assertEquals(children.size(), 3);
+        assertEquals(children.size(), 5);
 
         assertTrue(nodesDao.hasChildren(path));
     }
@@ -143,6 +143,21 @@ public class NodesDaoTest extends DbBaseTest {
         assertTrue(nodesDao.exists(fileNodePath));
         assertEquals(nodesDao.getChildren(fileNodePath).size(), 0);
         assertFalse(nodesDao.hasChildren(fileNodePath));
+    }
+
+    public void getChildrenOfFolderWithUnderscore() throws SQLException {
+        NodePath path1 = new NodePath("repo1", "", "a_1.2", false);
+        NodePath path2 = new NodePath("repo1", "", "ab1.2", false);
+        NodePath file1 = new NodePath("repo1", "a_1.2", "tt.txt", true);
+        NodePath file2 = new NodePath("repo1", "ab1.2", "tt.txt", true);
+        assertTrue(nodesDao.exists(path1));
+        assertTrue(nodesDao.exists(path2));
+        assertFalse(nodesDao.exists(file1));
+        assertTrue(nodesDao.exists(file2));
+        assertEquals(nodesDao.getChildren(path1).size(), 0);
+        assertFalse(nodesDao.hasChildren(path1));
+        assertEquals(nodesDao.getChildren(path2).size(), 1);
+        assertTrue(nodesDao.hasChildren(path2));
     }
 
     public void countRepositoryFiles() throws SQLException {
@@ -190,7 +205,7 @@ public class NodesDaoTest extends DbBaseTest {
     }
 
     public void countRepositoryFilesAndFolders() throws SQLException {
-        assertEquals(nodesDao.getNodesCount("repo1"), 14);
+        assertEquals(nodesDao.getNodesCount("repo1"), 17);
     }
 
     public void countRepositoryFilesAndFoldersUnderFolder() throws SQLException {

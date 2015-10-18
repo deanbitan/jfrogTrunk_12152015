@@ -58,16 +58,19 @@ class jfSidebarController {
         this.menuItems = this._getMenuItems();
         this._fixAdminMenuItems();
         this.$timeout(() => {
-            new mlPushMenu(document.getElementById('mp-menu'), {
+            let mpMenuElem = document.getElementById('mp-menu');
+            if (mpMenuElem) new mlPushMenu(mpMenuElem, {
                 type: 'cover'
             });
         });
     }
 
     goToState(item) {
+/*
         if (item.state === 'artifacts.browsers.path') {
             this.ArtifactoryEventBus.dispatch(EVENTS.CLEAR_SEARCH);
         }
+*/
         // Fix browser param according to user preference
         if (item.stateParams && item.stateParams.browser) {
             let storedBrowser = this.storage.getItem('BROWSER');

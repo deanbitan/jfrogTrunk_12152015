@@ -269,7 +269,7 @@ public abstract class ZipUtils {
         if (isTgzFamilyArchive(archiveSuffix) || isGzCompress(archiveSuffix)) {
             return new TarArchiveInputStream(new GzipCompressorInputStream(inputStream));
         }
-        return null;
+        return new ZipArchiveInputStream(inputStream);
     }
 
     /**
@@ -287,7 +287,7 @@ public abstract class ZipUtils {
         if (isTarArchive(archiveSuffix) || isTgzFamilyArchive(archiveSuffix)) {
             return new TarArchiveInputStream[length];
         }
-        return new TarArchiveInputStream[length];
+        return new ZipArchiveInputStream[length];
     }
 
     /**
@@ -316,7 +316,7 @@ public abstract class ZipUtils {
 
     private static boolean isZipFamilyArchive(String archiveSuffix) {
         return archiveSuffix.endsWith("zip") || archiveSuffix.endsWith("jar") || archiveSuffix.toLowerCase().endsWith(
-                "nupkg");
+                "nupkg") || archiveSuffix.endsWith("war");
     }
 
     private static void verifySupportedExtension(String extension) {

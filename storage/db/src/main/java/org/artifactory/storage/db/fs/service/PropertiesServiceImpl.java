@@ -114,6 +114,20 @@ public class PropertiesServiceImpl implements PropertiesService {
         }
     }
 
+    /**
+     * Sets properties
+     *
+     * @param repoPath   RepoPath of the node to set properties on
+     * @param properties The properties to set
+     */
+    @Override
+    public void setProperties(RepoPath repoPath, Properties properties) {
+        long nodeId = fileService.getNodeId(repoPath);
+        if (nodeId > 0) {
+           setProperties(nodeId, properties);
+        }
+    }
+
     @Override
     public int deleteProperties(long nodeId) {
         try {

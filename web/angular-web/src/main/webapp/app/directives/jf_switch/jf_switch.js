@@ -5,22 +5,28 @@ class jfSwitchController {
         // array of strings
         // array of objects of type {'value': ..., 'text': ...}
         // The model is assigned the value, and the text is displayed
-        this.optionObjects = this.options.map((option) => {
-            if (typeof(option) === 'string') {
-                return {value: option, text: option};
-            }
-            else {
-                return option;
-            }
-        });
-        if (_.isEmpty(this.ngModel)) this.ngModel = this.optionObjects[0].value;
-    }
-    getOptionObjects() {
 
+        this.controller = this;
+
+        this.updateOptionObjects();
+
+        if (_.isEmpty(this.ngModel))
+            this.ngModel = this.optionObjects[0].value;
     }
+
+    updateOptionObjects() {
+        this.optionObjects = this.options.map((option) => {
+            if (typeof(option) === 'string')
+                return {value: option, text: option};
+            else
+                return option;
+        });
+    }
+
     selectOption(option) {
         this.ngModelCtrl.$setViewValue(option.value);
     }
+
     isSelected(option) {
         return this.ngModel === option.value;
     }
@@ -33,7 +39,8 @@ export function jfSwitch() {
         scope: {
             jfSwitchTitle: '@',
             options: '=',
-            ngModel: '='
+            ngModel: '=',
+            controller: '='
         },
         link: ($scope, attrs, $element, ngModelCtrl) => {
             $scope.jfSwitch.ngModelCtrl = ngModelCtrl;

@@ -21,7 +21,8 @@ public interface LdapUserGroupAddon extends Addon {
      * @param statusHolder     -  import status holder
      * @return List of Groups found following refresh
      */
-    Set refreshLdapGroups(String userName, LdapGroupSetting ldapGroupSetting, BasicStatusHolder statusHolder);
+    Set<LdapUserGroup> refreshLdapGroups(String userName, LdapGroupSetting ldapGroupSetting,
+            BasicStatusHolder statusHolder);
 
     /**
      * import ldap groups into artifactory

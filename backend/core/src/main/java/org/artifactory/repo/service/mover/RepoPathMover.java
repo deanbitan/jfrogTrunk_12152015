@@ -39,7 +39,7 @@ import org.springframework.stereotype.Component;
  * @author Yossi Shaul
  */
 @Component
-public class RepoPathMover {
+public abstract class RepoPathMover {
     private static final Logger log = LoggerFactory.getLogger(RepoPathMover.class);
 
     @Autowired
@@ -47,6 +47,13 @@ public class RepoPathMover {
 
     @Autowired
     private InternalRepositoryService repositoryService;
+
+    @Request(aggregateEventsByTimeWindow = true)
+    public abstract void executeOperation(MoveMultiStatusHolder status, MoverConfig moverConfig);
+
+    protected abstract void handleMoveOrCopy(MoveMultiStatusHolder status, MoverConfig moverConfig,
+                                             VfsItem sourceItem, RepoRepoPath<LocalRepo> targetRrp);
+
 
     @Request(aggregateEventsByTimeWindow = true)
     public void moveOrCopy(MoveMultiStatusHolder status, MoverConfig moverConfig) {
@@ -57,16 +64,15 @@ public class RepoPathMover {
         status.setActivateLogging(!isDryRun);
 
         LocalRepo sourceRepo = getLocalRepo(fromRepoPath.getRepoKey());
-        VfsItem sourceItem = moverConfig.isCopy() ? sourceRepo.getImmutableFsItem(fromRepoPath) :
-                sourceRepo.getMutableFsItem(fromRepoPath);
+        VfsItem sourceItem = sourceRepo.getImmutableFsItem(fromRepoPath);
         if (sourceItem == null) {
             throw new IllegalArgumentException("Could not find item at " + fromRepoPath);
         }
 
         RepoPath targetLocalRepoPath = moverConfig.getTargetLocalRepoPath();
-        String opType = (moverConfig.isCopy()) ? "copy" : "move";
+        // String opType = (moverConfig.isCopy()) ? "copy" : "move";
         if (fromRepoPath.equals(targetLocalRepoPath)) {
-            status.error(String.format("Skipping %s %s: Destination and source are the same", opType, fromRepoPath),
+            status.error(String.format("Skipping %s %s: Destination and source are the same", operationType(), fromRepoPath),
                     log);
             return;
         }
@@ -74,7 +80,7 @@ public class RepoPathMover {
         RepoRepoPath<LocalRepo> targetRrp = repositoryService.getRepoRepoPath(targetLocalRepoPath);
         if (targetRrp.getRepo().isCache()) {
             throw new IllegalArgumentException(String.format("Target repository %s is a cache repository. %s to cache" +
-                    " repositories is not allowed.", targetLocalRepoPath.getRepoKey(), opType));
+                    " repositories is not allowed.", targetLocalRepoPath.getRepoKey(), operationType()));
         }
 
         LayoutsCoreAddon layoutsCoreAddon = addonsManager.addonByType(LayoutsCoreAddon.class);
@@ -86,11 +92,13 @@ public class RepoPathMover {
             layoutsCoreAddon.performCrossLayoutMoveOrCopy(status, moverConfig,
                     sourceRepo, targetRrp.getRepo(), sourceItem);
         } else {
-            new DefaultRepoPathMover(status, moverConfig).moveOrCopy(sourceItem, targetRrp);
+            handleMoveOrCopy(status, moverConfig, sourceItem, targetRrp);
         }
     }
 
-    private LocalRepo getLocalRepo(String repoKey) {
+    protected abstract String operationType();
+
+    protected LocalRepo getLocalRepo(String repoKey) {
         LocalRepo targetLocalRepo = repositoryService.localOrCachedRepositoryByKey(repoKey);
         if (targetLocalRepo == null) {
             throw new IllegalArgumentException("Local repository " + repoKey +

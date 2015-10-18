@@ -51,11 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +74,11 @@ public interface RestAddon extends Addon {
      *                        action.
      * @param suppressLayouts Indicates whether path translation across different layouts should be suppressed.
      * @param failFast        Indicates whether the operation should fail upon encountering an error.
+     * @param atomic          Indicates whether copy should run in one single tx
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    Response copy(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
+    Response copy(String path, String target, int dryRun, int suppressLayouts, int failFast, String atomic) throws Exception;
 
     /**
      * Move an artifact from one path to another.
@@ -95,7 +92,7 @@ public interface RestAddon extends Addon {
      * @return A JSON object of all the messages and errors that occurred during the action.
      * @throws Exception If an error occurred during the dry run or the actual action an exception is thrown.
      */
-    Response move(String path, String target, int dryRun, int suppressLayouts, int failFast) throws Exception;
+    Response move(String path, String target, int dryRun, int suppressLayouts, int failFast, String atomic) throws Exception;
 
     /**
      * @deprecated use {@link RestAddon#replicate(org.artifactory.repo.RepoPath, org.artifactory.api.rest.replication.ReplicationRequest)} instead
@@ -250,7 +247,7 @@ public interface RestAddon extends Addon {
      * @param properties The properties to attach as a list.
      * @return The response of the operation
      */
-    Response savePathProperties(String path, String recursive, KeyValueList properties);
+    Response savePathProperties(String path, String recursive, KeyValueList properties, String atomic);
 
     Response deletePathProperties(String path, String recursive, StringList properties);
 

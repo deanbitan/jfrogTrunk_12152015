@@ -224,6 +224,12 @@ class jfGeneralController {
                 });
     }
 
+    getFullFilePath() {
+        if (!window.location.origin) { // IE compatibility
+            window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+        }
+        return window.location.origin+this.currentNode.data.actualDownloadPath;
+    }
 }
 
 export function jfGeneral() {

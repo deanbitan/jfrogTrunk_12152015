@@ -152,7 +152,7 @@ public class FolderArchiveStreamer {
         ContextHelper.get().beanForType(TrafficService.class).handleTrafficEntry(downloadEntry);
         if (ConstantValues.downloadStatsEnabled.getBoolean()) {
             ContextHelper.get().beanForType(StatsService.class).fileDownloaded(path,
-                    SecurityContextHolder.getContext().getAuthentication().getName(), System.currentTimeMillis());
+                    SecurityContextHolder.getContext().getAuthentication().getName(), System.currentTimeMillis(), false);
         }
     }
 }

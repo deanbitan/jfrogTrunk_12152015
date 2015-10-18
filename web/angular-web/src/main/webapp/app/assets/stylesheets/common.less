@@ -318,7 +318,7 @@ h1 {
   border: 1px solid @grayBorderLighter;
   overflow: auto;
   height: 260px;
-  padding: 10px;
+  padding: 5px 5px 0;
 }
 
 .dnd-panel {
@@ -404,14 +404,16 @@ h1 {
   cursor: pointer;
   color: @grayFontDarker;
   list-style: none;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   position: relative;
 }
 
 .drag-item {
+  background: @grayBGLighter;
+
   &:hover,
   &:focus {
-    background: @grayBGLight;
+    background: @grayGridRowHover;
   }
 
   &.active,
@@ -1733,3 +1735,46 @@ h5 {
   color: #212121;
 }
 
+.show-all-list-item {
+  &:hover,
+  &:focus {
+    background: @grayBGLight;
+  }
+  height: 30px;
+  line-height: 30px;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  -ms-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+}
+
+.the-schpitz {
+  position: relative;
+
+  &::before {
+    content: '';
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 6px 6px 0 6px;
+    border-color: @greenBGDark transparent transparent transparent;
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    margin-left: -6px;
+  }
+
+  &::after {
+    content: '';
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 4px 4px 0 4px;
+    border-color: @white transparent transparent transparent;
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    margin-left: -4px;
+  }
+}

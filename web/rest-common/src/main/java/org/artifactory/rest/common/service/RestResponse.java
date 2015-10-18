@@ -62,6 +62,13 @@ public interface RestResponse<T> {
      */
     ArtifactoryRestResponse info(String info);
 
+    /**
+     * feedback entity
+     *
+     * @param entity
+     */
+    ArtifactoryRestResponse entity(Object entity);
+
     ArtifactoryRestResponse errors(List<String> errors);
 
     ArtifactoryRestResponse url(String url);

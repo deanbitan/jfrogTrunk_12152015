@@ -138,7 +138,7 @@ public class PermissionTargetModel extends BaseModel {
     }
 
     public String getRepoKeysView() {
-        if (repoKeys != null && repoKeys != null) {
+        if (repoKeys != null && !repoKeys.isEmpty()) {
             return repoKeys.size() + " | " + repoKeysView.substring(0, repoKeysView.length() - 2).toString();
         } else {
             return "";

@@ -75,7 +75,7 @@ public class RestAuthenticationFilter implements ContainerRequestFilter {
         boolean authenticated = authorizationService.isAuthenticated();
         boolean anonAccessEnabled = authorizationService.isAnonAccessEnabled();
         if (!authenticated) {
-            if (anonAccessEnabled || uriInfo.getPath().indexOf("auth") != -1) {
+            if (anonAccessEnabled || uriInfo.getPath().indexOf("auth") != -1 || uriInfo.getPath().matches(".*npm\\/.*\\/-\\/user\\/.*")) {
                 //If anon access is allowed and we didn't bother authenticating try to perform the action as a user
                 request.setSecurityContext(new RoleAuthenticator(UserInfo.ANONYMOUS, AuthorizationService.ROLE_USER));
             } else {

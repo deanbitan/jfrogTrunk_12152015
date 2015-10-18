@@ -18,79 +18,115 @@
 
 package org.artifactory.api.storage;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
+interface StorageConstants {
+    /**
+     * One kilo bytes in big decimal
+     */
+    BigDecimal ONE_KILO = new BigDecimal(1024);
+
+    /**
+     * The number of units to the transition to the next unit, i.e. there are 1024 bytes in a KB.
+     */
+    double UNITS_TO_NEXT_UNIT = 1024.0;
+}
+
 /**
- * Represent the different storage units and their conversion to/from bytes Based on {@link
- * org.apache.wicket.util.lang.Bytes}
+ * Represent the different storage units and their conversion to/from bytes
  *
  * @author Tomer Cohen
  */
 public enum StorageUnit {
     /**
-     * The kilobyte storage unit.
+     * One byte
      */
-    KB {
+    ONE(new BigDecimal(1)) {
         @Override
         public double fromBytes(long size) {
-            return size / UNITS_TO_NEXT_UNIT;
+            return size;
         }
 
         @Override
         public double toBytes(int size) {
-            return size * UNITS_TO_NEXT_UNIT;
+            return size;
+        }
+
+        @Override
+        public String displayName() {
+            return "bytes";
+        }
+    },
+    /**
+     * The kilobyte storage unit.
+     */
+    KB(StorageConstants.ONE_KILO) {
+        @Override
+        public double fromBytes(long size) {
+            return size / StorageConstants.UNITS_TO_NEXT_UNIT;
+        }
+
+        @Override
+        public double toBytes(int size) {
+            return size * StorageConstants.UNITS_TO_NEXT_UNIT;
         }
     },
     /**
      * The megabyte storage unit.
      */
-    MB {
+    MB(KB.getNumberOfBytes().multiply(StorageConstants.ONE_KILO)) {
         @Override
         public double fromBytes(long size) {
-            return KB.fromBytes(size) / UNITS_TO_NEXT_UNIT;
+            return KB.fromBytes(size) / StorageConstants.UNITS_TO_NEXT_UNIT;
         }
 
         @Override
         public double toBytes(int size) {
-            return KB.toBytes(size) * UNITS_TO_NEXT_UNIT;
+            return KB.toBytes(size) * StorageConstants.UNITS_TO_NEXT_UNIT;
         }
     },
     /**
      * The gigabyte storage unit.
      */
-    GB {
+    GB(MB.getNumberOfBytes().multiply(StorageConstants.ONE_KILO)) {
         @Override
         public double fromBytes(long size) {
-            return MB.fromBytes(size) / UNITS_TO_NEXT_UNIT;
+            return MB.fromBytes(size) / StorageConstants.UNITS_TO_NEXT_UNIT;
         }
 
         @Override
         public double toBytes(int size) {
-            return MB.toBytes(size) * UNITS_TO_NEXT_UNIT;
+            return MB.toBytes(size) * StorageConstants.UNITS_TO_NEXT_UNIT;
         }
     },
 
     /**
      * The terabyte storage unit.
      */
-    TB {
+    TB(GB.getNumberOfBytes().multiply(StorageConstants.ONE_KILO)) {
         @Override
         public double fromBytes(long size) {
-            return GB.fromBytes(size) / UNITS_TO_NEXT_UNIT;
+            return GB.fromBytes(size) / StorageConstants.UNITS_TO_NEXT_UNIT;
         }
 
         @Override
         public double toBytes(int size) {
-            return GB.toBytes(size) * UNITS_TO_NEXT_UNIT;
+            return GB.toBytes(size) * StorageConstants.UNITS_TO_NEXT_UNIT;
         }
     };
 
-    /**
-     * The number of units to the transition to the next unit, i.e. there are 1024 bytes in a KB.
-     */
-    private static final double UNITS_TO_NEXT_UNIT = 1024.0;
+    private final BigDecimal numberOfBytes;
+
+    StorageUnit(BigDecimal numberOfBytes) {
+        this.numberOfBytes = numberOfBytes;
+    }
+
+    public BigDecimal getNumberOfBytes() {
+        return numberOfBytes;
+    }
 
     /**
      * Convert the number of bytes to the target storage unit.
@@ -109,6 +145,13 @@ public enum StorageUnit {
     public abstract double toBytes(int size);
 
     /**
+     * @return How to display the size in readable format
+     */
+    public String displayName() {
+        return name();
+    }
+
+    /**
      * Convert the number of bytes to a human readable size, if the size is more than 1024 megabytes display the correct
      * number of gigabytes.
      *
@@ -116,25 +159,23 @@ public enum StorageUnit {
      * @return The size in human readable format.
      */
     public static String toReadableString(long size) {
-        // if less than 1 byte, then simply return the bytes as it is
-        if (size < UNITS_TO_NEXT_UNIT) {
-            return size + " bytes";
-        }
         DecimalFormat decimalFormat = createFormat();
-        // convert to KB
-        double readableSize = KB.fromBytes(size);
-        // if less than 1 MB
-        if (readableSize < UNITS_TO_NEXT_UNIT) {
-            return decimalFormat.format(readableSize) + " KB";
+        for (StorageUnit unit : StorageUnit.values()) {
+            double readableSize = unit.fromBytes(size);
+            if (unit == TB) {
+                // no more always return
+                return decimalFormat.format(readableSize) + " " + unit.displayName();
+            }
+            // if less than 1 byte, then simply return the bytes as it is
+            if (readableSize < StorageConstants.UNITS_TO_NEXT_UNIT) {
+                if (unit == ONE) {
+                    return size + " " + unit.displayName();
+                } else {
+                    return decimalFormat.format(readableSize) + " " + unit.displayName();
+                }
+            }
         }
-        // convert to MB
-        readableSize = MB.fromBytes(size);
-        // if less than 1 GB
-        if (readableSize < UNITS_TO_NEXT_UNIT) {
-            return decimalFormat.format(readableSize) + " MB";
-        }
-        readableSize = GB.fromBytes(size);
-        return decimalFormat.format(readableSize) + " GB";
+        throw new IllegalStateException("Could not reach here");
     }
 
     public static String format(double size) {
@@ -142,28 +183,37 @@ public enum StorageUnit {
     }
 
     public static long fromReadableString(String humanReadableSize) {
-        String number = humanReadableSize.replaceAll("([GgMmKkBb])", "");
-        double d = Double.parseDouble(number);
-        long l = Math.round(d * 1024 * 1024 * 1024L);
+        String number = humanReadableSize.replaceAll("([TtGgMmKkBb])", "");
+        BigDecimal d = new BigDecimal(number);
+        BigDecimal l = null;
         int unitLength = humanReadableSize.length() - number.length();
         int unitIndex = unitLength > 0 ? humanReadableSize.length() - unitLength : 0;
         switch (humanReadableSize.charAt(unitIndex)) {
             default:
-                l /= 1024;
+                l = d;
+                break;
             case 'K':
             case 'k':
-                l /= 1024;
+                l = d.multiply(KB.getNumberOfBytes());
+                break;
             case 'M':
             case 'm':
-                l /= 1024;
+                l = d.multiply(MB.getNumberOfBytes());
+                break;
             case 'G':
             case 'g':
-                return l;
+                l = d.multiply(GB.getNumberOfBytes());
+                break;
+            case 'T':
+            case 't':
+                l = d.multiply(TB.getNumberOfBytes());
+                break;
         }
+        return l.longValue();
     }
 
     private static DecimalFormat createFormat() {
-        DecimalFormat decimalFormat = new DecimalFormat("#.##", new DecimalFormatSymbols(Locale.ENGLISH));
+        DecimalFormat decimalFormat = new DecimalFormat(",###.##", new DecimalFormatSymbols(Locale.ENGLISH));
         decimalFormat.setMinimumFractionDigits(2);
         return decimalFormat;
     }

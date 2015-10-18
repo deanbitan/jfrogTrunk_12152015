@@ -32,7 +32,6 @@ import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.aql.AqlService;
 import org.artifactory.aql.api.domain.sensitive.AqlApiItem;
 import org.artifactory.aql.api.internal.AqlBase;
-import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.result.AqlLazyResult;
 import org.artifactory.aql.util.AqlSearchablePath;
 import org.artifactory.aql.util.AqlUtils;
@@ -98,7 +97,7 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
         List<RepoPath> foundPaths = Lists.newArrayList();
         AqlBase.OrClause pathSearchClause = AqlUtils.getSearchClauseForPaths(pathsToSearch);
         int currentRowNum = 0;
-        AqlApiItem versionSearch = AqlApiItem.create().filter(pathSearchClause).sortBy(AqlFieldEnum.itemPath).asc();
+        AqlApiItem versionSearch = AqlApiItem.create().filter(pathSearchClause).addSortElement(AqlApiItem.path()).asc();
         long start = System.currentTimeMillis();
         AqlLazyResult results = aqlService.executeQueryLazy(versionSearch);
         ResultSet resultSet = results.getResultSet();

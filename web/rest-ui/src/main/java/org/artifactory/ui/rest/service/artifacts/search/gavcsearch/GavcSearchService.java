@@ -42,7 +42,7 @@ public class GavcSearchService implements RestService {
         ItemSearchResults<GavcSearchResult> searchControls = search(gavcSearchControls);
         List<GavcResult> gavcResults = Lists.newArrayList();
         for (GavcSearchResult gavcSearchResult : searchControls.getResults()) {
-            gavcResults.add(new GavcResult(gavcSearchResult));
+            gavcResults.add(new GavcResult(gavcSearchResult,request));
         }
         int maxResults = ConstantValues.searchMaxResults.getInt();
         long resultsCount;

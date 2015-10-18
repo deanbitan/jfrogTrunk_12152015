@@ -12,7 +12,7 @@ URL:            http://www.jfrog.org
 Source0:        standalone.zip
 BuildRoot:      %{_tmppath}/build-%{name}-%{version}
 BuildArch:      noarch
-Requires:       %{_sbindir}/useradd, %{_sbindir}/groupadd, %{_bindir}/pkill, %{_bindir}/rsync
+Requires:       %{_sbindir}/useradd, %{_sbindir}/groupadd, %{_bindir}/pkill, %{_bindir}/rsync net-tools
 
 %define username artifactory
 %define group_name artifactory
@@ -69,6 +69,7 @@ rsync -r --exclude 'work' --exclude 'temp'  %{extracted_tomcat}/* "%{buildroot}%
 %__sed -r --in-place "s%export TOMCAT_HOME=.*%export TOMCAT_HOME=%{target_tomcat_home}%g;" "%{buildroot}%{target_etc_dir}/default"
 %__sed -r --in-place "s/#export ARTIFACTORY_USER=.*/export ARTIFACTORY_USER=%{username}/g;" "%{buildroot}%{target_etc_dir}/default"
 %__sed -r --in-place "s%export ARTIFACTORY_PID=.*%export ARTIFACTORY_PID=%{target_var_dir}/run/artifactory.pid%g;" "%{buildroot}%{target_etc_dir}/default"
+%__sed -r --in-place "s%Dartdist=zip%Dartdist=rpm%g;" "%{buildroot}%{target_etc_dir}/default"
 
 # Create artifactory home dir (var) and symlinks to install dir (opt)
 %__install -d "%{buildroot}%{target_artifactory_home}"

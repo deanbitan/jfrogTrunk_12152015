@@ -121,6 +121,12 @@ export class VirtualRepositoryFormController {
         this.repositoriesDao.getResolvedRepositories(
                 this.repositoryForm.repoInfo).$promise.then((resolvedRepositories)=> {
                     this.repositoryForm.repoInfo.basic.resolvedRepositories = resolvedRepositories;
+                    this.repositoryForm.repoInfo.basic.selectedLocalRepositories = _.pluck(_.filter(this.repositoryForm.repoInfo.basic.resolvedRepositories, (repo)=>{
+                        return repo.type === 'local';
+                    }),'repoName');
+                    if (!_.contains(this.repositoryForm.repoInfo.basic.selectedLocalRepositories,this.repositoryForm.repoInfo.basic.defaultDeploymentRepo)) {
+                        this.repositoryForm.repoInfo.basic.defaultDeploymentRepo = null;
+                    }
                 });
     }
 

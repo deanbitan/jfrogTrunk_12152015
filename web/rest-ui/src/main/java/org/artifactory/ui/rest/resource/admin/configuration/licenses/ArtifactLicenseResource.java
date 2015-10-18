@@ -3,7 +3,7 @@ package org.artifactory.ui.rest.resource.admin.configuration.licenses;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ui.rest.model.admin.configuration.licenses.DeleteLicensesModel;
 import org.artifactory.ui.rest.model.admin.configuration.licenses.License;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.configuration.ConfigServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

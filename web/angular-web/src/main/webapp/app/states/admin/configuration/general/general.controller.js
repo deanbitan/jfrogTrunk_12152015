@@ -4,7 +4,7 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminConfigurationGeneralController {
 
-    constructor($scope, $q, $timeout, FileUploader, ArtifactoryNotifications, GeneralConfigDao, FooterDao, ArtifactoryEventBus) {
+    constructor($scope, $q, $timeout, FileUploader, ArtifactoryNotifications, GeneralConfigDao, FooterDao, ArtifactoryEventBus, ArtifactoryModelSaver) {
         this.$scope = $scope;
         this.$q = $q;
         this.$timeout = $timeout;
@@ -17,6 +17,7 @@ export class AdminConfigurationGeneralController {
         this.defaultLogoUrl = 'images/artifactory_logo.svg';
         this.logoEndPoint = `${API.API_URL}/generalConfig/logo`;
         this.TOOLTIP = TOOLTIP.admin.configuration.general;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['generalConfigData']);
 
         this._initUploader();
 
@@ -26,6 +27,7 @@ export class AdminConfigurationGeneralController {
     _getGeneralConfigData() {
         this.generalConfigDao.get().$promise.then((data) => {
             this.generalConfigData = data;
+            this.artifactoryModelSaver.save();
             this._getCurrentImage();
         });
     }
@@ -48,8 +50,8 @@ export class AdminConfigurationGeneralController {
 
     _updateGeneralConfigData() {
         this.generalConfigDao.update(this.generalConfigData).$promise.then((data) => {
+            this.artifactoryModelSaver.save();
             this.artifactoryEventBus.dispatch(EVENTS.LOGO_UPDATED);
-            //          console.log(data);
         });
     }
 
@@ -153,8 +155,10 @@ export class AdminConfigurationGeneralController {
     }
 
     cancel() {
-        this.clear();
-        this._getGeneralConfigData();
+        this.artifactoryModelSaver.ask().then(()=>{
+            this.clear();
+            this._getGeneralConfigData();
+        });
     }
 
     onChangeLogoUrl() {

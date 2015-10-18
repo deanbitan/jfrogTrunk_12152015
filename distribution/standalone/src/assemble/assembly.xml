@@ -24,7 +24,7 @@
         <format>zip</format>
     </formats>
     <includeBaseDirectory>true</includeBaseDirectory>
-    <baseDirectory>artifactory-oss-${project.version}</baseDirectory>
+    <baseDirectory>${zipDirname}-${project.version}</baseDirectory>
     <fileSets>
         <!-- Removing the default annoying permissions of 777 -->
         <fileSet>

@@ -18,6 +18,7 @@
 
 package org.artifactory.storage.db.security.dao;
 
+import com.google.common.collect.Sets;
 import org.artifactory.storage.db.security.entity.PermissionTarget;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
@@ -27,7 +28,12 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Date: 9/3/12
@@ -112,6 +118,47 @@ public class PermissionTargetsDao extends BaseDao {
             permTarget.setRepoKeys(findRepoKeysForTarget(permTargetId));
         }
         return permTarget;
+    }
+
+    public Map<Long, PermissionTarget> getAllPermissionTargets() throws SQLException {
+        ResultSet resultSet = null;
+        Map<Long, Set<String>> repoKeys = getAllRepoKeys();
+        Map<Long, PermissionTarget> permTargets = new HashMap<>(repoKeys.size());
+        try {
+            resultSet = jdbcHelper.executeSelect("SELECT * FROM permission_targets");
+            while (resultSet.next()) {
+                PermissionTarget pt = resultSetToPermissionTarget(resultSet);
+                Set<String> keys = repoKeys.get(pt.getPermTargetId());
+                if (keys == null) {
+                    pt.setRepoKeys(Collections.emptySet());
+                } else {
+                    pt.setRepoKeys(keys);
+                }
+                permTargets.put(pt.getPermTargetId(), pt);
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return permTargets;
+    }
+
+    private Map<Long, Set<String>> getAllRepoKeys() throws SQLException {
+        ResultSet resultSet = null;
+        Map<Long, Set<String>> repoKeys = new HashMap<>(64);
+        try {
+            resultSet = jdbcHelper.executeSelect("SELECT * FROM permission_target_repos");
+            while (resultSet.next()) {
+                long ptId = resultSet.getLong(1);
+                Set<String> rks = repoKeys.get(ptId);
+                if (rks == null) {
+                    repoKeys.put(ptId, rks = new HashSet<>(3));
+                }
+                rks.add(resultSet.getString(2));
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return repoKeys;
     }
 
     private HashSet<String> findRepoKeysForTarget(long permTargetId) throws SQLException {

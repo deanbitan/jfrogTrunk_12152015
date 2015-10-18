@@ -27,6 +27,7 @@ public class SqlQueryBuilder {
         sqlGeneratorMap.put(AqlDomainEnum.items, new ArtifactsSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.properties, new PropertiesSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.archives, new ArchiveSqlGenerator());
+        sqlGeneratorMap.put(AqlDomainEnum.entries, new ArchiveEntrySqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.statistics, new StatisticsSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.artifacts, new BuildArtifactSqlGenerator());
         sqlGeneratorMap.put(AqlDomainEnum.dependencies, new BuildDependenciesSqlGenerator());

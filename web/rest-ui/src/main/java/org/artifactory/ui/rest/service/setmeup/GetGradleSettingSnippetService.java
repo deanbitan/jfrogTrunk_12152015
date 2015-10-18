@@ -16,6 +16,7 @@ import org.artifactory.rest.common.service.RestService;
 import org.artifactory.rest.common.service.StreamRestResponse;
 import org.artifactory.ui.rest.model.setmeup.GradleSettingModel;
 import org.artifactory.ui.rest.model.setmeup.ScriptDownload;
+import org.artifactory.ui.utils.MultiPartUtils;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.RepoLayoutUtils;
 import org.slf4j.Logger;
@@ -58,15 +59,22 @@ public class GetGradleSettingSnippetService implements RestService {
         GradleSettingModel gradleSettingModel = (GradleSettingModel) request.getImodel();
         boolean downloadScript = Boolean.valueOf(request.getQueryParamByKey("downloadScript"));
         boolean downloadGradleProps = Boolean.valueOf(request.getQueryParamByKey("gradleProps"));
+        boolean deployGradleSettings = Boolean.valueOf(request.getQueryParamByKey("deploy"));
         String servletContextUrl = HttpUtils.getServletContextUrl(request.getServletRequest());
         // generate maven settings
         String gradleSnippet = generateSettings(servletContextUrl, gradleSettingModel, response);
+
         if (downloadGradleProps) {
             downLoadGradleProps(response, servletContextUrl);
             return;
         }
         if (downloadScript) {
             downloadGradleBuildFile(response, gradleSnippet);
+            return;
+        } else if (deployGradleSettings) {
+            String savedSnippetName = MultiPartUtils.saveSettingToTempFolder(gradleSnippet);
+            GradleSettingModel gradleSettingsDeploy = new GradleSettingModel("build.gradle", savedSnippetName);
+            response.iModel(gradleSettingsDeploy);
             return;
         } else {
             // update maven setting model

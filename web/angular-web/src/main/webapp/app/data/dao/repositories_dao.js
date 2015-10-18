@@ -37,7 +37,7 @@ export function RepositoriesDao(RESOURCE, ArtifactoryDaoFactory) {
                 },
                 detectSmartRepository: {
                     method: 'POST',
-                    path: RESOURCE.REPOSITORIES + '/isartifactory',
+                    path: RESOURCE.REPOSITORIES + '/discoversmartrepocapabilities',
                 },
                 testLocalReplication: {
                     method: 'POST',

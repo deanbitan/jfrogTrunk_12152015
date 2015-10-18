@@ -61,6 +61,7 @@ export default {
     "IMPORT": "/artifactimport",
     "MAINTENANCE": "/maintenance",
     "LDAP": "/ldap",
+    "OAUTH": "/oauth",
     "CHECKSUMS": "/checksums",
     "FILTERED_RESOURCE": "/filteredResource",
     "LDAP_GROUPS": "/ldapgroups",

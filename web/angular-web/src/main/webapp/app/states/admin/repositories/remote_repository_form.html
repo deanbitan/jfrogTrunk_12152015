@@ -174,18 +174,18 @@
             </div>
             <div class="col-lg-6" ng-if="RepositoryForm.repoInfo.basic.contentSynchronisation.enabled">
                 <jf-panel jf-panel-heading="Smart Remote Repository">
-<!--
-                    <div class="form-group form-checkbox">
+                    <div class="form-group form-checkbox"
+                         ng-if="RepositoryForm.isSmartRepoSupportFeature('SYNC_STATISTICS')">
                         <div class="form-group-cell">
-                            <jf-checkbox text="Sync Statistics">
+                            <jf-checkbox text="Report Statistics">
                                 <input type="checkbox"
                                        ng-model="RepositoryForm.repoInfo.basic.contentSynchronisation.statistics.enabled">
                             </jf-checkbox>
                             <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.smartSyncStatistics"></jf-help-tooltip>
                         </div>
                     </div>
--->
-                    <div class="form-group form-checkbox">
+                    <div class="form-group form-checkbox"
+                         ng-if="RepositoryForm.isSmartRepoSupportFeature('SYNC_PROPERTIES')">
                         <div class="form-group-cell">
                             <jf-checkbox text="Sync Properties">
                                 <input type="checkbox"
@@ -194,7 +194,8 @@
                             <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.smartSyncProperties"></jf-help-tooltip>
                         </div>
                     </div>
-                    <div class="form-group form-checkbox">
+                    <div class="form-group form-checkbox"
+                         ng-if="RepositoryForm.isSmartRepoSupportFeature('LIST_CONTENT')">
                         <div class="form-group-cell">
                             <jf-checkbox text="List Remote Folder Items">
                                 <input type="checkbox"
@@ -204,6 +205,15 @@
                             <jf-help-tooltip
                                     html="RepositoryForm.TOOLTIP.remoteForm.smartListRemoteFolderItems"></jf-help-tooltip>
                         </div>
+                    </div>
+                </jf-panel>
+            </div>
+            <div class="col-lg-6" ng-if="RepositoryForm.smartRepoUnknownCapabilities">
+                <jf-panel jf-panel-heading="Smart Remote Repository">
+                    <div class="alert alert-warning">
+                        It seems that you are using Artifactory to serve as a remote repository,
+                        but we cannot determine its capabilities because credentials are missing
+                        and anonymous login is disabled.
                     </div>
                 </jf-panel>
             </div>
@@ -369,7 +379,12 @@
                 </jf-panel>
                 <jf-panel jf-panel-heading="{{RepositoryForm.repoInfo.typeSpecific.repoType}} Settings"
                           ng-if="RepositoryForm.repoInfo.isType('docker')">
-                    <div class="form-group form-checkbox">
+                    <div class="form-group">
+                        <div class="form-group-cell">
+                            <div class="input-label-weight">API Version: <strong>V2</strong></div>
+                        </div>
+                    </div>
+                    <div class="form-group form-checkbox margin-top-20">
                         <div class="form-group-cell">
                             <jf-checkbox text="Enable Token Authentication">
                                 <input type="checkbox"
@@ -789,16 +804,6 @@
                                        ng-model="RepositoryForm.repoInfo.advanced.synchronizeArtifactProperties">
                             </jf-checkbox>
                             <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.synchronizeArtifactoryProperties"></jf-help-tooltip>
-                        </div>
-                    </div>
-                    <div class="form-group no-margin-bottom">
-                        <div class="form-group-cell">
-                            <jf-checkbox text="Share Configuration">
-                                <input type="checkbox"
-                                       id="shareConfiguration"
-                                       ng-model="RepositoryForm.repoInfo.advanced.shareConfiguration">
-                            </jf-checkbox>
-                            <jf-help-tooltip html="RepositoryForm.TOOLTIP.remoteForm.shareConfiguration"></jf-help-tooltip>
                         </div>
                     </div>
                 </jf-panel>

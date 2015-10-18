@@ -11,7 +11,7 @@ import javax.ws.rs.core.Response;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.ui.rest.model.builds.BintrayModel;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.builds.BuildsServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

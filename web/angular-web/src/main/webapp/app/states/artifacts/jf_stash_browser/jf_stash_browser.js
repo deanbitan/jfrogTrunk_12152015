@@ -27,6 +27,8 @@ class JFStashBrowserController extends JFCommonBrowser {
     constructor($timeout, $injector, ArtifactoryEventBus, $element, $scope, $state, $stateParams, $location, $q, ArtifactoryState, ArtifactActions, StashResultsDao, User) {
         super(ArtifactActions);
 
+        this.rootID = '____root_node____';
+
         this.$scope = $scope;
         this.$timeout = $timeout;
         this.$location = $location;
@@ -79,8 +81,8 @@ class JFStashBrowserController extends JFCommonBrowser {
         }
         else {
 //            this.artifactoryEventBus.dispatch(EVENTS.TREE_NODE_SELECT,this._getSelectedTreeNode());
-            this.jstree().select_node('root');
-            this.jstree().open_node('root');
+            this.jstree().select_node(this.rootID);
+            this.jstree().open_node(this.rootID);
         }
     }
 
@@ -134,7 +136,7 @@ class JFStashBrowserController extends JFCommonBrowser {
             if (stateParams.browser !== 'stash' || !this.jstree()) return;
 
             let path;
-            path = stateParams.artifact ? stateParams.artifact.substring(stateParams.artifact.indexOf('/')+1) : 'root';
+            path = stateParams.artifact ? stateParams.artifact.substring(stateParams.artifact.indexOf('/')+1) : this.rootID;
 
             let selectedNode = this._getSelectedTreeNode();
             if (selectedNode && selectedNode.fullpath === stateParams.artifact) return;
@@ -158,7 +160,7 @@ class JFStashBrowserController extends JFCommonBrowser {
         $(this.treeElement).on("search.jstree", (e, data) => this._onSearch(e, data));
         $(this.treeElement).on("ready.jstree", (e) => this._onReady(e));
         $(this.treeElement).on("select_node.jstree", (e, args) => {
-            if (this.$stateParams.tab === 'StashInfo' && args.node.id !== 'root') {
+            if (this.$stateParams.tab === 'StashInfo' && args.node.id !== this.rootID) {
                 this.$stateParams.tab = 'General';
             }
             this._loadNode(args.node);
@@ -166,6 +168,27 @@ class JFStashBrowserController extends JFCommonBrowser {
         $(this.treeElement).on("activate_node.jstree", (e, args) => {
             this.jstree().open_node(args.node);
         });
+
+        $('#tree-element').on('keydown',(e) => {
+            if (e.keyCode === 37 && e.ctrlKey) { //CTRL + LEFT ARROW --> Collapse All !
+                let node = this.jstree().get_selected(true)[0];
+
+                let parentRepoNode = this.jstree().get_node(node.parent);
+                if (parentRepoNode.id === this.rootID) parentRepoNode = node;
+                else {
+                    while (parentRepoNode.parent !== this.rootID) {
+                        parentRepoNode = this.jstree().get_node(parentRepoNode.parent);
+                    }
+                }
+
+                $('#tree-element').jstree('close_all');
+                this.jstree().select_node(parentRepoNode);
+                this.$timeout(()=>{
+                    this.jstree().close_node(parentRepoNode);
+                });
+            }
+        })
+
     }
 
     _loadNode(item) {
@@ -204,7 +227,7 @@ class JFStashBrowserController extends JFCommonBrowser {
         let THIS = this;
         let node;
         node = {
-            id: 'root',
+            id: this.rootID,
             parent: '#',
             text: 'Stashed Search Results',
             type: 'stash',
@@ -264,7 +287,7 @@ class JFStashBrowserController extends JFCommonBrowser {
             pushToTree({
                 id: result.relativePath.split(' ').join(''),
                 text: result.name,
-                parent: dirArray.join('/').split(' ').join('') || 'root',
+                parent: dirArray.join('/').split(' ').join('') || this.rootID,
                 type: result.mimeType,
                 data: this._filterActions(new this.TreeNode(result))
             });
@@ -275,7 +298,7 @@ class JFStashBrowserController extends JFCommonBrowser {
                 pushToTree({
                     id: dirArray.join('/').split(' ').join(''),
                     text: dirArray[i],
-                    parent: up.join('/').split(' ').join('') || 'root',
+                    parent: up.join('/').split(' ').join('') || this.rootID,
                     type: 'folder',
                     data: this._filterActions(new this.TreeNode({
                         repoKey: result.repoKey,
@@ -364,7 +387,7 @@ class JFStashBrowserController extends JFCommonBrowser {
 
         let deletePoint = node;
         let parent = jstree.get_node(node.parent);
-        while (parent.children.length === 1 && parent.id !== 'root') {
+        while (parent.children.length === 1 && parent.id !== this.rootID) {
             deletePoint = parent;
             parent = jstree.get_node(parent.parent);
         }

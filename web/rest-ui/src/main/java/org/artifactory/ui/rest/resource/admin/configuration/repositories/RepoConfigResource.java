@@ -6,7 +6,7 @@ import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalR
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.replication.local.LocalReplicationConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualRepositoryConfigModel;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.configuration.ConfigServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -115,10 +115,10 @@ public class RepoConfigResource extends BaseResource {
     }
 
     @POST
-    @Path("isartifactory")
+    @Path("discoversmartrepocapabilities")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response isArtifactoryInstance(RemoteRepositoryConfigModel remoteRepositoryModel) {
-        return runService(configServiceFactory.isArtifactoryInstance(), remoteRepositoryModel);
+    public Response discoverSmartRepoCapabilities(RemoteRepositoryConfigModel remoteRepositoryModel) {
+        return runService(configServiceFactory.discoverSmartRepoCapabilities(), remoteRepositoryModel);
     }
 
     @POST

@@ -42,7 +42,10 @@ INSERT INTO nodes VALUES
 (31, 1, 'repo3', 'a/b/c', 'g.txt', 4, 1340283204448, 'admin', 1340283204448,'yossis-3274', 1340283204448, 716139, 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', '503a360ecad98a34b59863c1e6accf71', '503a360ecad98a34b59863c1e6accf71'),
 (32, 1, 'repo3', 'a/B/C', 'f.txt', 4, 1340283204448, 'admin', 1340283204448,'yossis-3274', 1340283204448, 716139, 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', '503a360ecad98a34b59863c1e6accf71', '503a360ecad98a34b59863c1e6accf71'),
 (33, 0, 'repo3', 'a/B', 'C', 4, 1340283204448, 'admin', 1340283204448,'yossis-3274', 1340283204448, 716139, 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', '503a360ecad98a34b59863c1e6accf71', '503a360ecad98a34b59863c1e6accf71'),
-(34, 1, 'repo3', 'B', 'test.txt', 2, 1340283204448, 'admin', 1340283204448,'yossis-3274', 1340283204448, 716139, 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', '503a360ecad98a34b59863c1e6accf71', '503a360ecad98a34b59863c1e6accf71');
+(34, 1, 'repo3', 'B', 'test.txt', 2, 1340283204448, 'admin', 1340283204448,'yossis-3274', 1340283204448, 716139, 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', '503a360ecad98a34b59863c1e6accf71', '503a360ecad98a34b59863c1e6accf71'),
+(35, 0, 'repo1', '.', 'a_1.2', 1, 1340283204448, 'yossis-1', 1340283204448, 'yossis-1', 1340283204448, 0, NULL, NULL, NULL, NULL),
+(36, 0, 'repo1', '.', 'ab1.2', 1, 1340283204448, 'yossis-1', 1340283204448, 'yossis-1', 1340283204448, 0, NULL, NULL, NULL, NULL),
+(37, 0, 'repo1', 'ab1.2', 'tt.txt', 2, 1340283204448, 'yossis-1', 1340283204448, 'yossis-1', 1340283204448, 716139, 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', 'dddd89fc2a043c2479a6de676a2f7179e9eaddac', '503a360ecad98a34b59863c1e6accf71', '503a360ecad98a34b59863c1e6accf71');
 
 INSERT INTO node_props VALUES
 (1, 5, 'build.name', 'ant'),

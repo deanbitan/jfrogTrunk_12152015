@@ -58,6 +58,7 @@ import org.artifactory.io.checksum.policy.ChecksumPolicy;
 import org.artifactory.io.checksum.policy.ChecksumPolicyBase;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
+import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.repo.db.DbCacheRepo;
 import org.artifactory.repo.local.ValidDeployPathContext;
 import org.artifactory.repo.remote.browse.RemoteItem;
@@ -79,6 +80,7 @@ import org.artifactory.resource.UnfoundRepoResourceReason.Reason;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryStore;
+import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.storage.fs.lock.map.LockingMap;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.entry.UploadEntry;
@@ -89,6 +91,7 @@ import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -103,6 +106,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author yoavl
@@ -111,6 +115,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     private static final Logger log = LoggerFactory.getLogger(RemoteRepoBase.class);
     private final ChecksumPolicy checksumPolicy;
     private final LockingMap lockingMap;
+
     /**
      * Flags this repository as assumed offline. The repository enters this state when a download request fails with
      * exception.
@@ -123,13 +128,16 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
     protected long nextOnlineCheckMillis;
     private LocalCacheRepo localCacheRepo;
     private RemoteRepoBase oldRemoteRepo;
+
     /**
      * Cache of resources not found on the remote machine. Keyed by resource path.
      */
     private Map<String, RepoResource> missedRetrievalsCache;
+
     /**
      * Cache of remote directories listing.
      */
+
     private Map<String, List<RemoteItem>> remoteResourceCache;
     private boolean globalOfflineMode;
     // List of interceptors for various download resolution points

@@ -187,7 +187,7 @@ export class ArtifactActions {
 
     _doDeleteContent(node) {
 //        console.log(node);
-        this.modal.confirm('Are you sure you want to delete this repository? All artifacts will be permanently deleted.', 'Delete ' + node.data.text, {confirm: 'Delete'})
+        this.modal.confirm('Are you sure you want to delete the content of this repository? All artifacts will be permanently deleted.', 'Delete Content Of \'' + node.data.text +'\'', {confirm: 'Delete Content'})
                 .then(() => this._performActionInServer('delete', node))
                 .then((response) => this.artifactoryEventBus.dispatch(EVENTS.ACTION_DELETE, node));
     }
@@ -200,7 +200,11 @@ export class ArtifactActions {
                     return this.modal.confirm('Are you sure you wish to delete the selected versions?\n\nThis folder may contain artifacts that are part of the result of or used as dependencies in published build(s).')
                 })
                 .then(() => {
-                    return this._performActionInServer('deleteversions', null, versions)
+                    let promise = this._performActionInServer('deleteversions', null, versions);
+                    promise.then(()=>{
+                        this._doRefresh(node);
+                    });
+                    return promise;
                 });
     }
 

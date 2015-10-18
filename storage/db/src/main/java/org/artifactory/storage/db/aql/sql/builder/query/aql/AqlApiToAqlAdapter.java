@@ -188,8 +188,12 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
         SortDetails sortDetails = new SortDetails();
         if (sort != null && !sort.isEmpty()) {
             sortDetails.setSortType(sort.getSortType());
-            for (AqlFieldEnum aqlField : sort.getFields()) {
-                sortDetails.addField(aqlField);
+            List<DomainSensitiveField> fields = sort.getFields();
+            for (DomainSensitiveField field : fields) {
+                sortDetails.addField(field.getField());
+                if(! context.getResultFields().contains(field)){
+                    context.getResultFields().add(field);
+                }
             }
         }
         context.setSort(sortDetails);

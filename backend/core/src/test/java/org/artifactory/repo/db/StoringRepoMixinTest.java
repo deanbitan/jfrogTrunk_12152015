@@ -29,6 +29,7 @@ import org.artifactory.repo.LocalCacheRepo;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.cache.expirable.CacheExpiry;
 import org.artifactory.repo.local.LocalNonCacheOverridable;
+import org.artifactory.repo.local.LocalNonCacheOverridables;
 import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
@@ -100,19 +101,19 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testLocalNotCacheAndOverridableProtection() throws Exception {
         expect(storingRepo.isCache()).andReturn(false);
-        LocalNonCacheOverridable overridable = createMock(LocalNonCacheOverridable.class);
-        expect(overridable.isOverridable(eq(storingRepo), eq("somepath"))).andReturn(true);
-        expect(context.beanForType(LocalNonCacheOverridable.class)).andReturn(overridable);
+        LocalNonCacheOverridables overridables = createMock(LocalNonCacheOverridables.class);
+        expect(overridables.isOverridable(eq(storingRepo), eq("somepath"))).andReturn(true);
+        expect(context.beanForType(LocalNonCacheOverridables.class)).andReturn(overridables);
         InternalRepositoryService repositoryService = createMock(InternalRepositoryService.class);
         fieldSet(storingRepoMixin, "repositoryService", repositoryService);
         expect(repositoryService.storingRepositoryByKey("somekey")).andReturn(storingRepo);
 
-        replay(overridable, context, storingRepo, repositoryService);
+        replay(overridables, context, storingRepo, repositoryService);
         PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo, "somepath")
                 .assertOverwrite(true).build();
         assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Overridable path shouldn't be protected.");
-        verify(overridable, context, storingRepo);
+        verify(overridables, context, storingRepo);
         reset(context, storingRepo);
     }
 
@@ -143,20 +144,20 @@ public class StoringRepoMixinTest extends ArtifactoryHomeBoundTest {
     @Test
     public void testLocalNotCacheAndNotFileProtection() throws Exception {
         expect(storingRepo.isCache()).andReturn(false);
-        LocalNonCacheOverridable overridable = createMock(LocalNonCacheOverridable.class);
-        expect(overridable.isOverridable(eq(storingRepo), eq("somefile"))).andReturn(false);
-        expect(context.beanForType(LocalNonCacheOverridable.class)).andReturn(overridable);
+        LocalNonCacheOverridables overridables = createMock(LocalNonCacheOverridables.class);
+        expect(overridables.isOverridable(eq(storingRepo), eq("somefile"))).andReturn(false);
+        expect(context.beanForType(LocalNonCacheOverridables.class)).andReturn(overridables);
         InternalRepositoryService repositoryService = createMock(InternalRepositoryService.class);
         expect(repositoryService.exists(eq(InternalRepoPathFactory.create("somekey", "somefile"))))
                 .andReturn(false);
         expect(repositoryService.storingRepositoryByKey(eq("somekey"))).andReturn(storingRepo);
         fieldSet(storingRepoMixin, "repositoryService", repositoryService);
-        replay(overridable, repositoryService, context, storingRepo);
+        replay(overridables, repositoryService, context, storingRepo);
         PathDeletionContext deletionContext = new PathDeletionContext.Builder(storingRepo, "somefile")
                 .assertOverwrite(true).build();
         assertFalse(storingRepoMixin.shouldProtectPathDeletion(deletionContext),
                 "Items which aren't files shouldn't be protected.");
-        verify(overridable, repositoryService, context, storingRepo);
+        verify(overridables, repositoryService, context, storingRepo);
         reset(context, storingRepo);
     }
 

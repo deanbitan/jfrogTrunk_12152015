@@ -1,17 +1,19 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminServicesIndexerController {
-    constructor(IndexerDao, RepositoriesDao) {
+    constructor(IndexerDao, RepositoriesDao, ArtifactoryModelSaver) {
         this.indexerDao = IndexerDao.getInstance();
         this.repositoriesDao = RepositoriesDao;
         this.indexer = {};
         this.TOOLTIP = TOOLTIP.admin.services.mavenIndexer;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['indexer']);
         this.getIndexerObject();
     }
 
     getIndexerObject() {
         this.indexerDao.get().$promise.then((result) => {
             this.indexer = result;
+            this.artifactoryModelSaver.save();
             this.getRepoData();
         });
     }
@@ -31,10 +33,14 @@ export class AdminServicesIndexerController {
     }
 
     save(indexer) {
-        this.indexerDao.save(indexer);
+        this.indexerDao.save(indexer).$promise.then(()=>{
+            this.artifactoryModelSaver.save();
+        });
     }
 
     cancel() {
-        this.getIndexerObject();
+        this.artifactoryModelSaver.ask().then(()=>{
+            this.getIndexerObject();
+        });
     }
 }

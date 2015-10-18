@@ -42,6 +42,7 @@ public class MoverConfig {
     private final boolean suppressLayouts;
     private final boolean failFast;
     private final boolean unixStyleBehavior;
+    private final boolean atomic;
 
     /**
      * Main constructor
@@ -58,7 +59,7 @@ public class MoverConfig {
      */
     public MoverConfig(RepoPath fromRepoPath, RepoPath targetLocalRepoPath, boolean copy,
             boolean dryRun, boolean executeMavenMetadataCalculation, boolean pruneEmptyFolders, Properties properties,
-            boolean suppressLayouts, boolean failFast, boolean unixStyleBehavior) {
+                       boolean suppressLayouts, boolean failFast, boolean unixStyleBehavior, boolean atomic) {
         this.fromRepoPath = fromRepoPath;
         this.targetLocalRepoPath = targetLocalRepoPath;
         this.copy = copy;
@@ -69,6 +70,7 @@ public class MoverConfig {
         this.suppressLayouts = suppressLayouts;
         this.failFast = failFast;
         this.unixStyleBehavior = unixStyleBehavior;
+        this.atomic = atomic;
     }
 
     public Properties getProperties() {
@@ -155,5 +157,9 @@ public class MoverConfig {
      */
     public boolean isUnixStyleBehavior() {
         return unixStyleBehavior;
+    }
+
+    public boolean isAtomic() {
+        return atomic;
     }
 }

@@ -79,6 +79,7 @@ public enum ConstantValues {
     securityMasterKeyLocation("security.master.key", "security/artifactory.key"),
     securityDisableRememberMe("security.disableRememberMe", FALSE),
     ldapForceGroupMemberAttFullDN("security.ldap.forceGroupMemberAttFullDN", FALSE),
+    enableAqlReadCommitted("enable.aql.read.committed", FALSE),
     mvnCentralHostPattern("mvn.central.hostPattern", ".maven.org"),
     mvnCentralIndexerMaxQueryIntervalSecs("mvn.central.indexerMaxQueryIntervalSecs", Seconds.DAY),
     mvnMetadataVersionsComparator("mvn.metadataVersionsComparatorFqn"),
@@ -139,6 +140,7 @@ public enum ConstantValues {
     bintraySystemUser("bintray.system.user"),
     bintraySystemUserApiKey("bintray.system.api.key"),
     bintrayClientThreadPoolSize("bintray.client.threadPool.size", 5),
+    enableUiPagesInIframe("enable.ui.pages.in.Iframe", false),
     bintrayClientRequestTimeout("bintray.client.requestTimeoutMS",150000),
     bintrayClientSignRequestTimeout("bintray.client.signRequestTimeoutMS",90000),
     useUserNameAutoCompleteOnLogin("useUserNameAutoCompleteOnLogin", "on"),
@@ -181,7 +183,8 @@ public enum ConstantValues {
     pypiIndexQuietPeriodSecs("pypi.index.quietPeriodSecs", 60),
     pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60),
     dockerCleanupMaxAgeMillis("docker.cleanup.maxAgeMillis", Seconds.DAY * 1000),
-    httpRangeSupport("http.range.support", true);
+    httpRangeSupport("http.range.support", true),
+    aclDirtyReadsTimeout("acl.dirty.read.timeout", 20000); // in milliseconds
     public static final String SYS_PROP_PREFIX = "artifactory.";
 
     private final String propertyName;

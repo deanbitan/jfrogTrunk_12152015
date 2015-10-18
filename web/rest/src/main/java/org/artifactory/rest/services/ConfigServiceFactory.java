@@ -1,5 +1,6 @@
 package org.artifactory.rest.services;
 
+import org.artifactory.rest.common.service.admin.advance.GetStorageSummaryService;
 import org.artifactory.rest.services.replication.CreateMultipleReplicationService;
 import org.artifactory.rest.services.replication.CreateReplicationService;
 import org.artifactory.rest.services.replication.DeleteReplicationsService;
@@ -31,6 +32,9 @@ public abstract class ConfigServiceFactory {
 
     @Lookup
     public abstract DeleteReplicationsService deleteReplicationsService();
+
+    @Lookup
+    public abstract GetStorageSummaryService getStorageSummaryService();
 
 
 }

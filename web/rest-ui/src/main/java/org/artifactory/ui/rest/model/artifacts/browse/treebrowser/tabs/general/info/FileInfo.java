@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.general.info;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import org.artifactory.addon.AddonType;
 import org.artifactory.addon.AddonsManager;
@@ -10,16 +11,20 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.license.LicenseInfo;
 import org.artifactory.api.module.ModuleInfo;
+import org.artifactory.api.properties.PropertiesService;
 import org.artifactory.api.repo.BaseBrowsableItem;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageUnit;
+import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.fs.StatsInfo;
+import org.artifactory.md.Properties;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.general.licenses.GeneralTabLicenseModel;
 import org.codehaus.jackson.annotate.JsonPropertyOrder;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Set;
@@ -37,6 +42,9 @@ import java.util.stream.Collectors;
     }
 )
 public class FileInfo extends BaseInfo {
+
+    @Autowired
+    private PropertiesService propsService;
 
     private String moduleID;
     private String deployedBy;
@@ -197,6 +205,29 @@ public class FileInfo extends BaseInfo {
         setWatchingSince(fetchWatchingSince(authService.currentUsername(), repoPath));
         // set last replication status
         setLastReplicationStatus(getLastReplicationInfo(repoPath));
+        // set RemoteDeleted indication
+        updateFileRemoteDeletedState(repoPath, repoService);
+    }
+
+    /**
+     * If SmartRepo is on and file was deleted on attached
+     * (remote) artifactory instance, this method will set
+     * remoteDeleted = True;
+     *
+     * @param repoPath
+     * @param repoService
+     */
+    private void updateFileRemoteDeletedState(RepoPath repoPath, RepositoryService repoService) {
+        if (isSmartRepo()!= null && isSmartRepo().booleanValue()) {
+
+            Properties properties = propsService.getProperties(repoPath);
+            this.setRemoteDeleted(Boolean.valueOf(
+                        !properties.entries().parallelStream()
+                        .filter(p -> p.getKey().equals("sourceDeleted") && p.getValue().equals("true"))
+                        .collect(Collectors.toList()).isEmpty()
+                    )
+            );
+        }
     }
 
     /**
@@ -221,16 +252,17 @@ public class FileInfo extends BaseInfo {
             this.setLastDownloaded(lastDownloadedString);
         }
 
-
-        // disable smart repo stats for release 4.1
-
-       /* // remote stats
+        // remote stats
         this.setRemoteDownloaded(statsInfo.getRemoteDownloadCount());
-        this.setLastRemoteDownloadedBy(statsInfo.getRemoteLastDownloadedBy());
+        if (Strings.isNullOrEmpty(statsInfo.getOrigin())) {
+            this.setLastRemoteDownloadedBy(statsInfo.getRemoteLastDownloadedBy());
+        } else {
+            this.setLastRemoteDownloadedBy(statsInfo.getRemoteLastDownloadedBy() + "@" + statsInfo.getOrigin());
+        }
         if (statsInfo.getRemoteLastDownloaded() != 0) {
             String lastRemoteDownloadedString = centralConfigService.format(statsInfo.getRemoteLastDownloaded());
             this.setLastRemoteDownloaded(lastRemoteDownloadedString);
-        }*/
+        }
     }
 
     /**

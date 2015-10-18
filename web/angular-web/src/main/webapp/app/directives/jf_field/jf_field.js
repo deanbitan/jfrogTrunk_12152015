@@ -110,7 +110,7 @@ export function jfField($timeout, ArtifactoryEventBus, $rootScope) {
                 });
             }
             function _onKeyDown() {
-                scope.formField.initialValue = false;
+                if (scope.formField) scope.formField.initialValue = false;
             }
 
             function _onKeyUp() {

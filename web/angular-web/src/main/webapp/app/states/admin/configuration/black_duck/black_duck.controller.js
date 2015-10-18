@@ -2,8 +2,9 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminConfigurationBlack_duckController {
 
-    constructor(BlackDuckDao, ProxiesDao) {
+    constructor(BlackDuckDao, ProxiesDao, ArtifactoryModelSaver) {
         this.blackDuckDao = BlackDuckDao.getInstance();
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['blackDuck']);
         this.proxiesDao = ProxiesDao;
         this.TOOLTIP = TOOLTIP.admin.configuration.blackDuck;
         this._initBlackDuck();
@@ -21,12 +22,15 @@ export class AdminConfigurationBlack_duckController {
         this.blackDuckDao.get().$promise.then((data)=> {
 //            console.log(data);
             this.blackDuck = data;
+            this.artifactoryModelSaver.save();
         });
     }
 
     save(duck) {
         if (duck.proxyRef==='') delete duck.proxyRef;
-        this.blackDuckDao.update(duck);
+        this.blackDuckDao.update(duck).$promise.then(()=>{
+            this.artifactoryModelSaver.save();
+        });
     }
 
     testBlackDuck(duck) {
@@ -35,7 +39,9 @@ export class AdminConfigurationBlack_duckController {
         });
     }
 
-    reset(){
-        this.getBlackduckData();
+    reset() {
+        this.artifactoryModelSaver.ask().then(()=>{
+            this.getBlackduckData();
+        });
     }
 }

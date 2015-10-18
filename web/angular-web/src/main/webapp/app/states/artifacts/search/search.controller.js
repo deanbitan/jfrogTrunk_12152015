@@ -84,24 +84,7 @@ export class SearchController {
     }
 
     downloadSelectedItems(row) {
-        let archivePath = '';
-        let remoteRepo = '';
-        let artifactPath = row.relativePath || row.path;
-        if (row.archiveName) {
-            if(row.archivePath === '[root]') {
-                row.archivePath = '';
-            }
-            archivePath = row.archivePath + row.archiveName;
-        }
-        if (this.$stateParams.searchType == 'remote') {
-            remoteRepo = 'jcenter';
-        }
-        let data = {
-            path: artifactPath || archivePath,
-            repoKey: remoteRepo || row.repoKey
-        };
-        this.artifactActionsDao.perform({action: 'download'}, data).$promise
-                .then((response) => this.download(response.data.path));
+//        this.download(row.downloadLink);
     }
 
     viewCodeArtifact(row) {

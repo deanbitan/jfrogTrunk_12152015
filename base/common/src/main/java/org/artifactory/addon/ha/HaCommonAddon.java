@@ -67,4 +67,7 @@ public interface HaCommonAddon extends Addon {
 
     boolean artifactoryServerHasHeartbeat(ArtifactoryServer artifactoryServer);
 
+    String getCurrentMemberServerId();
+
+
 }

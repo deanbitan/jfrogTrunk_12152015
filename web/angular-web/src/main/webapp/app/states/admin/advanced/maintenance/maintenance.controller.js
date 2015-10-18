@@ -2,11 +2,12 @@ import EVENTS from '../../../../constants/common_events.constants.js';
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminAdvancedMaintenanceController {
-    constructor(MaintenanceDao, ArtifactoryNotifications, ArtifactoryEventBus, ArtifactoryModal) {
+    constructor(MaintenanceDao, ArtifactoryNotifications, ArtifactoryEventBus, ArtifactoryModal, ArtifactoryModelSaver) {
         this.maintenanceDao = MaintenanceDao;
         this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.artifactoryModal = ArtifactoryModal;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['maintenanceSettings']);
         this.maintenanceSettings = {};
         this.TOOLTIP = TOOLTIP.admin.advanced.maintenance;
 
@@ -22,18 +23,23 @@ export class AdminAdvancedMaintenanceController {
             this.maintenanceSettings.quotaControl = data.quotaControl;
             this.maintenanceSettings.storageLimit = data.storageLimit;
             this.maintenanceSettings.storageWarning = data.storageWarning;
+            this.artifactoryModelSaver.save();
         });
     }
 
     save() {
         if (this.maintenanceForm.$valid) {
-            this.maintenanceDao.update(this.maintenanceSettings);
+            this.maintenanceDao.update(this.maintenanceSettings).$promise.then(()=>{
+                this.artifactoryModelSaver.save();
+            });
         }
     }
 
     clear() {
-        this.artifactoryEventBus.dispatch(EVENTS.FORM_CLEAR_FIELD_VALIDATION, true);
-        this._getData();
+        this.artifactoryModelSaver.ask().then(()=>{
+            this.artifactoryEventBus.dispatch(EVENTS.FORM_CLEAR_FIELD_VALIDATION, true);
+            this._getData();
+        });
     }
 
     resetQuotaFields() {

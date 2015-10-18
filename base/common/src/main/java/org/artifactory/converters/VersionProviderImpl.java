@@ -106,9 +106,9 @@ public class VersionProviderImpl implements VersionProvider {
                 // in such case the vest choice is to assume that the home version is equals to the database version.
                 if (dbProperties == null) {
                     if (ConstantValues.test.getBoolean()) {
-                        String version = v410.name();
-                        String revision = valueOf(v410.getRevision());
-                        originalDatabaseVersion = new CompoundVersionDetails(v410, version, revision, 1387059697274l);
+                        String version = v413.name();
+                        String revision = valueOf(v413.getRevision());
+                        originalDatabaseVersion = new CompoundVersionDetails(v413, version, revision, 1387059697274l);
                     } else {
                         //TODO [Gidi] this case should not happened check with Yossi
                         // In this case it is ok to assume that the version is 3.1.0 since the DB_PROPERTIES table exists and above is

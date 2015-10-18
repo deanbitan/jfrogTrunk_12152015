@@ -1,6 +1,6 @@
 package org.artifactory.ui.rest.resource.admin.security.saml;
 
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.security.SecurityServiceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

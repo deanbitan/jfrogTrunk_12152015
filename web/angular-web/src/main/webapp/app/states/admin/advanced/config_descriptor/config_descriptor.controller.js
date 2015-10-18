@@ -1,12 +1,13 @@
 export class AdminAdvancedConfigDescriptorController {
 
-    constructor($timeout, ArtifactoryHttpClient, ArtifactoryNotifications, RESOURCE) {
+    constructor($timeout, ArtifactoryHttpClient, ArtifactoryNotifications, RESOURCE, ArtifactoryModelSaver) {
         this.$timeout = $timeout;
         this.RESOURCE = RESOURCE;
         this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactoryHttpClient = ArtifactoryHttpClient;
         this.configDescriptor = '';
         this.apiAccess = {};
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['configDescriptor']);
 
         this._getData();
     }
@@ -14,6 +15,7 @@ export class AdminAdvancedConfigDescriptorController {
     _getData() {
         this.artifactoryHttpClient.get(this.RESOURCE.CONFIG_DESCRIPTOR).then((response) => {
                 this.configDescriptor = response.data;
+                this.artifactoryModelSaver.save();
                 this.$timeout(()=> {
                     this.apiAccess.api.clearHistory();
                 });
@@ -24,6 +26,7 @@ export class AdminAdvancedConfigDescriptorController {
     save(configXml) {
         this.artifactoryHttpClient.put(this.RESOURCE.CONFIG_DESCRIPTOR, {configXml})
             .success(response => {
+                this.artifactoryModelSaver.save();
                 this.artifactoryNotifications.create(response)
             })
             .error(response => {
@@ -34,7 +37,9 @@ export class AdminAdvancedConfigDescriptorController {
     }
 
     cancel() {
-        this._getData();
+        this.artifactoryModelSaver.ask().then(()=>{
+            this._getData();
+        });
     }
 
 }

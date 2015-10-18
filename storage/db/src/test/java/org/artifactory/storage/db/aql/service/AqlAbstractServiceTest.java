@@ -4,7 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.aql.model.AqlItemTypeEnum;
 import org.artifactory.aql.model.AqlPermissionProvider;
 import org.artifactory.aql.result.AqlEagerResult;
-import org.artifactory.aql.result.rows.AqlArchiveItem;
+import org.artifactory.aql.result.rows.AqlArchiveEntryItem;
 import org.artifactory.aql.result.rows.AqlBaseItem;
 import org.artifactory.aql.result.rows.AqlBuild;
 import org.artifactory.aql.result.rows.AqlBuildArtifact;
@@ -73,7 +73,7 @@ public class AqlAbstractServiceTest extends DbBaseTest {
     protected void assertArchive(AqlEagerResult queryResult, String path, String name) {
         boolean found = false;
         for (int j = 0; j < queryResult.getSize(); j++) {
-            AqlArchiveItem row = (AqlArchiveItem) queryResult.getResult(j);
+            AqlArchiveEntryItem row = (AqlArchiveEntryItem) queryResult.getResult(j);
             if (row.getEntryPath().equals(path) &&
                     row.getEntryName().equals(name)) {
                 found = true;

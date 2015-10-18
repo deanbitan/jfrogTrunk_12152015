@@ -22,6 +22,8 @@ import org.artifactory.api.security.GroupNotFoundException;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.common.Info;
 import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.md.Properties;
+import org.artifactory.model.xstream.fs.PropertiesImpl;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.MutableGroupInfo;
 import org.artifactory.security.MutableUserInfo;
@@ -30,6 +32,7 @@ import org.artifactory.security.UserGroupInfo;
 import org.artifactory.security.UserInfo;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.DbService;
+import org.artifactory.storage.db.fs.entity.UserProperty;
 import org.artifactory.storage.db.security.dao.UserGroupsDao;
 import org.artifactory.storage.db.security.dao.UserPropertiesDao;
 import org.artifactory.storage.db.security.entity.Group;
@@ -364,6 +367,30 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
         } catch (SQLException e) {
             throw new StorageException("Could not delete external data " + key + " from user " + username, e);
         }
+    }
+
+    @Override
+    public Properties findPropertiesForUser(String username) {
+        try {
+            List<UserProperty> userProperties = userPropertiesDao.getPropertiesForUser(username);
+            PropertiesImpl properties = new PropertiesImpl();
+            for (UserProperty userProperty : userProperties) {
+                properties.put(userProperty.getPropKey(), userProperty.getPropValue());
+            }
+            return properties;
+        } catch (SQLException e) {
+            throw new StorageException("Failed to load user properties for " + username, e);
+        }
+    }
+
+    @Override
+    public void deletePropertyFromAllUsers(String propertyKey) {
+        try {
+            userPropertiesDao.deletePropertyFromAllUsers(propertyKey);
+        } catch (SQLException e) {
+            throw new StorageException("Could not delete property by key" + propertyKey+" from all users");
+        }
+
     }
 
     private GroupInfo groupToGroupInfo(Group group) {

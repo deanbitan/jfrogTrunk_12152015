@@ -51,6 +51,8 @@
                                     </jf-checkbox>
                                     <jf-help-tooltip html="RepositoryLayoutForm.TOOLTIP.distinctiveDescriptorPathPattern"></jf-help-tooltip>
                                 </div>
+                            </div>
+                            <div class="form-group">
                                 <div class="form-group-cell double" ng-if="RepositoryLayoutForm.layoutData.distinctiveDescriptorPathPattern">
                                     <jf-field validations="repoLayouts">
                                         <input name="descriptorPathPattern"
@@ -118,6 +120,10 @@
                                             <tr ng-repeat="(key,value) in RepositoryLayoutForm.testReplyDictionary">
                                                 <td>{{value}}:</td>
                                                 <td>{{RepositoryLayoutForm.testReply[key]}}</td>
+                                            </tr>
+                                            <tr ng-repeat="(key,value) in RepositoryLayoutForm.testReply.customFields">
+                                                <td style="color: darkblue">{{key}}:</td>
+                                                <td>{{value}}</td>
                                             </tr>
                                         </table>
                                     </div>

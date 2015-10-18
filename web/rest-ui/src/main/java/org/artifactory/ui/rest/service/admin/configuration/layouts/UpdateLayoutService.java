@@ -28,12 +28,15 @@ public class UpdateLayoutService implements RestService<RepoLayout> {
         try {
             validation(repoLayout);
             MutableCentralConfigDescriptor configDescriptor = getMutableDescriptor();
-            configDescriptor.removeRepoLayout(repoLayout.getName());
-
-            //check if only repoLayout
-            configDescriptor.addRepoLayout(repoLayout);
-
-            centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
+            RepoLayout savedRepoLayout = configDescriptor.getRepoLayout(repoLayout.getName());
+            if (savedRepoLayout != null) {
+                savedRepoLayout.setArtifactPathPattern(repoLayout.getArtifactPathPattern());
+                savedRepoLayout.setDescriptorPathPattern(repoLayout.getDescriptorPathPattern());
+                savedRepoLayout.setDistinctiveDescriptorPathPattern(repoLayout.isDistinctiveDescriptorPathPattern());
+                savedRepoLayout.setFileIntegrationRevisionRegExp(repoLayout.getFileIntegrationRevisionRegExp());
+                savedRepoLayout.setFolderIntegrationRevisionRegExp(repoLayout.getFolderIntegrationRevisionRegExp());
+                centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
+            }
 
             String message = "Successfully updated layout '" + repoLayout.getName() + "'";
             response.info(message);

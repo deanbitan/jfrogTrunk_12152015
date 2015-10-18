@@ -1,10 +1,10 @@
 package org.artifactory.ui.rest.service.admin.security.auth.forgotpassword;
 
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.saml.SamlSsoAddon;
-import org.artifactory.addon.oauth.OAuthSsoAddon;
+import org.artifactory.addon.sso.saml.SamlSsoAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.mail.MailServerDescriptor;
 import org.artifactory.descriptor.security.sso.SamlSettings;
@@ -33,10 +33,9 @@ public class LoginRelatedDataService implements RestService {
         UserLogin userLogin = new UserLogin();
         // update saml provider link
         updateSamlLinkIfEnable(request, descriptor, userLogin);
-        // update oauth provider link
-        updateOAuthLinkIfEnable(request, userLogin);
         // update display forgot password flag
         updateDisplayForgotFlag(descriptor, userLogin);
+        updateCanRememberMeFlag(userLogin);
         response.iModel(userLogin);
     }
 
@@ -54,6 +53,10 @@ public class LoginRelatedDataService implements RestService {
         } else {
             userLogin.setForgotPassword(false);
         }
+    }
+
+    private void updateCanRememberMeFlag(UserLogin userLogin) {
+        userLogin.setCanRememberMe(!ConstantValues.securityDisableRememberMe.getBoolean());
     }
 
     /**
@@ -74,14 +77,4 @@ public class LoginRelatedDataService implements RestService {
         }
     }
 
-    /**
-     * @param request    - encapsulate data related to request
-     * @param userLogin  - user login details
-     */
-    private void updateOAuthLinkIfEnable(ArtifactoryRestRequest request, UserLogin userLogin) {
-        AddonsManager addons = ContextHelper.get().beanForType(AddonsManager.class);
-        OAuthSsoAddon oauthSsoAddon = addons.addonByType(OAuthSsoAddon.class);
-        String oauthLoginPageUrl = oauthSsoAddon.getOAuthLoginPageUrl(request.getServletRequest());
-        if (oauthLoginPageUrl != null) userLogin.setOauthProviderLink(oauthLoginPageUrl);
-    }
 }

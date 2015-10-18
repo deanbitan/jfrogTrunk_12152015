@@ -62,20 +62,24 @@ public enum AddonType {
     FILE_STORE("fileStore", "S3 Object Store", 2000, new String[]{"all", "enterprise"}, "ent", "S3+Object+Storage"),
     AQL("aql", "AQL", 2000, new String[]{"all", "features"}, "oss",
             "Artifactory+Query+Language"),
-    MAVEN_PLUGIN("mavenPlugin", "Maven Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
+    MAVEN_PLUGIN("maven", "Maven Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
             "Maven+Artifactory+Plugin"),
-    GRADLE_PLUGIN("gradlePlugin", "Gradle Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
+    GRADLE_PLUGIN("gradle", "Gradle Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
             "Gradle+Artifactory+Plugin"),
-    JENKINS_PLUGIN("jenkinsPlugin", "Jenkins Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
+    JENKINS_PLUGIN("jenkins", "Jenkins Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
             "Jenkins+(Hudson)+Artifactory+Plug-in"),
-    BAMBOO_PLUGIN("bambooPlugin", "Bamboo Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
+    BAMBOO_PLUGIN("bamboo", "Bamboo Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
             "Bamboo+Artifactory+Plug-in"),
-    TC_PLUGIN("tcPlugin", "TeamCity Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
+    TC_PLUGIN("teamcity", "TeamCity Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
             "TeamCity+Artifactory+Plug-in"),
-    MSBUILD_PLUGIN("msbuildPlugin", "MSBuild/TFS Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
+    MSBUILD_PLUGIN("msbuild", "MSBuild/TFS Plugin", 2000, new String[]{"all", "ecosystem"}, "oss",
             "MSBuild+Artifactory+Plugin"),
-    BINTRAY_INTEGRATION("bintrayIntegration", "Bintray Integration", 2000, new String[]{"all", "ecosystem"}, "oss",
-            "Bintray+Integration");
+    BINTRAY_INTEGRATION("bintray-integration", "Bintray Integration", 2000, new String[]{"all", "ecosystem"}, "oss",
+            "Bintray+Integration"),
+    SMART_REPO("smart-repo", "Smart Remote Repo", 2000, new String[]{"all", "features"}, "pro", "Smart+Remote+Repositories"),
+    SBT("sbt", "SBT", 2000, new String[]{"all", "packageManagement"}, "oss", "SBT+Repositories"),
+    IVY("ivy", "Ivy Plugin", 2000, new String[]{"all", "ecosystem"}, "oss", "Working+with+Ivy");
+
 
     private String addonName;
     private String addonDisplayName;

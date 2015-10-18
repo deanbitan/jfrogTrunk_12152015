@@ -71,7 +71,7 @@ public interface BowerAddon extends Addon {
      * get bower meta data info
      *
      * @param fileInfo - bower file info
-     * @return boower meta data info
+     * @return bower meta data info
      */
     BowerMetadataInfo getBowerMetadata(FileInfo fileInfo);
 }

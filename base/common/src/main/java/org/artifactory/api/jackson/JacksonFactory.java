@@ -174,4 +174,15 @@ public abstract class JacksonFactory {
         mapper.getDeserializationConfig().disable(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES);
         jsonParser.setCodec(mapper);
     }
+
+    /**
+     * Creates a Jackson object mapper
+     *
+     * @return {@link org.codehaus.jackson.map.ObjectMapper}
+     */
+    public static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
+    }
 }

@@ -23,6 +23,7 @@ import org.artifactory.api.request.ArtifactoryResponse;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -79,6 +80,8 @@ public interface AddonsManager {
      */
     String getLicenseKey();
 
+    Date getLicenseValidUntil();
+
     /**
      * Returns the hash of the license key (if installed) with an added char for indication of type
      * (<b>t</b>rial \ <b>c</b>ommercial).<br/>
@@ -98,8 +101,6 @@ public interface AddonsManager {
     boolean isLicenseKeyHashHAType(String licenseKeyHash);
 
     boolean lockdown();
-
-    boolean isInstantiationAuthorized(Class componentClass);
 
     /**
      * Sends a "forbidden" response to the request if no valid license is installed

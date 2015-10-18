@@ -1,21 +1,8 @@
 export function jfGrid($timeout,$compile) {
 
-    let isListTooltip = (cell) => {
-        let parent = cell.context.parentElement;
-        return (parent.classList.contains('tooltip-show-list'));
-    };
 
-    let formatListContent = (content)=>{
-        let pipeIndex = content.indexOf('|');
-        if (pipeIndex>=0) {
-            let listContent = content.substr(pipeIndex+1);
-            let list = listContent.split(',');
-            let cleanList = _.map(list,(line)=>{
-                return line.trim();
-            });
-            return cleanList.join('\n');
-        }
-        else return content;
+    let isNoTooltip = (cell) => {
+        return (cell.context.classList.contains('no-tooltip'));
     };
 
     return {
@@ -30,6 +17,8 @@ export function jfGrid($timeout,$compile) {
         templateUrl: 'directives/jf_grid/jf_grid.html',
         link: ($scope, $element, $attrs) => {
 
+            $scope.gridOptions.gridObjectName = $scope.objectName;
+
             $scope.noCount = $attrs.hasOwnProperty('noCount');
             $scope.noPagination = $attrs.hasOwnProperty('noPagination');
 
@@ -43,22 +32,21 @@ export function jfGrid($timeout,$compile) {
                     let cellItemContent = cellItem.text().trim();
 
                     if (cellItemContent.length > 0 && cellItem[0].scrollWidth > cellItem.innerWidth()) {
-                        if (!cellItem.hasClass('tooltipstered')) {
+                        if (!cellItem.hasClass('tooltipstered') && !isNoTooltip(cellItem)) {
                             cellItem.tooltipster({
                                 trigger: 'hover',
                                 onlyOne: 'true',
                                 interactive: 'true',
                                 position: 'bottom',
-                                content: isListTooltip(cellItem) ? formatListContent(cellItemContent) : cellItemContent
+                                content: cellItemContent
                             });
                             cellItem.tooltipster('show');
                         }
-                        else {
+                        else if (!isNoTooltip(cellItem)) {
                             cellItem.tooltipster('enable');
 
-                            let currentContent = isListTooltip(cellItem) ? formatListContent(cellItemContent) : cellItemContent;
-                            if (cellItem.tooltipster('content') != currentContent)
-                                cellItem.tooltipster('content', currentContent);
+                            if (cellItem.tooltipster('content') != cellItemContent)
+                                cellItem.tooltipster('content', cellItemContent);
                         }
                     }
                     else if (cellItem.hasClass('tooltipstered'))

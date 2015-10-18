@@ -517,7 +517,7 @@ public class ArtifactoryHome {
     }
 
     public File getMissionControlPropertiesFile() {
-        return new File(getEtcDir(), MISSION_CONTROL_FILE_NAME);
+        return new File(getHaAwareEtcDir(), MISSION_CONTROL_FILE_NAME);
     }
 
     public File getArtifactoryConfigFile() {

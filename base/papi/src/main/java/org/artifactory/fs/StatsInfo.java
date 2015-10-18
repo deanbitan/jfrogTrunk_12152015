@@ -36,4 +36,7 @@ public interface StatsInfo extends Info {
     long getRemoteDownloadCount();
     long getRemoteLastDownloaded();
     String getRemoteLastDownloadedBy();
+
+    String getPath();
+    String getOrigin();
 }

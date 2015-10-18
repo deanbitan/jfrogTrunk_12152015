@@ -4,14 +4,20 @@ import ICONS from '../constants/artifact_browser_icons.constant';
 import FIELD_OPTIONS from '../../../constants/field_options.constats';
 
 export class ArtifactsController {
-    constructor($scope, $stateParams, $state, $sce, ArtifactoryEventBus, ArtifactoryModal, ArtifactoryState, User, ArtifactDeployDao,
-            SetMeUpDao, ArtifactoryFeatures, parseUrl, ArtifactoryDeployModal) {
+    constructor($scope, $stateParams, $state, $compile, $timeout, $sce, ArtifactoryEventBus, ArtifactoryModal, ArtifactoryState, User, ArtifactDeployDao, ArtifactoryNotifications,
+            SetMeUpDao, ArtifactoryFeatures, parseUrl, ArtifactoryDeployModal, RepoDataDao, FilteredResourceDao) {
 
         this.artifactoryEventBus = ArtifactoryEventBus;
+        this.artifactoryNotifications = ArtifactoryNotifications;
+        this.filteredResourceDao = FilteredResourceDao;
         this.$stateParams = $stateParams;
         this.setMeUpDao = SetMeUpDao;
+        this.artifactDeployDao = ArtifactDeployDao;
+        this.repoDataDao = RepoDataDao;
         this.$state = $state;
         this.$scope = $scope;
+        this.$timeout = $timeout;
+        this.$compile = $compile;
         this.modal = ArtifactoryModal;
         this.parseUrl = parseUrl;
         this.artifactoryFeatures = ArtifactoryFeatures;
@@ -251,7 +257,7 @@ export class ArtifactsController {
                     snippet: "npm config set registry $2/api/npm/$1"
                 }, {
                     before: "For scoped package run the following command:",
-                    snippet: "npm config set @<SCOPE>:regitrsy $2/api/npm/$1"
+                    snippet: "npm config set @<SCOPE>:registry $2/api/npm/$1"
                 }],
                 read: [{
                     before: "After adding Artifactory as the default repository you can install a package using the npm install command:",
@@ -370,7 +376,7 @@ export class ArtifactsController {
                     before: "You can define proxy repositories in the <i>~/.sbt/repositories</i> file in the following way:",
                     snippet: "[repositories]\n" + "local\n" + "my-ivy-proxy-releases: $2/$1/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]\n" + "my-maven-proxy-releases: $2/$1/"
                 }, {
-                    before: "In order to specify that all resolvers added in the sbt project added should be ignored in favor of those configured in the repositories configuration, add the following configuration option to the sbt launcher script:",
+                    before: "In order to specify that all resolvers added in the sbt project should be ignored in favor of those configured in the repositories configuration, add the following configuration option to the sbt launcher script:",
                     snippet: "-Dsbt.override.build.repos=true",
                     after: "You can add this setting to the <i>/usr/local/etc/sbtopts</i> file"
                 }],
@@ -526,6 +532,9 @@ export class ArtifactsController {
             scope.snippet = scope.readSnippet = scope.deploySnippet = null
             scope.generateSettings = false
             scope.generate = {}
+
+            scope.deploySettingsMode = false;
+
 
             scope.generalSnippets = []
             scope.readSnippets = []
@@ -800,6 +809,112 @@ export class ArtifactsController {
             }
         }
 
+        this.setMeUpScope.setDeploySettingsMode = () => {
+
+            let defaultTargetPath;
+
+            switch (this.setMeUpScope.selection.repoType.value) {
+                case "maven":
+                    defaultTargetPath="settings.xml";
+                    break;
+                case "gradle":
+                    defaultTargetPath="build.gradle";
+                    break;
+                case "ivy":
+                    defaultTargetPath="ivysettings.xml";
+                    break;
+            }
+
+            this.setMeUpScope.deploySettingsMode = true;
+            this.setMeUpScope.snippetDeploy = {
+                targetPath:  defaultTargetPath,
+                targetRepo: ''
+            };
+
+            this.repoDataDao.get({user: 'true'}).$promise.then((result)=> {
+                this.setMeUpScope.snippetDeploy.reposList = result.repoTypesList;
+            });
+
+        };
+
+        this.setMeUpScope.deploySettingsSnippet = () => {
+            let doActualDeployment;
+            var scope = this.setMeUpScope.me();
+            if (scope.generate.maven) {
+                setMeUpDao.maven_snippet({deploy:true},{
+                    release: scope.selection.maven.releases,
+                    snapshot: scope.selection.maven.snapshots,
+                    pluginRelease: scope.selection.maven.pluginReleases,
+                    pluginSnapshot: scope.selection.maven.pluginSnapshots,
+                    mirror: (scope.selection.maven.mirror) ? scope.selection.maven.mirrorAny : ''
+                }).$promise.then((result)=> {
+                            doActualDeployment(result);
+                        })
+            }
+            else if (scope.generate.gradle) {
+                setMeUpDao.gradle_snippet({deploy:true},{
+                    pluginRepoKey: scope.selection.gradle.pluginResolver,
+                    libsResolverRepoKey: scope.selection.gradle.libsResolver,
+                    libsPublisherRepoKey: scope.selection.gradle.libsPublisher,
+                    pluginUseMaven: scope.selection.gradle.pluginUseMaven,
+                    resolverUseMaven: scope.selection.gradle.libsUseMaven,
+                    publisherUseMaven: scope.selection.gradle.publishUseMaven,
+                    pluginUseIvy: scope.selection.gradle.pluginUseIvy,
+                    resolverUseIvy: scope.selection.gradle.libsUseIvy,
+                    publisherUseIvy: scope.selection.gradle.publishUseIvy,
+                    pluginResolverLayout: scope.selection.gradle.pluginLayout,
+                    libsResolverLayout: scope.selection.gradle.libsLayout,
+                    libsPublisherLayouts: scope.selection.gradle.publishLayout
+                }).$promise.then((result)=> {
+                            doActualDeployment(result);
+                        })
+            }
+            else if (scope.generate.ivy) {
+                setMeUpDao.ivy_snippet({deploy:true},{
+                    libsRepo: scope.selection.ivy.libsRepository,
+                    libsRepoLayout: scope.selection.ivy.libsRepositoryLayout,
+                    libsResolverName: scope.selection.ivy.libsResolverName,
+                    useIbiblioResolver: (scope.selection.ivy.ibiblio) ? true : false,
+                    m2Compatible: (scope.selection.ivy.maven2) ? true : false
+                }).$promise.then((result)=> {
+                            doActualDeployment(result);
+                        })
+            }
+
+
+            doActualDeployment = (config) => {
+                let singleDeploy = {};
+
+                singleDeploy.action = "deploy";
+                singleDeploy.unitInfo = {
+                    artifactType: "base",
+                    path: this.setMeUpScope.snippetDeploy.targetPath
+                };
+                singleDeploy.fileName = config.savedSnippetName;
+                singleDeploy.repoKey = this.setMeUpScope.snippetDeploy.targetRepo.repoKey;
+
+                this.artifactDeployDao.post(singleDeploy).$promise.then((result)=> {
+                    if (result.data) {
+                        this.artifactoryEventBus.dispatch(EVENTS.TREE_REFRESH);
+                        this.artifactoryNotifications.createMessageWithHtml({
+                            type: 'success',
+                            body: `<div id="toaster-with-link">Successfully deployed <a ui-sref="artifacts.browsers.path({tab: 'General', browser: 'tree', artifact: '${result.data.repoKey}/${result.data.artifactPath}'})">${result.data.artifactPath} into ${result.data.repoKey}</a></div>`,
+                            timeout: 10000
+                        });
+                        this.$timeout(()=>{ //compile the element, so the ui-sref will work
+                            let e = angular.element($('#toaster-with-link'));
+                            this.$compile(e)(this.$scope);
+                        });
+
+                        this.filteredResourceDao.setFiltered({setFiltered: true},{
+                            repoKey: result.data.repoKey,
+                            path: result.data.artifactPath
+                        });
+                    }
+                });
+            }
+        };
+
         this.getSetMeUpData(function(data) {
 //            var url = new URL(data.baseUrl) //CAUSES PROBLEM ON IE, NOT REALY NEEDED...
             let parser = this.parseUrl(data.baseUrl);
@@ -864,5 +979,9 @@ export class ArtifactsController {
 
     exitStashState() {
         this.artifactoryEventBus.dispatch(EVENTS.ACTION_EXIT_STASH);
+    }
+
+    hasData() {
+        return this.artifactoryState.getState('hasArtifactsData') !== false;
     }
 }

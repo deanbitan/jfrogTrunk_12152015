@@ -2,7 +2,7 @@ import EVENTS     from '../../constants/common_events.constants';
 
 export class LoginController {
 
-    constructor($state, User, $location, $window, ArtifactoryState, ArtifactoryEventBus) {
+    constructor($state, $stateParams, User, $location, $window, ArtifactoryState, ArtifactoryEventBus) {
         this.user = {};
         this.rememberMe = false;
         this.UserService = User;
@@ -12,9 +12,17 @@ export class LoginController {
         this.$location = $location;
         this.ArtifactoryState = ArtifactoryState;
         this.canResetPassword = false;
+        this.canRememberMe = false;
         this.loginForm = null;
 
         this.canExit = (User.currentUser.name !== 'anonymous' || User.currentUser.anonAccessEnabled);
+
+        this.oauth = {}
+        User.getOAuthLoginData().then((response) => {
+            this.oauth.providers = response;
+        });
+
+        if ($stateParams.oauthError) this.errorMessage = $stateParams.oauthError;
 
         this.checkResetPassword();
     }
@@ -53,6 +61,7 @@ export class LoginController {
     checkResetPassword() {
         this.UserService.getLoginData().then((response) => {
             this.canResetPassword = response.forgotPassword;
+            this.canRememberMe = response.canRememberMe;
             this.ssoProviderLink = response.ssoProviderLink;
             this.oauthProviderLink = response.oauthProviderLink;
         });
@@ -62,11 +71,21 @@ export class LoginController {
         this.$state.go('forgot-password');
     }
 
+/*
     oauthLogin() {
         this.$window.open(this.oauthProviderLink,'_self');
     }
+*/
 
     ssoLogin() {
         this.$window.open(this.ssoProviderLink,'_self');
+    }
+
+    isOAuthEnabled() {
+        return this.oauth.providers && this.oauth.providers.length > 0;
+    }
+
+    onGotoOAuth() {
+        localStorage.stateBeforeOAuth = this.$state.current.name;
     }
 }

@@ -2,7 +2,7 @@ package org.artifactory.ui.rest.resource.admin.configuration.licenses;
 
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.rest.common.service.RestResponse;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.configuration.ConfigServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

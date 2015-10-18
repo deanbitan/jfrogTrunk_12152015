@@ -87,6 +87,11 @@ export const FEATURES = {
         label: 'Saml & SSO',
         path: 'sso'
     },
+    'oauthsso': {
+        license: 'PRO',
+        label: 'OAuth SSO',
+        path: 'sso' // ???
+    },
     'httpsso': {
         license: 'PRO',
         label: 'Http SSO',

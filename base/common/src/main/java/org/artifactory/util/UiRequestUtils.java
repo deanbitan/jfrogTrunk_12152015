@@ -150,16 +150,8 @@ public abstract class UiRequestUtils {
         if (isWebdavRequest(request)) {
             return false;
         }
-        if (isWicketRequest(request)) {
-            return true;
-        }
         String pathPrefix = PathUtils.getFirstPathElement(getServletPathFromRequest(request));
         return isUiPathPrefix(pathPrefix);
-    }
-
-    public static boolean isWicketRequest(HttpServletRequest request) {
-        String queryString = request.getQueryString();
-        return queryString != null && queryString.startsWith("wicket");
     }
 
     public static boolean isUiPathPrefix(String pathPrefix) {

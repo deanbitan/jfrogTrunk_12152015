@@ -19,6 +19,7 @@
 package org.artifactory.storage.security.service;
 
 import org.artifactory.common.Info;
+import org.artifactory.md.Properties;
 import org.artifactory.sapi.common.Lock;
 import org.artifactory.security.GroupInfo;
 import org.artifactory.security.MutableGroupInfo;
@@ -196,4 +197,8 @@ public interface UserGroupStoreService {
      * @return True if the delete succeeded, false otherwise
      */
     boolean deleteUserProperty(String username, String key);
+
+    Properties findPropertiesForUser(String username);
+
+    void deletePropertyFromAllUsers(String propertyKey);
 }

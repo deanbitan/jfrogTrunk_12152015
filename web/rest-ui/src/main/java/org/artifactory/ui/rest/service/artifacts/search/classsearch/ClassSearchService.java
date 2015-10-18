@@ -47,7 +47,7 @@ public class ClassSearchService implements RestService {
             List<ClassSearchResult> classSearchResults = Lists.newArrayList();
             ItemSearchResults<ArchiveSearchResult> archiveSearchResults = searchService.searchArchiveContent( archiveSearchControl);
             for (ArchiveSearchResult archiveSearchResult : archiveSearchResults.getResults()) {
-                classSearchResults.add(new ClassSearchResult(archiveSearchResult));
+                classSearchResults.add(new ClassSearchResult(archiveSearchResult,request));
             }
             long resultsCount;
             int maxResults = ConstantValues.searchMaxResults.getInt();

@@ -19,12 +19,14 @@
 package org.artifactory.rest.resource.artifact;
 
 
+import com.google.common.base.Strings;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.rest.AuthorizationRestException;
 import org.artifactory.addon.smartrepo.SmartRepoAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.model.common.RemoteRepoPathImpl;
 import org.artifactory.model.xstream.fs.StatsImpl;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
@@ -32,6 +34,8 @@ import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.rest.common.exception.NotFoundException;
 import org.artifactory.rest.common.util.RestUtils;
 import org.artifactory.storage.service.StatsServiceImpl;
+import org.artifactory.util.HttpUtils;
+import org.artifactory.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +86,7 @@ public class ArtifactStatisticsResource {
 
     @Autowired
     private StatsServiceImpl statsService;
+    private String remoteHost;
 
     /**
      * Updates artifact statistics triggered by remote host
@@ -96,34 +101,82 @@ public class ArtifactStatisticsResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response updateRemoteStats(StatsImpl[] statsInfos) throws IOException {
 
-        String remoteHost = request.getRemoteHost();
+        // host initiated the download request
+        String origin = getRemoteHost();
+
         for (StatsImpl statsInfo : statsInfos) {
 
-            RepoPath remoteRepoPath = RestUtils.calcRepoPathFromRequestPath(path + "/" + statsInfo.getRepoPath());
-            log.debug("Updating remote statistics (triggered by host \"{}\") on artifact \"{}\".",
-                    remoteHost, remoteRepoPath
+            log.debug(
+                    "Processing remote statistics event (triggered by host \"{}\") on artifact \"{}\".",
+                    origin, statsInfo.getPath()
             );
 
-            if (!authorizationService.canRead(remoteRepoPath)) {
-                return unAuthorizedResponse(remoteRepoPath);
+            // cache RepoPath
+            RepoPath repoPathInCache = RestUtils.calcRepoPathFromRequestPath(
+                    path + "/" + statsInfo.getRepoPath()
+            );
+            RepoPath remoteCacheRepoPath = RemoteRepoPathImpl.newInstance(origin, repoPathInCache);
+
+            // local RepoPath
+            RepoPath repoPathInLocal = RepoPathFactory.create(
+                    StringUtils.replaceLast(remoteCacheRepoPath.getRepoKey(), "-cache", ""),
+                    remoteCacheRepoPath.getPath()
+            );
+            RepoPath remoteLocalRepoPath = RemoteRepoPathImpl.newInstance(origin, repoPathInLocal);
+
+            boolean existsInCache = repositoryService.exists(remoteCacheRepoPath);
+            boolean existsInLocal = repositoryService.exists(repoPathInLocal);
+
+            if (!existsInCache && !existsInLocal) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("RepoPath {" + repoPathInCache + "} is not exist in this repository")
+                        .build();
             }
-            RepoPath localRepoPath = RepoPathFactory.create(remoteRepoPath.getRepoKey().replace("-cache", ""),
-                    remoteRepoPath.getPath());
 
+            RepoPath repoPath = existsInCache ? remoteCacheRepoPath : remoteLocalRepoPath;
 
-            boolean existsInRemote = repositoryService.exists(remoteRepoPath);
-            boolean existsILocal = repositoryService.exists(localRepoPath);
-
-            if (!existsInRemote && !existsILocal) {
-                throw new NotFoundException("Unable to find item");
+            if (!authorizationService.canRead(repoPath)) {
+                return unAuthorizedResponse(repoPath);
+            } else {
+                log.debug("User has READ permissions for resource {}, continuing ...", repoPath);
             }
 
-            RepoPath repoPath = existsInRemote ? remoteRepoPath : localRepoPath;
+            log.debug(
+                    "Updating remote statistics (triggered by host \"{}\") on artifact \"{}\".",
+                    origin, repoPath
+            );
+
             AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
             SmartRepoAddon smartRepoAddon = addonsManager.addonByType(SmartRepoAddon.class);
-            smartRepoAddon.fileDownloadedRemotely(statsInfo, remoteHost, repoPath);
+            smartRepoAddon.fileDownloadedRemotely(statsInfo, origin, repoPath);
         }
         return Response.ok().build();
+    }
+
+    /**
+     * Makes a best effort to fetch remote host name from request
+     *
+     * @return origin host
+     */
+    private String getRemoteHost() {
+        String origin = request.getRemoteHost();
+        // TODO: [MP] send host name on request (this will prevent reporting proxy as "origin")
+        if (Strings.isNullOrEmpty(origin)) {
+            log.warn("Fetching remote host name from request has failed, " +
+                    "trying \"X-Forwarded-For\" approach instead ...");
+            origin = HttpUtils.getRemoteClientAddress(request);
+            if (Strings.isNullOrEmpty(origin)) {
+                log.warn("Fetching remote host name by \"X-Forwarded-For\" has failed, " +
+                        "trying \"X-Artifactory-Originated\" approach instead ...");
+                origin = request.getHeader("X-Artifactory-Originated");
+                if (Strings.isNullOrEmpty(origin)) {
+                    log.error("Fetching remote host name by \"X-Artifactory-Originated\"" +
+                            " has failed, setting origin = \"Unknown\"");
+                    origin = "UNKNOWN";
+                }
+            }
+        }
+        return origin;
     }
 
     /**

@@ -41,6 +41,8 @@ public interface ArtifactRestConstants {
     String PARAM_DRY_RUN = "dry";
     String PARAM_SUPPRESS_LAYOUTS = "suppressLayouts";
     String PARAM_FAIL_FAST = "failFast";
+    String PARAM_ATOMIC = "atomic";
+
 
     String PATH_DOWNLOAD = "download";
     String PARAM_CONTENT = "content";

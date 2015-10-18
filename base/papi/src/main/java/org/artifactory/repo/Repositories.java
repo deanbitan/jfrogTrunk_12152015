@@ -137,18 +137,28 @@ public interface Repositories {
     StatusHolder deploy(RepoPath repoPath, InputStream inputStream);
 
     /**
-     * Deletes the specified repoPath
+     * Deletes the specified repoPath. Directories are deleted recursively in multiple transactions.
+     *
+     * @param repoPath The repository path to delete
+     * @return Deletion status
+     * @since 3.7.0
+     */
+    StatusHolder delete(RepoPath repoPath);
+
+    /**
+     * Deletes the specified repoPath. Directories are deleted recursively in a single transaction, which might be
+     * resource intensive when deleting very large directories.
      *
      * @param repoPath The repository path to delete
      * @return Deletion status
      * @since 2.4.0
      */
-    StatusHolder delete(RepoPath repoPath);
+    StatusHolder deleteAtomic(RepoPath repoPath);
 
     /**
      * @param repoPath
      * @return Result of the undeploy operation
-     * @deprecated Use {@link #delete(RepoPath)} instead
+     * @deprecated Use {@link #deleteAtomic(RepoPath)} instead
      */
     @Deprecated
     StatusHolder undeploy(RepoPath repoPath);
@@ -193,6 +203,17 @@ public interface Repositories {
     StatusHolder move(RepoPath source, RepoPath target);
 
     /**
+     * Moves the source repoPath to the targetRepoPath , Directories are moved recursively in a single transaction, which might be
+     * resource intensive when moving very large directories.
+     *
+     * @param source - A source repository path
+     * @param target - A target repository path
+     * @return The result status for the move operation
+     */
+    StatusHolder moveAtomic(RepoPath source, RepoPath target);
+
+
+    /**
      * Copies the source repoPath to the targetRepoPath
      *
      * @param source - A source repository path
@@ -200,6 +221,16 @@ public interface Repositories {
      * @return The result status for the copy operation
      */
     StatusHolder copy(RepoPath source, RepoPath target);
+
+    /**
+     * Copies the source repoPath to the targetRepoPath , Directories are copied recursively in a single transaction, which might be
+     * resource intensive when copying very large directories.
+     *
+     * @param source - A source repository path
+     * @param target - A target repository path
+     * @return The result status for the copy operation
+     */
+    StatusHolder copyAtomic(RepoPath source, RepoPath target);
 
     /**
      * Returns module related information (group, artifact, version, etc.) for given file, as it was extracted according

@@ -7,6 +7,7 @@ let events = {
     TREE_SEARCH_CANCEL:     'tree:search:cancel',
     TREE_COMPACT:           'tree:compact',
     TREE_REFRESH:           'tree:refresh',
+    TREE_COLLAPSE_ALL:      'tree:collapse:all',
     SEARCH_COLLAPSE:        'search:collapse',
     SEARCH:                 'search',
     CLEAR_SEARCH:           'search:clear',
@@ -34,6 +35,7 @@ let events = {
     CANCEL_SPINNER: 'spinner:cancel',
 
     USER_CHANGED:           'user:changed',
+    USER_LOGOUT:            'user:logout', //confirmDiscard (true/false)
 
     TABS_REFRESH:           'tabs:refresh',
     TAB_NODE_CHANGED:       'tabs:node:changed',

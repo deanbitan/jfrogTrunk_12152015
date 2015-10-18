@@ -3,8 +3,10 @@ package org.artifactory.storage.service;
 import org.artifactory.fs.StatsInfo;
 import org.artifactory.model.xstream.fs.StatsImpl;
 import org.artifactory.repo.RepoPath;
-import org.artifactory.storage.db.fs.service.InternalStatsServiceImpl;
+import org.artifactory.storage.db.fs.service.StatsPersistingServiceImpl;
 import org.artifactory.storage.fs.service.StatsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +18,13 @@ import javax.annotation.Nullable;
 @Service
 public class StatsServiceImpl implements StatsService {
 
-    @Autowired
-    InternalStatsServiceImpl internalStatsService;
+    private static final Logger log = LoggerFactory.getLogger(StatsServiceImpl.class);
 
     @Autowired
-    RemoteStatsServiceImpl remoteStatsService;
+    StatsPersistingServiceImpl statsPersistingService;
+
+    @Autowired
+    StatsDelegatingServiceImpl statsDelegatingService;
 
     /**
      * Collects stats from both DB and queue of events
@@ -32,7 +36,7 @@ public class StatsServiceImpl implements StatsService {
     @Nullable
     @Override
     public StatsInfo getStats(RepoPath repoPath) {
-        return (StatsImpl)internalStatsService.getStats(repoPath);
+        return (StatsImpl) statsPersistingService.getStats(repoPath);
     }
 
     /**
@@ -43,11 +47,20 @@ public class StatsServiceImpl implements StatsService {
      * @param repoPath       The file repo path to set/update stats
      * @param downloadedBy   User who downloaded the file
      * @param downloadedTime Time the file was downloaded
+     * @param fromAnotherArtifactory specifying whether request comes fromAnotherArtifactory
+     *                               (happens on first transitive download when artifact not in cache yet)
      */
     @Override
-    public void fileDownloaded(RepoPath repoPath, String downloadedBy, long downloadedTime) {
-        internalStatsService.fileDownloaded(repoPath, downloadedBy, downloadedTime);
-        remoteStatsService.fileDownloaded(repoPath, downloadedBy, downloadedTime);
+    public void fileDownloaded(RepoPath repoPath, String downloadedBy, long downloadedTime, boolean fromAnotherArtifactory) {
+        log.debug("Resource '{}' was downloaded by '{}' at '{}', fromAnotherArtifactory: '{}'",
+                repoPath, downloadedBy, downloadedTime, fromAnotherArtifactory);
+
+        statsPersistingService.fileDownloaded(repoPath, downloadedBy, downloadedTime, fromAnotherArtifactory);
+        if (!fromAnotherArtifactory) {
+            // we'd like to skip trigger comes fromAnotherArtifactory
+            // as it anyway will be delegated via remoteDownload event
+            statsDelegatingService.fileDownloaded(repoPath, downloadedBy, downloadedTime);
+        }
     }
 
     /**
@@ -55,27 +68,31 @@ public class StatsServiceImpl implements StatsService {
      *
      * Event queued for local stats update and potential delegation
      *
-     * @param origin         The origin host
-     * @param repoPath       The file repo path to set/update stats
-     * @param downloadedBy   User who downloaded the file
-     * @param downloadedTime Time the file was downloaded
-     * @param count          Amount of performed downloads
+     * @param origin             The remote host the download was triggered by
+     * @param path               The round trip of download request
+     * @param repoPath           The file repo path to set/update stats
+     * @param downloadedBy       User who downloaded the file
+     * @param downloadedTime     Time the file was downloaded
+     * @param count              Amount of performed downloads
      */
     @Override
-    public void fileDownloadedRemotely(String origin, RepoPath repoPath, String downloadedBy,
+    public void fileDownloadedRemotely(String origin, String path, RepoPath repoPath, String downloadedBy,
             long downloadedTime, long count) {
-        internalStatsService.fileDownloadedRemotely(origin, repoPath, downloadedBy, downloadedTime, count);
-        remoteStatsService.fileDownloaded(origin, repoPath, downloadedBy, downloadedTime, count);
+        log.debug("Resource '{}' was downloaded remotely by '{}', at '{}', from {}, count: '{}'",
+                repoPath, downloadedBy, downloadedTime, origin, count);
+
+        statsPersistingService.fileDownloadedRemotely(origin, path, repoPath, downloadedBy, downloadedTime, count);
+        statsDelegatingService.fileDownloaded(origin, path, repoPath, downloadedBy, downloadedTime, count);
     }
 
     @Override
     public int setStats(long nodeId, StatsInfo statsInfo) {
-        return internalStatsService.setStats(nodeId, statsInfo);
+        return statsPersistingService.setStats(nodeId, statsInfo);
     }
 
     @Override
     public boolean deleteStats(long nodeId) {
-        return internalStatsService.deleteStats(nodeId);
+        return statsPersistingService.deleteStats(nodeId);
     }
 
     /**
@@ -86,7 +103,7 @@ public class StatsServiceImpl implements StatsService {
      */
     @Override
     public boolean hasStats(RepoPath repoPath) {
-        return internalStatsService.hasStats(repoPath);
+        return statsPersistingService.hasStats(repoPath);
     }
 
     /**
@@ -94,7 +111,7 @@ public class StatsServiceImpl implements StatsService {
      */
     @Override
     public void flushStats() {
-        internalStatsService.flushStats();
-        remoteStatsService.flushStats();
+        statsPersistingService.flushStats();
+        statsDelegatingService.flushStats();
     }
 }

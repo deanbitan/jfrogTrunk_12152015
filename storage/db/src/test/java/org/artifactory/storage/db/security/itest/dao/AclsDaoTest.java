@@ -34,6 +34,7 @@ import org.testng.annotations.Test;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 
 import static org.testng.Assert.*;
 
@@ -58,10 +59,29 @@ public class AclsDaoTest extends SecurityBaseDaoTest {
     }
 
     public void testLoadPermissionTargets() throws SQLException {
-        assertPermissionTarget1(permissionTargetsDao.findPermissionTarget(1L));
-        assertPermissionTarget2(permissionTargetsDao.findPermissionTarget(2L));
-        assertPermissionTarget3(permissionTargetsDao.findPermissionTarget(3L));
-        assertPermissionTarget4(permissionTargetsDao.findPermissionTarget(4L));
+        for (long targetId = 1L; targetId < 5L; targetId++) {
+            assertAnyPermissionTarget(targetId, permissionTargetsDao.findPermissionTarget(targetId));
+        }
+    }
+
+    private void assertAnyPermissionTarget(long id, PermissionTarget pt) {
+        switch ((int) id) {
+            case 1:
+                assertPermissionTarget1(pt);
+                break;
+            case 2:
+                assertPermissionTarget2(pt);
+                break;
+            case 3:
+                assertPermissionTarget3(pt);
+                break;
+            case 4:
+                assertPermissionTarget4(pt);
+                break;
+            default:
+                fail("Permission Target unknown " + pt);
+                break;
+        }
     }
 
     private void assertPermissionTarget1(PermissionTarget pt) {
@@ -103,6 +123,10 @@ public class AclsDaoTest extends SecurityBaseDaoTest {
 
     @Test(dependsOnMethods = "testDeleteAcls")
     public void testLoadAllAcls() throws SQLException {
+        Map<Long, PermissionTarget> allPermissionTargets = permissionTargetsDao.getAllPermissionTargets();
+        for (Map.Entry<Long, PermissionTarget> entry : allPermissionTargets.entrySet()) {
+            assertAnyPermissionTarget(entry.getKey(), entry.getValue());
+        }
         assertAclCollection(aclsDao.getAllAcls(), ImmutableSet.of(10, 20, 30));
     }
 

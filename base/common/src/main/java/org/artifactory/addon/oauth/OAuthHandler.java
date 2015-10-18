@@ -1,6 +1,7 @@
 package org.artifactory.addon.oauth;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * @author Travis Foster
@@ -16,7 +17,7 @@ public interface OAuthHandler {
      * Handle login event from Artifactory login link.
      * Create login request and redirect to the OAuth login page.
      */
-    Object handleLoginRequest(HttpServletRequest request);
+    List<OAuthLoginUrl> getActiveProviders(HttpServletRequest request);
 
     /**
      * Handle login from external command line tool.

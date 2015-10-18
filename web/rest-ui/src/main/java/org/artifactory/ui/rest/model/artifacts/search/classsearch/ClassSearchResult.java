@@ -10,6 +10,7 @@ import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.ui.rest.model.artifacts.search.BaseSearchResult;
 import org.codehaus.jackson.annotate.JsonTypeName;
 
@@ -25,7 +26,7 @@ public class ClassSearchResult extends BaseSearchResult {
     public ClassSearchResult() {
     }
 
-    public ClassSearchResult(ArchiveSearchResult archiveSearchResult) {
+    public ClassSearchResult(ArchiveSearchResult archiveSearchResult,ArtifactoryRestRequest request) {
         super.setRepoKey(archiveSearchResult.getRepoKey());
         super.setName(archiveSearchResult.getEntryPath());
         super.setModifiedDate(archiveSearchResult.getLastModified());
@@ -34,6 +35,7 @@ public class ClassSearchResult extends BaseSearchResult {
         archivePath = archiveSearchResult.getItemInfo().getRelPath();
         RepoPath repoPath = InfoFactoryHolder.get().createRepoPath(archiveSearchResult.getRepoKey(),
                 archiveSearchResult.getRelativePath());
+        setDownloadLink(request.getDownloadLink(repoPath));
         this.repoPath = repoPath;
         updateActions();
     }

@@ -57,4 +57,11 @@ public class DbTransactionManager extends DataSourceTransactionManager {
                     new SessionSynchronization(session, definition.getName()));
         }
     }
+
+
+    @Override
+    protected void doCleanupAfterCompletion(Object transaction) {
+        super.doCleanupAfterCompletion(transaction);
+        log.debug("Connection was successfully released");
+    }
 }

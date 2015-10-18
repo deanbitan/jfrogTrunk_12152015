@@ -47,7 +47,7 @@ public class RemoteSearchService implements RestService {
         // search in bintray
         BintrayItemSearchResults<BintrayItemInfo> bintraySearchResults = searchRemoteRepo(remoteSearch, headersMap);
         // update model list result
-        List<RemoteResult> remoteResults = updateModelListResult(bintraySearchResults);
+        List<RemoteResult> remoteResults = updateModelListResult(bintraySearchResults,request);
         // update response data
         boolean isLimitSearchResults = (bintraySearchResults != null) && (bintraySearchResults.getRangeLimitTotal() > 0);
         SearchResult model = new SearchResult(remoteResults, remoteSearch.getSearchKey(), remoteResults.size(),
@@ -73,10 +73,10 @@ public class RemoteSearchService implements RestService {
      * @param bintraySearchResults - results return from bintray
      * @return - remote results model list
      */
-    private List<RemoteResult> updateModelListResult(BintrayItemSearchResults<BintrayItemInfo> bintraySearchResults) {
+    private List<RemoteResult> updateModelListResult(BintrayItemSearchResults<BintrayItemInfo> bintraySearchResults,ArtifactoryRestRequest restRequest) {
         List<RemoteResult> remoteResults = new ArrayList<>();
         if (bintraySearchResults != null) {
-            bintraySearchResults.getResults().forEach(remoteItem -> remoteResults.add(new RemoteResult(remoteItem)));
+            bintraySearchResults.getResults().forEach(remoteItem -> remoteResults.add(new RemoteResult(remoteItem,restRequest)));
         }
         return remoteResults;
     }

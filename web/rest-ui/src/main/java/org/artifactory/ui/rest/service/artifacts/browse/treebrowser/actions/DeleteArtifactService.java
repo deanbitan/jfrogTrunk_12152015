@@ -8,7 +8,6 @@ import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifact;
-import org.artifactory.util.PathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -57,6 +56,6 @@ public class DeleteArtifactService implements RestService {
      * @return - status of the un deploy
      */
     protected StatusHolder deleteArtifact(RepoPath repoPath) {
-        return repositoryService.undeploy(repoPath, true, true);
+        return repositoryService.undeployMultiTransaction(repoPath);
     }
 }

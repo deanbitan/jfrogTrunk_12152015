@@ -197,8 +197,8 @@ class jfBuildsGovernanceController {
 
     _getComponentsColumns() {
 
-        let idCellTemplate = '<div ng-if="row.entity.status !== \'Stale\'" class="ui-grid-cell-contents"><a href="" ng-click="grid.appScope.jfBuildsGovernance.showRequest(row.entity)">{{row.entity.componentName}}</a></div>' +
-            '<div ng-if="row.entity.status === \'Stale\'" class="ui-grid-cell-contents"><a href="" ng-click="grid.appScope.jfBuildsGovernance.showRequest(row.entity)">{{row.entity.componentName}}</a> <span class="not-in-build">(Not in build)<span></span></div>';
+        let idCellTemplate = '<div ng-if="row.entity.status !== \'Stale\'" class="ui-grid-cell-contents"><a href="" class="no-cm-action" ng-click="grid.appScope.jfBuildsGovernance.showRequest(row.entity)">{{row.entity.componentName}}</a></div>' +
+            '<div ng-if="row.entity.status === \'Stale\'" class="ui-grid-cell-contents"><a href="" class="no-cm-action" ng-click="grid.appScope.jfBuildsGovernance.showRequest(row.entity)">{{row.entity.componentName}}</a> <span class="not-in-build">(Not in build)<span></span></div>';
 
         let scopesCellTemplate = '<div class="ui-grid-cell-contents">{{row.entity.scopes.join(", ")}}</div>';
         let statusCellTemplate = '<div class="ui-grid-cell-contents"' +

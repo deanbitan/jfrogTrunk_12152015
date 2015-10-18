@@ -2,11 +2,12 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecurityGeneralController {
 
-    constructor(AdminSecurityGeneralDao, PasswordsEncryptionDao) {
+    constructor(AdminSecurityGeneralDao, PasswordsEncryptionDao, ArtifactoryModelSaver) {
         this.adminSecurityGeneralDao = AdminSecurityGeneralDao;
         this.passwordsEncryptionDao = PasswordsEncryptionDao.getInstance();
         this.options = ['SUPPORTED', 'UNSUPPORTED', 'REQUIRED'];
         this.TOOLTIP = TOOLTIP.admin.security.general;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['generalConfig']);
 
         this.getGeneralConfigObject();
         this.getMasterKeyStatus();
@@ -24,6 +25,7 @@ export class AdminSecurityGeneralController {
     getGeneralConfigObject() {
         this.adminSecurityGeneralDao.get().$promise.then((data) => {
             this.generalConfig = data;
+            this.artifactoryModelSaver.save();
         });
     }
 
@@ -46,11 +48,15 @@ export class AdminSecurityGeneralController {
     }
 
     save() {
-        this.adminSecurityGeneralDao.update(this.generalConfig);
+        this.adminSecurityGeneralDao.update(this.generalConfig).$promise.then(()=>{
+            this.artifactoryModelSaver.save();
+        });
     }
 
     cancel() {
-        this.getGeneralConfigObject();
+        this.artifactoryModelSaver.get().then(()=>{
+            this.getGeneralConfigObject();
+        });
     }
 
     onClickAllowAnonymousAccess() {

@@ -5,7 +5,7 @@ import org.artifactory.ui.rest.service.admin.advanced.configDescriptor.UpdateCon
 import org.artifactory.ui.rest.service.admin.advanced.maintenance.*;
 import org.artifactory.ui.rest.service.admin.advanced.securitydescriptor.GetSecurityDescriptorService;
 import org.artifactory.ui.rest.service.admin.advanced.securitydescriptor.UpdateSecurityDescriptorService;
-import org.artifactory.ui.rest.service.admin.advanced.storagesummary.GetStorageSummaryService;
+import org.artifactory.rest.common.service.admin.advance.GetStorageSummaryService;
 import org.artifactory.ui.rest.service.admin.advanced.systeminfo.GetSystemInfoService;
 import org.artifactory.ui.rest.service.admin.advanced.systemlogs.GetSysLogDownloadLinkService;
 import org.artifactory.ui.rest.service.admin.advanced.systemlogs.GetSysLogsInitializeService;

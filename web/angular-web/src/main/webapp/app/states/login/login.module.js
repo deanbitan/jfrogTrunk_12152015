@@ -7,6 +7,7 @@ function loginCOnfig ($stateProvider) {
                 url: '/login',
                 templateUrl: 'states/login/login.html',
                 controller: 'LoginController as Login',
+                params: {oauthError: null},
                 parent: 'login-layout'
             })
 }

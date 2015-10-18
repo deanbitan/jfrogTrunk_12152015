@@ -97,7 +97,7 @@ public class CopyArtifactService implements RestService {
                 copyArtifact.getTargetPath());
         // Force suppressing layouts, we want to be able to copy stuff between layouts
         copyArtifact.setSuppressLayouts(true);
-        status = repositoryService.copy(repoPath, targetRepoPath, copyArtifact.isDryRun(),
+        status = repositoryService.copyMultiTx(repoPath, targetRepoPath, copyArtifact.isDryRun(),
                 copyArtifact.isSuppressLayouts(), copyArtifact.isFailFast());
         if (!status.isError() && !status.hasWarnings()) {
             String opType = (copyArtifact.isDryRun()) ? "Dry run for " : "";

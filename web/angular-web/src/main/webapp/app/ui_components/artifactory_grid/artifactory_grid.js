@@ -1,7 +1,7 @@
 const TEMPLATES_FOLDER = "ui_components/artifactory_grid/templates/",
         MIN_COLUMN_WIDTH = 50;
 let headerCellTemplate = require("raw!./templates/headerCellDefaultTemplate.html");
-let $timeout, $window;
+let $timeout, $window, $state, $modal, $rootScope;
 
 const COMMON_ACTIONS = {
     delete: {
@@ -10,6 +10,7 @@ const COMMON_ACTIONS = {
     },
     download: {
         icon: 'icon icon-download',
+        href: row => {return row.downloadLink},
         tooltip: 'Download'
     }
 };
@@ -407,18 +408,245 @@ class ArtifactoryGrid {
     _onDestroy() {
         angular.element($window).off('resize', this.calculateFn);
     }
+
+
+    isOverflowing(cellId) {
+
+        let elem = $('#'+cellId);
+        let text = elem.children('.gridcell-content-text');
+        let showAll = elem.children('.gridcell-showall');
+        let cellItemContent = elem.text().trim();
+        let width = 0;
+        if (showAll.length) {
+            width = showAll.outerWidth();
+        }
+//        showAll.css('background-color',elem.parent().css('background-color'));
+        if (cellItemContent.length > 0 && elem[0].scrollWidth > elem.innerWidth()) {
+//            elem.css('padding-right',width+'px');
+            elem.addClass('overflow')
+            return true;
+        }
+        else {
+            elem.removeClass('overflow')
+//            elem.css('padding-right','5px');
+            return false;
+        }
+
+    }
+
+    showAll(model,rowName,col) {
+
+        let objectName = _.startCase(this.gridObjectName.indexOf('/')>=0 ? this.gridObjectName.split('/')[0] : this.gridObjectName);
+
+        let modalScope = $rootScope.$new();
+
+        modalScope.items = model;
+        modalScope.colName = col.displayName || col.name;
+        modalScope.rowName = rowName;
+        modalScope.objectName = objectName;
+
+        modalScope.filter = {};
+        modalScope.filterItem = (item) => {
+            if (modalScope.filter.text) {
+                let regex = new RegExp('.*' + modalScope.filter.text.split('*').join('.*') + '.*', "i");
+                return regex.test(item);
+            }
+            else return true;
+        };
+
+        modalScope.noResults = () => {
+            let filteredResults = _.filter(modalScope.items, (item)=>{
+                return modalScope.filterItem(item);
+            });
+            return filteredResults.length === 0;
+        };
+
+        $modal.open({
+            scope: modalScope,
+            templateUrl: 'ui_components/artifactory_grid/show_all_modal.html',
+            backdrop: true,
+            size: 'sm'
+        });
+    }
 }
 
 
 export class ArtifactoryGridFactory {
-    constructor(uiGridConstants, _$timeout_, _$window_) {
+    constructor(uiGridConstants, _$timeout_, _$window_, _$state_, _$modal_,_$rootScope_) {
         $timeout = _$timeout_;
         $window = _$window_;
+        $state = _$state_;
+        $modal = _$modal_;
+        $rootScope = _$rootScope_;
+
         this.uiGridConstants = uiGridConstants;
-    }
+        this.createContextMenu();
+
+   }
 
     getGridInstance(scope) {
         return new ArtifactoryGrid(scope, this.uiGridConstants);
     }
 
+    createContextMenu() {
+        $.contextMenu({
+            selector: '.ui-grid-cell-contents, .grid-cell-checkbox',
+            build: ($trigger,e) => {
+
+                let row = angular.element($trigger[0]).scope().row;
+                let grid = angular.element($trigger[0]).controller('uiGrid').grid;
+                let rowActions = grid.appScope.grids[grid.id].buttons;
+                let customActionsRaw = _.pluck(grid.columns,'colDef.customActions');
+                let allActions = [];
+                if (customActionsRaw) {
+                    customActionsRaw.forEach((acts)=>{
+                        if (acts) {
+                            acts.forEach((act)=>{
+                                allActions.push(act);
+                            })
+                        }
+                    });
+                }
+                if (rowActions) {
+                    rowActions.forEach((act)=>{
+                        allActions.push(act);
+                    });
+                }
+
+                allActions = _.filter(allActions,(act)=>{
+                    return row && (!act.visibleWhen || act.visibleWhen(row.entity));
+                });
+
+                let editAction = this._getEditAction($trigger,row,grid);
+
+                if (!allActions.length || !row) {
+                    return false;
+                }
+                else {
+                    let cmItems = {};
+
+                    if (editAction) {
+                        cmItems['*edit*'] = {
+                            name: 'Edit',
+                            icon: 'artifactory-edit'
+                        }
+                    }
+
+                    let getIconName = (classdef) => {
+                        let iconName;
+                        let classes = classdef.split(' ');
+                        classes.forEach((cls)=>{
+                            if (cls.startsWith('icon-')) {
+                                iconName = cls.substr(5);
+                            }
+                        });
+                        return iconName;
+                    };
+
+                    for (let actI in allActions) {
+                        let act = allActions[actI];
+                        act.key = act.tooltip.split(' ').join('').toLowerCase();
+                        cmItems[act.key] = {
+                            name: act.tooltip,
+                            icon: getIconName(act.icon)
+                        }
+                    }
+
+                    $timeout(()=>{
+                        $('.context-menu-item').on('click',(e)=>{
+                            if (this.actionToDo) {
+                                $(e.target).trigger('contextmenu:hide');
+                                $timeout(()=>{
+                                    this.actionToDo();
+                                    delete this.actionToDo;
+                                },100);
+                            }
+                        });
+                    });
+
+                    return {
+                        callback: (key, options) => {
+                            this.actionToDo = () => {
+                                if (key === '*edit*') {
+                                    editAction.do();
+                                }
+                                else {
+                                    let act = _.findWhere(allActions,{key: key});
+                                    act.callback(row.entity);
+                                }
+                            };
+                            return false;
+                        },
+                        items: cmItems
+                    }
+
+                }
+
+            }
+        });
+    }
+
+    _getEditAction($trigger,row,grid) {
+        let objScope = {row:row,grid:grid};
+        let editState = $trigger.parent().parent().find('[ui-sref]:not(.no-cm-action)').length ? $trigger.parent().parent().find('[ui-sref]:not(.no-cm-action)')[0].attributes['ui-sref'].textContent : null;
+
+        if (editState) {
+            let parenthesesOpenIndex = editState.indexOf('(');
+            let state = editState.substr(0,parenthesesOpenIndex);
+            let paramsString = editState.substr(parenthesesOpenIndex);
+            let openBraceIndex = paramsString.indexOf('{');
+            let closeBraceIndex = paramsString.lastIndexOf('}');
+            paramsString = paramsString.substr(openBraceIndex+1,closeBraceIndex-openBraceIndex-1);
+
+            let paramsObj = {};
+
+            let paramsSplit = paramsString.split(',');
+
+            paramsSplit.forEach((param)=>{
+                let keyVal = param.split(':');
+                let key = keyVal[0].trim();
+                let val = keyVal[1].trim();
+                if (val.startsWith('row.') || val.startsWith('grid.')) val = _.get(objScope,val);
+
+                else if (val.startsWith("'")) val = val.split("'").join('');
+                else if (val.startsWith('"')) val = val.split('"').join('');
+                paramsObj[key]=val;
+            });
+
+            return {
+                do: ()=>{
+                    $state.go(state,paramsObj);
+                }
+            }
+        }
+        else {
+            let ngClicks = $trigger.parent().parent().find('[ng-click]:not(.no-cm-action)');
+            let clickCommand;
+            for (let i in ngClicks) {
+                let ngClick = ngClicks[i];
+                if (ngClick.attributes && ngClick.attributes['ng-click'] && ngClick.attributes['ng-click'].textContent.startsWith('grid.appScope')) {
+                    clickCommand = ngClick.attributes['ng-click'].textContent;
+                    break;
+                }
+            }
+
+            if (clickCommand) {
+                let parenthesesOpenIndex = clickCommand.indexOf('(');
+                let funcName = clickCommand.substr(0,parenthesesOpenIndex);
+                let paramsString = clickCommand.substr(parenthesesOpenIndex).split('(').join('').split(')').join('').trim();
+                let param = _.get(objScope,paramsString);
+
+                let funcThis = _.get(objScope,funcName.substr(0,funcName.lastIndexOf('.')));
+                let func = _.get(objScope,funcName).bind(funcThis);
+
+                return {
+                    do: () => {
+                        func(param);
+                    }
+                }
+            }
+            else return null;
+
+        }
+    }
 }

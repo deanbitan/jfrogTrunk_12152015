@@ -7,23 +7,18 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.artifactory.api.config.CentralConfigService;
-import org.artifactory.descriptor.repo.ProxyDescriptor;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
-import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteAdvancedRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteBasicRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteNetworkRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.typespecific.TypeSpecificConfigModel;
-import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.HttpClientUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -62,7 +57,7 @@ public class RemoteRepositoryTestUrl<T extends RemoteRepositoryConfigModel> exte
         }
 
         RemoteNetworkRepositoryConfigModel networkModel = remoteRepoAdvancedModel.getNetwork();
-        CloseableHttpClient client = getRemoteRepoTestHttpClient(remoteRepoUrl, networkModel);
+        CloseableHttpClient client = getRemoteRepoHttpClient(remoteRepoUrl, networkModel);
         CloseableHttpResponse response = null;
 
         try {

@@ -196,6 +196,8 @@ public abstract class AqlRestResult implements Closeable {
         public List<Row> statistics;
         @JsonProperty("archives")
         public List<Row> archives;
+        @JsonProperty("entries")
+        public List<Row> entries;
         @JsonProperty("artifacts")
         public List<Row> artifacts;
         @JsonProperty("dependencies")
@@ -302,6 +304,13 @@ public abstract class AqlRestResult implements Closeable {
                                 this.archives = Lists.newArrayList();
                             }
                             this.archives.add(row);
+                            break;
+                        }
+                        case entries: {
+                            if (this.entries == null) {
+                                this.entries = Lists.newArrayList();
+                            }
+                            this.entries.add(row);
                             break;
                         }
                         case artifacts: {

@@ -126,7 +126,11 @@ class JFTreeBrowserController extends JFCommonBrowser {
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_NODE_OPEN, path => {
             this._openTreeNode(path)
         });
-        
+
+        this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_COLLAPSE_ALL, () => {
+            this._collapseAll();
+        });
+
         this.artifactoryEventBus.registerOnScope(this.$scope, EVENTS.TREE_COMPACT, () => this._toggleCompactFolders());
 
         // URL changed (like back button / forward button / someone input a URL)
@@ -167,6 +171,31 @@ class JFTreeBrowserController extends JFCommonBrowser {
         $(this.treeElement).on("after_open.jstree",(node)=>{
             if (this.activeFilter) this._searchTree(this.searchText);
         });
+
+
+        $('#tree-element').on('keydown',(e) => {
+            if (e.keyCode === 37 && e.ctrlKey) { //CTRL + LEFT ARROW --> Collapse All !
+                this._collapseAll();
+            }
+        })
+    }
+
+    _collapseAll() {
+        let node = this.jstree().get_selected(true)[0];
+
+        let parentRepoNode = this.jstree().get_node(node.parent);
+        if (parentRepoNode.id === '#') parentRepoNode = node;
+        else {
+            while (parentRepoNode.parent !== '#') {
+                parentRepoNode = this.jstree().get_node(parentRepoNode.parent);
+            }
+        }
+
+        $('#tree-element').jstree('close_all');
+        this.jstree().select_node(parentRepoNode);
+        this.$timeout(()=>{
+            this.jstree().close_node(parentRepoNode);
+        });
     }
 
     _loadNode(item) {
@@ -193,6 +222,7 @@ class JFTreeBrowserController extends JFCommonBrowser {
                 promise = obj.data.getChildren();
             }
             promise.then((data) => {
+                this.artifactoryState.setState("hasArtifactsData", data.length > 0 || obj.id !== '#');
                 cb(this._transformData(data));
             });
         };
@@ -350,9 +380,14 @@ class JFTreeBrowserController extends JFCommonBrowser {
                 callback(leafNode);
             }
             else {
-                jstree.open_node(leafNode, (node) => {
-                    this._openNodePath(leafNode, path, leafNode, callback, pathStopIndex + 1);
-                }, false);
+                if (!leafNode.data.isArchive() && leafNode.data.icon !== 'docker') {
+                    jstree.open_node(leafNode, (node) => {
+                        this._openNodePath(leafNode, path, leafNode, callback, pathStopIndex + 1);
+                    }, false);
+                }
+                else {
+                    callback(leafNode);
+                }
             }
         }
         else {

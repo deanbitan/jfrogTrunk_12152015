@@ -381,12 +381,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
 
         if (removedRepo instanceof LocalRepoDescriptor) {
-            LocalReplicationDescriptor existingReplication = getLocalReplication(removedRepo.getKey());
-            if (existingReplication != null) {
-                removeLocalReplication(existingReplication);
+            List<LocalReplicationDescriptor> existingReplications = getMultiLocalReplications(removedRepo.getKey());
+            if (existingReplications != null && !existingReplications.isEmpty()) {
+                existingReplications.forEach(replication -> removeLocalReplication(replication));
             }
         }
-
         return removedRepo;
     }
 

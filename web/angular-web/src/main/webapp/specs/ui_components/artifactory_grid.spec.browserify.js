@@ -17,6 +17,7 @@ describe('unit test: artifactory_grid ui component', () => {
   }
 
   beforeEach(m('artifactory.ui_components'));
+  beforeEach(m('ui.router'));
   beforeEach(inject(setup));
 
   describe('initial state', () => {
@@ -77,6 +78,7 @@ describe('unit test: artifactory_grid ui component', () => {
         customAction,
         {
             icon: 'icon icon-download',
+            href: gridOptions.columnDefs[0].customActions[1].href,
             tooltip: 'Download',
             callback: downloadCallback,
         },

@@ -3,7 +3,10 @@ package org.artifactory.ui.rest.model.artifacts.search.remotesearch;
 import org.artifactory.api.bintray.BintrayItemInfo;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.ItemSearchResult;
+import org.artifactory.factory.InfoFactoryHolder;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.ui.rest.model.artifacts.search.BaseSearchResult;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.slf4j.Logger;
@@ -28,12 +31,15 @@ public class RemoteResult extends BaseSearchResult {
     private boolean cached;
     private long releaseAsLong;
 
-    public RemoteResult(BintrayItemInfo bintrayItemInfo) {
+    public RemoteResult(BintrayItemInfo bintrayItemInfo,ArtifactoryRestRequest request) {
         this.setName(bintrayItemInfo.getName());
         path = bintrayItemInfo.getPath();
         packageName = bintrayItemInfo.getPackage();
         formatReleaseDate(bintrayItemInfo);
         cached = bintrayItemInfo.isCached();
+        setRepoKey(bintrayItemInfo.getRepo());
+        RepoPath repoPath = InfoFactoryHolder.get().createRepoPath(getRepoKey(),getPath());
+        setDownloadLink(request.getDownloadLink(repoPath));
         updateActions();
     }
 

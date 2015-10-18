@@ -2,6 +2,7 @@ package org.artifactory.storage.binstore.service;
 
 import com.google.common.collect.Lists;
 import org.artifactory.storage.StorageProperties;
+import org.artifactory.storage.binstore.service.base.BinaryProviderBase;
 import org.artifactory.storage.config.model.ChainMetaData;
 import org.artifactory.storage.config.model.Param;
 import org.artifactory.storage.config.model.ProviderMetaData;
@@ -10,6 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.artifactory.storage.binstore.service.base.MutableBinaryProviderInjector.getMutableBinaryProvider;
+import static org.artifactory.storage.binstore.service.base.MutableBinaryProviderInjector.setMutableBinaryProvider;
 
 /**
  * @author Gidi Shabat
@@ -26,6 +30,12 @@ public class BinaryProviderFactory {
 
     }
 
+    public static <T extends BinaryProviderBase> T createBinaryProvider(ProviderMetaData providerMetaData,
+            StorageProperties properties, InternalBinaryStore binaryStore) {
+        T t = create(providerMetaData, properties, binaryStore);
+        t.initialize();
+        return t;
+    }
     public static <T extends BinaryProviderBase> T create(ProviderMetaData providerMetaData,
             StorageProperties properties, InternalBinaryStore binaryStore) {
         try {
@@ -33,15 +43,16 @@ public class BinaryProviderFactory {
             Map<String, Class> binaryProvidersMap = binaryStore.getBinaryProvidersMap();
             Class binaryProviderClass = binaryProvidersMap.get(providerMetaData.getType());
             BinaryProviderBase instance = (BinaryProviderBase) binaryProviderClass.newInstance();
-            instance.setProviderMetaData(providerMetaData);
-            instance.setStorageProperties(properties);
-            instance.setBinaryStore(binaryStore);
-            instance.setEmpty(new EmptyBinaryProvider());
-            return (T) instance;
+            MutableBinaryProvider mutableBinaryProvider = new MutableBinaryProvider();
+            mutableBinaryProvider.setProviderMetaData(providerMetaData);
+            mutableBinaryProvider.setStorageProperties(properties);
+            mutableBinaryProvider.setBinaryStoreServices(binaryStore);
+            mutableBinaryProvider.setEmpty(new EmptyBinaryProvider());
+            setMutableBinaryProvider(instance, mutableBinaryProvider);
+            return (T)instance;
         } catch (Exception e) {
             throw new RuntimeException("Failed to initiate binary provider.", e);
         }
-
     }
 
     public static BinaryProviderBase buildProviders(ChainMetaData configChain, InternalBinaryStore binaryStore,
@@ -57,15 +68,16 @@ public class BinaryProviderFactory {
         if (providerMetaData == null) {
             return null;
         }
-        BinaryProviderBase binaryProvider = create(providerMetaData, storageProperties, binaryStore);
-        binaryProvider.setBinaryProvider(
+        BinaryProviderBase binaryProviderBase = create(providerMetaData, storageProperties, binaryStore);
+        MutableBinaryProvider mutableBinaryProvider = getMutableBinaryProvider(binaryProviderBase);
+        mutableBinaryProvider.setBinaryProvider(
                 build(providerMetaData.getProviderMetaData(), binaryStore, storageProperties));
         for (ProviderMetaData subProviderMetaData : providerMetaData.getSubProviderMetaDataList()) {
-            binaryProvider.addSubBinaryProvider(
+            mutableBinaryProvider.addSubBinaryProvider(
                     build(subProviderMetaData, binaryStore, storageProperties));
         }
-        binaryProvider.initialize();
-        return binaryProvider;
+        binaryProviderBase.initialize();
+        return binaryProviderBase;
     }
 
 

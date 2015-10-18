@@ -35,7 +35,7 @@ public class AqlParserTest {
         assertValid(sm, "items.find({\"@ver*\" : {\"$eq\" : \"*\"}})");
         assertValid(sm, "items.find()");
         assertValid(sm, "items.find({\"@*\" : {\"$eq\" : \"1.1*\"}}).limit(10)");
-        assertValid(sm, "items.find({\"archive.entry_name\" : {\"$eq\" : \"a.a\"}}).limit(10)");
+        assertValid(sm, "items.find({\"archive.entry.name\" : {\"$eq\" : \"a.a\"}}).limit(10)");
         assertValid(sm, "items.find({\"artifact.module.name\" : {\"$eq\" : \"a.a\"}}).limit(10)");
         assertValid(sm, "items.find({\"artifact.module.build.name\" : {\"$eq\" : \"a.a\"}}).limit(10)");
         assertValid(sm, "builds.find({\"module.dependency.name\" : {\"$eq\" : \"a.a\"}}).limit(10)");
@@ -61,13 +61,13 @@ public class AqlParserTest {
         assertValid(sm, "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"path\" :\"path\" }).limit(10)");
         assertValid(sm, "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).limit(10)");
         assertValid(sm,
-                "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"repo\",\"archive.entry_name\").limit(10)");
+                "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"repo\",\"archive.entry.name\").limit(10)");
         assertValid(sm,
                 "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"@repo\",\"property.value\").limit(10)");
         assertValid(sm,
                 "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"repo\",\"@repo\",\"property.value\").limit(10)");
         assertValid(sm,
-                "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"archive.entry_name\").limit(10)");
+                "items.find({\"path\" : {\"$eq\" : \"a.a\"},\"@path\" :\"path\" }).include(\"archive.entry.name\").limit(10)");
         assertValid(sm, "items.find({\"@*\" : {\"$eq\" : \"1.1*\"}}).limit(10)");
         assertValid(sm, "items.find({\"@*\" : {\"$eq\" : null}}).limit(10)");
         assertValid(sm, "items.find({\"@*\" : {\"$eq\" : null}}).offset(145).limit(10)");
@@ -86,6 +86,7 @@ public class AqlParserTest {
         assertValid(sm, "modules.find({\"@*\" : {\"$eq\" : \"sdsdsdsd*\"}}).offset(145).limit(10)");
         assertValid(sm, "build.properties.find({\"module.number\" : {\"$eq\" : \"a.a\"}}).limit(10)");
         assertValid(sm, "build.properties.find({\"repo\" : {\"$eq\" : \"a.a\"}}).limit(10)");
+        assertValid(sm, "archive.entries.find({\"archive.item.repo\" : {\"$eq\" : \"a.a\"}}).limit(10)");
 
     }
 
@@ -111,7 +112,6 @@ public class AqlParserTest {
 
     private void assertValid(AqlParser sm, String script) throws Exception {
         ParserElementResultContainer parse = sm.parse(script);
-        System.out.println(parse);
     }
 
     private void assertInValid(AqlParser sm, String script) throws Exception {

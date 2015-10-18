@@ -298,6 +298,42 @@
                 <input name="data" type="hidden" ng-value="getIvyProps()">
                 <input type="submit" class="btn btn-secondary" value="Download Snippet" />
             </form>
+
+            <button ng-if="(generate.maven || generate.gradle || generate.ivy) && snippet && !deploySettingsMode"
+                    class="btn btn-secondary"
+                    ng-click="setDeploySettingsMode()">Deploy Settings
+            </button>
+        </div>
+        <div ng-if="deploySettingsMode" class="margin-top-20">
+            <form>
+                <jf-panel jf-panel-heading="Deploy Snippet">
+                    <div class="form-group">
+                        <div class="form-group-cell">
+                            <label>Target Repository</label>
+                            <jf-ui-select jf-select-model="snippetDeploy.targetRepo"
+                                          jf-select-options="snippetDeploy.reposList"
+                                          jf-select-display-attr="repoKey">
+
+                            </jf-ui-select>
+                        </div>
+                        <div class="form-group-cell">
+                            <jf-field>
+                                <label for="target-file">Target Path
+                                </label>
+                                <input type="text"
+                                       class="input-text"
+                                       id="target-file"
+                                       ng-model="snippetDeploy.targetPath">
+                            </jf-field>
+                        </div>
+                            <button class="btn btn-secondary margin-top-25"
+                                    ng-disabled="!snippetDeploy.targetRepo"
+                                    type="button"
+                                    ng-click="deploySettingsSnippet()">Deploy
+                            </button>
+                    </div>
+                </jf-panel>
+            </form>
         </div>
     </div>
 

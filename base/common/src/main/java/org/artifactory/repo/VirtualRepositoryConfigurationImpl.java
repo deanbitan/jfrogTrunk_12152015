@@ -19,14 +19,12 @@
 package org.artifactory.repo;
 
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +41,7 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
     private boolean artifactoryRequestsCanRetrieveRemoteArtifacts = false;
     private String keyPair = "";
     private String pomRepositoryReferencesCleanupPolicy = "discard_active_reference";
+    private String defaultDeploymentRepo;
 
     public VirtualRepositoryConfigurationImpl() {
     }
@@ -62,12 +61,10 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
             }
         }
         List<RepoDescriptor> repositories = repoDescriptor.getRepositories();
-        setRepositories(Lists.transform(repositories, new Function<RepoDescriptor, String>() {
-            @Override
-            public String apply(@Nonnull RepoDescriptor input) {
-                return input.getKey();
-            }
-        }));
+        setRepositories(Lists.transform(repositories, RepoDescriptor::getKey));
+        if (repoDescriptor.getDefaultDeploymentRepo() != null) {
+            setDefaultDeploymentRepo(repoDescriptor.getDefaultDeploymentRepo().getKey());
+        }
     }
 
     @Override
@@ -96,6 +93,15 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
 
     public void setPomRepositoryReferencesCleanupPolicy(String pomRepositoryReferencesCleanupPolicy) {
         this.pomRepositoryReferencesCleanupPolicy = pomRepositoryReferencesCleanupPolicy;
+    }
+
+    @Override
+    public String getDefaultDeploymentRepo() {
+        return defaultDeploymentRepo;
+    }
+
+    public void setDefaultDeploymentRepo(String defaultDeploymentRepo) {
+        this.defaultDeploymentRepo = defaultDeploymentRepo;
     }
 
     @Override

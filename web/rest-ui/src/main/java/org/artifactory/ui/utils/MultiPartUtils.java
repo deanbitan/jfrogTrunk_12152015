@@ -11,12 +11,7 @@ import org.artifactory.ui.exception.BadRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
@@ -174,5 +169,19 @@ public class MultiPartUtils {
             IOUtils.closeQuietly(zipinputstream);
             org.apache.commons.io.FileUtils.deleteQuietly(uploadedFile);
         }
+    }
+
+    /**
+     * save snippet to temp folder
+     * @param snippet - snippet
+     * @return - saved snippet name
+     */
+    public static String saveSettingToTempFolder(String snippet){
+        String uploadDir = ContextHelper.get().getArtifactoryHome().getTempUploadDir().getAbsolutePath();
+        InputStream inputStream = new ByteArrayInputStream(snippet.getBytes());
+        String settingName = "settings" + "_" + UUID.randomUUID().toString();
+        File settingFile = new File(uploadDir, settingName);
+        FileUtils.copyInputStreamToFile(inputStream,settingFile);
+        return settingName;
     }
 }

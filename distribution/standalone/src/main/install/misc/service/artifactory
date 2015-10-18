@@ -232,7 +232,29 @@ check() {
     echo "JAVA_OPTIONS         =  $JAVA_OPTIONS"
     echo
 
+    checkJavaVersion
+
     exit 1
+}
+
+checkJavaVersion(){
+    if type -p java; then
+        _java=java
+    elif [[ -n "$JAVA_HOME" ]] && [[ -x "$JAVA_HOME/bin/java" ]];  then
+        echo found java executable in JAVA_HOME
+        _java="$JAVA_HOME/bin/java"
+    else
+        echo "no java"
+    fi
+
+    if [[ "$_java" ]]; then
+        $_java -version 2>&1| \
+        awk -F\" '/version/{\
+            if ($2 < 1.8) {\
+                printf "%s is too old must be at least java 1.8\n", $2;\
+                exit 0;\
+            } else exit 1}' && exit 99
+    fi
 }
 
 #
@@ -261,9 +283,11 @@ checkArtUser
 
 case "$1" in
   start)
+        checkJavaVersion
         start
         ;;
   wait)
+        checkJavaVersion
 	    start_and_wait
 	    ;;
   stop)

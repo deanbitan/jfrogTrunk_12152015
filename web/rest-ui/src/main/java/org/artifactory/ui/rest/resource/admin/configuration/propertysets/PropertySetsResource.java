@@ -3,7 +3,7 @@ package org.artifactory.ui.rest.resource.admin.configuration.propertysets;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.ui.rest.model.admin.configuration.propertysets.AdminPropertySetModel;
 import org.artifactory.ui.rest.model.admin.configuration.propertysets.DeletePropertySetModel;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.admin.configuration.ConfigServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

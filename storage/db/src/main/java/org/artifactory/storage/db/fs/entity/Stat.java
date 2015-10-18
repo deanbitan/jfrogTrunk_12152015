@@ -36,7 +36,8 @@ public class Stat {
     private  long remoteLastDownloaded;
     private  String remoteLastDownloadedBy;
 
-    private final String origin;
+    private String origin;
+    private String path;
 
     public Stat(long nodeId, long downloadCount, long lastDownloaded, String lastDownloadedBy) {
         this.nodeId = nodeId;
@@ -50,21 +51,7 @@ public class Stat {
         this.remoteLastDownloadedBy = null;
 
         this.origin = null;
-    }
-
-
-    public Stat(long nodeId, String remoteLastDownloadedBy, long remoteDownloadCount, long remoteLastDownloaded, String origin) {
-        this.nodeId = nodeId;
-
-        this.remoteDownloadCount = remoteDownloadCount;
-        this.remoteLastDownloaded = remoteLastDownloaded;
-        this.remoteLastDownloadedBy = remoteLastDownloadedBy;
-
-        this.downloadCount = 0;
-        this.lastDownloadedBy = null;
-        this.lastDownloaded = 0;
-
-        this.origin = origin;
+        this.path = path;
     }
 
     public Stat(long nodeId, long downloadCount, long lastDownloaded, String lastDownloadedBy, long remoteDownloadCount,
@@ -78,9 +65,10 @@ public class Stat {
         this.remoteLastDownloadedBy = remoteLastDownloadedBy;
 
         this.origin = null;
+        this.path = null;
     }
     public Stat(long nodeId, long downloadCount, long lastDownloaded, String lastDownloadedBy, long remoteDownloadCount,
-            long remoteLastDownloaded, String remoteLastDownloadedBy, String origin) {
+            long remoteLastDownloaded, String remoteLastDownloadedBy, String origin, String path) {
         this.nodeId = nodeId;
         this.downloadCount = downloadCount;
         this.lastDownloaded = lastDownloaded;
@@ -90,6 +78,7 @@ public class Stat {
         this.remoteLastDownloadedBy = remoteLastDownloadedBy;
 
         this.origin = origin;
+        this.path = path;
     }
 
     public long getNodeId() {
@@ -140,6 +129,18 @@ public class Stat {
         this.remoteLastDownloadedBy = remoteLastDownloadedBy;
     }
 
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb =  new StringBuilder();
@@ -162,6 +163,9 @@ public class Stat {
 
         sb.append(", remoteLastDownloadedBy: ");
         sb.append(remoteLastDownloadedBy);
+
+        sb.append(", path: ");
+        sb.append(path);
 
         sb.append("}");
 

@@ -7,10 +7,10 @@ class jfClipCopyController {
         this.$timeout = $timeout;
 
         if (this.objectName) {
-            this.origTooltip = this.tooltipText = "Copy " + this.objectName + " to Clipboard";
+            this.origTooltip = this.tooltipText = "Copy " + this.objectName.toLowerCase() + " to clipboard";
         }
         else {
-            this.origTooltip = this.tooltipText = "Copy to Clipboard";
+            this.origTooltip = this.tooltipText = "Copy to clipboard";
         }
         this.timeoutPromise = null;
 
@@ -25,7 +25,7 @@ class jfClipCopyController {
             this.timeoutPromise = null;
         }
 
-        this.tooltipText = this.objectName ? (this.objectName + ' copied to Clipboard !') : 'Value copied to Clipboard';
+        this.tooltipText = this.objectName ? (this.objectName.charAt(0).toUpperCase() +  this.objectName.substr(1) + ' copied to clipboard') : 'Value copied to clipboard';
         this.timeoutPromise = this.$timeout(()=>{
             this.tooltipText = this.origTooltip;
         },this.FEEDBACK_DELAY);

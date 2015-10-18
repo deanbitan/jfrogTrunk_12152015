@@ -39,12 +39,23 @@ public class StatsImpl implements MutableStatsInfo {
     private String remoteLastDownloadedBy;
 
     private String repoPath;
+    private String path;
+    private String origin;
 
     public StatsImpl() {
     }
 
     public StatsImpl(StatsInfo statsInfo) {
         this.downloadCount = statsInfo.getDownloadCount();
+        this.lastDownloaded = statsInfo.getLastDownloaded();
+        this.lastDownloadedBy = statsInfo.getLastDownloadedBy();
+
+        this.remoteDownloadCount = statsInfo.getRemoteDownloadCount();
+        this.remoteLastDownloaded = statsInfo.getRemoteLastDownloaded();
+        this.remoteLastDownloadedBy = statsInfo.getRemoteLastDownloadedBy();
+
+        this.path = statsInfo.getPath();
+        this.origin = statsInfo.getOrigin();
     }
 
     @Override
@@ -101,6 +112,24 @@ public class StatsImpl implements MutableStatsInfo {
     }
 
     @Override
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public void setOrigin(String origin) {
+        this.origin = origin;
+    }
+
+    @Override
+    public String getOrigin() {
+        return origin;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -122,6 +151,27 @@ public class StatsImpl implements MutableStatsInfo {
             return false;
         }
 
+        if (remoteDownloadCount != stats.remoteDownloadCount) {
+            return false;
+        }
+        if (remoteLastDownloaded != stats.remoteLastDownloaded) {
+            return false;
+        }
+        if (remoteLastDownloadedBy != null ? !remoteLastDownloadedBy.equals(stats.remoteLastDownloadedBy) :
+                stats.remoteLastDownloadedBy != null) {
+            return false;
+        }
+
+
+        if (repoPath != null ? !repoPath.equals(stats.repoPath) :
+                stats.repoPath != null) {
+            return false;
+        }
+        if (path != null ? !path.equals(stats.path) :
+                stats.path != null) {
+            return false;
+        }
+
         return true;
     }
 
@@ -137,6 +187,7 @@ public class StatsImpl implements MutableStatsInfo {
         result = 31 * result + (remoteLastDownloadedBy != null ? remoteLastDownloadedBy.hashCode() : 0);
 
         result = 31 * result + (repoPath != null ? repoPath.hashCode() : 0);
+        result = 31 * result + (path != null ? path.hashCode() : 0);
 
         return result;
     }

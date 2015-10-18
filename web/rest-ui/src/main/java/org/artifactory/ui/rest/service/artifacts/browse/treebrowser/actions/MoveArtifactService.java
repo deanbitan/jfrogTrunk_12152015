@@ -73,7 +73,7 @@ public class MoveArtifactService implements RestService {
                 moveArtifact.getTargetPath());
         // Force suppressing layouts, we want to be able to move stuff between layouts
         moveArtifact.setSuppressLayouts(true);
-        status = repositoryService.move(repoPath, targetRepoPath, moveArtifact.isDryRun(),
+        status = repositoryService.moveMultiTx(repoPath, targetRepoPath, moveArtifact.isDryRun(),
                 moveArtifact.isSuppressLayouts(), moveArtifact.isFailFast());
         if (!status.isError() && !status.hasWarnings()) {
             String opType = (moveArtifact.isDryRun()) ? "Dry run for " : "";

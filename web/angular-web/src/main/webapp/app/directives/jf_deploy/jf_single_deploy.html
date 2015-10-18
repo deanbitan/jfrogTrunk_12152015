@@ -52,7 +52,7 @@
                        class="input-text"
                        id="target-file"
                        ng-model="jfSingleDeploy.deployFile.targetPath"
-                       ng-disabled="jfSingleDeploy.deployFile.unitInfo.artifactType=='maven'">
+                       ng-disabled="jfSingleDeploy.deployFile.unitInfo.mavenArtifact">
             </jf-field>
         </div>
     </div>
@@ -61,7 +61,7 @@
 <div class="form-group">
     <div class="form-group-cell">
         <jf-checkbox text="Deploy as Maven Artifact"
-                     ng-if="(jfSingleDeploy.deployFile.unitInfo.maven || jfSingleDeploy.deployFile.unitInfo.artifactType=='maven')">
+                     ng-if="jfSingleDeploy.isMavenCheckBoxVisible() && !jfSingleDeploy.deployFile.unitInfo.bundle">
             <input type="checkbox"
                    id="maven"
                    ng-model="jfSingleDeploy.deployFile.unitInfo.mavenArtifact"
@@ -69,12 +69,11 @@
         </jf-checkbox>
         <jf-help-tooltip
                 html="jfSingleDeploy.TOOLTIP.deployAsMaven"
-                ng-if="(jfSingleDeploy.deployFile.unitInfo.maven || jfSingleDeploy.deployFile.unitInfo.artifactType=='maven')"></jf-help-tooltip>
+                ng-if="jfSingleDeploy.isMavenCheckBoxVisible() && !jfSingleDeploy.deployFile.unitInfo.bundle"></jf-help-tooltip>
         <jf-checkbox text="Deploy as Debian Package"
                      ng-if="(jfSingleDeploy.deployFile.unitInfo.debian || jfSingleDeploy.deployFile.unitInfo.artifactType=='debian')">
             <input type="checkbox"
                    id="debian"
-
                    ng-model="jfSingleDeploy.deployFile.unitInfo.debianArtifact"
                    ng-change="jfSingleDeploy.changeDebianFileType()">
         </jf-checkbox>
@@ -83,7 +82,7 @@
                 ng-if="(jfSingleDeploy.deployFile.unitInfo.debian || jfSingleDeploy.deployFile.unitInfo.artifactType=='debian')"></jf-help-tooltip>
 
         <jf-checkbox text="Deploy as Bundle Artifact"
-                     ng-if="jfSingleDeploy.isBundle">
+                     ng-if="jfSingleDeploy.isBundle && !jfSingleDeploy.deployFile.unitInfo.mavenArtifact">
             <input type="checkbox"
                    id="bundle"
                    ng-model="jfSingleDeploy.deployFile.unitInfo.bundle">
@@ -92,7 +91,7 @@
 </div>
 
 <jf-panel jf-panel-heading="Maven Artifact"
-          ng-if="jfSingleDeploy.deployFile.unitInfo.mavenArtifact">
+          ng-if="jfSingleDeploy.isMavenSectionVisible()">
     <form name="mavenArifactForm">
         <div class="form-group">
             <div class="form-group-cell">

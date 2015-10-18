@@ -7,7 +7,7 @@ import org.artifactory.ui.rest.model.artifacts.search.classsearch.ClassSearch;
 import org.artifactory.ui.rest.model.artifacts.search.gavcsearch.GavcSearch;
 import org.artifactory.ui.rest.model.artifacts.search.quicksearch.QuickSearch;
 import org.artifactory.ui.rest.model.artifacts.search.remotesearch.RemoteSearch;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.search.SearchServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;

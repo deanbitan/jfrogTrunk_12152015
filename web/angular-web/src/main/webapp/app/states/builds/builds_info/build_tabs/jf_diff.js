@@ -74,7 +74,7 @@ class jfDiffController {
             }).$promise.then((data) => {
                         if (data) {
                             this.variablesLength = data.props.length ? data.props.length : 0;
-                            this.dependenciesLength = data.props.length ? data.dependencies.length : 0;
+                            this.dependenciesLength = data.dependencies.length ? data.dependencies.length : 0;
                             this.artifactsLength = data.artifacts.length ? data.artifacts.length : 0;
 
                             if (data.artifacts) {

@@ -53,8 +53,8 @@ public class GetResolvedRepositories<T extends VirtualRepositoryConfigModel> imp
             VirtualRepoResolver resolver = initRepositoriesResolverWithCurrentRepos(selectedRepoDesc,
                     virtualModel.getGeneral());
             List<RealRepoDescriptor> orderedRepos = resolver.getOrderedRepos();
-            List<String> repoKeys = orderedRepos.stream().map(RealRepoDescriptor::getKey).collect(Collectors.toList());
-            response.iModelList(repoKeys);
+            selectedRepositories = orderedRepos.stream().map(VirtualSelectedRepository::new).collect(Collectors.toList());
+            response.iModelList(selectedRepositories);
         } catch (RepoConfigException e) {
             response.error(e.getMessage()).responseCode(e.getStatusCode());
         }

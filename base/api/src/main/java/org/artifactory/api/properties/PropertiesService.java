@@ -13,7 +13,7 @@ import org.artifactory.sapi.common.Lock;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,6 +78,17 @@ public interface PropertiesService {
      */
     @Lock
     void deleteProperty(RepoPath repoPath, String property);
+
+
+    /**
+     * Recursively adds (and stores) a property to the item at the repo path in multiple transaction.
+     *
+     * @param repoPath    The item repo path
+     * @param propertySet Property set to add - can be null
+     * @param propertyMapFromRequest    Properties map from request
+     */
+    void addPropertyRecursivelyMultiple(RepoPath repoPath, @Nullable PropertySet propertySet,
+                                        Map<Property, List<String>> propertyMapFromRequest);
 
     /**
      * Deletes property from the item recursively.

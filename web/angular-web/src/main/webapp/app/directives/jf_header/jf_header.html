@@ -18,7 +18,8 @@
         <div class="pull-right header-section">
             <div ng-if="!jfHeader.currentUser.isGuest()">Welcome,
                 <a href ui-sref="user_profile" class="navbar-link username-header">{{jfHeader.currentUser.name}}</a>
-                <a href=""
+                <a id="logout"
+                   href=""
                    class="navbar-link"
                    ng-click="jfHeader.logout()">
                     <span class="log-out">( Log Out )</span>

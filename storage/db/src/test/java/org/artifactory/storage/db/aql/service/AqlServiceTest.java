@@ -266,14 +266,14 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void findArtifactsUsingArchives() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"archive.entry_name\": {\"$match\" : \"a*\"}})");
+                "items.find({\"archive.entry.name\": {\"$match\" : \"a*\"}})");
         assertSize(queryResult, 0);
     }
 
     @Test
     public void findArtifactsUsingArchivesAndMatches() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"archive.entry_name\": {\"$match\" : \"t*\"}})");
+                "items.find({\"archive.entry.name\": {\"$match\" : \"t*\"}})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "org/yossis/tools", "file2.bin", file);
     }
@@ -390,7 +390,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void findArtifactsWithCanonicalAndOrOperatorsAndArtifactsFieldsAndArchiveFields() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"repo\" : \"repo1\", \"$and\" : [{\"@yossis\" : {\"$ne\" : \"an\"}},{\"archive.entry_name\": {\"$match\" : \"file*\"}}]})");
+                "items.find({\"repo\" : \"repo1\", \"$and\" : [{\"@yossis\" : {\"$ne\" : \"an\"}},{\"archive.entry.name\": {\"$match\" : \"file*\"}}]})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "org/yossis/tools", "test.bin", file);
     }
@@ -398,7 +398,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void findArtifactsWithCanonicalAndOrOperatorsAndArtifactsFieldsAndArchiveFieldsUsingNotEquals() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"repo\" : \"repo1\", \"$and\" : [{\"@build.name\" : {\"$ne\" : \"ant\"}},{\"archive.entry_name\": {\"$match\" : \"file*\"}},{\"archive.entry_name\": \"lll\"}]})");
+                "items.find({\"repo\" : \"repo1\", \"$and\" : [{\"@build.name\" : {\"$ne\" : \"ant\"}},{\"archive.entry.name\": {\"$match\" : \"file*\"}},{\"archive.entry.name\": \"lll\"}]})");
         assertSize(queryResult, 0);
     }
 
@@ -636,7 +636,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void findArchives() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "archives.find({\"item.repo\" :\"repo1\"})");
+                "archive.entries.find({\"archive.item.repo\" :\"repo1\"})");
         assertSize(queryResult, 8);
         assertArchive(queryResult, "META-INF", "LICENSE.txt");
         assertArchive(queryResult, "META-INF", "MANIFEST.MF");
@@ -645,7 +645,7 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void findArchivesFilterByArchiveEntryPath() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "archives.find({\"item.repo\" :\"repo1\",\"entry_path\" :\"META\"})");
+                "archive.entries.find({\"archive.item.repo\" :\"repo1\",\"archive.entry.path\" :\"META\"})");
         assertSize(queryResult, 0);
     }
 
@@ -884,17 +884,17 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void checkOrBehaviour() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"archive.entry_name\" : {\"$match\": \"*txt\"}}).sort({\"$desc\" : [\"name\"]})");
+                "items.find({\"archive.entry.name\" : {\"$match\": \"*txt\"}}).sort({\"$desc\" : [\"name\"]})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "ant/ant/1.5", "ant-1.5.jar", file);
 
         queryResult = aqlService.executeQueryEager(
-                "items.find({\"archive.entry_name\" : {\"$match\": \"*file\"}}).sort({\"$desc\" : [\"name\"]})");
+                "items.find({\"archive.entry.name\" : {\"$match\": \"*file\"}}).sort({\"$desc\" : [\"name\"]})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "org/yossis/tools", "test.bin", file);
 
         queryResult = aqlService.executeQueryEager(
-                "items.find({\"$or\":[{\"archive.entry_name\" : {\"$match\": \"*txt\"}},{\"archive.entry_name\" : {\"$match\": \"*file\"}}]}).sort({\"$desc\" : [\"name\"]})");
+                "items.find({\"$or\":[{\"archive.entry.name\" : {\"$match\": \"*txt\"}},{\"archive.entry.name\" : {\"$match\": \"*file\"}}]}).sort({\"$desc\" : [\"name\"]})");
         assertSize(queryResult, 2);
         assertItem(queryResult, "repo1", "ant/ant/1.5", "ant-1.5.jar", file);
         assertItem(queryResult, "repo1", "org/yossis/tools", "test.bin", file);
@@ -903,17 +903,17 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
     @Test
     public void checkAndBehaviour() {
         AqlEagerResult queryResult = aqlService.executeQueryEager(
-                "items.find({\"archive.entry_name\" : {\"$match\": \"*txt\"}}).sort({\"$desc\" : [\"name\"]})");
+                "items.find({\"archive.entry.name\" : {\"$match\": \"*txt\"}}).sort({\"$desc\" : [\"name\"]})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "ant/ant/1.5", "ant-1.5.jar", file);
 
         queryResult = aqlService.executeQueryEager(
-                "items.find({\"archive.entry_name\" : {\"$match\": \"*file\"}}).sort({\"$desc\" : [\"name\"]})");
+                "items.find({\"archive.entry.name\" : {\"$match\": \"*file\"}}).sort({\"$desc\" : [\"name\"]})");
         assertSize(queryResult, 1);
         assertItem(queryResult, "repo1", "org/yossis/tools", "test.bin", file);
 
         queryResult = aqlService.executeQueryEager(
-                "items.find({\"$and\":[{\"archive.entry_name\" : {\"$match\": \"*txt\"}},{\"archive.entry_name\" : {\"$match\": \"*file\"}}]}).sort({\"$desc\" : [\"name\"]})");
+                "items.find({\"$and\":[{\"archive.entry.name\" : {\"$match\": \"*txt\"}},{\"archive.entry.name\" : {\"$match\": \"*file\"}}]}).sort({\"$desc\" : [\"name\"]})");
         assertSize(queryResult, 0);
     }
 

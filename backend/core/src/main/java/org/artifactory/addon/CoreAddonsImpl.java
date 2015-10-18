@@ -18,11 +18,7 @@
 
 package org.artifactory.addon;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
@@ -31,8 +27,6 @@ import org.artifactory.addon.blackduck.ExternalComponentInfo;
 import org.artifactory.addon.bower.BowerAddon;
 import org.artifactory.addon.bower.BowerMetadataInfo;
 import org.artifactory.addon.build.ArtifactBuildAddon;
-import org.artifactory.addon.crowd.CrowdAddon;
-import org.artifactory.addon.crowd.CrowdExtGroup;
 import org.artifactory.addon.debian.DebianAddon;
 import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.addon.gems.ArtifactGemsInfo;
@@ -54,14 +48,15 @@ import org.artifactory.addon.pypi.PypiPkgMetadata;
 import org.artifactory.addon.replication.LocalReplicationSettings;
 import org.artifactory.addon.replication.RemoteReplicationSettings;
 import org.artifactory.addon.replication.ReplicationAddon;
-import org.artifactory.addon.saml.SamlSsoAddon;
-import org.artifactory.addon.search.ArtifactSearchAddon;
 import org.artifactory.addon.smartrepo.SmartRepoAddon;
+import org.artifactory.addon.sso.crowd.CrowdAddon;
+import org.artifactory.addon.sso.crowd.CrowdExtGroup;
+import org.artifactory.addon.sso.saml.SamlSsoAddon;
 import org.artifactory.addon.watch.ArtifactWatchAddon;
 import org.artifactory.addon.webstart.ArtifactWebstartAddon;
 import org.artifactory.addon.yum.ArtifactRpmMetadata;
 import org.artifactory.addon.yum.YumAddon;
-import org.artifactory.api.bintray.docker.BintrayPushRequest;
+import org.artifactory.api.bintray.docker.BintrayDockerPushRequest;
 import org.artifactory.api.build.GeneralBuild;
 import org.artifactory.api.build.ModuleArtifact;
 import org.artifactory.api.build.ModuleDependency;
@@ -81,8 +76,6 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.build.diff.BuildsDiff;
 import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.api.rest.replication.ReplicationStatus;
-import org.artifactory.api.search.ItemSearchResult;
-import org.artifactory.api.search.SavedSearchResults;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.ArtifactoryBuildArtifact;
 import org.artifactory.build.BuildRun;
@@ -96,12 +89,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.replication.ReplicationBaseDescriptor;
-import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
@@ -114,11 +102,7 @@ import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.WatchersInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.nuget.NuMetaData;
-import org.artifactory.repo.HttpRepo;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.Repo;
-import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.*;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.service.mover.MoverConfig;
 import org.artifactory.repo.virtual.VirtualRepo;
@@ -166,11 +150,7 @@ import java.io.Reader;
 import java.security.Key;
 import java.security.KeyStore;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -181,9 +161,9 @@ import java.util.concurrent.Semaphore;
 @Component
 public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAddon, PropertiesAddon, LayoutsCoreAddon,
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
-        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon, GitLfsAddon,
+        GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon,
         ArtifactWatchAddon, ArtifactBuildAddon, UiNuGetAddon, LdapUserGroupAddon,
-        ArtifactWebstartAddon, ArtifactSearchAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon {
+        ArtifactWebstartAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon, Addon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -219,6 +199,10 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void testCrowdConnection(CrowdSettings crowdSettings) throws Exception {
+    }
+
+    @Override
+    public void logOffCrowd(HttpServletRequest request, HttpServletResponse response) {
     }
 
     @Override
@@ -589,11 +573,6 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public String getPublicKeyDownloadTarget() {
-        return "";
-    }
-
-    @Override
     public void onInstallKey(String key, boolean isPublic) throws Exception {
 
     }
@@ -855,6 +834,11 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public String getCurrentMemberServerId() {
+        return null;
+    }
+
+    @Override
     public SemaphoreWrapper getSemaphore(String semaphoreName) {
         Semaphore semaphore = new Semaphore(HaCommonAddon.DEFAULT_SEMAPHORE_PERMITS);
         return new JVMSemaphoreWrapper(semaphore);
@@ -925,7 +909,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void pushTagToBintray(String repoKey, BintrayPushRequest request) {
+    public void pushTagToBintray(String repoKey, BintrayDockerPushRequest request) {
     }
 
     @Override
@@ -1113,18 +1097,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public SavedSearchResults getSearchResults(String name, List<? extends ItemSearchResult> itemSearchResults,
-            boolean completeVersion) {
-        return null;
-    }
-
-    @Override
     public String getSamlLoginIdentityProviderUrl(HttpServletRequest request) {
-        return null;
-    }
-
-    @Override
-    public String getOAuthLoginPageUrl(HttpServletRequest request) {
         return null;
     }
 
@@ -1144,8 +1117,13 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public void fileDownloadedRemotely(StatsInfo statsInfo, String remoteHost, RepoPath repoPath) {
+    public void fileDownloadedRemotely(StatsInfo statsInfo, String origin, RepoPath repoPath) {
 
+    }
+
+    @Override
+    public boolean isActive() {
+        return true;
     }
 }
 

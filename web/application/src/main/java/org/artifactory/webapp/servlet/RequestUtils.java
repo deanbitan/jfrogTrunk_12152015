@@ -20,12 +20,11 @@ package org.artifactory.webapp.servlet;
 
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.wicket.request.Request;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.api.webdav.WebdavService;
-import org.artifactory.common.wicket.util.WicketUtils;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
@@ -49,7 +48,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import static org.apache.commons.lang.StringUtils.EMPTY;
-import static org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH;
 import static org.artifactory.webapp.servlet.RepoFilter.ATTR_ARTIFACTORY_REPOSITORY_PATH;
 
 /**
@@ -152,16 +150,8 @@ public abstract class RequestUtils {
         if (isWebdavRequest(request)) {
             return false;
         }
-        if (isWicketRequest(request)) {
-            return true;
-        }
         String pathPrefix = PathUtils.getFirstPathElement(getServletPathFromRequest(request));
         return isUiPathPrefix(pathPrefix);
-    }
-
-    public static boolean isWicketRequest(HttpServletRequest request) {
-        String queryString = request.getQueryString();
-        return queryString != null && queryString.startsWith("wicket");
     }
 
     public static boolean isUiPathPrefix(String pathPrefix) {
@@ -241,15 +231,6 @@ public abstract class RequestUtils {
         return (RepoPath) servletRequest.getAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH);
     }
 
-    public static void removeRepoPath(Request request, boolean storeAsRemoved) {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request.getContainerRequest();
-        RepoPath removedRepoPath = getRepoPath(httpServletRequest);
-        httpServletRequest.removeAttribute(ATTR_ARTIFACTORY_REPOSITORY_PATH);
-        if (removedRepoPath != null && storeAsRemoved) {
-            httpServletRequest.setAttribute(ATTR_ARTIFACTORY_REMOVED_REPOSITORY_PATH, removedRepoPath);
-        }
-    }
-
     /**
      * Extract the username out of the request, by checking the the header for the {@code Authorization} and then if it
      * starts with {@code Basic} get it as a base 64 token and decode it.
@@ -281,11 +262,6 @@ public abstract class RequestUtils {
         return EMPTY;
     }
 
-    public static String getWicketServletContextUrl() {
-        final HttpServletRequest httpRequest = WicketUtils.getHttpServletRequest();
-        return HttpUtils.getServletContextUrl(httpRequest);
-    }
-
     /**
      * add no cache and no store header to response in order to avoid java script caching on browser
      *
@@ -294,7 +270,10 @@ public abstract class RequestUtils {
      */
     public static void addNoCacheToWebAppRequest(String servletPath, HttpServletResponse response) {
         if (servletPath.indexOf(HttpUtils.ANGULAR_WEBAPP) != -1) {
-            response.setHeader("Cache-Control", "no-cache, no-store");
+            response.setHeader("Cache-Control", "no-store");
+            if (!ConstantValues.enableUiPagesInIframe.getBoolean()) {
+                response.setHeader("X-FRAME-OPTIONS", "DENY");
+            }
         }
     }
 }

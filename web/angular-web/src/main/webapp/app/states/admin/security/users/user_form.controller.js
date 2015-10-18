@@ -1,16 +1,20 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecurityUserFormController {
-    constructor($scope, $state, $stateParams, ArtifactoryGridFactory, UserDao, GroupsDao, GroupPermissionsDao,
-            uiGridConstants, commonGridColumns) {
+    constructor($scope, $state, $stateParams, $timeout, $q, ArtifactoryGridFactory, UserDao, GroupsDao, GroupPermissionsDao,
+            uiGridConstants, commonGridColumns, ArtifactoryModelSaver, RepositoriesDao) {
 
         this.$scope = $scope;
         this.$state = $state;
         this.$stateParams = $stateParams;
+        this.$timeout = $timeout;
+        this.$q = $q;
+        this.repositoriesDao = RepositoriesDao;
         this.userDao = UserDao.getInstance();
         this.groupsDao = GroupsDao.getInstance();
         this.groupPermissionsDao = GroupPermissionsDao.getInstance();
         this.artifactoryGridFactory = ArtifactoryGridFactory;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['userdata','input']);
         this.permissionsGridOptions = {};
         this.uiGridConstants = uiGridConstants;
         this.commonGridColumns = commonGridColumns;
@@ -36,10 +40,22 @@ export class AdminSecurityUserFormController {
 
         this._createGrid();
 
+        this._getAllRepos();
         this._getAllGroups();
         this._getGroupsPermissions();
     }
 
+    _getAllRepos() {
+        this.reposData = {};
+        this.repositoriesDao.getRepositories({type:'local'}).$promise
+                .then((data) => {
+                    this.reposData.locals = _.map(data,(r)=>{return r.repoKey;});
+                });
+        this.repositoriesDao.getRepositories({type:'remote'}).$promise
+                .then((data) => {
+                    this.reposData.remotes = _.map(data,(r)=>{return r.repoKey;});
+                });
+    }
 
     _createGrid() {
         this.permissionsGridOptions = this.artifactoryGridFactory.getGridInstance(this.$scope)
@@ -52,7 +68,10 @@ export class AdminSecurityUserFormController {
         this.groupsDao.getAll().$promise.then((data)=> {
             this.groupsData = data;
             this.groupsList = _.map(this.groupsData, (group)=> {
-                if (group.autoJoin && this.mode === 'create') this.userdata.groups.push(group.groupName);
+                if (group.autoJoin && this.mode === 'create') {
+                    this.userdata.groups.push(group.groupName);
+                    this.artifactoryModelSaver.save();
+                }
                 return group.groupName;
             });
             if (this.mode === 'create') this._getGroupsPermissions();
@@ -90,14 +109,49 @@ export class AdminSecurityUserFormController {
     _setGridData() {
         let data = angular.copy(this.groupsPermissions);
         data = data.concat(this.userPermissions);
-        this.permissionsGridOptions.setGridData(data);
+        this._fixDataFormat(data).then((fixedData)=>{
+            this.permissionsGridOptions.setGridData(fixedData);
+        });
+    }
+
+    _fixDataFormat(data,defer = null) {
+        let defer = defer || this.$q.defer();
+        if (this.reposData.locals && this.reposData.remotes) {
+            data.forEach((record)=>{
+                if (record.repoKeys.length === 1 && record.repoKeys[0] === 'ANY LOCAL') {
+                    record.repoKeysView = 'ANY LOCAL';
+                    record.reposList = angular.copy(this.reposData.locals);
+                }
+                else if (record.repoKeys.length === 1 && record.repoKeys[0] === 'ANY REMOTE') {
+                    record.repoKeysView = 'ANY REMOTE';
+                    record.reposList = angular.copy(this.reposData.remotes);
+                }
+                else if (record.repoKeys.length === 1 && record.repoKeys[0] === 'ANY') {
+                    record.repoKeysView = 'ANY';
+                    record.reposList = angular.copy(this.reposData.remotes).concat(this.reposData.locals);
+                }
+                else {
+                    record.repoKeysView = record.repoKeys.join(', ');
+                    record.reposList = angular.copy(record.repoKeys);
+                }
+            });
+            defer.resolve(data);
+        }
+        else {
+            this.$timeout(()=>{
+                this._fixDataFormat(data,defer);
+            })
+        }
+        return defer.promise;
     }
 
     _getUserData() {
         this.userDao.getSingle({name: this.username}).$promise.then((data) => {
             //console.log(data);
             this.userdata = data;
-            this._getGroupsPermissions()
+            if (!this.userdata.groups) this.userdata.groups = [];
+            this.artifactoryModelSaver.save();
+            this._getGroupsPermissions();
         });
     }
 
@@ -117,6 +171,7 @@ export class AdminSecurityUserFormController {
         _.extend(payload, this.input);
         this._fixGroups(payload);
         this.userDao.update({name: this.userdata.name}, payload).$promise.then((data) => {
+            this.artifactoryModelSaver.save();
             this.$state.go('^.users');
         });
     }
@@ -126,6 +181,7 @@ export class AdminSecurityUserFormController {
         _.extend(payload, this.input);
         this._fixGroups(payload);
         this.userDao.create(payload).$promise.then((data) => {
+            this.artifactoryModelSaver.save();
             this.$state.go('^.users');
         });
     }
@@ -180,7 +236,7 @@ export class AdminSecurityUserFormController {
                 field: "repoKeys",
                 name: "Repositories",
                 displayName: "Repositories",
-                cellTemplate: '<div ng-if="row.entity.repoKeys" class="ui-grid-cell-contents">{{row.entity.repoKeys.length}} | {{row.entity.repoKeys.join(\', \')}}</div>',
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.reposList','row.entity.permissionName','row.entity.repoKeysView',true),
                 width:'16%'
 
             },

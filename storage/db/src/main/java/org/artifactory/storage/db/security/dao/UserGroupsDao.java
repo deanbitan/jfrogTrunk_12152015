@@ -116,14 +116,14 @@ public class UserGroupsDao extends BaseDao {
 
     public int updateUser(User user) throws SQLException {
         int res = jdbcHelper.executeUpdate("UPDATE users SET " +
-                " password = ?, salt = ?," +
-                " email = ?, gen_password_key = ?," +
-                " admin = ?, enabled = ?, updatable_profile = ?," +
-                " realm = ?, private_key = ?, public_key = ?," +
-                " last_login_time = ?, last_login_ip = ?," +
-                " last_access_time = ?, last_access_ip = ?," +
-                " bintray_auth = ?" +
-                " WHERE user_id = ? AND username = ?",
+                        " password = ?, salt = ?," +
+                        " email = ?, gen_password_key = ?," +
+                        " admin = ?, enabled = ?, updatable_profile = ?," +
+                        " realm = ?, private_key = ?, public_key = ?," +
+                        " last_login_time = ?, last_login_ip = ?," +
+                        " last_access_time = ?, last_access_ip = ?," +
+                        " bintray_auth = ?" +
+                        " WHERE user_id = ? AND username = ?",
                 nullIfEmpty(user.getPassword()), nullIfEmpty(user.getSalt()),
                 nullIfEmpty(user.getEmail()), nullIfEmpty(user.getGenPasswordKey()),
                 booleanAsByte(user.isAdmin()), booleanAsByte(user.isEnabled()),
@@ -179,6 +179,36 @@ public class UserGroupsDao extends BaseDao {
         } finally {
             DbUtils.close(resultSet);
         }
+    }
+
+    public Map<Long, String> getAllUsernamePerIds() throws SQLException {
+        ResultSet resultSet = null;
+        Map<Long, String> results = new HashMap<>();
+        try {
+            String query = "SELECT user_id, username FROM users";
+            resultSet = jdbcHelper.executeSelect(query);
+            while (resultSet.next()) {
+                results.put(resultSet.getLong(1), resultSet.getString(2));
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return results;
+    }
+
+    public Map<Long, String> getAllGroupNamePerIds() throws SQLException {
+        ResultSet resultSet = null;
+        Map<Long, String> results = new HashMap<>();
+        try {
+            String query = "SELECT group_id, group_name FROM groups";
+            resultSet = jdbcHelper.executeSelect(query);
+            while (resultSet.next()) {
+                results.put(resultSet.getLong(1), resultSet.getString(2));
+            }
+        } finally {
+            DbUtils.close(resultSet);
+        }
+        return results;
     }
 
     public Collection<User> getAllUsers(boolean includeAdmins) throws SQLException {

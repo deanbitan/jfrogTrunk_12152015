@@ -1,10 +1,11 @@
 export class AdminSecurityPermissionsController {
-    constructor($scope,$state, ArtifactoryGridFactory, PermissionsDao, ArtifactoryModal, uiGridConstants, User) {
+    constructor($scope,$state, ArtifactoryGridFactory, PermissionsDao, ArtifactoryModal, uiGridConstants, User, commonGridColumns) {
         this.$state=$state;
         this.currentTab = 'repo';
         this.modal = ArtifactoryModal;
         this.permissionsDao = PermissionsDao.getInstance();
         this.$scope = $scope;
+        this.commonGridColumns = commonGridColumns;
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.uiGridConstants = uiGridConstants;
         this.user = User.getCurrent();
@@ -15,6 +16,13 @@ export class AdminSecurityPermissionsController {
 
     initPermission() {
         this.permissionsDao.getAll().$promise.then((permissions)=> {
+            permissions.forEach((permission)=>{
+                permission.groupsList = _.pluck(permission.groups,'principal');
+                permission.usersList = _.pluck(permission.users,'principal');
+                permission.reposList = _.pluck(permission.repoKeys,'repoKey');
+                permission.repoKeysView = permission.repoKeysView ? (permission.repoKeysView.indexOf('|') !== -1 ? permission.repoKeysView.split('|')[1].trim() : permission.repoKeysView) : '';
+            });
+
             this.gridOption.setGridData(permissions);
         });
     }
@@ -93,21 +101,21 @@ export class AdminSecurityPermissionsController {
             {
                 name: 'Repositories',
                 displayName: 'Repositories',
-                field: 'repoKeysView',
-                cellClass: 'tooltip-show-list'
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.reposList','row.entity.name','row.entity.repoKeysView',true),
+                field: 'repoKeysView'
             },
             {
                 name: 'Groups',
                 displayName: 'Groups',
-                field: 'groupsView',
-                cellClass: 'tooltip-show-list'
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.groupsList','row.entity.name'),
+                field: 'groupsList'
 
             },
             {
-                name: 'Number of Users',
-                displayName: 'Number of Users',
-                field: 'userView',
-                cellClass: 'tooltip-show-list'
+                name: 'Users',
+                displayName: 'Users',
+                cellTemplate: this.commonGridColumns.listableColumn('row.entity.usersList','row.entity.name'),
+                field: 'usersList'
             }
         ]
     }

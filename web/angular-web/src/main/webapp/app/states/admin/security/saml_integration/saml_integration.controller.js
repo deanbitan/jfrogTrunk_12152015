@@ -2,9 +2,10 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecuritySamlIntegrationController {
 
-    constructor(SamlDao) {
+    constructor(SamlDao, ArtifactoryModelSaver) {
         this.samlDao = SamlDao.getInstance();
         this.TOOLTIP = TOOLTIP.admin.security.SAMLSSOSettings;
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['saml']);
 
         this._init();
     }
@@ -15,15 +16,20 @@ export class AdminSecuritySamlIntegrationController {
             if (!angular.isDefined(this.saml.noAutoUserCreation)) {
                 this.saml.noAutoUserCreation = true;
             }
+            this.artifactoryModelSaver.save();
         });
     }
 
     save() {
-        this.samlDao.update(this.saml);
+        this.samlDao.update(this.saml).$promise.then(()=>{
+            this.artifactoryModelSaver.save();
+        });
     }
 
     cancel() {
-        this._init();
+        this.artifactoryModelSaver.ask().then(()=>{
+            this._init();
+        });
     }
     canSave() {
         return this.samlForm.$valid;

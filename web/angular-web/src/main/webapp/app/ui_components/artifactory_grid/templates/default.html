@@ -29,7 +29,8 @@
             <a ng-repeat="action in col.colDef.customActions" ng-if="!action.visibleWhen || action.visibleWhen(row.entity)"
                class="btn btn-action"
                ng-click="action.callback(row.entity, row)"
-               jf-tooltip="{{action.tooltip}}">
+               jf-tooltip="{{action.tooltip}}"
+               ng-href="{{action.href(row.entity)}}">
                 <i class="{{action.icon}}"></i>
             </a>
         </div>

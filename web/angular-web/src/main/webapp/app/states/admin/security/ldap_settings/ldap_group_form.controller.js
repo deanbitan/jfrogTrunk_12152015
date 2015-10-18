@@ -1,15 +1,16 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 // Injectables:
-let $q, $scope, $state, $stateParams, ArtifactoryGridFactory, LdapGroupsDao, LdapDao;
+let $q, $scope, $state, $stateParams, ArtifactoryGridFactory, LdapGroupsDao, LdapDao, ArtifactoryModelSaver;
 export class LdapGroupFormController {
 
-    constructor(_$q_, _$scope_, _$state_, _$stateParams_, _ArtifactoryGridFactory_, _LdapGroupsDao_, _LdapDao_) {
+    constructor(_$q_, _$scope_, _$state_, _$stateParams_, _ArtifactoryGridFactory_, _LdapGroupsDao_, _LdapDao_, _ArtifactoryModelSaver_) {
         $q = _$q_;
         $scope = _$scope_;
         $state = _$state_;
         $stateParams = _$stateParams_;
         ArtifactoryGridFactory = _ArtifactoryGridFactory_;
+        ArtifactoryModelSaver = _ArtifactoryModelSaver_.createInstance(this,['ldapGroup']);
         LdapGroupsDao = _LdapGroupsDao_;
         LdapDao = _LdapDao_;
 
@@ -37,7 +38,10 @@ export class LdapGroupFormController {
         }
         else {
             this.ldapGroupPromise = LdapGroupsDao.get({name: $stateParams.ldapGroupName}).$promise
-                .then((ldapGroup) => this.ldapGroup = ldapGroup);
+                .then((ldapGroup) => {
+                        this.ldapGroup = ldapGroup;
+                        ArtifactoryModelSaver.save();
+                    });
         }
     }
 
@@ -88,7 +92,10 @@ export class LdapGroupFormController {
 
     save() {
         let whenSaved = this.isNew ? LdapGroupsDao.save(this.ldapGroup) : LdapGroupsDao.update(this.ldapGroup);
-        whenSaved.$promise.then(() => this._end());
+        whenSaved.$promise.then(() => {
+            ArtifactoryModelSaver.save();
+            this._end()
+        });
     }
 
     cancel() {

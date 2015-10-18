@@ -86,6 +86,7 @@ goto end
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Djava.io.tmpdir=%CATALINA_BASE%\temp;-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager;-Djava.util.logging.config.file=%CATALINA_BASE%\conf\logging.properties"
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Djruby.compile.invokedynamic=false"
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Dfile.encoding=UTF8"
+"%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Dartdist=zip"
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions "-Dartifactory.home=%ARTIFACTORY_HOME%" --Startup %STARTUP_TYPE% --LogPrefix artifactory-service
 "%EXECUTABLE%" //US//%SERVICE_NAME% ++JvmOptions %JOPTS%
 rem --JvmMs 128 --JvmMx 256

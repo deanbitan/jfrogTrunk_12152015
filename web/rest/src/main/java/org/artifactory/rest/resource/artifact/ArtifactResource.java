@@ -34,13 +34,7 @@ import org.artifactory.api.repo.VirtualRepoItem;
 import org.artifactory.api.repo.exception.BlackedOutException;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
-import org.artifactory.api.rest.artifact.ItemLastModified;
-import org.artifactory.api.rest.artifact.ItemPermissions;
-import org.artifactory.api.rest.artifact.ItemProperties;
-import org.artifactory.api.rest.artifact.ItemStatsInfo;
-import org.artifactory.api.rest.artifact.RestBaseStorageInfo;
-import org.artifactory.api.rest.artifact.RestFileInfo;
-import org.artifactory.api.rest.artifact.RestFolderInfo;
+import org.artifactory.api.rest.artifact.*;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumInfo;
 import org.artifactory.checksum.ChecksumType;
@@ -80,18 +74,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -161,8 +145,8 @@ public class ArtifactResource {
 
     @PUT
     public Response savePathProperties(@QueryParam("recursive") String recursive,
-            @QueryParam("properties") KeyValueList properties) {
-        return restAddon().savePathProperties(path, recursive, properties);
+                                       @QueryParam("properties") KeyValueList properties, @QueryParam("atomic") String atomic) {
+        return restAddon().savePathProperties(path, recursive, properties, atomic);
     }
 
     @DELETE

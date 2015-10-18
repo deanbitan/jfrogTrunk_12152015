@@ -36,10 +36,10 @@ public enum AqlFieldEnum {
     propertyValue("value", "properties", string),
     propertyId("id", "properties", longInt),
     // archive entries
-    archiveEntryName("entry_name", "archives", string),
-    archiveEntryPath("entry_path", "archives", string),
-    archiveEntryPathId("entry_path_id", "archives", longInt),
-    archiveEntryNameId("entry_name_id", "archives", longInt),
+    archiveEntryName("name", "entries", string),
+    archiveEntryPath("path", "entries", string),
+    archiveEntryPathId("path_id", "entries", longInt),
+    archiveEntryNameId("name_id", "entries", longInt),
     // builds
     moduleName("name", "modules", string),
     moduleId("id","modules",longInt),
@@ -123,6 +123,9 @@ public enum AqlFieldEnum {
                         propertyId
                 };
             case archives:
+                return new AqlFieldEnum[]{
+                };
+            case entries:
                 return new AqlFieldEnum[]{
                         archiveEntryName,
                         archiveEntryNameId,

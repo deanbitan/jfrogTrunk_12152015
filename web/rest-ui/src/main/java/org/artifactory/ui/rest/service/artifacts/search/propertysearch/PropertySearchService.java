@@ -22,7 +22,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author Chen Keinan
@@ -51,11 +50,11 @@ public class PropertySearchService implements RestService {
         // search property
         ItemSearchResults<PropertySearchResult> propertyResults = searchService.searchPropertyAql(propertySearchControls);
         // update response data
-        List<PropertyResult> results = new ArrayList<>();
-        results.addAll(propertyResults.getResults().stream()
-                .filter(this::filterNoReadResults)
-                .map(PropertyResult::new)
-                .collect(Collectors.toList()));
+         List<PropertyResult> results = new ArrayList<>();
+        for (PropertySearchResult propsResult : propertyResults.getResults()) {
+            if (filterNoReadResults(propsResult))
+                results.add(new PropertyResult(propsResult, request));
+        }
         int maxResults = ConstantValues.searchMaxResults.getInt();
         long resultsCount;
         if (propertySearchControls.isLimitSearchResults() && results.size() > maxResults) {

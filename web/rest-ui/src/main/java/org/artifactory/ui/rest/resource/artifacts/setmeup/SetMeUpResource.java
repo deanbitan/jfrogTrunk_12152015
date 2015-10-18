@@ -6,7 +6,7 @@ import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.setmeup.GradleSettingModel;
 import org.artifactory.ui.rest.model.setmeup.IvySettingModel;
 import org.artifactory.ui.rest.model.setmeup.MavenSettingModel;
-import org.artifactory.ui.rest.resource.BaseResource;
+import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.general.GeneralServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

@@ -34,6 +34,8 @@ import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.debian.DebianSettings;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
+import org.artifactory.descriptor.security.oauth.OAuthProviderSettings;
+import org.artifactory.descriptor.security.oauth.OAuthSettings;
 import org.artifactory.descriptor.security.sso.CrowdSettings;
 import org.artifactory.security.crypto.CryptoHelper;
 import org.springframework.stereotype.Component;
@@ -121,6 +123,18 @@ public class EncryptConfigurationInterceptor implements ConfigurationChangesInte
             String newApiKey = getNewPassword(encrypt, bintraySettings.getApiKey());
             if (StringUtils.isNotBlank(newApiKey)) {
                 bintraySettings.setApiKey(newApiKey);
+            }
+        }
+        OAuthSettings oauthSettings = descriptor.getSecurity().getOauthSettings();
+        if (oauthSettings != null) {
+            List<OAuthProviderSettings> oauthProvidersSettings = oauthSettings.getOauthProvidersSettings();
+            if(oauthProvidersSettings!=null){
+                for (OAuthProviderSettings oauthProvidersSetting : oauthProvidersSettings) {
+                    String secret = getNewPassword(encrypt, oauthProvidersSetting.getSecret());
+                    if (StringUtils.isNotBlank(secret)) {
+                        oauthProvidersSetting.setSecret(secret);
+                    }
+                }
             }
         }
     }

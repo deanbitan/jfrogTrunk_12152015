@@ -37,6 +37,9 @@ export class BrowsersController {
             // Use forceLoad as a Date to ensure state transition even if it's the same as before
             this.state.go(this.state.current.name, {browser: browser, artifact: repo.fullpath, forceLoad: new Date()});
         }
+        else if (browser === 'tree' && this.stateParams.browser === 'tree') {
+            this.artifactoryEventBus.dispatch(EVENTS.TREE_COLLAPSE_ALL);
+        }
         else if (browser != this.stateParams.browser) {
             this.state.go(this.state.current.name, {browser: browser});
         }

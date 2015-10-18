@@ -33,6 +33,7 @@ import org.testng.annotations.Test;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static org.testng.Assert.*;
 
@@ -273,6 +274,8 @@ public class UserGroupsDaoTest extends SecurityBaseDaoTest {
         userGroupsDao.deleteUser("u5");
         userGroupsDao.deleteUser("u6");
         userGroupsDao.deleteUser("u8");
+        checkAllUsernameMap(userGroupsDao.getAllUsernamePerIds());
+        checkAllGroupNameMap(userGroupsDao.getAllGroupNamePerIds());
         checkUserCollection(userGroupsDao.getAllUsers(true), ImmutableSet.of(1, 2, 3, 15, 16));
         checkUserCollection(userGroupsDao.getAllUsers(false), ImmutableSet.of(1, 15));
         assertTrue(userGroupsDao.findUsersInGroup(3L).isEmpty());
@@ -282,6 +285,45 @@ public class UserGroupsDaoTest extends SecurityBaseDaoTest {
         assertEquals(userGroupsDao.removeUsersFromGroup(3L, ImmutableList.of("u1", "u2", "u3")), 3);
         assertTrue(userGroupsDao.findUsersInGroup(3L).isEmpty());
         checkUserCollection(userGroupsDao.getAllUsers(true), ImmutableSet.of(1, 2, 3, 15, 16));
+    }
+
+    private void checkAllUsernameMap(Map<Long, String> allUsernamePerIds) {
+        assertEquals(allUsernamePerIds.size(), 5);
+        for (Map.Entry<Long, String> entry : allUsernamePerIds.entrySet()) {
+            switch (entry.getKey().intValue()) {
+                case 1:
+                case 2:
+                case 3:
+                    assertEquals(entry.getValue(), "u"+entry.getKey());
+                    break;
+                case 15:
+                    assertEquals(entry.getValue(), "anonymous");
+                    break;
+                case 16:
+                    assertEquals(entry.getValue(), "admin");
+                    break;
+                default:
+                    fail("User ID "+entry.getKey()+" unknown");
+            }
+        }
+    }
+
+    private void checkAllGroupNameMap(Map<Long, String> allGroupNamePerIds) {
+        assertEquals(allGroupNamePerIds.size(), 4);
+        for (Map.Entry<Long, String> entry : allGroupNamePerIds.entrySet()) {
+            switch (entry.getKey().intValue()) {
+                case 1:
+                case 2:
+                case 3:
+                    assertEquals(entry.getValue(), "g"+entry.getKey());
+                    break;
+                case 15:
+                    assertEquals(entry.getValue(), "readers");
+                    break;
+                default:
+                    fail("User ID "+entry.getKey()+" unknown");
+            }
+        }
     }
 
     private void checkGroupInUser(User userById) {

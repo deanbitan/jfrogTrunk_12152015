@@ -60,7 +60,7 @@ public class AqlQueryDecorator {
             case moduleProperties:return Lists.newArrayList(AqlFieldEnum.modulePropertyId);
             case builds:return Lists.newArrayList(AqlFieldEnum.buildId);
             case buildProperties:return Lists.newArrayList(AqlFieldEnum.buildPropertyId);
-            case archives:{
+            case entries:{
                 // since archive represent two tables, in case of archive we might have two keys
                 ArrayList<AqlFieldEnum> result = Lists.newArrayList();
                 for (DomainSensitiveField field : aqlQuery.getResultFields()) {

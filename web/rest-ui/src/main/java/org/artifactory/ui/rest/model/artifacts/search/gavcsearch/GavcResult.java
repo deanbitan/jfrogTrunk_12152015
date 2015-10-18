@@ -9,6 +9,7 @@ import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.ui.rest.model.artifacts.search.BaseSearchResult;
 import org.codehaus.jackson.annotate.JsonTypeName;
 
@@ -27,7 +28,7 @@ public class GavcResult extends BaseSearchResult {
     public GavcResult() {
     }
 
-    public GavcResult(GavcSearchResult gavcSearchResult) {
+    public GavcResult(GavcSearchResult gavcSearchResult,ArtifactoryRestRequest request) {
         super.setRepoKey(gavcSearchResult.getRepoKey());
         super.setName(gavcSearchResult.getName());
         super.setModifiedDate(gavcSearchResult.getLastModified());
@@ -39,6 +40,7 @@ public class GavcResult extends BaseSearchResult {
         relativePath = gavcSearchResult.getItemInfo().getRelPath();
         RepoPath repoPath = InfoFactoryHolder.get().createRepoPath(gavcSearchResult.getRepoKey(),
                 gavcSearchResult.getRelativePath());
+        setDownloadLink(request.getDownloadLink(repoPath));
         this.repoPath = repoPath;
         super.updateActions();
     }

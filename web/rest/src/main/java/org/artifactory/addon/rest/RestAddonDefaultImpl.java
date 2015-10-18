@@ -70,13 +70,13 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public Response copy(String path, String target, int dryRun, int suppressLayouts, int failFast)
+    public Response copy(String path, String target, int dryRun, int suppressLayouts, int failFast, String atomic)
             throws Exception {
         throw new MissingRestAddonException();
     }
 
     @Override
-    public Response move(String path, String target, int dryRun, int suppressLayouts, int failFast)
+    public Response move(String path, String target, int dryRun, int suppressLayouts, int failFast, String atomic)
             throws Exception {
         throw new MissingRestAddonException();
     }
@@ -167,7 +167,7 @@ public class RestAddonDefaultImpl implements RestAddon {
     }
 
     @Override
-    public Response savePathProperties(String path, String recursive, KeyValueList properties) {
+    public Response savePathProperties(String path, String recursive, KeyValueList properties, String atomic) {
         throw new MissingRestAddonException();
     }
 

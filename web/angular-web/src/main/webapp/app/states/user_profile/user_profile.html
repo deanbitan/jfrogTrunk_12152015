@@ -166,10 +166,19 @@
                         </form>
                     </div>
                 </jf-panel>
-                <div ng-if="UserProfile.oauthProviderLink">
-                    <a ui-sref="login_request" ng-if="!UserProfile.profileLocked">OAuth2 Login</a>
-                </div>
+                <jf-panel jf-panel-heading="OAuth User Binding" ng-if="!UserProfile.profileLocked && UserProfile.isOAuthEnabled()">
+                    <div id="user-profile-oauth">
+                        <div ng-repeat="provider in UserProfile.oauth.providers" class="user-profile-oauth-row">
+                            <div class="icon-oauth" ng-class="{'icon-oauth-{{provider.type.toLowerCase()}}-dark': provider.binded, 'icon-oauth-{{provider.type.toLowerCase()}}': !provider.binded}"></div>
+                            <div class="provider-name" jf-tooltip-on-overflow>{{provider.name}}</div>
+                            <div ng-if="!provider.binded"><a href ng-href="{{provider.url}}" ng-mousedown="UserProfile.onGotoOAuth()">Click to bind</a></div>
+                            <div ng-if="provider.binded" class="unbind-link"><a href ng-click="UserProfile.unbindOAuthProvider(provider.name)">Click to unbind</a></div>
 
+                            <div class="clearfix"></div>
+                            <!--div class="clearfix oauth-username">Username : {{provider.username}}</div-->
+                        </div>
+                    </div>
+                </jf-panel>
             </div>
         </div>
 

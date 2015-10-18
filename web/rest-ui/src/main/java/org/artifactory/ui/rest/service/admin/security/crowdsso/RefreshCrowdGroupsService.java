@@ -2,8 +2,8 @@ package org.artifactory.ui.rest.service.admin.security.crowdsso;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
-import org.artifactory.addon.crowd.CrowdAddon;
-import org.artifactory.addon.crowd.CrowdExtGroup;
+import org.artifactory.addon.sso.crowd.CrowdAddon;
+import org.artifactory.addon.sso.crowd.CrowdExtGroup;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.UserGroupService;

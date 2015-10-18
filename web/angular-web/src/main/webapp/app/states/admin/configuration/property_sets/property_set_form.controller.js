@@ -1,16 +1,17 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 // Injectables:
-let $q, $scope, $state, $stateParams, ArtifactoryGridFactory, PropertySetsDao, PropertyFormModal, Property, PropertySet, uiGridConstants, ArtifactoryModal;
+let $q, $scope, $state, $stateParams, ArtifactoryGridFactory, PropertySetsDao, PropertyFormModal, Property, PropertySet, uiGridConstants, ArtifactoryModal, ArtifactoryModelSaver;
 
 export class AdminConfigurationPropertySetFormController {
-    constructor(_$stateParams_, _$scope_, _PropertySetsDao_, _$state_, _ArtifactoryGridFactory_, _PropertyFormModal_, ArtifactoryState, _$q_, _Property_, _PropertySet_, _uiGridConstants_, _ArtifactoryModal_) {
+    constructor(_$stateParams_, _$scope_, _PropertySetsDao_, _$state_, _ArtifactoryGridFactory_, _PropertyFormModal_, ArtifactoryState, _$q_, _Property_, _PropertySet_, _uiGridConstants_, _ArtifactoryModal_, _ArtifactoryModelSaver_) {
         $scope = _$scope_;
     	$state = _$state_;
         $stateParams = _$stateParams_;
         Property = _Property_;
         PropertySet = _PropertySet_;
         ArtifactoryModal = _ArtifactoryModal_;
+        ArtifactoryModelSaver = _ArtifactoryModelSaver_.createInstance(this,['propertySet']);;
 
     	this.isNew = !$stateParams.propertySetName;
     	PropertySetsDao = _PropertySetsDao_;
@@ -35,6 +36,7 @@ export class AdminConfigurationPropertySetFormController {
         }
         promise.then((propertySet) => {
             this.propertySet = new PropertySet(propertySet);
+            ArtifactoryModelSaver.save();
             this.gridOptions.setGridData(this.propertySet.properties)
         });
     }
@@ -50,7 +52,10 @@ export class AdminConfigurationPropertySetFormController {
 
     save() {
 		let whenSaved = this.isNew ? PropertySetsDao.save(this.propertySet) : PropertySetsDao.update(this.propertySet);
-        whenSaved.$promise.then(() => this._end());
+        whenSaved.$promise.then(() => {
+            ArtifactoryModelSaver.save();
+            this._end()
+        });
     }
 
 	cancel() {

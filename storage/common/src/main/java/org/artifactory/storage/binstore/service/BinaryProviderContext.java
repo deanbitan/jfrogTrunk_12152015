@@ -19,6 +19,8 @@
 package org.artifactory.storage.binstore.service;
 
 
+import org.artifactory.storage.binstore.service.base.BinaryProviderBase;
+
 import java.util.Set;
 
 /**

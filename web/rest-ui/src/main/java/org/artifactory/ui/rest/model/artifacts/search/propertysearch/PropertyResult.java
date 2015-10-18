@@ -11,6 +11,7 @@ import org.artifactory.fs.FolderInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.ui.rest.model.artifacts.search.BaseSearchResult;
 import org.codehaus.jackson.annotate.JsonTypeName;
 
@@ -27,7 +28,7 @@ public class PropertyResult extends BaseSearchResult {
     public PropertyResult() {
     }
 
-    public PropertyResult(PropertySearchResult propertyResult) {
+    public PropertyResult(PropertySearchResult propertyResult,ArtifactoryRestRequest request) {
         super.setRepoKey(propertyResult.getRepoKey());
         this.relativePath = propertyResult.getRelativePath();
         String relDirPath = propertyResult.getRelDirPath();
@@ -49,6 +50,7 @@ public class PropertyResult extends BaseSearchResult {
         super.setModifiedString(ContextHelper.get().getCentralConfig().format(getModifiedDate()));
         this.repoPath = InfoFactoryHolder.get().createRepoPath(propertyResult.getRepoKey(),
                 propertyResult.getRelativePath(), itemInfo instanceof FolderInfo);
+        setDownloadLink(request.getDownloadLink(repoPath));
         updateActions();
     }
 

@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.1.3</version>
+        <version>4.2.0</version>
     </parent>
 
     <build>
@@ -88,20 +88,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.artifactory</groupId>
-            <artifactId>artifactory-web-green-skin</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
-        </dependency>
-
-        <!-- Required by spring proxying -->
-
-        <dependency>
-            <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
         </dependency>
 
         <dependency>

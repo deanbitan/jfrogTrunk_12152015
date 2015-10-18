@@ -37,6 +37,7 @@ export const AdminMenuItems = [
             {"label": "LDAP", "state": "admin.security.ldap_settings"},
             {"label": "Crowd", "state": "admin.security.crowd_integration", "feature": "crowd"},
             {"label": "SAML SSO", "state": "admin.security.saml_integration", "feature": "samlsso"},
+            {"label": "OAuth SSO", "state": "admin.security.oauth", "feature": "oauthsso"},
             {"label": "HTTP SSO", "state": "admin.security.http_sso", "feature": "httpsso"},
             {"label": "Signing Keys", "state": "admin.security.signing_keys", "feature": "signingkeys"}
         ]

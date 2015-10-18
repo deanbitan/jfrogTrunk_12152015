@@ -22,12 +22,19 @@ public class IvySettingModel extends BaseModel {
     private Boolean useIbiblioResolver;
     private Boolean m2Compatible;
     private String ivySnippet;
+    private String settings;
+    private String savedSnippetName;
 
     public IvySettingModel() {
     }
 
     public IvySettingModel(String ivySnippet) {
         this.ivySnippet = ivySnippet;
+    }
+
+    public IvySettingModel(String settings, String savedSnippetName) {
+        this.settings = settings;
+        this.savedSnippetName = savedSnippetName;
     }
 
     public Set<String> getLibsRepository() {
@@ -92,6 +99,22 @@ public class IvySettingModel extends BaseModel {
 
     public void setIvySnippet(String ivySnippet) {
         this.ivySnippet = ivySnippet;
+    }
+
+    public String getSettings() {
+        return settings;
+    }
+
+    public void setSettings(String settings) {
+        this.settings = settings;
+    }
+
+    public String getSavedSnippetName() {
+        return savedSnippetName;
+    }
+
+    public void setSavedSnippetName(String savedSnippetName) {
+        this.savedSnippetName = savedSnippetName;
     }
 
     public void clearProps() {

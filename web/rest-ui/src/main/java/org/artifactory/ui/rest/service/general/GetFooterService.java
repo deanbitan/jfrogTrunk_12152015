@@ -4,6 +4,7 @@ import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.AddonsWebManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.addon.OssAddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.security.AuthorizationService;
@@ -39,9 +40,10 @@ public class GetFooterService implements RestService {
     public void execute(ArtifactoryRestRequest request, RestResponse response) {
         String versionInfo = getVersionInfo();
         String versionID = getVersionID(versionInfo);
+        String severId = getCurrentServerId();
         Footer footer = new Footer(getFooterLicenseInfo(), versionInfo, getCopyrights(), getCopyRightsUrl(),
                 getBuildNum(), isAol(), isGlobalRepoEnabled(), versionID, isUserLogo(), getLogoUrl(), getServer(),
-                getSystemMessage(), isHelpLinksEnabled());
+                getSystemMessage(), isHelpLinksEnabled(), severId);
         response.iModel(footer);
     }
 
@@ -67,6 +69,12 @@ public class GetFooterService implements RestService {
                 break;
         }
         return versionID;
+    }
+
+    private String getCurrentServerId() {
+        AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
+        HaCommonAddon haCommonAddon = addonsManager.addonByType(HaCommonAddon.class);
+        return haCommonAddon.getCurrentMemberServerId();
     }
 
     /**

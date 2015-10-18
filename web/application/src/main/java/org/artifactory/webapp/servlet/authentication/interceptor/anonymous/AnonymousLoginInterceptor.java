@@ -11,6 +11,6 @@ public class AnonymousLoginInterceptor implements AnonymousAuthenticationInterce
 
     @Override
     public boolean accept(HttpServletRequest request) {
-        return request.getRequestURI().contains("auth");
+        return request.getRequestURI().contains("auth")||request.getRequestURI().matches(".*npm\\/.*\\/-\\/user\\/.*");
     }
 }

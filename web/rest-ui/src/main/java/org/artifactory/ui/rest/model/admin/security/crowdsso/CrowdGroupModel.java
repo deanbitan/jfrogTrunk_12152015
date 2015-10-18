@@ -1,6 +1,6 @@
 package org.artifactory.ui.rest.model.admin.security.crowdsso;
 
-import org.artifactory.addon.crowd.CrowdExtGroup;
+import org.artifactory.addon.sso.crowd.CrowdExtGroup;
 import org.artifactory.rest.common.model.RestModel;
 import org.artifactory.rest.common.util.JsonUtil;
 

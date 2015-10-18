@@ -64,11 +64,10 @@ public class ArtifactoryUpdatesServiceImpl implements ArtifactoryUpdatesService 
 
     @Override
     public void fetchMessage() {
-        if (!ConstantValues.versionQueryEnabled.getBoolean() && centralConfigService.getDescriptor().isOfflineMode()) {
-            return;
+        if (ConstantValues.versionQueryEnabled.getBoolean() && !centralConfigService.getDescriptor().isOfflineMode()) {
+            final Message message = getRemoteMessage();
+            cache.put(MESSAGE_CACHE_KEY, message);
         }
-        final Message message = getRemoteMessage();
-        cache.put(MESSAGE_CACHE_KEY, message);
     }
 
     @Override

@@ -29,6 +29,7 @@ public class BaseInfo {
     private String repoType;
     private String repositoryPath;
     private Boolean smartRepo;
+    private Boolean remoteDeleted;
 
     public String getName() {
         return name;
@@ -44,6 +45,14 @@ public class BaseInfo {
 
     public void setRepositoryPath(String repositoryPath) {
         this.repositoryPath = repositoryPath;
+    }
+
+    public Boolean getRemoteDeleted() {
+        return remoteDeleted;
+    }
+
+    public void setRemoteDeleted(Boolean remoteDeleted) {
+        this.remoteDeleted = remoteDeleted;
     }
 
     /**
