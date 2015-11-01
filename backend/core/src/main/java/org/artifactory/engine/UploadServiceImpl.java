@@ -26,6 +26,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.RestCoreAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.exception.FileExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
@@ -66,6 +67,7 @@ import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.resource.FileResource;
 import org.artifactory.resource.MutableRepoResourceInfo;
 import org.artifactory.resource.UnfoundRepoResource;
+import org.artifactory.storage.binstore.BinaryStoreInputStream;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
 import org.artifactory.storage.binstore.service.BinaryStore;
 import org.artifactory.traffic.TrafficService;
@@ -512,14 +514,24 @@ public class UploadServiceImpl implements UploadService {
     private void uploadItemWithReusedContent(ArtifactoryRequest request, ArtifactoryResponse response,
             LocalRepo repo, RepoResource res) throws IOException, RepoRejectException {
         String sha1 = HttpUtils.getSha1Checksum(request);
+        String sha256Checksum = null;
         if (StringUtils.isBlank(sha1)) {
-            response.sendError(SC_NOT_FOUND, "Checksum deploy failed. SHA1 header '" +
-                    ArtifactoryRequest.CHECKSUM_SHA1 + "' doesn't exist", log);
-            return;
+            sha256Checksum = HttpUtils.getSha256Checksum(request);
+            if (StringUtils.isBlank(sha256Checksum)){
+                response.sendError(SC_NOT_FOUND, "Checksum deploy failed. SHA1 / SHA256 header '" +
+                        ArtifactoryRequest.CHECKSUM_SHA1 +"/"+ ArtifactoryRequest.CHECKSUM_SHA256 + "' doesn't exist", log);
+                return;
+            }
+
+            sha1 = ContextHelper.get().getRepositoryService().getSha1BySha2Property(sha256Checksum);
         }
         log.debug("Checksum deploy to '{}' with SHA1: {}", res.getRepoPath(), sha1);
-        if (!ChecksumType.sha1.isValid(sha1)) {
-            response.sendError(SC_NOT_FOUND, "Checksum deploy failed. Invalid SHA1: " + sha1, log);
+        if (!ChecksumType.sha1.isValid(sha1) || (sha256Checksum != null && !ChecksumType.sha256.isValid(sha256Checksum))) {
+            if (sha256Checksum != null){
+                response.sendError(SC_NOT_FOUND, "Checksum deploy failed. Invalid SHA256: " + sha256Checksum, log);
+            }else {
+                response.sendError(SC_NOT_FOUND, "Checksum deploy failed. Invalid SHA1: " + sha1, log);
+            }
             return;
         }
         InputStream inputStream = null;
@@ -572,11 +584,23 @@ public class UploadServiceImpl implements UploadService {
         //Update the last modified
         long lastModified = request.getLastModified() > 0 ? request.getLastModified() : System.currentTimeMillis();
         ((MutableRepoResourceInfo) res.getInfo()).setLastModified(lastModified);
-
         Properties properties = null;
         RepoPath repoPath = res.getRepoPath();
         if (authService.canAnnotate(repoPath)) {
             properties = request.getProperties();
+            // If the deploy is checksum deploy with SHA-256 then we should add the SHA_256 checksum as property
+            if (isChecksumDeploy(request)){
+                String sha256Checksum = HttpUtils.getSha256Checksum(request);
+                // Make sure that we found the file using checksum deploy
+                if(StringUtils.isNotBlank(sha256Checksum) && inputStream !=null &&
+                        inputStream instanceof BinaryStoreInputStream) {
+                    // Make sure that the properties is not null
+                    if(properties==null){
+                        properties=(Properties) InfoFactoryHolder.get().createProperties();
+                    }
+                    properties.put("sha256",sha256Checksum);
+                }
+            }
         }
         SaveResourceContext.Builder contextBuilder = new SaveResourceContext.Builder(res, inputStream)
                 .properties(properties);

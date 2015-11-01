@@ -41,7 +41,7 @@ import java.util.List;
  * @author Yossi Shaul
  */
 @XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "anonAccessToBuildInfosDisabled", "hideUnauthorizedResources", "passwordSettings",
-        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings","debianSettings","oauthSettings"},
+        "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings","oauthSettings","debianSettings"},
         namespace = Descriptor.NS)
 public class SecurityDescriptor implements Descriptor {
 

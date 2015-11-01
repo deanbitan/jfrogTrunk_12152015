@@ -29,4 +29,7 @@ public interface LockableAddProperties {
     @Lock
     void addPropertyInternalMultiple(RepoPath repoPath, @Nullable PropertySet propertySet,
                                      Map<Property, List<String>> propertyMapFromRequests);
+
+    @Lock
+    void addSha256PropertyInternalMultiple(RepoPath repoPath);
 }

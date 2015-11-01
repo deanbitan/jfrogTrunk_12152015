@@ -880,6 +880,17 @@ public class AqlServiceTest extends AqlAbstractServiceTest {
         assertBuildArtifacts(queryResult, "bb1mod2-art1", "dll");
     }
 
+    @Test
+    public void includeInProperties() {
+        //AqlEagerResult queryResult = aqlService.executeQueryEager("items.find({\"repo\" :\"repo1\"}).include(\"@ddd\",\"@ddd\")");
+
+        //System.out.println("");
+
+        AqlEagerResult queryResulta = aqlService.executeQueryEager("items.find({\"repo\": {\"$eq\": \"pd-canoe\"}, \"@gitRepo\": {\"$match\": \"*/Pardot/pardot.git\"}, \"@gitBranch\": {\"$eq\": \"master\"}}).include(\"*\").limit(1)");
+
+        System.out.println("");
+
+    }
 
     @Test
     public void checkOrBehaviour() {

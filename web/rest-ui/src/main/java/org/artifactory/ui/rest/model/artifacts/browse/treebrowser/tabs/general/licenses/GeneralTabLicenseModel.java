@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.general.licenses;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.blackduck.BlackDuckAddon;
 import org.artifactory.api.context.ContextHelper;
@@ -44,11 +45,12 @@ public class GeneralTabLicenseModel extends BaseModel {
     public GeneralTabLicenseModel(LicenseInfo licenseInfo) {
         if (licenseInfo.getName().equals(LicenseInfo.UNKNOWN)) {
             this.name = LicenseInfo.UNKNOWN + "(" + licenseInfo.getLongName() + ")";
+            this.approved = false;
         } else {
             this.name = licenseInfo.getName();
             this.approved = licenseInfo.isApproved();
-            this.url = licenseInfo.getUrl();
         }
+        this.url = StringUtils.isNotBlank(licenseInfo.getUrl()) ? licenseInfo.getUrl() : null;
     }
 
     public String getName() {

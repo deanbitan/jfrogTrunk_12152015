@@ -11,6 +11,8 @@ public enum OAuthUIProvidersTypeEnum {
     google("Google", OAuthProvidersTypeEnum.google,new String[]{"tokenUrl","apiUrl","authUrl","domain"},
             new String[]{"https://www.googleapis.com/oauth2/v3/token","https://www.googleapis.com/oauth2/v1/userinfo",
                     null,null}),
+    cloudfoundry("Cloud Foundry", OAuthProvidersTypeEnum.cloudfoundry,new String[]{"apiUrl","authUrl","tokenUrl"},
+            new String[]{null,null,null}),
     openId("OpenID", OAuthProvidersTypeEnum.openId,new String[]{"apiUrl","authUrl","tokenUrl"},
             new String[]{null,null,null});
     private OAuthProvidersTypeEnum providerType;

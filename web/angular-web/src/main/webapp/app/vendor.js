@@ -27,7 +27,7 @@ module.exports = {
         'components/codemirror/mode/clike/clike.js',
         'components/codemirror/addon/dialog/dialog.js',
         'components/codemirror/addon/search/searchcursor.js',
-        'components/angular-ui-codemirror/ui-codemirror.js',
+        'components/angular-ui-codemirror/src/ui-codemirror.js',
         'components/x2js/xml2json.js',
         'components/angular-hotkeys/build/hotkeys.js',
         'components/jstree/dist/jstree.js',

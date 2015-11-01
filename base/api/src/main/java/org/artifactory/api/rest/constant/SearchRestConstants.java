@@ -78,6 +78,7 @@ public interface SearchRestConstants {
     String AUTOFIND_PARAM = "autofind";
     String REPOS_PARAM = "repos";
 
+    String PARAM_SHA256_CHECKSUM = "sha256";
     String PARAM_MD5_CHECKSUM = "md5";
     String PARAM_SHA1_CHECKSUM = "sha1";
 

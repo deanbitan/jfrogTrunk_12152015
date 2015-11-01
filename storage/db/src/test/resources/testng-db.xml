@@ -26,6 +26,13 @@
             <class name="org.artifactory.storage.db.fs.itest.service.FileServiceImplTest"/>
         </classes>
     </test>
+<!--
+    <test name="ConfigurableBinaryProviderManagerTest">
+        <classes>
+            <class name="org.artifactory.storage.db.binstore.itest.service.ConfigurableBinaryProviderManagerTest"/>
+        </classes>
+    </test>
+-->
     <test name="FileServiceRepoSummaryTest">
         <classes>
             <class name="org.artifactory.storage.db.fs.itest.service.FileServiceRepoStorageSummaryTest"/>
@@ -161,16 +168,6 @@
             <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFileProviderTest"/>
         </classes>
     </test>
-    <!--<test name="BinaryStoreImplDoubleFileProviderTest">
-        <classes>
-            <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplDoubleFileProviderTest"/>
-        </classes>
-    </test>
-    <test name="BinaryStoreImplDoubleFileProviderWithIOErrorTest">
-        <classes>
-            <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplDoubleFileProviderWithIOErrorTest"/>
-        </classes>
-    </test>-->
     <test name="BinaryStoreImplFullPathFileProviderTest">
         <classes>
             <class name="org.artifactory.storage.db.binstore.itest.service.BinaryStoreImplFullPathFileProviderTest"/>

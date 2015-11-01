@@ -71,7 +71,7 @@ public class StatsPersistingServiceImpl extends AbstractStatsService implements 
             long downloadRemoteCount = event.getRemoteEventCount().get() +
                     (statsInfo != null ? statsInfo.getRemoteDownloadCount() : 0);
 
-            mergedStats = new StatsImpl();
+            mergedStats = new StatsImpl(statsInfo);
             mergedStats.setDownloadCount(localDownloadCount);
             if(!Strings.isNullOrEmpty(event.getLocalDownloadedBy())) {
                 mergedStats.setLastDownloaded(event.getLocalDownloadedTime());

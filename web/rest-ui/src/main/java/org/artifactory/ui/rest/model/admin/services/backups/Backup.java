@@ -20,7 +20,7 @@ import java.util.Map;
  * @author Chen Keinan
  */
 @JsonFilter("exclude fields")
-@IgnoreSpecialFields(value = {"excludeRepos", "includeRepos", "dir", "retentionPeriodHours",
+@IgnoreSpecialFields(value = {"excludeRepos", "dir", "retentionPeriodHours",
         "excludedRepositories", "sendMailOnError", "excludeBuilds", "incremental"})
 public class Backup extends BackupDescriptor implements RestModel, RestSpecialFields {
 
@@ -51,16 +51,15 @@ public class Backup extends BackupDescriptor implements RestModel, RestSpecialFi
     private void populateditFields(BackupDescriptor backupDescriptor, boolean isEdit) {
         if (isEdit) {
             this.isEdit = isEdit;
-            populateExcludeRepo(backupDescriptor.getExcludedRepositories());
-            populateIncludeRepo();
             super.setRetentionPeriodHours(backupDescriptor.getRetentionPeriodHours());
             super.setCreateArchive(backupDescriptor.isCreateArchive());
             super.setDir(backupDescriptor.getDir());
             super.setExcludeBuilds(backupDescriptor.isExcludeBuilds());
-            super.setRetentionPeriodHours(backupDescriptor.getRetentionPeriodHours());
             super.setSendMailOnError(backupDescriptor.isSendMailOnError());
             super.setCreateArchive(backupDescriptor.isCreateArchive());
         }
+        populateExcludeRepo(backupDescriptor.getExcludedRepositories());
+        populateIncludeRepo();
     }
 
     /**

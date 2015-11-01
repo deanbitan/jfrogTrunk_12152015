@@ -14,6 +14,8 @@ public class SearchResult extends BaseModel {
     private long resultsCount;
     private boolean isLimitSearchResults;
 
+    public SearchResult(){} // for jackson
+
     public SearchResult(Object results, String searchExpression, long resultsCount, boolean isLimitSearchResults) {
         this.results = results;
         this.searchExpression = searchExpression;

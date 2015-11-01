@@ -54,9 +54,13 @@ import org.artifactory.api.repo.exception.RepoRejectException;
 import org.artifactory.api.request.UploadService;
 import org.artifactory.api.rest.constant.RepositoriesRestConstants;
 import org.artifactory.api.rest.constant.RestConstants;
+import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.SavedSearchResults;
+import org.artifactory.api.search.SearchService;
 import org.artifactory.api.search.VersionSearchResults;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
+import org.artifactory.api.search.property.PropertySearchControls;
+import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.api.security.AclService;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.storage.StorageQuotaInfo;
@@ -84,6 +88,7 @@ import org.artifactory.repo.cleanup.FolderPruningService;
 import org.artifactory.repo.count.ArtifactCountRetriever;
 import org.artifactory.repo.db.DbLocalRepo;
 import org.artifactory.repo.db.importexport.DbRepoExportSearchHandler;
+import org.artifactory.repo.http.IdleConnectionMonitorService;
 import org.artifactory.repo.interceptor.StorageInterceptors;
 import org.artifactory.repo.local.PathDeletionContext;
 import org.artifactory.repo.local.ValidDeployPathContext;
@@ -154,6 +159,9 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
     private AclService aclService;
 
     @Autowired
+    private SearchService artifactsearchService;
+
+    @Autowired
     private AuthorizationService authService;
 
     @Autowired
@@ -195,9 +203,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
 
     private Map<String, VirtualRepo> virtualRepositoriesMap = Maps.newLinkedHashMap();
 
-    private List<PoolingHttpClientConnectionManager> remoteRepoHttpConnMgrList = Lists.newArrayList();
-
-    private IdleConnectionMonitorThread idleConnectionMonitorThread = null;
 
     // a cache of all the repository keys
     private Set<String> allRepoKeysCache;
@@ -210,7 +215,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
     public void init() {
         rebuildRepositories(null);
         HttpUtils.resetArtifactoryUserAgent();
-        initIdleConnectionMonitorThread();
 
         try {
             //Dump info to the log
@@ -233,34 +237,13 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
         taskService.startTask(remoteFlushTask, false);
     }
 
-    /**
-     * restart InitIdleConnectionMonitorThread Object after reload if it not running anymore
-     */
-    private void closeConnectionMonitorThread() {
-        if (idleConnectionMonitorThread != null) {
-            idleConnectionMonitorThread.shutdown();
-            remoteRepoHttpConnMgrList.clear();
-        }
-    }
 
-    /**
-     * create InitIdleConnectionMonitorThread Object and start the monitor
-     */
-    private void initIdleConnectionMonitorThread() {
-        if (!remoteRepoHttpConnMgrList.isEmpty()) {
-            idleConnectionMonitorThread = new IdleConnectionMonitorThread(remoteRepoHttpConnMgrList);
-            idleConnectionMonitorThread.setName("Idle Connection Monitor");
-            idleConnectionMonitorThread.start();
-        }
-    }
 
     @Override
     public void reload(CentralConfigDescriptor oldDescriptor) {
         HttpUtils.resetArtifactoryUserAgent();
         deleteOrphanRepos(oldDescriptor);
-        closeConnectionMonitorThread();
         rebuildRepositories(oldDescriptor);
-        initIdleConnectionMonitorThread();
         checkAndCleanChangedVirtualPomCleanupPolicy(oldDescriptor);
     }
 
@@ -1035,15 +1018,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
             boolean suppressLayouts,
             boolean failFast) {
         MoverConfigBuilder configBuilder = new MoverConfigBuilder(from, to).copy(false).dryRun(dryRun).
-                executeMavenMetadataCalculation(false).suppressLayouts(suppressLayouts).failFast(failFast);
+                executeMavenMetadataCalculation(false).atomic(true).suppressLayouts(suppressLayouts).failFast(failFast);
         return moveOrCopy(configBuilder.build());
-    }
-
-    @Override
-    public void registerConnectionPoolMgr(PoolingHttpClientConnectionManager connectionManager) {
-        if (connectionManager != null) {
-            remoteRepoHttpConnMgrList.add(connectionManager);
-        }
     }
 
     @Override
@@ -1317,7 +1293,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
      */
     private BasicStatusHolder deleteSingleLeaf(RepoPath repoPath, boolean calcMavenMetadata,BasicStatusHolder statusHolder) {
         LockableUndeploy lockableUndeploy = InternalContextHelper.get().beanForType(LockableUndeploy.class);
-        return lockableUndeploy.undeployInternal(repoPath, calcMavenMetadata,statusHolder);
+        return lockableUndeploy.undeployInternal(repoPath, calcMavenMetadata, statusHolder);
     }
 
     @Override
@@ -1346,8 +1322,8 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
         for (VersionUnit versionUnit : versionUnits) {
             Set<RepoPath> repoPaths = versionUnit.getRepoPaths();
             if (repoPaths.stream().filter(authService::canDelete).count() != repoPaths.size()) {
-                status.warn("User " + authService.currentUsername() + "doesn't have permission to delete one or more " +
-                        "the paths associated with module '" + versionUnit.getModuleInfo().getPrettyModuleId()
+                status.warn("User " + authService.currentUsername() + " doesn't have permission to delete one or more "
+                        + "the paths associated with module '" + versionUnit.getModuleInfo().getPrettyModuleId()
                         + "', it will not be removed.", log);
                 continue;
             }
@@ -1710,6 +1686,7 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
         // save binary early without opening DB transaction (except in full db mode)
         SaveResourceContext newSaveContext = null;
         try {
+
             BinaryInfo binaryInfo = binaryStore.addBinary(saveContext.getInputStream());
             newSaveContext = new SaveResourceContext.Builder(saveContext)
                     .binaryInfo(binaryInfo).build();
@@ -1718,6 +1695,33 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
             throw e;
         }
         return getTransactionalMe().saveResourceInTransaction(repo, newSaveContext);
+    }
+
+
+    public String getSha1BySha2Property(String value){
+        PropertySearchControls propertyControlSearch = getPropertyControlSearch("sha256", value);
+        ItemSearchResults<PropertySearchResult> searchResults = searchService.searchPropertyAql(propertyControlSearch);
+        if (!searchResults.getResults().isEmpty()) {
+            PropertySearchResult propertySearchResult = searchResults.getResults().get(0);
+            FileInfo itemInfo = (FileInfo) propertySearchResult.getItemInfo();
+            if (itemInfo != null) {
+                return itemInfo.getSha1();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * update property control search
+     *
+     * @return property control search
+     */
+    private PropertySearchControls getPropertyControlSearch(String key,String value) {
+        PropertySearchControls propertySearchControls = new PropertySearchControls();
+        propertySearchControls.setSelectedRepoForSearch(new ArrayList<>());
+        propertySearchControls.setLimitSearchResults(true);
+        propertySearchControls.put(key, value, true);
+        return propertySearchControls;
     }
 
     @Override
@@ -2260,54 +2264,6 @@ public class RepositoryServiceImpl implements InternalRepositoryService ,Lockabl
         for (LocalRepoDescriptor descriptor : getLocalAndCachedRepoDescriptors()) {
             registrationService.register(new ManagedRepository(descriptor), REPOSITORIES_MBEAN_TYPE,
                     descriptor.getKey());
-        }
-    }
-
-
-
-    /**
-     * thread to monitor expired and idle connection , if found clear it and return it back to pool
-     */
-    private static class IdleConnectionMonitorThread extends Thread {
-
-        private final List<PoolingHttpClientConnectionManager> connMgrList;
-        private volatile boolean shutdown;
-
-        public IdleConnectionMonitorThread(List<PoolingHttpClientConnectionManager> connMgrList) {
-            super();
-            this.connMgrList = connMgrList;
-        }
-
-        @Override
-        public void run() {
-            try {
-                log.debug("Starting Gems Idle Connection Monitor Thread ");
-                while (!shutdown) {
-                    synchronized (this) {
-                        wait(10000);
-                        if (!connMgrList.isEmpty()) {
-                            for (PoolingHttpClientConnectionManager connPollMgr : connMgrList) {
-                                connPollMgr.closeExpiredConnections();
-                            }
-                        }
-                    }
-                }
-            } catch (InterruptedException ex) {
-                log.debug("Terminating Gems Idle Connection Monitor Thread ");
-            }
-        }
-
-        public void shutdown() {
-            if (!connMgrList.isEmpty()) {
-                for (PoolingHttpClientConnectionManager connPollMgr : connMgrList) {
-                    IOUtils.closeQuietly(connPollMgr);
-                }
-            }
-            shutdown = true;
-            synchronized (this) {
-                notifyAll();
-                log.debug("shutdown Gems Idle Connection Monitor Thread ");
-            }
         }
     }
 }

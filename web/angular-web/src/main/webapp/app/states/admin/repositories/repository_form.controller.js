@@ -644,8 +644,11 @@ export class AdminRepositoryFormController {
     }
 
     _deleteReplication(row) {
-        _.remove(this.repoInfo.replications, row);
-        this.replicationsGridOption.setGridData(this.repoInfo.replications);
+        this.modal.confirm("Are you sure you wish to delete this replication?", 'Delete Replication', {confirm: 'Delete'})
+                .then(()=> {
+                    _.remove(this.repoInfo.replications, row);
+                    this.replicationsGridOption.setGridData(this.repoInfo.replications);
+                });
 
     }
 

@@ -24,7 +24,7 @@ public class DeleteLayoutService implements RestService {
         mutableDescriptor.removeRepoLayout(layoutKey);
         centralConfigService.saveEditedDescriptorAndReload(mutableDescriptor);
 
-        String message = "Layout '" + layoutKey + "' successfully deleted.";
+        String message = "Layout '" + layoutKey + "' successfully deleted";
         response.info(message).responseCode(HttpStatus.SC_OK);
     }
 

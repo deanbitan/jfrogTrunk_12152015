@@ -35,11 +35,19 @@ public class RestFileInfo extends RestBaseStorageInfo {
     public static class Checksums implements Serializable {
         public String sha1;
         public String md5;
+        public String sha256;
 
         public Checksums(String sha1, String md5) {
             this.sha1 = sha1;
             this.md5 = md5;
         }
+
+        public Checksums(String sha1, String md5, String sha256) {
+            this.sha1 = sha1;
+            this.md5 = md5;
+            this.sha256 = sha256;
+        }
+
 
         private Checksums() {
         }

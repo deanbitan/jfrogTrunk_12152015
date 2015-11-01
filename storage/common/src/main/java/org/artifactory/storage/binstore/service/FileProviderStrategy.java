@@ -10,7 +10,7 @@ import java.util.Random;
  */
 public interface FileProviderStrategy {
     @Nonnull
-    File getTempBinariesDir(Random random) throws IOException;
+    File createTempFile();
 
     @Nonnull
     File getFile(String sha1);

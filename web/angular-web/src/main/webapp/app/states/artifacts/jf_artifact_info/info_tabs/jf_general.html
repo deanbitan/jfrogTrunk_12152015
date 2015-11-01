@@ -34,9 +34,10 @@
             <td ng-if="key == 'licenses'">
                 <div class="licenses-list inline-block"
                      ng-repeat="license in jfGeneral.generalData.info.licenses track by $index">
-                    <a ng-if="license.url !== ''"
-                       href="{{license.url}}" target="_blank">{{license.name}}</a><span
-                        ng-if="jfGeneral.generalData.info.licenses.length>1 && $index<jfGeneral.generalData.info.licenses.length-1">,&nbsp;</span>
+                    <a ng-if="license.url !== '' && license.url !== undefined"
+                       href="{{license.url}}" target="_blank">{{license.name}}</a>
+                    <span ng-if="license.url == '' || license.url === undefined">{{license.name}}</span>
+                    <span ng-if="jfGeneral.generalData.info.licenses.length>1 && $index<jfGeneral.generalData.info.licenses.length-1">,&nbsp;</span>
                 </div>
                 <span ng-if="!jfGeneral.generalData.info.licenses.length">Not Found</span>
 
@@ -169,11 +170,18 @@
           ng-if="jfGeneral.generalData.checksums">
 
     <table class="jf-data-table">
+        <tr ng-if="!jfGeneral.generalData.checksums.sha2">
+            <td>SHA-2:</td>
+            <td ng-if="!jfGeneral.features.isOss()"><a ng-click="jfGeneral.getSha256()">Calculate</a></td>
+            <td ng-if="jfGeneral.features.isOss()"><div style="width:92px" class="license-required license-required-PRO"><a ng-click="jfGeneral.getSha256()">Calculate</a></div></td>
+        </tr>
         <tr ng-repeat="(_key,_value) in jfGeneral.generalData.checksums"
             ng-if="_key != 'showFixChecksums' && _key != 'message' && _key != 'sha1Value'">
-            <td>{{_value}}</td>
+            <td>{{jfGeneral.getChecksumKey(_value)}}:</td>
+            <td>{{jfGeneral.getChecksumVal(_value)}}</td>
         </tr>
     </table>
+
     <div ng-if="jfGeneral.generalData.checksums.showFixChecksums">
         <div class="text-danger preserve-lb"
              ng-if="jfGeneral.generalData.checksums.message">{{jfGeneral.generalData.checksums.message}}

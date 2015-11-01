@@ -4,6 +4,7 @@ function signingKeysConfig($stateProvider) {
 
     $stateProvider
             .state('admin.security.signing_keys', {
+                params: {feature: 'signingkeys'},
                 url: '/signing_keys',
                 templateUrl: 'states/admin/security/signing_keys/signing_keys.html',
                 controller: 'SigningKeysController as SigningKeys'

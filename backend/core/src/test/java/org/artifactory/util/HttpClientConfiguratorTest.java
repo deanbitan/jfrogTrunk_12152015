@@ -28,13 +28,21 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.DefaultRoutePlanner;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.repo.http.IdleConnectionMonitorService;
+import org.artifactory.repo.http.IdleConnectionMonitorServiceImpl;
+import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.TestUtils;
 import org.artifactory.util.bearer.BearerSchemeFactory;
+import org.easymock.EasyMock;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.testng.Assert.*;
@@ -48,8 +56,22 @@ import static org.testng.Assert.*;
 @Test
 public class HttpClientConfiguratorTest extends ArtifactoryHomeBoundTest {
 
+    private IdleConnectionMonitorService idleConnectionMonitorService;
+    private ArtifactoryContext contextMock;
+
     @BeforeMethod
     public void setUp() throws Exception {
+        bindArtifactoryHome();
+
+        getBound().setProperty(ConstantValues.idleConnectionMonitorInterval, "10");
+        getBound().setProperty(ConstantValues.disableIdleConnectionMonitoring, "false");
+        idleConnectionMonitorService = new IdleConnectionMonitorServiceImpl();
+        contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
+        EasyMock.expect(contextMock.beanForType(IdleConnectionMonitorService.class))
+                .andReturn(idleConnectionMonitorService).anyTimes();
+        ArtifactoryContextThreadBinder.bind(contextMock);
+        EasyMock.replay(contextMock);
+
         //Version might not have been initialized
         if (StringUtils.isBlank(ConstantValues.artifactoryVersion.getString())) {
             ArtifactoryHome.get().getArtifactoryProperties().
@@ -75,29 +97,31 @@ public class HttpClientConfiguratorTest extends ArtifactoryHomeBoundTest {
         new HttpClientConfigurator().hostFromUrl("sttp:/.com");
     }
 
-    public void testHost() {
-        HttpClient client = new HttpClientConfigurator().host("bob").getClient();
+    public void testHost() throws IOException {
+        CloseableHttpClient client = new HttpClientConfigurator().host("bob").getClient();
         DefaultRoutePlanner routePlanner = getRoutePlanner(client);
         assertThat(routePlanner).isInstanceOf(HttpClientConfigurator.DefaultHostRoutePlanner.class);
         assertEquals(((HttpClientConfigurator.DefaultHostRoutePlanner)
                 routePlanner).getDefaultHost().getHostName(), "bob", "Unexpected host.");
+        client.close();
     }
 
-    public void testTokenAuthentication() {
-        HttpClient client = new HttpClientConfigurator().host("bob").enableTokenAuthentication(true, null, null).getClient();
+    public void testTokenAuthentication() throws IOException {
+        CloseableHttpClient client = new HttpClientConfigurator().host("bob").enableTokenAuthentication(true, null, null).getClient();
         Registry<AuthSchemeProvider> registry = getAuthSchemeRegistry(client);
         assertThat(registry.lookup("bearer")).isInstanceOf(BearerSchemeFactory.class);
         RequestConfig defaultConfig = getDefaultConfig(client);
         assertThat(defaultConfig.getTargetPreferredAuthSchemes().size()).isEqualTo(1);
         assertThat(defaultConfig.getTargetPreferredAuthSchemes().iterator().next()).isEqualTo("Bearer");
+        client.close();
     }
 
     private Registry<AuthSchemeProvider> getAuthSchemeRegistry(HttpClient client) {
-        return TestUtils.getField(client, "authSchemeRegistry", Registry.class);
+        return TestUtils.getField(getCloseableHttpClient(client), "authSchemeRegistry", Registry.class);
     }
 
     private RequestConfig getDefaultConfig(HttpClient client) {
-        return TestUtils.getField(client, "defaultConfig", RequestConfig.class);
+        return TestUtils.getField(getCloseableHttpClient(client), "defaultConfig", RequestConfig.class);
     }
 
     /*private Registry<AuthSchemeProvider> getAuthSchemeRegistry(HttpClient client) {
@@ -105,7 +129,7 @@ public class HttpClientConfiguratorTest extends ArtifactoryHomeBoundTest {
     }*/
 
     private DefaultRoutePlanner getRoutePlanner(HttpClient client) {
-        return TestUtils.getField(client, "routePlanner", DefaultRoutePlanner.class);
+        return TestUtils.getField(getCloseableHttpClient(client), "routePlanner", DefaultRoutePlanner.class);
     }
 
     /*
@@ -224,6 +248,10 @@ public class HttpClientConfiguratorTest extends ArtifactoryHomeBoundTest {
     }*/
 
     private HttpClientConnectionManager getConnManager(HttpClient client) {
-        return TestUtils.getField(client, "connManager", HttpClientConnectionManager.class);
+        return TestUtils.getField(getCloseableHttpClient(client), "connManager", HttpClientConnectionManager.class);
+    }
+
+    private CloseableHttpClient getCloseableHttpClient(HttpClient client) {
+        return TestUtils.getField(client, "closeableHttpClient", CloseableHttpClient.class);
     }
 }

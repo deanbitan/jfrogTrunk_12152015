@@ -24,16 +24,13 @@ public class ModuleLicenseModel {
     private String id;
     private String md5;
     private String sha1;
-    private LicenseInfo license = NOT_FOUND_LICENSE;              //License set as prop
-    private LicenseInfo extractedLicense = NOT_SEARCHED_LICENSE;  //Licenses from archive / descriptor
+    private LicenseInfo license = createNotFound();              //License set as prop
+    private LicenseInfo extractedLicense = createNotSearched();  //Licenses from archive / descriptor
     private Set<String> scopes = Sets.newHashSet();
     private String scopeNames = "";
     private boolean selected;
     private boolean overridable = false;
 
-    public void setOverridable(boolean overridable) {
-        this.overridable = overridable;
-    }
 
     private boolean hasConflicts = false;
     private boolean notFound = false;
@@ -87,7 +84,7 @@ public class ModuleLicenseModel {
      */
     public static ModuleLicenseModel createNotFoundModel(RepoPath path) {
         ModuleLicenseModel model = new ModuleLicenseModel(path);
-        model.extractedLicense = LicenseInfo.NOT_FOUND_LICENSE;
+        model.extractedLicense = LicenseInfo.createNotFound();
         model.setModelProperties(false);
         return model;
     }
@@ -185,6 +182,10 @@ public class ModuleLicenseModel {
         return overridable;
     }
 
+    public void setOverridable(boolean overridable) {
+        this.overridable = overridable;
+    }
+
     public boolean hasConflicts() {
         return hasConflicts;
     }
@@ -208,10 +209,10 @@ public class ModuleLicenseModel {
     public void setModelProperties(boolean canAnnotate) {
         //Null proof just in case
         if (license == null) {
-            license = LicenseInfo.NOT_FOUND_LICENSE;
+            license = LicenseInfo.createNotFound();
         }
         if (extractedLicense == null) {
-            extractedLicense = LicenseInfo.NOT_SEARCHED_LICENSE;
+            extractedLicense = LicenseInfo.createNotSearched();
         }
         //Both licenses not found (or extracted was not searched) - mark model as not found
         if ((license.isNotFound() && extractedLicense.isNotFound())
@@ -245,7 +246,7 @@ public class ModuleLicenseModel {
      */
     public boolean hasMismatchingAutoOverridableLicenses() {
         return extractedLicense.isFound() && (license.isNotFound()
-                || (license.equals(EMPTY_UNKNOWN_LICENSE) && !extractedLicense.equals(EMPTY_UNKNOWN_LICENSE)));
+                || (license.equals(createEmptyUnknown()) && !extractedLicense.equals(createEmptyUnknown())));
     }
 
     /**

@@ -17,6 +17,8 @@
  */
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
+
 /**
  * Refresh the tree node data and children recursively.
  *

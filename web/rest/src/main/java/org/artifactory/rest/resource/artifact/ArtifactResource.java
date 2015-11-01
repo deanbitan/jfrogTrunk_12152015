@@ -550,9 +550,27 @@ public class ArtifactResource {
         ChecksumInfo md5 = checksumInfo.getChecksumInfo(ChecksumType.md5);
         String originalSha1 = sha1 != null ? sha1.getOriginal() : checksumInfo.getSha1();
         String originalMd5 = md5 != null ? md5.getOriginal() : checksumInfo.getMd5();
-        fileInfo.checksums = new RestFileInfo.Checksums(checksumInfo.getSha1(), checksumInfo.getMd5());
+        String sha256 = getSha256(itemInfo.getRepoPath());
+        fileInfo.checksums = new RestFileInfo.Checksums(checksumInfo.getSha1(), checksumInfo.getMd5(), sha256);
         fileInfo.originalChecksums = new RestFileInfo.Checksums(originalSha1, originalMd5);
         return fileInfo;
+    }
+
+    /**
+     * get sha256 checksum property and return it
+     *
+     * @param repoPath - file repo path
+     * @return sha 256
+     */
+    private String getSha256(RepoPath repoPath) {
+        Properties properties = ContextHelper.get().getRepositoryService().getProperties(repoPath);
+        if (properties != null) {
+            String sha256 = properties.getFirst("sha256");
+            if (StringUtils.isNotBlank(sha256)) {
+                return sha256;
+            }
+        }
+        return null;
     }
 
     private RestFolderInfo createFolderInfoData(String repoKey, FolderInfo itemInfo) {

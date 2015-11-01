@@ -79,10 +79,12 @@ export class AdminServicesBackupFormController {
             this.backup.incremental = false;
         }
     }
-
+/*
+    MOVED TO MAIN BACKUPS GRID
     runNow() {
         BackupDao.runNow({},this.backup).$promise.then((res)=>{
            //console.log(res);
         });
     }
+*/
 }

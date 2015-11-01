@@ -99,7 +99,7 @@ public class GetArtifactLicenseService implements RestService {
     private License getSingleLicense(String licenseName, LicensesAddon licensesAddon) {
         License license = null;
         LicenseInfo licenseInfo = licensesAddon.getLicenseByName(licenseName);
-        if (!licenseInfo.getName().equals("Not Found")) {
+        if (!licenseInfo.isNotFound()) {
             license = ConfigModelPopulator.populateLicenseInfo(licenseInfo);
         }
         return license;

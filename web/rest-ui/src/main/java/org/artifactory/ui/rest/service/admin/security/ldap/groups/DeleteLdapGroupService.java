@@ -36,6 +36,6 @@ public class DeleteLdapGroupService implements RestService {
         MutableCentralConfigDescriptor configDescriptor = centralConfigService.getMutableDescriptor();
         configDescriptor.getSecurity().removeLdapGroup(groupId);
         centralConfigService.saveEditedDescriptorAndReload(configDescriptor);
-        artifactoryResponse.info("Ldap Group " + groupId + " successfully deleted.");
+        artifactoryResponse.info("Ldap Group " + groupId + " successfully deleted");
     }
 }

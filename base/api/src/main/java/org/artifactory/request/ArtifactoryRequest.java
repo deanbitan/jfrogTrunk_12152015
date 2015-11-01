@@ -28,6 +28,8 @@ public interface ArtifactoryRequest extends Request {
 
     String CHECKSUM_SHA1 = "X-Checksum-Sha1";
 
+    String CHECKSUM_SHA256 = "X-Checksum-Sha256";
+
     String CHECKSUM_MD5 = "X-Checksum-Md5";
 
     String ACCEPT_RANGES = "Accept-Ranges";

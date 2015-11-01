@@ -94,9 +94,7 @@ public class GetBackupService implements RestService {
      */
     private void populateMultiBackupDescriptorToModel(List<BackupDescriptor> backupDescriptorsList,
             List<RestModel> backupList) {
-        backupDescriptorsList.forEach(backupDescriptor -> {
-            backupList.add(new Backup(backupDescriptor, false));
-        });
+        backupDescriptorsList.forEach(backupDescriptor -> backupList.add(new Backup(backupDescriptor, false)));
     }
 
     /**

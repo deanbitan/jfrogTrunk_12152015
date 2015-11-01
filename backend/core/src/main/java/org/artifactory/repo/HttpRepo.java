@@ -104,6 +104,10 @@ import static org.artifactory.request.ArtifactoryRequest.ORIGIN_ARTIFACTORY;
 
 public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(HttpRepo.class);
+
+    private static final boolean REQUEST_SENT_RETRY_ENABLED = false;
+    private static final int RETRY_COUNT = 1;
+
     protected RemoteRepositoryBrowser remoteBrowser;
     @Nullable
     private CloseableHttpClient client;
@@ -194,8 +198,8 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
 
     @Override
     public void destroy() {
-        super.destroy();
         cleanupResources();
+        super.destroy();
         if (client != null) {
             IOUtils.closeQuietly(client);
         }
@@ -452,11 +456,29 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
      * @return The http response.
      * @throws IOException If the repository is offline or if any error occurs during the execution
      */
-    public CloseableHttpResponse executeMethod(HttpRequestBase method, @Nullable HttpContext context,
+    private CloseableHttpResponse doExecuteMethod(HttpRequestBase method, @Nullable HttpContext context,
             Map<String, String> extraHeaders)
             throws IOException {
-        addDefaultHeadersAndQueryParams(method,extraHeaders);
+        addDefaultHeadersAndQueryParams(method, extraHeaders);
         return getHttpClient().execute(method, context);
+    }
+
+    /**
+     * Executes an HTTP method using the repository client and returns the http response.
+     * This method allows to override some of the default headers, note that the ARTIFACTORY_ORIGINATED, the
+     * ORIGIN_ARTIFACTORY and the ACCEPT_ENCODING can't be overridden
+     * The caller to this class is responsible to close the response.
+     *
+     * @param method  Method to execute
+     * @param context The request context for execution state
+     * @param extraHeaders Extra headers to add to the remote server request
+     * @return The http response.
+     * @throws IOException If the repository is offline or if any error occurs during the execution
+     */
+    public final CloseableHttpResponse executeMethod(HttpRequestBase method, @Nullable HttpContext context,
+            Map<String, String> extraHeaders)
+            throws IOException {
+        return interceptResponse(doExecuteMethod(method, context, extraHeaders));
     }
 
     @Override
@@ -636,13 +658,10 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         String password = CryptoHelper.decryptIfNeeded(getPassword());
         return new HttpClientConfigurator()
                 .hostFromUrl(getUrl())
-                .defaultMaxConnectionsPerHost(50)
-                .maxTotalConnections(50)
                 .connectionTimeout(getSocketTimeoutMillis())
                 .soTimeout(getSocketTimeoutMillis())
                 .handleGzipResponse(handleGzipResponse)
-                .staleCheckingEnabled(true)
-                .retry(1, false)
+                .retry(RETRY_COUNT, REQUEST_SENT_RETRY_ENABLED)
                 .localAddress(getLocalAddress())
                 .proxy(getProxy())
                 .authentication(getUsername(), password, isAllowAnyHostAuth())
@@ -799,7 +818,7 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
         synchronized (onlineMonitorSync) {
             log.info("Resetting assumed offline status");
             stopOfflineCheckThread();
-            assumedOffline = false;
+            assumedOffline.getAndSet(false);
         }
     }
 
@@ -840,16 +859,16 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                         throw new InterruptedException();
                     }
                     if (checkOnline()) {
-                        if (assumedOffline) {
+                        if (assumedOffline.get()) {
                             log.info("{} is back online!", getKey());
                         }
-                        assumedOffline = false;
+                        assumedOffline.getAndSet(false);
                         onlineMonitorThread = null;
                         return;
                     }
-                    if (!assumedOffline) {
+                    if (!assumedOffline.get()) {
                         log.info("{} is inaccessible. Setting as offline!", getKey());
-                        assumedOffline = true;
+                        assumedOffline.getAndSet(true);
                     }
                     long nextOnlineCheckDelay = calculateNextOnlineCheckDelay();
                     nextOnlineCheckMillis = System.currentTimeMillis() + nextOnlineCheckDelay;
@@ -897,10 +916,13 @@ public class HttpRepo extends RemoteRepoBase<HttpRepoDescriptor> {
                 StatusLine status = response.getStatusLine();
                 log.debug("Online monitor http method completed with no exception: {}: {}",
                         status.getStatusCode(), status.getReasonPhrase());
-                //TODO: RTFACT-6528 [by YS] consider putting offline if status > 500 && status < 600
-                // no exception - consider back online
-                return true;
-            } catch (IOException e) {
+
+                if (isResourceUnavailable(status)) { //RTFACT-6528
+                    log.debug("Considering as offline due to the return code '{}'", status.getStatusCode());
+                } else return true;
+            } catch (IllegalStateException| IOException e) {
+                // IllegalStateException can be thrown while this tread in race with destroy()
+                // i.e. closed client is accesses before interrupt() takes effect
                 log.debug("Online monitor http method failed: {}: {}", e.getClass().getName(), e.getMessage());
             }
             return false;

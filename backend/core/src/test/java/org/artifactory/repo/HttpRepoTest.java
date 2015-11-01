@@ -19,48 +19,70 @@
 package org.artifactory.repo;
 
 import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
 import org.artifactory.addon.LayoutsCoreAddon;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ArtifactoryContextThreadBinder;
+import org.artifactory.api.context.ContextHelper;
+import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.repo.http.IdleConnectionMonitorService;
+import org.artifactory.repo.http.IdleConnectionMonitorServiceImpl;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.test.ArtifactoryHomeStub;
 import org.easymock.EasyMock;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
 
 /**
  * @author Yoav Landman
  */
 public class HttpRepoTest extends ArtifactoryHomeBoundTest {
     private InternalRepositoryService internalRepoService;
+    private IdleConnectionMonitorService idleConnectionMonitorService;
+    private ArtifactoryContext contextMock;
 
     @BeforeClass
     public void setup() {
+
+        bindArtifactoryHome();
+
+        getBound().setProperty(ConstantValues.idleConnectionMonitorInterval, "10");
+        getBound().setProperty(ConstantValues.disableIdleConnectionMonitoring, "false");
+        idleConnectionMonitorService = new IdleConnectionMonitorServiceImpl();
+
         internalRepoService = EasyMock.createMock(InternalRepositoryService.class);
         AddonsManager addonsManager = EasyMock.createMock(AddonsManager.class);
         LayoutsCoreAddon layoutsCoreAddon = EasyMock.createMock(LayoutsCoreAddon.class);
         HaAddon haAddon = EasyMock.createMock(HaAddon.class);
         EasyMock.expect(addonsManager.addonByType(LayoutsCoreAddon.class)).andReturn(layoutsCoreAddon);
         EasyMock.expect(addonsManager.addonByType(HaAddon.class)).andReturn(haAddon);
-        ArtifactoryContext contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
-        EasyMock.expect(contextMock.beanForType(AddonsManager.class)).andReturn(addonsManager).times(2);
+        contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
+        EasyMock.expect(contextMock.beanForType(AddonsManager.class)).andReturn(addonsManager).anyTimes();
+        EasyMock.expect(contextMock.beanForType(IdleConnectionMonitorService.class))
+                .andReturn(idleConnectionMonitorService).anyTimes();
         ArtifactoryContextThreadBinder.bind(contextMock);
         EasyMock.replay(contextMock, addonsManager);
     }
 
     @AfterClass
     public void tearDown() {
+        bindArtifactoryHome();
         ArtifactoryContextThreadBinder.unbind();
     }
 
     @Test
-    public void testProxyRemoteAuthAndMultihome() {
+    public void testProxyRemoteAuthAndMultihome() throws IOException {
         ProxyDescriptor proxyDescriptor = new ProxyDescriptor();
         proxyDescriptor.setHost("proxyHost");
         proxyDescriptor.setUsername("proxy-username");
@@ -77,7 +99,8 @@ public class HttpRepoTest extends ArtifactoryHomeBoundTest {
         httpRepoDescriptor.setLocalAddress("0.0.0.0");
 
         HttpRepo httpRepo = new HttpRepo(httpRepoDescriptor, internalRepoService, false, null);
-        HttpClient client = httpRepo.createHttpClient();
+        CloseableHttpClient client = httpRepo.createHttpClient();
+        if(client!=null) client.close();
 
         //TODO: [by YS] implement test on httpclient4
         /*Credentials proxyCredentials = client.getState().getProxyCredentials(AuthScope.ANY);

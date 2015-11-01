@@ -1,6 +1,6 @@
 <config version="2">
-    <chain template="file-system"/>
+    <chain template="cache-fs"/>
     <provider id="file-system" type="file-system">
-        <dir>hello</dir>
+        <dir>test654</dir>
     </provider>
 </config>

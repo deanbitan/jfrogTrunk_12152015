@@ -206,13 +206,6 @@ public interface InternalRepositoryService extends RepositoryService, Reloadable
             boolean failFast);
 
     /**
-     * register Pooling Http Client Connection Manager in order to monitor the connection pool and clean idle or expire connection
-     *
-     * @param connectionManager - remote repository Pooling Http Client Connection Manager
-     */
-    void registerConnectionPoolMgr(PoolingHttpClientConnectionManager connectionManager);
-
-    /**
      * Sets the client checksum on the target file. Fails if the target doesn't exist or not a file.
      *
      * @param repo               The repository holding the file

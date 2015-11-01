@@ -6,6 +6,7 @@ import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.property.ArtifactoryConverter;
 import org.artifactory.common.property.FatalConversionException;
+import org.artifactory.config.CronConfigurationException;
 import org.artifactory.storage.db.properties.model.DbProperties;
 import org.artifactory.storage.db.properties.service.ArtifactoryCommonDbPropertiesService;
 import org.artifactory.version.CompoundVersionDetails;
@@ -176,11 +177,18 @@ public class ConvertersManagerImpl implements ConverterManager {
     }
 
     private void handleException(Exception e) {
-        log.error("Conversion failed. You should analyze the error and retry launching " +
-                "Artifactory. Error is: {}", e.getMessage());
-        homeConversionRunning = false;
-        databaseConversionRunning = false;
-        throw new RuntimeException(e.getMessage(), e);
+        if (e instanceof CronConfigurationException) {
+            // we let saving cron (even if its no longer valid/malformed)
+            // rather than fail upgrade, later on user can change it manually
+            log.warn(e.getMessage());
+            log.debug("{}", e);
+        } else {
+            log.error("Conversion failed. You should analyze the error and retry launching " +
+                    "Artifactory. Error is: {}", e.getMessage());
+            homeConversionRunning = false;
+            databaseConversionRunning = false;
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 
     private DbProperties createDbPropertiesFromVersion(CompoundVersionDetails versionDetails) {

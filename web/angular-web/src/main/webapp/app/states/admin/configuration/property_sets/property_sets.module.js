@@ -4,17 +4,20 @@ import {PropertyFormModalFactory}                    from './property_form_modal
 function propertySetsConfig($stateProvider) {
     $stateProvider
             .state('admin.configuration.property_sets', {
+                params: {feature: 'properties'},
                 url: '/property_sets',
                 controller: 'AdminConfigurationPropertySetsController as PropertySets',
                 templateUrl: 'states/admin/configuration/property_sets/property_sets.html'
             })
             .state('admin.configuration.property_sets.edit', {
+                params: {feature: 'properties'},
                 parent: 'admin.configuration',
                 url: '/property_sets/{propertySetName}/edit',
                 templateUrl: 'states/admin/configuration/property_sets/property_set_form.html',
                 controller: 'AdminConfigurationPropertySetFormController as PropertySetForm'
             })
             .state('admin.configuration.property_sets.new', {
+                params: {feature: 'properties'},
                 parent: 'admin.configuration',
                 url: '/property_sets/new',
                 templateUrl: 'states/admin/configuration/property_sets/property_set_form.html',

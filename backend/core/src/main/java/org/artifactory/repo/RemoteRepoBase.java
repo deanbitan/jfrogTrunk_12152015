@@ -21,9 +21,12 @@ package org.artifactory.repo;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.HaAddon;
@@ -106,6 +109,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -120,7 +124,9 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
      * Flags this repository as assumed offline. The repository enters this state when a download request fails with
      * exception.
      */
-    protected volatile boolean assumedOffline;
+    protected volatile AtomicBoolean assumedOffline = new AtomicBoolean(false);
+    //RTFACT-6528
+    protected final static List<Integer> offlineStatusCodes = Lists.newArrayList(502, 503, 504, 505);
 
     /**
      * The next time, in milliseconds, to check online status of this repository
@@ -240,7 +246,7 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
 
     @Override
     public boolean isAssumedOffline() {
-        return assumedOffline;
+        return assumedOffline.get();
     }
 
     @Override
@@ -1299,5 +1305,29 @@ public abstract class RemoteRepoBase<T extends RemoteRepoDescriptor> extends Rea
             }
         }
         return requestPropertyBuilder.toString();
+    }
+
+    /**
+     * Intercepts response to apply RemoteRepo business logic
+     *
+     * @param response {@link org.apache.http.client.methods.CloseableHttpResponse}
+     */
+    protected final CloseableHttpResponse interceptResponse(CloseableHttpResponse response) {
+        if(isResourceUnavailable(response.getStatusLine())) {
+            putOffline();
+        }
+        return response;
+    }
+
+    /**
+     * Checks whether response code falls into ResourceUnavailable marked status codes
+     *
+     * @param status {@link org.apache.http.StatusLine}
+     *
+     * @return true if response.status is one of HttpRepo#offlineStatusCodes
+     *         members or false
+     */
+    protected final boolean isResourceUnavailable(StatusLine status) {
+        return offlineStatusCodes.contains(Integer.valueOf(status.getStatusCode()));
     }
 }

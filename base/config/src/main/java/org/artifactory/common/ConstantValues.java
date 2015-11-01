@@ -184,7 +184,11 @@ public enum ConstantValues {
     pypiIndexSleepSecs("pypi.index.sleepMilliSecs", 60),
     dockerCleanupMaxAgeMillis("docker.cleanup.maxAgeMillis", Seconds.DAY * 1000),
     httpRangeSupport("http.range.support", true),
-    aclDirtyReadsTimeout("acl.dirty.read.timeout", 20000); // in milliseconds
+    aclDirtyReadsTimeout("acl.dirty.read.timeout", 20000),
+    allowUnauthenticatedPing("ping.allowUnauthenticated", FALSE), // in milliseconds
+    idleConnectionMonitorInterval("repo.http.idleConnectionMonitorInterval", 10),
+    disableIdleConnectionMonitoring("repo.http.disableIdleConnectionMonitoring", FALSE);
+
     public static final String SYS_PROP_PREFIX = "artifactory.";
 
     private final String propertyName;

@@ -284,7 +284,7 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Override
     public VersionSearchResults searchVersionUnits(VersionUnitSearchControls controls) {
-        VersionUnitSearcher searcher = new VersionUnitSearcher(aqlService, authService);
+        VersionUnitSearcher searcher = new VersionUnitSearcher(aqlService);
         return searcher.doSearch(controls);
     }
 

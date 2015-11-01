@@ -34,6 +34,7 @@
 
     <!-- register artifactory authentication interceptors -->
     <bean class="org.artifactory.webapp.servlet.authentication.interceptor.anonymous.AnonymousLoginInterceptor"/>
+    <bean class="org.artifactory.webapp.servlet.authentication.interceptor.anonymous.AnonymousPingInterceptor"/>
 
     <!-- create the spring basic authentication filter (will be used as a delegate) -->
     <bean id="basicAuthenticationFilter"

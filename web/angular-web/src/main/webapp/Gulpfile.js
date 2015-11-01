@@ -22,7 +22,7 @@ var minifyCss = require('gulp-minify-css');
 var RevAll = require('gulp-rev-all');
 var revReplace = require("gulp-rev-replace");
 var revNapkin = require('gulp-rev-napkin');
-
+var karma = require('karma');
 var rimraf = require('gulp-rimraf');
 
 // default task runs the development tasks seq
@@ -280,4 +280,12 @@ gulp.task("revreplace", ['revision'], function() {
             .pipe(revReplace({manifest: manifest}))
             .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET))
     }
+});
+
+
+gulp.task('karma', function (done) {
+    karma.server.start({
+        configFile: __dirname + '/karma.conf.js',
+        singleRun: true
+    }, done);
 });

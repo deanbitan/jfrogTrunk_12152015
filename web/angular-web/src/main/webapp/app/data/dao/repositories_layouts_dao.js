@@ -17,7 +17,8 @@ export function RepositoriesLayoutsDao(RESOURCE, ArtifactoryDaoFactory) {
             },
             testArtifactPath: {
                 method: 'POST',
-                params: {action: 'testArtPath'}
+                params: {action: 'testArtPath'},
+                notifications: true
             },
             resolveRegex: {
                 method: 'POST',

@@ -5,13 +5,10 @@
 
 package org.artifactory.api.license;
 
-import com.google.common.base.Predicate;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.Nonnull;
 import java.io.Serializable;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -30,16 +27,7 @@ public class LicenseInfo implements Serializable {
     public static final String UNKNOWN = "Unknown";
     public static final String ROOT = "license";
     private static final String NOT_SEARCHED = "Not Searched";
-    public static final LicenseInfo EMPTY_UNKNOWN_LICENSE = createUnknown("License Name Not Found", "");
-    public static final LicenseInfo NOT_FOUND_LICENSE = createNotFound();
-    //Signifies no attempt was made to search for this license so it doesn't get tagged as a conflict. INTERNAL USE ONLY
-    public static final LicenseInfo NOT_SEARCHED_LICENSE = new LicenseInfo(NOT_SEARCHED, "", "");
-    public static final Predicate<LicenseInfo> NOT_VALID_LICENSE_PREDICATE = new Predicate<LicenseInfo>() {
-        @Override
-        public boolean apply(@Nonnull LicenseInfo input) {
-            return !input.isValidLicense();
-        }
-    };
+
     private String name = "";
     private String longName = "";
     private String url = "";
@@ -117,17 +105,15 @@ public class LicenseInfo implements Serializable {
     }
 
     public boolean matchesLicense(String otherLicense) {
-        if (StringUtils.isNotBlank(regexp) && StringUtils.isNotBlank(otherLicense)) {
-            Pattern pattern = Pattern.compile(regexp, Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(otherLicense);
-            if (matcher.matches()) {
-                return true;
-            }
-        } else if (StringUtils.isNotBlank(otherLicense)) {
-            // no regexp - try exact match
-            if (otherLicense.equals(getName())) {
-                return true;
-            }
+        //Blank - nothing to match
+        if (StringUtils.isBlank(otherLicense)) {
+            return false;
+        }
+        //Try exact match first
+        if (otherLicense.equalsIgnoreCase(getName())) {
+            return true;
+        } else if (StringUtils.isNotBlank(regexp)) {
+            return Pattern.compile(regexp, Pattern.CASE_INSENSITIVE).matcher(otherLicense).matches();
         }
         return false;
     }
@@ -137,6 +123,13 @@ public class LicenseInfo implements Serializable {
      */
     public static LicenseInfo createNotFound() {
         return new LicenseInfo(NOT_FOUND, "", "");
+    }
+
+    /**
+     * Internal use, signifies license was not searched for by any LicenseLocatorStrategy
+     */
+    public static LicenseInfo createNotSearched() {
+        return new LicenseInfo(NOT_SEARCHED, "", "");
     }
 
     public boolean isNotFound() {
@@ -156,6 +149,14 @@ public class LicenseInfo implements Serializable {
      */
     public static LicenseInfo createUnknown(String name, String url) {
         return new LicenseInfo(UNKNOWN, name, url);
+    }
+
+    /**
+     * Unknown license that no valid name was found for.
+     * Mostly used for backwards compatibility with older versions that only saved 'unknown' as the name.
+     */
+    public static LicenseInfo createEmptyUnknown() {
+        return new LicenseInfo(NOT_SEARCHED, "", "");
     }
 
     public boolean isUnknown() {
@@ -182,9 +183,13 @@ public class LicenseInfo implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         LicenseInfo that = (LicenseInfo) o;
-        if (this.isUnknown() && that.isUnknown()) {
+
+        if(this.isNotFound() && that.isNotFound()) {
+            return true;
+        } else if (this.isNotSearched() && that.isNotSearched()) {
+            return true;
+        } else if (this.isUnknown() && that.isUnknown()) {
             return longName != null ? longName.equals(that.longName) : that.longName != null;
         } else {
             return name != null ? name.equals(that.name) : that.name != null;
@@ -193,20 +198,13 @@ public class LicenseInfo implements Serializable {
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + name.hashCode();
+        int result = name.hashCode();
         result = (longName != null ? (31 * result + longName.hashCode()) : result);
         return result;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("LicenseInfo");
-        sb.append("{name='").append(name).append('\'');
-        sb.append(", longName='").append(longName).append('\'');
-        sb.append(", url='").append(url).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "LicenseInfo" + "{name='" + name + '\'' + ", longName='" + longName + '\'' + ", url='" + url + '\'' + '}';
     }
 }

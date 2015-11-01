@@ -207,7 +207,7 @@ class jfLicensesController {
         let relevantData = this.allData.licenses;
 
         if (this.includePublished) {
-            relevantData = relevantData.concat(this.allData.publishModules);
+            relevantData = relevantData.concat(this.allData.publishedModules);
         }
 
         this.filteredData = _.filter(relevantData,(license) => {
@@ -265,8 +265,8 @@ class jfLicensesController {
                 '\'license-neutral\': row.entity.license.notSearched}"'+
                 '><div ng-if="row.groupHeader">{{row.entity[\'license.name\']}}</div>' +
                 '<div ng-if="!row.groupHeader">' +
-                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') !== -1"><a href="" ng-click="grid.appScope.jfLicenses.changeLicense(row.entity)">{{row.entity.license.name}}</a></span>' +
-                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') === -1">{{row.entity.license.name}}</span>' +
+                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') !== -1"><a href="" ng-click="grid.appScope.jfLicenses.changeLicense(row.entity)">{{row.entity.license.name === "Unknown" ? "Unknown(" + row.entity.license.longName + ")" : row.entity.license.name}}</a></span>' +
+                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') === -1">{{row.entity.license.name === "Unknown" ? "Unknown(" + row.entity.license.longName + ")" : row.entity.license.name}}</span>' +
                 '</div></div>';
         return [
             {
@@ -288,7 +288,7 @@ class jfLicensesController {
                 field: "scopeNames",
                 headerCellTemplate: headerCellGroupingTemplate,
                 grouped: true,
-                width: '15%'
+                width: '12%'
             },
             {
                 name: "Repo Path",
@@ -310,7 +310,7 @@ class jfLicensesController {
                 headerCellTemplate: headerCellGroupingTemplate,
                 cellTemplate: licenseCellTemplate,
                 grouped: true,
-                width: '10%'
+                width: '13%'
             }
         ];
     }
@@ -325,15 +325,15 @@ class jfLicensesController {
                 '\'license-notfound\': row.entity.license.notFound}"'+
                 '><div ng-if="row.groupHeader">{{row.entity[\'license.name\']}}</div>' +
                 '<div ng-if="!row.groupHeader">' +
-                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') !== -1"><a href="" ng-click="grid.appScope.jfLicenses.changeLicense(row.entity)">{{row.entity.license.name}}</a></span>' +
-                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') === -1">{{row.entity.license.name}}</span>' +
+                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') !== -1"><a href="" ng-click="grid.appScope.jfLicenses.changeLicense(row.entity)">{{row.entity.license.name === "Unknown" ? "Unknown(" + row.entity.license.longName + ")" : row.entity.license.name}}</a></span>' +
+                '<span ng-if="row.entity.actions.indexOf(\'ChangeLicense\') === -1">{{row.entity.license.name === "Unknown" ? "Unknown(" + row.entity.license.longName + ")" : row.entity.license.name}}</span>' +
                 '</div></div>';
 
         let foundLicenseCellTemplate = '<div class="ui-grid-cell-contents"' +
             'ng-class="{\'license-approved\': row.entity.extractedLicense.found && row.entity.extractedLicense.name !== row.entity.license.name && row.entity.extractedLicense.approved,' +
                 '\'license-unapproved\': row.entity.extractedLicense.found && row.entity.extractedLicense.name !== row.entity.license.name && !row.entity.extractedLicense.approved,' +
                 '\'license-found-same-or-notfound\': !row.entity.extractedLicense.found || row.entity.extractedLicense.name === row.entity.license.name}"' +
-                '>{{row.entity.extractedLicense.name}}</div>';
+                '>{{row.entity.extractedLicense.name === "Unknown" ? "Unknown(" + row.entity.extractedLicense.longName + ")" : row.entity.extractedLicense.name}}</div>';
 
         return [
             {

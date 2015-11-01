@@ -18,6 +18,8 @@
 
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
+
 /**
  * This action will display a popup windows with the content of the selected text file.
  *

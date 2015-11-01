@@ -22,6 +22,11 @@ export function ArtifactActionsDao(RESOURCE, ArtifactoryDaoFactory) {
                     path: RESOURCE.ARTIFACT_ACTIONS + '/deleteversions',
                     isArray: false,
                     notifications: true
+                },
+                getSha256: {
+                    method: 'POST',
+                    path: RESOURCE.ARTIFACT_ACTIONS + '/addSha256',
+                    notifications: true
                 }
         }).getInstance();
 }

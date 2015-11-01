@@ -1,14 +1,9 @@
 package org.artifactory.ui.rest.resource.artifacts.browse.treebrowser.actions;
 
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
 import org.artifactory.rest.common.service.RestResponse;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.CopyArtifact;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DeleteArtifact;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.DownloadArtifact;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.MoveArtifact;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.ViewArtifact;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.WatchArtifact;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.ZapArtifact;
+import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.*;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.recalculateindex.BaseIndexCalculator;
 import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.browse.BrowseServiceFactory;
@@ -139,4 +134,15 @@ public class ArtifactActionsResource extends BaseResource {
             throws Exception {
         return runService(browseFactory.zapCachesVirtual(), zapArtifact);
     }
+
+    @POST
+    @Path("addSha256")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response addSha256(BaseArtifact baseArtifact)
+            throws Exception {
+        return runService(browseFactory.AddSha256ToArtifact(), baseArtifact);
+    }
+
+
 }

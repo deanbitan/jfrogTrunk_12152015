@@ -79,15 +79,18 @@ public class SimpleIdGenerator extends IdGenerator {
         Connection con = null;
         PreparedStatement stmt = null;
         try {
+            log.trace("Starting updating index with current value={}", maxReservedIndex);
             con = uniqueIdsDataSource.getConnection();
             stmt = con.prepareStatement("UPDATE unique_ids SET current_id = ? where index_type = ?");
             try {
                 long nextMaxCurrentIndex = maxReservedIndex + step();
                 stmt.setLong(1, nextMaxCurrentIndex);
                 stmt.setString(2, INDEX_TYPE_GENERAL);
+                log.trace("Executing update index with value={}", nextMaxCurrentIndex);
                 int rows = stmt.executeUpdate();
                 if (rows == 1) {
                     maxReservedIndex = nextMaxCurrentIndex;
+                    log.trace("Updated index with value={}", maxReservedIndex);
                 } else {
                     throw new StorageException(
                             "Failed to update the unique indices table " + INDEX_TYPE_GENERAL + " does not exists!");

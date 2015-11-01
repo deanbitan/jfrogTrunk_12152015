@@ -20,6 +20,7 @@ package org.artifactory.webapp.servlet;
 
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHeaders;
 import org.artifactory.api.context.ArtifactoryContext;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
@@ -263,17 +264,42 @@ public abstract class RequestUtils {
     }
 
     /**
-     * add no cache and no store header to response in order to avoid java script caching on browser
+     * add no cache and no store header to response in order to avoid java script caching on browser.
+     * In addition adds a compatibility header for IE (where needed) to avoid default compatibility view for
+     * intranet sites.
      *
-     * @param servletPath - http servlet path
+     * @param request     - http servlet request
      * @param response    - http servlet response
      */
-    public static void addNoCacheToWebAppRequest(String servletPath, HttpServletResponse response) {
-        if (servletPath.indexOf(HttpUtils.ANGULAR_WEBAPP) != -1) {
-            response.setHeader("Cache-Control", "no-store");
+    public static void addAdditionalHeadersToWebAppRequest(HttpServletRequest request, HttpServletResponse response) {
+        final String servletPath = RequestUtils.getServletPathFromRequest(request);
+        if (servletPath.contains(HttpUtils.ANGULAR_WEBAPP)) {
+            verifyExplorerUserAgentAndSetHeader(request, response);
+            if (servletPath.endsWith("/app.html")) {
+                // don't store (cache) the app.html in the browser. other resources contain unique version identifier
+                response.setHeader("Cache-Control", "no-store");
+            }
             if (!ConstantValues.enableUiPagesInIframe.getBoolean()) {
                 response.setHeader("X-FRAME-OPTIONS", "DENY");
             }
+        }
+    }
+
+    /**
+     * Verifies user agent is Internet Explorer according to:
+     * https://msdn.microsoft.com/en-us/library/hh869301(v=vs.85).aspx
+     * https://msdn.microsoft.com/en-us/library/ms537503(v=vs.85).aspx
+     * http://www.useragentstring.com/pages/Internet%20Explorer/
+     *
+     * And adds the compatibility header to avoid explorer defaulting to IE7 mode when launching compatibility view.
+     * see RTFACT-7928
+     */
+    private static void verifyExplorerUserAgentAndSetHeader(HttpServletRequest request, HttpServletResponse response) {
+        String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
+        if(userAgent.contains("MSIE") || userAgent.contains("Trident")
+                || (userAgent.contains("Windows") && userAgent.contains("Edge"))
+                || userAgent.contains("IEMobile")) {
+            response.setHeader("X-UA-Compatible", "IE=Edge");
         }
     }
 }

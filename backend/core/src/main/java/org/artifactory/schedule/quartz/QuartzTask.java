@@ -83,7 +83,8 @@ public class QuartzTask extends TaskBase {
         try {
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (SchedulerException e) {
-            throw new RuntimeException("Error in scheduling job: " + trigger.getKey(), e);
+            log.warn("Scheduling job \""+ jobDetail.getKey().getName() + "\" has failed, {}", e.getMessage());
+            log.debug("Cause: {}", e);
         }
     }
 

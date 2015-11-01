@@ -41,8 +41,7 @@ public class ScanArtifactForLicensesService implements RestService<GeneralTabLic
             return;
         }
         Set<LicenseInfo> foundLicenses = addonsManager.addonByType(LicensesAddon.class).scanPathForLicenses(path);
-        if (foundLicenses.isEmpty() ||
-                (foundLicenses.size() == 1 && foundLicenses.iterator().next().equals(LicenseInfo.NOT_FOUND_LICENSE))) {
+        if (foundLicenses.isEmpty() || (foundLicenses.size() == 1 && foundLicenses.iterator().next().isNotFound())) {
             //Don't send "not found" object - UI gets empty array and handles
             response.iModelList(Lists.newArrayList());
         } else {

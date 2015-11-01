@@ -10,7 +10,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class CallHomeRequest {
 
-    public String product = "JFrog Artifactory";
+    public String product = "JFrog-Artifactory";
 
     public String repository = "artifactory";
 

@@ -3,7 +3,7 @@ import DICTIONARY from './../../constants/artifact_general.constant';
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 class jfGeneralController {
-    constructor($scope, ArtifactGeneralDao, ArtifactoryNotifications, ArtifactLicensesDao, ChecksumsDao,
+    constructor($scope, ArtifactGeneralDao, ArtifactoryNotifications, ArtifactLicensesDao, ChecksumsDao, ArtifactActionsDao, ArtifactoryFeatures,
             FilteredResourceDao, ArtifactoryEventBus, ArtifactoryModal, DependencyDeclarationDao, $compile, User) {
         this.generalData = {
             dependencyDeclaration: []
@@ -11,6 +11,7 @@ class jfGeneralController {
         this.$scope = $scope;
         this.artifactLicensesDao = ArtifactLicensesDao;
         this.DICTIONARY = DICTIONARY;
+        this.artifactActionsDao = ArtifactActionsDao;
         this.TOOLTIP = TOOLTIP.artifacts.browse;
         this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactGeneralDao = ArtifactGeneralDao;
@@ -19,6 +20,7 @@ class jfGeneralController {
         this.modal = ArtifactoryModal;
         this.currentDeclaration = 'Maven';
         this.artifactoryEventBus = ArtifactoryEventBus;
+        this.features = ArtifactoryFeatures;
         this.$compile = $compile;
         this.userService = User;
         this.SearchForArchiveLicense = "Search Archive License File";
@@ -229,6 +231,25 @@ class jfGeneralController {
             window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
         }
         return window.location.origin+this.currentNode.data.actualDownloadPath;
+    }
+
+    getSha256() {
+        if (this.features.isOss()) return;
+        this.artifactActionsDao.getSha256({
+            repoKey: this.currentNode.data.repoKey,
+            path: this.currentNode.data.path
+        }).$promise.then((result)=> {
+                    this._getGeneralData();
+                });
+    }
+
+    getChecksumKey(keyval) {
+        return keyval.split(':')[0];
+    }
+    getChecksumVal(keyval) {
+        let splitted = keyval.split(':');
+        splitted.shift(1);
+        return splitted.join(':');
     }
 }
 

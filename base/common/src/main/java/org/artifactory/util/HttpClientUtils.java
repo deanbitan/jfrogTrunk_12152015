@@ -23,6 +23,8 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.artifactory.repo.http.CloseableHttpClientDecorator;
 import org.springframework.util.ReflectionUtils;
 
 import javax.annotation.Nonnull;
@@ -91,11 +93,24 @@ public abstract class HttpClientUtils {
             return null;
         }
         try {
-            Field requestConfigField = client.getClass().getDeclaredField("defaultConfig");
+            HttpClient httpClient = extractCloseableHttpClient(client);
+            Field requestConfigField = httpClient.getClass().getDeclaredField("defaultConfig");
             requestConfigField.setAccessible(true);
-            return (RequestConfig) ReflectionUtils.getField(requestConfigField, client);
+            return (RequestConfig) ReflectionUtils.getField(requestConfigField, httpClient);
         } catch (NoSuchFieldException e) {
             throw new IllegalStateException("Failed to get default request config", e);
         }
+    }
+
+    /**
+     * Extracts decorated HttpClient (if decorated)
+     *
+     * @param client
+     * @return {@link HttpClient}
+     */
+    private static HttpClient extractCloseableHttpClient(HttpClient client) throws NoSuchFieldException {
+        if (client instanceof CloseableHttpClientDecorator)
+            return ((CloseableHttpClientDecorator)client).getDecorated();
+        return client;
     }
 }

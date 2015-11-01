@@ -32,24 +32,16 @@ import java.util.Set;
 @XStreamAlias("searchResults")
 public class VersionSearchResults extends ItemSearchResults<VersionUnitSearchResult> {
 
-    //Signifies if these search results are missing entries due to insufficient user permissions
-    private boolean missingResultsDueToAuth;
-
     //Signifies if the query exceeded the allowed query limit
     private boolean queryLimitExceeded;
 
     private boolean searchHadErrors;
 
-    public VersionSearchResults(Set<VersionUnitSearchResult> results, long count, boolean missingResultsDueToAuth,
-            boolean queryLimitExceeded, boolean searchHadErrors) {
+    public VersionSearchResults(Set<VersionUnitSearchResult> results, long count, boolean queryLimitExceeded,
+            boolean searchHadErrors) {
         super(Lists.newArrayList(results), count);
-        this.missingResultsDueToAuth = missingResultsDueToAuth;
         this.queryLimitExceeded = queryLimitExceeded;
         this.searchHadErrors = searchHadErrors;
-    }
-
-    public boolean isMissingResultsDueToAuth() {
-        return missingResultsDueToAuth;
     }
 
     public boolean isQueryLimitExceeded() {

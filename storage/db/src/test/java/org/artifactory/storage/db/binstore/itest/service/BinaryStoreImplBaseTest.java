@@ -65,16 +65,16 @@ import static org.testng.Assert.*;
 public abstract class BinaryStoreImplBaseTest extends DbBaseTest {
 
     @Autowired
-    BinaryStoreImpl binaryStore;
+    protected BinaryStoreImpl binaryStore;
 
     @Autowired
-    NodesDao nodesDao;
+    protected NodesDao nodesDao;
 
     @Autowired
-    BinariesDao binariesDao;
+    protected BinariesDao binariesDao;
 
     @Autowired
-    StorageProperties storageProperties;
+    protected StorageProperties storageProperties;
 
     @Override
     protected ArtifactoryHomeBoundTest createArtifactoryHomeTest() throws IOException {

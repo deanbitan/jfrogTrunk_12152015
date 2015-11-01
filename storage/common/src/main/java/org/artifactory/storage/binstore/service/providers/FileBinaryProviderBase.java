@@ -39,17 +39,16 @@ public abstract class FileBinaryProviderBase extends FileBinaryProviderReadOnlyB
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderBase.class);
 
     @Override
-    protected void verifyState(File binariesDir) {
-        super.verifyState(binariesDir);
+    protected void verifyState() {
+        super.verifyState();
         // the main and pre folder should be writable also
         if (!binariesDir.canWrite()) {
             throw new StorageException("Filestore folder '" +
                     binariesDir.getAbsolutePath() + "' is not writable!");
         }
-        File tempDir = getNewTempBinariesFile(binariesDir);
-        if (!tempDir.canWrite()) {
+        if (!tempBinariesDir.canWrite()) {
             throw new StorageException("Temporary pre store folder '" +
-                    tempDir.getAbsolutePath() + "' is not writable!");
+                    tempBinariesDir.getAbsolutePath() + "' is not writable!");
         }
     }
 

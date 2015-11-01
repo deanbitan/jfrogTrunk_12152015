@@ -20,6 +20,7 @@ package org.artifactory.storage.db.spring;
 
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
+import org.artifactory.common.ConstantValues;
 import org.artifactory.storage.StorageProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,32 +118,38 @@ public class ArtifactoryTomcatDataSource extends DataSource implements Artifacto
         p.setDefaultTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
         // only one connection is required for the id generator
-        p.setInitialSize(1);
-        p.setMinIdle(1);
+        p.setInitialSize(0);
+        p.setMinIdle(0);
         p.setMaxIdle(1);
         p.setMaxActive(1);
-        p.setMaxAge(s.getIntProperty("maxAge", 0));
-        p.setMaxWait(s.getIntProperty("maxWait", (int) TimeUnit.SECONDS.toMillis(120)));
-        p.setMinEvictableIdleTimeMillis(
-                s.getIntProperty("minEvictableIdleTimeMillis", 300000));
-        p.setTimeBetweenEvictionRunsMillis(
-                s.getIntProperty("timeBetweenEvictionRunsMillis", 30000));
-        p.setInitSQL(s.getProperty("initSQL", null));
+        // Make sure old idle connections are sweep and tested
+        p.setTestWhileIdle(true);
+        p.setTestOnBorrow(true);
+        p.setTestWhileIdle(true);
+        p.setRemoveAbandoned(true);
+        p.setRemoveAbandonedTimeout((int) ConstantValues.locksTimeoutSecs.getLong()/2);
+        p.setSuspectTimeout((int) ConstantValues.locksTimeoutSecs.getLong()/2);
+        p.setLogAbandoned(true);
+        p.setLogValidationErrors(true);
+
+        // Timeout default to make sure new connection is created
+        long timeoutInMillis = TimeUnit.SECONDS.toMillis(ConstantValues.locksTimeoutSecs.getLong());
+        p.setMaxAge(timeoutInMillis);
+        p.setMaxWait((int) timeoutInMillis);
+        // Defaults values are good
+        //p.setMinEvictableIdleTimeMillis(60000);
+        //p.setTimeBetweenEvictionRunsMillis(5000);
+
+        // Pool sweeper critical here since connection rarely used
+        if (!p.isPoolSweeperEnabled()) {
+            log.error("ID Generator pool connection should sweep idled connections");
+        }
 
         // validation query for all kind of tests (connect, borrow etc.)
+        p.setInitSQL(s.getProperty("initSQL", null));
         p.setValidationQuery(s.getProperty("validationQuery", getDefaultValidationQuery(s)));
         p.setValidationQueryTimeout(s.getIntProperty("validationQueryTimeout", 30));
         p.setValidationInterval(s.getLongProperty("validationInterval", 30000));
-        p.setTestOnBorrow(s.getBooleanProperty("testOnBorrow", true));
-        p.setTestWhileIdle(s.getBooleanProperty("testWhileIdle", false));
-        p.setTestOnReturn(s.getBooleanProperty("testOnReturn", false));
-        p.setTestOnConnect(s.getBooleanProperty("testOnConnect", false));
-
-        p.setRemoveAbandoned(s.getBooleanProperty("removeAbandoned", false));
-        p.setRemoveAbandonedTimeout(s.getIntProperty("removeAbandonedTimeout", 600));
-        p.setSuspectTimeout(s.getIntProperty("suspectTimeout", 600));
-        p.setLogAbandoned(s.getBooleanProperty("logAbandoned", false));
-        p.setLogValidationErrors(s.getBooleanProperty("logValidationErrors", false));
 
         p.setJmxEnabled(false);
 

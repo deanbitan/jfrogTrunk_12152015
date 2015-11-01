@@ -1,4 +1,4 @@
-package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
+package org.artifactory.rest.common.model.artifact;
 
 import org.artifactory.rest.common.model.BaseModel;
 import org.artifactory.rest.common.util.JsonUtil;

@@ -179,6 +179,11 @@ export const FEATURES = {
         license: 'PRO',
         label: 'P2',
         path: 'p2'
+    },
+    'sha256': {
+        license: 'PRO',
+        label: 'Sha256 Calculation',
+        path: 'sha256'
     }
 };
 

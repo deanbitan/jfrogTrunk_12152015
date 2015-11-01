@@ -8,7 +8,7 @@ import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPathFactory;
 import org.artifactory.rest.common.model.BaseModel;
 import org.artifactory.rest.common.model.RestPaging;
-import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.BaseArtifact;
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
 import org.artifactory.util.PathUtils;
 
 import java.util.ArrayList;

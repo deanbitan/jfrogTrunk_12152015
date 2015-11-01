@@ -41,7 +41,7 @@ import static org.artifactory.storage.binstore.service.BinaryProviderHelper.save
  * @author Fred Simon
  */
 @BinaryProviderClassInfo(nativeName = "file-system")
-public class FileBinaryProviderImpl extends FileBinaryProviderBase implements FileBinaryProvider {
+public class FileBinaryProviderImpl extends FileBinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderImpl.class);
 
     @Override

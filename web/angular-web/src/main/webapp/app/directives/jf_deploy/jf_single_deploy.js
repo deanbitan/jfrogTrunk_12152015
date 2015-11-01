@@ -58,7 +58,7 @@ class jfSingleDeployController {
      * @param response
      */
     onSuccessItem(fileDetails, response) {
-        if (this.deployFile.repoDeploy.repoType !== 'Maven') {
+        if (this.deployFile.repoDeploy.repoType !== 'Maven' && response.unitInfo.artifactType === 'maven') {
             response.unitInfo.artifactType = "base";
         }
         response.unitInfo.debianArtifact = response.unitInfo.artifactType==='debian';

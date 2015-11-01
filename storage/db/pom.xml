@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.2.0</version>
+        <version>4.2.1</version>
     </parent>
 
     <dependencies>
@@ -71,7 +71,12 @@
             <groupId>org.artifactory</groupId>
             <artifactId>artifactory-config</artifactId>
             <type>test-jar</type>
-            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.artifactory</groupId>
+            <artifactId>artifactory-storage-config</artifactId>
+            <type>test-jar</type>
         </dependency>
 
         <dependency>

@@ -300,6 +300,9 @@ public class CentralConfigServiceImpl implements InternalCentralConfigService {
             AccessLogger.configurationChanged();
             log.debug("Old configuration:\n{}", JaxbHelper.toXml(oldDescriptor));
             log.debug("New configuration:\n{}", JaxbHelper.toXml(newDescriptor));
+        } catch (ConfigurationException e) {
+            log.warn("Failed to reload configuration: " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             String msg = "Failed to reload configuration: " + e.getMessage();
             log.error(msg, e);

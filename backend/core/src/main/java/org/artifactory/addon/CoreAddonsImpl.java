@@ -43,6 +43,7 @@ import org.artifactory.addon.npm.NpmAddon;
 import org.artifactory.addon.npm.NpmMetadataInfo;
 import org.artifactory.addon.nuget.UiNuGetAddon;
 import org.artifactory.addon.oauth.OAuthSsoAddon;
+import org.artifactory.addon.properties.ArtifactPropertiesAddon;
 import org.artifactory.addon.pypi.PypiAddon;
 import org.artifactory.addon.pypi.PypiPkgMetadata;
 import org.artifactory.addon.replication.LocalReplicationSettings;
@@ -76,6 +77,7 @@ import org.artifactory.api.request.ArtifactoryResponse;
 import org.artifactory.api.rest.build.diff.BuildsDiff;
 import org.artifactory.api.rest.compliance.FileComplianceInfo;
 import org.artifactory.api.rest.replication.ReplicationStatus;
+import org.artifactory.api.search.property.PropertySearchControls;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.build.ArtifactoryBuildArtifact;
 import org.artifactory.build.BuildRun;
@@ -163,7 +165,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
         GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon,
         ArtifactWatchAddon, ArtifactBuildAddon, UiNuGetAddon, LdapUserGroupAddon,
-        ArtifactWebstartAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon, Addon {
+        ArtifactWebstartAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon,ArtifactPropertiesAddon, Addon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -312,6 +314,10 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public boolean setLicensePropsOnPath(RepoPath path, Set<LicenseInfo> licenses) {
         return false;
+    }
+
+    @Override
+    public void setLicensePropsOnPath(RepoPath path, String... licenseNames) {
     }
 
     @Override
@@ -1124,6 +1130,15 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public boolean isActive() {
         return true;
+    }
+
+    @Override
+    public void addPropertySha256RecursivelyMultiple(RepoPath repoPath) {
+    }
+
+    @Override
+    public PropertySearchControls getSha256PropertyControlSearch(String sha256, ArrayList<String> reposToSearch) {
+        return null;
     }
 }
 

@@ -159,7 +159,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
             throws IOException, ServletException {
         final String servletPath = RequestUtils.getServletPathFromRequest(request);
         // add no cache header to web app request
-        RequestUtils.addNoCacheToWebAppRequest(servletPath, response);
+        RequestUtils.addAdditionalHeadersToWebAppRequest(request, response);
         String method = request.getMethod();
         if ((servletPath == null || "/".equals(servletPath) || servletPath.length() == 0) &&
                 "get".equalsIgnoreCase(method)) {

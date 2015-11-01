@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.artifacts.browse;
 
+import org.artifactory.rest.common.service.artifact.AddSha256ToArtifactService;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.properties.DeletePropertyModel;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.watchers.DeleteWatchersModel;
 import org.artifactory.ui.rest.service.artifacts.browse.generic.BrowseNativeService;
@@ -194,5 +195,10 @@ public abstract class BrowseServiceFactory {
 
     @Lookup
     public abstract RecalculateIndexService recalculateIndex();
+
+    @Lookup
+    public abstract AddSha256ToArtifactService AddSha256ToArtifact();
+
+
 
 }

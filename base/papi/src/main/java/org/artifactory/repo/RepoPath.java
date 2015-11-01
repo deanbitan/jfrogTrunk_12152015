@@ -24,18 +24,27 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Holds a compound path of a repository id and a path withing that repository separated by ':'
+ * Holds a compound path of a repository key and a path within that repository, separated by a ':'
  */
 public interface RepoPath extends Info {
     char REPO_PATH_SEP = ':';
     char ARCHIVE_SEP = '!';
     String REMOTE_CACHE_SUFFIX = "-cache";
 
+    /**
+     * @return The repository key
+     */
     @Nonnull
     String getRepoKey();
 
+    /**
+     * @return The path inside the repository
+     */
     String getPath();
 
+    /**
+     * @return The full repository path, like "repoKey:path/to"
+     */
     String getId();
 
     /**
@@ -50,27 +59,41 @@ public interface RepoPath extends Info {
     String toPath();
 
     /**
-     * @return The name of the path as if it was a file (the string after the last '/' or '\')
+     * @return The name of the path as if it were a file (the string after the last '/' or '\')
      */
     String getName();
 
     /**
-     * @return Parent repo path of this path. Null if current is root repository path).
+     * @return The repo path of the parent folder to this path. Null if this is the root path of the repository.
      */
     @Nullable
     RepoPath getParent();
 
     /**
-     * @return True if this repo path points to the root (i.e., the ath part is empty)
+     * @return True if this repo path is the root path of the repository (i.e., the path part is empty)
      */
     boolean isRoot();
 
     /**
+     * Whether this repo path is a path to a file, rather than a folder.
+     *
+     * Note that this function does not query Artifactory for this information,
+     * but will usually instead just look at the way the path is formatted: if
+     * path ends with a '/' character, it is considered a folder, and if not,
+     * it is considered a file.
+     *
      * @return True if this repo path represents a file
      */
     boolean isFile();
 
     /**
+     * Whether this repo path is a path to a folder, rather than a file.
+     *
+     * Note that this function does not query Artifactory for this information,
+     * but will usually instead just look at the way the path is formatted: if
+     * path ends with a '/' character, it is considered a folder, and if not,
+     * it is considered a file.
+     *
      * @return True if this repo path represents a folder
      */
     boolean isFolder();

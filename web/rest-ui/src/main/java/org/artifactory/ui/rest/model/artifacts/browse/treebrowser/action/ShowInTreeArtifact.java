@@ -19,6 +19,8 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
 
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
+
 /**
  * @author Yossi Shaul
  */

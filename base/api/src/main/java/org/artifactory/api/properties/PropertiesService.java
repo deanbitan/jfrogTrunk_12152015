@@ -90,12 +90,15 @@ public interface PropertiesService {
     void addPropertyRecursivelyMultiple(RepoPath repoPath, @Nullable PropertySet propertySet,
                                         Map<Property, List<String>> propertyMapFromRequest);
 
-    /**
-     * Deletes property from the item recursively.
-     *
-     * @param repoPath The item repo path
-     * @param property Property name to delete
-     */
+
+    void addPropertySha256RecursivelyMultiple(RepoPath repoPath);
+
+        /**
+         * Deletes property from the item recursively.
+         *
+         * @param repoPath The item repo path
+         * @param property Property name to delete
+         */
     @Lock
     void deletePropertyRecursively(RepoPath repoPath, String property);
 

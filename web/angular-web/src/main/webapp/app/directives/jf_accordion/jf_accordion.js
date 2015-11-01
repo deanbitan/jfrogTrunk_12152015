@@ -17,10 +17,16 @@ class jfAccordionController {
     }
 
     saveState() {
+
+        this.artifactoryState.setState('saveAdminState',true);
+/*
+// ACTUAL SAVING OF LAST ADMIN STATE MOVED TO artifactory.states.mudule.js (TO PREVENT SAVING WRONG STATE WHEN CONFIRMATION MODAL IS PRESENTED)
         this.$timeout(()=>{
             this.artifactoryState.setState('lastAdminState',this.state.current);
             this.artifactoryState.setState('lastAdminStateParams', this.state.params);
         });
+*/
+
     }
 
     isItemActive(item) {

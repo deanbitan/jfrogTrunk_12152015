@@ -42,6 +42,7 @@ public interface FileBinaryProvider extends BinaryProvider {
 
     /**
      * Check for state of the filestore.
+     * Is usually an heavy operation checking I/O access. Do not use on every call.
      *
      * @return true if all access and permissions to folders are valid, false otherwise
      */

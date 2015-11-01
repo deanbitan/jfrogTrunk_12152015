@@ -3,6 +3,7 @@ import {AdminConfigurationBlack_duckController} from './black_duck.controller'
 function blackDuckConfig($stateProvider) {
     $stateProvider
             .state('admin.configuration.black_duck', {
+                params: {feature: 'blackduck'},
                 url: '/black_duck',
                 templateUrl: 'states/admin/configuration/black_duck/black_duck.html',
                 controller: 'AdminConfigurationBlack_duckController as BlackDuck'

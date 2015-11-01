@@ -1,10 +1,9 @@
 package org.artifactory.ui.rest.model.artifacts.deploy;
 
+import com.sun.jersey.multipart.FormDataMultiPart;
 import org.artifactory.api.artifact.UnitInfo;
 import org.artifactory.rest.common.model.BaseModel;
 import org.artifactory.ui.rest.model.utils.FileUpload;
-
-import com.sun.jersey.multipart.FormDataMultiPart;
 
 /**
  * @author Chen Keinan
@@ -41,11 +40,20 @@ public class UploadArtifactInfo extends BaseModel {
     }
 
     public String getFileName() {
+        verifyFileName(fileName);
         return fileName;
     }
 
     public void setFileName(String fileName) {
+        verifyFileName(fileName);
         this.fileName = fileName;
+    }
+
+    private void verifyFileName(String fileName) {
+        // security check
+        if (fileName != null && fileName.contains("..")) {
+            throw new IllegalArgumentException("File name cannot contain relative paths");
+        }
     }
 
     public String getRepoKey() {

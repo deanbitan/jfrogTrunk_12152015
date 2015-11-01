@@ -29,7 +29,11 @@ public class PropertyKeyValues extends BaseModel {
      * @param property        - property instance
      */
     private void updateProps(String propertySetName, Property property) {
-        this.key = propertySetName + "." + property.getName();
+        if (propertySetName != null) {
+            this.key = propertySetName + "." + property.getName();
+        }else{
+            key = property.getName();
+        }
         property.getPredefinedValues().forEach(preValue -> values.add(preValue.getValue()));
     }
 

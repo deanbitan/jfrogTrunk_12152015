@@ -4,6 +4,7 @@ function samlIntegrationConfig($stateProvider) {
 
     $stateProvider
             .state('admin.security.saml_integration', {
+                params: {feature: 'samlsso'},
                 url: '/saml_integration',
                 templateUrl: 'states/admin/security/saml_integration/saml_integration.html',
                 controller: 'AdminSecuritySamlIntegrationController as AdminSecuritySamlIntegration'

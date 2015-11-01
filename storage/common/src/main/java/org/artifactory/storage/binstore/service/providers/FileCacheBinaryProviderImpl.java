@@ -57,7 +57,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Fred Simon
  */
 @BinaryProviderClassInfo(nativeName = "cache-fs")
-public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implements FileBinaryProvider {
+public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase {
     private static final Logger log = LoggerFactory.getLogger(FileCacheBinaryProviderImpl.class);
 
     private long maxTotalSize;  // in bytes
@@ -299,7 +299,7 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
         final String sha1;
 
         SavedToFileOnReadInputStream(InputStream delegate, String sha1) throws IOException {
-            super(delegate, BinaryProviderHelper.createTempBinFile(tempBinariesDir));
+            super(delegate, createTempFile());
             this.sha1 = sha1;
         }
 
@@ -340,7 +340,7 @@ public class FileCacheBinaryProviderImpl extends FileBinaryProviderBase implemen
 
     class SavedToFileOnWriteInputStream extends SavedToFileInputStream {
         SavedToFileOnWriteInputStream(InputStream delegate) throws IOException {
-            super(delegate, BinaryProviderHelper.createTempBinFile(tempBinariesDir));
+            super(delegate, createTempFile());
         }
 
         @Override

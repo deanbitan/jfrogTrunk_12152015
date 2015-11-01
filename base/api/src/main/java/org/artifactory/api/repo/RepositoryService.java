@@ -93,9 +93,11 @@ public interface RepositoryService extends ImportableExportable {
 
     VirtualRepoDescriptor virtualRepoDescriptorByKey(String repoKey);
 
-    /**
-     * Internal - get the raw content directly
-     */
+    String getSha1BySha2Property(String value);
+
+        /**
+         * Internal - get the raw content directly
+         */
     String getStringContent(FileInfo fileInfo);
 
     /**

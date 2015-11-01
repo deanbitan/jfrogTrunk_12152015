@@ -62,16 +62,13 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
     public static final int QUERY_LIMIT = 5 * ConstantValues.searchUserQueryLimit.getInt();
 
     private AqlService aqlService;
-    private AuthorizationService authorizationService;
     private HashMultimap<ModuleInfo, RepoPath> moduleInfoToRepoPaths = HashMultimap.create();
     private Repo repo = null;
-    private boolean resultsWereFiltered = false;
     private boolean searchHadErrors = false;
 
-    public VersionUnitSearcher(AqlService aqlService, AuthorizationService authorizationService) {
+    public VersionUnitSearcher(AqlService aqlService) {
         super();
         this.aqlService = aqlService;
-        this.authorizationService = authorizationService;
     }
 
     @Override
@@ -83,14 +80,14 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
         if (repo == null || pathsToSearch.size() < 1) {
             log.error(repo == null ? "No such repo '" + repoKey + "' to search in"
                     : "path '" + controls.getPathToSearchWithin() + "' does not exist");
-            return new VersionSearchResults(Sets.newHashSet(), 0, false, false, true);
+            return new VersionSearchResults(Sets.newHashSet(), 0, false, true);
         }
         List<RepoPath> results = searchPathsForFiles(pathsToSearch);
         results.stream().forEach(this::createModuleInfoAndInsertToMap);
         Set<VersionUnitSearchResult> versions = getVersionUnitResults();
         //Query exceeded allowed limit, should warn user
         boolean exceededLimit = results.size() > QUERY_LIMIT;
-        return new VersionSearchResults(versions, versions.size(), resultsWereFiltered, exceededLimit, searchHadErrors);
+        return new VersionSearchResults(versions, versions.size(), exceededLimit, searchHadErrors);
     }
 
     private List<RepoPath> searchPathsForFiles(List<AqlSearchablePath> pathsToSearch) {
@@ -171,13 +168,6 @@ public class VersionUnitSearcher extends SearcherBase<VersionUnitSearchControls,
 
     private VersionUnitSearchResult buildSearchResult(ModuleInfo moduleInfo) {
         Set<RepoPath> modulePaths = moduleInfoToRepoPaths.get(moduleInfo);
-        //User doesn't have permissions to delete some \ all files of this module - don't return a result for it
-        if (modulePaths.stream().filter(authorizationService::canDelete).count() != modulePaths.size()) {
-            resultsWereFiltered = true; //warn user
-            log.debug("Auth service filtered results for user {}, and module {}",
-                    authorizationService.currentUsername(), moduleInfo.getPrettyModuleId());
-            return null;
-        }
         return new VersionUnitSearchResult(new VersionUnit(moduleInfo, Sets.newHashSet(modulePaths)));
     }
 

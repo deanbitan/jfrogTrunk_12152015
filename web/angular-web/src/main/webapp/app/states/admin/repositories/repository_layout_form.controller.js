@@ -83,7 +83,7 @@ export class AdminRepositoryLayoutFormController {
         this.testReply = null;
 
         this.layoutsDao.testArtifactPath({},payload).$promise.then((data)=>{
-            this.testReply = data;
+            this.testReply = data.data;
         });
     }
 

@@ -22,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.archive.ArchiveType;
 import org.artifactory.api.download.FolderDownloadInfo;
 import org.artifactory.repo.RepoPath;
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.ui.utils.RequestUtils;
 

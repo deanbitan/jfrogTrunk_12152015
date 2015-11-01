@@ -19,6 +19,8 @@
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
 
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
+
 /**
  * Action to view source of class files or text files inside an archive.
  *

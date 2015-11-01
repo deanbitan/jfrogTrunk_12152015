@@ -254,7 +254,7 @@ public enum ArtifactoryConfigVersion implements SubConfigElementVersion {
     v1513("http://artifactory.jfrog.org/xsd/1.5.13",
             "http://www.jfrog.org/xsd/artifactory-v1_5_13.xsd",
             ArtifactoryVersion.v390,
-            ArtifactoryVersion.v394, new AddonsDefaultLayoutConverter(), new SingleRepoTypeConverter(),
+            ArtifactoryVersion.v395, new AddonsDefaultLayoutConverter(), new SingleRepoTypeConverter(),
             new SuppressConsitencyConverter(),new MavenIndexerConverter()),
     v160("http://artifactory.jfrog.org/xsd/1.6.0",
             "http://www.jfrog.org/xsd/artifactory-v1_6_0.xsd",

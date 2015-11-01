@@ -399,6 +399,27 @@ export class ArtifactsController {
             }
         };
 
+        this.setMeUpScope.fixTPL = function(tpl) {
+            let temp = tpl;
+            let protocol;
+            if (_.contains(tpl,'http://')) {
+                protocol = 'http://';
+            }
+            else if (_.contains(tpl, 'https://')) {
+                protocol = 'https://';
+            }
+            temp = temp.split(protocol).join('@@protocol@@');
+            temp = temp.split('//').join('/');
+            temp = temp.split('@@protocol@@').join(this.protocol); //this.protocol is the correct protocol to use
+
+            if (_.contains(temp,this.host+"/artifactory") && this.path !== "/artifactory") {
+                temp = temp.replace(this.host+"/artifactory",this.host+this.path);
+            }
+
+            return temp;
+
+        }
+
         this.setMeUpScope.checkLayoutSettings = function (settings, repoType) {
             if (this.select && this.select.selected) {
                 if (repoType == 'ivy') {
@@ -708,6 +729,7 @@ export class ArtifactsController {
                         if (tpl) {
                             tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                     this.serverId).replace(/\$4/g, this.host)
+                            tpl = this.fixTPL(tpl);
                             scope.deploySnippets.push({
                                 before: this.$sce.trustAsHtml(this.snippets[repoType]['deploy'][i]['before']),
                                 snippet: tpl,
@@ -722,6 +744,7 @@ export class ArtifactsController {
                     if (tpl) {
                         tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                 this.serverId).replace(/\$4/g, this.host)
+                        tpl = this.fixTPL(tpl);
                         scope.deploySnippets.push({
                             before: this.$sce.trustAsHtml(this.snippets[repoType]['deploy']['before']),
                             snippet: tpl,
@@ -745,6 +768,7 @@ export class ArtifactsController {
                         if (tpl) {
                             tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                     this.serverId).replace(/\$4/g, this.host)
+                            tpl = this.fixTPL(tpl);
                             scope.readSnippets.push({
                                 before: this.$sce.trustAsHtml(this.snippets[repoType]['read'][i]['before']),
                                 snippet: tpl,
@@ -758,6 +782,7 @@ export class ArtifactsController {
                     if (tpl) {
                         tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                 this.serverId).replace(/\$4/g, this.host)
+                        tpl = this.fixTPL(tpl);
                         scope.readSnippets.push({
                             before: this.$sce.trustAsHtml(this.snippets[repoType]['read']['before']),
                             snippet: tpl,
@@ -784,6 +809,7 @@ export class ArtifactsController {
                         if (tpl && repoData) {
                             tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                     this.serverId).replace(/\$4/g, this.host)
+                            tpl = this.fixTPL(tpl);
                         }
                         scope.generalSnippets.push({
                             title: this.$sce.trustAsHtml(this.snippets[repoType]['general'][i]['title']),
@@ -798,6 +824,7 @@ export class ArtifactsController {
                     if (tpl && repoData) {
                         tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                 this.serverId).replace(/\$4/g, this.host)
+                        tpl = this.fixTPL(tpl);
                     }
                     scope.generalSnippets.push({
                         title: this.$sce.trustAsHtml(this.snippets[repoType]['general']['title']),
@@ -917,10 +944,13 @@ export class ArtifactsController {
 
         this.getSetMeUpData(function(data) {
 //            var url = new URL(data.baseUrl) //CAUSES PROBLEM ON IE, NOT REALY NEEDED...
+
             let parser = this.parseUrl(data.baseUrl);
             this.setMeUpScope.baseUrl = parser.href;
-            this.setMeUpScope.host = parser.host;
+            this.setMeUpScope.host = parser.host.split(':')[0]; //split by ':' to remove the port number that IE returns in .host
             this.setMeUpScope.serverId = data.serverId;
+            this.setMeUpScope.protocol = parser.protocol+'//';
+            this.setMeUpScope.path = parser.pathname;
 
             data.repoKeyTypes.sort(function(a,b) {
                 return (a.repoKey > b.repoKey)?1:-1

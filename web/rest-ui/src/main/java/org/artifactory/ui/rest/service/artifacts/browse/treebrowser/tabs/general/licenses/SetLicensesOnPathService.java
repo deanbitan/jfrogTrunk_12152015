@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -31,6 +33,8 @@ import java.util.stream.Collectors;
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 public class SetLicensesOnPathService implements RestService {
     private static final Logger log = LoggerFactory.getLogger(SetLicensesOnPathService.class);
+
+    private final Pattern UNKNOWN_PATTERN = Pattern.compile("Unknown\\((.*)\\)", Pattern.CASE_INSENSITIVE);
 
     @Autowired
     private AddonsManager addonsManager;
@@ -51,7 +55,8 @@ public class SetLicensesOnPathService implements RestService {
         LicensesAddon licensesAddon = addonsManager.addonByType(LicensesAddon.class);
         List<GeneralTabLicenseModel> newLicensesNames = request.getModels();
         Set<LicenseInfo> newLicenses = newLicensesNames.stream()
-                .map(newLicense -> licensesAddon.getLicenseByName(newLicense.getName()))
+                .map(this::trimUnknownFromName)
+                .map(licensesAddon::getLicenseByName)
                 .collect(Collectors.toSet());
         if (CollectionUtils.isNullOrEmpty(newLicenses)) {
             log.debug("Request sent with empty license set - deleting license properties from path {}", path);
@@ -65,6 +70,20 @@ public class SetLicensesOnPathService implements RestService {
                 response.error("Failed to update license information - check the log for more information")
                         .responseCode(HttpStatus.SC_BAD_REQUEST);
             }
+        }
+    }
+
+    /**
+     * UI sends unknown licenses as "Unknown(<name>)" (as sent to it by LicenseService) - which will cause duplicate
+     * "Unknown" prefixes when setting the license again.
+     * This method trims the "Unknown(..)" part so we get only the license name.
+     */
+    private String trimUnknownFromName(GeneralTabLicenseModel license) {
+        Matcher matcher = UNKNOWN_PATTERN.matcher(license.getName());
+        if (matcher.matches()) {
+            return matcher.group(1);
+        } else {
+            return license.getName();
         }
     }
 }

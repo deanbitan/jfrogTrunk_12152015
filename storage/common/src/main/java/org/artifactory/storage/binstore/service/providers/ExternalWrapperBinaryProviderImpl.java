@@ -145,7 +145,7 @@ public class ExternalWrapperBinaryProviderImpl extends FileBinaryProviderReadOnl
         private final String sha1;
 
         CopyOnReadInputStream(InputStream in, String sha1) throws IOException {
-            super(in, BinaryProviderHelper.createTempBinFile(tempBinariesDir));
+            super(in, createTempFile());
             this.sha1 = sha1;
         }
 

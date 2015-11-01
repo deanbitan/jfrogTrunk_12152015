@@ -3,7 +3,7 @@ import {AdminConfigurationHAController} from './ha.controller';
 function haConfig($stateProvider) {
     $stateProvider
             .state('admin.configuration.ha', {
-                params: {feature: 'highAvailability'},
+                params: {feature: 'highavailability'},
                 url: '/ha',
                 templateUrl: 'states/admin/configuration/ha/ha.html',
                 controller: 'AdminConfigurationHAController as AdminConfigurationHA'

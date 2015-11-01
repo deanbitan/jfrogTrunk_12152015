@@ -92,8 +92,12 @@ public interface LicensesAddon extends Addon {
 
     boolean setLicensePropsOnPath(RepoPath path, Set<LicenseInfo> licenses);
 
+    void setLicensePropsOnPath(RepoPath path, String... licenseNames);
+
     /**
-     * Used by the UI to scan path for licenses - returns all licenses for path, property-based and descriptor-retrieved
+     * Used by the UI to scan path for licenses - returns all licenses for path, property-based and
+     * descriptor-retrieved (extracted). Returns a distinct list of licenses (i.e. no duplicates that were found both
+     * in properties and extracted).
      */
     Set<LicenseInfo> scanPathForLicenses(RepoPath path);
 

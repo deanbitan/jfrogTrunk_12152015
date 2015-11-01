@@ -185,6 +185,10 @@ public abstract class HttpUtils {
         return request.getHeader(ArtifactoryRequest.CHECKSUM_SHA1);
     }
 
+    public static String getSha256Checksum(ArtifactoryRequest request) {
+        return request.getHeader(ArtifactoryRequest.CHECKSUM_SHA256);
+    }
+
     public static boolean isExpectedContinue(ArtifactoryRequest request) {
         String expectHeader = request.getHeader("Expect");
         if (StringUtils.isBlank(expectHeader)) {

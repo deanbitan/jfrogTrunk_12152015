@@ -110,6 +110,7 @@ class jfDragDropController {
      * useful when clicking a per-item delete button
      */
     excludeSpecific(item) {
+        if (this.disabled) return;
         var picked;
         for (var i = this.includeList.length-1; i >= 0; i--) {
             if (this.includeList[i] == item) {
@@ -125,6 +126,7 @@ class jfDragDropController {
     }
 
     includeSpecific(item) {
+        if (this.disabled) return;
         var picked;
         for (var i = this.excludeList.length-1; i >= 0; i--) {
             if (this.excludeList[i] == item) {

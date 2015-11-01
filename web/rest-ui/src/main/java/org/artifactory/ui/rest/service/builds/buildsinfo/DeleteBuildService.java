@@ -63,7 +63,7 @@ public class DeleteBuildService<T extends DeleteBuildsModel> implements RestServ
             String buildStarted = DateUtils.formatBuildDate(buildDate);
             BuildRun buildRun = buildService.getBuildRun(buildName, buildNumber, buildStarted);
             buildService.deleteBuild(buildRun, false, multiStatusHolder);
-            multiStatusHolder.status(String.format("Successfully deleted build '%s' #%s.", buildName, buildNumber),
+            multiStatusHolder.status(String.format("Successfully deleted build '%s' #%s", buildName, buildNumber),
                     log);
             if (multiStatusHolder.hasErrors()) {
                 response.error(multiStatusHolder.getLastError().getMessage());

@@ -46,6 +46,15 @@ function changeStateHook(User, $rootScope, $q, ArtifactoryNotifications, $locati
             });
         }
 
+        let saveAdminState = ArtifactoryState.getState('saveAdminState');
+        if (toState.name.startsWith('admin.') && saveAdminState && !e.defaultPrevented) {
+            ArtifactoryState.setState('lastAdminState', toState);
+            ArtifactoryState.setState('lastAdminStateParams', toParams);
+            ArtifactoryState.removeState('saveAdminState');
+        }
+        else if (saveAdminState) {
+            ArtifactoryState.removeState('saveAdminState');
+        }
 
 
         if (fromState.name && toState.name && fromState.name != toState.name) {
@@ -59,6 +68,7 @@ function changeStateHook(User, $rootScope, $q, ArtifactoryNotifications, $locati
         else if (fromState.name === 'artifacts.browsers.search') {
             ArtifactoryEventBus.dispatch(EVENTS.CLEAR_SEARCH);
         }
+
 
 
         if (toState.name === 'oauth_error') {

@@ -18,6 +18,8 @@
 
 package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
+
 /**
  * Base class for actions viewing text resources.
  *

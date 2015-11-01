@@ -20,6 +20,7 @@ package org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action;
 
 import org.artifactory.api.module.VersionUnit;
 import org.artifactory.mime.MavenNaming;
+import org.artifactory.rest.common.model.artifact.BaseArtifact;
 import org.artifactory.ui.rest.model.common.RepoKeyPath;
 
 import java.util.HashSet;

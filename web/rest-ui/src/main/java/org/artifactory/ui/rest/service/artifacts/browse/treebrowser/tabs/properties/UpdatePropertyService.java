@@ -35,7 +35,7 @@ public class UpdatePropertyService implements RestService {
             response.info("Successfully updated property '" + propertiesTab.getProperty().getName() + "'");
         }catch (Exception e){
             log.error("Failed to create property '" + propertiesTab.getProperty().getName() +  "'");
-            response.info("Failed to update property '" + propertiesTab.getProperty().getName() +  "'");
+            response.error("Failed to update property '" + propertiesTab.getProperty().getName() +  "'");
         }
     }
 }

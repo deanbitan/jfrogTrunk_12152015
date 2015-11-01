@@ -79,7 +79,7 @@ public class BinaryProviderHelper {
             throws IOException {
         File preFileStoreFile = null;
         try {
-            preFileStoreFile = createTempBinFile(fileProviderStrategy);
+            preFileStoreFile = fileProviderStrategy.createTempFile();
             BinaryInfoImpl binaryInfo = saveStreamToTempFile(in, preFileStoreFile);
             preFileStoreFile = persistFile(binaryInfo, preFileStoreFile, fileProviderStrategy);
             return binaryInfo;
@@ -92,20 +92,7 @@ public class BinaryProviderHelper {
         }
     }
 
-
-    /**
-     * Creates a temp file.
-     *
-     * @param fileProviderStrategy
-     * @return the file
-     * @throws IOException On failure writing to the temp file
-     */
-    public static File createTempBinFile(FileProviderStrategy fileProviderStrategy) throws IOException {
-        File temp = fileProviderStrategy.getTempBinariesDir(random);
-        return temp;
-    }
-
-    public static File createTempBinFile(File tempDir) throws IOException {
+    public static File createTempBinFile(File tempDir) {
         Random rnd = random;
         if (rnd == null) {
             rnd = initRNG();

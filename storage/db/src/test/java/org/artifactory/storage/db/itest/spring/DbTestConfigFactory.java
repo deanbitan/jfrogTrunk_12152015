@@ -51,10 +51,6 @@ public class DbTestConfigFactory implements BeanFactoryAware {
     @Bean(name = "dataSource")
     public DataSource createDataSource() {
         StorageProperties storageProperties = beanFactory.getBean("storageProperties", StorageProperties.class);
-        /*ArtifactoryDataSource dataSource = new ArtifactoryDbcpDataSource(storageProperties);
-        GenericObjectPool pool = (GenericObjectPool) ReflectionTestUtils.getField(dataSource, "_pool");
-        PoolableConnectionFactory factory = (PoolableConnectionFactory) ReflectionTestUtils.getField(pool, "_factory");
-        factory.setDefaultAutoCommit(true);*/
         ArtifactoryTomcatDataSource dataSource = new ArtifactoryTomcatDataSource(storageProperties);
         // the db tests has limited tx support (which is mostly controlled by the business logic layer) so we are using
         // auto commit
@@ -69,21 +65,6 @@ public class DbTestConfigFactory implements BeanFactoryAware {
     @Bean(name = "uniqueIdsDataSource")
     public DataSource createUniqueIdsDataSource() {
         StorageProperties storageProperties = beanFactory.getBean("storageProperties", StorageProperties.class);
-
-        /*GenericObjectPool.Config poolConfig = new GenericObjectPool.Config();
-        poolConfig.maxActive = 1;
-        poolConfig.maxIdle = 1;
-        ObjectPool connectionPool = new GenericObjectPool(null, poolConfig);
-
-        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(
-                storageProperties.getConnectionUrl(),
-                storageProperties.getUsername(), storageProperties.getPassword());
-
-        // default auto commit true!
-        PoolableConnectionFactory pcf = new ArtifactoryPoolableConnectionFactory(connectionFactory,
-                connectionPool, null, null, false, true);
-        pcf.setDefaultTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-        return new PoolingDataSource(connectionPool);*/
         return ArtifactoryTomcatDataSource.createUniqueIdDataSource(storageProperties);
     }
 

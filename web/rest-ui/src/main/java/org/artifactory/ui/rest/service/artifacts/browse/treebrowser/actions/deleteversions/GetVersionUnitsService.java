@@ -2,7 +2,6 @@ package org.artifactory.ui.rest.service.artifacts.browse.treebrowser.actions.del
 
 import org.artifactory.api.module.ModuleInfo;
 import org.artifactory.api.repo.RepositoryService;
-import org.artifactory.api.search.ItemSearchResults;
 import org.artifactory.api.search.VersionSearchResults;
 import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.mime.MavenNaming;
@@ -60,15 +59,9 @@ public class GetVersionUnitsService implements RestService {
         response.iModel(new DeleteArtifactVersions(moduleArtifactVersionMap.values()));
         if (results.isSearchHadErrors()) {
             response.error("The version search encountered errors, check the logs for additional info.");
-        } else {
-            if (results.isQueryLimitExceeded()) {
-                response.warn("Search exceeded the limit and some versions are not shown.\n " +
-                        "Try running this action from deeper node.");
-            }
-            if (results.isMissingResultsDueToAuth()) {
-                response.warn("Some versions were excluded from the results as you are missing the permissions " +
-                        "required to delete them.");
-            }
+        } else if (results.isQueryLimitExceeded()) {
+            response.warn("Search exceeded the limit and some versions are not shown.\n " +
+                    "Try running this action from deeper node.");
         }
     }
 

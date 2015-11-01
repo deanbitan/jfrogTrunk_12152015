@@ -25,6 +25,7 @@ import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.storage.db.itest.DbBaseTest;
 import org.artifactory.storage.fs.service.StatsService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -49,6 +50,7 @@ public class StatsServiceImplTest extends DbBaseTest {
         importSql("/sql/nodes-for-service.sql");
     }
 
+    @Test
     public void getStatsFileWithStats() {
         StatsInfo stats = statsService.getStats(new RepoPathImpl("repo1", "ant/ant/1.5/ant-1.5.jar"));
         assertNotNull(stats);
@@ -117,7 +119,7 @@ public class StatsServiceImplTest extends DbBaseTest {
         assertEquals(stats.getLastDownloadedBy(), "ariels");
     }
 
-    @Test
+    @Test(dependsOnMethods = "getStatsFileWithStats")
     public void fileDownloadedRemotelyOnFileWithStats() {
         RepoPathImpl repoPath = new RepoPathImpl("repo1", "ant/ant/1.5/ant-1.5.jar");
         long lastDownloaded = System.currentTimeMillis() + 2000;

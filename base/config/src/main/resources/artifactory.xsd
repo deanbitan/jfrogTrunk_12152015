@@ -1424,13 +1424,13 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="oauthSettings" type="oauthSettingsType" minOccurs="0" maxOccurs="1">
-                    <xs:annotation>
-                        <xs:documentation source="description">
-                            <![CDATA[
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        <![CDATA[
                         Security settings specific to OAuth.
                         ]]>
-                        </xs:documentation>
-                    </xs:annotation>
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="debianSettings" type="DebianSettingsType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>

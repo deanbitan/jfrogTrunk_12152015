@@ -28,7 +28,7 @@ public class DeleteBackupService implements RestService {
         // delete backup
         deleteBackup(backupId);
         // update feedback
-        response.info("Backup " + backupId + " successfully deleted.");
+        response.info("Backup " + backupId + " successfully deleted");
     }
 
     /**

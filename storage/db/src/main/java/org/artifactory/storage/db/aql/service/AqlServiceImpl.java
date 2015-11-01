@@ -135,7 +135,7 @@ public class AqlServiceImpl implements AqlService {
         log.trace("Converting the AqlApi query into SQL query: {}", aqlQuery);
         SqlQuery sqlQuery = sqlQueryBuilder.buildQuery(aqlQuery);
         log.trace("Successfully finished to convert the parser result into the following SQL query '{}'", sqlQuery);
-        log.debug("processing the following SQL query: {}", sqlQuery);
+        log.trace("processing the following SQL query: {}", sqlQuery);
         AqlEagerResultImpl aqlQueryResult = aqlDao.executeQueryEager(sqlQuery);
         log.debug("Successfully finished to process SQL query with the following size: {}", aqlQueryResult.getSize());
         return aqlQueryResult;
@@ -145,7 +145,7 @@ public class AqlServiceImpl implements AqlService {
         log.trace("Converting the AqlApi query into SQL qury: {}", aqlQuery);
         SqlQuery sqlQuery = sqlQueryBuilder.buildQuery(aqlQuery);
         log.trace("Successfully finished to convert the parser result into the following SQL query '{}'", sqlQuery);
-        log.debug("processing the following SQL query: {}", sqlQuery);
+        log.trace("processing the following SQL query: {}", sqlQuery);
         AqlLazyResult aqlQueryStreamResult = aqlDao.executeQueryLazy(sqlQuery, permissionProvider);
         log.debug("Successfully finished to process SQL query (lazy)");
         return aqlQueryStreamResult;

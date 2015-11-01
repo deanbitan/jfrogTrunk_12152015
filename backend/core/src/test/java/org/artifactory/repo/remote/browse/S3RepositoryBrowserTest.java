@@ -25,12 +25,19 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.artifactory.api.context.ArtifactoryContext;
+import org.artifactory.api.context.ArtifactoryContextThreadBinder;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.repo.http.IdleConnectionMonitorService;
+import org.artifactory.repo.http.IdleConnectionMonitorServiceImpl;
+import org.artifactory.spring.InternalArtifactoryContext;
+import org.artifactory.test.ArtifactoryHomeBoundTest;
 import org.artifactory.test.ArtifactoryHomeStub;
 import org.artifactory.test.mock.SimpleMockServer;
 import org.artifactory.util.HttpClientConfigurator;
 import org.artifactory.util.StringInputStream;
+import org.easymock.EasyMock;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
@@ -57,8 +64,10 @@ import static org.testng.Assert.*;
  * @author Yossi Shaul
  */
 @Test
-public class S3RepositoryBrowserTest {
+public class S3RepositoryBrowserTest extends ArtifactoryHomeBoundTest {
     private static final Logger log = LoggerFactory.getLogger(S3RepositoryBrowserTest.class);
+    private IdleConnectionMonitorService idleConnectionMonitorService;
+    private ArtifactoryContext contextMock;
 
     static {
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -193,17 +202,34 @@ public class S3RepositoryBrowserTest {
 
     @BeforeClass
     public void setup() {
+
+        bindArtifactoryHome();
+
+        getBound().setProperty(ConstantValues.idleConnectionMonitorInterval, "10");
+        getBound().setProperty(ConstantValues.disableIdleConnectionMonitoring, "false");
+        idleConnectionMonitorService = new IdleConnectionMonitorServiceImpl();
+
+        contextMock = EasyMock.createMock(InternalArtifactoryContext.class);
+        EasyMock.expect(contextMock.beanForType(IdleConnectionMonitorService.class))
+                .andReturn(idleConnectionMonitorService).anyTimes();
+        ArtifactoryContextThreadBinder.bind(contextMock);
+        EasyMock.replay(contextMock);
+
         server = new SimpleMockServer(new S3Handler());
         server.start();
         ArtifactoryHomeStub props = new ArtifactoryHomeStub();
         props.setProperty(ConstantValues.artifactoryVersion, "TEST");
         ArtifactoryHome.bind(props);
+
+
+
         client = new HttpClientConfigurator().connectionTimeout(30000).soTimeout(2000).noRetry().getClient();
         ArtifactoryHome.unbind();
     }
 
     @AfterClass
-    public void shutdown() {
+    public void shutdown() throws IOException {
+        if(client!=null) client.close();
         server.stop();
     }
 

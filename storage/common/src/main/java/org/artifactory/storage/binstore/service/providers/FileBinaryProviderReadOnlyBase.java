@@ -33,9 +33,7 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.Random;
 
 import static org.artifactory.storage.binstore.service.BinaryProviderHelper.getDataFolder;
 
@@ -59,38 +57,35 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
         if (StringUtils.isBlank(binaryProviderDir)) {
             binaryProviderDir = "filestore";
         }
-        binariesDir = getDataFolder(getBaseDataDir(), getParam("dir", binaryProviderDir));
-        this.tempBinariesDir = getNewTempBinariesFile(binariesDir);
-        verifyState(binariesDir);
+        this.binariesDir = getDataFolder(getBaseDataDir(), getParam("dir", binaryProviderDir));
+        this.tempBinariesDir = new File(binariesDir, "_pre");
+        verifyState();
     }
 
     protected File getBaseDataDir() {
         return ArtifactoryHome.get().getHaAwareDataDir();
     }
 
-
-    protected File getNewTempBinariesFile(File binariesDir) {
-        return new File(binariesDir, "_pre");
-    }
-
     @Override
     public boolean isAccessible() {
         try {
-            verifyState(binariesDir);
+            if (this.binariesDir == null || this.tempBinariesDir == null) {
+                return false;
+            }
+            verifyState();
             return true;
         } catch (Exception e) {
             return false;
         }
     }
 
-    protected void verifyState(File binariesDir) {
+    protected void verifyState() {
         if (!binariesDir.exists() && !binariesDir.mkdirs()) {
             throw new StorageException("Could not create file store folder '" + binariesDir.getAbsolutePath() + "'");
         }
-        File tempDir = getNewTempBinariesFile(binariesDir);
-        if (!tempDir.exists() && !tempDir.mkdirs()) {
+        if (!tempBinariesDir.exists() && !tempBinariesDir.mkdirs()) {
             throw new StorageException("Could not create temporary pre store folder '" +
-                    tempDir.getAbsolutePath() + "'");
+                    tempBinariesDir.getAbsolutePath() + "'");
         }
     }
 
@@ -139,7 +134,7 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
 
     @Nonnull
     @Override
-    public File getTempBinariesDir(Random random) throws IOException {
+    public File createTempFile() {
         return BinaryProviderHelper.createTempBinFile(tempBinariesDir);
     }
 

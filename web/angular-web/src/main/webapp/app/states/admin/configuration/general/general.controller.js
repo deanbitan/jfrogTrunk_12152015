@@ -19,6 +19,8 @@ export class AdminConfigurationGeneralController {
         this.TOOLTIP = TOOLTIP.admin.configuration.general;
         this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['generalConfigData']);
 
+        this.deleteUserLogo = false;
+
         this._initUploader();
 
         this._getGeneralConfigData();
@@ -85,6 +87,7 @@ export class AdminConfigurationGeneralController {
             this.showPreview(fileItem._file);
         }).catch((err)=> {
             this.artifactoryNotifications.create({error: err});
+            this.uploader.clearQueue();
         });
     }
 
@@ -139,6 +142,8 @@ export class AdminConfigurationGeneralController {
         this.uploader.clearQueue();
         this.logoFile = undefined;
 
+        this.deleteUserLogo = true;
+
         this.$timeout(()=>{
             $(".artifactory-logo img")[0].src = this.defaultLogoUrl;
         });
@@ -149,7 +154,7 @@ export class AdminConfigurationGeneralController {
             this.uploader.uploadAll();
         }
         else {
-            this._deleteUploadedPicture();
+            if (this.deleteUserLogo) this._deleteUploadedPicture();
             this._updateGeneralConfigData();
         }
     }
@@ -167,6 +172,7 @@ export class AdminConfigurationGeneralController {
             this._imageExists(this.logoUrlInput)
             .then(()=>{
                     this.generalConfigData.logoUrl = this.logoUrlInput;
+                    this.deleteUserLogo = true;
                 })
             .catch((err)=>console.log(err));
 

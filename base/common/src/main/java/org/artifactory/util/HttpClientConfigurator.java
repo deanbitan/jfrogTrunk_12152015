@@ -51,6 +51,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.repo.ProxyDescriptor;
+import org.artifactory.repo.http.CloseableHttpClientDecorator;
 import org.artifactory.security.crypto.CryptoHelper;
 import org.artifactory.util.bearer.BearerSchemeFactory;
 import org.slf4j.Logger;
@@ -64,6 +65,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Builder for HTTP client.
@@ -72,6 +74,19 @@ import java.util.List;
  */
 public class HttpClientConfigurator {
     private static final Logger log = LoggerFactory.getLogger(HttpClientConfigurator.class);
+
+    // in httpclient 4.4 handling of stale connections was changed,
+    // previously, the code would check every connection by default before re-using it.
+    // The code now only checks connection if the elapsed time since the last use of
+    // the connection exceeds the timeout that has been set
+    private static final int CONNECTION_TIME_TO_LIVE = 5;
+    private static final int DEFAULT_PORT = 80;
+    // max connections for localhost:80
+    private static final int DEFAULT_POOL_MAX_CONNECTIONS_PER_ROUTE = 50;
+    private static final String LOCALHOST = "localhost";
+    private static final int MAX_CONNECTIONS_PER_HOST = 50;
+    private static final int MAX_TOTAL_CONNECTIONS = 50;
+
 
     private HttpClientBuilder builder = HttpClients.custom();
     private RequestConfig.Builder config = RequestConfig.custom();
@@ -94,17 +109,35 @@ public class HttpClientConfigurator {
         if (hasCredentials()) {
             builder.setDefaultCredentialsProvider(credsProvider);
         }
-        return builder.setDefaultRequestConfig(config.build()).build();
-    }
+        builder.setDefaultRequestConfig(config.build());
 
-    public HttpClientConfigurator keepAliveStrategy() {
-        ConnectionKeepAliveStrategy keepAliveStrategy = getConnectionKeepAliveStrategy();
-        builder.setKeepAliveStrategy(keepAliveStrategy);
-        return this;
+        /**
+         * Connection management
+         */
+        builder.setKeepAliveStrategy(getConnectionKeepAliveStrategy());
+        PoolingHttpClientConnectionManager connectionMgr = createConnectionMgr();
+        builder.setConnectionManager(connectionMgr);
+
+        return new CloseableHttpClientDecorator(builder.build(), connectionMgr);
     }
 
     /**
-     * provide a custom keep-alive strategy
+     * Creates custom Http Client connection pool to be used by Http Client
+     *
+     * @return {@link PoolingHttpClientConnectionManager}
+     */
+    private PoolingHttpClientConnectionManager createConnectionMgr() {
+        PoolingHttpClientConnectionManager connectionMgr;
+        connectionMgr = new PoolingHttpClientConnectionManager(CONNECTION_TIME_TO_LIVE, TimeUnit.SECONDS);
+        connectionMgr.setMaxTotal(MAX_TOTAL_CONNECTIONS);
+        connectionMgr.setDefaultMaxPerRoute(MAX_CONNECTIONS_PER_HOST);
+        HttpHost localhost = new HttpHost(LOCALHOST, DEFAULT_PORT);
+        connectionMgr.setMaxPerRoute(new HttpRoute(localhost), DEFAULT_POOL_MAX_CONNECTIONS_PER_ROUTE);
+        return connectionMgr;
+    }
+
+    /**
+     * Produces a {@link ConnectionKeepAliveStrategy}
      *
      * @return keep-alive strategy to be used for connection pool
      */
@@ -135,17 +168,6 @@ public class HttpClientConfigurator {
                 }
             }
         };
-    }
-
-    /**
-     * set customized Pooling Http Client Connection Manager
-     *
-     * @param connectionManager -  custom PoolingHttpClientConnectionManager
-     * @return Http Client Configurator
-     */
-    public HttpClientConfigurator connectionMgr(PoolingHttpClientConnectionManager connectionManager) {
-        builder.setConnectionManager(connectionManager);
-        return this;
     }
 
     /**

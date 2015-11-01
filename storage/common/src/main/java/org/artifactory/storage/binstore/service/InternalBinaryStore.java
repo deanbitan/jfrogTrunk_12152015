@@ -101,8 +101,10 @@ public interface InternalBinaryStore extends BinaryStore,BinaryStoreServices {
      * The actual local directory where checksum binary files will be stored.
      *
      * @return the folder for this binary store
+     * @deprecated Cannot be used anymore
      */
     @Nullable
+    @Deprecated
     File getBinariesDir();
 
     /**

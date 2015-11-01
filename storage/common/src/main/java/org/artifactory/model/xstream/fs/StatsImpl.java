@@ -46,6 +46,8 @@ public class StatsImpl implements MutableStatsInfo {
     }
 
     public StatsImpl(StatsInfo statsInfo) {
+        if (statsInfo == null) return;
+
         this.downloadCount = statsInfo.getDownloadCount();
         this.lastDownloaded = statsInfo.getLastDownloaded();
         this.lastDownloadedBy = statsInfo.getLastDownloadedBy();
