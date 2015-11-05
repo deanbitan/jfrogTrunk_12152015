@@ -111,4 +111,9 @@ public class AqlApiItem extends AqlBase<AqlApiItem, AqlItem> {
         ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.items, AqlDomainEnum.dependencies);
         return new AqlApiDynamicFieldsDomains.AqlApiDependencyDynamicFieldsDomains(subDomains);
     }
+
+    public static AqlApiDynamicFieldsDomains.AqlApiComparator<AqlApiItem> depth() {
+        ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.items);
+        return new AqlApiDynamicFieldsDomains.AqlApiComparator(AqlFieldEnum.itemDepth, subDomains);
+    }
 }

@@ -1,6 +1,5 @@
 package org.artifactory.aql.util;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
@@ -10,7 +9,6 @@ import org.artifactory.aql.api.internal.AqlBase;
 import org.artifactory.aql.result.AqlEagerResult;
 import org.artifactory.aql.result.rows.AqlBaseFullRowImpl;
 import org.artifactory.aql.result.rows.AqlItem;
-import org.artifactory.aql.result.rows.AqlProperty;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.RepoPathFactory;
@@ -99,6 +97,20 @@ public class AqlUtils {
         RepoPath searchPath = InternalRepoPathFactory.childRepoPath(path, "*.*");
         //All files in the folder containing the file
         AqlSearchablePath allFilesInCurrentFolder = new AqlSearchablePath(searchPath);
+        //This will also find files without any extension (i.e. docker, lfs)
+        allFilesInCurrentFolder.setFileName("*");
+        artifactPaths.add(allFilesInCurrentFolder);
+        artifactPaths.add( getSearchablePathForAllFilesInSubfolders(path));
+        return artifactPaths;
+    }
+
+    /**
+     * Returns a searchable path representing all subfolders of current path and all files in them
+     * NOTE: use only with folders!
+     */
+    public static AqlSearchablePath getSearchablePathForAllFilesInSubfolders(RepoPath path) {
+        //Add *.* in filename for AqlSearchablePath creation - path is assumed to be a folder
+        RepoPath searchPath = InternalRepoPathFactory.childRepoPath(path, "*.*");
         //All files in all subfolders of folder containing the file
         AqlSearchablePath allFilesInSubFolders = new AqlSearchablePath(searchPath);
         if (".".equals(allFilesInSubFolders.getPath())) {  //Special case for root folder
@@ -106,12 +118,8 @@ public class AqlUtils {
         } else {
             allFilesInSubFolders.setPath(allFilesInSubFolders.getPath() + "/**");
         }
-        //This will also find files without any extension (i.e. docker, lfs)
-        allFilesInCurrentFolder.setFileName("*");
         allFilesInSubFolders.setFileName("*");
-        artifactPaths.add(allFilesInCurrentFolder);
-        artifactPaths.add(allFilesInSubFolders);
-        return artifactPaths;
+        return allFilesInSubFolders;
     }
 
     /**
@@ -121,11 +129,13 @@ public class AqlUtils {
         AqlBase.OrClause searchClause = AqlBase.or();
         for (AqlSearchablePath path : aqlSearchablePaths) {
             log.debug("Adding path '{}' to artifact search", path.toRepoPath().toString());
+            int depth = path.getPath().split("/").length;
             searchClause.append(
                     and(
-                            AqlApiItem.repo().matches(path.getRepo()),
+                            AqlApiItem.repo().equal(path.getRepo()),
                             AqlApiItem.path().matches(path.getPath()),
-                            AqlApiItem.name().matches(path.getFileName())
+                            AqlApiItem.name().matches(path.getFileName()),
+                            AqlApiItem.depth().greaterEquals(depth)
                     )
             );
         }
@@ -142,29 +152,5 @@ public class AqlUtils {
                 log.trace("Unexpected exception when closing JDBC result set", e);
             }
         }
-    }
-
-    public static RepoPath pathFromLazyRow(ResultSet resultSet) throws SQLException {
-        String repo = resultSet.getString(AqlUtils.COLUMN_REPO);
-        String path = resultSet.getString(AqlUtils.COLUMN_PATH);
-        String name = resultSet.getString(AqlUtils.COLUMN_NAME);
-        if (StringUtils.isBlank(repo) || StringUtils.isBlank(path) || StringUtils.isBlank(name)) {
-            log.debug("Got bad item info from query row: repo: {}, path: {}, name: {}, size: {}", repo, path, name);
-            return null;
-        }
-        return fromAql(repo, path, name);
-    }
-
-    /**
-     * Returns a multimap of propertyKey -> values
-     *
-     * @param results The AQL properties search result
-     */
-    public static HashMultimap<String, String> propsToMap(AqlEagerResult<AqlProperty> results) {
-        HashMultimap<String, String> map = HashMultimap.create();
-        for (AqlProperty property : results.getResults()) {
-            map.put(property.getKey(), property.getValue());
-        }
-        return map;
     }
 }

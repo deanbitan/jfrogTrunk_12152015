@@ -78,6 +78,10 @@ public class AqlApiDynamicFieldsDomains {
             return new AqlApiComparator(AqlFieldEnum.itemOriginalMd5, domains);
         }
 
+        public AqlApiComparator<T> depth() {
+            return new AqlApiComparator(AqlFieldEnum.itemDepth, domains);
+        }
+
         public AqlApiArchiveDynamicFieldsDomains<T> archive() {
             ArrayList<AqlDomainEnum> tempDomains = Lists.newArrayList(domains);
             tempDomains.add(AqlDomainEnum.archives);

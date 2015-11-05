@@ -27,7 +27,7 @@ module.exports = {
         'components/codemirror/mode/clike/clike.js',
         'components/codemirror/addon/dialog/dialog.js',
         'components/codemirror/addon/search/searchcursor.js',
-        'components/angular-ui-codemirror/src/ui-codemirror.js',
+        'components/angular-ui-codemirror/ui-codemirror.js',
         'components/x2js/xml2json.js',
         'components/angular-hotkeys/build/hotkeys.js',
         'components/jstree/dist/jstree.js',
@@ -51,6 +51,7 @@ module.exports = {
 
     CSS: [
         'components/jquery-ui/themes/smoothness/jquery-ui.css',
+        'components/bootstrap/dist/css/bootstrap.min.css',
         'components/jQuery-contextMenu/dist/jquery.contextMenu.min.css',
         'components/bootstrap/dist/css/bootstrap.css',
         'components/angular-ui-layout/ui-layout.css',

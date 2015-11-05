@@ -35,6 +35,7 @@ import org.artifactory.api.search.artifact.ArtifactSearchControls;
 import org.artifactory.api.search.artifact.ArtifactSearchResult;
 import org.artifactory.api.search.artifact.ChecksumSearchControls;
 import org.artifactory.api.search.deployable.VersionUnitSearchControls;
+import org.artifactory.api.search.deployable.VersionUnitSearchResult;
 import org.artifactory.api.search.gavc.GavcSearchControls;
 import org.artifactory.api.search.gavc.GavcSearchResult;
 import org.artifactory.api.search.property.PropertySearchControls;
@@ -42,7 +43,6 @@ import org.artifactory.api.search.property.PropertySearchResult;
 import org.artifactory.api.search.stats.StatsSearchControls;
 import org.artifactory.api.search.stats.StatsSearchResult;
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.aql.AqlService;
 import org.artifactory.build.BuildRun;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -120,9 +120,6 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Autowired
     private CachedThreadPoolTaskExecutor executor;
-
-    @Autowired
-    AqlService aqlService;
 
     @Override
     public ItemSearchResults<ArtifactSearchResult> searchArtifacts(ArtifactSearchControls controls) {
@@ -284,8 +281,10 @@ public class SearchServiceImpl implements InternalSearchService {
 
     @Override
     public VersionSearchResults searchVersionUnits(VersionUnitSearchControls controls) {
-        VersionUnitSearcher searcher = new VersionUnitSearcher(aqlService);
-        return searcher.doSearch(controls);
+        VersionUnitSearcher searcher = new VersionUnitSearcher();
+        ItemSearchResults<VersionUnitSearchResult> res = searcher.doSearch(controls);
+        return new VersionSearchResults(Sets.newHashSet(res.getResults()), res.getFullResultsCount(),
+                res.getFullResultsCount() >= ConstantValues.searchUserQueryLimit.getInt(), false);
     }
 
     @Override
