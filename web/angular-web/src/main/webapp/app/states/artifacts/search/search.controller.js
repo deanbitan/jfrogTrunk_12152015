@@ -65,7 +65,7 @@ export class SearchController {
 
 
     showInTree(row) {
-        let relativePath = row.relativePath ? (row.relativePath.startsWith('./') ? row.relativePath.substr(2) : row.relativePath) : '';
+        let relativePath = row.relativePath.startsWith('./') ? row.relativePath.substr(2) : row.relativePath;
         let artifactPath = row.repoKey + "/" + (relativePath || row.path);
         let archivePath = '';
         if (row.archiveName) {
