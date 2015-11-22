@@ -50,7 +50,7 @@ public class BowerViewService implements RestService {
         BowerAddon bowerAddon = addonsManager.addonByType(BowerAddon.class);
         RepoPath repoPath = InternalRepoPathFactory.create(repoKey, path);
         FileInfo fileInfo = repositoryService.getFileInfo(repoPath);
-        BowerMetadataInfo bowerMetadata = bowerAddon.getBowerMetadata(fileInfo);
+        BowerMetadataInfo bowerMetadata = bowerAddon.getBowerMetadata(fileInfo.getRepoPath());
         if (bowerMetadata != null) {
             return new BowerArtifactInfo(bowerMetadata);
         }

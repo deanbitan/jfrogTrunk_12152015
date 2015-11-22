@@ -1,19 +1,23 @@
 package org.artifactory.storage.db.security.dao;
 
 import com.google.common.collect.Lists;
-import org.artifactory.storage.db.fs.entity.UserProperty;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.artifactory.model.xstream.security.UserProperty;
+import org.artifactory.security.UserPropertyInfo;
 import org.artifactory.storage.db.util.BaseDao;
 import org.artifactory.storage.db.util.DbUtils;
 import org.artifactory.storage.db.util.JdbcHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A dao for the user_props table.
@@ -24,6 +28,8 @@ import java.util.List;
  */
 @Repository
 public class UserPropertiesDao extends BaseDao {
+    private static final Logger log = LoggerFactory.getLogger(UserPropertiesDao.class);
+
 
     @Autowired
     public UserPropertiesDao(JdbcHelper jdbcHelper) {
@@ -45,39 +51,10 @@ public class UserPropertiesDao extends BaseDao {
         }
     }
 
-    public boolean addUserProperty(long uid, String key, String val) throws SQLException {
-        DataSource dataSource = null;
-        Connection conn = null;
-        PreparedStatement update = null;
-        PreparedStatement insert = null;
-        String upd = "UPDATE user_props SET prop_value=? WHERE user_id=? AND prop_key=?";
-        String ins = "INSERT INTO user_props (user_id, prop_key, prop_value) VALUES (?, ?, ?)";
-        try {
-            dataSource = jdbcHelper.getDataSource();
-            conn = dataSource.getConnection();
-            update = conn.prepareStatement(upd);
-            insert = conn.prepareStatement(ins);
-            update.setString(1, val);
-            update.setLong(2, uid);
-            update.setString(3, key);
-            int updated = update.executeUpdate();
-            if (updated == 0) {
-                insert.setLong(1, uid);
-                insert.setString(2, key);
-                insert.setString(3, val);
-                int inserted = insert.executeUpdate();
-                return inserted == 1;
-            } else return updated == 1;
-        } finally {
-            DbUtils.close(insert);
-            DbUtils.close(conn, update, null, dataSource);
-        }
-    }
-
     public String getUserProperty(String username, String key) throws SQLException {
         ResultSet rs = null;
         try {
-            String sel = "SELECT d.prop_value FROM users u INNER JOIN user_props d USING (user_id) ";
+            String sel = "SELECT d.prop_value FROM users u INNER JOIN user_props d ON (u.user_id = d.user_id) ";
             sel += "WHERE u.username = ? AND d.prop_key = ?";
             rs = jdbcHelper.executeSelect(sel, username, key);
             if (rs.next()) {
@@ -110,6 +87,30 @@ public class UserPropertiesDao extends BaseDao {
         }
     }
 
+    public Map<Long, Set<UserPropertyInfo>> getAllUserProperties() throws SQLException {
+        ResultSet rs = null;
+        Set<UserPropertyInfo> results = null;
+        Map<Long, Set<UserPropertyInfo>> userPropertyMap = Maps.newHashMap();
+        try {
+            String sel = "SELECT user_id,prop_key,prop_value FROM user_props order by user_id ";
+            rs = jdbcHelper.executeSelect(sel);
+            while (rs.next()) {
+                Long userId = rs.getLong(1);
+                if (userPropertyMap.get(userId) == null) {
+                    results = Sets.newHashSet();
+                    results.add(propertyFromData(userId, rs));
+                    userPropertyMap.put(userId, results);
+                } else {
+                    results.add(propertyFromData(userId, rs));
+                }
+            }
+            return userPropertyMap;
+        } finally {
+            DbUtils.close(rs);
+        }
+    }
+
+
     private UserProperty propertyFromResultSet(ResultSet resultSet) throws SQLException {
         long propId = resultSet.getLong(1);
         String propKey = resultSet.getString(2);
@@ -117,8 +118,73 @@ public class UserPropertiesDao extends BaseDao {
         return new UserProperty(propId, propKey, propValue);
     }
 
+    private UserProperty propertyFromData(long userId, ResultSet resultSet) throws SQLException {
+        String propKey = resultSet.getString(2);
+        String propValue = emptyIfNull(resultSet.getString(3));
+        return new UserProperty(userId, propKey, propValue);
+    }
+
     public void deletePropertyFromAllUsers(String propertyKey) throws SQLException {
         String del = "DELETE FROM user_props WHERE prop_key = ?";
         jdbcHelper.executeUpdate(del, propertyKey);
+    }
+
+    /**
+     * find user id by name and add property to that user
+     *
+     * @param id - user id
+     * @param key      - prop key
+     * @param val      - prop password
+     * @return - if true adding property succeeded
+     * @throws SQLException
+     */
+    public boolean addUserPropertyById(long id, String key, String val) throws SQLException {
+        deleteProperty(id, key);
+        String ins = "INSERT INTO user_props (user_id, prop_key, prop_value) VALUES (?, ?, ?)";
+        int updateStatus = jdbcHelper.executeUpdate(ins, id, key, val);
+        return updateStatus == 1;
+    }
+
+    /**
+     * find user id by name and add property to that user
+     *
+     * @param userName - user name
+     * @param key      - prop key
+     * @param val      - prop password
+     * @return - if true adding property succeeded
+     * @throws SQLException
+     */
+    public boolean addUserPropertyByUserName(String userName, String key, String val) throws SQLException {
+        ResultSet rs = null;
+        try {
+            String sel = "SELECT user_id from users where username=? ";
+            rs = jdbcHelper.executeSelect(sel, userName);
+            if (rs.next()) {
+                long userId = rs.getLong(1);
+                if (addUserPropertyById(userId, key, val)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            DbUtils.close(rs);
+        }
+    }
+
+    public boolean deletePropertyByUserName(String userName, String key) throws SQLException {
+        ResultSet rs = null;
+        try {
+            String sel = "SELECT user_id from users where username=? ";
+            rs = jdbcHelper.executeSelect(sel, userName);
+            if (rs.next()) {
+                int userId = rs.getInt(1);
+                if (deleteProperty(userId, key)) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            DbUtils.close(rs);
+        }
     }
 }

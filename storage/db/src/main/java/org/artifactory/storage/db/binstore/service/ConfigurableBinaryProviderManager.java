@@ -108,6 +108,14 @@ public class ConfigurableBinaryProviderManager {
                 overrideParam(chain.getProviderMetaData().getProviderMetaData(), "dir", providerDir);
                 return chain;
             }
+            case S3Old: {
+                log.debug("Initializing 's3t' chain");
+                String providerDir = storageProperties.getBinaryCacheProviderDir();
+                ChainMetaData chain = buildUserTemplate(defaultConfigStream, "s3Old");
+                // Set the store dir in the file (cache) binary provider
+                overrideParam(chain.getProviderMetaData().getProviderMetaData(), "dir", providerDir);
+                return chain;
+            }
             default:
                 throw new RuntimeException("Fail to initiate binary provider config. Reason: invalid storage" +
                         " type in storage.properties");

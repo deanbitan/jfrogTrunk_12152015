@@ -38,6 +38,7 @@ import org.artifactory.storage.binstore.GarbageCollectorInfo;
 import org.artifactory.storage.binstore.service.BinaryData;
 import org.artifactory.storage.binstore.service.BinaryInfoImpl;
 import org.artifactory.storage.binstore.service.BinaryProviderFactory;
+import org.artifactory.storage.binstore.service.EmptyBinaryProvider;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.GarbageCollectorListener;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
@@ -320,6 +321,36 @@ public class BinaryStoreImpl implements InternalBinaryStore {
     }
 
     @Override
+    public Map<FileBinaryProvider, File> getBinariesDirs() {
+        Map<FileBinaryProvider, File> dirs = Maps.newHashMap();
+        FileBinaryProvider provider = getFileBinaryProvider();
+        if (provider != null) {
+            dirs.put(provider, provider.getBinariesDir());
+            collectProviderDirectories((BinaryProviderBase) provider, dirs);
+        }
+        return dirs;
+    }
+
+    private void collectProviderDirectories(BinaryProviderBase provider, Map<FileBinaryProvider, File> dirs) {
+        BinaryProviderBase next = provider.next();
+        while (next != null && !(next instanceof EmptyBinaryProvider)) {
+            if (next instanceof FileBinaryProvider) {
+                FileBinaryProvider fileBinaryProvider = (FileBinaryProvider) next;
+                dirs.put(fileBinaryProvider, (fileBinaryProvider).getBinariesDir());
+            }
+            collectProviderDirectories(next, dirs);
+            next = next.next();
+        }
+        for (BinaryProviderBase subProvider : provider.getSubBinaryProviders()) {
+            if (subProvider instanceof FileBinaryProvider) {
+                FileBinaryProvider subFileBinaryProvider = (FileBinaryProvider) subProvider;
+                dirs.put(subFileBinaryProvider, subFileBinaryProvider.getBinariesDir());
+                collectProviderDirectories(subProvider, dirs);
+            }
+        }
+    }
+
+    @Override
     @Nullable
     public BinaryInfo addBinaryRecord(String sha1, String md5, long length) {
         try {
@@ -327,7 +358,7 @@ public class BinaryStoreImpl implements InternalBinaryStore {
             if (result == null) {
                 // It does not exists in the DB
                 // Let's check if in bin provider
-                if (getFirstBinaryProvider().exists(sha1, length)) {
+                if (getFirstBinaryProvider().exists(sha1)) {
                     // Good let's use it
                     return getTransactionalMe().insertRecordInDb(sha1, md5, length);
                 }

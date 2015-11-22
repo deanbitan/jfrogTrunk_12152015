@@ -39,6 +39,7 @@ import {ArtifactActionsDao}      from './dao/artifact/artifact_actions_dao';
 import {PredefineDao}            from './dao/predefine_values_dao';
 import {RepoPropertySetDao}      from './dao/repo_property_set_dao';
 import {ArtifactSearchDao}       from './dao/artifact/artifact_search_dao';
+import {ArtifactPackageSearchDao}from './dao/artifact/artifact_package_search_dao';
 import {DependencyDeclarationDao}from './dao/dependency_declaration_dao';
 import {ArtifactDeployDao}       from './dao/artifact/artifact_deploy_dao';
 import {ArtifactViewsDao}        from './dao/artifact/artifact_views_dao';
@@ -68,6 +69,8 @@ import {RepositoriesLayoutsDao}  from './dao/repositories_layouts_dao';
 import {HaDao}                   from './dao/ha_dao';
 import {StashResultsDao}       from './dao/stash_results_dao';
 import {OAuthDao}       from './dao/oauth_dao';
+import {SupportPageDao}       from './dao/support_page_dao';
+import {ServerTimeDao}       from './dao/server_time_dao';
 
 angular.module('artifactory.dao', ['ngResource', 'artifactory.services'])
     .factory('artifactoryNotificationsInterceptor', artifactoryNotificationsInterceptor)
@@ -114,6 +117,7 @@ angular.module('artifactory.dao', ['ngResource', 'artifactory.services'])
     .service('PredefineDao', PredefineDao)
     .service('RepoPropertySetDao', RepoPropertySetDao)
     .service('ArtifactSearchDao', ArtifactSearchDao)
+    .service('ArtifactPackageSearchDao', ArtifactPackageSearchDao)
     .service('DependencyDeclarationDao', DependencyDeclarationDao)
     .service('ArtifactDeployDao', ArtifactDeployDao)
     .service('ArtifactViewsDao', ArtifactViewsDao)
@@ -142,4 +146,6 @@ angular.module('artifactory.dao', ['ngResource', 'artifactory.services'])
         .service('RepositoriesLayoutsDao', RepositoriesLayoutsDao)
         .service('StashResultsDao', StashResultsDao)
         .service('OAuthDao', OAuthDao)
+        .service('SupportPageDao', SupportPageDao)
+        .service('ServerTimeDao', ServerTimeDao)
         .factory('HaDao', HaDao);

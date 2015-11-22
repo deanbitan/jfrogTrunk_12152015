@@ -96,7 +96,9 @@ export class AdminImportExportSystemController {
                 this.exportOptions.path = this.defaultRootPath + this.exportOptions.path;
             }
             this.exportOptions.action = "system";
-            this.systemExportDao.save(this.exportOptions);
+            this.systemExportDao.save(this.exportOptions).$promise.then((res)=>{
+                if (res.status = 200) this.exportOptions.path = '';
+            });
         }
     }
 

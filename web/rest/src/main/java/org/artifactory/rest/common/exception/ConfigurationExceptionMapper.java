@@ -29,7 +29,10 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 /**
- * Created by Michael Pasternak on 10/15/15.
+ * Maps {@link org.artifactory.config.ConfigurationException}
+ * to {@link Response.Status.BAD_REQUEST} error code
+ *
+ * @author Michael Pasternak
  */
 @Component
 @Provider

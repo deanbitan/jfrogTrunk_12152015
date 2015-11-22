@@ -21,6 +21,7 @@ package org.artifactory.addon.plugin;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.config.ImportableExportable;
 import org.artifactory.build.staging.BuildStagingStrategy;
+import org.artifactory.request.Request;
 import org.artifactory.resource.ResourceStreamHandle;
 
 import javax.annotation.Nullable;
@@ -33,6 +34,9 @@ import java.util.Map;
  * @date Oct 28, 2008
  */
 public interface PluginsAddon extends Addon, ImportableExportable {
+    String PLUGIN_STATUS_LOADED = "Loaded";
+    String PLUGIN_STATUS_ERROR = "Error";
+
     <C> void execPluginActions(Class<? extends PluginAction> type, C context, Object... args);
 
     ResponseCtx execute(String executionName, String method, Map params, @Nullable ResourceStreamHandle body,
@@ -53,5 +57,15 @@ public interface PluginsAddon extends Addon, ImportableExportable {
      */
     ResponseCtx reloadPlugins();
 
-    void executeAdditiveRealmPlugins();
+    void executeAdditiveRealmPlugins(Request servletRequest);
+
+    /**
+     * Used by the UI to get info about all plugins in the plugin directory (loaded and otherwise).
+     */
+    Map<String, String> getPluginsStatus();
+
+    /**
+     *  Used by the Support Bundle Service to append plugins info.
+     */
+    String getPluginsInfoSupportBundleDump();
 }

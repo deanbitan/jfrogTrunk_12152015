@@ -2,7 +2,7 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecurityUserFormController {
     constructor($scope, $state, $stateParams, $timeout, $q, ArtifactoryGridFactory, UserDao, GroupsDao, GroupPermissionsDao,
-            uiGridConstants, commonGridColumns, ArtifactoryModelSaver, RepositoriesDao) {
+            uiGridConstants, commonGridColumns, ArtifactoryModelSaver, RepositoriesDao, UserProfileDao, ArtifactoryModal, ArtifactoryNotifications) {
 
         this.$scope = $scope;
         this.$state = $state;
@@ -10,14 +10,17 @@ export class AdminSecurityUserFormController {
         this.$timeout = $timeout;
         this.$q = $q;
         this.repositoriesDao = RepositoriesDao;
+        this.modal = ArtifactoryModal;
         this.userDao = UserDao.getInstance();
         this.groupsDao = GroupsDao.getInstance();
         this.groupPermissionsDao = GroupPermissionsDao.getInstance();
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['userdata','input']);
         this.permissionsGridOptions = {};
+        this.userProfileDao = UserProfileDao;
         this.uiGridConstants = uiGridConstants;
         this.commonGridColumns = commonGridColumns;
+        this.artifactoryNotifications = ArtifactoryNotifications;
         this.TOOLTIP = TOOLTIP.admin.security.usersForm;
         this.input = {};
 
@@ -146,12 +149,17 @@ export class AdminSecurityUserFormController {
     }
 
     _getUserData() {
+
         this.userDao.getSingle({name: this.username}).$promise.then((data) => {
             //console.log(data);
             this.userdata = data;
             if (!this.userdata.groups) this.userdata.groups = [];
             this.artifactoryModelSaver.save();
             this._getGroupsPermissions();
+        });
+
+        this.userProfileDao.getApiKey({},{username: this.username}).$promise.then((res)=>{
+            if (res.apiKey) this.apiKeyExist = true;
         });
     }
 
@@ -289,5 +297,15 @@ export class AdminSecurityUserFormController {
 
     isAnonymous() {
         return this.userdata.name === 'anonymous';
+    }
+
+    revokeApiKey() {
+        this.modal.confirm(`Are you sure you want to revoke API key for this user ?`)
+                .then(() => {
+                    this.userProfileDao.revokeApiKey({}, {username: this.username}).$promise.then(()=>{
+                        this.apiKeyExist = false;
+                    });
+
+                });
     }
 }

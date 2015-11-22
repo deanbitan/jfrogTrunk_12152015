@@ -14,9 +14,14 @@
                     <div ng-switch-when="class">
                         <jf-class query="Search.query"></jf-class>
                     </div>
+                    <div ng-switch-when="package">
+                        <jf-package query="Search.query" parent-controller="Search"></jf-package>
+                    </div>
+<!--
                     <div ng-switch-when="gavc">
                         <jf-gavc query="Search.query"></jf-gavc>
                     </div>
+-->
                     <div ng-switch-when="property">
                         <jf-property query="Search.query"></jf-property>
                     </div>
@@ -25,6 +30,34 @@
                     </div>
                     <div ng-switch-when="remote">
                         <jf-remote query="Search.query"></jf-remote>
+                    </div>
+                </div>
+
+                <div ng-if="Search.aql">
+                    <div id="show-aql-button" style="display:none">
+                        <button class="btn btn-small" jf-tooltip="Show AQL Query"
+                                ng-click="Search.setShowAQL(true)"
+                                ng-if="!Search.showAQL"><i class="icon iconrepo iconrepo-aql"></i></button>
+                        <button class="btn btn-small" jf-tooltip="Hide AQL Query"
+                                ng-click="Search.setShowAQL(false)"
+                                ng-if="Search.showAQL"><i class="icon iconrepo iconrepo-aql"></i></button>
+                    </div>
+                    <div collapse="!Search.showAQL" class="margin-top-20">
+                        <jf-clip-copy text-to-copy="Search.aql"
+                                      class="code-mirror-copy"
+                                      object-name="Query"></jf-clip-copy>
+                        <jf-code-mirror ng-if="Search.showAQL"
+                                        mime-type="json"
+                                        mode="aql"
+                                        model="Search.aql"
+                                        height="275px">
+                        </jf-code-mirror>
+                        <jf-code-mirror ng-if="!Search.showAQL"
+                                        mime-type="json"
+                                        mode="aql"
+                                        model="Search.aql"
+                                        height="275px">
+                        </jf-code-mirror>
                     </div>
                 </div>
 
@@ -53,6 +86,7 @@
                     </div>
                 </div>
             </form>
+
             <div id="stash-container" ng-if="Search.hasStashPerms() && Search.currentSearch !== 'remote'">
                 <i id="stash-animation" class="icon icon-copy"></i>
                 <div id="stash-menu" ng-if="Search.stashedItemsCount">
@@ -78,11 +112,12 @@
                 </div>
             </div>
             <div class="search-results-title">
-                {{Search.resultsMsg}}
+                {{Search.resultsMsg}} <span ng-if="Search.getSelectedRecords()"> ({{Search.getSelectedRecords()}} Selected)</span>
                 <span ng-if="Search.gridOptions.data.length && !Search.gridOptions.data[0]._emptyRow && Search.hasStashPerms() && Search.stashedItemsCount === 0 && Search.currentSearch !== 'remote' && !Search.duringStashAnimation">
                     <span>|</span><a href="" id="stash-results-button" ng-click="Search.saveToStash()">Stash Results</a><jf-help-tooltip html="Search.TOOLTIP.stash"></jf-help-tooltip>
                 </span>
             </div>
+
 
             <jf-grid
                     grid-options="Search.gridOptions"

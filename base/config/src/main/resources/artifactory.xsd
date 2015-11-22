@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.3"
-           xmlns="http://artifactory.jfrog.org/xsd/1.6.3"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.4"
+           xmlns="http://artifactory.jfrog.org/xsd/1.6.4"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -881,6 +881,13 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:element>
+                    <xs:element name="externalDependencies" type="ExternalDependenciesConfigType" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation source="description">
+                                Configuration for fetching external depenednecies
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -892,6 +899,44 @@
                 <xs:annotation>
                     <xs:documentation source="description">
                         A set of local and remote P2 repository URLs to aggregate under this virtual repository.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ExternalDependenciesConfigType">
+        <xs:sequence>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="1" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Enable filtering of external dependencies
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="patterns" type="ExternalDependenciesPatternsType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of ant patterns to match for external dependencies.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="remoteRepo" type="xs:IDREF" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Remote repo used to cache external dependencies
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ExternalDependenciesPatternsType">
+        <xs:sequence>
+            <xs:element name="pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The pattern to match for external dependency
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

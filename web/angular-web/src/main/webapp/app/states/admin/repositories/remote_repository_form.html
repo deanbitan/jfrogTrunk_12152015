@@ -96,7 +96,7 @@
                                     <ui-select-choices
                                             repeat="item in RepositoryForm.repositoryLayouts | filter: $select.search track by $index">
                                         <div ng-bind-html="item | highlight: $select.search"
-                                             id="remote-repository-layout-item"></div>
+                                             name="remote-repository-layout-item"></div>
                                     </ui-select-choices>
                                 </ui-select>
                             </jf-field>

@@ -20,6 +20,7 @@ package org.artifactory.ui.rest.service.utils.validation;
 
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.exception.ValidationException;
 
 /**
  * Checks if an xml id is unique in the central config descriptor.

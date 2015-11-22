@@ -35,4 +35,10 @@ public interface VirtualRepositoryConfiguration extends RepositoryConfiguration 
     String getDefaultDeploymentRepo();
 
     List<String> getRepositories();
+
+    boolean isExternalDependenciesEnabled();
+
+    String getExternalDependenciesRemoteRepo();
+
+    List<String> getExternalDependenciesPatterns();
 }

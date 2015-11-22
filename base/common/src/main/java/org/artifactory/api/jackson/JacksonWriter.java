@@ -37,4 +37,18 @@ public final class JacksonWriter {
     public static <T> String serialize(T item) throws IOException {
         return JacksonFactory.createObjectMapper().writeValueAsString(item);
     }
+
+    /**
+     * Serializes given item to json
+     *
+     * @param item an object to serialize
+     * @param prettyPrint ident output
+     *
+     * @return serialized json string
+     *
+     * @throws java.io.IOException
+     */
+    public static <T> String serialize(T item, boolean prettyPrint) throws IOException {
+        return JacksonFactory.createObjectMapper(prettyPrint).writeValueAsString(item);
+    }
 }

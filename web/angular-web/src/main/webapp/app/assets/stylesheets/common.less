@@ -50,8 +50,14 @@ a {
   &.alert-danger:before {
     content: "-";
   }
-  &.alert-info:before {
-    content: "\e002";
+  &.alert-info {
+    &:before {
+      content: "\e002";
+    }
+    
+    a {
+      text-decoration: underline;
+    }
   }
 }
 
@@ -801,6 +807,10 @@ form.ng-pending {
 
   &.form-checkbox, &.half-margin-bottom {
     margin-bottom: 14px;
+  }
+  
+  &.form-checkbox-group {
+    padding-left: 26px;
   }
 }
 
@@ -1679,11 +1689,17 @@ h5 {
   animation: spin 0.8s infinite linear;
 }
 
-.copy-to-clip {
+.icon-button {
   color: @grayFontGeneral;
   cursor: pointer;
   font-size: 22px;
+  
+  &:hover {
+    color: @grayFontGeneral;
+  }
+}
 
+.copy-to-clip {
   h1 & , .jf-data-table & {
     position: relative;
     top: 2px;
@@ -1782,4 +1798,8 @@ h5 {
 .not-like-input {
   background-color: transparent;
   border-color: transparent !important;
+}
+
+.not-allowed {
+  cursor: not-allowed;
 }

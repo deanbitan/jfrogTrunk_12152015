@@ -108,6 +108,13 @@ public interface InternalBinaryStore extends BinaryStore,BinaryStoreServices {
     File getBinariesDir();
 
     /**
+     * Map each file provider to it's filestore folder
+     *
+     * @return A map of each filestore folder mapped to it's provider
+     */
+    Map<FileBinaryProvider, File> getBinariesDirs();
+
+    /**
      * Add an external checksum filestore that can be used in read only mode.
      * This will create an external filestore binary provider
      * at the end of binary provider chain. So, if no binary found it will be used

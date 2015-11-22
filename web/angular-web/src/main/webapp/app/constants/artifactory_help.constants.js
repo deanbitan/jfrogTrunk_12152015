@@ -262,6 +262,11 @@ export default {
             title: "Virtual Repositories",
             link: "https://www.jfrog.com/confluence/display/RTF/Virtual+Repositories",
             priority: 1
+        },
+        {
+            title: "Deploying to a Virtual Repository",
+            link: "https://www.jfrog.com/confluence/display/RTF/Deploying+Artifacts#DeployingArtifacts-DeployingtoaVirtualRepository",
+            priority: 2
         }
     ],
     "/admin/repository/virtual/**": [
@@ -269,6 +274,11 @@ export default {
             title: "Virtual Repositories",
             link: "https://www.jfrog.com/confluence/display/RTF/Virtual+Repositories",
             priority: 1
+        },
+        {
+            title: "Deploying to a Virtual Repository",
+            link: "https://www.jfrog.com/confluence/display/RTF/Deploying+Artifacts#DeployingArtifacts-DeployingtoaVirtualRepository",
+            priority: 2
         }
     ],
 

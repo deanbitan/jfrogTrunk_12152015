@@ -2,12 +2,14 @@
 <!--
   ~ Copyright 2014 JFrog Ltd. All rights reserved.
   ~ JFROG PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
+-->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>artifactory-storage-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.2.2</version>
+        <version>4.x-SNAPSHOT</version>
     </parent>
 
     <artifactId>artifactory-storage-config</artifactId>

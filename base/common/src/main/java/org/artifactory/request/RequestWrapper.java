@@ -17,4 +17,8 @@ public class RequestWrapper {
     public String getClientAddress() {
         return HttpUtils.getRemoteClientAddress(request);
     }
+
+    public String getBaseUrl() {
+        return HttpUtils.getServletContextUrl(request);
+    }
 }

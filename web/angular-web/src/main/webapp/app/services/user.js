@@ -84,21 +84,11 @@ class User {
         if (state != 'builds.info') {
             return true;
         }
-        // TODO: (Adam) this is not the place to change the tab!!!
-        if (isChangeTab) {
-            this.changeBuildInfoTab(stateParams);
-        }
 
         if (stateParams.tab === 'published') {
             return true;
         }
         return this.getCanDeploy();
-    }
-
-    changeBuildInfoTab(stateParams) {
-        if (this.isGuest() || !this.getCanDeploy()) {
-            stateParams.tab = 'published';
-        }
     }
 
     canView(state, stateParams = {}) {

@@ -21,6 +21,7 @@ package org.artifactory.repo;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.descriptor.repo.ExternalDependenciesConfig;
 import org.artifactory.descriptor.repo.PomCleanupPolicy;
 import org.artifactory.descriptor.repo.RepoDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
@@ -42,6 +43,9 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
     private String keyPair = "";
     private String pomRepositoryReferencesCleanupPolicy = "discard_active_reference";
     private String defaultDeploymentRepo;
+    private boolean externalDependenciesEnabled;
+    private String externalDependenciesRemoteRepo;
+    private List<String> externalDependenciesPatterns;
 
     public VirtualRepositoryConfigurationImpl() {
     }
@@ -64,6 +68,12 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
         setRepositories(Lists.transform(repositories, RepoDescriptor::getKey));
         if (repoDescriptor.getDefaultDeploymentRepo() != null) {
             setDefaultDeploymentRepo(repoDescriptor.getDefaultDeploymentRepo().getKey());
+        }
+        if (repoDescriptor.getExternalDependencies() != null) {
+            ExternalDependenciesConfig externalDependencies = repoDescriptor.getExternalDependencies();
+            setExternalDependenciesEnabled(externalDependencies.isEnabled());
+            setExternalDependenciesRemoteRepo(externalDependencies.getRemoteRepo().getKey());
+            setExternalDependenciesPatterns(externalDependencies.getPatterns());
         }
     }
 
@@ -111,5 +121,32 @@ public class VirtualRepositoryConfigurationImpl extends RepositoryConfigurationB
 
     public void setRepositories(List<String> repositories) {
         this.repositories = repositories;
+    }
+
+    @Override
+    public boolean isExternalDependenciesEnabled() {
+        return externalDependenciesEnabled;
+    }
+
+    public void setExternalDependenciesEnabled(boolean externalDependenciesEnabled) {
+        this.externalDependenciesEnabled = externalDependenciesEnabled;
+    }
+
+    @Override
+    public String getExternalDependenciesRemoteRepo() {
+        return externalDependenciesRemoteRepo;
+    }
+
+    public void setExternalDependenciesRemoteRepo(String externalDependenciesRemoteRepo) {
+        this.externalDependenciesRemoteRepo = externalDependenciesRemoteRepo;
+    }
+
+    @Override
+    public List<String> getExternalDependenciesPatterns() {
+        return externalDependenciesPatterns;
+    }
+
+    public void setExternalDependenciesPatterns(List<String> externalDependenciesPatterns) {
+        this.externalDependenciesPatterns = externalDependenciesPatterns;
     }
 }

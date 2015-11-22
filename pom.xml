@@ -15,12 +15,14 @@
   ~
   ~ You should have received a copy of the GNU Lesser General Public License
   ~ along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
-  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
+  -->
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.2.2</version>
+    <version>4.x-SNAPSHOT</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -110,6 +112,7 @@
     <modules>
         <module>base</module>
         <module>storage</module>
+        <module>support</module>
         <module>backend</module>
         <module>web</module>
         <module>distribution</module>
@@ -132,96 +135,106 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-common</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-config</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.artifactory</groupId>
+                <artifactId>artifactory-storage-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.artifactory</groupId>
+                <artifactId>artifactory-support-core</artifactId>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-config</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest-common</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest-ui</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-angular-web</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
@@ -231,7 +244,7 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
                 <type>war</type>
             </dependency>
             <dependency>
@@ -1002,7 +1015,7 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>repomd</artifactId>
-                <version>4.1.2</version>
+                <version>4.1.4</version>
             </dependency>
 
             <dependency>
@@ -1014,7 +1027,7 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>rpm-extractor</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.4</version>
             </dependency>
 
             <dependency>
@@ -1038,7 +1051,7 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>bower</artifactId>
-                <version>4.1.0</version>
+                <version>4.1.4</version>
             </dependency>
 
             <dependency>
@@ -1050,7 +1063,7 @@
             <dependency>
                 <groupId>org.jfrog.metadata</groupId>
                 <artifactId>docker</artifactId>
-                <version>4.1.2</version>
+                <version>4.1.4</version>
             </dependency>
 
             <dependency>
@@ -1148,12 +1161,12 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>4.2.2</version>
+                <version>${project.version}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
@@ -1186,10 +1199,6 @@
                 <artifactId>wss4j</artifactId>
                 <version>1.5.10</version>
                 <exclusions>
-                    <exclusion>
-                        <groupId>xalan</groupId>
-                        <artifactId>xalan</artifactId>
-                    </exclusion>
                     <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
@@ -1397,6 +1406,53 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <dependency>
+                <groupId>com.jamesmurty.utils</groupId>
+                <artifactId>java-xmlbuilder</artifactId>
+                <version>1.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>net.java.dev.jets3t</groupId>
+                <artifactId>jets3t</artifactId>
+                <version>0.9.4</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.jamesmurty.utils</groupId>
+                        <artifactId>ava-xmlbuilder</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpcore</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>jackson-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.activation</groupId>
+                        <artifactId>activation</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>jackson-core-asl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.iharder</groupId>
+                        <artifactId>base64</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.jclouds</groupId>
                 <artifactId>jclouds-allblobstore</artifactId>
@@ -1725,7 +1781,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.9</version>
+                    <version>2.10</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

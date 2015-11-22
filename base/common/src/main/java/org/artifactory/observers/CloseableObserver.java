@@ -21,7 +21,7 @@ package org.artifactory.observers;
 /**
  * Provides onClose() observation capabilities
  *
- * Created by Michael Pasternak on 10/22/15.
+ * @author Michael Pasternak
  */
 public interface CloseableObserver {
     /**

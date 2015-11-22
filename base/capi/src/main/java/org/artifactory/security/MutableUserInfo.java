@@ -69,6 +69,8 @@ public interface MutableUserInfo extends UserInfo {
 
     void setGroups(Set<UserGroupInfo> groups);
 
+    void setUserProperties(Set<UserPropertyInfo> userProperties);
+
     void setInternalGroups(Set<String> groups);
 
     void setLastLoginTimeMillis(long lastLoginTimeMillis);

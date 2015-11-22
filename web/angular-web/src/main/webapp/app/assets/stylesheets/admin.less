@@ -234,6 +234,30 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
       background-color: @grayGridRowHover;
     }
   }
+  
+  &.with-actions {
+    .group-list-item {
+      position: relative;
+    }
+    
+    .group-list-actions {
+      position: absolute;
+      right: 0;
+      top: 0;
+      
+      .btn {
+        min-width: initial;
+        
+        i {
+          font-size: 18px;
+          
+          &:before {
+            line-height: 40px;
+          }
+        }
+      }
+    }
+  }
 }
 
 // ------------------------ Wizard ------------------------- //
@@ -624,7 +648,32 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
   cursor: pointer;
 }
 
+.text-button-group {
+  .text-button {
+    display: inline-block;
+    margin: 0 20px 0 0;
+    padding: 0;
+  }
+  
+  &.pull-right {
+    .text-button {
+      margin: 0 0 0 20px;
+    }
+  }
+  
+  &.grey {
+    .text-button {
+      color: @grayFontGeneral;
+      
+      &:hover {
+        color: @greenFontHeader;
+      }
+    }
+  }
+}
+
 .text-button {
+  display: inline-block;
   font-size: 16px;
   color: @greenFontHeader;
   cursor: pointer;
@@ -640,6 +689,21 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
   &:hover {
     color: #327535;
   }
+  
+  &[disabled] {
+    color: @grayFontLighter !important;
+    cursor: default;
+  }
+  
+  &.revoke-button {
+    &:hover {
+      color: @redError;
+    }
+  }
+  
+  .form-button & {
+    padding: 0;
+  }
 }
 
 /******************** High Availability ***********************/
@@ -651,5 +715,23 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
     float: left;
     top: 4px;
     margin: 2px 5px 0 0;
+  }
+}
+
+/******************** Support Page ***********************/
+
+.form-calendar {
+  position: relative;
+  
+  input {
+    cursor: pointer;
+  }
+  
+  i.icon {
+    font-size: 20px;
+    position: absolute;
+    top: 34px;
+    right: 14px;
+    pointer-events: none;
   }
 }

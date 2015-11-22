@@ -18,7 +18,11 @@
 
 package org.artifactory.addon;
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
@@ -28,6 +32,7 @@ import org.artifactory.addon.bower.BowerAddon;
 import org.artifactory.addon.bower.BowerMetadataInfo;
 import org.artifactory.addon.build.ArtifactBuildAddon;
 import org.artifactory.addon.debian.DebianAddon;
+import org.artifactory.addon.debian.DebianCalculationEvent;
 import org.artifactory.addon.filteredresources.FilteredResourcesAddon;
 import org.artifactory.addon.gems.ArtifactGemsInfo;
 import org.artifactory.addon.gems.GemsAddon;
@@ -53,6 +58,7 @@ import org.artifactory.addon.smartrepo.SmartRepoAddon;
 import org.artifactory.addon.sso.crowd.CrowdAddon;
 import org.artifactory.addon.sso.crowd.CrowdExtGroup;
 import org.artifactory.addon.sso.saml.SamlSsoAddon;
+import org.artifactory.addon.support.SupportAddon;
 import org.artifactory.addon.watch.ArtifactWatchAddon;
 import org.artifactory.addon.webstart.ArtifactWebstartAddon;
 import org.artifactory.addon.yum.ArtifactRpmMetadata;
@@ -91,7 +97,12 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.replication.ReplicationBaseDescriptor;
-import org.artifactory.descriptor.repo.*;
+import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RealRepoDescriptor;
+import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoLayout;
+import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.ldap.SearchPattern;
 import org.artifactory.descriptor.security.ldap.group.LdapGroupPopulatorStrategies;
@@ -104,7 +115,11 @@ import org.artifactory.fs.StatsInfo;
 import org.artifactory.fs.WatchersInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.nuget.NuMetaData;
-import org.artifactory.repo.*;
+import org.artifactory.repo.HttpRepo;
+import org.artifactory.repo.LocalRepo;
+import org.artifactory.repo.RemoteRepo;
+import org.artifactory.repo.Repo;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.service.mover.MoverConfig;
 import org.artifactory.repo.virtual.VirtualRepo;
@@ -146,13 +161,18 @@ import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.security.Key;
 import java.security.KeyStore;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -165,7 +185,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
         FilteredResourcesAddon, ReplicationAddon, YumAddon, NuGetAddon, RestCoreAddon, CrowdAddon, BlackDuckAddon,
         GemsAddon, HaAddon, NpmAddon, BowerAddon, DebianAddon, PypiAddon, DockerAddon, VagrantAddon,
         ArtifactWatchAddon, ArtifactBuildAddon, UiNuGetAddon, LdapUserGroupAddon,
-        ArtifactWebstartAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon,ArtifactPropertiesAddon, Addon {
+        ArtifactWebstartAddon, SamlSsoAddon, OAuthSsoAddon, SmartRepoAddon,ArtifactPropertiesAddon, SupportAddon, Addon {
 
     private static final Logger log = LoggerFactory.getLogger(CoreAddonsImpl.class);
 
@@ -579,6 +599,10 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public void calculateMetaData(Set<DebianCalculationEvent> calculationRequests, boolean delayed) {
+    }
+
+    @Override
     public void onInstallKey(String key, boolean isPublic) throws Exception {
 
     }
@@ -845,6 +869,9 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public void propagateReindexAll(ArtifactoryServer server, String repoKey, boolean async) {}
+
+    @Override
     public SemaphoreWrapper getSemaphore(String semaphoreName) {
         Semaphore semaphore = new Semaphore(HaCommonAddon.DEFAULT_SEMAPHORE_PERMITS);
         return new JVMSemaphoreWrapper(semaphore);
@@ -910,7 +937,7 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
-    public BowerMetadataInfo getBowerMetadata(FileInfo fileInfo) {
+    public BowerMetadataInfo getBowerMetadata(RepoPath repoPath) {
         return null;
     }
 
@@ -1139,6 +1166,31 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     @Override
     public PropertySearchControls getSha256PropertyControlSearch(String sha256, ArrayList<String> reposToSearch) {
         return null;
+    }
+
+    @Override
+    public boolean isSupportAddonEnabled() {
+        return false;
+    }
+
+    @Override
+    public List<String> generate(Object bundleConfiguration) {
+        return Lists.newArrayList();
+    }
+
+    @Override
+    public List<String> list() {
+        return Lists.newArrayList();
+    }
+
+    @Override
+    public InputStream download(String bundleName) throws FileNotFoundException {
+        return null;
+    }
+
+    @Override
+    public boolean delete(String bundleName, boolean async) throws FileNotFoundException {
+        return false;
     }
 }
 

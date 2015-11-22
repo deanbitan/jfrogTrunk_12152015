@@ -20,7 +20,7 @@ class jfGridFilterController {
         this.grid.enableFiltering = true;
 
         var cols = this.grid.columnDefs;
-        this.column = _.find(cols, _.matchesProperty('field', this.filterField));
+        this.column = _.find(cols, _.matchesProperty('field', this.filterField)) || cols[0];
         if (this.filterField2) this.column2 = _.find(cols, _.matchesProperty('field', this.filterField2));
 
         $scope.$on('$destroy', () => this.onDestroy());

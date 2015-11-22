@@ -19,7 +19,6 @@
 package org.artifactory.descriptor.repo.vcs;
 
 import com.google.common.base.Strings;
-import org.apache.commons.lang.StringUtils;
 
 import java.text.MessageFormat;
 
@@ -44,6 +43,25 @@ public class VcsUrlBuilder {
         if(!Strings.isNullOrEmpty(provider.getResourceDownloadUrl())) {
             String[] values = new String[] {user, repository, file, branch};
             return MessageFormat.format(provider.getResourceDownloadUrl(), values);
+        }
+        return null;
+    }
+
+    /**
+     * Formats single resource download URL based on
+     * VcsGitProvider url definition
+     *
+     * @param provider
+     * @param user
+     * @param repository
+     * @param release
+     *
+     * @return formatted url
+     */
+    public static String releaseDownloadUrl(VcsGitProvider provider, String user, String repository, String release, String ballType) {
+        if (!Strings.isNullOrEmpty(provider.getReleaseDownloadUrl())) {
+            String[] values = new String[]{user, repository, ballType, release};
+            return MessageFormat.format(provider.getReleaseDownloadUrl(), values);
         }
         return null;
     }

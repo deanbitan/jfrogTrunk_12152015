@@ -164,6 +164,10 @@ public class StorageProperties {
         return getProperty(Key.binaryProviderS3Identity, null);
     }
 
+    public Boolean useSignature() {
+        return getBooleanProperty(Key.binaryProviderS3UseSignature.key, false);
+    }
+
     public int getEventuallyPersistedTimeOut() {
         return getIntProperty(Key.binaryProviderEventuallyPersistedTimeOut.key, 120000);
     }
@@ -231,6 +235,27 @@ public class StorageProperties {
 
     public String getS3Entpoint() {
         return getProperty(Key.binaryProviderS3Endpoint);
+    }
+
+    public int getS3EntpointPort() {
+        return getIntProperty(Key.binaryProviderS3EndpointPort.key, -1);
+    }
+
+    public Boolean isHttpsOnly() {
+        return getBooleanProperty(Key.binaryProviderS3HttpsOnly.key,true);
+    }
+
+    public String getS3Region() {
+        return getProperty(Key.binaryProviderS3Region);
+    }
+
+
+    public String getS3AwsVersion() {
+        return getProperty(Key.binaryProviderS3awsVersion);
+    }
+
+    public long getMultiPartLimit() {
+        return getLongProperty(Key.binaryProviderS3MultiPartLimit.key, 100*1000*1000l/*100M*/);
     }
 
     public String getProperty(Key property) {
@@ -301,7 +326,6 @@ public class StorageProperties {
         return dbType == DbType.POSTGRESQL;
     }
 
-
     public enum Key {
         username, password, type, url, driver,
         maxActiveConnections("pool.max.active"), maxIdleConnections("pool.max.idle"),
@@ -322,6 +346,7 @@ public class StorageProperties {
         binaryProviderS3BucketName("binary.provider.s3.bucket.name"),
         binaryProviderS3BucketPath("binary.provider.s3.bucket.path"),
         binaryProviderS3Identity("binary.provider.s3.identity"),
+        binaryProviderS3UseSignature("binary.provider.s3.use.signature"),
         binaryProviderS3Credential("binary.provider.s3.credential"),
         binaryProviderS3ProviderId("binary.provider.s3.provider.id"),
         binaryProviderS3ProxyPort("binary.provider.s3.proxy.port"),
@@ -330,9 +355,14 @@ public class StorageProperties {
         binaryProviderS3ProxyIdentity("binary.provider.s3.proxy.identity"),
         binaryProviderS3ProxyCredential("binary.provider.s3.proxy.credential"),
         binaryProviderS3Endpoint("binary.provider.s3.endpoint"),
+        binaryProviderS3awsVersion("binary.provider.s3.aws.version"),
+        binaryProviderS3Region("binary.provider.s3.region"),
+        binaryProviderS3MultiPartLimit("binary.provider.s3.multi.part.limit"),
+        binaryProviderS3EndpointPort("binary.provider.s3.endpoint.port"),
 
         // Dynamic S3 Param
         binaryProviderS3Param("binary.provider.s3.env"),
+        binaryProviderS3HttpsOnly("binary.provider.s3.https.only"),
 
         // Eventually persisted binary provider
         binaryProviderEventuallyPersistedMaxNumberOfTreads(
@@ -364,5 +394,6 @@ public class StorageProperties {
         fullDb,     // binaries are stored as blobs in the db, filesystem is used for caching unless cache size is 0
         cachedFS,   // binaries are stored in the filesystem, but a front cache (faster access) is added
         S3,         // binaries are stored in S3 JClouds API
+        S3Old,        // binaries are stored in S3 Jets3t API
     }
 }

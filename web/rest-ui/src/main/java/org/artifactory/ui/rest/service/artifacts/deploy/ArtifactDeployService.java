@@ -90,8 +90,8 @@ public class ArtifactDeployService implements RestService {
             artifactoryResponse.iModel(uploadedArtifactInfo);
         } catch (RepoRejectException e) {
             log.error(e.toString());
-            artifactoryResponse.error("Failed to deploy file:" + fileName + " to Repository: " + repoKey +
-                    ". Please check the log file for more details");
+            String err = DeployUtil.getDeployError(fileName, repoKey, e);
+            artifactoryResponse.error(err);
         }
     }
 

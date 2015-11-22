@@ -69,6 +69,7 @@ public class ArtifactoryHome {
     private File logDir;
     private File backupDir;
     private File tempWorkDir;
+    private File supportDir;
     private File tempUploadDir;
     private File pluginsDir;
     private File logoDir;
@@ -162,6 +163,13 @@ public class ArtifactoryHome {
         return tempWorkDir;
     }
 
+    /**
+     * @return temp directory for support content
+     */
+    public File getSupportDir() {
+        return supportDir;
+    }
+
     public File getTempUploadDir() {
         return tempUploadDir;
     }
@@ -212,6 +220,7 @@ public class ArtifactoryHome {
             dataDir = getOrCreateSubDir("data");
             logDir = getOrCreateSubDir("logs");
             backupDir = getOrCreateSubDir("backup");
+            supportDir = getOrCreateSubDir("support");
 
             File tempRootDir = getOrCreateSubDir(dataDir, "tmp");
             tempWorkDir = getOrCreateSubDir(tempRootDir, "work");
@@ -224,6 +233,7 @@ public class ArtifactoryHome {
             checkWritableDirectory(dataDir);
             checkWritableDirectory(logDir);
             checkWritableDirectory(backupDir);
+            checkWritableDirectory(supportDir);
             checkWritableDirectory(tempRootDir);
             checkWritableDirectory(tempWorkDir);
             checkWritableDirectory(tempUploadDir);

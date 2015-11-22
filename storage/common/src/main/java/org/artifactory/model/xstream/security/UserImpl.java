@@ -21,10 +21,7 @@ package org.artifactory.model.xstream.security;
 import com.google.common.collect.ImmutableSet;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import org.artifactory.sapi.security.SecurityConstants;
-import org.artifactory.security.MutableUserInfo;
-import org.artifactory.security.SaltedPassword;
-import org.artifactory.security.UserGroupInfo;
-import org.artifactory.security.UserInfo;
+import org.artifactory.security.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,6 +47,7 @@ public class UserImpl implements MutableUserInfo {
     private boolean transientUser;
 
     private Set<UserGroupInfo> groups = new HashSet<>(1);
+    private Set<UserPropertyInfo> userPropertyInfos = new HashSet<>();
 
     private long lastLoginTimeMillis;
     private String lastLoginClientIp;
@@ -85,6 +83,13 @@ public class UserImpl implements MutableUserInfo {
             this.groups = new HashSet<>(groups);
         } else {
             this.groups = new HashSet<>(1);
+        }
+
+        Set<UserPropertyInfo> userPropertyInfos = user.getUserProperties();
+        if (groups != null) {
+            this.userPropertyInfos = new HashSet<>(userPropertyInfos);
+        } else {
+            this.userPropertyInfos = new HashSet();
         }
 
         setPrivateKey(user.getPrivateKey());
@@ -288,6 +293,14 @@ public class UserImpl implements MutableUserInfo {
         return ImmutableSet.copyOf(_groups());
     }
 
+    @Override
+    public Set<UserPropertyInfo> getUserProperties() {
+        if (userPropertyInfos == null) {
+            this.userPropertyInfos = new HashSet();
+        }
+        return userPropertyInfos;
+    }
+
     // Needed because XStream inject nulls :(
     private Set<UserGroupInfo> _groups() {
         if (groups == null) {
@@ -303,6 +316,11 @@ public class UserImpl implements MutableUserInfo {
         } else {
             this.groups = new HashSet<>(groups);
         }
+    }
+
+    @Override
+    public void setUserProperties(Set<UserPropertyInfo> userProperties) {
+        userPropertyInfos = userProperties;
     }
 
     @Override

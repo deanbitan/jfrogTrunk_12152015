@@ -72,7 +72,7 @@ public class BlobBinaryProviderImpl extends BinaryProviderBase {
     }
 
     @Override
-    public boolean exists(String sha1, long length) {
+    public boolean exists(String sha1) {
         try {
             long lengthFound;
             if (databaseType != DbType.MSSQL) {
@@ -82,17 +82,13 @@ public class BlobBinaryProviderImpl extends BinaryProviderBase {
                 lengthFound = jdbcHelper.executeSelectLong("SELECT DATALENGTH(data) FROM binary_blobs where sha1 = ?", sha1);
             }
             if (lengthFound != DbService.NO_DB_ID) {
-                log.trace("Found sha1 {} with length {}", sha1, length);
-                if (length != lengthFound) {
-                    throw new BinaryNotFoundException("Found a file with checksum '"
-                            + sha1 + "' but length is " + lengthFound + " not " + length);
-                }
+                log.trace("Found sha1 {} with length {}", sha1);
                 return true;
             }
         } catch (SQLException e) {
             throw new StorageException("Could not verify existence of " + sha1, e);
         }
-        return next().exists(sha1, length);
+        return next().exists(sha1);
     }
 
     @Nonnull
@@ -138,7 +134,7 @@ public class BlobBinaryProviderImpl extends BinaryProviderBase {
             log.trace("Inserting {} in blob binary provider", bd);
 
             String sha1 = bd.getSha1();
-            if (!exists(sha1, bd.getLength())) {
+            if (!exists(sha1)) {
                 int updated = 0;
                 try {
                     updated = jdbcHelper.executeUpdate("UPDATE binary_blobs SET sha1 = ? WHERE sha1 = ?",
@@ -147,7 +143,7 @@ public class BlobBinaryProviderImpl extends BinaryProviderBase {
                     // May get duplicate key violated on concurrent insert
                     // TORE: [by fsi] with good SQL error handling should limit to duplicate key violation cases
                     log.debug("Got exception moving temp blob line " + randomId + " to " + sha1, e);
-                    if (exists(sha1, bd.getLength())) {
+                    if (exists(sha1)) {
                         // All is OK someone else did the job already
                         deleteTempRow(randomId, sha1);
                         updated = 1;

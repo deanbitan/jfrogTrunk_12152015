@@ -53,6 +53,10 @@ public abstract class BinaryProviderBase implements BinaryProvider {
         return mutableBinaryProvider.getIntParam(name, defaultValue);
     }
 
+    public boolean getBooleanParam(String name, boolean defaultValue) {
+        return mutableBinaryProvider.getBooleanParam(name, defaultValue);
+    }
+
     public Set<Property> getProperties() {
         return mutableBinaryProvider.getproperties();
     }
@@ -71,6 +75,10 @@ public abstract class BinaryProviderBase implements BinaryProvider {
 
     public BinaryProviderBase getBinaryProvider() {
         return mutableBinaryProvider.getBinaryProvider();
+    }
+
+    public BinaryProviderBase getParentBinaryProvider() {
+        return mutableBinaryProvider.getParentBinaryProvider();
     }
 
     public String getParam(String name, String defaultValue) {

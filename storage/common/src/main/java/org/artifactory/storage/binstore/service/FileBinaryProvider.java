@@ -31,7 +31,7 @@ import java.io.File;
  *
  * @author freds
  */
-public interface FileBinaryProvider extends BinaryProvider {
+public interface FileBinaryProvider extends BinaryProvider, FileProviderStrategy {
     @Nonnull
     File getBinariesDir();
 
@@ -47,4 +47,7 @@ public interface FileBinaryProvider extends BinaryProvider {
      * @return true if all access and permissions to folders are valid, false otherwise
      */
     boolean isAccessible();
+
+    long getFreeSpace();
+
 }

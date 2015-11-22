@@ -77,6 +77,7 @@ public enum AddonType {
     BINTRAY_INTEGRATION("bintray-integration", "Bintray Integration", 2000, new String[]{"all", "ecosystem"}, "oss",
             "Bintray+Integration"),
     SMART_REPO("smart-repo", "Smart Remote Repo", 2000, new String[]{"all", "features"}, "pro", "Smart+Remote+Repositories"),
+    OAUTH("oauth", "OAuth", 2000, new String[]{"all", "features"}, "pro", "OAuth+Integration"),
     SBT("sbt", "SBT", 2000, new String[]{"all", "packageManagement"}, "oss", "SBT+Repositories"),
     IVY("ivy", "Ivy Plugin", 2000, new String[]{"all", "ecosystem"}, "oss", "Working+with+Ivy");
 

@@ -30,6 +30,7 @@ public abstract class AbstractVcsProviderConfiguration implements VcsProviderCon
     private final String repositoryDownloadUrl;
     private final String resourceDownloadUrl;
     private final Map<String, String> headers;
+    private final String releaseDownloadUrl;
 
     AbstractVcsProviderConfiguration(String prettyText, String refsPrefix, String repositoryDownloadUrl) {
         this.prettyText = prettyText;
@@ -37,6 +38,7 @@ public abstract class AbstractVcsProviderConfiguration implements VcsProviderCon
         this.repositoryDownloadUrl = repositoryDownloadUrl;
         this.resourceDownloadUrl = null;
         this.headers = null;
+        this.releaseDownloadUrl = null;
     }
 
     AbstractVcsProviderConfiguration(String prettyText, String refsPrefix, String repositoryDownloadUrl,
@@ -46,14 +48,16 @@ public abstract class AbstractVcsProviderConfiguration implements VcsProviderCon
         this.repositoryDownloadUrl = repositoryDownloadUrl;
         this.resourceDownloadUrl = resourceDownloadUrl;
         this.headers = null;
+        this.releaseDownloadUrl = null;
     }
 
     AbstractVcsProviderConfiguration(String prettyText, String refsPrefix, String repositoryDownloadUrl,
-            String resourceDownloadUrl, Map<String, String> headers) {
+                                     String resourceDownloadUrl, Map<String, String> headers, String releaseDownloadUrl) {
         this.prettyText = prettyText;
         this.refsPrefix = refsPrefix;
         this.repositoryDownloadUrl = repositoryDownloadUrl;
         this.resourceDownloadUrl = resourceDownloadUrl;
+        this.releaseDownloadUrl = releaseDownloadUrl;
         this.headers = headers;
     }
 
@@ -75,6 +79,11 @@ public abstract class AbstractVcsProviderConfiguration implements VcsProviderCon
     @Override
     public String getResourceDownloadUrl() {
         return resourceDownloadUrl;
+    }
+
+    @Override
+    public String getReleaseDownloadUrl() {
+        return releaseDownloadUrl;
     }
 
     @Override

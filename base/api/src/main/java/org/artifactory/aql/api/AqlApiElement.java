@@ -11,4 +11,5 @@ public interface AqlApiElement<T extends AqlBase> {
     List<AqlApiElement<T>> get();
 
     public boolean isEmpty();
+    public String toNative(int dept);
 }

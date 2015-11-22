@@ -29,13 +29,7 @@ import org.artifactory.md.MutablePropertiesInfo;
 import org.artifactory.md.PropertiesInfo;
 import org.artifactory.model.common.RepoPathImpl;
 import org.artifactory.model.xstream.fs.*;
-import org.artifactory.model.xstream.security.AceImpl;
-import org.artifactory.model.xstream.security.AclImpl;
-import org.artifactory.model.xstream.security.GroupImpl;
-import org.artifactory.model.xstream.security.PermissionTargetImpl;
-import org.artifactory.model.xstream.security.SecurityDataImpl;
-import org.artifactory.model.xstream.security.UserGroupImpl;
-import org.artifactory.model.xstream.security.UserImpl;
+import org.artifactory.model.xstream.security.*;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.resource.MutableRepoResourceInfo;
@@ -221,6 +215,7 @@ public class XStreamInfoFactory extends AbstractInfoFactory {
                     AclImpl.class,
                     AceImpl.class,
                     UserImpl.class,
+                    UserProperty.class,
                     UserGroupImpl.class,
                     GroupImpl.class
             );

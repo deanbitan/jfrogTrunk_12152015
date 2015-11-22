@@ -19,6 +19,7 @@
 package org.artifactory.api.storage;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Holds the storage quota information.
@@ -33,16 +34,17 @@ public class StorageQuotaInfo {
     private final int diskSpaceLimitPercentage;
     private final int diskSpaceWarningPercentage;
 
-    public StorageQuotaInfo(File dataDir, int diskSpaceLimitPercentage, int diskSpaceWarningPercentage,
+    public StorageQuotaInfo(List<File> dataDir, int diskSpaceLimitPercentage, int diskSpaceWarningPercentage,
             long fileContentLength) {
         this.diskSpaceLimitPercentage = diskSpaceLimitPercentage;
         this.diskSpaceWarningPercentage = diskSpaceWarningPercentage;
         build(dataDir, fileContentLength);
     }
 
-    private void build(File dataDir, long fileContentLength) {
-        freeSpace = dataDir.getFreeSpace();
-        totalSpace = dataDir.getTotalSpace();
+    private void build(List<File> dataDirs, long fileContentLength) {
+        freeSpace = dataDirs.stream().mapToLong(File::getFreeSpace).sum();
+        totalSpace = dataDirs.stream().mapToLong(File::getTotalSpace).sum();
+        usedSpace = totalSpace - freeSpace;
         if (fileContentLength > 0) {
             usedSpace = totalSpace + fileContentLength - freeSpace;
         } else {

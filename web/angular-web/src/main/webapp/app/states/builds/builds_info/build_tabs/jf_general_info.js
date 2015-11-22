@@ -8,8 +8,9 @@ class jfGeneralInfoController {
         this.pushToBintrayModal = PushToBintrayModal;
         this.generalData = {};
         this.DICTIONARY = DICTIONARY.generalInfo;
+        this.User = User;
 
-        this.userCanPushToBintray = User.getCurrent().canPushToBintray();
+        this.userCanPushToBintray = false;
 
         this._getGeneralInfo();
     }
@@ -25,6 +26,7 @@ class jfGeneralInfoController {
             time: this.$stateParams.startTime,
             action:'buildInfo'
         }).$promise.then((data) => {
+            this.userCanPushToBintray = data.allowPushToBintray && this.User.getCurrent().canPushToBintray();
             this.generalData = data;
         });
 

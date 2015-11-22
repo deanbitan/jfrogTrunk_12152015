@@ -199,7 +199,7 @@ export class ArtifactsController {
             },
             nuget: {
                 general: [{
-                    before: "When using Artifactory as a NuGet repository you can wither work with the NuGet client directly or with Visual Studio"
+                    before: "When using Artifactory as a NuGet repository you can either work with the NuGet client directly or with Visual Studio"
                 },{
                     before: "<b>NuGet Client Configuration</b><br/>To configure NuGet client to work with Artifactoy you will need to add Artifactroy to the list of sources. To add this repository use the following command",
                     snippet: "nuget sources Add -Name Artifactory -Source $2/api/nuget/$1"

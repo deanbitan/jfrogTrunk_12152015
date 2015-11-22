@@ -23,7 +23,7 @@ import org.artifactory.security.SecurityServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -42,7 +42,7 @@ public class DaoLdapAuthoritiesPopulator implements LdapAuthoritiesPopulator {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             return userDetails.getAuthorities();
         } catch (UsernameNotFoundException e) {
-            return Sets.<GrantedAuthority>newHashSet(new GrantedAuthorityImpl(SecurityServiceImpl.ROLE_USER));
+            return Sets.<GrantedAuthority>newHashSet(new SimpleGrantedAuthority(SecurityServiceImpl.ROLE_USER));
         }
     }
 }

@@ -32,12 +32,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 
 import java.util.List;
@@ -258,4 +253,7 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
     void setBintrayConfig(BintrayConfigDescriptor bintrayConfigDescriptor);
 
     BackupDescriptor getBackup(String backupKey);
+
+    void conditionallyAddToBackups(RealRepoDescriptor remoteRepoDescriptor);
+
 }

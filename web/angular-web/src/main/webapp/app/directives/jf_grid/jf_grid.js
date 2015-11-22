@@ -94,6 +94,15 @@ export function jfGrid($timeout,$compile) {
 
                 return count + ' ' + _.startCase(recordsName);
             };
+
+            $scope.getSelectedRecords = () => {
+
+                if (!$scope.gridOptions.multiSelect || !$scope.gridOptions.api || !$scope.gridOptions.api.selection) return '';
+
+                let count = $scope.gridOptions.api.selection.getSelectedRows().length;
+
+                return count;
+            };
         }
     }
 }

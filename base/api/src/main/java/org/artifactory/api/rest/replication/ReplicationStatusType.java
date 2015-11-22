@@ -32,7 +32,8 @@ public enum ReplicationStatusType {
     ERROR("error", "Completed with errors"),
     WARN("warn", "Completed with warnings"),
     OK("ok", "Completed successfully"),
-    INCONSISTENT("inconsistent", "Inconsistent");
+    INCONSISTENT("inconsistent", "Inconsistent"),
+    PARTIAL_FAILURE("partial_failure", "Some replications completed with errors");
 
     private String id;
     private String displayName;

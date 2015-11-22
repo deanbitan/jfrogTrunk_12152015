@@ -225,7 +225,8 @@ public class MavenMetadataCalculator extends AbstractMetadataCalculator {
         Metadata metadata = new Metadata();
         metadata.setGroupId(artifactInfo.getGroupId());
         metadata.setArtifactId(artifactInfo.getArtifactId());
-        metadata.setVersion(artifactInfo.getVersion());
+        String baseVersion = StringUtils.substringBefore(artifactInfo.getVersion(), "-");
+        metadata.setVersion(baseVersion + MavenNaming.SNAPSHOT_SUFFIX);
         Versioning versioning = new Versioning();
         metadata.setVersioning(versioning);
         versioning.setLastUpdatedTimestamp(new Date());

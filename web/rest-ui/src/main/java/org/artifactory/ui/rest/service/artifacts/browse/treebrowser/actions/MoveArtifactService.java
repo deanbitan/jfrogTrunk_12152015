@@ -101,7 +101,7 @@ public class MoveArtifactService implements RestService {
             artifactoryResponse.errors(errors);
         } else {
             artifactoryResponse.info(
-                    "Artifact successfully moved to:" + moveArtifact.getTargetRepoKey() + ":" + moveArtifact.getTargetPath());
+                    "Successfully moved artifact to:" + moveArtifact.getTargetRepoKey() + ":" + moveArtifact.getTargetPath());
         }
     }
 }

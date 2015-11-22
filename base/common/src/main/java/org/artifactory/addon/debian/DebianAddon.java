@@ -21,12 +21,16 @@ package org.artifactory.addon.debian;
 import org.artifactory.addon.Addon;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 
+import java.util.Set;
+
 /**
  * @author Gidi Shabat
  */
 public interface DebianAddon extends Addon {
 
     void recalculateAll(LocalRepoDescriptor localRepoDescriptor, String password, boolean delayed);
+
+    void calculateMetaData(Set<DebianCalculationEvent> calculationRequests, boolean delayed);
 
      void onInstallKey(String key,boolean isPublic) throws Exception;
 

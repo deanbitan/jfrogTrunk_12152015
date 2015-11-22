@@ -88,6 +88,16 @@ public class JaxbHelper<T> {
         }
     }
 
+    public static <T> String toXml(T object) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            new JaxbHelper<T>().write(bos, object);
+            return bos.toString("utf-8");
+        } catch (IOException e) {
+            throw new RuntimeException("Object could be converted to string!", e);
+        }
+    }
+
     public void write(OutputStream stream, T object) {
         try {
             JAXBContext context = JAXBContext.newInstance(object.getClass());

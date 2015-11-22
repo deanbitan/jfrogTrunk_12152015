@@ -51,8 +51,8 @@ public class UsageTrackingBinaryProvider extends BinaryProviderBase implements B
 
 
     @Override
-    public boolean exists(String sha1, long length) {
-        return next().exists(sha1, length);
+    public boolean exists(String sha1) {
+        return next().exists(sha1);
     }
 
     @Nonnull

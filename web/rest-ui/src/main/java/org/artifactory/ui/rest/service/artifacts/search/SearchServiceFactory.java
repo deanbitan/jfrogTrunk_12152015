@@ -4,6 +4,9 @@ import org.artifactory.ui.rest.model.artifacts.search.DeleteArtifactsModel;
 import org.artifactory.ui.rest.service.artifacts.search.checksumsearch.ChecksumSearchService;
 import org.artifactory.ui.rest.service.artifacts.search.classsearch.ClassSearchService;
 import org.artifactory.ui.rest.service.artifacts.search.gavcsearch.GavcSearchService;
+import org.artifactory.ui.rest.service.artifacts.search.packagesearch.GetPackageSearchOptionsService;
+import org.artifactory.ui.rest.service.artifacts.search.packagesearch.PackageSearchCriteriaToNativeAqlService;
+import org.artifactory.ui.rest.service.artifacts.search.packagesearch.PackageSearchService;
 import org.artifactory.ui.rest.service.artifacts.search.propertysearch.GetPropertySetsService;
 import org.artifactory.ui.rest.service.artifacts.search.propertysearch.PropertySearchService;
 import org.artifactory.ui.rest.service.artifacts.search.quicksearch.QuickSearchService;
@@ -28,6 +31,15 @@ public abstract class SearchServiceFactory {
 
     @Lookup
     public abstract PropertySearchService propertySearchService();
+
+    @Lookup
+    public abstract PackageSearchService packageSearch();
+
+    @Lookup
+    public abstract PackageSearchCriteriaToNativeAqlService PackageSearchCriteriaToNativeAql();
+
+    @Lookup
+    public abstract GetPackageSearchOptionsService packageSearchOptions();
 
     @Lookup
     public abstract SaveSearchResultsService saveSearchResults();
@@ -69,6 +81,4 @@ public abstract class SearchServiceFactory {
 
     @Lookup
     public abstract DiscardFromResultsService discardResults();
-
-
 }

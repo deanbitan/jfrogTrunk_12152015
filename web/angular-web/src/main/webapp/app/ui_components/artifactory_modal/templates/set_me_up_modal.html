@@ -38,8 +38,8 @@
                     <ui-select-match placeholder="Releases">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.maven.releases">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.maven.releases | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -50,8 +50,8 @@
                     <ui-select-match placeholder="Snapshots">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.maven.snapshots">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.maven.snapshots | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -64,8 +64,8 @@
                     <ui-select-match placeholder="Plugin Releases">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.maven.pluginReleases">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.maven.pluginReleases | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -76,8 +76,8 @@
                     <ui-select-match placeholder="Plugin Snapshots">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.maven.pluginSnapshots">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.maven.pluginSnapshots | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -109,8 +109,8 @@
                     <ui-select-match placeholder="Select Repository Key">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.gradle.pluginResolver">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.gradle.pluginResolver | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -123,8 +123,8 @@
                     <ui-select-match placeholder="Select Repository Key">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.gradle.libsResolver">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.gradle.libsResolver | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -137,8 +137,8 @@
                     <ui-select-match placeholder="Select Repository Key">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.gradle.libsPublisher">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.gradle.libsPublisher | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -237,8 +237,8 @@
                     <ui-select-match placeholder="Plugin Releases">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.ivy.libsRepository">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.ivy.libsRepository | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -249,8 +249,8 @@
                     <ui-select-match placeholder="Plugin Releases">
                         {{$select.selected}}
                     </ui-select-match>
-                    <ui-select-choices repeat="property in settings.ivy.libsRepositoryLayout">
-                        <div ng-bind-html="property"></div>
+                    <ui-select-choices repeat="property in settings.ivy.libsRepositoryLayout | filter: $select.search track by $index">
+                        <div ng-bind-html="property | highlight: $select.search"></div>
                     </ui-select-choices>
                 </ui-select>
             </div>
@@ -281,28 +281,37 @@
 
     <div class="set-me-up-actions" ng-if="generateSettings">
         <button class="btn btn-secondary" ng-click="generateBuildSettings()">Generate Settings</button>
-        <div class="pull-right">
+        <div class="pull-right text-button-group">
             <form ng-if="generate.maven && snippet" class="inline" method="post" action="../ui/setMeUp/downloadBuildMaven?downloadScript=true">
                 <input name="data" type="hidden" ng-value="getMavenProps()">
-                <input type="submit" class="btn btn-secondary" value="Download Snippet" />
+                <div onclick="javascript:$(this).parents('form').submit()" class="text-button">
+                    <span class="icon icon-download"></span>Download Snippet
+                </div>
             </form>
             <form ng-if="generate.gradle && snippet" class="inline" method="post" action="../ui/setMeUp/downloadBuildGradle?downloadScript=true">
                 <input name="data" type="hidden" ng-value="getGradleProps()">
-                <input type="submit" class="btn btn-secondary" value="Download Snippet" />
+                <div onclick="javascript:$(this).parents('form').submit()" class="text-button">
+                    <span class="icon icon-download"></span>Download Snippet
+                </div>
             </form>
             <form ng-if="generate.gradle && snippet" class="inline" method="post" action="../ui/setMeUp/downloadBuildGradle?gradleProps=true">
                 <input name="data" type="hidden" ng-value="getGradleProps()">
-                <input type="submit" class="btn btn-secondary" value="Download gradle.properties" />
+                <div onclick="javascript:$(this).parents('form').submit()" class="text-button">
+                    <span class="icon icon-download"></span>Download gradle.properties
+                </div>
             </form>
             <form ng-if="generate.ivy && snippet" class="inline" method="post" action="../ui/setMeUp/downloadBuildIvy?downloadScript=true">
                 <input name="data" type="hidden" ng-value="getIvyProps()">
-                <input type="submit" class="btn btn-secondary" value="Download Snippet" />
+                <div onclick="javascript:$(this).parents('form').submit()" class="text-button">
+                    <span class="icon icon-download"></span>Download Snippet
+                </div>
             </form>
 
-            <button ng-if="(generate.maven || generate.gradle || generate.ivy) && snippet && !deploySettingsMode"
-                    class="btn btn-secondary"
-                    ng-click="setDeploySettingsMode()">Deploy Settings
-            </button>
+            <div class="text-button"
+                 ng-if="(generate.maven || generate.gradle || generate.ivy) && snippet && !deploySettingsMode"
+                 ng-click="setDeploySettingsMode()">
+                <span class="icon icon-upload-hover"></span>Deploy Settings
+            </div>
         </div>
         <div ng-if="deploySettingsMode" class="margin-top-20">
             <form>
@@ -418,5 +427,13 @@
                 <p ng-if="snip.after" ng-bind-html="snip.after"></p>
             </div>
         </div>
+    </div>
+</div>
+<div class="modal-footer"
+     ng-if="selection.repoType && selection.repoType.wiki">
+    <div id="package-description" class="text-left">
+        <a href="https://www.jfrog.com/confluence/display/RTF/{{selection.repoType.wiki}}" target="_blank">
+            Learn more about Artifactory support for {{selection.repoType.text}} <span ng-if="selection.repoType.value !== 'docker'">repository</span><span ng-if="selection.repoType.value === 'docker'">registry</span>
+        </a>
     </div>
 </div>

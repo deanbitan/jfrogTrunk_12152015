@@ -6,6 +6,7 @@ import org.apache.commons.io.IOUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
+import org.artifactory.io.FileUtils;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.ui.exception.BadRequestException;
 import org.slf4j.Logger;

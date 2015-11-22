@@ -53,10 +53,10 @@ public class CreatePropertyService implements RestService {
         try {
             if (recursive) {
                 propsService.addPropertyRecursively(repoPath, propertiesTab.getParent(), propertiesTab.getProperty(),
-                        propertiesTab.getSelectedValues());
+                        true,propertiesTab.getSelectedValues());
             } else {
                 propsService.addProperty(repoPath, propertiesTab.getParent(), propertiesTab.getProperty(),
-                        propertiesTab.getSelectedValues());
+                        true,propertiesTab.getSelectedValues());
             }
             artifactoryResponse.info("Successfully created property '" + propertiesTab.getProperty().getName() + "'");
             artifactoryResponse.responseCode(HttpServletResponse.SC_CREATED);

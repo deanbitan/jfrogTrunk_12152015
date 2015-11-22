@@ -24,7 +24,7 @@ public class RemoveSearchResultsService implements RestService {
         String searchName = request.getQueryParamByKey("name");
         try {
             RequestUtils.removeResultsToRequest(searchName, request.getServletRequest());
-            response.info("Stash successfully cleared");
+            response.info("Successfully cleared stash");
         } catch (Exception e) {
             response.error("no result with name:" + searchName + " found");
             log.error("no result with name:" + searchName + " found");

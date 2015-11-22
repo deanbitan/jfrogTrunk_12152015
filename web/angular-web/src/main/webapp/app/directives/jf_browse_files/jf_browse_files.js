@@ -260,7 +260,7 @@ class jfBrowseFilesController {
     }
 
     onSelectionChange() {
-        this.browseFilesScope.folder.selectedFolder = (this.browseFilesScope.baseDirectory || '') + (!this.isWindows ? (this.browseFilesScope.baseDirectory ? '' : '/') : (this.browseFilesScope.baseDirectory ? (!this.browseFilesScope.baseDirectory.endsWith('\\')?'\\':'') : this.browseFilesScope.folder.currentRoot)) + this.browseFilesScope.folder.currentFolder;
+        this.browseFilesScope.folder.selectedFolder = (this.browseFilesScope.baseDirectory || '') + (!this.isWindows ? (!this.browseFilesScope.baseDirectory || !this.browseFilesScope.baseDirectory.endsWith('/') ? '/' :'') : (this.browseFilesScope.baseDirectory ? (!this.browseFilesScope.baseDirectory.endsWith('\\')?'\\':'') : this.browseFilesScope.folder.currentRoot)) + this.browseFilesScope.folder.currentFolder;
         if (this.isWindows && this.browseFilesScope.folder.selectedFolder.toLowerCase().startsWith(this.browseFilesScope.folder.currentRoot.toLowerCase()+this.browseFilesScope.folder.currentRoot.toLowerCase()))
             this.browseFilesScope.folder.selectedFolder = this.browseFilesScope.folder.selectedFolder.toLowerCase().replace(this.browseFilesScope.folder.currentRoot.toLowerCase()+this.browseFilesScope.folder.currentRoot.toLowerCase(),this.browseFilesScope.folder.currentRoot);
     }

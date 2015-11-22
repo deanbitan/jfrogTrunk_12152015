@@ -53,6 +53,10 @@ public interface UserGroupStoreService {
     boolean createUser(UserInfo user);
 
     @Lock
+    boolean createUserWithProperties(UserInfo user, boolean addUserProperties);
+
+
+    @Lock
     void deleteUser(String username);
 
     List<UserInfo> getAllUsers(boolean includeAdmins);
@@ -187,6 +191,7 @@ public interface UserGroupStoreService {
      * @param val The value to write
      * @return True if the write succeeded, false otherwise
      */
+    @Lock
     boolean addUserProperty(String username, String key, String val);
 
     /**
@@ -201,4 +206,5 @@ public interface UserGroupStoreService {
     Properties findPropertiesForUser(String username);
 
     void deletePropertyFromAllUsers(String propertyKey);
+
 }

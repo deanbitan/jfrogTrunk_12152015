@@ -18,21 +18,17 @@
 
 package org.artifactory.storage.db.security.service;
 
+import org.apache.commons.collections.MapUtils;
 import org.artifactory.api.security.GroupNotFoundException;
 import org.artifactory.api.security.UserInfoBuilder;
 import org.artifactory.common.Info;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.md.Properties;
 import org.artifactory.model.xstream.fs.PropertiesImpl;
-import org.artifactory.security.GroupInfo;
-import org.artifactory.security.MutableGroupInfo;
-import org.artifactory.security.MutableUserInfo;
-import org.artifactory.security.SaltedPassword;
-import org.artifactory.security.UserGroupInfo;
-import org.artifactory.security.UserInfo;
+import org.artifactory.model.xstream.security.UserProperty;
+import org.artifactory.security.*;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.db.DbService;
-import org.artifactory.storage.db.fs.entity.UserProperty;
 import org.artifactory.storage.db.security.dao.UserGroupsDao;
 import org.artifactory.storage.db.security.dao.UserPropertiesDao;
 import org.artifactory.storage.db.security.entity.Group;
@@ -47,11 +43,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Date: 8/27/12
@@ -63,6 +55,7 @@ import java.util.Set;
 public class UserGroupServiceImpl implements UserGroupStoreService {
     @SuppressWarnings("UnusedDeclaration")
     private static final Logger log = LoggerFactory.getLogger(UserGroupServiceImpl.class);
+    private static final String API_KEY = "api_key";
 
     @Autowired
     private DbService dbService;
@@ -130,12 +123,25 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
 
     @Override
     public boolean createUser(UserInfo user) {
+        return createUserWithProperties(user, false);
+    }
+
+    @Override
+    public boolean createUserWithProperties(UserInfo user, boolean addUserProperties) {
         try {
             if (userExists(user.getUsername())) {
                 return false;
             }
             User u = userInfoToUser(dbService.nextId(), user);
-            return userGroupsDao.createUser(u) > 0;
+            int createUserSucceeded = userGroupsDao.createUser(u);
+            Set<UserPropertyInfo> userProperties = user.getUserProperties();
+            if (addUserProperties && userProperties != null && !userProperties.isEmpty()) {
+                for (UserPropertyInfo userPropertyInfo : userProperties) {
+                    userPropertiesDao.addUserPropertyById(new Long(u.getUserId()).intValue(),
+                            userPropertyInfo.getPropKey(), userPropertyInfo.getPropValue());
+                }
+            }
+            return createUserSucceeded > 0;
         } catch (SQLException e) {
             throw new StorageException("Failed to create user " + user.getUsername(), e);
         }
@@ -155,8 +161,10 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
         List<UserInfo> results = new ArrayList<>();
         try {
             Collection<User> allUsers = userGroupsDao.getAllUsers(includeAdmins);
+            Map<Long, Set<UserPropertyInfo>> allUserProperties = userPropertiesDao.getAllUserProperties();
             for (User user : allUsers) {
-                results.add(userToUserInfo(user));
+                UserInfo userInfo = userToUserInfoWithProperties(user, allUserProperties);
+                results.add(userInfo);
             }
             return results;
         } catch (SQLException e) {
@@ -354,7 +362,7 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
     @Override
     public boolean addUserProperty(String username, String key, String val) {
         try {
-            return userPropertiesDao.addUserProperty(userGroupsDao.findUserIdByUsername(username), key, val);
+            return userPropertiesDao.addUserPropertyByUserName(username, key, val);
         } catch (SQLException e) {
             throw new StorageException("Could not add external data " + key + ":" + val + " to user " + username, e);
         }
@@ -408,6 +416,10 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
     }
 
     private UserInfo userToUserInfo(User user) throws SQLException {
+        return userToUserInfoWithProperties(user, null);
+    }
+
+    private UserInfo userToUserInfoWithProperties(User user, Map<Long, Set<UserPropertyInfo>> allUserProperties) throws SQLException {
         UserInfoBuilder builder = new UserInfoBuilder(user.getUsername());
         Set<UserGroupInfo> groups = new HashSet<>(user.getGroups().size());
         for (UserGroup userGroup : user.getGroups()) {
@@ -434,6 +446,9 @@ public class UserGroupServiceImpl implements UserGroupStoreService {
         userInfo.setLastAccessTimeMillis(user.getLastAccessTimeMillis());
         userInfo.setLastAccessClientIp(user.getLastAccessClientIp());
         userInfo.setBintrayAuth(user.getBintrayAuth());
+        if (MapUtils.isNotEmpty(allUserProperties) && allUserProperties.get(user.getUserId()) != null) {
+            userInfo.setUserProperties(allUserProperties.get(user.getUserId()));
+        }
         return userInfo;
     }
 

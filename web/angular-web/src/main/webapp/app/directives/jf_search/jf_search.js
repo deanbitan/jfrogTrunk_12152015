@@ -52,8 +52,8 @@ class jfSearchController {
     getSearchTabs() {
         return [
             {key: 'quick', value: 'Quick'},
+            {key: 'package', value: 'Package'},
             {key: 'class', value: 'Archive'},
-            {key: 'gavc', value: 'GAVC'},
             {key: 'property', value: 'Property', feature: 'properties'},
             {key: 'checksum', value: 'Checksum'},
             {key: 'remote', value: 'Remote'}

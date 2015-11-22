@@ -172,8 +172,8 @@
     <table class="jf-data-table">
         <tr ng-if="!jfGeneral.generalData.checksums.sha2">
             <td>SHA-2:</td>
-            <td ng-if="!jfGeneral.features.isOss()"><a ng-click="jfGeneral.getSha256()">Calculate</a></td>
-            <td ng-if="jfGeneral.features.isOss()"><div style="width:92px" class="license-required license-required-PRO"><a ng-click="jfGeneral.getSha256()">Calculate</a></div></td>
+            <td ng-if="!jfGeneral.features.isOss()"><a ng-class="{'not-allowed':!jfGeneral.canCalculateSha256()}" ng-click="jfGeneral.getSha256()">Calculate</a></td>
+            <td ng-if="jfGeneral.features.isOss()"><div style="width:92px" class="license-required license-required-PRO"><a class="not-allowed">Calculate</a></div></td>
         </tr>
         <tr ng-repeat="(_key,_value) in jfGeneral.generalData.checksums"
             ng-if="_key != 'showFixChecksums' && _key != 'message' && _key != 'sha1Value'">

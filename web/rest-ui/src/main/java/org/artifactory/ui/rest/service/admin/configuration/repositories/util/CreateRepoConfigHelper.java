@@ -73,6 +73,7 @@ public class CreateRepoConfigHelper {
         log.debug("Creating descriptor from received model");
         LocalRepoDescriptor repoDescriptor = model.toDescriptor(repoValidator, repoBuilder);
         configDescriptor.addLocalRepository(repoDescriptor);
+        configDescriptor.conditionallyAddToBackups(repoDescriptor);
         if (model.getReplications() != null) {
             log.debug("Creating push replication descriptor(s) from received model");
             Set<LocalReplicationDescriptor> replications = model.getReplicationDescriptors(replicationValidator,

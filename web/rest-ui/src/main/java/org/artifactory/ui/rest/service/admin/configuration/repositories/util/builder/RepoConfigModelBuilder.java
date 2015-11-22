@@ -157,6 +157,7 @@ public class
         replication.setSyncProperties(replicationDescriptor.isSyncProperties());
         replication.setUsername(replicationDescriptor.getUsername());
         replication.setPassword(replicationDescriptor.getPassword());
+        replication.setPathPrefix(replicationDescriptor.getPathPrefix());
         return replication;
     }
 
@@ -167,6 +168,7 @@ public class
         replication.setEnabled(replicationDescriptor.isEnabled());
         replication.setSyncDeletes(replicationDescriptor.isSyncDeletes());
         replication.setSyncProperties(replicationDescriptor.isSyncProperties());
+        replication.setPathPrefix(replicationDescriptor.getPathPrefix());
         return replication;
     }
 
@@ -456,10 +458,28 @@ public class
                 typeSpecific = new GemsTypeSpecificConfigModel();
                 break;
             case Npm:
-                typeSpecific = new NpmTypeSpecificConfigModel();
+                NpmTypeSpecificConfigModel npmType = new NpmTypeSpecificConfigModel();
+                ExternalDependenciesConfig npmExternalDependencies = descriptor.getExternalDependencies();
+                if (npmExternalDependencies != null) {
+                    npmType.setEnableExternalDependencies(npmExternalDependencies.isEnabled());
+                    if (npmExternalDependencies.getRemoteRepo() != null) {
+                        npmType.setExternalRemoteRepo(npmExternalDependencies.getRemoteRepo().getKey());
+                    }
+                    npmType.setExternalPatterns(npmExternalDependencies.getPatterns());
+                }
+                typeSpecific = npmType;
                 break;
             case Bower:
-                typeSpecific = new BowerTypeSpecificConfigModel();
+                BowerTypeSpecificConfigModel bowerType = new BowerTypeSpecificConfigModel();
+                ExternalDependenciesConfig bowerExternalDependencies = descriptor.getExternalDependencies();
+                if (bowerExternalDependencies != null) {
+                    bowerType.setEnableExternalDependencies(bowerExternalDependencies.isEnabled());
+                    if (bowerExternalDependencies.getRemoteRepo() != null) {
+                        bowerType.setExternalRemoteRepo(bowerExternalDependencies.getRemoteRepo().getKey());
+                    }
+                    bowerType.setExternalPatterns(bowerExternalDependencies.getPatterns());
+                }
+                typeSpecific = bowerType;
                 break;
             case NuGet:
                 typeSpecific = new NugetTypeSpecificConfigModel();

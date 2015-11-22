@@ -55,7 +55,7 @@ public class BinaryProviderHelper {
         // move the file to its final destination
         File targetFile = fileProviderStrategy.getFile(binaryInfo.getSha1());
         Path targetPath = targetFile.toPath();
-        if (!java.nio.file.Files.exists(targetPath)) {
+        if (!fileProviderStrategy.isFileExists(binaryInfo.getSha1())) {
             // Move the file from the pre-filestore to the filestore
             java.nio.file.Files.createDirectories(targetPath.getParent());
             try {

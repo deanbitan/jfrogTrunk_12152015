@@ -61,7 +61,7 @@ public enum InfoWriter {
     /**
      * The format of the list to be printed
      */
-    private static String listFormat = "   %1$-70s| %2$s%n";
+    public static final String listFormat = "   %1$-70s| %2$s%n";
 
     /**
      * Main constructor
@@ -82,9 +82,18 @@ public enum InfoWriter {
      */
     public static void writeInfo() throws IllegalAccessException, InstantiationException {
         if (log.isInfoEnabled()) {
-            String wholeDump = getInfoString();
-            log.info(wholeDump);
+            log.info(getInfo());
         }
+    }
+
+    /**
+     * Dumps the info from all the groups in the enum to the log
+     *
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
+    public static String getInfo() throws IllegalAccessException, InstantiationException {
+        return getInfoString();
     }
 
     public static String getInfoString() throws InstantiationException, IllegalAccessException {

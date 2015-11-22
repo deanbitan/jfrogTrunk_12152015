@@ -39,7 +39,7 @@ public interface BinaryProvider {
      * @param length The expected length of this binary
      * @return true if this binary provider has the given key with length
      */
-    boolean exists(String sha1, long length);
+    boolean exists(String sha1);
 
     /**
      * Retrieve the readable stream with the bytes associated with the provided SHA1 checksum.

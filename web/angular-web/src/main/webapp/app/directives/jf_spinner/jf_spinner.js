@@ -5,6 +5,7 @@ class jfSpinnerController {
         this.$scope = $scope;
         this.$state = $state;
         this.show = false;
+        this.count = 0;
         this.artifactoryEventBus = ArtifactoryEventBus;
 
         this.intervalPromise = null;
@@ -16,11 +17,21 @@ class jfSpinnerController {
     }
 
     showSpinner() {
-        if ((this.domain === 'body' && this.$state.current.name === 'login') || (this.domain === 'content' && this.$state.current.name !== 'login')) this.show = true;
+        if ((this.domain === 'body' && this.$state.current.name === 'login') || (this.domain === 'content' && this.$state.current.name !== 'login')) {
+            this.count++;
+            this.show = true;
+//            console.log(this.count,'show')
+        }
     }
 
     hideSpinner() {
-        this.show = false;
+        this.count--;
+        if (this.count<0) this.count = 0;
+//        console.log(this.count)
+        if (this.count === 0) {
+//            console.log('hide')
+            this.show = false;
+        }
     }
 
 

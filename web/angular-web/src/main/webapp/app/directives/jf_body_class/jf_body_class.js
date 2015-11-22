@@ -31,6 +31,6 @@ class jfBodyClassController {
     }
 
     isLoadCompleted() {
-        return window.angular && angular.element(document.body).injector() && angular.element(document.body).injector().get("$http").pendingRequests == 0;
+        return window.angular && angular.element(document.body).injector() && angular.element(document.body).injector().get("$http").pendingRequests.length == 0;
     }
 }

@@ -70,6 +70,8 @@ public interface UserInfo extends Info {
 
     Set<UserGroupInfo> getGroups();
 
+    Set<UserPropertyInfo> getUserProperties();
+
     long getLastLoginTimeMillis();
 
     String getLastLoginClientIp();

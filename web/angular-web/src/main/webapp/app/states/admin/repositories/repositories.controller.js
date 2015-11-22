@@ -184,17 +184,17 @@ export class AdminRepositoriesController {
                 enableSorting: !this.features.isGlobalRepoEnabled()
             },
             {
-                name: 'URL',
-                displayName: 'URL',
-                field: 'url',
-                width: '40%',
-                enableSorting: !this.features.isGlobalRepoEnabled()
-            },
-            {
                 name: 'Type',
                 displayName: 'Type',
                 field: 'displayType',
                 width: '10%',
+                enableSorting: !this.features.isGlobalRepoEnabled()
+            },
+            {
+                name: 'URL',
+                displayName: 'URL',
+                field: 'url',
+                width: '40%',
                 enableSorting: !this.features.isGlobalRepoEnabled()
             },
             {

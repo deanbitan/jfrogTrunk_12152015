@@ -82,7 +82,7 @@ export function selectTargetPathFactory(ArtifactActionsDao, $q, $rootScope, Arti
         if (customDryRun) customDryRun.scope = modalScope;
 
         // Launch modal
-        modalInstance = ArtifactoryModal.launchModal('select_target_path', modalScope);
+        modalInstance = ArtifactoryModal.launchModal('select_target_path', modalScope, 'sm');
         return deferred.promise;
     }
 }

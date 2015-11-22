@@ -14,7 +14,8 @@
             <h5 class="text-primary" ng-if="jfDragDrop.headers.leftTitle">
                 {{jfDragDrop.headers.leftTitle}}
             </h5>
-            <div class="dnd-list-wrapper"
+            <div id="dnd-exclude-list"
+                 class="dnd-list-wrapper"
                  ng-mouseenter="jfDragDrop.mouseIsInExclude(true)"
                  ng-mouseleave="jfDragDrop.mouseIsInExclude(false)">
                 <ul class="dnd-list">
@@ -66,7 +67,8 @@
             <h5 class="text-primary"
                 ng-if="jfDragDrop.headers.rightTitle">{{jfDragDrop.headers.rightTitle}}
             </h5>
-            <div class="dnd-list-wrapper"
+            <div id="dnd-include-list"
+                 class="dnd-list-wrapper"
                  ng-mouseenter="jfDragDrop.mouseIsInInclude(true)"
                  ng-mouseleave="jfDragDrop.mouseIsInInclude(false)">
                 <ul class="dnd-list dnd-list-fullheight">

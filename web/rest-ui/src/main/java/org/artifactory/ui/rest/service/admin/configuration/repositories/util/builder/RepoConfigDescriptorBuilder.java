@@ -324,6 +324,28 @@ public class RepoConfigDescriptorBuilder {
                 DockerTypeSpecificConfigModel docker = (DockerTypeSpecificConfigModel) type;
                 descriptor.setForceDockerAuthentication(docker.isForceDockerAuthentication());
                 break;
+            case Bower:
+                BowerTypeSpecificConfigModel bower = (BowerTypeSpecificConfigModel) type;
+                if (descriptor.getExternalDependencies() == null) {
+                    descriptor.setExternalDependencies(new ExternalDependenciesConfig());
+                }
+                descriptor.getExternalDependencies().setEnabled(bower.getEnableExternalDependencies());
+                descriptor.getExternalDependencies().getPatterns().clear();
+                descriptor.getExternalDependencies().getPatterns().addAll(bower.getExternalPatterns());
+                descriptor.getExternalDependencies().setRemoteRepo(
+                        centralConfig.getDescriptor().getRemoteRepositoriesMap().get(bower.getExternalRemoteRepo()));
+                break;
+            case Npm:
+                NpmTypeSpecificConfigModel npm = (NpmTypeSpecificConfigModel) type;
+                if (descriptor.getExternalDependencies() == null) {
+                    descriptor.setExternalDependencies(new ExternalDependenciesConfig());
+                }
+                descriptor.getExternalDependencies().setEnabled(npm.getEnableExternalDependencies());
+                descriptor.getExternalDependencies().getPatterns().clear();
+                descriptor.getExternalDependencies().getPatterns().addAll(npm.getExternalPatterns());
+                descriptor.getExternalDependencies().setRemoteRepo(
+                        centralConfig.getDescriptor().getRemoteRepositoriesMap().get(npm.getExternalRemoteRepo()));
+                break;
             case Maven: //P2 reaches maven also
             case Gradle:
             case Ivy:

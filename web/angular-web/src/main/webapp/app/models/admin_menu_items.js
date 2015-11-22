@@ -68,6 +68,7 @@ export const AdminMenuItems = [
         "label": "Advanced",
         "state": "admin.advanced",
         "subItems": [
+            {"label": "Support Zone", "state": "admin.advanced.support_page", "feature":"supportpage"},
             {"label": "System Info", "state": "admin.advanced.system_info", "feature":"systeminfo"},
             {"label": "System Logs", "state": "admin.advanced.system_logs"},
             {"label": "Maintenance", "state": "admin.advanced.maintenance", "feature":"maintenance"},

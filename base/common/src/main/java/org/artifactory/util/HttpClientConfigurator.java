@@ -79,7 +79,7 @@ public class HttpClientConfigurator {
     // previously, the code would check every connection by default before re-using it.
     // The code now only checks connection if the elapsed time since the last use of
     // the connection exceeds the timeout that has been set
-    private static final int CONNECTION_TIME_TO_LIVE = 5;
+    private static final int INACTIVITY_TIMEOUT = 500;
     private static final int DEFAULT_PORT = 80;
     // max connections for localhost:80
     private static final int DEFAULT_POOL_MAX_CONNECTIONS_PER_ROUTE = 50;
@@ -128,7 +128,7 @@ public class HttpClientConfigurator {
      */
     private PoolingHttpClientConnectionManager createConnectionMgr() {
         PoolingHttpClientConnectionManager connectionMgr;
-        connectionMgr = new PoolingHttpClientConnectionManager(CONNECTION_TIME_TO_LIVE, TimeUnit.SECONDS);
+        connectionMgr = new PoolingHttpClientConnectionManager(INACTIVITY_TIMEOUT, TimeUnit.MILLISECONDS);
         connectionMgr.setMaxTotal(MAX_TOTAL_CONNECTIONS);
         connectionMgr.setDefaultMaxPerRoute(MAX_CONNECTIONS_PER_HOST);
         HttpHost localhost = new HttpHost(LOCALHOST, DEFAULT_PORT);

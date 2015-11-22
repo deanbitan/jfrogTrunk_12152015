@@ -74,7 +74,7 @@
                                         <ui-select-choices
                                                 repeat="item in RepositoryForm.repositoryLayouts | filter: $select.search track by $index">
                                             <div ng-bind-html="item | highlight: $select.search"
-                                                    id="virtual-repository-layout-item"></div>
+                                                    name="virtual-repository-layout-item"></div>
                                         </ui-select-choices>
                                     </ui-select>
                                 </jf-field>
@@ -171,7 +171,7 @@
                                           exclude-display-field="repoName"
                                           objects-name="Repositories"
                                           ng-if="RepositoryForm.repositoriesList && RepositoryForm.repoInfo.basic.selectedRepositories"
-                                          on-change="VirtualRepository.onchangeRepo()"
+                                          on-change="VirtualRepository.onChangeRepo()"
                                           headers="{leftTitle:'Available Repositories', rightTitle:'Selected Repositories'}"></jf-drag-drop>
                         </jf-panel>
                         <jf-panel jf-panel-heading="Included Repositories"
@@ -275,12 +275,12 @@
                             <jf-help-tooltip
                                     html="RepositoryForm.TOOLTIP.virtualForm.cleanupRepositoryReferencesinPOM"></jf-help-tooltip>
                             <ui-select ng-model="RepositoryForm.repoInfo.typeSpecific.pomCleanupPolicy">
-                                <ui-select-match>
+                                <ui-select-match id="select-header">
                                     {{RepositoryForm.pomCleanupPolicies[$select.selected] }}
                                 </ui-select-match>
                                 <ui-select-choices
                                         repeat="item in RepositoryForm.pomCleanupPoliciesKeys | filter: $select.search">
-                                    <div ng-bind-html="RepositoryForm.pomCleanupPolicies[item] | highlight: $select.search"></div>
+                                    <div name="select-item" ng-bind-html="RepositoryForm.pomCleanupPolicies[item] | highlight: $select.search"></div>
                                 </ui-select-choices>
                             </ui-select>
                         </jf-field>
@@ -305,6 +305,72 @@
                             </div>
                         </jf-field>
                     </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6">
+                    <jf-panel jf-panel-heading="External Dependency Rewrite"
+                              ng-if="VirtualRepository.isDependencyRewriteRelevant()">
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-checkbox text="Enable Dependency Rewrite">
+                                    <input type="checkbox"
+                                           id="enableDependencyRewrite"
+                                           ng-change="VirtualRepository.onDependencyRewriteEnableChange()"
+                                           ng-model="RepositoryForm.repoInfo.typeSpecific.enableExternalDependencies">
+                                </jf-checkbox>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <label>Remote Repository For Cache</label>
+                                <jf-ui-select jf-select-model="RepositoryForm.repoInfo.typeSpecific.externalRemoteRepo"
+                                              jf-select-options="RepositoryForm.repoInfo.basic.selectedRemoteRepositories"
+                                              jf-select-disabled="!RepositoryForm.repoInfo.typeSpecific.enableExternalDependencies"
+                                              id="externalDepRemoteRepo"></jf-ui-select>
+
+                                <div ng-if="!VirtualRepository.isDependencyRewriteOK()" class="jf-validation">This field is required</div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-field validations="properties" autofocus="!PropertyForm.isNew">
+                                    <label>Patterns Whitelist</label>
+                                    <jf-help-tooltip
+                                            html="RepositoryForm.TOOLTIP.virtualForm.externalDependenciesPatterns"></jf-help-tooltip>
+                                    <input
+                                            type="text"
+                                            class="input-text"
+                                            ng-model="RepositoryForm.newValue"
+                                            placeholder="New Pattern"
+                                            id="newPatternField"
+                                            name="newPatternField"
+                                            ng-model-options="{updateOn: 'default blur', debounce: { 'default': 500, 'blur': 0 } }"
+                                            jf-enter-press="VirtualRepository.addDependencyRewritePattern()"
+                                            ng-disabled="!RepositoryForm.repoInfo.typeSpecific.enableExternalDependencies">
+                                </jf-field>
+                                <div class="jf-validation">{{VirtualRepository.errorMessage}}</div>
+                            </div>
+                            <div class="form-group-cell form-button auto-width">
+                                <button type="button" class="btn btn-secondary"
+                                        ng-click="VirtualRepository.addDependencyRewritePattern()"
+                                        ng-disabled="!RepositoryForm.repoInfo.typeSpecific.enableExternalDependencies">Add</button>
+                            </div>
+                        </div>
+
+                        <div id="property-set-list" ng-if="RepositoryForm.repoInfo.typeSpecific.externalPatterns.length">
+                            <div class="property-set-row" ng-repeat="pattern in RepositoryForm.repoInfo.typeSpecific.externalPatterns track by $index">
+                                <div>{{pattern}}</div>
+                                <div class="property-set-buttons">
+                                    <a href="" class="icon icon-clear"
+                                       ng-click="RepositoryForm.repoInfo.typeSpecific.enableExternalDependencies && VirtualRepository.removeDependencyRewritePattern($index)"
+                                       ng-if="RepositoryForm.repoInfo.typeSpecific.externalPatterns.length > 1"
+                                       ng-disabled="!RepositoryForm.repoInfo.typeSpecific.enableExternalDependencies"></a>
+                                </div>
+                            </div>
+                        </div>
+                    </jf-panel>
                 </div>
             </div>
         </div>

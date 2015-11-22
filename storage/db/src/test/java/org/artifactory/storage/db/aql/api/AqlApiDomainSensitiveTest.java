@@ -237,7 +237,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                                 AqlApiEntry.archive().item().repo().matches("rep?1"),
                                 AqlApiEntry.name().matches("*")
                         )
-                ).
+                ).include(AqlApiEntry.archive().item().property().key()).
                 addSortElement(AqlApiEntry.archive().item().property().key());
         AqlEagerResult<AqlArchiveEntryItem> result = aqlService.executeQueryEager(aql);
         assertSize(result, 18);
@@ -254,6 +254,7 @@ public class AqlApiDomainSensitiveTest extends DbBaseTest {
                                 AqlApiItem.archive().entry().name().matches("*")
                         )
                 ).
+                include(AqlApiItem.archive().entry().path(), AqlApiItem.archive().entry().name()).
                 addSortElement(AqlApiItem.archive().entry().path()).
                 addSortElement(AqlApiItem.archive().entry().name());
         AqlEagerResult<AqlItem> result = aqlService.executeQueryEager(aql);

@@ -76,6 +76,7 @@ public class ArtifactDeployBundleService implements RestService {
         } catch (Exception e) {
             artifactoryResponse.error(e.getMessage());
             log.error(e.toString());
+            artifactoryResponse.error(DeployUtil.getDeployError(uploadArtifactInfo.getFileName(), repoKey, e));
         }
     }
 

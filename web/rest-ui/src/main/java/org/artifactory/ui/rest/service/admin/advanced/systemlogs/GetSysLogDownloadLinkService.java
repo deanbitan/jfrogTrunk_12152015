@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.admin.advanced.systemlogs;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
@@ -31,27 +32,37 @@ public class GetSysLogDownloadLinkService implements RestService {
      * update response with the log data file
      *
      * @param artifactoryRequest  - encapsulate data related to the request
-     * @param artifactoryResponse  - encapsulate data related to the response
+     * @param artifactoryResponse - encapsulate data related to the response
      */
     private void updateResponseWithLogFile(ArtifactoryRestRequest artifactoryRequest,
-                                           RestResponse artifactoryResponse) {
-
+            RestResponse artifactoryResponse) {
         String selectedLog = artifactoryRequest.getQueryParamByKey("id");
+        if (StringUtils.isEmpty(selectedLog)) {
+            artifactoryResponse.error("Log file name (id) cannot be empty");
+            return;
+        }
+
+        if (selectedLog.contains("..")) {
+            artifactoryResponse.error("Log file name (id) cannot contain relative paths");
+            return;
+        }
+
         File systemLogFile = new File(logDir, selectedLog);
+        if (!systemLogFile.exists()) {
+            artifactoryResponse.error("Log file name (id) not found: " + selectedLog);
+            return;
+        }
 
-        if (systemLogFile.exists()) {
-            ((StreamRestResponse) artifactoryResponse).setDownloadFile(systemLogFile.getName());
-            ((StreamRestResponse) artifactoryResponse).setDownload(true);
-            SystemLogFile logFileModel = new SystemLogFile();
+        ((StreamRestResponse) artifactoryResponse).setDownloadFile(systemLogFile.getName());
+        ((StreamRestResponse) artifactoryResponse).setDownload(true);
+        SystemLogFile logFileModel = new SystemLogFile();
 
-            try {
-                FileInputStream stream = new FileInputStream(systemLogFile);
-                logFileModel.setStream(stream);
-            } catch (IOException e) {
-                throw new RuntimeException(e.getMessage());
-            }
-
+        try {
+            FileInputStream stream = new FileInputStream(systemLogFile);
+            logFileModel.setStream(stream);
             artifactoryResponse.iModel(logFileModel);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

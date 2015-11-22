@@ -101,7 +101,7 @@ export class AdminConfigurationLicensesController {
                 displayName: 'Name',
                 field: "longName",
                 cellTemplate: '<div class="ui-grid-cell-contents"><span>{{row.entity.longName}}</span></div>',
-                width: '45%'
+                width: '40%'
 
             },
             {
@@ -116,7 +116,7 @@ export class AdminConfigurationLicensesController {
                 displayName: "Status",
                 field: "status",
                 cellTemplate: '<div class="ui-grid-cell-contents"><a href="" ng-click="grid.appScope.AdminConfigurationLicenses.setStatus(row.entity)" ng-class="{\'license-approved\': row.entity.approved, \'license-unapproved\': !row.entity.approved}">{{row.entity.status}}</a></div>',
-                width: '10%'
+                width: '15%'
             }
         ]
     }

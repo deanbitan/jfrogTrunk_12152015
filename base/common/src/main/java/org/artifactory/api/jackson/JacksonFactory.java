@@ -18,6 +18,7 @@
 
 package org.artifactory.api.jackson;
 
+import com.sun.xml.internal.ws.developer.SerializationFeature;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -25,6 +26,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.AnnotationIntrospector;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.introspect.Annotated;
 import org.codehaus.jackson.map.introspect.JacksonAnnotationIntrospector;
@@ -178,11 +180,23 @@ public abstract class JacksonFactory {
     /**
      * Creates a Jackson object mapper
      *
+     * @param ident ident output for pretty printing
+     *
+     * @return {@link org.codehaus.jackson.map.ObjectMapper}
+     */
+    public static ObjectMapper createObjectMapper(boolean ident) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        if (ident) mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
+        return mapper;
+    }
+
+    /**
+     * Creates a Jackson object mapper
+     *
      * @return {@link org.codehaus.jackson.map.ObjectMapper}
      */
     public static ObjectMapper createObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        return mapper;
+        return  createObjectMapper(false);
     }
 }

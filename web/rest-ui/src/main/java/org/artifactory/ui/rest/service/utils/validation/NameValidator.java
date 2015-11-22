@@ -1,6 +1,7 @@
 package org.artifactory.ui.rest.service.utils.validation;
 
 import org.apache.commons.lang.StringUtils;
+import org.artifactory.exception.ValidationException;
 
 /**
  * Generic name validator for root entity names (repos, descriptor keys etc.).
@@ -28,5 +29,12 @@ public final class NameValidator {
                 }
             }
         }
+    }
+
+    /**
+     * @return ForbiddenChars
+     */
+    public static char[] getForbiddenChars() {
+        return forbiddenChars;
     }
 }

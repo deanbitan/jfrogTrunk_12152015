@@ -33,9 +33,9 @@ public enum AqlDomainEnum {
     public String[] subDomains;
     public AqlFieldEnum[] fields;
 
-    AqlDomainEnum(String signature, String[] domainPath, AqlFieldEnum... fields) {
+    AqlDomainEnum(String signature, String[] subDomains, AqlFieldEnum... fields) {
         this.signatue = signature;
-        this.subDomains = domainPath;
+        this.subDomains = subDomains;
         this.fields = fields;
     }
 

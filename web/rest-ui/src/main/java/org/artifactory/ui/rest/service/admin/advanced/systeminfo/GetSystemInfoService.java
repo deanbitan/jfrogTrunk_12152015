@@ -1,6 +1,7 @@
 package org.artifactory.ui.rest.service.admin.advanced.systeminfo;
 
 import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
@@ -52,6 +53,8 @@ public class GetSystemInfoService implements RestService {
         updateJvmInfo(systemInfo);
         // update vm args
         updateVmArgs(systemInfo);
+        // update plugins status
+        updatePluginsInfo(systemInfo);
     }
 
     /**
@@ -132,6 +135,14 @@ public class GetSystemInfoService implements RestService {
         storageInfo.put("Storage Type", storageProperties.getBinariesStorageType().toString());
         storageInfo.put("Connection Url", storageProperties.getConnectionUrl());
         systemInfo.put("Storage Info", storageInfo);
+    }
+
+    private void updatePluginsInfo(Map<String, Map<String, String>> systemInfo) {
+        Map<String, String> pluginsStatus = ContextHelper.get().beanForType(AddonsManager.class)
+                .addonByType(PluginsAddon.class).getPluginsStatus();
+        if(!pluginsStatus.isEmpty()) {
+            systemInfo.put("User Plugins Status", pluginsStatus);
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.artifactory.rest.common.service;
 
 import org.artifactory.repo.RepoPath;
+import org.artifactory.util.HttpUtils;
 import org.artifactory.util.UiRequestUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,7 +43,10 @@ public class ArtifactoryRestRequest<T> {
         List<String> valueList = uriInfo.getPathParameters().get(key);
         if (valueList != null && !valueList.isEmpty()){
             String currentValue = valueList.get(0);
-            value =   (currentValue==null)? currentValue : currentValue.replaceAll("/","");
+            value = (currentValue == null) ? currentValue :
+                    currentValue.startsWith("/") ? currentValue.substring(1, currentValue.length())
+                            :
+                            currentValue;
         }
         return value;
     }
@@ -134,7 +138,7 @@ public class ArtifactoryRestRequest<T> {
 
     public String getDownloadLink(RepoPath repoPath){
         if (repoPath != null) {
-            return servletRequest.getContextPath() + "/" + repoPath.getRepoKey() + "/" + repoPath.getPath();
+            return HttpUtils.getServletContextUrl(servletRequest) + "/" + repoPath.getRepoKey() + "/" + repoPath.getPath();
         }else{
             return  "";
         }

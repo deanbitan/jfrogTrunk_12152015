@@ -14,8 +14,8 @@ export class AdminConfigurationLicenseFormController {
     		this.license = new LicensesDao();
     	}
     	else {
-    		LicensesDao.getSingleLicense({name: $stateParams.licenseName}).$promise.then((data)=>{
-                this.license = data.data;
+            this.license = LicensesDao.getSingleLicense({name: $stateParams.licenseName});
+            this.license.$promise.then((data)=>{
                 this.artifactoryModelSaver.save();
             });
     	}

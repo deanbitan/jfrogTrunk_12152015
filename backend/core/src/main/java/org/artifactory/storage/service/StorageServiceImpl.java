@@ -58,7 +58,9 @@ import org.artifactory.storage.FileStoreStorageSummary;
 import org.artifactory.storage.StorageProperties;
 import org.artifactory.storage.StorageSummaryInfo;
 import org.artifactory.storage.binstore.service.BinaryStoreGarbageCollectorJob;
+import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.InternalBinaryStore;
+import org.artifactory.storage.binstore.service.providers.FileCacheBinaryProviderImpl;
 import org.artifactory.storage.db.DbService;
 import org.artifactory.storage.db.DbType;
 import org.artifactory.storage.fs.repo.RepoStorageSummary;
@@ -74,8 +76,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.artifactory.api.repo.storage.RepoStorageSummaryInfo.RepositoryType;
 
@@ -137,8 +141,8 @@ public class StorageServiceImpl implements InternalStorageService {
 
     @Override
     public FileStoreStorageSummary getFileStoreStorageSummary() {
-        File binariesFolder = binaryStore.getBinariesDir();
-        return new FileStoreStorageSummary(binariesFolder, storageProperties);
+        List<File> binariesDirs = getNonCacheStorageFolders();
+        return new FileStoreStorageSummary(binariesDirs, storageProperties);
     }
 
     @Override
@@ -151,13 +155,21 @@ public class StorageServiceImpl implements InternalStorageService {
         if (!quotaConfig.isEnabled()) {
             return null;
         }
-        File binariesFolder = binaryStore.getBinariesDir();
-        if (binariesFolder == null) {
+        List<File> binariesDirs = getNonCacheStorageFolders();
+        if (binariesDirs == null) {
             return null;
         }
 
-        return new StorageQuotaInfo(binariesFolder, quotaConfig.getDiskSpaceLimitPercentage(),
+        return new StorageQuotaInfo(binariesDirs, quotaConfig.getDiskSpaceLimitPercentage(),
                 quotaConfig.getDiskSpaceWarningPercentage(), fileContentLength);
+    }
+
+    private List<File> getNonCacheStorageFolders() {
+        Map<FileBinaryProvider, File> map = binaryStore.getBinariesDirs();
+        return map.entrySet().stream()
+                .filter(entry -> !(entry.getKey() instanceof FileCacheBinaryProviderImpl))
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
     }
 
     @Override

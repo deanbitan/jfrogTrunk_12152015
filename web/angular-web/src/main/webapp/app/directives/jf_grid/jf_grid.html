@@ -1,7 +1,7 @@
 <div class="grid-container" ng-if="gridOptions.data">
     <div class="wrapper-grid-actions">
 
-        <div ng-if="!noCount" class="grid-counter">{{ getTotalRecords() }}</div>
+        <div ng-if="!noCount" class="grid-counter">{{ getTotalRecords() }}<span ng-if="getSelectedRecords()"> ({{getSelectedRecords()}} Selected)</span></div>
 
         <div ng-if="filterField" class="filter-group">
             <jf-grid-filter

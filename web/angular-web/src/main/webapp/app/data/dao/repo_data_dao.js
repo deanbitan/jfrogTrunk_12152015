@@ -13,6 +13,10 @@ export function RepoDataDao(RESOURCE, ArtifactoryDaoFactory) {
                 getForSearch: {
                     method: 'GET',
                     path: RESOURCE.REPO_DATA + "?search=true"
+                },
+                getForPackageSearch: {
+                    method: 'GET',
+                    path: RESOURCE.REPO_DATA + "?packageSearch=true"
                 }
             })
             .getInstance();

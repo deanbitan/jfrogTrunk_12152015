@@ -43,6 +43,9 @@ public class GetGeneralBintrayService implements RestService {
     private BintrayInfoModel getBintrayInfoModel(String sha1, Map<String, String> headersMap) {
         BintrayInfoModel bintrayInfoModel = new BintrayInfoModel();
 
+        if(  ConstantValues.bintrayUIHideUploads.getBoolean()) {
+            return bintrayInfoModel;
+        }
         boolean anonymousUser = authService.isAnonymous();
         boolean hasSystemAPIKey = bintrayService.hasBintraySystemUser();
         boolean userHasBintrayAuth = bintrayService.isUserHasBintrayAuth();

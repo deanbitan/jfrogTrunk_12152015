@@ -187,7 +187,10 @@ public enum ConstantValues {
     aclDirtyReadsTimeout("acl.dirty.read.timeout", 20000),
     allowUnauthenticatedPing("ping.allowUnauthenticated", FALSE), // in milliseconds
     idleConnectionMonitorInterval("repo.http.idleConnectionMonitorInterval", 10),
-    disableIdleConnectionMonitoring("repo.http.disableIdleConnectionMonitoring", FALSE);
+    disableIdleConnectionMonitoring("repo.http.disableIdleConnectionMonitoring", FALSE),
+    contentCollectionAwaitTimeout("support.core.bundle.contentCollectionAwaitTimeout", 60),
+    waitForSlotBeforeWithdraw("support.core.bundle.waitForSlotBeforeWithdraw", 600),
+    maxBundles("support.core.bundle.maxBundles", 5);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

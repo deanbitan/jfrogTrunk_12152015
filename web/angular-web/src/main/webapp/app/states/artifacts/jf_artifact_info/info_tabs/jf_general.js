@@ -148,7 +148,8 @@ class jfGeneralController {
     loadPackageDescription() {
         this.bintrayData = {};
         this.artifactGeneralDao.bintray({sha1: this.generalData.checksums.sha1Value}).$promise.then((data)=> {
-            this.bintrayData = data;
+            if (!data.name && !data.errorMessage) this.generalData.bintrayInfoEnabled = false;
+            else this.bintrayData = data;
         });
     }
 
@@ -227,14 +228,18 @@ class jfGeneralController {
     }
 
     getFullFilePath() {
+/*
         if (!window.location.origin) { // IE compatibility
             window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
         }
         return window.location.origin+this.currentNode.data.actualDownloadPath;
+*/
+        return this.currentNode.data.actualDownloadPath;
     }
 
     getSha256() {
-        if (this.features.isOss()) return;
+        if (this.features.isOss() || !this.canCalculateSha256()) return;
+
         this.artifactActionsDao.getSha256({
             repoKey: this.currentNode.data.repoKey,
             path: this.currentNode.data.path
@@ -242,13 +247,16 @@ class jfGeneralController {
                     this._getGeneralData();
                 });
     }
+    canCalculateSha256() {
+        return this.canAnnotate && this.userService.currentUser.getCanDeploy();
+    }
 
     getChecksumKey(keyval) {
         return keyval.split(':')[0];
     }
     getChecksumVal(keyval) {
         let splitted = keyval.split(':');
-        splitted.shift(1);
+        splitted.shift();
         return splitted.join(':');
     }
 }

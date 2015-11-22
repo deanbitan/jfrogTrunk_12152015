@@ -31,7 +31,7 @@
 }
 
 .select-target-path {
-  min-height: 340px;
+  min-height: 380px;
 }
 
 #property-set-list {
@@ -77,6 +77,16 @@
 
         label {
           margin-bottom: 0;
+        }
+      }
+      
+      &.property-set-buttons {
+        text-align: right;
+        padding-right: 20px;
+        
+        a[disabled]:hover {
+          color: @grayFontLighter;
+          cursor: default;
         }
       }
     }

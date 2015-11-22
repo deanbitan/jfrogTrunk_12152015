@@ -17,6 +17,7 @@ module.exports = {
         FONTS : 'app/assets/fonts/**',
         VENDOR_JS : 'app/vendor.js',
         IMAGES : 'app/assets/images/**',
+        JQUERY_UI_IMAGES : 'app/assets/images/jqueryui/**',
         MEDIUM_SVG_ICONS: 'app/assets/svgicons/*.svg'
     },
 

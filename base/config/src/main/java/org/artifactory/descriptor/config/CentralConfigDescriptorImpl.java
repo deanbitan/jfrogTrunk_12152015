@@ -40,15 +40,7 @@ import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.replication.ReplicationBaseDescriptor;
-import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RealRepoDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoBaseDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.descriptor.repo.jaxb.LocalRepositoriesMapAdapter;
 import org.artifactory.descriptor.repo.jaxb.RemoteRepositoriesMapAdapter;
 import org.artifactory.descriptor.repo.jaxb.VirtualRepositoriesMapAdapter;
@@ -59,18 +51,9 @@ import org.artifactory.util.PathUtils;
 import org.artifactory.util.RepoLayoutUtils;
 
 import javax.annotation.Nullable;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @XmlRootElement(name = "config")
 @XmlType(name = "CentralConfigType",
@@ -423,7 +406,6 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         String repoKey = localRepoDescriptor.getKey();
         repoKeyExists(repoKey, false);
         localRepositoriesMap.put(repoKey, localRepoDescriptor);
-        conditionallyAddToBackups(localRepoDescriptor);
     }
 
     @Override
@@ -434,7 +416,8 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         conditionallyAddToBackups(remoteRepoDescriptor);
     }
 
-    private void conditionallyAddToBackups(RealRepoDescriptor remoteRepoDescriptor) {
+    @Override
+    public void conditionallyAddToBackups(RealRepoDescriptor remoteRepoDescriptor) {
         // Conditionally add the repository to any backup exclude list
         for (BackupDescriptor backup : getBackups()) {
             backup.addExcludedRepository(remoteRepoDescriptor);

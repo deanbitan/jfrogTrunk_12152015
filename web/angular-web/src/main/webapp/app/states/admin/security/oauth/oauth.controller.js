@@ -24,10 +24,10 @@ export class AdminSecurityOAuthController {
     _init() {
         this.OAuthDao.get().$promise.then((data)=>{
             this.oauthData = data;
-
             this.selectizeOptions = [{text:' ',value: '*'}];
-            this.selectizeOptions = this.selectizeOptions.concat(_.map(data.providers, (p)=>Object({text:p.name,value:p.name})));
-            if (!_.findWhere(data.providers,{name: data.defaultNpm})) {
+            let githubProviders = _.filter(data.providers,(p)=>{return p.providerType === 'github'});
+            this.selectizeOptions = this.selectizeOptions.concat(_.map(githubProviders, (p)=>Object({text:p.name,value:p.name})));
+            if (!_.findWhere(githubProviders,{name: data.defaultNpm})) {
                 this.selectizeOptions.push({text: data.defaultNpm,value:data.defaultNpm});
             }
             data.providers.forEach((provider) => {

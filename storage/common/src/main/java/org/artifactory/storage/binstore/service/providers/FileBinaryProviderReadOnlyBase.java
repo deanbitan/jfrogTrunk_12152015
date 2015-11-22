@@ -22,10 +22,9 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.storage.StorageException;
 import org.artifactory.storage.binstore.service.BinaryNotFoundException;
-import org.artifactory.storage.binstore.service.base.BinaryProviderBase;
 import org.artifactory.storage.binstore.service.BinaryProviderHelper;
 import org.artifactory.storage.binstore.service.FileBinaryProvider;
-import org.artifactory.storage.binstore.service.FileProviderStrategy;
+import org.artifactory.storage.binstore.service.base.BinaryProviderBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,11 +43,12 @@ import static org.artifactory.storage.binstore.service.BinaryProviderHelper.getD
  * @author freds
  */
 public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
-        implements FileBinaryProvider, FileProviderStrategy {
+        implements FileBinaryProvider {
     private static final Logger log = LoggerFactory.getLogger(FileBinaryProviderReadOnlyBase.class);
 
     protected File binariesDir;
     protected File tempBinariesDir;
+    protected long freeSpace;
 
     @Override
     public void initialize() {
@@ -87,6 +87,12 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
             throw new StorageException("Could not create temporary pre store folder '" +
                     tempBinariesDir.getAbsolutePath() + "'");
         }
+        freeSpace = getBinariesDir().getFreeSpace();
+    }
+
+    @Override
+    public long getFreeSpace() {
+        return freeSpace;
     }
 
     @Override
@@ -95,26 +101,25 @@ public abstract class FileBinaryProviderReadOnlyBase extends BinaryProviderBase
     }
 
     @Override
-    public boolean exists(String sha1, long length) {
+    public boolean exists(String sha1) {
         File file = getFile(sha1);
         if (file.exists()) {
-            log.trace("File found: {}", file.getAbsolutePath());
-            if (file.length() != length) {
-                log.error("Found a file with checksum '" + sha1 + "' " +
-                        "but length is " + file.length() + " not " + length);
-                return false;
-            }
             return true;
         } else {
             log.trace("File not found: {}", file.getAbsolutePath());
         }
-        return next().exists(sha1, length);
+        return next().exists(sha1);
     }
 
     @Override
     @Nonnull
     public File getFile(String sha1) {
         return new File(binariesDir, BinaryProviderHelper.getRelativePath(sha1));
+    }
+
+    @Override
+    public boolean isFileExists(String sha1) {
+        return exists(sha1);
     }
 
     @Override

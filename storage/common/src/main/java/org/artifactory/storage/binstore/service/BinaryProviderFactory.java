@@ -70,11 +70,17 @@ public class BinaryProviderFactory {
         }
         BinaryProviderBase binaryProviderBase = create(providerMetaData, storageProperties, binaryStore);
         MutableBinaryProvider mutableBinaryProvider = getMutableBinaryProvider(binaryProviderBase);
-        mutableBinaryProvider.setBinaryProvider(
-                build(providerMetaData.getProviderMetaData(), binaryStore, storageProperties));
+        BinaryProviderBase next = build(providerMetaData.getProviderMetaData(), binaryStore, storageProperties);
+        mutableBinaryProvider.setBinaryProvider(next);
+        if(next!=null) {
+            MutableBinaryProvider childMutableBinaryProvider = getMutableBinaryProvider(next);
+            childMutableBinaryProvider.setParentBinaryProvider(binaryProviderBase);
+        }
         for (ProviderMetaData subProviderMetaData : providerMetaData.getSubProviderMetaDataList()) {
-            mutableBinaryProvider.addSubBinaryProvider(
-                    build(subProviderMetaData, binaryStore, storageProperties));
+            BinaryProviderBase subBinaryProvider = build(subProviderMetaData, binaryStore, storageProperties);
+            mutableBinaryProvider.addSubBinaryProvider(subBinaryProvider);
+            MutableBinaryProvider childMutableSubBinaryProvider = getMutableBinaryProvider(subBinaryProvider);
+            childMutableSubBinaryProvider.setParentBinaryProvider(binaryProviderBase);
         }
         binaryProviderBase.initialize();
         return binaryProviderBase;

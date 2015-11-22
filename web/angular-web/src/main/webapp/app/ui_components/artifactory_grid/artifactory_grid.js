@@ -1,7 +1,7 @@
 const TEMPLATES_FOLDER = "ui_components/artifactory_grid/templates/",
         MIN_COLUMN_WIDTH = 50;
 let headerCellTemplate = require("raw!./templates/headerCellDefaultTemplate.html");
-let $timeout, $window, $state, $modal, $rootScope;
+let $timeout, $window, $state, $modal, $rootScope, download;
 
 const COMMON_ACTIONS = {
     delete: {
@@ -112,8 +112,26 @@ class ArtifactoryGrid {
         if (this.api) {
             callback(this.api);
         }
+
+
         // Add it to array anyway (for cases when grid element is removed and added to DOM with ng-if)
         this._afterRegister.push(callback);
+    }
+
+    fixGroupingUndefinedValues() {
+        if (this.api.grouping) {
+            let origFunc = this.api.grouping.groupColumn;
+            this.api.grouping.groupColumn = (columnName) => {
+                let column = _.findWhere(this.api.grid.columns,{displayName: columnName});
+                let field = column.field;
+                this.api.grid.rows.forEach((row)=>{
+                    if (row.entity[field] === undefined) {
+                        row.entity[field] = '';
+                    }
+                });
+                origFunc(columnName);
+            }
+        }
     }
 
     setColumns(columnDefs) {
@@ -290,6 +308,7 @@ class ArtifactoryGrid {
         this.data = data;
         this.afterRegister((gridApi) => {
             gridApi.grid.element.css('visibility', 'visible');
+            this.fixGroupingUndefinedValues()
         });
 
         if (!this.data || !this.data.length) {
@@ -472,11 +491,12 @@ class ArtifactoryGrid {
 
 
 export class ArtifactoryGridFactory {
-    constructor(uiGridConstants, _$timeout_, _$window_, _$state_, _$modal_,_$rootScope_) {
+    constructor(uiGridConstants, _$timeout_, _$window_, _$state_, _$modal_,_$rootScope_, _artifactoryDownload_) {
         $timeout = _$timeout_;
         $window = _$window_;
         $state = _$state_;
         $modal = _$modal_;
+        download = _artifactoryDownload_;
         $rootScope = _$rootScope_;
 
         this.uiGridConstants = uiGridConstants;
@@ -573,6 +593,10 @@ export class ArtifactoryGridFactory {
                                 else {
                                     let act = _.findWhere(allActions,{key: key});
                                     act.callback(row.entity);
+                                    if (act.href) {
+                                        let url = act.href(row.entity);
+                                        download(url);
+                                    }
                                 }
                             };
                             return false;

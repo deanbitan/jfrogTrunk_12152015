@@ -19,7 +19,9 @@
 package org.artifactory.config;
 
 /**
- * Created by Michael Pasternak on 10/18/15.
+ * Thrown when cron configuration is illegal
+ *
+ * @author Michael Pasternak
  */
 public class CronConfigurationException extends ConfigurationException {
     public CronConfigurationException(String message) {

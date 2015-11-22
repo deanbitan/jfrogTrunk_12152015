@@ -23,6 +23,10 @@ public class SearchResult extends BaseModel {
         this.isLimitSearchResults = isLimitSearchResults;
     }
 
+    public String getSearchExpression() {
+        return searchExpression;
+    }
+
     public Object getResults() {
         return results;
     }
@@ -40,7 +44,7 @@ public class SearchResult extends BaseModel {
         } else if (isLimitSearchResults && resultsCount == -1) {
             msg.append("Showing first ").append(maxResults).append(" found matches");
         } else {
-            msg.append("Search Results (").append(resultsCount).append(" Items)");
+            msg.append("Search Results - ").append(resultsCount).append(" Items");
         }
         return msg.toString();
     }

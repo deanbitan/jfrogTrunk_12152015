@@ -25,6 +25,6 @@ public class UpdateArtifactLicenseService implements RestService {
         // update artifact license
         ArtifactLicenseModel artifactLicenseModel = (ArtifactLicenseModel) request.getImodel();
         licensesAddon.updateLicenseInfo(artifactLicenseModel.buildLicenseInfo());
-        response.info("License " + artifactLicenseModel.getName() + " updated successfully");
+        response.info("Successfully updated license " + artifactLicenseModel.getName() + "");
     }
 }

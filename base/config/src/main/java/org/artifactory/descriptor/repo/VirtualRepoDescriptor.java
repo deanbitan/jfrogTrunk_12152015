@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @XmlType(name = "VirtualRepoType", propOrder = {"artifactoryRequestsCanRetrieveRemoteArtifacts", "repositories",
-        "keyPair", "pomRepositoryReferencesCleanupPolicy", "p2", "defaultDeploymentRepo"}, namespace = Descriptor.NS)
+        "keyPair", "pomRepositoryReferencesCleanupPolicy", "p2", "defaultDeploymentRepo", "externalDependencies"},
+        namespace = Descriptor.NS)
 public class VirtualRepoDescriptor extends RepoBaseDescriptor {
 
     public static final String GLOBAL_VIRTUAL_REPO_KEY = "repo";
@@ -54,6 +55,9 @@ public class VirtualRepoDescriptor extends RepoBaseDescriptor {
     @XmlIDREF
     @XmlElement(name = "defaultDeploymentRepo", type = LocalRepoDescriptor.class, required = false)
     private LocalRepoDescriptor defaultDeploymentRepo;
+
+    @XmlElement(required = false)
+    private ExternalDependenciesConfig externalDependencies;
 
     public List<RepoDescriptor> getRepositories() {
         return repositories;
@@ -115,6 +119,14 @@ public class VirtualRepoDescriptor extends RepoBaseDescriptor {
 
     public void setDefaultDeploymentRepo(LocalRepoDescriptor defaultDeploymentRepo) {
         this.defaultDeploymentRepo = defaultDeploymentRepo;
+    }
+
+    public ExternalDependenciesConfig getExternalDependencies() {
+        return externalDependencies;
+    }
+
+    public void setExternalDependencies(ExternalDependenciesConfig externalDependencies) {
+        this.externalDependencies = externalDependencies;
     }
 
     @Override

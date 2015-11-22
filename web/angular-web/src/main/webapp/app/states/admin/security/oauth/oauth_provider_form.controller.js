@@ -25,7 +25,7 @@ export class AdminSecurityOAuthProviderFormController {
             this.providerData = {
                 enabled: true
             };
-            this.title = 'Create New Provider';
+            this.title = 'Add New Provider';
         }
 
         this._getData();

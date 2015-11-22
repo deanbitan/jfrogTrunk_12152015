@@ -44,7 +44,11 @@ public interface PropertiesService {
      * @param values      Property values (if null, will not add the property)
      */
     @Lock
-    void addProperty(RepoPath repoPath, @Nullable PropertySet propertySet, Property property, String... values);
+    void addProperty(RepoPath repoPath, @Nullable PropertySet propertySet, Property property,
+            boolean updateAccessLogger,String... values);
+
+    @Lock
+    void addProperty(RepoPath repoPath, @Nullable PropertySet propertySet, Property property,String... values);
 
     /**
      * Edit a property on a specific repo path.
@@ -55,7 +59,7 @@ public interface PropertiesService {
      * @param values      Property values
      */
     @Lock
-    void editProperty(RepoPath repoPath, PropertySet propertySet, Property property, String... values);
+    void editProperty(RepoPath repoPath, PropertySet propertySet, Property property, boolean updateAccessLogger,String... values);
 
 
     /**
@@ -68,8 +72,19 @@ public interface PropertiesService {
      */
     @Lock
     void addPropertyRecursively(RepoPath repoPath, @Nullable PropertySet propertySet, Property property,
-            String... values);
+            boolean updateAccessLogger,String... values);
 
+    /**
+     * Recursively adds (and stores) a property to the item at the repo path.
+     *
+     * @param repoPath    The item repo path
+     * @param propertySet Property set to add - can be null
+     * @param property    Property to add
+     * @param values      Property values (if null, will not add the property)
+     */
+    @Lock
+    void addPropertyRecursively(RepoPath repoPath, @Nullable PropertySet propertySet, Property property,
+            String... values);
     /**
      * Deletes the property from the item.
      *
@@ -77,7 +92,10 @@ public interface PropertiesService {
      * @param property Property name to delete
      */
     @Lock
-    void deleteProperty(RepoPath repoPath, String property);
+    boolean deleteProperty(RepoPath repoPath, String property,boolean updateAccessLogger);
+
+    @Lock
+    boolean deleteProperty(RepoPath repoPath, String property);
 
 
     /**
@@ -88,8 +106,18 @@ public interface PropertiesService {
      * @param propertyMapFromRequest    Properties map from request
      */
     void addPropertyRecursivelyMultiple(RepoPath repoPath, @Nullable PropertySet propertySet,
-                                        Map<Property, List<String>> propertyMapFromRequest);
+                                        Map<Property, List<String>> propertyMapFromRequest,boolean updateAccessLogger);
 
+
+    /**
+     * Recursively adds (and stores) a property to the item at the repo path in multiple transaction.
+     *
+     * @param repoPath    The item repo path
+     * @param propertySet Property set to add - can be null
+     * @param propertyMapFromRequest    Properties map from request
+     */
+    void addPropertyRecursivelyMultiple(RepoPath repoPath, @Nullable PropertySet propertySet,
+            Map<Property, List<String>> propertyMapFromRequest);
 
     void addPropertySha256RecursivelyMultiple(RepoPath repoPath);
 
@@ -99,6 +127,15 @@ public interface PropertiesService {
          * @param repoPath The item repo path
          * @param property Property name to delete
          */
+    @Lock
+    void deletePropertyRecursively(RepoPath repoPath, String property, boolean updateAccessLogger);
+
+    /**
+     * Deletes property from the item recursively.
+     *
+     * @param repoPath The item repo path
+     * @param property Property name to delete
+     */
     @Lock
     void deletePropertyRecursively(RepoPath repoPath, String property);
 

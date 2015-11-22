@@ -26,7 +26,7 @@ import javax.xml.bind.annotation.XmlType;
 /**
 * Delegation definitions container
 *
-* Created by Michael Pasternak on 8/12/15.
+ * @author Michael Pasternak
 */
 @XmlType(name = "ContentSynchronisation", propOrder = {"enabled", "statistics", "properties"},
         namespace = Descriptor.NS)

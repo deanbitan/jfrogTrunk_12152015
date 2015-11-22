@@ -3,6 +3,7 @@ package org.artifactory.ui.rest.resource.artifacts.search;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.checksum.ChecksumType;
+import org.artifactory.ui.rest.model.artifacts.search.packagesearch.search.AqlUISearchModel;
 import org.artifactory.ui.rest.model.artifacts.search.DeleteArtifactsModel;
 import org.artifactory.ui.rest.model.artifacts.search.checksumsearch.ChecksumSearch;
 import org.artifactory.ui.rest.model.artifacts.search.classsearch.ClassSearch;
@@ -19,11 +20,13 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * @author Chen Keinan
@@ -62,6 +65,29 @@ public class ArtifactSearchResource extends BaseResource {
     public Response gavcSearch(GavcSearch gavcSearch)
             throws Exception {
         return runService(searchFactory.gavcSearchService(), gavcSearch);
+    }
+
+    @POST
+    @Path("pkg{type:.*}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response pkgSearch(List<AqlUISearchModel> search) throws Exception {
+        return runService(searchFactory.packageSearch(), search);
+    }
+
+    @GET
+    @Path("pkg{type:.*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPkgSearchOptions() throws Exception {
+        return runService(searchFactory.packageSearchOptions());
+    }
+
+    @POST
+    @Path("pkg/tonative")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response searchCriteriaToNativeAql(List<AqlUISearchModel> search) throws Exception {
+        return runService(searchFactory.PackageSearchCriteriaToNativeAql(), search);
     }
 
     @POST

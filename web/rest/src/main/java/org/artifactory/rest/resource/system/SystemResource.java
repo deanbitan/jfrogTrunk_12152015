@@ -19,7 +19,10 @@
 package org.artifactory.rest.resource.system;
 
 
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.plugin.PluginsAddon;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.SystemRestConstants;
 import org.artifactory.api.security.AuthorizationService;
 import org.artifactory.api.security.MasterEncryptionService;
@@ -84,7 +87,9 @@ public class SystemResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String getSystemInfo() throws Exception {
-        return InfoWriter.getInfoString();
+        return InfoWriter.getInfoString()
+                + ContextHelper.get().beanForType(AddonsManager.class).addonByType(PluginsAddon.class)
+                .getPluginsInfoSupportBundleDump();
     }
 
     @Path(SystemRestConstants.PATH_CONFIGURATION)
@@ -139,4 +144,10 @@ public class SystemResource {
         return Response.ok().entity("DONE").build();
     }
 
+    @GET
+    @Path("serverTime")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getServerTime() {
+        return Response.ok().entity(Long.toString(System.currentTimeMillis())).build();
+    }
 }

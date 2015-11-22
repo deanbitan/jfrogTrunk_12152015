@@ -7,7 +7,6 @@ import org.artifactory.descriptor.repo.vcs.VcsUrlBuilder;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
-import java.text.MessageFormat;
 
 /**
  * @author Yoav Luft
@@ -52,6 +51,19 @@ public class VcsGitConfiguration implements Descriptor {
      */
     public String buildResourceDownloadUrl(String user, String repository, String file, String version) {
         return VcsUrlBuilder.resourceDownloadUrl(provider, user, repository, file, version);
+    }
+
+    /**
+     * Constructs ResourceDownloadUrl
+     *
+     * @param user git user
+     * @param repository git repository
+     * @param version content branch/tag
+     *
+     * @return ResourceDownloadUrl
+     */
+    public String buildReleaseDownloadUrl(String user, String repository, String version, String ballType) {
+        return VcsUrlBuilder.releaseDownloadUrl(provider, user, repository, version, ballType);
     }
 
     /**

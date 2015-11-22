@@ -255,6 +255,11 @@ public class LocalLatestVersionResolver extends LatestVersionResolver {
         String version1 = moduleInfo1.getBaseRevision() + "-" + moduleInfo1.getFileIntegrationRevision();
         String version2 = moduleInfo2.getBaseRevision() + "-" + moduleInfo2.getFileIntegrationRevision();
 
+        if (moduleInfo1.getFileIntegrationRevision() == null && moduleInfo2.getFileIntegrationRevision() == null) {
+            version1 = moduleInfo1.getBaseRevision();
+            version2 = moduleInfo2.getBaseRevision();
+        }
+
         return (mavenVersionComparator.compare(version1, version2) >= 0) ? moduleInfo1 : moduleInfo2;
     }
 

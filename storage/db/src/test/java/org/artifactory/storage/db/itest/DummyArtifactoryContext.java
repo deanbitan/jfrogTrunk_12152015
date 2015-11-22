@@ -229,6 +229,9 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         }
 
         @Override
+        public void propagateReindexAll(ArtifactoryServer server, String repoKey, boolean async) {}
+
+        @Override
         public boolean isDefault() {
             return false;
         }

@@ -260,7 +260,10 @@ class jfSingleDeployController {
     }
 
     onAfterAddingFile(fileItem) {
-        this.isBundle = _.endsWith(fileItem.file.name, 'zip');
+        this.isBundle = _.endsWith(fileItem.file.name, 'zip') ||
+                        _.endsWith(fileItem.file.name, 'tar') ||
+                        _.endsWith(fileItem.file.name, 'tgz') ||
+                        _.endsWith(fileItem.file.name, 'tar.gz') ;
         this.deployFile.fileName = fileItem.file.name;
         if (this.deployFile.targetPath.slice(-1) != "/") {
             this.deployFile.targetPath += "/";

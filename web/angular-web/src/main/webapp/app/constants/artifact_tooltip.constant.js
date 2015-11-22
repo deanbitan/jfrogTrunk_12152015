@@ -48,6 +48,9 @@ If Storage Type is "fullDb" then this is the path to the directory that caches b
 If Storage Type is "S3" then this is the path to the directory that caches binaries from S3.`,
                 centralConfigurationDescriptor: ``,
                 securityConfigurationDescriptor: ``
+            },
+            supportPage: {
+                hideUserDetails: `This option will remove passwords and user related information from configuration files before generating the support info package.`
             }
         },
         configuration: {
@@ -352,6 +355,8 @@ can be mapped between the layout of this virtual repository and the marked repos
 Path translations may not work as expected.`,
                 artifactoryRequestCanRetrieveRemoteArtifacts: `Determines whether artifact requests coming from other instance
 of Artifactory can be fulfilled by accessing this virtual repository's remote repositories, or by only accessing its caches (default).`,
+                externalDependenciesPatterns: `Optional include patterns to match external dependencies. Ant-style path expressions are supported (*, **, ?).
+For example, specifying **/github.com/** will only allow external dependencies from github.com host.`,
                 cleanupRepositoryReferencesInPOMs: `(1) Discard Active References - Removes repository elements that are declared
 directly under a project or a profile in the same POM that is activeByDefault.
 (2)Discard Any References - Removes all repository elements regardless of whether

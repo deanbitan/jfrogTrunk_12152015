@@ -40,7 +40,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by Michael Pasternak on 9/1/15.
+ * Provides smart repo services
+ *
+ * @author Michael Pasternak
  */
 @Service
 public class SmartRepoServiceImpl implements SmartRepoService {

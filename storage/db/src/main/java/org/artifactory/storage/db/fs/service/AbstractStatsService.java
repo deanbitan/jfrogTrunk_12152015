@@ -53,7 +53,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Created by Michael Pasternak on 8/25/15.
+ * Provides basic statistic services
+ *
+ * @author Michael Pasternak
  */
 public abstract class AbstractStatsService {
 

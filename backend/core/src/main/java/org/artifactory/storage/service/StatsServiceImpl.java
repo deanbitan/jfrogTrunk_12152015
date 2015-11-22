@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nullable;
 
 /**
- * Created by Michael Pasternak on 8/25/15.
+ * Provides statistics persistence and delegation services
+ *
+ * @author Michael Pasternak
  */
 @Service
 public class StatsServiceImpl implements StatsService {

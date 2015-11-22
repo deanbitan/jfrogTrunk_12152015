@@ -49,6 +49,7 @@ public class ReplicationConfigDescriptorBuilder {
         descriptor.setRepoKey(repoKey);
         descriptor.setSyncDeletes(model.isSyncDeletes());
         descriptor.setSyncProperties(model.isSyncProperties());
+        descriptor.setPathPrefix(model.getPathPrefix());
         return descriptor;
     }
 

@@ -24,6 +24,7 @@ import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.MutableUserInfo;
 import org.artifactory.security.SaltedPassword;
 import org.artifactory.security.UserGroupInfo;
+import org.artifactory.security.UserPropertyInfo;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -46,7 +47,7 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
     private boolean transientUser = false;
     private Set<UserGroupInfo> groups = new HashSet<>();
     private String bintrayAuth;
-
+    private Set<UserPropertyInfo> userPropertyInfos;
     public UserInfoBuilder(String username) {
         this.username = username;
     }
@@ -73,6 +74,7 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
         user.setTransientUser(transientUser);
         user.setGroups(groups);
         user.setBintrayAuth(bintrayAuth);
+        user.setUserProperties(userPropertyInfos);
         return user;
     }
 
@@ -120,6 +122,15 @@ public class UserInfoBuilder implements Builder<MutableUserInfo> {
             this.groups = groups;
         } else {
             this.groups = Collections.emptySet();
+        }
+        return this;
+    }
+
+    public UserInfoBuilder userProperties(@Nullable Set<UserPropertyInfo> userPropertyInfos) {
+        if (userPropertyInfos != null) {
+            this.userPropertyInfos = userPropertyInfos;
+        } else {
+            this.userPropertyInfos = Collections.emptySet();
         }
         return this;
     }

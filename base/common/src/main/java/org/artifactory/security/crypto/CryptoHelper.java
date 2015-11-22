@@ -18,6 +18,7 @@
 
 package org.artifactory.security.crypto;
 
+import com.thoughtworks.xstream.core.util.Base64Encoder;
 import org.apache.commons.io.FileUtils;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
@@ -25,37 +26,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -193,6 +180,21 @@ public abstract class CryptoHelper {
             return convertToString(encrypted, master);
         } catch (Exception e) {
             throw new UnsupportedOperationException(e);
+        }
+    }
+
+    public static String generateUniqueApiKey() throws GeneralSecurityException {
+        byte[] hmacData;
+
+        try {
+            SecretKeySpec secretKey = new SecretKeySpec("secretKey".getBytes("UTF-8"), "HmacSHA256");
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(secretKey);
+            String data = UUID.randomUUID().toString();
+            hmacData = mac.doFinal(data.getBytes("UTF-8"));
+            return new Base64Encoder().encode(hmacData);
+        } catch (UnsupportedEncodingException e) {
+            throw new GeneralSecurityException(e);
         }
     }
 

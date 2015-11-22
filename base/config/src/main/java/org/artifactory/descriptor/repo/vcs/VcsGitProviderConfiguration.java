@@ -32,6 +32,7 @@ public class VcsGitProviderConfiguration extends AbstractVcsProviderConfiguratio
                 "{0}/{1}/archive/{2}.{3}",
                 "https://api.github.com/repos/{0}/{1}/contents/{2}?ref={3}",
                 new HashMap<String, String>(){{put("Accept", "application/vnd.github.v3.raw");}}
+                , "https://api.github.com/repos/{0}/{1}/{2}/{3}"
         );
     }
 }

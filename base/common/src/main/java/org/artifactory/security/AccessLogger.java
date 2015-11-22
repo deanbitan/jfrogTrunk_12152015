@@ -44,7 +44,7 @@ public abstract class AccessLogger {
 
     public enum Action {
         ANNOTATE, ANNOTATE_DELETE, DOWNLOAD, DEPLOY, DELETE, SEARCH, LOGIN, CONFIGURATION_CHANGE, CREATE, UPDATE,
-        APPROVE, DISAPPROVE, FORM_SUBMIT
+        APPROVE, DISAPPROVE, FORM_SUBMIT, PROPERTY_ADDED,PROPERTY_REMOVED,PROPERTY_UPDATED
     }
 
     private AccessLogger() {
@@ -133,6 +133,26 @@ public abstract class AccessLogger {
 
     public static void approved(String message) {
         logAction(null, Action.APPROVE, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void propertyAdded(RepoPath repoPath, String message) {
+        logAction(repoPath, Action.PROPERTY_ADDED, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void propertyAddedDenied(RepoPath repoPath,String message) {
+        logAction(repoPath, Action.PROPERTY_ADDED, true, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void propertyDeleted(RepoPath repoPath, String message) {
+        logAction(repoPath, Action.PROPERTY_REMOVED, false, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void propertyDeletedDenied(RepoPath repoPath, String message) {
+        logAction(repoPath, Action.PROPERTY_REMOVED, true, AuthenticationHelper.getAuthentication(), message);
+    }
+
+    public static void propertyUpdated(RepoPath repoPath, String message) {
+        logAction(repoPath, Action.PROPERTY_UPDATED, false, AuthenticationHelper.getAuthentication(), message);
     }
 
     public static void disapproved(String message) {

@@ -10,9 +10,11 @@ export class AdminAdvancedStorageSummaryController {
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.TOOLTIP = TOOLTIP.admin.advanced.storageSummary;
         this.storageSummaryDao.get().$promise.then((result) => {
+
             this.storageSummary = result;
             this.storageSummary.repositoriesSummaryList = _.map(this.storageSummary.repositoriesSummaryList,(row)=>{
                 row.usedSpace = {value: row.usedSpace, isTotal: row.repoKey==='TOTAL'};
+                row.percentage = row.repoKey==='TOTAL' ? 100 : parseFloat(row.percentage);
                 return row;
             });
 
@@ -42,8 +44,8 @@ export class AdminAdvancedStorageSummaryController {
                       (kb[0] && !kb[1]) ? 1 : (kb[1] && !kb[0]) ? -1 :
                       (parseFloat(a.value.match(/[+-]?\d+(\.\d+)?/)[0]) > parseFloat(b.value.match(/[+-]?\d+(\.\d+)?/)[0])) ? 1 : -1
         }
-        else if (a.isTotal) res = -1;
-        else if (b.isTotal) res = 1;
+        else if (a.isTotal) res = 1;
+        else if (b.isTotal) res = -1;
 
         return res;
     }
@@ -67,7 +69,7 @@ export class AdminAdvancedStorageSummaryController {
             },
             {
                 field: "percentage",
-                cellTemplate: '<div class="ui-grid-cell-contents text-center">{{row.entity.percentage}}</div>',
+                cellTemplate: '<div class="ui-grid-cell-contents text-center">{{row.entity.percentage}}%</div>',
                 name: "Percentage",
                 displayName: "Percentage"
             },

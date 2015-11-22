@@ -25,10 +25,12 @@ import org.apache.http.Header;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.config.VersionInfo;
 import org.artifactory.api.context.ContextHelper;
@@ -56,6 +58,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
+
+import static org.artifactory.request.ArtifactoryRequest.ARTIFACTORY_ORIGINATED;
 
 /**
  * Service used to discover capabilities of another artifactory
@@ -172,7 +176,7 @@ public class ResearchService extends AbstractResearchService {
         CloseableHttpResponse response;
         String requestUrl = produceVersionUrl(uri, inArtifactoryContext);
         HttpGet getMethod = new HttpGet(requestUrl);
-
+        addOriginatedHeader(getMethod);
         try {
             response = client.execute(getMethod);
             String returnedInfo = null;
@@ -221,6 +225,16 @@ public class ResearchService extends AbstractResearchService {
             log.debug("Checking remote artifactory version has failed: {}.", e);
         }
         return ResearchResponse.notArtifactory();
+    }
+
+    /**
+     * add originated header to request
+     *
+     * @param request - http servlet request
+     */
+    private static void addOriginatedHeader(HttpRequestBase request) {
+        String hostId = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaCommonAddon.class).getHostId();
+        request.addHeader(ARTIFACTORY_ORIGINATED, hostId);
     }
 
     /**
@@ -371,7 +385,7 @@ public class ResearchService extends AbstractResearchService {
         CloseableHttpResponse response;
         String requestUrl = produceRepoInfoUrl(uri, repoKey, inArtifactoryContext);
         HttpGet getMethod = new HttpGet(requestUrl);
-
+        addOriginatedHeader(getMethod);
         try {
             response = client.execute(getMethod);
             if (response != null ) {

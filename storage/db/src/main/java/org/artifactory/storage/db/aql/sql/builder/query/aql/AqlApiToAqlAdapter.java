@@ -73,6 +73,20 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
             if (element instanceof AqlBase.FilterApiElement) {
                 visitElements(element, context);
             }
+            if (element instanceof AqlBase.IncludeApiElement) {
+                handleResultInclude((AqlBase.IncludeApiElement) element, context);
+            }
+        }
+    }
+
+    private void handleResultInclude(AqlBase.IncludeApiElement element, AdapterContext context) {
+        // fill context with domain fields
+        for (DomainSensitiveField field : element.getResultFields()) {
+            context.addField(field);
+        }
+        // fill context with include fields
+        for (DomainSensitiveField field : element.getIncludeFields()) {
+            context.addField(field);
         }
     }
 
@@ -200,10 +214,6 @@ public class AqlApiToAqlAdapter extends AqlAdapter {
     }
 
     private void handleDomain(AqlBase.DomainApiElement domain, AdapterContext context) {
-        // Get the Domain info from the AqlBase DomainApiElement and set in the AqlQuery
-        for (DomainSensitiveField field : domain.getFields()) {
-            context.addField(field);
-        }
         // Get the Main domain info from the AqlBase DomainApiElement and set it in the AqlQuery
         context.setDomain(domain.getDomain());
     }

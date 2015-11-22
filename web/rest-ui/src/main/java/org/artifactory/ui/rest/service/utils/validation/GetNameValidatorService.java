@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.utils.validation;
 
+import org.artifactory.exception.ValidationException;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;

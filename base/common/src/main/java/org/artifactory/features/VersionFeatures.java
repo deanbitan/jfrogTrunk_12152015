@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 /**
  * Version features descriptor
  *
- * Created by Michael Pasternak on 9/30/15.
+ * @author Michael Pasternak
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)

@@ -2,7 +2,7 @@ import EVENTS from '../../constants/common_events.constants.js';
 
 export class UserProfileController {
 
-    constructor($state,$scope,UserProfileDao, ArtifactoryFeatures, BintrayDao, ArtifactoryNotifications, User, ArtifactoryEventBus, ArtifactoryModelSaver, OAuthDao, ArtifactoryGridFactory) {
+    constructor($state,$scope,UserProfileDao, ArtifactoryFeatures, BintrayDao, ArtifactoryNotifications, User, ArtifactoryEventBus, ArtifactoryModelSaver, OAuthDao, ArtifactoryGridFactory, ArtifactoryModal) {
         this.$scope = $scope;
         this.$state = $state;
         this.userProfileDao = UserProfileDao;
@@ -14,7 +14,8 @@ export class UserProfileController {
         this.artifactoryGridFactory = ArtifactoryGridFactory;
         this.OAuthDao = OAuthDao;
         this.features = ArtifactoryFeatures;
-        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['userInfo']);
+        this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['userInfo'],['apiKey']);
+        this.modal = ArtifactoryModal;
 
         this.userInfo = {};
         this.currentPassword = null;
@@ -22,11 +23,11 @@ export class UserProfileController {
         this.showBintrayApiKey = false;
         this.profileLocked = true;
 
-
-
         if(this.currentUser.name=='anonymous'){
             $state.go('home');
         }
+
+        $('body').addClass('load-complete');
 
     }
 
@@ -34,7 +35,7 @@ export class UserProfileController {
         this.userProfileDao.fetch({password: this.currentPassword}).$promise
             .then(response => {
                 this.userInfo = response.data;
-                this.artifactoryModelSaver.save();
+                    this.artifactoryModelSaver.save();
                 //console.log(this.userInfo);
                 this.profileLocked = false;
 
@@ -42,8 +43,47 @@ export class UserProfileController {
                     this._initOAuthData();
                 }
 
+                this._getApiKey();
 
             });
+    }
+
+    _getApiKey() {
+        this.userProfileDao.getApiKey().$promise.then((res)=>{
+            this.userInfo.apiKey = res.apiKey;
+        });
+    }
+
+
+    revokeApiKey() {
+        this.modal.confirm(`Are you sure you want to revoke your API key?`)
+                .then(() => {
+                    this.userProfileDao.revokeApiKey().$promise.then((res)=> {
+                        this._getApiKey();
+                    });
+                });
+    }
+    regenerateApiKey() {
+        this.userProfileDao.regenerateApiKey().$promise.then((res)=>{
+            if (res.apiKey) {
+                this.artifactoryNotifications.create({info: 'Successfully regenerated API key'});
+                this.userInfo.apiKey = res.apiKey;
+            }
+            else {
+                this.artifactoryNotifications.create({error: 'Failed to regenerate API key'});
+            }
+        });
+    }
+    generateApiKey() {
+        this.userProfileDao.getAndCreateApiKey().$promise.then((res)=>{
+            if (res.apiKey) {
+                this.artifactoryNotifications.create({info: 'Successfully generated API key'});
+                this.userInfo.apiKey = res.apiKey;
+            }
+            else {
+                this.artifactoryNotifications.create({error: 'Failed to generate API key'});
+            }
+        });
     }
 
     _initOAuthData() {

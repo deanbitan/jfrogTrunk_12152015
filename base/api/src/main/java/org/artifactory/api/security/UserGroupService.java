@@ -28,6 +28,7 @@ import org.artifactory.security.UserInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -170,4 +171,19 @@ public interface UserGroupService {
     void deleteProperty(String userName, String propertyKey);
 
     void deletePropertyFromAllUsers(String propertyKey);
+
+    String getPropsToken(String userName, String propsKey);
+
+    @Lock
+    boolean revokePropsToken(String userName, String propsKey) throws SQLException;
+
+    @Lock
+    boolean createPropsToken(String userName, String key, String value) throws SQLException;
+
+    @Lock
+    void revokeAllPropsTokens(String propsKey) throws SQLException;
+
+    @Lock
+    boolean updatePropsToken(String user, String propKey, String propValue) throws SQLException;
+
 }

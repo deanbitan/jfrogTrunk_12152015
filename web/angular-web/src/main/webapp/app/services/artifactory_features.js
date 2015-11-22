@@ -1,4 +1,3 @@
-
 // For debugging only:
 window._aolSimulate = function (value) {
     localStorage._aol = value ? "true" : "false";
@@ -184,6 +183,10 @@ export const FEATURES = {
         license: 'PRO',
         label: 'Sha256 Calculation',
         path: 'sha256'
+    },
+    'supportpage': {
+        license: 'PRO',
+        label: 'Support Page'
     }
 };
 
@@ -201,7 +204,8 @@ export const HIDDEN_AOL_FEATURES = [
     'configdescriptor',
     'securitydescriptor',
     'system',
-    'mail'
+    'mail',
+    'supportpage'
 ];
 
 // Features that are hidden for OSS
@@ -260,9 +264,6 @@ export class ArtifactoryFeatures {
     }
 
     getCurrentLicense() {
-        if (localStorage._license != undefined) {
-            return localStorage._license;
-        } // For debugging only
         return this.footerDao.getInfo().versionID;
     }
 

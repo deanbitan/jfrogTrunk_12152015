@@ -3,7 +3,9 @@ package org.artifactory.storage.service;
 import org.artifactory.repo.RepoPath;
 
 /**
- * Created by Michael Pasternak on 8/25/15.
+ * Delegates statistics events to registered members
+ *
+ * @author Michael Pasternak
  */
 public interface StatsDelegatingService {
     /**

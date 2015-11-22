@@ -21,7 +21,7 @@ export function jfDisableFeature(ArtifactoryFeatures, $timeout) {
           // Add a tooltip with link to the feature page:
           let featureName = ArtifactoryFeatures.getFeatureName(feature);
           let featureLink = ArtifactoryFeatures.getFeatureLink(feature);
-          
+
           $($element).tooltipster({
                     contentAsHTML : 'true',
                     trigger: 'hover',
@@ -29,8 +29,8 @@ export function jfDisableFeature(ArtifactoryFeatures, $timeout) {
                     interactive: 'true',
                     interactiveTolerance: 150,
                     position: 'top',
-                    content: `Learn more about the <a href="${featureLink}" target="_blank">${featureName}</a> feature`
-                });          
+                    content: featureLink ? `Learn more about the <a href="${featureLink}" target="_blank">${featureName}</a> feature` : `The ${featureName} feature is not supported on oss version`
+                });
         }
         else {
           $($element).hide();

@@ -31,12 +31,34 @@
         </provider>
     </chain>
 
+    <!-- S3 default chain -->
+    <chain template="google-storage">
+        <provider id="cache-fs" type="cache-fs">
+            <provider id="eventual" type="eventual">
+                <provider id="retry" type="retry">
+                    <provider id="google-storage" type="google-storage"/>
+                </provider>
+            </provider>
+        </provider>
+    </chain>
+
+    <!-- S3 default chain -->
+    <chain template="s3Old">
+        <provider id="cache-fs" type="cache-fs">
+            <provider id="eventual" type="eventual">
+                <provider id="retry" type="retry">
+                    <provider id="s3Old" type="s3Old"/>
+                </provider>
+            </provider>
+        </provider>
+    </chain>
+
     <!-- Simple Sharding with 2 shards default chain -->
     <chain template="double-shards">
         <provider id="cache-fs" type="cache-fs">
             <provider id="sharding" type="sharding">
-                <sub-provider id="shard-fs-1" type="file-system"/>
-                <sub-provider id="shard-fs-2" type="file-system"/>
+                <sub-provider id="shard-fs-1" type="sharding-file-system"/>
+                <sub-provider id="shard-fs-2" type="sharding-file-system"/>
             </provider>
         </provider>
     </chain>
@@ -62,10 +84,10 @@
     </provider>
 
     <!-- Shards FS provider configuration -->
-    <provider id="shard-fs-1" type="file-system">
+    <provider id="shard-fs-1" type="sharding-file-system">
         <dir>shard-fs-1</dir>
     </provider>
-    <provider id="shard-fs-2" type="file-system">
+    <provider id="shard-fs-2" type="sharding-file-system">
         <dir>shard-fs-2</dir>
     </provider>
 

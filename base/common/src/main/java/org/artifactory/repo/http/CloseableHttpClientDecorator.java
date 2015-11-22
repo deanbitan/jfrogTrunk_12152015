@@ -34,7 +34,11 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Created by Michael Pasternak on 10/21/15.
+ * Provides decoration capabilities for HttpClient,
+ * where {@link CloseableObserver} can register to
+ * onClose() event
+ *
+ * @author Michael Pasternak
  */
 public class CloseableHttpClientDecorator extends CloseableHttpClient {
 

@@ -18,13 +18,6 @@
 
 package org.artifactory.descriptor.repo.vcs;
 
-import org.artifactory.descriptor.repo.vcs.VcsArtifactoryProviderConfiguration;
-import org.artifactory.descriptor.repo.vcs.VcsBitbucketProviderConfiguration;
-import org.artifactory.descriptor.repo.vcs.VcsCustomProviderConfiguration;
-import org.artifactory.descriptor.repo.vcs.VcsGitProviderConfiguration;
-import org.artifactory.descriptor.repo.vcs.VcsProviderConfiguration;
-import org.artifactory.descriptor.repo.vcs.VcsStashProviderConfiguration;
-
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlEnumValue;
 import java.util.Map;
@@ -71,6 +64,10 @@ public enum VcsGitProvider {
 
     public String getResourceDownloadUrl() {
         return configuration.getResourceDownloadUrl();
+    }
+
+    public String getReleaseDownloadUrl() {
+        return configuration.getReleaseDownloadUrl();
     }
 
     public Map<String, String> getHeaders() {

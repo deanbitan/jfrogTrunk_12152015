@@ -100,7 +100,7 @@ public class TestLocalReplicationService implements RestService<LocalRepositoryC
                     .responseCode(HttpStatus.SC_OK);
         } catch (Exception e) {
             log.debug("Error testing push replication config: ", e);
-            String error = "Error testing pull replication config: ";
+            String error = "Error testing push replication config: ";
             if (e instanceof UnknownHostException) {
                 error += "unknown host '";
                 if (e.getMessage().equalsIgnoreCase("api")) {

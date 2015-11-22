@@ -30,6 +30,8 @@ import org.artifactory.md.Properties;
 import org.artifactory.mime.NamingUtils;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
+import org.artifactory.security.props.auth.ApiKeyManager;
+import org.artifactory.security.props.auth.model.TokenKeyValue;
 import org.artifactory.util.HttpUtils;
 import org.artifactory.util.PathUtils;
 import org.slf4j.Logger;
@@ -301,5 +303,38 @@ public abstract class RequestUtils {
                 || userAgent.contains("IEMobile")) {
             response.setHeader("X-UA-Compatible", "IE=Edge");
         }
+    }
+
+
+    /**
+     * return user name by props auth
+     *
+     * @param request - http servlet request
+     * @return user name
+     */
+    public static String getUserNameByPropsAuth(HttpServletRequest request) {
+        TokenKeyValue tokenKeyValue;
+        if ((tokenKeyValue = getApiKeyTokenKeyValue(request)) != null) {
+            String userByPropAuth = ContextHelper.get().getAuthorizationService().
+                    findUserByPropAuth(tokenKeyValue.getKey(), tokenKeyValue.getToken());
+            if (userByPropAuth != null) {
+                return userByPropAuth;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * check weather api key is found on request
+     *
+     * @param request - http servlet request
+     * @return Token key value
+     */
+    public static TokenKeyValue getApiKeyTokenKeyValue(HttpServletRequest request) {
+        String apiKeyValue = request.getHeader("X-Api-Key");
+        if (apiKeyValue != null) {
+            return new TokenKeyValue(ApiKeyManager.API_KEY, apiKeyValue);
+        }
+        return null;
     }
 }

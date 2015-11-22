@@ -37,14 +37,7 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Date: 8/26/12
@@ -89,14 +82,14 @@ public class UserGroupsDao extends BaseDao {
 
     public int createUser(User user) throws SQLException {
         int res = jdbcHelper.executeUpdate("INSERT INTO users VALUES(" +
-                " ?," +
-                " ?, ?, ?," +
-                " ?, ?," +
-                " ?, ?, ?," +
-                " ?, ?, ?," +
-                " ?, ?," +
-                " ?, ?," +
-                " ?)",
+                        " ?," +
+                        " ?, ?, ?," +
+                        " ?, ?," +
+                        " ?, ?, ?," +
+                        " ?, ?, ?," +
+                        " ?, ?," +
+                        " ?, ?," +
+                        " ?)",
                 user.getUserId(),
                 user.getUsername(), nullIfEmpty(user.getPassword()), nullIfEmpty(user.getSalt()),
                 nullIfEmpty(user.getEmail()), nullIfEmpty(user.getGenPasswordKey()),

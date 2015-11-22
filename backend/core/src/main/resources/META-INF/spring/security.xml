@@ -39,12 +39,22 @@
     <!-- create the spring basic authentication filter (will be used as a delegate) -->
     <bean id="basicAuthenticationFilter"
           class="org.springframework.security.web.authentication.www.BasicAuthenticationFilter">
-        <property name="authenticationManager" ref="passwordDecryptingManager"/>
-        <property name="authenticationEntryPoint" ref="basicAuthenticationEntryPoint"/>
+        <constructor-arg ref="passwordDecryptingManager"/>
+        <constructor-arg ref="basicAuthenticationEntryPoint"/>
         <property name="authenticationDetailsSource">
             <bean class="org.artifactory.security.HttpAuthenticationDetailsSource"/>
         </property>
     </bean>
+
+    <!-- props auth security related (filter and authentication)  -->
+    <bean id="propsAuthenticationFilter"
+          class="org.artifactory.webapp.servlet.authentication.PropsAuthenticationFilter">
+        <constructor-arg ref="propsAuthenticationProvider"/>
+        <constructor-arg ref="basicAuthenticationEntryPoint"/>
+    </bean>
+
+    <bean id="propsAuthenticationProvider"
+          class="org.artifactory.security.db.apikey.PropsAuthenticationProvider"></bean>
 
     <bean id="basicAuthenticationEntryPoint"
           class="org.artifactory.webapp.servlet.authentication.ArtifactoryBasicAuthenticationEntryPoint">
@@ -55,6 +65,7 @@
     <bean id="ldapAuthenticationProvider" class="org.artifactory.security.ldap.ArtifactoryLdapAuthenticationProvider"/>
     <bean id="crowdAuthenticationProviderAdapter"
           class="org.artifactory.security.crowd.CrowdAuthenticationProviderAdapter"/>
+
     <bean id="dbAuthenticationProvider" class="org.artifactory.security.db.DbAuthenticationProvider">
         <property name="userDetailsService" ref="dbUserDetailsService"/>
         <property name="saltSource" ref="dbUserDetailsService"/>
@@ -79,21 +90,19 @@
 
     <bean id="rememberMeProcessingFilter"
           class="org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationFilter">
-        <property name="rememberMeServices" ref="rememberMeServices"/>
-        <property name="authenticationManager" ref="authenticationManager"/>
+        <constructor-arg ref="rememberMeServices"/>
+        <constructor-arg ref="authenticationManager"/>
     </bean>
 
     <bean id="rememberMeServices"
           class="org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices">
-        <property name="userDetailsService" ref="dbUserDetailsService"/>
-        <property name="key" value="artifactory"/>
+        <constructor-arg value="artifactory"/>
+        <constructor-arg ref="dbUserDetailsService"/>
         <property name="tokenValiditySeconds" value="604800"/>
     </bean>
 
     <bean id="rememberMeAuthenticationProvider"
           class="org.springframework.security.authentication.RememberMeAuthenticationProvider">
-        <property name="key" value="artifactory"/>
-        <!--<security:custom-authentication-provider/>-->
+        <constructor-arg value="artifactory"/>
     </bean>
-
 </beans>

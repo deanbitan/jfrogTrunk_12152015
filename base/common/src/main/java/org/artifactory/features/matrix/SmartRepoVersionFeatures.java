@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 /**
  * SmartRepo Version features descriptor
  *
- * Created by Michael Pasternak on 9/30/15.
+ * @author Michael Pasternak
  */
 @Lazy(true)
 @Scope(BeanDefinition.SCOPE_SINGLETON)

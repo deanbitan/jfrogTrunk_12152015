@@ -57,9 +57,9 @@ import java.io.IOException;
 import static org.artifactory.api.rest.constant.ArtifactRestConstants.*;
 
 /**
-* Created by Michael Pasternak on 8/13/15.
- *
  * This resources processes remote statistics events
+ *
+ * @author Michael Pasternak
 */
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)

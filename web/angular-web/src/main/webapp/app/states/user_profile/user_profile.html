@@ -25,38 +25,14 @@
                             </button>
                         </div>
                     </div>
-                    <div class="alert alert-info">Insert the password and press the Unlock button to edit the
-                        profile.
-                    </div>
+                    <div class="alert alert-info">Insert the password and press the Unlock button to edit the profile.</div>
                 </form>
-                <jf-panel jf-panel-heading="Personal Settings">
+                
+                <jf-panel jf-panel-heading="Personal Settings" ng-if="UserProfile.userInfo.user.profileUpdatable">
                     <div ng-class="{disabled: UserProfile.profileLocked}">
                         <form name="UserProfile.userForm" ng-submit="UserProfile.save()">
+
                             <div class="form-group">
-                                <div class="form-group-cell">
-                                    <jf-field>
-                                        <label>API Key</label>
-                                        <input type="password"
-                                               class="input-text"
-                                               ng-model="UserProfile.userInfo.user.password"
-                                               ng-class="{'not-disabled-style': !UserProfile.profileLocked}"
-                                               disabled
-                                               id="password"
-                                               name="password"
-                                                />
-                                    </jf-field>
-                                </div>
-                                <div class="form-group-cell auto-width form-button form-link">
-                                    <span jf-reveal-input="password"></span>
-                                </div>
-                                <div class="form-group-cell auto-width form-button form-link">
-                                    <jf-clip-copy text-to-copy="UserProfile.userInfo.user.password"
-                                                  object-name="Key"></jf-clip-copy>
-
-                                </div>
-                            </div>
-
-                            <div class="form-group" ng-if="UserProfile.userInfo.user.profileUpdatable">
                                 <div class="form-group-cell">
                                     <jf-field>
                                         <label>New Password</label>
@@ -73,8 +49,7 @@
                                     <div ng-password-strength="UserProfile.userInfo.user.newPassword" strength="passStrength" mode="bootstrap"></div>
                                 </div>
                             </div>
-
-                            <div class="form-group" ng-if="UserProfile.userInfo.user.profileUpdatable">
+                            <div class="form-group">
                                 <div class="form-group-cell">
                                     <jf-field validations="users">
                                         <label>Retype Password</label>
@@ -89,8 +64,7 @@
                                     </jf-field>
                                 </div>
                             </div>
-
-                            <div class="form-group" ng-if="UserProfile.userInfo.user.profileUpdatable">
+                            <div class="form-group">
                                 <div class="form-group-cell">
                                     <jf-field validations="users">
                                         <label class="mandatory">Email Address</label>
@@ -105,6 +79,89 @@
                             </div>
                         </form>
                     </div>
+                </jf-panel>
+
+                <jf-panel jf-panel-heading="Authentication Settings">
+                    <form name="UserProfile.userForm" ng-submit="UserProfile.save()">
+                        <div class="form-group no-margin-bottom">
+                            <div class="form-group-cell">
+                                <jf-field>
+                                    <label>API Key</label>
+                                    <input ng-if="UserProfile.profileLocked || UserProfile.userInfo.apiKey"
+                                           type="password"
+                                           class="input-text"
+                                           ng-model="UserProfile.userInfo.apiKey"
+                                           disabled
+                                           id="apiKey"
+                                           name="apiKey"
+                                            />
+                                    <input ng-if="!UserProfile.userInfo.apiKey && !UserProfile.profileLocked"
+                                           type="text"
+                                           disabled
+                                           value="Click on Generate to create Key"
+                                           class="input-text"/>
+                                </jf-field>
+                            </div>
+                            <div ng-if="UserProfile.profileLocked || UserProfile.userInfo.apiKey"
+                                 class="form-group-cell auto-width form-button form-link profile-reveal">
+                                    <span jf-reveal-input="apiKey"
+                                          object-name="API Key"></span>
+                            </div>
+                            <div ng-if="UserProfile.profileLocked || UserProfile.userInfo.apiKey"
+                                 class="form-group-cell auto-width form-button form-link profile-copy">
+                                <jf-clip-copy text-to-copy="UserProfile.userInfo.apiKey"
+                                              object-name="Key"></jf-clip-copy>
+                            </div>
+                            <div ng-if="UserProfile.userInfo.apiKey"
+                                 class="form-group-cell auto-width form-button form-link profile-generate">
+                                <a class="generate-button"
+                                   ng-click="UserProfile.regenerateApiKey()"
+                                   ng-if="!UserProfile.profileLocked"
+                                   jf-tooltip="Regenerate">
+                                    <span class="icon-generate"></span>
+                                </a>
+                            </div>
+                            <div ng-if="!UserProfile.userInfo.apiKey && !UserProfile.profileLocked"
+                                 class="form-group-cell auto-width form-button form-link profile-generate">
+                                <a class="generate-button"
+                                   ng-click="UserProfile.generateApiKey()"
+                                   ng-if="!UserProfile.profileLocked"
+                                   jf-tooltip="Generate">
+                                    <span class="icon-generate"></span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div ng-click="UserProfile.revokeApiKey()" class="text-button revoke-button"
+                                 ng-if="!UserProfile.profileLocked && UserProfile.userInfo.apiKey">
+                                <span class="icon icon-clear"></span>Revoke API Key
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-group-cell">
+                                <jf-field>
+                                    <label>Encrypted Password</label>
+                                    <input type="password"
+                                           class="input-text"
+                                           ng-model="UserProfile.userInfo.user.password"
+                                           disabled
+                                           id="password"
+                                           name="password"
+                                            />
+                                </jf-field>
+                            </div>
+                            <div class="form-group-cell auto-width form-button form-link profile-reveal">
+                                    <span jf-reveal-input="password"
+                                          object-name="Encrypted Password"></span>
+                            </div>
+                            <div class="form-group-cell auto-width form-button form-link profile-copy">
+                                <jf-clip-copy text-to-copy="UserProfile.userInfo.user.password"
+                                              object-name="Encrypted Password"></jf-clip-copy>
+
+                            </div>
+                        </div>
+                    </form>
                 </jf-panel>
 
                 <jf-panel jf-panel-heading="Bintray Settings">
@@ -132,19 +189,20 @@
                                     <jf-field validations="bintray" always-show-errors="true">
                                         <label>Bintray API Key</label>
                                         <input type="password"
-                                               id="apiKey"
+                                               id="bintrayApiKey"
                                                class="input-text"
                                                ng-model="UserProfile.userInfo.bintray.apiKey"
                                                ng-disabled="UserProfile.profileLocked || !UserProfile.userInfo.user.profileUpdatable"
                                                ng-required="UserProfile.userInfo.bintray.userName"
-                                               name="apiKey"
+                                               name="bintrayApiKey"
                                                 />
                                     </jf-field>
                                 </div>
-                                <div class="form-group-cell auto-width form-button form-link">
-                                  <span jf-reveal-input="apiKey"></span>
+                                <div class="form-group-cell auto-width form-button form-link profile-reveal">
+                                  <span jf-reveal-input="bintrayApiKey"
+                                        object-name="API Key"></span>
                                 </div>
-                                <div class="form-group-cell auto-width form-button form-link">
+                                <div class="form-group-cell auto-width form-button form-link profile-copy">
                                     <jf-clip-copy text-to-copy="UserProfile.userInfo.bintray.apiKey"
                                                   object-name="Key"></jf-clip-copy>
                                 </div>

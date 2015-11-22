@@ -33,9 +33,10 @@ import javax.annotation.Nullable;
 import java.util.Map;
 
 /**
- * Service providing idle connections monitoring for {@link PoolingHttpClientConnectionManager}
+ * Service providing idle connections monitoring
+ * for {@link PoolingHttpClientConnectionManager}
  *
- * Created by Michael Pasternak on 10/21/15.
+ * @author Michael Pasternak
  */
 @Lazy(true)
 @Scope(BeanDefinition.SCOPE_SINGLETON)

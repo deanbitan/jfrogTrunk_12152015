@@ -51,7 +51,6 @@ module.exports = {
 
     CSS: [
         'components/jquery-ui/themes/smoothness/jquery-ui.css',
-        'components/bootstrap/dist/css/bootstrap.min.css',
         'components/jQuery-contextMenu/dist/jquery.contextMenu.min.css',
         'components/bootstrap/dist/css/bootstrap.css',
         'components/angular-ui-layout/ui-layout.css',

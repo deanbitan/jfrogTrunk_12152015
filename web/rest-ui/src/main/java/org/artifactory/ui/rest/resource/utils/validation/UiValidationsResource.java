@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response;
  *
  * @author Yossi Shaul
  */
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
+@RolesAllowed({AuthorizationService.ROLE_ADMIN, AuthorizationService.ROLE_USER})
 @Component
 @Path("validations")
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)

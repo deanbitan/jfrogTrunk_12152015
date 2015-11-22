@@ -73,10 +73,10 @@ export function jfField($timeout, ArtifactoryEventBus, $rootScope) {
             function _onFormSubmitted(formName) {
                 if (!formName || (scope.form.$name === formName && !scope.formField.$valid)) {
                     inputElement.addClass('invalid');
-                    scope.formField.showErrors = true;
+                    if (scope.formField) scope.formField.showErrors = true;
                 } else {
                     inputElement.removeClass('invalid');
-                    scope.formField.showErrors = false;
+                    if (scope.formField) scope.formField.showErrors = false;
                 }
             }
 

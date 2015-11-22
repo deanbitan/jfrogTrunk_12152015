@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.model.utils.repositories;
 
+import org.artifactory.descriptor.repo.DockerApiVersion;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.rest.common.model.BaseModel;
 
@@ -10,6 +11,7 @@ public class RepoKeyType extends BaseModel {
 
     private String repoKey;
     private RepoType RepoType;
+    private String dockerApiVersion;
     private String type;
     private Boolean canDeploy;
     private Boolean canRead;
@@ -22,9 +24,22 @@ public class RepoKeyType extends BaseModel {
         this.type = type;
     }
 
-    public RepoKeyType(RepoType type, String repoKey) {
+    public RepoKeyType(RepoType repoType, String repoKey) {
         this.repoKey = repoKey;
-        this.RepoType = type;
+        this.RepoType = repoType;
+    }
+
+    public RepoKeyType(String type, RepoType repoType, String repoKey) {
+        this.type = type;
+        this.repoKey = repoKey;
+        this.RepoType = repoType;
+    }
+
+    public RepoKeyType(String type, RepoType repoType, String repoKey, DockerApiVersion dockerApiVersion) {
+        this.repoKey = repoKey;
+        this.RepoType = repoType;
+        this.type = type;
+        this.dockerApiVersion = dockerApiVersion.name();
     }
 
     public String getRepoKey() {
@@ -73,5 +88,9 @@ public class RepoKeyType extends BaseModel {
 
     public void setIsLocal(Boolean isLocal) {
         this.isLocal = isLocal;
+    }
+
+    public String getDockerApiVersion() {
+        return dockerApiVersion;
     }
 }

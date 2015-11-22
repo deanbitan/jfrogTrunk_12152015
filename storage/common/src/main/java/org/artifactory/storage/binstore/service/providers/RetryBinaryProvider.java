@@ -30,8 +30,8 @@ public class RetryBinaryProvider extends BinaryProviderBase {
     }
 
     @Override
-    public boolean exists(String sha1, long length) {
-        return isExist(sha1, length, 0);
+    public boolean exists(String sha1) {
+        return isExist(sha1, 0);
     }
 
     @Override
@@ -66,16 +66,16 @@ public class RetryBinaryProvider extends BinaryProviderBase {
         }
     }
 
-    public boolean isExist(String sha1, long length, int trying) {
+    public boolean isExist(String sha1, int trying) {
         try {
-            return next().exists(sha1, length);
+            return next().exists(sha1);
         } catch (Exception e) {
             if (trying < maxTrays) {
                 waitDelayTime();
                 log.trace(
                         "Failed to check if blob  '{}'  exist in next binary provider, trying again for the  '{}'  time",
                         sha1, trying);
-                return isExist(sha1, length, ++trying);
+                return isExist(sha1, ++trying);
             } else {
                 log.error("Failed to check if blob  '{}'  exist in next binary provider", sha1, e);
                 throw e;

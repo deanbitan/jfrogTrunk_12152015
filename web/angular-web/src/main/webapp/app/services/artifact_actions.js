@@ -3,7 +3,7 @@ import EVENTS from '../constants/artifacts_events.constants';
 import ACTIONS from '../constants/artifacts_actions.constants';
 export class ArtifactActions {
     constructor(ArtifactoryEventBus, ArtifactActionsDao, StashResultsDao, $window, $rootScope, $timeout, ArtifactoryNotifications,
-                ArtifactoryModal, selectTargetPath, selectDeleteVersions, PushToBintrayModal, $q) {
+                ArtifactoryModal, selectTargetPath, selectDeleteVersions, PushToBintrayModal, $q, artifactoryIFrameDownload) {
         this.$q = $q;
         this.$timeout = $timeout;
         this.artifactoryEventBus = ArtifactoryEventBus;
@@ -16,6 +16,7 @@ export class ArtifactActions {
         this.selectDeleteVersions = selectDeleteVersions;
         this.$window = $window;
         this.$rootScope = $rootScope;
+        this.iframeDownload = artifactoryIFrameDownload;
     }
 
     perform(actionObj, node) {
@@ -197,7 +198,7 @@ export class ArtifactActions {
         this.selectDeleteVersions(node)
                 .then((_versions) => {
                     versions = _versions;
-                    return this.modal.confirm('Are you sure you wish to delete the selected versions?\n\nThis folder may contain artifacts that are part of the result of or used as dependencies in published build(s).')
+                    return this.modal.confirm('Are you sure you wish to delete '+_versions.length+' selected versions?\n\nThis folder may contain artifacts that are part of the result of or used as dependencies in published build(s).','Delete '+_versions.length+' Versions')
                 })
                 .then(() => {
                     let promise = this._performActionInServer('deleteversions', null, versions);
@@ -242,7 +243,7 @@ export class ArtifactActions {
             modalScope.archiveTypes = ['zip','tar','tar.gz','tgz'];
             modalScope.selection = {archiveType: 'zip'};
             modalScope.download = () => {
-                this._iframeDownload(`${API.API_URL}/artifactactions/downloadfolder?repoKey=${node.data.repoKey}&path=${node.data.path}&archiveType=${modalScope.selection.archiveType}`);
+                this.iframeDownload(`${API.API_URL}/artifactactions/downloadfolder?repoKey=${node.data.repoKey}&path=${node.data.path}&archiveType=${modalScope.selection.archiveType}`,'There are too many folder download requests currently running, try again later.');
                 modalInstance.close();
             };
             modalScope.cancel = () => modalInstance.close();
@@ -252,6 +253,7 @@ export class ArtifactActions {
 
     }
 
+/*
     _iframeDownload(url) {
         let iframe=$('<iframe style="display: none">');
         iframe.load((event)=>{
@@ -279,6 +281,7 @@ export class ArtifactActions {
 
         iframe.attr('src', url).appendTo('body');
     }
+*/
 
     // Do the actual action on the server via the DAO:
     _performActionInServer(actionName, node, extraData = {}, extraParams = {}) {

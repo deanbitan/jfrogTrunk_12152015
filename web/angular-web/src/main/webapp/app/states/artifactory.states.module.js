@@ -90,6 +90,9 @@ function changeStateHook(User, $rootScope, $q, ArtifactoryNotifications, $locati
             }
         }
 
+        if (toState.name.match(/^builds/) && !User.getCurrent().getCanDeploy()) {
+            toParams.tab = 'published';
+        }
 
         if (toState.name === 'login' && $location.path() !== '/login' && $location.path() !== '/forgot-password' && $location.path() !== '/oauth_error') {
             let afterLogin = ArtifactoryState.getState('urlAfterLogin');

@@ -3,6 +3,7 @@ package org.artifactory.aql.api.domain.sensitive;
 import com.google.common.collect.Lists;
 import org.artifactory.aql.api.internal.AqlApiDynamicFieldsDomains;
 import org.artifactory.aql.api.internal.AqlBase;
+import org.artifactory.aql.model.AqlComparatorEnum;
 import org.artifactory.aql.model.AqlDomainEnum;
 import org.artifactory.aql.model.AqlFieldEnum;
 import org.artifactory.aql.result.rows.AqlBuildProperty;
@@ -33,6 +34,11 @@ public class AqlApiBuildProperty extends AqlBase<AqlApiBuildProperty, AqlBuildPr
         return new AqlApiDynamicFieldsDomains.AqlApiBuildDynamicFieldsDomains(subDomains);
     }
 
+    public static AqlBase.PropertyCriteriaClause<AqlApiProperty> property(String key, AqlComparatorEnum comparator,
+            String value) {
+        ArrayList<AqlDomainEnum> subDomains = Lists.newArrayList(AqlDomainEnum.buildProperties);
+        return new AqlBase.PropertyCriteriaClause(key, comparator, value, subDomains);
+    }
     public static AqlApiBuildProperty create() {
         return new AqlApiBuildProperty();
     }

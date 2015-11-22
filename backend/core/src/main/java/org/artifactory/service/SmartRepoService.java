@@ -22,7 +22,9 @@ import org.artifactory.fs.RepoResource;
 import org.springframework.stereotype.Service;
 
 /**
- * Created by Michael Pasternak on 9/1/15.
+ * Provides smart repo services
+ *
+ * @author Michael Pasternak
  */
 @Service
 public interface SmartRepoService {

@@ -1,5 +1,9 @@
 package org.artifactory.ui.rest.service.admin.security;
 
+import org.artifactory.rest.common.service.admin.userprofile.CreateApiKeyService;
+import org.artifactory.rest.common.service.admin.userprofile.GetApiKeyService;
+import org.artifactory.rest.common.service.admin.userprofile.RevokeApiKeyService;
+import org.artifactory.rest.common.service.admin.userprofile.UpdateApiKeyService;
 import org.artifactory.ui.rest.model.admin.security.oauth.OAuthUserToken;
 import org.artifactory.ui.rest.model.admin.security.user.User;
 import org.artifactory.ui.rest.service.admin.security.auth.annotate.GetCanAnnotateService;
@@ -10,11 +14,7 @@ import org.artifactory.ui.rest.service.admin.security.auth.forgotpassword.ResetP
 import org.artifactory.ui.rest.service.admin.security.auth.forgotpassword.ValidateResetTokenService;
 import org.artifactory.ui.rest.service.admin.security.auth.login.LoginService;
 import org.artifactory.ui.rest.service.admin.security.auth.logout.LogoutService;
-import org.artifactory.ui.rest.service.admin.security.crowdsso.GetCrowdIntegrationService;
-import org.artifactory.ui.rest.service.admin.security.crowdsso.ImportCrowdGroupsService;
-import org.artifactory.ui.rest.service.admin.security.crowdsso.RefreshCrowdGroupsService;
-import org.artifactory.ui.rest.service.admin.security.crowdsso.TestCrowdConnectionService;
-import org.artifactory.ui.rest.service.admin.security.crowdsso.UpdateCrowdIntegration;
+import org.artifactory.ui.rest.service.admin.security.crowdsso.*;
 import org.artifactory.ui.rest.service.admin.security.general.EncryptDecryptService;
 import org.artifactory.ui.rest.service.admin.security.general.GetMasterKeyService;
 import org.artifactory.ui.rest.service.admin.security.general.GetSecurityConfigService;
@@ -25,55 +25,14 @@ import org.artifactory.ui.rest.service.admin.security.group.GetGroupService;
 import org.artifactory.ui.rest.service.admin.security.group.UpdateGroupService;
 import org.artifactory.ui.rest.service.admin.security.httpsso.GetHttpSsoService;
 import org.artifactory.ui.rest.service.admin.security.httpsso.UpdateHttpSsoService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.CreateLdapGroupService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.DeleteLdapGroupService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.GetLdapGroupService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.GroupMappingStrategyService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.ImportLdapGroupService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.RefreshLdapGroupService;
-import org.artifactory.ui.rest.service.admin.security.ldap.groups.UpdateLdapGroupService;
-import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.CreateLdapSettingsService;
-import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.DeleteLdapSettingsService;
-import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.GetLdapSettingsService;
-import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.ReorderLdapSettingsService;
-import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.TestLdapSettingsService;
-import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.UpdateLdapSettingsService;
-import org.artifactory.ui.rest.service.admin.security.oauth.AddOAuthProviderSettings;
-import org.artifactory.ui.rest.service.admin.security.oauth.DeleteOAuthProviderSettings;
-import org.artifactory.ui.rest.service.admin.security.oauth.DeleteOAuthUserToken;
-import org.artifactory.ui.rest.service.admin.security.oauth.GetOAuthSettings;
-import org.artifactory.ui.rest.service.admin.security.oauth.GetOAuthTokensForUser;
-import org.artifactory.ui.rest.service.admin.security.oauth.UpdateOAuthProviderSettings;
-import org.artifactory.ui.rest.service.admin.security.oauth.UpdateOrCreateOAuthSettings;
-import org.artifactory.ui.rest.service.admin.security.permissions.CreatePermissionsTargetService;
-import org.artifactory.ui.rest.service.admin.security.permissions.DeletePermissionsTargetService;
-import org.artifactory.ui.rest.service.admin.security.permissions.GetAllUsersAndGroupsService;
-import org.artifactory.ui.rest.service.admin.security.permissions.GetPermissionsTargetService;
-import org.artifactory.ui.rest.service.admin.security.permissions.UpdatePermissionsTargetService;
-import org.artifactory.ui.rest.service.admin.security.saml.GetSamlLoginRequestService;
-import org.artifactory.ui.rest.service.admin.security.saml.GetSamlLoginResponseService;
-import org.artifactory.ui.rest.service.admin.security.saml.GetSamlLogoutRequestService;
-import org.artifactory.ui.rest.service.admin.security.saml.GetSamlService;
-import org.artifactory.ui.rest.service.admin.security.saml.IsSamlAuthentication;
-import org.artifactory.ui.rest.service.admin.security.saml.UpdateSamlService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.debiankeys.GetDebianSigningKeyService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.debiankeys.InstallDebianKeyService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.debiankeys.RemoveDebianKeyService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.debiankeys.UpdateDebianKeyService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.debiankeys.VerifyDebianKeyService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.AddKeyStoreService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.CancelKeyPairService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.ChangeKeyStorePasswordService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.GetKeyStoreService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.RemoveKeyStorePasswordService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.RemoveKeyStoreService;
-import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.SaveKeyStoreService;
-import org.artifactory.ui.rest.service.admin.security.user.CheckExternalStatusService;
-import org.artifactory.ui.rest.service.admin.security.user.CreateUserService;
-import org.artifactory.ui.rest.service.admin.security.user.DeleteUserService;
-import org.artifactory.ui.rest.service.admin.security.user.GetUserPermissionsService;
-import org.artifactory.ui.rest.service.admin.security.user.GetUsersService;
-import org.artifactory.ui.rest.service.admin.security.user.UpdateUserService;
+import org.artifactory.ui.rest.service.admin.security.ldap.groups.*;
+import org.artifactory.ui.rest.service.admin.security.ldap.ldapsettings.*;
+import org.artifactory.ui.rest.service.admin.security.oauth.*;
+import org.artifactory.ui.rest.service.admin.security.permissions.*;
+import org.artifactory.ui.rest.service.admin.security.saml.*;
+import org.artifactory.ui.rest.service.admin.security.signingkeys.debiankeys.*;
+import org.artifactory.ui.rest.service.admin.security.signingkeys.keystore.*;
+import org.artifactory.ui.rest.service.admin.security.user.*;
 import org.artifactory.ui.rest.service.admin.security.user.userprofile.UnlockUserProfileService;
 import org.artifactory.ui.rest.service.admin.security.user.userprofile.UpdateUserProfileService;
 import org.springframework.beans.factory.annotation.Lookup;
@@ -210,6 +169,19 @@ public abstract class SecurityServiceFactory {
     public abstract UnlockUserProfileService unlockUserProfile();
     @Lookup
     public abstract UpdateUserProfileService updateUserProfile();
+
+    @Lookup
+    public abstract GetApiKeyService getApiKey();
+
+    @Lookup
+    public abstract CreateApiKeyService createApiKey();
+
+    @Lookup
+    public abstract RevokeApiKeyService revokeApiKey();
+
+    @Lookup
+    public abstract UpdateApiKeyService regenerateApiKey();
+
     @Lookup
     public abstract InstallDebianKeyService uploadDebianKey();
     @Lookup

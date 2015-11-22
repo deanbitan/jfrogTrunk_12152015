@@ -5,6 +5,7 @@ export function jfCodeMirror() {
         restrict: 'E',
         scope: {
             mimeType: '@',
+            mode: '@',
             model: '=',
             allowEdit: '@',
             height: '@?',
@@ -29,7 +30,7 @@ class jfCodeController {
             lineNumbers: true,
             readOnly: !this.allowEdit, // Don't use nocursor - it disables search
             lineWrapping: true,
-            mode: 'links',
+            mode: this.mode || 'links',
             viewportMargin: 65,
             autofocus: this.autofocus,
             mimeType: this.mimeType,

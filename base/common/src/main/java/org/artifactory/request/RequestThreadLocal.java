@@ -34,4 +34,12 @@ public class RequestThreadLocal {
         }
         return "";
     }
+
+    public static String getBaseUrl() {
+        RequestThreadLocalContext requestThreadLocalContext = context.get();
+        if (requestThreadLocalContext != null) {
+            return requestThreadLocalContext.getRequestThreadLocal().getBaseUrl();
+        }
+        return "";
+    }
 }

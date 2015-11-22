@@ -28,8 +28,6 @@ import org.artifactory.binstore.BinaryInfo;
 import org.artifactory.common.ArtifactoryHome;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.storage.StorageException;
-import org.artifactory.storage.binstore.service.BinaryProviderHelper;
-import org.artifactory.storage.binstore.service.FileBinaryProvider;
 import org.artifactory.storage.binstore.service.annotation.BinaryProviderClassInfo;
 import org.artifactory.util.Files;
 import org.slf4j.Logger;

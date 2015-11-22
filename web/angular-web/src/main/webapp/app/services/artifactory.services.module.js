@@ -7,6 +7,7 @@ import {ArtifactoryEventBus}                    from './artifactory_eventBus';
 import {ArtifactoryXmlParser}                   from './artifactory_xml_parser';
 import {UserFactory}                            from './user';
 import {artifactoryDownload}                    from './artifactory_download';
+import {artifactoryIFrameDownload}              from './artifactory_iframe_download';
 import {ArtifactoryState}                       from './artifactory_state';
 import {artifactorySessionInterceptor}          from './artifactory_session_interceptor';
 import {artifactoryDebugInterceptor}            from './artifactory_debug_interceptor';
@@ -30,6 +31,7 @@ angular.module('artifactory.services', ['ui.router', 'artifactory.ui_components'
         .service('User', UserFactory)
         .service('ArtifactoryState', ArtifactoryState)
         .factory('artifactoryDownload', artifactoryDownload)
+        .factory('artifactoryIFrameDownload', artifactoryIFrameDownload)
         .factory('artifactorySessionInterceptor', artifactorySessionInterceptor)
         .factory('artifactoryDebugInterceptor', artifactoryDebugInterceptor)
         .factory('artifactoryMessageInterceptor', artifactoryMessageInterceptor)

@@ -99,6 +99,10 @@ export class AdminRepositoryFormController {
                     this.repoInfo.basic.selectedLocalRepositories = _.pluck(_.filter(this.repoInfo.basic.resolvedRepositories, (repo)=>{
                         return repo.type === 'local';
                     }),'repoName');
+                    this.repoInfo.basic.selectedRemoteRepositories = _.pluck(_.filter(this.repoInfo.basic.resolvedRepositories, (repo)=>{
+                        return repo.type === 'remote';
+                    }),'repoName');
+                    this.repoInfo.basic.selectedLocalRepositories.unshift('');
 
                     this.artifactoryModelSaver.save();
 
@@ -291,7 +295,6 @@ export class AdminRepositoryFormController {
     _getDefaultModels() {
         return this.repositoriesDao.getDefaultValues().$promise.then((models)=> {
             this.defaultModels = models.defaultModels;
-
         });
 
     }
@@ -315,6 +318,7 @@ export class AdminRepositoryFormController {
      * handle save or update click
      */
     save() {
+
         if (this.repoType == fieldsValuesDictionary.REPO_TYPE.LOCAL) {
             if (this.repoInfo.replications && this.repoInfo.replications.length) {
                 this.saveCronAndEventFlagToAllReplicationsAndValidateHa();
@@ -424,6 +428,16 @@ export class AdminRepositoryFormController {
             }
             this._getRepositoriesByType();
         }
+    }
+
+    /**
+     * function for reverse proxy config generator
+     */
+    openReverseProxyModal() {
+        this.$reverseProxyScope = this.$scope.$new();
+        this.$reverseProxyScope.modalClose = ()=> this.modalClose();
+
+        this.reverseProxyModal = this.modal.launchModal('reverse_proxy_modal', this.$reverseProxyScope)
     }
 
     _getRepositoriesByType() {

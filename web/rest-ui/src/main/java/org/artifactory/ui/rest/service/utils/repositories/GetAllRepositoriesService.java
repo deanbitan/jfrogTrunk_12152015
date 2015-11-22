@@ -9,11 +9,13 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
 import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.repo.InternalRepoPathFactory;
 import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
+import org.artifactory.ui.rest.model.artifacts.search.packagesearch.criteria.PackageSearchCriteria;
 import org.artifactory.ui.rest.model.utils.repositories.RepoKeyType;
 import org.artifactory.ui.rest.model.utils.repositories.RepositoriesData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +52,7 @@ public class GetAllRepositoriesService implements RestService {
         Boolean userOnly = Boolean.valueOf(request.getQueryParamByKey("user"));
         Boolean localOnly = Boolean.valueOf(request.getQueryParamByKey("local"));
         Boolean searchOnly = Boolean.valueOf(request.getQueryParamByKey("search"));
+        Boolean packageSearchOnly = Boolean.valueOf(request.getQueryParamByKey("packageSearch"));
         Boolean localRemoteOnly = Boolean.valueOf(request.getQueryParamByKey("all"));
         Boolean permission = Boolean.valueOf(request.getQueryParamByKey("permission"));
 
@@ -58,12 +61,12 @@ public class GetAllRepositoriesService implements RestService {
         // get repo data for search if require
         if (searchOnly) {
             searchRepoData(response, repositoriesData);
-            return;
+        } else if (packageSearchOnly) {
+            packageSearchRepoData(response, repositoriesData);
         } else if (localRemoteOnly) {
             List<RepoKeyType> allRepositoriesData = getAllRepositoriesData();
             repositoriesData.setRepoTypesList(allRepositoriesData);
             response.iModelList(allRepositoriesData);
-            return;
         } else if (permission) {
             List<RepoKeyType> allRepositoriesData = getPermissionRepoData();
             repositoriesData.setRepoTypesList(allRepositoriesData);
@@ -83,6 +86,18 @@ public class GetAllRepositoriesService implements RestService {
      */
     private void searchRepoData(RestResponse artifactoryResponse, RepositoriesData repositoriesData) {
         List<RepoKeyType> orderdRepoKeys = getOrderdRepoKeys();
+        repositoriesData.setRepoTypesList(orderdRepoKeys);
+        artifactoryResponse.iModel(repositoriesData);
+    }
+
+    /**
+     * get repository list for pakcage search
+     *
+     * @param artifactoryResponse - encapsulated data related to response
+     * @param repositoriesData    - repository data
+     */
+    private void packageSearchRepoData(RestResponse artifactoryResponse, RepositoriesData repositoriesData) {
+        List<RepoKeyType> orderdRepoKeys = getPackageSearchRepos();
         repositoriesData.setRepoTypesList(orderdRepoKeys);
         artifactoryResponse.iModel(repositoriesData);
     }
@@ -167,6 +182,37 @@ public class GetAllRepositoriesService implements RestService {
                 type = "local";
             }
             repoKeys.add(new RepoKeyType(type, descriptor.getKey()));
+        }
+        return repoKeys;
+    }
+
+    private List<RepoKeyType> getPackageSearchRepos() {
+        List<RepoKeyType> repoKeys = Lists.newArrayList();
+        List<LocalRepoDescriptor> localAndCache = repoService.getLocalAndCachedRepoDescriptors();
+        List<LocalRepoDescriptor> localOnly = repoService.getLocalRepoDescriptors();
+        Collections.sort(localAndCache, new LocalAndCachedDescriptorsComparator());
+        for (PackageSearchCriteria.PackageSearchType type : PackageSearchCriteria.PackageSearchType.values()) {
+            //Get Docker repos only once
+            if (type.equals(PackageSearchCriteria.PackageSearchType.dockerV1)) {
+                continue;
+            }
+            List<LocalRepoDescriptor> repoList = type.isRemoteCachesProps() ? localAndCache : localOnly;
+            repoList.stream()
+                    .filter(descriptor -> descriptor.getType().equals(type.getRepoType()) ||
+                                    (descriptor.getType().isMavenGroup() && type.getRepoType().isMavenGroup())
+                    )
+                    .filter(descriptor ->
+                            authorizationService.canRead(InternalRepoPathFactory.repoRootPath(descriptor.getKey())))
+                    .forEach(repoDescriptor -> {
+                        String localOrRemote = repoDescriptor.isCache() ? "remote" : "local";
+                        if (repoDescriptor.getType().equals(RepoType.Docker)) {
+                            repoKeys.add(new RepoKeyType(localOrRemote, repoDescriptor.getType(),
+                                    repoDescriptor.getKey(), repoDescriptor.getDockerApiVersion()));
+                        } else {
+                            repoKeys.add(new RepoKeyType(localOrRemote, repoDescriptor.getType(),
+                                    repoDescriptor.getKey()));
+                        }
+                    });
         }
         return repoKeys;
     }

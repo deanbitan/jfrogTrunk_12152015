@@ -37,6 +37,7 @@ public class MutableBinaryProvider{
     private ProviderMetaData providerMetaData;
     private StorageProperties storageProperties;
     private BinaryProviderBase binaryProvider;
+    private BinaryProviderBase parentBinaryProvider;
     private List<BinaryProviderBase> subBinaryProviders = Lists.newArrayList();
     private BinaryProviderBase empty;
     private BinaryStoreServices binaryStoreServices;
@@ -83,6 +84,14 @@ public class MutableBinaryProvider{
         return Integer.valueOf(param);
     }
 
+    public boolean getBooleanParam(String name, boolean defaultValue) {
+        String param = providerMetaData.getParamValue(name);
+        if (StringUtils.isBlank(param)) {
+            return defaultValue;
+        }
+        return Boolean.valueOf(param);
+    }
+
     public long getLongParam(String name, long defaultValue) {
         String param = providerMetaData.getParamValue(name);
         if (StringUtils.isBlank(param)) {
@@ -99,11 +108,13 @@ public class MutableBinaryProvider{
         return param;
     }
 
+    public BinaryProviderBase getParentBinaryProvider() {
+        return parentBinaryProvider;
+    }
+
     public void setBinaryStoreServices(BinaryStoreServices binaryStoreServices) {
         this.binaryStoreServices = binaryStoreServices;
     }
-
-
 
     public void addSubBinaryProvider(BinaryProviderBase binaryProviderBase) {
         subBinaryProviders.add(binaryProviderBase);
@@ -125,6 +136,7 @@ public class MutableBinaryProvider{
         this.binaryProvider = binaryProviderBase;
     }
 
-
-
+    public void setParentBinaryProvider(BinaryProviderBase parentBinaryProvider) {
+        this.parentBinaryProvider = parentBinaryProvider;
+    }
 }

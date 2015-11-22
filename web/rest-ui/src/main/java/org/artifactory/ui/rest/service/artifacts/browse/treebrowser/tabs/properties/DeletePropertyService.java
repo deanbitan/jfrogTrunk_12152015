@@ -57,9 +57,9 @@ public class DeletePropertyService<T extends DeletePropertyModel> implements Res
             boolean recursive) {
         try {
             if (recursive) {
-                propsService.deletePropertyRecursively(path, name);
+                propsService.deletePropertyRecursively(path, name,true);
             } else {
-                propsService.deleteProperty(path, name);
+                propsService.deleteProperty(path, name,true);
             }
         } catch (Exception e) {
             log.error("problem with deleting property:" + name);

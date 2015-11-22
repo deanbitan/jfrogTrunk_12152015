@@ -257,6 +257,44 @@ a.clear-all {
   }
 }
 
+.package-search {
+  .form-group {
+    margin-bottom: 0;
+    
+    &:after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+  }
+  .form-group-cell {
+    width: 250px;
+    float: left;
+    display: block;
+    margin-bottom: 15px;
+    
+    &:nth-child(3n + 1):not(.package-search-buttons) {
+      clear: left;
+    }
+
+    @media screen and (max-width: 1440px) {
+      &:nth-child(3n + 1).package-search-buttons {
+        width: 790px;
+      }
+    }
+    &:nth-child(4n + 1).package-search-buttons {
+      width: 520px;
+    }
+    &:nth-child(5n + 1).package-search-buttons {
+      width: 250px;
+    }
+    
+    &.package-search-buttons {
+      width: auto;
+    }
+  }
+}
+
 #stash-container {
   position: absolute;
   right: 0;
@@ -344,4 +382,54 @@ a.clear-all {
       left: 2px;
     }
   }
+}
+
+
+
+// AQL Viewer
+
+#show-aql-button {
+  position: absolute;
+  left: 385px;
+  top: 1px;
+  .btn {
+    background-color: transparent;
+    width: 33px;
+    height: 33px;
+
+    i {
+      position: absolute;
+      top: 12px;
+      left: 10px;
+      display: block;
+      width: 33px;
+      height: 33px;
+    }
+  }
+}
+
+
+.cm-external-command {
+  color: red;
+}
+.cm-header-tag {
+  color: orange;
+}
+.cm-aql-keyword {
+  color: green;
+}
+.cm-aql-operators {
+  color: blue;
+}
+.cm-aql-domain {
+  color: purple;
+}
+.cm-aql-brackets {
+  color: darkred;
+}
+.cm-api-url {
+  color: darkcyan;
+}
+.cm-api-key {
+  color: slategray;
 }

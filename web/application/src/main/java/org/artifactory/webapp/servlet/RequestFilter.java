@@ -29,11 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -77,10 +73,12 @@ public class RequestFilter extends DelayedFilterBase {
             Authentication authentication = RequestUtils.getAuthentication((HttpServletRequest) req);
             if (authentication != null) {
                 username = authentication.getPrincipal().toString();
-            } else if (RequestUtils.isAuthHeaderPresent(request)) {
+            } else if (RequestUtils.isAuthHeaderPresent(request) || RequestUtils.getApiKeyTokenKeyValue(request) != null) {
                 // since we do not have an authentication here, and a session was not opened since this
                 // is a non UI request, we are forced to extract it out of the authentication header.
                 username = RequestUtils.extractUsernameFromRequest(request);
+                // in case of token request fetch user name
+                username = findPropAuthUserNameByToken(request, username);
             }
             String remoteAddress = new HttpAuthenticationDetails(request).getRemoteAddress();
             RequestLogger.request(remoteAddress, username, method, servletPath, request.getProtocol(),
@@ -88,6 +86,25 @@ public class RequestFilter extends DelayedFilterBase {
         } finally {
             RequestThreadLocal.destroy();
         }
+    }
+
+    /**
+     * find user name from props toke
+     *
+     * @param request  - http servlet request
+     * @param username - user name
+     * @return user name for request log
+     */
+    private String findPropAuthUserNameByToken(HttpServletRequest request, String username) {
+        if (StringUtils.isEmpty(username) && RequestUtils.getApiKeyTokenKeyValue(request) != null) {
+            String userNameByPropsAuth = RequestUtils.getUserNameByPropsAuth(request);
+            if (userNameByPropsAuth != null) {
+                username = userNameByPropsAuth;
+            } else {
+                username = "non_authenticated_user";
+            }
+        }
+        return username;
     }
 
     @Override

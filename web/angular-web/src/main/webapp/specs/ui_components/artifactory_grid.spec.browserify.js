@@ -17,6 +17,7 @@ describe('unit test: artifactory_grid ui component', () => {
   }
 
   beforeEach(m('artifactory.ui_components'));
+  beforeEach(m('artifactory.services'));
   beforeEach(m('ui.router'));
   beforeEach(inject(setup));
 

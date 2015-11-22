@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * Statistics delegation context
  *
-* Created by Michael Pasternak on 8/12/15.
+ * @author Michael Pasternak
 */
 @XmlType(name = "StatisticsContent", propOrder = {"enabled"},
         namespace = Descriptor.NS)

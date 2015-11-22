@@ -3,12 +3,16 @@ import TOOLTIP  from '../../../constants/artifact_tooltip.constant';
 
 let headerCellGroupingTemplate = require("raw!../../../ui_components/artifactory_grid/templates/headerCellTemplate.html");
 export class SearchController {
-    constructor($scope, $stateParams, $window, $state, ArtifactoryGridFactory, ArtifactSearchDao, ArtifactoryEventBus,
-                ArtifactActionsDao, artifactoryDownload, RepoDataDao, ArtifactoryState, uiGridConstants,
-            commonGridColumns,ArtifactoryModal, ArtifactViewSourceDao, StashResultsDao, ArtifactoryNotifications, User) {
+    constructor($scope, $stateParams, $window, $state, ArtifactoryGridFactory, ArtifactSearchDao, ArtifactPackageSearchDao, ArtifactoryEventBus,
+                ArtifactActionsDao, artifactoryDownload, RepoDataDao, ArtifactoryState, uiGridConstants, $timeout,
+            commonGridColumns,ArtifactoryModal, ArtifactViewSourceDao, StashResultsDao, ArtifactoryNotifications, User, SetMeUpDao, UserProfileDao) {
         this.$window = $window;
+        this.$timeout = $timeout;
         this.repoDataDao = RepoDataDao;
         this.artifactSearchDao = ArtifactSearchDao;
+        this.userProfileDao = UserProfileDao;
+        this.setMeUpDao = SetMeUpDao;
+        this.artifactPackageSearchDao = ArtifactPackageSearchDao;
         this.stashResultsDao = StashResultsDao;
         this.artifactoryNotifications = ArtifactoryNotifications;
         this.artifactoryGridFactory = ArtifactoryGridFactory;
@@ -34,8 +38,14 @@ export class SearchController {
         this.query = {
             selectedRepositories: []
         };
-        this._createGrid();
+
+        if (this.currentSearch === 'package') {
+            this._createPackageSearchColumnsObject();
+        }
         this._initSearch();
+        this._createGrid();
+
+        this.showAQL = false;
 
         // isSearchShown is used to show / hide the tree
         $scope.Artifact.isSearchShown = true;
@@ -55,16 +65,16 @@ export class SearchController {
 
 
     showInTree(row) {
-        let artifactPath = row.repoKey + "/" + (row.relativePath || row.path);
+        let relativePath = row.relativePath ? (row.relativePath.startsWith('./') ? row.relativePath.substr(2) : row.relativePath) : '';
+        let artifactPath = row.repoKey + "/" + (relativePath || row.path);
         let archivePath = '';
         if (row.archiveName) {
             if(row.archivePath === '[root]') {
                 row.archivePath = '';
             }
-            archivePath = row.repoKey + "/" + row.archivePath + row.archiveName;
+            archivePath = row.repoKey + "/" + relativePath + row.archiveName;
         }
         let path = (archivePath || artifactPath );
-
         this.$state.go('artifacts.browsers.path', {
             "browser": "tree",
             "tab": "General",
@@ -119,17 +129,19 @@ export class SearchController {
     }
 
     _initSearch() {
+
         if (this.$stateParams.searchType) {
             this.closeSearchPanel(false);
         }
         if (!this.repoList.length) {
-            this.repoDataDao.getForSearch().$promise.then((result)=> {
+            let getFuncName = this.currentSearch === 'package' ? 'getForPackageSearch' : 'getForSearch';
+            this.repoDataDao[getFuncName]().$promise.then((result)=> {
                 result.repoTypesList = _.map(result.repoTypesList,(repo)=>{
                     repo._iconClass = "icon " + (repo.type === 'local' ? "icon-local-repo" : (repo.type === 'remote' ? "icon-remote-repo" : (repo.type === 'virtual' ? "icon-virtual-repo" : "icon-notif-error")));
                     return repo;
                 });
 
-
+                this.allRepoList  = _.cloneDeep(result.repoTypesList);
                 let lastIncluded = (this.$stateParams.searchParams && this.$stateParams.searchParams.selectedRepos) ? this.$stateParams.searchParams.selectedRepos : [];
                 this.repoList = _.filter(result.repoTypesList,(repo)=>{
                     return !_.find(lastIncluded,{repoKey: repo.repoKey});
@@ -138,12 +150,38 @@ export class SearchController {
         }
         if (this.$stateParams.params) {
             this.query = JSON.parse(atob(this.$stateParams.params));
+
+            if (this.currentSearch === 'package') {
+                this.packageSearchColumns = this.query.columns;
+            }
             this._getGridData([]);
         }
+        else {
+            if (this.currentSearch === 'package') {
+                this.packageSearchColumns = ['artifact','path','repo','modified'];
+            }
+        }
+        //get set me up data (for baseUrl)
+        this.setMeUpDao.get().$promise.then((result)=> {
+            this.baseUrl = result.baseUrl;
+            this._updateAQL();
+        });
+
+        this.userProfileDao.getApiKey().$promise.then((res)=>{
+            this.apiKey = res.apiKey;
+            this._updateAQL();
+        });
+
+
 
     }
 
+    _updateAQL() {
+        if (this.cleanAql) this.aql = `curl -H 'X-Api-Key: ${this.apiKey || '<YOUR_API_KEY>'}' -X POST ${this.baseUrl}/api/search/aql -d '\n${this.cleanAql}'`;
+    }
     _createGrid() {
+        if (this.currentSearch === 'package' && !this.packageSearchColumns) return;
+
         if(this.currentSearch == "remote" || this.currentSearch == "class") {
             this.gridOptions = this.artifactoryGridFactory.getGridInstance(this.$scope)
                     .setColumns(this._getColumns())
@@ -181,6 +219,8 @@ export class SearchController {
     }
 
     _getGridData() {
+        if (this.currentSearch === 'package' && !this.packageSearchColumns) return;
+
         if (this.currentSearch == "property") {
             this.artifactSearchDao.fetch({
                 search: "property",
@@ -193,8 +233,37 @@ export class SearchController {
                     this.savedToStash = false;
                 });
         }
+        else if (this.currentSearch === "package" && this.query.query.search !== 'gavc') {
+            this.artifactPackageSearchDao.runQuery({},this.query.query).$promise.then((result)=>{
+                result = result.data;
+
+                _.map(result.results, (result)=>{
+                    if (result.extraFields) {
+                        for (let key in result.extraFields) {
+                            result['extraField_'+key] = result.extraFields[key].join(', ');
+                        }
+                        delete result.extraFields;
+                    }
+                });
+
+                this.resultsMsg = result.message;
+                this.gridOptions.setGridData(result.results);
+                this.results = result.results;
+                this.savedToStash = false;
+                if (result.searchExpression) {
+                    this.cleanAql = result.searchExpression;
+                    this._updateAQL();
+                    this.$timeout(()=>{
+                        let showAqlButtonElem = $('#show-aql-button');
+                        let gridFilterElem = $('jf-grid-filter');
+                        gridFilterElem.append(showAqlButtonElem);
+                        showAqlButtonElem.css('display','block');
+                    })
+                }
+            });
+        }
         else {
-            this.artifactSearchDao.fetch(this.query).$promise.then((result)=> {
+            this.artifactSearchDao.fetch(this.currentSearch === "package" ? this.query.query : this.query).$promise.then((result)=> {
                 this.resultsMsg = result.data.message;
                 this.gridOptions.setGridData(result.data.results);
                 this.results = result.data.results;
@@ -392,8 +461,55 @@ export class SearchController {
     hasStashPerms() {
         return this.user.currentUser.getCanDeploy();
     }
+
+    getSelectedRecords() {
+        if (!this.gridOptions.multiSelect || !this.gridOptions.api || !this.gridOptions.api.selection) return '';
+
+        let count = this.gridOptions.api.selection.getSelectedRows().length;
+
+        return count;
+    }
+
+    setShowAQL(show) {
+        this.showAQL = show;
+    }
+
+    filterReposLimitByPackageType(packageType) {
+
+        let lastIncluded = this.query.selectedRepositories;// (this.$stateParams.searchParams && this.$stateParams.searchParams.selectedRepos) ? this.$stateParams.searchParams.selectedRepos : [];
+
+        let filterFunc = (repo)=>{
+            let ret;
+            if (packageType.startsWith('docker')) {
+                if (packageType.endsWith('V1')) ret = repo.repoType.toLowerCase() === 'docker' && repo.dockerApiVersion === 'V1';
+                else if (packageType.endsWith('V2')) ret = repo.repoType.toLowerCase() === 'docker' && repo.dockerApiVersion === 'V2';
+            }
+            else if (packageType === 'rpm') {
+                ret = repo.repoType.toLowerCase() === 'yum';
+            }
+            else if (packageType === 'gavc') {
+                ret = repo.repoType.toLowerCase() === 'maven' || repo.repoType.toLowerCase() === 'ivy' || repo.repoType.toLowerCase() === 'sbt' || repo.repoType.toLowerCase() === 'gradle';
+            }
+            else ret = repo.repoType.toLowerCase() === packageType.toLowerCase();
+
+            return ret;
+        };
+
+        this.query.selectedRepositories = _.filter(lastIncluded, filterFunc);;
+
+        this.repoList = _.filter(this.allRepoList,(repo)=>{
+            return filterFunc(repo) && !_.find(lastIncluded,{repoKey: repo.repoKey})
+        });
+    }
+
+
     _getColumns() {
+
         switch (this.currentSearch) {
+            case 'package':
+            {
+                return this._getColumnsForPackageSearch(this.packageSearchColumns)
+            }
             case 'quick':
             {
                 return [
@@ -778,5 +894,166 @@ export class SearchController {
                 ]
             }
         }
+    }
+
+    _createPackageSearchColumnsObject() {
+        this.packageSearchColumnsObject = {
+            artifact: {
+                name: "Artifact",
+                displayName: "Artifact",
+                field: "name",
+                sort: {
+                    direction: this.uiGridConstants.ASC
+                },
+                cellTemplate: this.commonGridColumns.downloadableColumn(),
+                width: '25%',
+                customActions: [{
+                    icon: 'icon icon-view',
+                    tooltip: 'View',
+                    callback: row => this.viewCodeArtifact(row),
+                    visibleWhen: row => _.contains(row.actions, 'View')
+                }],
+                actions: {
+                    download: {
+                        callback: row => this.downloadSelectedItems(row),
+                        visibleWhen: row => _.contains(row.actions, 'Download')
+                    }
+                }
+            },
+            path: {
+                name: "Path",
+                displayName: "Path",
+                field: "relativePath",
+                headerCellTemplate: headerCellGroupingTemplate,
+                width: '40%',
+                customActions: [{
+                    icon: 'icon icon-show-in-tree',
+                    tooltip: 'Show In Tree',
+                    callback: row => this.showInTree(row),
+                    visibleWhen: row => _.contains(row.actions, 'ShowInTree')
+                }]
+            },
+            repo: {
+                name: "Repository",
+                displayName: "Repository",
+                field: "repoKey",
+                headerCellTemplate: headerCellGroupingTemplate,
+                width: '15%'
+            },
+            modified: {
+                name: "Modified",
+                displayName: "Modified",
+                cellTemplate: '<div class="ui-grid-cell-contents">{{ row.entity.modifiedString }}</div>',
+                field: "modifiedDate",
+                width: '20%',
+                actions: {
+                    delete: {
+                        callback: row => this._deleteSelected([row]),
+                        visibleWhen: row => _.contains(row.actions, 'Delete')
+                    }
+                }
+            },
+            groupID: {
+                name: 'Group ID',
+                displayName: 'Group ID',
+                field: 'groupID',
+                headerCellTemplate: headerCellGroupingTemplate,
+                width: '18%'
+            },
+            artifactID: {
+                name: 'Artifact ID',
+                displayName: 'Artifact ID',
+                field: 'artifactID',
+                headerCellTemplate: headerCellGroupingTemplate,
+                width: '18%'
+            },
+            version: {
+                name: 'Version',
+                displayName: 'Version',
+                field: 'version',
+                headerCellTemplate: headerCellGroupingTemplate,
+                width: '18%'
+            },
+            classifier: {
+                name: 'Classifier',
+                displayName: 'Classifier',
+                field: 'classifier',
+                headerCellTemplate: headerCellGroupingTemplate,
+                width: '18%'
+            }
+        }
+
+    }
+
+    _getColumnsForPackageSearch(columns) {
+        let columnsArray = [];
+        columns.forEach((column)=>{
+            if (!_.contains(column,'*')) {
+                columnsArray.push(_.clone(this.packageSearchColumnsObject[column]));
+            }
+            else {
+                let groupable = false;
+                let width;
+                if (_.contains(column,'@')) {
+                    column = column.split('@').join('');
+                    groupable = true;
+                }
+                if (_.contains(column,'!')) {
+                    let splitted = column.split('!');
+                    column = splitted[0];
+                    width = splitted[1];
+                }
+
+                let splitted = column.split('*');
+                let field = splitted[0];
+                let name = splitted[1];
+                columnsArray.push({
+                    name: name,
+                    displayName: name,
+                    field: 'extraField_'+field,
+                    width: width || '18%',
+                    headerCellTemplate: groupable ? headerCellGroupingTemplate : undefined
+
+                });
+            }
+        });
+
+        this._normalizeGridColumnWidths(columnsArray);
+
+        if (!columnsArray[0].actions) columnsArray[0].actions = {};
+        if (!columnsArray[0].actions.download) {
+            columnsArray[0].actions.download =  {
+                callback: row => this.downloadSelectedItems(row),
+                visibleWhen: row => _.contains(row.actions, 'Download')
+            }
+        }
+
+        //If no path field add 'show in tree' action to first column
+        if(_.findIndex(columnsArray, 'name', 'Path') < 0) {
+            if (!columnsArray[0].customActions) columnsArray[0].customActions = [];
+            columnsArray[0].customActions = [{
+                icon: 'icon icon-show-in-tree',
+                tooltip: 'Show In Tree',
+                callback: row => this.showInTree(row),
+                visibleWhen: row => _.contains(row.actions, 'ShowInTree')
+            }]
+        }
+
+        return columnsArray;
+    }
+
+    _normalizeGridColumnWidths(columnsArray) {
+        let totalWidth = 0;
+        for (let key in columnsArray) {
+            let obj = columnsArray[key];
+            totalWidth += parseInt(obj.width);
+        }
+        let scale = 100/totalWidth;
+        for (let key in columnsArray) {
+            let obj = columnsArray[key];
+            let origWidth = parseInt(obj.width);
+            obj.width = (origWidth*scale) + '%';
+        }
+
     }
 }

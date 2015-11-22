@@ -23,6 +23,8 @@ package org.artifactory.util;
  */
 public class StringUtils {
 
+    public static final String LINE_SEPARATOR = System.lineSeparator();
+
     private StringUtils() {;}
 
     /**
@@ -42,5 +44,16 @@ public class StringUtils {
             return string.substring(0, lastIndex) + tail;
         }
         return string;
+    }
+
+    /**
+     * Capitalizes first latter in string
+     *
+     * @param string
+     *
+     * @return capitalized string
+     */
+    public static String capitalize(String string) {
+        return Character.toUpperCase(string.charAt(0)) + string.substring(1);
     }
 }

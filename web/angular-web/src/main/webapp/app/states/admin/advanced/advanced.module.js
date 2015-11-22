@@ -4,6 +4,7 @@ import SecurityDescriptor   from './security_descriptor/security_descriptor.modu
 import StorageSummary       from './storage_summary/storage_summary.module';
 import SystemInfo           from './system_info/system_info.module';
 import SystemLogs           from './system_logs/system_logs.module';
+import SupportPage           from './support_page/support_page.module';
 
 
 import {AdminAdvancedController} from './advanced.controller';
@@ -23,7 +24,8 @@ export default angular.module('admin.advanced', [
     SecurityDescriptor.name,
     StorageSummary.name,
     SystemInfo.name,
-    SystemLogs.name
+    SystemLogs.name,
+    SupportPage.name
 ])
         .config(advancedConfig)
         .controller('AdminAdvancedController', AdminAdvancedController);

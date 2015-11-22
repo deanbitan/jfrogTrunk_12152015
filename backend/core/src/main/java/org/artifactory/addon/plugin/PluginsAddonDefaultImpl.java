@@ -19,7 +19,9 @@
 package org.artifactory.addon.plugin;
 
 import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.build.staging.BuildStagingStrategy;
+import org.artifactory.request.Request;
 import org.artifactory.resource.ResourceStreamHandle;
 import org.artifactory.sapi.common.ExportSettings;
 import org.artifactory.sapi.common.ImportSettings;
@@ -70,8 +72,18 @@ public class PluginsAddonDefaultImpl implements PluginsAddon {
     }
 
     @Override
-    public void executeAdditiveRealmPlugins() {
+    public void executeAdditiveRealmPlugins(Request servletRequest) {
 
+    }
+
+    @Override
+    public Map<String, String> getPluginsStatus() {
+        return Maps.newHashMap();
+    }
+
+    @Override
+    public String getPluginsInfoSupportBundleDump() {
+        return StringUtils.EMPTY;
     }
 
     @Override

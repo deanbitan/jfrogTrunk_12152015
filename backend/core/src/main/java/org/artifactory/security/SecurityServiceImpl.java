@@ -51,14 +51,11 @@ import org.artifactory.descriptor.repo.LocalCacheRepoDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
 import org.artifactory.descriptor.security.sso.HttpSsoSettings;
+import org.artifactory.exception.InvalidNameException;
+import org.artifactory.exception.ValidationException;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.model.xstream.security.ImmutableAclInfo;
-import org.artifactory.repo.InternalRepoPathFactory;
-import org.artifactory.repo.LocalCacheRepo;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.Repo;
-import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.*;
 import org.artifactory.repo.service.InternalRepositoryService;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.sapi.common.ExportSettings;
@@ -75,10 +72,7 @@ import org.artifactory.storage.security.service.AclStoreService;
 import org.artifactory.storage.security.service.UserGroupStoreService;
 import org.artifactory.update.security.SecurityInfoReader;
 import org.artifactory.update.security.SecurityVersion;
-import org.artifactory.util.EmailException;
-import org.artifactory.util.Files;
-import org.artifactory.util.PathMatcher;
-import org.artifactory.util.SerializablePair;
+import org.artifactory.util.*;
 import org.artifactory.version.CompoundVersionDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,14 +89,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.crypto.SecretKey;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.security.KeyPair;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -488,12 +477,48 @@ public class SecurityServiceImpl implements InternalSecurityService {
 
     @Override
     public void deleteProperty(String userName, String propertyKey) {
-        userGroupStoreService.deleteUserProperty(userName,propertyKey);
+        userGroupStoreService.deleteUserProperty(userName, propertyKey);
     }
 
     @Override
     public void deletePropertyFromAllUsers(String propertyKey) {
         userGroupStoreService.deletePropertyFromAllUsers(propertyKey);
+    }
+
+    @Override
+    public String getPropsToken(String userName, String propsKey) {
+        return userGroupStoreService.findUserProperty(userName, propsKey);
+    }
+
+    @Override
+    public boolean revokePropsToken(String userName, String propsKey) throws SQLException {
+        return userGroupStoreService.deleteUserProperty(userName, propsKey);
+    }
+
+    @Override
+    public boolean createPropsToken(String userName, String propsKey, String propsValue) throws SQLException {
+        boolean isPropsAddSucceeded = false;
+        try {
+            isPropsAddSucceeded = userGroupStoreService.addUserProperty(userName, propsKey, propsValue);
+
+        } catch (Exception e) {
+            log.debug("error adding {}:{} to db", propsKey, propsValue);
+        }
+        return isPropsAddSucceeded;
+    }
+
+    @Override
+    public void revokeAllPropsTokens(String propsKey) throws SQLException {
+        userGroupStoreService.deletePropertyFromAllUsers(propsKey);
+    }
+
+    @Override
+    public boolean updatePropsToken(String userName, String propsKey, String propsValue) throws SQLException {
+        boolean isUpdateSucceeded = userGroupStoreService.deleteUserProperty(userName, propsKey);
+        if (isUpdateSucceeded) {
+            isUpdateSucceeded = userGroupStoreService.addUserProperty(userName, propsKey, propsValue);
+        }
+        return isUpdateSucceeded;
     }
 
     @Override
@@ -645,8 +670,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
         UserInfo userInfo;
         try {
             userInfo = findUser(userName.toLowerCase());
-        } catch (UsernameNotFoundException e) {
-            userInfo = autoCreateUser(userName, transientUser);
+        } catch (UsernameNotFoundException nfe) {
+            try {
+                userInfo = autoCreateUser(userName, transientUser);
+            } catch (ValidationException ve) {
+                log.error("Auto-Creation of '" + userName + "' has filed, " + ve.getMessage());
+                throw new InvalidNameException(userName, ve.getMessage(), ve.getIndex());
+            }
         }
         return userInfo;
     }
@@ -676,9 +706,22 @@ public class SecurityServiceImpl implements InternalSecurityService {
         }
     }
 
-    private UserInfo autoCreateUser(String userName, boolean transientUser) {
+    /**
+     * Auto create user
+     *
+     * @param userName
+     * @param transientUser
+     *
+     * @return {@link UserInfo}
+     * @throws ValidationException if userName is invalid
+     */
+    private UserInfo autoCreateUser(String userName, boolean transientUser) throws ValidationException {
         UserInfo userInfo;
         log.debug("Creating new external user '{}'", userName);
+
+        // make sure username answer artifactory standards RTFACT-8259
+        NameValidator.validate(userName);
+
         UserInfoBuilder userInfoBuilder = new UserInfoBuilder(userName.toLowerCase()).updatableProfile(false);
         userInfoBuilder.internalGroups(getNewUserDefaultGroupsNames());
         if (transientUser) {
@@ -1466,7 +1509,7 @@ public class SecurityServiceImpl implements InternalSecurityService {
         boolean hasAnonymous = false;
         if (users != null) {
             for (UserInfo user : users) {
-                userGroupStoreService.createUser(user);
+                userGroupStoreService.createUserWithProperties(user, true);
                 if (user.isAnonymous()) {
                     hasAnonymous = true;
                 }
@@ -1739,5 +1782,13 @@ public class SecurityServiceImpl implements InternalSecurityService {
         acl.setPermissionTarget(mutablePermissionTargetInfo);
 
         return acl;
+    }
+
+    public String findUserByPropAuth(String key, String value) {
+        UserInfo userByProperty = userGroupStoreService.findUserByProperty(key, value);
+        if (userByProperty != null) {
+            return userByProperty.getUsername();
+        }
+        return null;
     }
 }

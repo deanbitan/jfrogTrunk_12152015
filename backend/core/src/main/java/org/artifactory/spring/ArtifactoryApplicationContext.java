@@ -488,7 +488,7 @@ public class ArtifactoryApplicationContext extends ClassPathXmlApplicationContex
             beanForType(BuildService.class).importFrom(settings);
             // import logback conf
             beanForType(LoggingService.class).importFrom(settings);
-            if (!settings.isExcludeContent()) {
+            if (settings.isIncludeMetadata() || !settings.isExcludeContent()) {
                 // import repositories content
                 getRepositoryService().importFrom(settings);
             }

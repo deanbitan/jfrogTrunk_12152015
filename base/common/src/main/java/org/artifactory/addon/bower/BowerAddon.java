@@ -21,6 +21,7 @@ package org.artifactory.addon.bower;
 import org.artifactory.addon.Addon;
 import org.artifactory.api.repo.Async;
 import org.artifactory.fs.FileInfo;
+import org.artifactory.repo.RepoPath;
 
 /**
  * Core Bower functionality interface
@@ -70,8 +71,8 @@ public interface BowerAddon extends Addon {
     /**
      * get bower meta data info
      *
-     * @param fileInfo - bower file info
+     * @param repoPath - bower file info
      * @return bower meta data info
      */
-    BowerMetadataInfo getBowerMetadata(FileInfo fileInfo);
+    BowerMetadataInfo getBowerMetadata(RepoPath repoPath);
 }

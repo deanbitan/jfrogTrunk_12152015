@@ -1,13 +1,9 @@
 package org.artifactory.rest.services;
 
 import org.artifactory.rest.common.service.admin.advance.GetStorageSummaryService;
+import org.artifactory.rest.common.service.admin.userprofile.*;
 import org.artifactory.rest.common.service.artifact.AddSha256ToArtifactService;
-import org.artifactory.rest.services.replication.CreateMultipleReplicationService;
-import org.artifactory.rest.services.replication.CreateReplicationService;
-import org.artifactory.rest.services.replication.DeleteReplicationsService;
-import org.artifactory.rest.services.replication.GetReplicationService;
-import org.artifactory.rest.services.replication.UpdateMultipleReplicationsService;
-import org.artifactory.rest.services.replication.UpdateReplicationService;
+import org.artifactory.rest.services.replication.*;
 import org.springframework.beans.factory.annotation.Lookup;
 
 /**
@@ -36,6 +32,24 @@ public abstract class ConfigServiceFactory {
 
     @Lookup
     public abstract GetStorageSummaryService getStorageSummaryService();
+
+    @Lookup
+    public abstract GetApiKeyService getApiKey();
+
+    @Lookup
+    public abstract CreateApiKeyService createApiKey();
+
+    @Lookup
+    public abstract RevokeApiKeyService revokeApiKey();
+
+    @Lookup
+    public abstract UpdateApiKeyService regenerateApiKey();
+
+    @Lookup
+    public abstract GetUsersAndApiKeys getUsersAndApiKeys();
+
+    @Lookup
+    public abstract SyncUsersAndApiKeys syncUsersAndApiKeys();
 
     @Lookup
     public abstract AddSha256ToArtifactService addSha256ToArtifact();

@@ -19,7 +19,7 @@
 package org.artifactory.ui.rest.service.admin.configuration.layouts.validation;
 
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.ui.rest.service.utils.validation.ValidationException;
+import org.artifactory.exception.ValidationException;
 
 import java.util.regex.Pattern;
 

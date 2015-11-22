@@ -27,7 +27,9 @@ import javax.xml.bind.annotation.XmlType;
 
 
 /**
-* Created by Michael Pasternak on 8/12/15.
+ * Properties descriptor
+ *
+ * @author Michael Pasternak
 */
 @XmlType(name = "PropertiesContent", propOrder = {"enabled"},
         namespace = Descriptor.NS)

@@ -2,6 +2,7 @@ package org.artifactory.ui.rest.model.builds;
 
 import org.artifactory.rest.common.model.BaseModel;
 import org.artifactory.rest.common.model.RestPaging;
+import org.artifactory.rest.common.util.BintrayRestHelper;
 
 /**
  * @author Chen Keinan
@@ -21,6 +22,7 @@ public class GeneralBuildInfo extends BaseModel implements RestPaging {
     private String url;
     private  Long time;
     private String buildStat;
+    private Boolean allowPushToBintray;
 
 
     public GeneralBuildInfo() {}
@@ -39,6 +41,7 @@ public class GeneralBuildInfo extends BaseModel implements RestPaging {
         this.url = buildBuilder.url;
         this.time = (buildBuilder.time == null) ? null : buildBuilder.time;
         this.buildStat = buildBuilder.buildStat;
+        allowPushToBintray = BintrayRestHelper.isPushToBintrayAllowed();
     }
 
     public Long getTime() {
@@ -143,6 +146,10 @@ public class GeneralBuildInfo extends BaseModel implements RestPaging {
 
     public void setBuildStat(String buildStat) {
         this.buildStat = buildStat;
+    }
+
+    public Boolean getAllowPushToBintray() {
+        return allowPushToBintray;
     }
 
     public static class BuildBuilder {

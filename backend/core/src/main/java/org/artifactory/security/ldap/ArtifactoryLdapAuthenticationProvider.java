@@ -26,6 +26,7 @@ import org.artifactory.api.security.UserGroupService;
 import org.artifactory.api.security.ldap.LdapService;
 import org.artifactory.api.security.ldap.LdapUser;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.exception.InvalidNameException;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.security.*;
 import org.artifactory.spring.InternalContextHelper;
@@ -39,6 +40,7 @@ import org.springframework.ldap.CommunicationException;
 import org.springframework.ldap.NamingException;
 import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.ldap.LdapUtils;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
@@ -211,6 +213,11 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
                     e.getMostSpecificCause().getMessage());
             log.debug(message);
             throw new AuthenticationServiceException(message, e);
+        } catch (InvalidNameException e) {
+            String message = String.format("Failed to persist user '%s': %s", userName, e.getMessage());
+            log.warn(message);
+            log.debug("Cause: {}", e);
+            throw new InternalAuthenticationServiceException(message, e);
         } catch (Exception e) {
             String message = "Unexpected exception in LDAP authentication:";
             log.error(message, e);

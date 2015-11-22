@@ -2,7 +2,7 @@ import EVENTS from '../constants/artifacts_events.constants';
 
 export function artifactorySpinnerInterceptor($injector, $timeout, $q, ArtifactoryEventBus) {
 
-    let SPINNER_TIMEOUT = 400; //milis
+    let SPINNER_TIMEOUT = 500; //milis
     let serial = 0;
     let timeouts = {};
     let pendings = [];
@@ -11,6 +11,7 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
 
     ArtifactoryEventBus.register(EVENTS.CANCEL_SPINNER, () => {
         if (pendings.length) {
+            ArtifactoryEventBus.dispatch(EVENTS.HIDE_SPINNER);
             canceled = canceled.concat(pendings);
             pendings = [];
 //            console.log('canceled: ', canceled);
@@ -22,7 +23,7 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
 
         req.headers['Request-Agent'] = 'artifactoryUI';
 
-        if (!req.params || !req.params.$no_spinner) {
+        if ((!req.params || !req.params.$no_spinner) && req.url.startsWith('../ui/') ) {
 
             req.headers.serial = serial;
 
@@ -32,7 +33,9 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
             timeouts[serial] = $timeout(()=> {
                 let canceledIndex = canceled.indexOf(req.headers.serial);
 
-                if (canceledIndex < 0) ArtifactoryEventBus.dispatch(EVENTS.SHOW_SPINNER);
+                if (canceledIndex < 0) {
+                    ArtifactoryEventBus.dispatch(EVENTS.SHOW_SPINNER);
+                }
                 else {
                     canceled.splice(canceledIndex,1);
                 }
@@ -79,8 +82,9 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
         else {
             if (timeouts[s]) {
                 if (inDelayIndex >= 0) inDelay.splice(inDelayIndex,1);
-
-                ArtifactoryEventBus.dispatch(EVENTS.HIDE_SPINNER);
+                else {
+                    ArtifactoryEventBus.dispatch(EVENTS.HIDE_SPINNER);
+                }
                 $timeout.cancel(timeouts[s]);
                 delete timeouts[s];
             }

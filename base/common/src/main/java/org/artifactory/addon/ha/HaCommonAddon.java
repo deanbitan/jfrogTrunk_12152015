@@ -23,11 +23,18 @@ public interface HaCommonAddon extends Addon {
      */
     String ARTIFACTORY_PRO = "Artifactory";
 
+    String SUPPORT_BUNDLE_SEMAPHORE_NAME = "supportBundleSemaphore";
     String STATS_SEMAPHORE_NAME = "flushStatsSemaphore";
     String STATS_REMOTE_SEMAPHORE_NAME = "flushRemoteStatsSemaphore";
     String INDEXING_SEMAPHORE_NAME = "indexingSemaphore";
     String INDEX_MARKED_ARCHIVES_SEMAPHORE_NAME = "indexMarkedArchivesSemaphore";
     int DEFAULT_SEMAPHORE_PERMITS = 1;
+    // we block concurrent executions to prevent race condition
+    // between delete(async) and list(),
+    //
+    // also there is no justification to perform concurrent execution
+    // as we support taking several thread dumps with or without interval
+    int SUPPORT_BUNDLE_SEMAPHORE_INITIAL_PERMITS = 1;
 
     /**
      * determines if HA is enabled.
@@ -70,4 +77,5 @@ public interface HaCommonAddon extends Addon {
     String getCurrentMemberServerId();
 
 
+    void propagateReindexAll(ArtifactoryServer server, String repoKey, boolean async);
 }

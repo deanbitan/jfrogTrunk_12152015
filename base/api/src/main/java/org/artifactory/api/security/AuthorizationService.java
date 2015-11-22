@@ -184,4 +184,8 @@ public interface AuthorizationService {
      * @param escape Should the return password get escaped
      */
     String currentUserEncryptedPassword(boolean escape);
+
+
+    String findUserByPropAuth(String key, String value);
+
 }

@@ -24,13 +24,15 @@ import java.util.Map;
  * Created by michaelp on 6/28/15.
  */
 public interface VcsProviderConfiguration {
-    public String getPrettyText();
+    String getPrettyText();
 
-    public String getRefsPrefix();
+    String getRefsPrefix();
 
-    public String getRepositoryDownloadUrl();
+    String getRepositoryDownloadUrl();
 
-    public String getResourceDownloadUrl();
+    String getResourceDownloadUrl();
 
-    public Map<String, String> getHeaders();
+    Map<String, String> getHeaders();
+
+    String getReleaseDownloadUrl();
 }

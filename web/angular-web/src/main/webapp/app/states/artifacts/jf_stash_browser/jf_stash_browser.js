@@ -356,25 +356,33 @@ class JFStashBrowserController extends JFCommonBrowser {
     _filterActions(treeNode) {
         let origLoad = treeNode.load.bind(treeNode);
         treeNode.load = () => {
-            return origLoad().then(()=>{
-                treeNode.actions = _.filter(treeNode.actions,(action)=>{
+            return origLoad().then(()=> {
+
+                treeNode.actions = _.filter(treeNode.actions, (action)=> {
                     return this.filteredActions.indexOf(action.name) === -1;
                 });
 
-                if (!_.findWhere(treeNode.actions,{name:"DiscardFromStash"})) {
-                    treeNode.actions.push({
-                        title: "Discard from Stash",
-                        name: "DiscardFromStash",
-                        icon: "icon-delete-content"
-                    });
-                }
-                if (!_.findWhere(treeNode.actions,{name:"ShowInTree"})) {
+                let deleteAction = _.findWhere(treeNode.actions, {name: "Delete"});
+                treeNode.actions.splice(treeNode.actions.indexOf(deleteAction), 1);
+
+
+                if (!_.findWhere(treeNode.actions, {name: "ShowInTree"})) {
                     treeNode.actions.push({
                         title: "Show In Tree",
                         name: "ShowInTree",
                         icon: "icon-show-in-tree"
                     });
                 }
+
+                if (!_.findWhere(treeNode.actions, {name: "DiscardFromStash"})) {
+                    treeNode.actions.push({
+                        title: "Discard from Stash",
+                        name: "DiscardFromStash",
+                        icon: "icon-delete-content"
+                    });
+                }
+
+                treeNode.actions.push(deleteAction);
 
             });
         };

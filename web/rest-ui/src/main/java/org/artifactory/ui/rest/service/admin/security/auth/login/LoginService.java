@@ -84,7 +84,8 @@ public class LoginService implements RestService {
                 //update response with user login data
                 updateResponseWithLoginUser(response, userLogin, artifactoryContext, securityConfig);
                 AddonsManager addonsManager = ContextHelper.get().beanForType(AddonsManager.class);
-                addonsManager.addonByType(PluginsAddon.class).executeAdditiveRealmPlugins();
+                addonsManager.addonByType(PluginsAddon.class).executeAdditiveRealmPlugins(
+                        new HttpLoginArtifactoryRequest(request.getServletRequest()));
                 // TODO: [chenk] fix this ^^^, not reachable without dependency to artifactory-core
             }
         } catch (AuthenticationException e) {

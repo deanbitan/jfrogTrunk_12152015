@@ -25,6 +25,7 @@ import org.artifactory.config.InternalCentralConfigService;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 import org.artifactory.descriptor.security.ldap.LdapSetting;
+import org.artifactory.exception.InvalidNameException;
 import org.artifactory.factory.InfoFactory;
 import org.artifactory.factory.InfoFactoryHolder;
 import org.artifactory.repo.InternalRepoPathFactory;
@@ -36,11 +37,13 @@ import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.storage.security.service.AclStoreService;
 import org.artifactory.storage.security.service.UserGroupStoreService;
 import org.artifactory.test.ArtifactoryHomeBoundTest;
+import org.artifactory.util.NameValidator;
 import org.easymock.EasyMock;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -604,6 +607,12 @@ public class SecurityServiceImplTest extends ArtifactoryHomeBoundTest {
         assertTrue(hasPermissionOnRemoteRoot, "User should have permissions for this path");
         verify(aclStoreServiceMock, repositoryServiceMock);
         reset(aclStoreServiceMock, repositoryServiceMock);
+    }
+
+    @Test(dependsOnMethods = {"permissionOnRemoteRoot"},
+            expectedExceptions = {InvalidNameException.class})
+    protected void findOrCreateExternalAuthUserWithIllegalChars() {
+        service.findOrCreateExternalAuthUser(new String(NameValidator.getForbiddenChars()), false);
     }
 
     public void testUserHasPermissions() {

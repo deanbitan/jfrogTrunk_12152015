@@ -44,7 +44,8 @@ gulp.task('build:common',
                 'less',
                 'copyHtml',
                 'fonts',
-                'images'
+                'images',
+                'jqueryui-images'
             ],
             callback
         );
@@ -253,6 +254,12 @@ gulp.task('fonts', function () {
 gulp.task('images', function () {
     return gulp.src(CONFIG.SOURCES.IMAGES)
             .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET + '/images'))
+});
+
+//copy jquery-ui images
+gulp.task('jqueryui-images', function () {
+    return gulp.src(CONFIG.SOURCES.JQUERY_UI_IMAGES)
+            .pipe(gulp.dest(CONFIG.DESTINATIONS.TARGET + '/css/images'))
 });
 
 function transformFilename(file, hash) {

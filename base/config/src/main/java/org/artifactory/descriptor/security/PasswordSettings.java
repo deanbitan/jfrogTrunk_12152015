@@ -81,4 +81,12 @@ public class PasswordSettings implements Descriptor {
     public int hashCode() {
         return encryptionPolicy != null ? encryptionPolicy.hashCode() : 0;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("encryptionPolicy: ");
+        sb.append(encryptionPolicy);
+        return sb.toString();
+    }
 }

@@ -1,8 +1,11 @@
 package org.artifactory.ui.rest.model.admin.configuration.repository.typespecific;
 
+import com.google.common.collect.Lists;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues;
+
+import java.util.List;
 
 import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues.DEFAULT_BOWER_REGISTRY;
 
@@ -12,7 +15,12 @@ import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoC
 public class BowerTypeSpecificConfigModel extends VcsTypeSpecificConfigModel {
 
     //remote
-    protected String registryUrl = DEFAULT_BOWER_REGISTRY;
+    private String registryUrl = DEFAULT_BOWER_REGISTRY;
+
+    //virtual
+    private Boolean enableExternalDependencies = false;
+    private List<String> externalPatterns = Lists.newArrayList("**");
+    private String externalRemoteRepo = "";
 
     public String getRegistryUrl() {
         return registryUrl;
@@ -20,6 +28,30 @@ public class BowerTypeSpecificConfigModel extends VcsTypeSpecificConfigModel {
 
     public void setRegistryUrl(String registryUrl) {
         this.registryUrl = registryUrl;
+    }
+
+    public Boolean getEnableExternalDependencies() {
+        return enableExternalDependencies;
+    }
+
+    public void setEnableExternalDependencies(Boolean enableExternalDependencies) {
+        this.enableExternalDependencies = enableExternalDependencies;
+    }
+
+    public List<String> getExternalPatterns() {
+        return externalPatterns;
+    }
+
+    public void setExternalPatterns(List<String> externalPatterns) {
+        this.externalPatterns = externalPatterns;
+    }
+
+    public String getExternalRemoteRepo() {
+        return externalRemoteRepo;
+    }
+
+    public void setExternalRemoteRepo(String externalRemoteRepo) {
+        this.externalRemoteRepo = externalRemoteRepo;
     }
 
     @Override

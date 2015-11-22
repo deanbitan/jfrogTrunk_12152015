@@ -373,13 +373,13 @@ public class UserGroupsDaoTest extends SecurityBaseDaoTest {
     @Test(expectedExceptions = {SQLException.class})
     public void testCreateUserPropNullKey() throws SQLException {
         // TORE: [by fsi] use the error handling to verify we broke the correct constraint
-        userPropsDao.addUserProperty(2L, null, "F");
+        userPropsDao.addUserPropertyById(2L, null, "F");
     }
 
     @Test(expectedExceptions = {SQLException.class})
     public void testCreateUserPropNoUser() throws SQLException {
         // TORE: [by fsi] use the error handling to verify we broke the correct constraint
-        userPropsDao.addUserProperty(3456L, "test.fail", "F");
+        userPropsDao.addUserPropertyById(3456L, "test.fail", "F");
     }
 
     public void testFindUserById() throws SQLException {
@@ -415,10 +415,10 @@ public class UserGroupsDaoTest extends SecurityBaseDaoTest {
 
     public void createUserProperty() throws SQLException {
         // new prop
-        assertTrue(userPropsDao.addUserProperty(2L, "test.new", "W"));
+        assertTrue(userPropsDao.addUserPropertyById(2L, "test.new", "W"));
         // update and reset
-        assertTrue(userPropsDao.addUserProperty(1L, "test.null", "W"));
-        assertTrue(userPropsDao.addUserProperty(1L, "test.null", null));
+        assertTrue(userPropsDao.addUserPropertyById(1L, "test.null", "W"));
+        assertTrue(userPropsDao.addUserPropertyById(1L, "test.null", null));
     }
 
     public void testNoUserProperties() throws SQLException {

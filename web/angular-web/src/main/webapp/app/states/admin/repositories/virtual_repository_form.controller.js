@@ -11,6 +11,8 @@ export class VirtualRepositoryFormController {
         this.features = ArtifactoryFeatures;
         this._createGrid();
         this._initVirtual();
+
+        this.repositoryForm.isDependencyRewriteOK = this.isDependencyRewriteOK.bind(this);
     }
 
     isSigningKeysDisable() {
@@ -117,16 +119,20 @@ export class VirtualRepositoryFormController {
         }
     }
 
-    onchangeRepo() {
+    onChangeRepo() {
         this.repositoriesDao.getResolvedRepositories(
                 this.repositoryForm.repoInfo).$promise.then((resolvedRepositories)=> {
                     this.repositoryForm.repoInfo.basic.resolvedRepositories = resolvedRepositories;
                     this.repositoryForm.repoInfo.basic.selectedLocalRepositories = _.pluck(_.filter(this.repositoryForm.repoInfo.basic.resolvedRepositories, (repo)=>{
                         return repo.type === 'local';
                     }),'repoName');
+                    this.repositoryForm.repoInfo.basic.selectedRemoteRepositories = _.pluck(_.filter(this.repositoryForm.repoInfo.basic.resolvedRepositories, (repo)=>{
+                        return repo.type === 'remote';
+                    }),'repoName');
                     if (!_.contains(this.repositoryForm.repoInfo.basic.selectedLocalRepositories,this.repositoryForm.repoInfo.basic.defaultDeploymentRepo)) {
                         this.repositoryForm.repoInfo.basic.defaultDeploymentRepo = null;
                     }
+                    this.repositoryForm.repoInfo.basic.selectedLocalRepositories.unshift('');
                 });
     }
 
@@ -143,6 +149,46 @@ export class VirtualRepositoryFormController {
     _deleteRepo(repo) {
         _.remove(this.repositoryForm.repoInfo.typeSpecific.p2Repos, {repoUrl: repo.repoUrl});
         this.gridP2Option.setGridData(this.repositoryForm.repoInfo.typeSpecific.p2Repos);
+    }
+
+    isDependencyRewriteRelevant() {
+        return this.repositoryForm.repoInfo.typeSpecific && (this.repositoryForm.repoInfo.typeSpecific.repoType === 'Bower' || this.repositoryForm.repoInfo.typeSpecific.repoType === 'Npm');
+    }
+    addDependencyRewritePattern() {
+        this.newValue = $('#newPatternField').val();
+        this.errorMessage = null;
+
+        if (_.isEmpty(this.newValue)) {
+            this.errorMessage = "Must input value";
+        }
+        //else if (!this._isValueUnique(this.newValue)) {
+        //    this.errorMessage = "Value already exists";
+        //}
+        else {
+            this.repositoryForm.repoInfo.typeSpecific.externalPatterns.push(this.newValue);
+            this.newValue = null;
+            $('#newPatternField').val('');
+            //this.invalidateType();
+        }
+    }
+
+    removeDependencyRewritePattern(index) {
+        this.repositoryForm.repoInfo.typeSpecific.externalPatterns.splice(index,1);
+    }
+
+    onDependencyRewriteEnableChange() {
+        if (this.repositoryForm.repoInfo.typeSpecific.enableExternalDependencies) {
+            if (!this.repositoryForm.repoInfo.typeSpecific.externalRemoteRepo && this.repositoryForm.repoInfo.basic.selectedRemoteRepositories) {
+                this.repositoryForm.repoInfo.typeSpecific.externalRemoteRepo = this.repositoryForm.repoInfo.basic.selectedRemoteRepositories[0];
+            }
+            if (!this.repositoryForm.repoInfo.typeSpecific.externalPatterns) {
+                this.repositoryForm.repoInfo.typeSpecific.externalPatterns = ['**'];
+            }
+        }
+    }
+
+    isDependencyRewriteOK() {
+        return !this.repositoryForm.repoInfo.typeSpecific.enableExternalDependencies || this.repositoryForm.repoInfo.typeSpecific.externalRemoteRepo;
     }
 
     getP2Columns() {

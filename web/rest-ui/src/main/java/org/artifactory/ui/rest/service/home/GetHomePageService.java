@@ -150,7 +150,7 @@ public class GetHomePageService implements RestService {
                 getAddonConfigureUrl(AddonType.PLUGINS.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.SMART_REPO,
                 getAddonInfoForPro(AddonType.SMART_REPO),
-                getAddonLearnMoreUrl("smart-remote-repository"),
+                getAddonLearnMoreUrl("smart-remote-repositories"),
                 getAddonConfigureUrl(AddonType.SMART_REPO.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.NUGET, addonInfoMap.get("nuget"), getAddonLearnMoreUrl("nuget"), getAddonConfigureUrl(AddonType.NUGET.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.NPM, addonInfoMap.get("npm"), getAddonLearnMoreUrl("npm"), getAddonConfigureUrl(AddonType.NPM.getConfigureUrlSuffix())));
@@ -160,6 +160,11 @@ public class GetHomePageService implements RestService {
         addonModels.add(new AddonModel(AddonType.VAGRANT, addonInfoMap.get("vagrant"), getAddonLearnMoreUrl("vagrant"), getAddonConfigureUrl(AddonType.VAGRANT.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.LDAP, addonInfoMap.get("ldap"), getAddonLearnMoreUrl("ldap"), getAddonConfigureUrl(AddonType.LDAP.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.SSO, addonInfoMap.get("sso"), getAddonLearnMoreUrl("sso"), getAddonConfigureUrl(AddonType.SSO.getConfigureUrlSuffix())));
+        addonModels.add(new AddonModel(AddonType.OAUTH,
+                getAddonInfoForPro(AddonType.OAUTH),
+                getAddonLearnMoreUrl("oauth-integration"),
+                getAddonConfigureUrl(AddonType.OAUTH.getConfigureUrlSuffix())));
+        
         addonModels.add(new AddonModel(AddonType.VCS, addonInfoMap.get("vcs"), getAddonLearnMoreUrl("vcs"), getAddonConfigureUrl(AddonType.VCS.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.YUM, addonInfoMap.get("yum"), getAddonLearnMoreUrl("yum"), getAddonConfigureUrl(AddonType.YUM.getConfigureUrlSuffix())));
         addonModels.add(new AddonModel(AddonType.DEBIAN, addonInfoMap.get("debian"), getAddonLearnMoreUrl("debian"), getAddonConfigureUrl(AddonType.DEBIAN.getConfigureUrlSuffix())));

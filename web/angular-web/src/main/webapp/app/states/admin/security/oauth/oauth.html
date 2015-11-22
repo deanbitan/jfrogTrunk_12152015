@@ -6,7 +6,7 @@
             <div class="card stretch card-pole-pad card-side-pad">
                 <div class="content-with-footer">
                     <jf-panel jf-panel-heading="General OAuth Settings">
-                        <div class="form-group">
+                        <div class="form-group form-checkbox">
                             <div class="form-group-cell">
                                 <jf-checkbox text="Enable OAuth">
                                     <input type="checkbox"
@@ -26,7 +26,7 @@
                         </div>
                         <div class="form-group-cell">
                             <jf-field>
-                                <label>Default Provider</label>
+                                <label>Default GitHub Provider</label>
                                 <selectize config='AdminSecurityOAuth.selectizeConfig'
                                            options='AdminSecurityOAuth.selectizeOptions'
                                            ng-model='AdminSecurityOAuth.oauthData.defaultNpm'>

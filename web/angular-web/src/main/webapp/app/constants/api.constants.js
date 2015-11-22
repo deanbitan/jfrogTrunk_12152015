@@ -70,6 +70,7 @@ export default {
     "SIGNINGKEYS": "/signingkeys",
     "KEYSTORE":"/keystore",
     "USER_PROFILE": "/userProfile",
+    "USER_API_KEY": "/userApiKey",
     "BUILDS": "/builds",
     "BUILDS_INFO": "/buildsinfo",  /// JUST FOR MOCK, WILL BE REMOVED
     "TARGET_PERMISSIONS": "/targetPermissions",
@@ -86,6 +87,8 @@ export default {
     "SET_ME_UP_IVY_SNIPPET": "/setMeUp/ivySnippet",
     "REPOSITORIES":"/admin/repositories",
     "REPOSITORIES_LAYOUTS":"/admin/repolayouts",
-    "STASH_RESULTS":"/stashResults"
+    "STASH_RESULTS":"/stashResults",
+    "SUPPORT_PAGE":"/userSupport",
+    "SERVER_TIME":"/system/serverTime"
 
 }

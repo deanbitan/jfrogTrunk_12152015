@@ -21,6 +21,7 @@ package org.artifactory.storage;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
+import java.util.List;
 
 import static org.artifactory.storage.StorageProperties.BinaryProviderType;
 import static org.artifactory.storage.StorageProperties.BinaryProviderType.cachedFS;
@@ -33,27 +34,33 @@ import static org.artifactory.storage.StorageProperties.BinaryProviderType.fullD
  * @author Yossi Shaul
  */
 public class FileStoreStorageSummary implements Serializable {
-    private final File binariesFolder;
+    private final List<File> binariesFolders;
     private final BinaryProviderType binariesStorageType;
     private long freeSpace;
     private long totalSpace;
     private long usedSpace;
     private long cacheSize;
 
-    public FileStoreStorageSummary(@Nullable File binariesFolder, BinaryProviderType binariesStorageType) {
-        this.binariesFolder = binariesFolder;
-        this.binariesStorageType = binariesStorageType;
-        freeSpace = binariesFolder != null ? binariesFolder.getFreeSpace() : 0;
-        totalSpace = binariesFolder != null ? binariesFolder.getTotalSpace() : 0;
-        usedSpace = totalSpace - freeSpace;
-    }
-
-    public FileStoreStorageSummary(File binariesFolder, StorageProperties storageProperties) {
-        this(binariesFolder, storageProperties.getBinariesStorageType());
+    public FileStoreStorageSummary(List<File> binariesFolders, StorageProperties storageProperties) {
+        this(binariesFolders, storageProperties.getBinariesStorageType());
         if (fullDb.equals(binariesStorageType) || cachedFS.equals(binariesStorageType)) {
             cacheSize = storageProperties.getBinaryProviderCacheMaxSize();
         } else {
             cacheSize = -1L;
+        }
+    }
+
+    public FileStoreStorageSummary(@Nullable List<File> binariesFolders, BinaryProviderType binariesStorageType) {
+        this.binariesFolders = binariesFolders;
+        this.binariesStorageType = binariesStorageType;
+        if (binariesFolders != null && !binariesFolders.isEmpty()) {
+            freeSpace = binariesFolders.stream().mapToLong(File::getFreeSpace).sum();
+            totalSpace = binariesFolders.stream().mapToLong(File::getTotalSpace).sum();
+            usedSpace = totalSpace - freeSpace;
+        } else {
+            freeSpace = 0;
+            totalSpace = 0;
+            usedSpace = 0;
         }
     }
 
@@ -69,26 +76,26 @@ public class FileStoreStorageSummary implements Serializable {
      * when configured to use full db without a cache
      */
     @Nullable
-    public File getBinariesFolder() {
-        return binariesFolder;
+    public List<File> getBinariesFolders() {
+        return binariesFolders;
     }
 
     /**
-     * @return The total space in bytes on the device containing {@link FileStoreStorageSummary#binariesFolder}
+     * @return The total space in bytes on the device containing {@link FileStoreStorageSummary#getBinariesFolders()}
      */
     public long getTotalSpace() {
         return totalSpace;
     }
 
     /**
-     * @return The free space, in bytes, on the device containing {@link FileStoreStorageSummary#binariesFolder}
+     * @return The free space, in bytes, on the device containing {@link FileStoreStorageSummary#getBinariesFolders()}
      */
     public long getUsedSpace() {
         return usedSpace;
     }
 
     /**
-     * @return The free space, in bytes, on the device containing {@link FileStoreStorageSummary#binariesFolder}
+     * @return The free space, in bytes, on the device containing {@link FileStoreStorageSummary#getBinariesFolders()}
      */
     public long getFreeSpace() {
         return freeSpace;

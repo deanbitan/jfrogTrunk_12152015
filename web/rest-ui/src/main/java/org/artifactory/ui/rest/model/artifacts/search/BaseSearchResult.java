@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.model.artifacts.search;
 
+import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.search.ItemSearchResult;
 import org.artifactory.api.security.AuthorizationService;
@@ -10,9 +11,11 @@ import org.artifactory.repo.RepoPath;
 import org.artifactory.rest.common.model.BaseModel;
 import org.artifactory.ui.rest.model.artifacts.search.classsearch.ClassSearchResult;
 import org.artifactory.ui.rest.model.artifacts.search.gavcsearch.GavcResult;
+import org.artifactory.ui.rest.model.artifacts.search.packagesearch.result.PackageSearchResult;
 import org.artifactory.ui.rest.model.artifacts.search.propertysearch.PropertyResult;
 import org.artifactory.ui.rest.model.artifacts.search.quicksearch.QuickSearchResult;
 import org.artifactory.util.PathUtils;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.annotate.JsonSubTypes;
 import org.codehaus.jackson.annotate.JsonTypeInfo;
@@ -29,7 +32,8 @@ import java.util.List;
         @JsonSubTypes.Type(value = GavcResult.class, name = "gavc"),
         @JsonSubTypes.Type(value = PropertyResult.class, name = "property"),
         @JsonSubTypes.Type(value = StashResult.class, name = "stash"),
-        @JsonSubTypes.Type(value = QuickSearchResult.class, name = "quick")})
+        @JsonSubTypes.Type(value = QuickSearchResult.class, name = "quick"),
+        @JsonSubTypes.Type(value = PackageSearchResult.class, name = "package")})
 @JsonIgnoreProperties("searchResult")
 public abstract class BaseSearchResult extends BaseModel {
 
@@ -95,7 +99,9 @@ public abstract class BaseSearchResult extends BaseModel {
         if (NamingUtils.isViewable(getName()) || "class".equals(PathUtils.getExtension(getName()))) {
             actions.add("View");
         }
-        actions.add("Download");
+        if(StringUtils.isNotEmpty(downloadLink)) {
+            actions.add("Download");
+        }
         actions.add("ShowInTree");
         if (authorizationService.canDelete(repoPath)) {
             actions.add("Delete");

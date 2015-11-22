@@ -15,7 +15,7 @@ class jfDockerV2LayersController {
 
             let layerPanelTopOffset = $('.docker-layers-panel').position().top;
             if (layerPanelTopOffset < this.layerDetailsTopOffset * -1 && $('.layers-container').offset().top + $('.layers-container').height() + 50 > $(window).height())
-                $('.layer-details').css('margin-top',  Math.abs(layerPanelTopOffset) - this.layerDetailsTopOffset + 30);
+                $('.layer-details').css('margin-top',  Math.abs(layerPanelTopOffset) - this.layerDetailsTopOffset + 10);
             else if ($('.layers-container').offset().top > 0)
                 $('.layer-details').css('margin-top',  30);
         });

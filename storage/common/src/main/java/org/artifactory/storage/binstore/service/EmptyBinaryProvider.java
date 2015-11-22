@@ -41,7 +41,7 @@ public class EmptyBinaryProvider extends BinaryProviderBase {
     }
 
     @Override
-    public boolean exists(String sha1, long length) {
+    public boolean exists(String sha1) {
         return false;
     }
 

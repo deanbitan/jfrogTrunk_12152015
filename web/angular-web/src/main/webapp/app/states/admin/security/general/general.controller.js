@@ -2,12 +2,20 @@ import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminSecurityGeneralController {
 
-    constructor(AdminSecurityGeneralDao, PasswordsEncryptionDao, ArtifactoryModelSaver) {
+    constructor(AdminSecurityGeneralDao, PasswordsEncryptionDao, ArtifactoryModelSaver, UserProfileDao, ArtifactoryModal, UserDao, ArtifactoryNotifications) {
         this.adminSecurityGeneralDao = AdminSecurityGeneralDao;
         this.passwordsEncryptionDao = PasswordsEncryptionDao.getInstance();
         this.options = ['SUPPORTED', 'UNSUPPORTED', 'REQUIRED'];
+        this.modal = ArtifactoryModal;
         this.TOOLTIP = TOOLTIP.admin.security.general;
         this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['generalConfig']);
+        this.userProfileDao = UserProfileDao;
+        this.userDao = UserDao.getInstance();
+        this.artifactoryNotifications = ArtifactoryNotifications;
+
+        this.userDao.getAll().$promise.then((users)=> {
+            this.userNames = _.pluck(users,'name');
+        });
 
         this.getGeneralConfigObject();
         this.getMasterKeyStatus();
@@ -63,5 +71,31 @@ export class AdminSecurityGeneralController {
         if (!this.generalConfig.anonAccessEnabled) {
             this.generalConfig.anonAccessToBuildInfosDisabled = false;
         }
+    }
+
+    canRevokeUser() {
+        return _.contains(this.userNames,this.usernameToRevoke);
+    }
+
+    revokeApiKey() {
+        this.userProfileDao.getApiKey({},{username: this.usernameToRevoke}).$promise.then((res)=>{
+            if (res.apiKey) {
+                this.modal.confirm(`Are you sure you want to revoke API key for user '${this.usernameToRevoke}'?`)
+                        .then(() => {
+                            this.userProfileDao.revokeApiKey({}, {username: this.usernameToRevoke});
+                        });
+            }
+            else {
+                this.artifactoryNotifications.create({error: `User '${this.usernameToRevoke}' has no valid API key`});
+            }
+        });
+
+    }
+
+    revokeApiKeys() {
+        this.modal.confirm(`Are you sure you want to revoke all users API keys?`)
+                .then(() => {
+                    this.userProfileDao.revokeApiKey({deleteAll: 1});
+                });
     }
 }

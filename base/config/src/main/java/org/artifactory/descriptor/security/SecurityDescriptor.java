@@ -33,6 +33,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.Iterator;
 import java.util.List;
@@ -40,6 +41,7 @@ import java.util.List;
 /**
  * @author Yossi Shaul
  */
+@XmlRootElement
 @XmlType(name = "SecurityType", propOrder = {"anonAccessEnabled", "anonAccessToBuildInfosDisabled", "hideUnauthorizedResources", "passwordSettings",
         "ldapSettings", "ldapGroupSettings", "httpSsoSettings", "crowdSettings", "samlSettings","oauthSettings","debianSettings"},
         namespace = Descriptor.NS)

@@ -41,7 +41,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Created by Michael Pasternak on 8/25/15.
+ * Delegates statistics events to registered members
+ *
+ * @author Michael Pasternak
  */
 @Service
 public class StatsDelegatingServiceImpl extends AbstractStatsService implements StatsDelegatingService {

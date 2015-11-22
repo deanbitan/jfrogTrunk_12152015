@@ -23,9 +23,10 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import javax.annotation.Nullable;
 
 /**
- * Service providing idle connections monitoring for {@link PoolingHttpClientConnectionManager}
+ * Service providing idle connections monitoring
+ * for {@link PoolingHttpClientConnectionManager}
  *
- * Created by Michael Pasternak on 10/21/15.
+ * @author Michael Pasternak
  */
 public interface IdleConnectionMonitorService {
     /**

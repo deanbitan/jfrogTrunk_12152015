@@ -110,7 +110,7 @@ public class ArtifactMultiDeployService implements RestService {
             artifactoryResponse.iModel(uploadedArtifactInfo);
         } catch (RepoRejectException e) {
             log.error(e.toString());
-            artifactoryResponse.error("failed to deploy file:" + actualFileName + " to Repository: " + repoKey);
+            artifactoryResponse.error(DeployUtil.getDeployError(actualFileName, repoKey, e));
         }
     }
 

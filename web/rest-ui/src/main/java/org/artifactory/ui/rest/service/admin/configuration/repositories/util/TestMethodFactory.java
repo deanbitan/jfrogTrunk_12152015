@@ -9,6 +9,9 @@ import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.descriptor.repo.RepoType;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteAdvancedRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.typespecific.TypeSpecificConfigModel;
@@ -17,6 +20,8 @@ import org.artifactory.util.PathUtils;
 
 import java.net.URISyntaxException;
 import java.util.List;
+
+import static org.artifactory.request.ArtifactoryRequest.ARTIFACTORY_ORIGINATED;
 
 /**
  * Create Http request for test replication button
@@ -46,8 +51,20 @@ public class TestMethodFactory {
                 break;
             default:
                 request = new HttpHead(HttpUtils.encodeQuery(repoUrl));
+                //Add the current requester host id
         }
+        addOriginatedHeader(request);
         return request;
+    }
+
+    /**
+     * add originated header to request
+     *
+     * @param request - http servlet request
+     */
+    private static void addOriginatedHeader(HttpRequestBase request) {
+        String hostId = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaCommonAddon.class).getHostId();
+        request.addHeader(ARTIFACTORY_ORIGINATED, hostId);
     }
 
     private static HttpRequestBase createGemsTestMethod(String repoUrl) {
