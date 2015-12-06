@@ -120,7 +120,7 @@ describe('unit test:tree node dao', function () {
             node.load().then(function(result) {
                 expect(result).toBe(node);
                 expect(node.tabs).toEqual(loadedNodeData[0].tabs);
-                expect(node.actions).toEqual(loadedNodeData[0].actions);
+                expect(node.actions).toEqual([{icon: "icon-simple-browser",name: "NativeBrowser",title: "Native Browser"}]);
                 done();
             });
             flush();
@@ -132,6 +132,15 @@ describe('unit test:tree node dao', function () {
                 expect(node.tabs).toEqual([]);
                 expect(node.actions).not.toBeDefined();
             });
+        });
+        it('should not have NativeBrowser action in context menu for files', function(done) {
+            var loadedNodeData = TreeNodeMock.data();
+            leafnode.expectLoad(loadedNodeData);
+            leafnode.load().then(function(result) {
+                expect(leafnode.actions).toEqual([]);
+                done();
+            });
+            flush();
         });
     });
 

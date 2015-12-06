@@ -8,6 +8,11 @@ export function ArtifactViewsDao(RESOURCE, ArtifactoryDaoFactory) {
                 'fetch':{
                     method: 'POST',
                     params:{view: '@view'}
+                },
+                'getDockerProxySnippet': {
+                    method: 'GET',
+                    path: RESOURCE.VIEWS + "/dockerproxy/:repoKey",
+                    params:{repoKey: '@repoKey'}
                 }
             })
             .getInstance();

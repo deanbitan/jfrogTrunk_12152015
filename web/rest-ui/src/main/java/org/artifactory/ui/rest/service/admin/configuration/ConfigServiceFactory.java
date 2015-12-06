@@ -1,5 +1,9 @@
 package org.artifactory.ui.rest.service.admin.configuration;
 
+import org.artifactory.rest.common.service.admin.reverseProxies.CheckReverseProxyPortAvailabilityService;
+import org.artifactory.rest.common.service.admin.reverseProxies.CreateReverseProxyService;
+import org.artifactory.rest.common.service.admin.reverseProxies.GetReverseProxiesService;
+import org.artifactory.rest.common.service.admin.reverseProxies.UpdateReverseProxyService;
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualRepositoryConfigModel;
@@ -9,34 +13,15 @@ import org.artifactory.ui.rest.service.admin.configuration.bintray.UpdateBintray
 import org.artifactory.ui.rest.service.admin.configuration.blackduck.GetBlackDuckService;
 import org.artifactory.ui.rest.service.admin.configuration.blackduck.TestBlackDuckService;
 import org.artifactory.ui.rest.service.admin.configuration.blackduck.UpdateBlackDuckService;
-import org.artifactory.ui.rest.service.admin.configuration.general.DeleteUploadedLogoService;
-import org.artifactory.ui.rest.service.admin.configuration.general.GetGeneralConfigDataService;
-import org.artifactory.ui.rest.service.admin.configuration.general.GetGeneralConfigService;
-import org.artifactory.ui.rest.service.admin.configuration.general.GetUploadLogoService;
-import org.artifactory.ui.rest.service.admin.configuration.general.UpdateGeneralConfigService;
-import org.artifactory.ui.rest.service.admin.configuration.general.UploadLogoService;
+import org.artifactory.ui.rest.service.admin.configuration.general.*;
 import org.artifactory.ui.rest.service.admin.configuration.ha.GetHighAvailabilityMembersService;
 import org.artifactory.ui.rest.service.admin.configuration.ha.RemoveServerService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.CreateLayoutService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.DeleteLayoutService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.GetLayoutInfoService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.GetLayoutsService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.ResolveRegexService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.TestArtPathService;
-import org.artifactory.ui.rest.service.admin.configuration.layouts.UpdateLayoutService;
-import org.artifactory.ui.rest.service.admin.configuration.licenses.CreateArtifactLicenseService;
-import org.artifactory.ui.rest.service.admin.configuration.licenses.DeleteArtifactLicenseService;
-import org.artifactory.ui.rest.service.admin.configuration.licenses.ExportLicenseFileService;
-import org.artifactory.ui.rest.service.admin.configuration.licenses.GetArtifactLicenseService;
-import org.artifactory.ui.rest.service.admin.configuration.licenses.UpdateArtifactLicenseService;
+import org.artifactory.ui.rest.service.admin.configuration.layouts.*;
+import org.artifactory.ui.rest.service.admin.configuration.licenses.*;
 import org.artifactory.ui.rest.service.admin.configuration.mail.GetMailService;
 import org.artifactory.ui.rest.service.admin.configuration.mail.TestMailService;
 import org.artifactory.ui.rest.service.admin.configuration.mail.UpdateMailService;
-import org.artifactory.ui.rest.service.admin.configuration.propertysets.CreatePropertySetService;
-import org.artifactory.ui.rest.service.admin.configuration.propertysets.DeletePropertySetService;
-import org.artifactory.ui.rest.service.admin.configuration.propertysets.GetConfigPropertySetNamesService;
-import org.artifactory.ui.rest.service.admin.configuration.propertysets.GetConfigPropertySetService;
-import org.artifactory.ui.rest.service.admin.configuration.propertysets.UpdatePropertySetService;
+import org.artifactory.ui.rest.service.admin.configuration.propertysets.*;
 import org.artifactory.ui.rest.service.admin.configuration.proxies.CreateProxyService;
 import org.artifactory.ui.rest.service.admin.configuration.proxies.DeleteProxyService;
 import org.artifactory.ui.rest.service.admin.configuration.proxies.GetProxiesService;
@@ -45,14 +30,9 @@ import org.artifactory.ui.rest.service.admin.configuration.registerpro.GetLicens
 import org.artifactory.ui.rest.service.admin.configuration.registerpro.UpdateLicenseKeyService;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.CreateRepositoryConfigService;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.DeleteRepositoryConfigService;
-import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.ExecuteAllLocalReplicationsService;
-import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.ExecuteLocalReplicationService;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.GetRepositoryConfigService;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.UpdateRepositoryConfigService;
-import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.ExecuteRemoteReplicationService;
-import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.TestLocalReplicationService;
-import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.TestRemoteReplicationService;
-import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.ValidateLocalReplicationService;
+import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.*;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.util.*;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.util.validator.ValidateRepoNameService;
 import org.springframework.beans.factory.annotation.Lookup;
@@ -92,6 +72,16 @@ public abstract class ConfigServiceFactory {
 
     @Lookup
     public abstract DeleteProxyService deleteProxiesService();
+
+    // reverse proxies services
+    @Lookup
+    public abstract CreateReverseProxyService createReverseProxy();
+
+    @Lookup
+    public abstract UpdateReverseProxyService updateReverseProxy();
+
+    @Lookup
+    public abstract GetReverseProxiesService getReverseProxies();
 
     // licenses services
     @Lookup
@@ -258,4 +248,9 @@ public abstract class ConfigServiceFactory {
 
     @Lookup
     public abstract RemoveServerService removeServer();
+
+    @Lookup
+    public abstract CheckReverseProxyPortAvailabilityService checkReverseProxyPortAvailability();
+
+
 }

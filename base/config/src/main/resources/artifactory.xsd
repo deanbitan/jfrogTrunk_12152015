@@ -18,8 +18,8 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0"
-           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.4"
-           xmlns="http://artifactory.jfrog.org/xsd/1.6.4"
+           targetNamespace="http://artifactory.jfrog.org/xsd/1.6.5"
+           xmlns="http://artifactory.jfrog.org/xsd/1.6.5"
            elementFormDefault="qualified">
 
     <xs:element name="config" type="CentralConfigType"/>
@@ -142,6 +142,18 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="reverseProxies" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of reusable reverse proxy definitions.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="reverseProxy" type="ReverseProxyType" maxOccurs="unbounded" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="propertySets" type="PropertySetsType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation source="description">
@@ -186,7 +198,7 @@
                 </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
-                        <xs:element name="repoLayout" type="RepoLayoutType" maxOccurs="unbounded" minOccurs="0"/>
+                        <xs:element name="repoLayout" type="RepoLayoutType" maxOccurs="unbounded" minOccurs="0" />
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -1104,6 +1116,86 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ReverseProxyType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:ID">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        Reverse Proxy Unique ID.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="webServerType" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        The web server type for this reverse proxy
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="nginx"/>
+                        <xs:enumeration value="apache"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="artifactoryAppContext" type="xs:string"/>
+            <xs:element name="publicAppContext" type="xs:string"/>
+            <xs:element name="serverName" type="xs:string"/>
+            <xs:element name="serverNameExpression" type="xs:string" nillable="true"/>
+            <xs:element name="sslType" minOccurs="0" maxOccurs="1">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="self-signed"/>
+                        <xs:enumeration value="ca-signed"/>
+                        <xs:enumeration value="no-ssl"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="sslCertificate" type="xs:string" nillable="true"/>
+            <xs:element name="sslKey" type="xs:string" nillable="true"/>
+            <xs:element name="dockerReverseProxyMethod" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        method to use for reverse proxy
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="portPerRepo"/>
+                        <xs:enumeration value="subDomain"/>
+                        <xs:enumeration value="noValue"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="useHttps" type="xs:boolean" />
+            <xs:element name="useHttp" type="xs:boolean" />
+            <xs:element name="sslPort" type="xs:int"/>
+            <xs:element name="httpPort" type="xs:int"/>
+            <xs:element name="reverseProxyRepositories" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation source="description">
+                        A set of reusable reverse proxy repositories.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="reverseProxyRepoConfigs" type="ReverseProxyRepoConfigType" maxOccurs="unbounded" minOccurs="0"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="artifactoryServerName" type="xs:string"/>
+            <xs:element name="upStreamName" type="xs:string" nillable="true"/>
+            <xs:element name="artifactoryPort" type="xs:int"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="ReverseProxyRepoConfigType">
+        <xs:sequence>
+            <xs:element name="repoRef" type="xs:IDREF"/>
+            <xs:element name="serverName" type="xs:string"/>
+            <xs:element name="port" type="xs:int"/>
         </xs:sequence>
     </xs:complexType>
 

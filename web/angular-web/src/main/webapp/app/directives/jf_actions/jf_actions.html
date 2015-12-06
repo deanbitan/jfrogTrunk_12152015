@@ -14,7 +14,7 @@
               <i class="action-icon icon icon-more"></i> Actions
           </a>
           <ul class="dropdown-menu dropdown-menu-right actions-dropdown text-left">
-              <li ng-repeat="actionObj in jfActions.dynamicActions" class="action-item">
+              <li ng-repeat="actionObj in jfActions.dynamicActions" class="action-item menu-item-{{actionObj.icon}}">
                   <a href="" class="action-container" ng-click="jfActions.doAction(actionObj)">
                       <span class="action-icon icon"
                             ng-class="actionObj.icon"></span>

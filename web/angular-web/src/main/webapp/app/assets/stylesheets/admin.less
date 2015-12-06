@@ -74,6 +74,10 @@
     position: relative;
     top: 2px;
     left: 6px;
+    
+    &.icon-clear:hover {
+      color: @redError;
+    }
   }
 }
 
@@ -254,6 +258,10 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
           &:before {
             line-height: 40px;
           }
+        }
+        
+        &:hover .icon-clear:before {
+          color: @redError;
         }
       }
     }
@@ -488,7 +496,7 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
 
     &[disabled] {
       &, & .grid-button-icon:before {
-        cursor: default;
+        cursor: not-allowed;
         color: @grayFontLighter;
       }
     }
@@ -734,4 +742,14 @@ body.admin-advanced-config_descriptor, body.admin-advanced-security_descriptor {
     right: 14px;
     pointer-events: none;
   }
+}
+
+/******************** Reverse Proxy Page ***********************/
+
+.icon-reverse {
+  width: 40px;
+  height: 40px;
+  float: left;
+  background-position: 0 center;
+  margin-right: 10px;
 }

@@ -59,6 +59,22 @@ a {
       text-decoration: underline;
     }
   }
+  
+  ul {
+    margin: 4px 20px;
+  }
+  
+  &.stripped {
+    padding: 5px 15px 5px 30px !important;
+    border: 0 none;
+    background-color: transparent;
+    margin-bottom: 0;
+    
+    &:before {
+      top: 1px;
+      left: 0;
+    }
+  }
 }
 
 .alert-fade.ng-leave {
@@ -209,6 +225,10 @@ jf-help-tooltip {
   i {
     float: left;
     margin: 2px 4px 0 0;
+  }
+  
+  &.attention {
+    color: @redError;
   }
 }
 
@@ -987,6 +1007,29 @@ jf-checkbox + jf-checkbox {
   }
 }
 
+.jf-data-table-ellipsis {
+  > div {
+    clear: both;
+    line-height: 30px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    .key-cell {
+      float: left;
+      width: 200px;
+    }
+  }
+
+  .license-required-icon, .license-required {
+    &::after {
+      line-height: 18px;
+      right: -24px;
+    }
+  }
+}
+
 //------------------------Validation-----------------//
 .jf-validation {
   color: @redError;
@@ -1669,8 +1712,37 @@ h5 {
     width: 100px;
     height: 100px;
   }
+
 }
 
+.jf-spinner-local {
+  display: inline;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 10000000;
+  background-color: rgba(0, 0, 255, 0.5);
+
+  .spinner-msg-local {
+    position: absolute;
+    height: 20px;
+    width: 20px;
+
+    color: @grayFontGeneral;
+    text-align: center;
+    top: 0px;
+    left: 0px;
+
+  }
+
+  .icon-hourglass-local {
+    background-size: 20px 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.icon-hourglass-local,
 .icon-hourglass {
   .icon-hourglass();
   .spinning();

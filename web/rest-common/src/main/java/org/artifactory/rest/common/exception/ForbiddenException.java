@@ -16,7 +16,7 @@
  * along with Artifactory.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.artifactory.ui.exception;
+package org.artifactory.rest.common.exception;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;

@@ -1,6 +1,8 @@
 package org.artifactory.ui.rest.model.admin.configuration.repository.virtual;
 
+import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.ReverseProxyDescriptor;
 import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.repository.GeneralRepositoryConfigModel;
@@ -69,6 +71,12 @@ public class VirtualRepositoryConfigModel implements RepositoryConfigModel<Virtu
     @Override
     public void setReplications(List<RepositoryReplicationConfigModel> replication) {
 
+    }
+
+    @Override
+    public ReverseProxyDescriptor getReverseProxyDescriptor(RepoBaseDescriptor repoDescriptor,
+                                                            RepoConfigDescriptorBuilder builder){
+        return builder.buildReverseProxyDescriptor(this.advanced, repoDescriptor);
     }
 
     @Override

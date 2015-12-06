@@ -78,4 +78,7 @@ public interface HaCommonAddon extends Addon {
 
 
     void propagateReindexAll(ArtifactoryServer server, String repoKey, boolean async);
+
+    List propagateTrafficCollector(long startLong, long endLong, List<String> ipsToFilter,
+            List<ArtifactoryServer> servers, Class clazz) ;
 }

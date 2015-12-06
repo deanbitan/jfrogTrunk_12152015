@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-base-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.3.0</version>
+        <version>4.3.1</version>
     </parent>
 
     <dependencies>
@@ -132,6 +132,12 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
+        </dependency>
+
+        <!-- for cron expressions validation -->
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
         </dependency>
     </dependencies>
 </project>

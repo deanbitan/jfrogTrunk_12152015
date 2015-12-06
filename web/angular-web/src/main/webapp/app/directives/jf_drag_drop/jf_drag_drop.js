@@ -32,8 +32,11 @@ export function jfDragDrop() {
                             });
                             dragItem.tooltipster('show');
                         }
-                        else
+                        else {
                             dragItem.tooltipster('enable');
+                            if (dragItem.tooltipster('content') != dragItem.text().trim())
+                                dragItem.tooltipster('content', dragItem.text().trim());
+                        }
                     }
                     else if (dragItem.hasClass('tooltipstered'))
                         dragItem.tooltipster('disable');
@@ -363,7 +366,9 @@ class jfDragDropController {
     }
 
     _getFilteredExcludeList() {
-        return _.filter(this.excludeList,(item)=>!this._isFilteredOut(item));
+        let ret = _.filter(this.excludeList,(item)=>!this._isFilteredOut(item));
+        this.noMatches = this.excludeList && this.excludeList.length && !ret.length;
+        return ret;
     }
 
 
@@ -670,4 +675,5 @@ class jfDragDropController {
             this.toggleSelection(item);
         });
     }
+
 }

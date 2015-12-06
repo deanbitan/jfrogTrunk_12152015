@@ -4,7 +4,7 @@ import org.artifactory.api.common.BasicStatusHolder;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
-import org.artifactory.ui.rest.service.utils.AolUtils;
+import org.artifactory.rest.common.util.AolUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;

@@ -182,9 +182,7 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
                 String email = user.getStringAttribute(emailAttribute);
                 if (StringUtils.isNotBlank(email)) {
                     log.debug("User '{}' has email address '{}'", userName, email);
-                    if (StringUtils.isBlank(userInfo.getEmail())) {
-                        userInfo.setEmail(email);
-                    }
+                    userInfo.setEmail(email);
                 }
             }
 
@@ -192,6 +190,10 @@ public class ArtifactoryLdapAuthenticationProvider implements RealmAwareAuthenti
             ldapGroupAddon.populateGroups(user, userInfo);
             log.debug("Finished Loading LDAP groups");
             SimpleUser simpleUser = new SimpleUser(userInfo);
+
+            // update user with latest attribute
+            userGroupService.updateUser(userInfo, false);
+
             // create new authentication response containing the user and it's authorities
             return new LdapRealmAwareAuthentication(simpleUser, authentication.getCredentials(),
                     simpleUser.getAuthorities());

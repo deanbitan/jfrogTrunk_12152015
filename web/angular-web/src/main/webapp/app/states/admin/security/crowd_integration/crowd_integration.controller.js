@@ -45,7 +45,7 @@ export class CrowdIntegrationController {
     _getBatchActions() {
         return [
             {
-                icon: 'icon icon-import',
+                icon: 'import',
                 name: 'Import',
                 callback: () => this.importCrowds()
             }

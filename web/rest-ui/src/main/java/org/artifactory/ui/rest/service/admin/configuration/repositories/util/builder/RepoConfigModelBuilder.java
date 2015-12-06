@@ -6,7 +6,9 @@ import org.apache.commons.lang.StringUtils;
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.p2.P2Repo;
 import org.artifactory.api.config.CentralConfigService;
+import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.repo.RepositoryService;
+import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
@@ -19,11 +21,7 @@ import org.artifactory.ui.rest.model.admin.configuration.repository.GeneralRepos
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalAdvancedRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalBasicRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalRepositoryConfigModel;
-import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteAdvancedRepositoryConfigModel;
-import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteBasicRepositoryConfigModel;
-import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteCacheRepositoryConfigModel;
-import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteNetworkRepositoryConfigModel;
-import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
+import org.artifactory.ui.rest.model.admin.configuration.repository.remote.*;
 import org.artifactory.ui.rest.model.admin.configuration.repository.replication.local.LocalReplicationConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.replication.remote.RemoteReplicationConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.typespecific.*;
@@ -31,6 +29,7 @@ import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.Virt
 import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualBasicRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.virtual.VirtualSelectedRepository;
+import org.artifactory.ui.rest.model.admin.configuration.reverseProxy.ReverseProxyRepoModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -134,6 +133,13 @@ public class
         // Advanced
         VirtualAdvancedRepositoryConfigModel advanced = new VirtualAdvancedRepositoryConfigModel();
         advanced.setRetrieveRemoteArtifacts(descriptor.isArtifactoryRequestsCanRetrieveRemoteArtifacts());
+        MutableCentralConfigDescriptor mutableDescriptor = ContextHelper.get().getCentralConfig().getMutableDescriptor();
+        ReverseProxyDescriptor reverseProxyDescriptor = mutableDescriptor.getReverseProxy("nginx");
+        if (reverseProxyDescriptor != null) {
+            ReverseProxyRepoConfig reverseProxyRepoConfigsByRepoKey = reverseProxyDescriptor
+                    .getReverseProxyRepoConfigsByRepoKey(descriptor.getKey());
+            advanced.setReverseProxy(reverseProxyToModel(reverseProxyRepoConfigsByRepoKey, reverseProxyDescriptor));
+        }
         model.setAdvanced(advanced);
 
         // Type specific
@@ -219,7 +225,26 @@ public class
         List<PropertySet> propertySetsList = descriptor.getPropertySets();
         List<PropertySetNameModel> propertySetNameModelList = collectPropertySets(propertySetsList);
         advanced.setPropertySets(propertySetNameModelList);
+
+        MutableCentralConfigDescriptor mutableDescriptor = ContextHelper.get().getCentralConfig().getMutableDescriptor();
+        ReverseProxyDescriptor reverseProxyDescriptor = mutableDescriptor.getReverseProxy("nginx");
+        if (reverseProxyDescriptor != null) {
+            ReverseProxyRepoConfig reverseProxyRepoConfig = reverseProxyDescriptor
+                    .getReverseProxyRepoConfig(descriptor.getKey());
+            advanced.setReverseProxy(reverseProxyToModel(reverseProxyRepoConfig, reverseProxyDescriptor));
+        }
         return advanced;
+    }
+
+    private ReverseProxyRepoModel reverseProxyToModel(ReverseProxyRepoConfig reverseProxy,ReverseProxyDescriptor reverseProxyDescriptor) {
+        if (reverseProxy != null) {
+            ReverseProxyRepoModel model = new ReverseProxyRepoModel();
+            model.setConfigurationKey(reverseProxyDescriptor.getKey());
+            model.setServerName(reverseProxy.getServerName());
+            model.setServerPort(reverseProxy.getPort());
+            return model;
+        }
+        return null;
     }
 
     private RemoteAdvancedRepositoryConfigModel createRemoteAdvancedConfig(HttpRepoDescriptor descriptor) {
@@ -241,6 +266,13 @@ public class
         advanced.setHardFail(descriptor.isHardFail());
         advanced.setQueryParams(descriptor.getQueryParams());
         advanced.setShareConfiguration(descriptor.isShareConfiguration());
+        MutableCentralConfigDescriptor mutableDescriptor = ContextHelper.get().getCentralConfig().getMutableDescriptor();
+        ReverseProxyDescriptor reverseProxyDescriptor = mutableDescriptor.getReverseProxy("nginx");
+        if (reverseProxyDescriptor != null) {
+            ReverseProxyRepoConfig reverseProxyRepoConfigsByRepoKey = reverseProxyDescriptor
+                    .getReverseProxyRepoConfigsByRepoKey(descriptor.getKey());
+            advanced.setReverseProxy(reverseProxyToModel(reverseProxyRepoConfigsByRepoKey, reverseProxyDescriptor));
+        }
         return advanced;
     }
 

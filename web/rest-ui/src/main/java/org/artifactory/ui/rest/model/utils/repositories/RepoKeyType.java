@@ -16,6 +16,8 @@ public class RepoKeyType extends BaseModel {
     private Boolean canDeploy;
     private Boolean canRead;
     private Boolean isLocal;
+    private Boolean isRemote;
+    private Boolean isVirtual;
 
     public RepoKeyType(){}
 
@@ -88,6 +90,22 @@ public class RepoKeyType extends BaseModel {
 
     public void setIsLocal(Boolean isLocal) {
         this.isLocal = isLocal;
+    }
+
+    public Boolean getIsRemote() {
+        return isRemote;
+    }
+
+    public void setIsRemote(Boolean isRemote) {
+        this.isRemote = isRemote;
+    }
+
+    public Boolean getIsVirtual() {
+        return isVirtual;
+    }
+
+    public void setIsVirtual(Boolean isVirtual) {
+        this.isVirtual = isVirtual;
     }
 
     public String getDockerApiVersion() {

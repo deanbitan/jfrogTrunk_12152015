@@ -1,9 +1,9 @@
 package org.artifactory.ui.rest.resource.admin.configuration.proxies;
 
 import org.artifactory.api.security.AuthorizationService;
-import org.artifactory.ui.rest.model.admin.configuration.proxy.DeleteProxiesModel;
-import org.artifactory.ui.rest.model.admin.configuration.proxy.Proxy;
+import org.artifactory.rest.common.model.proxies.ProxiesModel;
 import org.artifactory.rest.common.resource.BaseResource;
+import org.artifactory.ui.rest.model.admin.configuration.proxy.Proxy;
 import org.artifactory.ui.rest.service.admin.configuration.ConfigServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -57,8 +57,8 @@ public class ProxyResource extends BaseResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteProxies(DeleteProxiesModel deleteProxiesModel)
+    public Response deleteProxies(ProxiesModel proxiesModel)
             throws Exception {
-        return runService(configServiceFactory.deleteProxiesService(),deleteProxiesModel);
+        return runService(configServiceFactory.deleteProxiesService(), proxiesModel);
     }
 }

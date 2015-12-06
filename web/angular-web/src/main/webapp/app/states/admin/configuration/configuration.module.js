@@ -1,6 +1,7 @@
 import Licenses           from './licenses/licenses.module';
 import Mail               from './mail/mail.module';
 import Proxies            from './proxies/proxies.module';
+import ReverseProxies     from './reverse_proxies/reverse_proxies.module';
 import RegisterPro        from './register_pro/register_pro.module';
 import Bintray            from './bintray/bintray.module';
 import BlackDuck          from './black_duck/black_duck.module'
@@ -32,6 +33,7 @@ export default angular.module('admin.configuration', [
     Licenses.name,
     Mail.name,
     Proxies.name,
+    ReverseProxies.name,
     RegisterPro.name,
     Bintray.name,
     BlackDuck.name,

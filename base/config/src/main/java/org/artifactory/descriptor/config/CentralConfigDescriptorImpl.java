@@ -59,7 +59,7 @@ import java.util.*;
 @XmlType(name = "CentralConfigType",
         propOrder = {"serverName", "offlineMode", "helpLinksEnabled", "fileUploadMaxSizeMb", "dateFormat", "addons", "mailServer",
                 "bintrayConfig", "security", "backups", "indexer", "localRepositoriesMap", "remoteRepositoriesMap",
-                "virtualRepositoriesMap", "proxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
+                "virtualRepositoriesMap", "proxies", "reverseProxies", "propertySets", "urlBase", "logo", "footer", "repoLayouts",
                 "remoteReplications", "localReplications", "gcConfig", "cleanupConfig", "virtualCacheCleanupConfig",
                 "quotaConfig", "externalProviders", "systemMessageConfig", "folderDownloadConfig"},
         namespace = Descriptor.NS)
@@ -83,6 +83,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @XmlElementWrapper(name = "proxies")
     @XmlElement(name = "proxy", required = false)
     private List<ProxyDescriptor> proxies = new ArrayList<>();
+
+    @XmlElementWrapper(name = "reverseProxies")
+    @XmlElement(name = "reverseProxy", required = false)
+    private List<ReverseProxyDescriptor> reverseProxies = new ArrayList<>();
+
     @XmlElement(defaultValue = DEFAULT_DATE_FORMAT)
     private String dateFormat = DEFAULT_DATE_FORMAT;
 
@@ -206,6 +211,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     @Override
     public void setProxies(List<ProxyDescriptor> proxies) {
         this.proxies = proxies;
+    }
+
+    @Override
+    public List<ReverseProxyDescriptor> getReverseProxies() {
+        return reverseProxies;
+    }
+
+    @Override
+    public void setReverseProxies(List<ReverseProxyDescriptor> reverseProxies) {
+        this.reverseProxies = reverseProxies;
     }
 
     @Override
@@ -369,6 +384,11 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
                 existingReplications.forEach(replication -> removeLocalReplication(replication));
             }
         }
+
+        //Remove repo's reverse proxy config
+        getReverseProxies().stream()
+                .forEach(reverseProxyDescriptor -> reverseProxyDescriptor.deleteReverseProxyConfig(repoKey));
+
         return removedRepo;
     }
 
@@ -486,6 +506,39 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         }
 
         return proxyDescriptor;
+    }
+
+    @Override
+    public boolean isReverseProxyExists(String key) {
+        return getReverseProxy(key) != null;
+    }
+
+    @Override
+    public void addReverseProxy(ReverseProxyDescriptor descriptor) {
+        String proxyKey = descriptor.getKey();
+        if (isReverseProxyExists(proxyKey)) {
+            throw new AlreadyExistsException("Reverse Proxy " + proxyKey + " already exists");
+        }
+        reverseProxies.add(descriptor);
+    }
+
+    @Override
+    public void updateReverseProxy(ReverseProxyDescriptor descriptor) {
+        if (descriptor != null) {
+            removeReverseProxy(descriptor.getKey());
+            addReverseProxy(descriptor);
+        }
+    }
+
+    @Override
+    public ReverseProxyDescriptor removeReverseProxy(String key) {
+        ReverseProxyDescriptor reverseProxy = getReverseProxy(key);
+        if (reverseProxy == null) {
+            return null;
+        }
+
+        reverseProxies.remove(reverseProxy);
+        return reverseProxy;
     }
 
     @Override
@@ -668,6 +721,16 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         for (ProxyDescriptor proxy : proxies) {
             if (proxy.getKey().equals(proxyKey)) {
                 return proxy;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public ReverseProxyDescriptor getReverseProxy(String key) {
+        for (ReverseProxyDescriptor reverseProxy : reverseProxies) {
+            if (reverseProxy.getKey().equals(key)) {
+                return reverseProxy;
             }
         }
         return null;
@@ -933,7 +996,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     public Map<String, LocalReplicationDescriptor> getSingleReplicationPerRepoMap() {
         Map<String, LocalReplicationDescriptor> localReplicationsMap = Maps.newHashMap();
         for (LocalReplicationDescriptor localReplication : localReplications) {
-                localReplicationsMap.put(localReplication.getRepoKey(), localReplication);
+            localReplicationsMap.put(localReplication.getRepoKey(), localReplication);
         }
         return localReplicationsMap;
     }
@@ -972,7 +1035,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
     }
 
     private <T extends ReplicationBaseDescriptor> void addReplication(T replicationDescriptor,
-            List<T> replications) {
+                                                                      List<T> replications) {
         if (replications.contains(replicationDescriptor)) {
             throw new AlreadyExistsException("Replication for '" + replicationDescriptor.getRepoKey() +
                     "' already exists");
@@ -988,7 +1051,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
      * @param <T>
      */
     private <T extends ReplicationBaseDescriptor> void addLocalReplication(T replicationDescriptor,
-            List<T> replications) {
+                                                                           List<T> replications) {
         if (replications.contains(replicationDescriptor)) {
             replications.remove(replicationDescriptor);
         }
@@ -1018,7 +1081,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
      * @return
      */
     private <T extends ReplicationBaseDescriptor> T getSpecificLocalReplication(String replicatedRepoKey,
-            String replicateRepoUrl, List<T> replications) {
+                                                                                String replicateRepoUrl, List<T> replications) {
         if (StringUtils.isNotBlank(replicatedRepoKey)) {
             for (T replication : replications) {
 
@@ -1040,7 +1103,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
      * @return
      */
     private <T extends ReplicationBaseDescriptor> T get1stEnableLocalReplication(String replicatedRepoKey,
-            List<T> replications) {
+                                                                                 List<T> replications) {
         if (StringUtils.isNotBlank(replicatedRepoKey)) {
             for (T replication : replications) {
                 if (replicatedRepoKey.equals(replication.getRepoKey()) && replication.isEnabled()) {
@@ -1058,7 +1121,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
      * @return
      */
     private <T extends ReplicationBaseDescriptor> int getNumOfActiveLocalReplication(String replicatedRepoKey,
-            List<T> replications) {
+                                                                                     List<T> replications) {
         int replicationCounter = 0;
         if (StringUtils.isNotBlank(replicatedRepoKey)) {
             for (T replication : replications) {
@@ -1070,7 +1133,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         return replicationCounter;
     }
     private <T extends ReplicationBaseDescriptor> void removeReplication(T replicationDescriptor,
-            List<T> replications) {
+                                                                         List<T> replications) {
         replications.remove(replicationDescriptor);
     }
 
@@ -1104,7 +1167,7 @@ public class CentralConfigDescriptorImpl implements MutableCentralConfigDescript
         if (StringUtils.isNotBlank(replicatedRepoKey)) {
             for (T replication : replications) {
                 if (replicatedRepoKey.equals(replication.getRepoKey()))
-                localReplicationList.add(replication);
+                    localReplicationList.add(replication);
             }
         }
         return localReplicationList;

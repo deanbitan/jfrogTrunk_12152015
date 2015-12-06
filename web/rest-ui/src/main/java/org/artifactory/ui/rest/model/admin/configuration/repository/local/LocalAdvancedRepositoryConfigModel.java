@@ -3,6 +3,7 @@ package org.artifactory.ui.rest.model.admin.configuration.repository.local;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.propertysets.PropertySetNameModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.AdvancedRepositoryConfigModel;
+import org.artifactory.ui.rest.model.admin.configuration.reverseProxy.ReverseProxyRepoModel;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class LocalAdvancedRepositoryConfigModel implements AdvancedRepositoryCon
     protected List<PropertySetNameModel> propertySets;
     protected Boolean blackedOut = DEFAULT_BLACKED_OUT;
     protected Boolean allowContentBrowsing = DEFAULT_ALLOW_CONTENT_BROWSING;
+    protected ReverseProxyRepoModel reverseProxy;
 
     @Override
     public List<PropertySetNameModel> getPropertySets() {
@@ -47,6 +49,16 @@ public class LocalAdvancedRepositoryConfigModel implements AdvancedRepositoryCon
     @Override
     public void setAllowContentBrowsing(Boolean allowContentBrowsing) {
         this.allowContentBrowsing = allowContentBrowsing;
+    }
+
+    @Override
+    public ReverseProxyRepoModel getReverseProxy() {
+        return reverseProxy;
+    }
+
+    @Override
+    public void setReverseProxy(ReverseProxyRepoModel reverseProxy) {
+        this.reverseProxy = reverseProxy;
     }
 
     @Override

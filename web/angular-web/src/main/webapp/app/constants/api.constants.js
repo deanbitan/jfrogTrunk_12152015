@@ -17,6 +17,7 @@ export default {
     "MAIL": "/mail",
     "REGISTER_PRO": "/registerlicense",
     "PROXIES": "/proxies",
+    "REVERSE_PROXIES": "/reverseProxies",
     "HTTPSSO": "/httpsso",
     "LICENSES": "/licenses",
     "HIGH_AVAILABILITY": "/highAvailability",

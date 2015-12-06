@@ -444,6 +444,15 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
     }
 
     @Override
+    public String filterResource(Reader reader, Object model) throws Exception {
+        try {
+            return IOUtils.toString(reader);
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+    }
+
+    @Override
     public void toggleResourceFilterState(RepoPath repoPath, boolean filtered) {
     }
 
@@ -870,6 +879,12 @@ public class CoreAddonsImpl implements WebstartAddon, LdapGroupAddon, LicensesAd
 
     @Override
     public void propagateReindexAll(ArtifactoryServer server, String repoKey, boolean async) {}
+
+    @Override
+    public List propagateTrafficCollector(long startLong, long endLong, List<String> ipsToFilter,
+            List<ArtifactoryServer> servers, Class clazz){
+        return null;
+    }
 
     @Override
     public SemaphoreWrapper getSemaphore(String semaphoreName) {

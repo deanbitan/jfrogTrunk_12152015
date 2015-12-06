@@ -164,7 +164,7 @@ public class AccessFilter extends DelayedFilterBase implements SecurityListener 
         if ((servletPath == null || "/".equals(servletPath) || servletPath.length() == 0) &&
                 "get".equalsIgnoreCase(method)) {
             //We were called with an empty path - redirect to the app main page
-            response.sendRedirect(HttpUtils.ANGULAR_WEBAPP + "/");
+            response.sendRedirect(HttpUtils.WEBAPP_URL_PATH_PREFIX + "/");
             return;
         }
         //Reuse the authentication if it exists

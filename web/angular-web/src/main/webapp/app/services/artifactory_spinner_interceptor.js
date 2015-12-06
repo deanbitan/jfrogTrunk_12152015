@@ -25,6 +25,8 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
 
         if ((!req.params || !req.params.$no_spinner) && req.url.startsWith('../ui/') ) {
 
+            let domain = req.params ? req.params.$spinner_domain : undefined;
+
             req.headers.serial = serial;
 
             pendings.push(serial);
@@ -34,7 +36,7 @@ export function artifactorySpinnerInterceptor($injector, $timeout, $q, Artifacto
                 let canceledIndex = canceled.indexOf(req.headers.serial);
 
                 if (canceledIndex < 0) {
-                    ArtifactoryEventBus.dispatch(EVENTS.SHOW_SPINNER);
+                    ArtifactoryEventBus.dispatch(EVENTS.SHOW_SPINNER, domain);
                 }
                 else {
                     canceled.splice(canceledIndex,1);

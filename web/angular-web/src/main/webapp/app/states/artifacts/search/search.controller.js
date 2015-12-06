@@ -65,14 +65,14 @@ export class SearchController {
 
 
     showInTree(row) {
-        let relativePath = row.relativePath.startsWith('./') ? row.relativePath.substr(2) : row.relativePath;
+        let relativePath = row.relativePath ? (row.relativePath.startsWith('./') ? row.relativePath.substr(2) : row.relativePath) : '';
         let artifactPath = row.repoKey + "/" + (relativePath || row.path);
         let archivePath = '';
         if (row.archiveName) {
             if(row.archivePath === '[root]') {
                 row.archivePath = '';
             }
-            archivePath = row.repoKey + "/" + relativePath + row.archiveName;
+            archivePath = row.repoKey + "/" + row.archivePath + row.archiveName;
         }
         let path = (archivePath || artifactPath );
         this.$state.go('artifacts.browsers.path', {
@@ -255,9 +255,13 @@ export class SearchController {
                     this._updateAQL();
                     this.$timeout(()=>{
                         let showAqlButtonElem = $('#show-aql-button');
+                        let aqlViewerElem = $('#aql-viewer');
                         let gridFilterElem = $('jf-grid-filter');
+                        let gridActionElem = $('.wrapper-grid-actions');
                         gridFilterElem.append(showAqlButtonElem);
                         showAqlButtonElem.css('display','block');
+
+                        gridActionElem.after(aqlViewerElem);
                     })
                 }
             });
@@ -520,7 +524,7 @@ export class SearchController {
                         sort: {
                             direction: this.uiGridConstants.ASC
                         },
-                        cellTemplate: this.commonGridColumns.downloadableColumn(),
+                        cellTemplate: this.commonGridColumns.downloadableColumn('autotest-quick-artifact'),
                         width: '25%',
                         customActions: [{
                             icon: 'icon icon-view',
@@ -540,6 +544,7 @@ export class SearchController {
                         displayName: "Path",
                         field: "relativeDirPath",
                         headerCellTemplate: headerCellGroupingTemplate,
+                        cellTemplate: '<div class="autotest-quick-path ui-grid-cell-contents">{{ row.entity.relativeDirPath}}</div>',
                         width: '40%',
                         customActions: [{
                             icon: 'icon icon-show-in-tree',
@@ -548,17 +553,18 @@ export class SearchController {
                             visibleWhen: row => _.contains(row.actions, 'ShowInTree')
                         }]
                     },
-                    {
+                      {
                         name: "Repository",
                         displayName: "Repository",
                         field: "repoKey",
                         headerCellTemplate: headerCellGroupingTemplate,
+                        cellTemplate: '<div class="autotest-quick-repository ui-grid-cell-contents">{{ row.entity.repoKey}}</div>',
                         width: '15%'
                     },
                     {
                         name: "Modified",
                         displayName: "Modified",
-                        cellTemplate: '<div class="ui-grid-cell-contents">{{ row.entity.modifiedString }}</div>',
+                        cellTemplate: '<div class="autotest-quick-modified ui-grid-cell-contents">{{ row.entity.modifiedString }}</div>',
                         field: "modifiedDate",
                         width: '20%',
                         actions: {

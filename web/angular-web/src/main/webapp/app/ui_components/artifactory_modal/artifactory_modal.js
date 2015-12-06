@@ -50,15 +50,18 @@ export class ArtifactoryModal {
      * @param title - title of the modal
      * @param content - content for the code mirror container
      * @param mode - mode for code mirror editor options (usually {name: <mimetype>}
+     * @param beforeMessage - message to insert before the codemirror element
      * @returns {{Modal instance}}
      */
-    launchCodeModal(title, content, mode) {
+    launchCodeModal(title, content, mode, beforeMessage = undefined,objectName = undefined) {
         let modalInstance;
         let modalScope = this.$rootScope.$new();
         modalScope.closeModal = () => modalInstance.close();
         modalScope.content = content;
         modalScope.mode = mode;
         modalScope.title = title;
+        modalScope.beforeMessage = beforeMessage;
+        modalScope.objectName = objectName;
         return modalInstance = this.launchModal('code_modal', modalScope);
     }
 

@@ -186,7 +186,12 @@ class ArtifactoryGrid {
             if (item.visible) {
                 if (item.colDef.field) {
                     if (item.originalWidth && item.originalWidth.indexOf('%') != -1) {
-                        gridApi.grid.columns[index].width = gridApi.grid.columns[index].colDef.width = Math.floor(gridSize * (item.originalWidth.replace('%', '') / 100));
+                        let newColSize = Math.floor(gridSize * (item.originalWidth.replace('%', '') / 100));
+                        
+                        if (gridApi.grid.columns[index].colDef.minWidth && parseInt(gridApi.grid.columns[index].colDef.minWidth) > newColSize)
+                            newColSize = parseInt(gridApi.grid.columns[index].colDef.minWidth);
+                        
+                        gridApi.grid.columns[index].width = gridApi.grid.columns[index].colDef.width = newColSize;
 
                         columnWidthCounter = columnWidthCounter + gridApi.grid.columns[index].width;
                         resizedColumns.push(index);
@@ -207,6 +212,22 @@ class ArtifactoryGrid {
                 if (item.visible && item.colDef.field && resizedColumns.indexOf(index) == -1)
                     gridApi.grid.columns[index].width = gridApi.grid.columns[index].colDef.width = columnWidthDiff;
             });
+        }
+        else if (columnWidthCounter > gridSize) {
+            let columnWidthDiff = columnWidthCounter - gridSize,
+                indexIterate = 0;
+            
+            while (columnWidthDiff > 0) {
+                if (indexIterate == gridApi.grid.columns.length)
+                    indexIterate = 0;
+
+                if (gridApi.grid.columns[indexIterate].visible && gridApi.grid.columns[indexIterate].colDef.field) {
+                    gridApi.grid.columns[indexIterate].width = gridApi.grid.columns[indexIterate].colDef.width = gridApi.grid.columns[indexIterate].width - 1;
+                    columnWidthDiff = columnWidthDiff - 1;
+                }
+
+                indexIterate++;
+            }
         }
 
         gridApi.grid.refreshCanvas(true);

@@ -2,11 +2,12 @@ import fieldsValuesDictionary from '../../../constants/field_options.constats';
 import TOOLTIP from '../../../constants/artifact_tooltip.constant';
 
 export class AdminRepositoryFormController {
-    constructor($q, $scope, $stateParams, $state, RepositoriesDao, PropertySetsDao, ArtifactoryGridFactory,
+    constructor($q, $scope, $stateParams, $state, $timeout, RepositoriesDao, PropertySetsDao, ArtifactoryGridFactory, ReverseProxiesDao,
             ArtifactoryModal, ArtifactoryFeatures, ArtifactoryNotifications, commonGridColumns,ArtifactoryModelSaver) {
         this.$scope = $scope;
         this.$q = $q;
         this.currentTab = 'basic';
+        this.$timeout = $timeout;
         this.$stateParams = $stateParams;
         this.propertySetsDao = PropertySetsDao;
         this.artifactoryGridFactory = ArtifactoryGridFactory;
@@ -15,12 +16,21 @@ export class AdminRepositoryFormController {
         this.modal = ArtifactoryModal;
         this.$state = $state;
         this.repositoriesDao = RepositoriesDao;
+        this.reverseProxiesDao = ReverseProxiesDao;
         this.newRepository = false;
         this.features = ArtifactoryFeatures;
         this.replicationsGridOption = {};
         this.replicationScope = $scope.$new();
         this.TOOLTIP = TOOLTIP.admin.repositories;
         this.artifactoryModelSaver = ArtifactoryModelSaver.createInstance(this,['repoInfo'],['replications.*.proxies']);
+
+        this.reverseProxies = ["**"];
+
+        this.reverseProxiesSelectizeConfig = {
+            sortField: 'text',
+            create: false,
+            maxItems: 1
+        };
 
 
         this._createGrid();
@@ -75,6 +85,11 @@ export class AdminRepositoryFormController {
         this.repositoriesDao.getRepository({type: this.repoType, repoKey: repoKey}).$promise
                 .then(info => {
                     this.repoInfo = info;
+
+                    if (this.repoInfo.typeSpecific.repoType === "Docker" && !this.features.isAol() && !this.features.isOss()) {
+                        this._getReveresProxyConfigurations();
+                    }
+
                     //console.log(info);
                     if (this.repoInfo.replications && this.repoInfo.replications.length) {
                         this.repoInfo.cronExp = this.repoInfo.replications[0].cronExp;
@@ -430,15 +445,6 @@ export class AdminRepositoryFormController {
         }
     }
 
-    /**
-     * function for reverse proxy config generator
-     */
-    openReverseProxyModal() {
-        this.$reverseProxyScope = this.$scope.$new();
-        this.$reverseProxyScope.modalClose = ()=> this.modalClose();
-
-        this.reverseProxyModal = this.modal.launchModal('reverse_proxy_modal', this.$reverseProxyScope)
-    }
 
     _getRepositoriesByType() {
         this.repositoriesDao.availableRepositoriesByType({
@@ -624,6 +630,9 @@ export class AdminRepositoryFormController {
             this.repoInfo.typeSpecific = {};
         }
         this.repoInfo.typeSpecific.repoType = type.serverEnumName;
+        if (this.repoInfo.typeSpecific.repoType === "Docker" && !this.features.isAol() && !this.features.isOss()) {
+            this._getReveresProxyConfigurations();
+        }
 
         if (this.newRepository) {
             this._setDefaultValuesByType();
@@ -812,5 +821,36 @@ export class AdminRepositoryFormController {
 
     cancel() {
         this.$state.go('^.list', {repoType: this.repoType});
+    }
+
+    _getReveresProxyConfigurations() {
+        this.reverseProxiesDao.get().$promise.then((reverseProxies)=> {
+
+            this.reverseProxyConfigured = reverseProxies.serverName && reverseProxies.webServerType && (reverseProxies.useHttp || reverseProxies.useHttps) && reverseProxies.dockerReverseProxyMethod !== 'NOVALUE';;
+
+//            this.hideReverseProxy = this.reverseProxyConfigured
+
+            if (this.reverseProxyConfigured) {
+                if (!this.repoInfo.advanced.reverseProxy) {
+                    this.repoInfo.advanced.reverseProxy = {
+                        key: reverseProxies.key,
+                        serverName: reverseProxies.serverName
+                    };
+                }
+                if (reverseProxies.dockerReverseProxyMethod === 'PORTPERREPO') {
+                    this.reverseProxyPortMode = true;
+                    this.repoInfo.advanced.reverseProxy.serverName = reverseProxies.serverName;
+                }
+                else {
+                    this.reverseProxyPortMode = false;
+                    if (this.repoInfo.general && this.repoInfo.general.repoKey) this.repoInfo.advanced.reverseProxy.serverName = reverseProxies.serverNameExpression.replace('*',this.repoInfo.general.repoKey);
+                    this.reverseProxyServerNameExpression = reverseProxies.serverNameExpression;
+                }
+            }
+
+        });
+    }
+    onChangeRepoKey() {
+        if (this.repoInfo.general && this.repoInfo.general.repoKey && this.reverseProxyServerNameExpression) this.repoInfo.advanced.reverseProxy.serverName = this.reverseProxyServerNameExpression.replace('*',this.repoInfo.general.repoKey);
     }
 }

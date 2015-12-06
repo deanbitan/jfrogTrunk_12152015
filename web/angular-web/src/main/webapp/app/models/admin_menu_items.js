@@ -19,6 +19,7 @@ export const AdminMenuItems = [
             {"label": "Black Duck", "state": "admin.configuration.black_duck", "feature": "blackduck"},
             {"label": "Property Sets", "state": "admin.configuration.property_sets", "feature": "properties"},
             {"label": "Proxies", "state": "admin.configuration.proxies", "feature": "proxies"},
+            {"label": "Reverse Proxy", "state": "admin.configuration.reverse_proxy", "feature": "reverse_proxies"},
             {"label": "Mail", "state": "admin.configuration.mail", "feature": "mail"},
             {"label": "High Availability", "state": "admin.configuration.ha", "feature": "highavailability"},
             //{"label": "Bintray", "state": "admin.configuration.bintray"},

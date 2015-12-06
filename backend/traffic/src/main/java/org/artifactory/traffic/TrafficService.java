@@ -44,10 +44,18 @@ public interface TrafficService {
     /**
      * Get transfer usage for the specified time window (edges inclusive) filtered by ips
      */
-    TransferUsage getUsageWithFilter(Calendar from, Calendar to, List<String> ipToFilter);
+    TransferUsage getTrafficUsageWithFilterCurrentNode(long startTime, long endTime, List<String> ipToFilter);
 
     /**
      * return true if The traffic service is active (if the traffic is collected for AOL)
      */
     boolean isActive();
+
+    /**
+     * Get transfer usage for the specified time window (edges inclusive) filtered by ips
+     * Case the instance is an HA instance - collect traffic from all nodes and aggregate it to TransferUsage
+     */
+    TransferUsage getTrafficUsageWithFilter(long startLong, long endLong, List<String> ipsToFilter);
+
+    void validateDateRange(Calendar startDate, Calendar endDate);
 }

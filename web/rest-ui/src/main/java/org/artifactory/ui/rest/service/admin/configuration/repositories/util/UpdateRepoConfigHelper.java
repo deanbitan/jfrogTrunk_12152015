@@ -6,11 +6,7 @@ import org.artifactory.api.repo.RepositoryService;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
-import org.artifactory.descriptor.repo.HttpRepoDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoDescriptor;
-import org.artifactory.descriptor.repo.RepoType;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.typespecific.P2TypeSpecificConfigModel;
@@ -72,9 +68,11 @@ public class UpdateRepoConfigHelper {
         log.debug("Model resolved to local repo descriptor, updating.");
         String repoKey = model.getGeneral().getRepoKey();
         LocalRepoDescriptor repoDescriptor = model.toDescriptor(repoConfigValidator, descriptorBuilder);
+        ReverseProxyDescriptor reverseProxyDescriptor = model.getReverseProxyDescriptor(repoDescriptor, descriptorBuilder);
         Set<LocalReplicationDescriptor> replications = model.getReplicationDescriptors(replicationValidator,
                 replicationBuilder);
         log.debug("Updating descriptor for {}.", repoKey);
+        configDescriptor.updateReverseProxy(reverseProxyDescriptor);
         configDescriptor.getLocalRepositoriesMap().put(repoDescriptor.getKey(), repoDescriptor);
         replicationConfigService.updateLocalReplications(replications, repoKey, configDescriptor);
         configService.saveEditedDescriptorAndReload(configDescriptor);
@@ -85,6 +83,8 @@ public class UpdateRepoConfigHelper {
         MutableCentralConfigDescriptor configDescriptor = configService.getMutableDescriptor();
         String repoKey = model.getGeneral().getRepoKey();
         HttpRepoDescriptor repoDescriptor = model.toDescriptor(repoConfigValidator, descriptorBuilder);
+        ReverseProxyDescriptor reverseProxyDescriptor = model.getReverseProxyDescriptor(repoDescriptor, descriptorBuilder);
+        configDescriptor.updateReverseProxy(reverseProxyDescriptor);
         RemoteReplicationDescriptor replication = model.getReplicationDescriptor(replicationValidator,
                 replicationBuilder);
         log.debug("Updating descriptor for {}.", repoDescriptor.getKey());
@@ -101,6 +101,8 @@ public class UpdateRepoConfigHelper {
         MutableCentralConfigDescriptor configDescriptor = configService.getMutableDescriptor();
         String repoKey = model.getGeneral().getRepoKey();
         VirtualRepoDescriptor repoDescriptor = model.toDescriptor(repoConfigValidator, descriptorBuilder);
+        ReverseProxyDescriptor reverseProxyDescriptor = model.getReverseProxyDescriptor(repoDescriptor, descriptorBuilder);
+        configDescriptor.updateReverseProxy(reverseProxyDescriptor);
         if (repoDescriptor.getType().equals(RepoType.P2)) {
             updateP2Config(configDescriptor, repoDescriptor,
                     ((P2TypeSpecificConfigModel) model.getTypeSpecific()).getP2Repos());

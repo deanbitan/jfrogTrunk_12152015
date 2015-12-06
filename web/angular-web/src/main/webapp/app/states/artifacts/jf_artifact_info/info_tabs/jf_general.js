@@ -67,6 +67,8 @@ class jfGeneralController {
 
     _getGeneralData() {
 
+        this.sha256Calculated = false;
+
         let generalTab = this.getGeneralTab();
         if (generalTab && generalTab.info) { // If general data already exists on the node (for archive children)
             this.generalData = generalTab;
@@ -240,7 +242,9 @@ class jfGeneralController {
     getSha256() {
         if (this.features.isOss() || !this.canCalculateSha256()) return;
 
-        this.artifactActionsDao.getSha256({
+        this.sha256Calculated = true;
+
+        this.artifactActionsDao.getSha256({$spinner_domain: "sha256"}, {
             repoKey: this.currentNode.data.repoKey,
             path: this.currentNode.data.path
         }).$promise.then((result)=> {

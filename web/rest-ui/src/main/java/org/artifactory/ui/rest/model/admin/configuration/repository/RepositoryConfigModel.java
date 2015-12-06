@@ -1,6 +1,8 @@
 package org.artifactory.ui.rest.model.admin.configuration.repository;
 
+import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.ReverseProxyDescriptor;
 import org.artifactory.rest.common.model.RestModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
@@ -53,6 +55,10 @@ public interface RepositoryConfigModel<B extends BasicRepositoryConfigModel, A e
     TypeSpecificConfigModel getTypeSpecific();
 
     void setTypeSpecific(TypeSpecificConfigModel typeSpecific);
+
+
+    ReverseProxyDescriptor getReverseProxyDescriptor(RepoBaseDescriptor repoDescriptor,
+                              RepoConfigDescriptorBuilder builder);
 
     /**
      * Uses the builder to produce a descriptor from this model

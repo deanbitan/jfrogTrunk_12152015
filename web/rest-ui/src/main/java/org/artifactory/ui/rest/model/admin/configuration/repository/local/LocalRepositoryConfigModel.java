@@ -2,7 +2,9 @@ package org.artifactory.ui.rest.model.admin.configuration.repository.local;
 
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.repo.LocalRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.ReverseProxyDescriptor;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.repository.GeneralRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.RepositoryConfigModel;
@@ -89,6 +91,11 @@ public class LocalRepositoryConfigModel implements RepositoryConfigModel<LocalBa
             throws RepoConfigException {
         validator.validateLocal(this);
         return builder.buildLocalDescriptor(this);
+    }
+
+    public ReverseProxyDescriptor getReverseProxyDescriptor(RepoBaseDescriptor repoDescriptor,
+                                                            RepoConfigDescriptorBuilder builder){
+        return builder.buildReverseProxyDescriptor(this.advanced, repoDescriptor);
     }
 
     @Override

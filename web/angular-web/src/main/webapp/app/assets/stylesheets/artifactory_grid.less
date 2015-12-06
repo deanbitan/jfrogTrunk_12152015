@@ -167,6 +167,10 @@
 
           &:hover {
             color: @greenFontHeader;
+            
+            .icon-clear:before {
+              color: @redError;
+            }
           }
 
           i {
@@ -507,6 +511,12 @@ div.ui-grid-cell input.ng-valid {
       background-color: transparent;
       &, i:before {
         color: @greenFontHeader;
+      }
+    }
+    
+    &.batch-action-clear:hover {
+      &, i:before {
+        color: @redError;
       }
     }
   }

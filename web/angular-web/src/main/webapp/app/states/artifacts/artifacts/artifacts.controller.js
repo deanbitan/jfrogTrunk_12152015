@@ -5,7 +5,7 @@ import FIELD_OPTIONS from '../../../constants/field_options.constats';
 
 export class ArtifactsController {
     constructor($scope, $stateParams, $state, $compile, $timeout, $sce, ArtifactoryEventBus, ArtifactoryModal, ArtifactoryState, User, ArtifactDeployDao, ArtifactoryNotifications,
-            SetMeUpDao, ArtifactoryFeatures, parseUrl, ArtifactoryDeployModal, RepoDataDao, FilteredResourceDao) {
+            SetMeUpDao, ArtifactoryFeatures, parseUrl, ArtifactoryDeployModal, RepoDataDao, FilteredResourceDao, ArtifactViewsDao, ReverseProxiesDao, RepositoriesDao) {
 
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.artifactoryNotifications = ArtifactoryNotifications;
@@ -14,12 +14,14 @@ export class ArtifactsController {
         this.setMeUpDao = SetMeUpDao;
         this.artifactDeployDao = ArtifactDeployDao;
         this.repoDataDao = RepoDataDao;
+        this.repositoriesDao = RepositoriesDao;
         this.$state = $state;
         this.$scope = $scope;
         this.$timeout = $timeout;
         this.$compile = $compile;
         this.modal = ArtifactoryModal;
         this.parseUrl = parseUrl;
+        this.reverseProxiesDao = ReverseProxiesDao;
         this.artifactoryFeatures = ArtifactoryFeatures;
         this.node = null;
         this.selectedNode = {};
@@ -31,6 +33,7 @@ export class ArtifactsController {
         this.tooltips = TOOLTIPS;
         this.icons = ICONS;
         this.$sce = $sce;
+        this.artifactViewsDao = ArtifactViewsDao;
         this.initEvent();
         this.repoPackageTypes = FIELD_OPTIONS.repoPackageTypes.slice(0);//make a copy
 
@@ -81,6 +84,7 @@ export class ArtifactsController {
     }
 
     initSetMeUpScope() {
+        let self = this;
         var setMeUpDao = this.setMeUpDao;
         this.setMeUpScope = this.$scope.$new();
 
@@ -174,7 +178,7 @@ export class ArtifactsController {
             },
             docker: {
                 general: {
-                    title: "Using Docker with Artifactory requires a reverse proxy such as Nginx or Apache. For more details please visit our <a href=\"http://www.jfrog.com/confluence/display/RTF/Docker+Repositories#DockerRepositories-RequirementforaReverseProxy(Nginx/Apache)\" target=\"_blank\">documentation</a>."
+                    title: "Using Docker with Artifactory requires a reverse proxy such as Nginx or Apache.<br/>For more details please visit our <a href=\"http://www.jfrog.com/confluence/display/RTF/Docker+Repositories#DockerRepositories-RequirementforaReverseProxy(Nginx/Apache)\" target=\"_blank\">documentation</a>.<br>Not using an SSL certificate requires Docker clients to add an --insecure-registry flag to the <b>DOCKER_OPTS</b>"
                 },
                 read: [{
                     before: "Execute docker pull from the endpoint URL.<br/>For example, to pull from server named <b>artprod.company.com</b> that is behind Nginx or Apache:",
@@ -676,7 +680,9 @@ export class ArtifactsController {
 
         };
 
-        this.setMeUpScope.resolveSnippet = function () {
+        this.setMeUpScope.resolveSnippet = function (resloveDockerReverseProxy) {
+            if (resloveDockerReverseProxy === undefined) resloveDockerReverseProxy = true;
+
             if (!this.selection.repoType) {
                 return
             }
@@ -699,6 +705,38 @@ export class ArtifactsController {
                 scope.generalSnippets.push({
                     title: this.$sce.trustAsHtml("<b>You don't have deploy permissions on this repository!<b/>")
                 });
+            }
+
+            if (this.selection.repoType.value === 'docker' && resloveDockerReverseProxy && !self.artifactoryFeatures.isAol() && !self.artifactoryFeatures.isOss()) {
+                self.artifactViewsDao.getDockerProxySnippet({},{repoKey: "dummy" /*this.selection.repo.text*/}).$promise.then((data)=>{
+                    self.reverseProxiesDao.get().$promise.then((reverseProxies)=> {
+
+                        if (reverseProxies.dockerReverseProxyMethod !== 'NOVALUE') self.setMeUpScope.reverseProxySnippet = data.template;
+
+                        let repoType = this.selection.repo.local ? "local" : (this.selection.repo.remote ? "remote" : "virtual");
+                        self.repositoriesDao.getRepository({type: repoType, repoKey: this.selection.repo.text}).$promise.then(info => {
+                            let perRepo = info.advanced.reverseProxy;
+
+                            let snip;
+                            if (reverseProxies.dockerReverseProxyMethod === 'PORTPERREPO') snip = `${reverseProxies.serverName}:${perRepo.serverPort || '<port>'}`;
+                            if (reverseProxies.dockerReverseProxyMethod === 'SUBDOMAIN') snip = `${this.selection.repo.text}.${reverseProxies.serverName}`;
+
+                            if (snip && !reverseProxies.useHttps) {
+                                this.snippets.docker.general.title = "Using Docker with Artifactory requires a reverse proxy such as Nginx or Apache.<br/>For more details please visit our <a href=\"http://www.jfrog.com/confluence/display/RTF/Docker+Repositories#DockerRepositories-RequirementforaReverseProxy(Nginx/Apache)\" target=\"_blank\">documentation</a>.<br>Not using an SSL certificate requires Docker clients to add an --insecure-registry flag to the <b>DOCKER_OPTS</b>"
+                                this.snippets.docker.general.snippet = `export DOCKER_OPTS+=" --insecure-registry ${snip}"`;
+                            }
+                            else {
+                                this.snippets.docker.general.title = "Using Docker with Artifactory requires a reverse proxy such as Nginx or Apache.<br/>For more details please visit our <a href=\"http://www.jfrog.com/confluence/display/RTF/Docker+Repositories#DockerRepositories-RequirementforaReverseProxy(Nginx/Apache)\" target=\"_blank\">documentation</a>."
+                                delete this.snippets.docker.general.snippet;
+                            }
+                            this.resolveSnippet(false);
+                        });
+                    });
+                });
+            }
+            else if (resloveDockerReverseProxy){
+                delete self.setMeUpScope.reverseProxySnippet;
+                delete this.snippets.docker.general.snippet;
             }
         }
 
@@ -809,7 +847,7 @@ export class ArtifactsController {
                         if (tpl && repoData) {
                             tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                     this.serverId).replace(/\$4/g, this.host)
-                            tpl = this.fixTPL(tpl);
+                            if (repoType !== 'docker') tpl = this.fixTPL(tpl);
                         }
                         scope.generalSnippets.push({
                             title: this.$sce.trustAsHtml(this.snippets[repoType]['general'][i]['title']),
@@ -824,7 +862,7 @@ export class ArtifactsController {
                     if (tpl && repoData) {
                         tpl = tpl.replace(/\$1/g, repoData.text).replace(/\$2/g, this.baseUrl).replace(/\$3/g,
                                 this.serverId).replace(/\$4/g, this.host)
-                        tpl = this.fixTPL(tpl);
+                        if (repoType !== 'docker') tpl = this.fixTPL(tpl);
                     }
                     scope.generalSnippets.push({
                         title: this.$sce.trustAsHtml(this.snippets[repoType]['general']['title']),
@@ -956,7 +994,7 @@ export class ArtifactsController {
                 return (a.repoKey > b.repoKey)?1:-1
             })
             this.setMeUpScope.reposAndTypes = data.repoKeyTypes.map(function(item) {
-                return { text : item.repoKey, value : item.repoType.toLowerCase(), read : item.canRead, deploy: item.canDeploy, local: item.isLocal }
+                return { text : item.repoKey, value : item.repoType.toLowerCase(), read : item.canRead, deploy: item.canDeploy, local: item.isLocal, remote: item.isRemote, virtual: item.isVirtual }
             })
             //this.setMeUpScope.filterByType()
 

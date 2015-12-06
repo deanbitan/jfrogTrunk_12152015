@@ -302,7 +302,8 @@ export class AdminSecurityPermissionsFormController {
                 displayName: 'Read',
                 field: 'read',
                 cellTemplate: this.commonGridColumns.checkboxColumn('row.entity.read'),
-                width: '10%'
+                width: '10%',
+                minWidth: '100'
             }
         ]
     }
@@ -348,7 +349,8 @@ export class AdminSecurityPermissionsFormController {
                 displayName: 'Read',
                 field: 'read',
                 cellTemplate: this.commonGridColumns.checkboxColumn('row.entity.read'),
-                width: '10%'
+                width: '10%',
+                minWidth: '100'
             }
         ]
     }

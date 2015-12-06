@@ -190,7 +190,8 @@ public enum ConstantValues {
     disableIdleConnectionMonitoring("repo.http.disableIdleConnectionMonitoring", FALSE),
     contentCollectionAwaitTimeout("support.core.bundle.contentCollectionAwaitTimeout", 60),
     waitForSlotBeforeWithdraw("support.core.bundle.waitForSlotBeforeWithdraw", 600),
-    maxBundles("support.core.bundle.maxBundles", 5);
+    maxBundles("support.core.bundle.maxBundles", 5),
+    callHomeCron("post.jobs.callHome.cron", null);
 
     public static final String SYS_PROP_PREFIX = "artifactory.";
 

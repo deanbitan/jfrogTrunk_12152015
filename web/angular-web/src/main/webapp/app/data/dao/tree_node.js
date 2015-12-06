@@ -1,19 +1,20 @@
 const ARCHIVE_MARKER = '!';
 
-export function TreeNodeFactory($q, $injector, RESOURCE, ArtifactoryHttpClient, ArtifactWatchesDao, ArtifactActionsDao) {
+export function TreeNodeFactory($q, $injector, RESOURCE, ArtifactoryHttpClient, ArtifactWatchesDao, ArtifactActionsDao, NativeBrowser) {
     return function(data) {
-        return new TreeNode(data, $q, $injector, RESOURCE, ArtifactoryHttpClient, ArtifactWatchesDao, ArtifactActionsDao)
+        return new TreeNode(data, $q, $injector, RESOURCE, ArtifactoryHttpClient, ArtifactWatchesDao, ArtifactActionsDao, NativeBrowser)
     }
 }
 
 class TreeNode {
-    constructor(data, $q, $injector, RESOURCE, ArtifactoryHttpClient, ArtifactWatchesDao, ArtifactActionsDao) {
+    constructor(data, $q, $injector, RESOURCE, ArtifactoryHttpClient, ArtifactWatchesDao, ArtifactActionsDao, NativeBrowser) {
         this.$q = $q;
         this.treeBrowserDao = $injector.get('TreeBrowserDao');
         this.RESOURCE = RESOURCE;
         this.artifactoryHttpClient = ArtifactoryHttpClient;
         this.artifactWatchesDao = ArtifactWatchesDao;
         this.artifactActionsDao = ArtifactActionsDao;
+        this.nativeBrowser = NativeBrowser;
 
         // Wrap the data
         angular.extend(this, data);
@@ -131,6 +132,19 @@ class TreeNode {
                     .then((response) => {
                         this.tabs = response.data[0].tabs;
                         this.actions = response.data[0].actions;
+
+                        let removeIndex = this.actions.indexOf(_.findWhere(this.actions, {name: "NativeBrowser"}));
+                        if (removeIndex !== -1) this.actions.splice(removeIndex,1);
+
+                        let index = this.actions.indexOf(_.findWhere(this.actions, {name: "Watch"}));
+                        if (index===-1) index = this.actions.indexOf(_.findWhere(this.actions, {name: "Unwatch"}));
+                        if (index===-1) index = this.actions.indexOf(_.findWhere(this.actions, {name: "Move"}));
+                        if (index===-1) index = this.actions.indexOf(_.findWhere(this.actions, {name: "Refresh"}));
+                        if (this.nativeBrowser.isAllowed(this)) this.actions.splice(index+1,0,{
+                            icon: "icon-simple-browser",
+                            name: "NativeBrowser",
+                            title: "Native Browser"
+                        });
                         return this;
                     });
         }

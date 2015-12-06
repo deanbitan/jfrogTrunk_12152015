@@ -3,7 +3,7 @@ import EVENTS from '../constants/artifacts_events.constants';
 import ACTIONS from '../constants/artifacts_actions.constants';
 export class ArtifactActions {
     constructor(ArtifactoryEventBus, ArtifactActionsDao, StashResultsDao, $window, $rootScope, $timeout, ArtifactoryNotifications,
-                ArtifactoryModal, selectTargetPath, selectDeleteVersions, PushToBintrayModal, $q, artifactoryIFrameDownload) {
+                ArtifactoryModal, selectTargetPath, selectDeleteVersions, PushToBintrayModal, $q, artifactoryIFrameDownload, NativeBrowser) {
         this.$q = $q;
         this.$timeout = $timeout;
         this.artifactoryEventBus = ArtifactoryEventBus;
@@ -17,6 +17,7 @@ export class ArtifactActions {
         this.$window = $window;
         this.$rootScope = $rootScope;
         this.iframeDownload = artifactoryIFrameDownload;
+        this.nativeBrowser = NativeBrowser;
     }
 
     perform(actionObj, node) {
@@ -253,35 +254,9 @@ export class ArtifactActions {
 
     }
 
-/*
-    _iframeDownload(url) {
-        let iframe=$('<iframe style="display: none">');
-        iframe.load((event)=>{
-            let response,defaultMessage;
-            try {
-                response = $(event.target).contents().find('pre').text();
-            }
-            catch(e) { //workaround for ie .contents() ACCESS DENIED error
-                defaultMessage = 'There are too many folder download requests currently running, try again later.';
-            }
-            if (defaultMessage || response) {
-                let message = defaultMessage || JSON.parse(JSON.parse(response).errors[0].message).error;
-                this.$timeout(()=>{
-                    this.artifactoryNotifications.create({error: message});
-                    if (iframe.parent().length) iframe.remove();
-                });
-            }
-        });
-
-        iframe.ready(() => {
-            this.$timeout(()=>{
-                if (iframe.parent().length) iframe.remove();
-            },15000);
-        });
-
-        iframe.attr('src', url).appendTo('body');
+    _doNativeBrowser(node) {
+        this.$window.open(this.nativeBrowser.pathFor(node.data),"_blank");
     }
-*/
 
     // Do the actual action on the server via the DAO:
     _performActionInServer(actionName, node, extraData = {}, extraParams = {}) {

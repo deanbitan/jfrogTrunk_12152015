@@ -80,11 +80,13 @@ class jfGridFilterController {
         this.$timeout(()=>{
             if (this.grid.api.grid.getVisibleRows().length === 0) {
                 this.grid.setGridData(data.concat([{_emptyRow:true}]));
+                this.noMatches=true;
             }
             else if (this.grid.api.grid.getVisibleRows().length > 1) {
                 this.grid.setGridData(_.filter(data,(row)=>{
                     return !row._emptyRow;
                 }));
+                this.noMatches=false;
             }
             this.$timeout(()=> {
                 this.grid.api.core.refresh();

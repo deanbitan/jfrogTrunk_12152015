@@ -26,6 +26,7 @@ public interface TrafficRestConstants {
     String FILES_ROOT = "files";
     String STREAM_ROOT = "stream";
     String PATH_FILTER = STREAM_ROOT + "/filter";
+    String PATH_FILTER_NODE = "/filter/node";
     String PARAM_START_DATE = "start";
     String PARAM_END_DATE = "end";
     String PARAM_FILTER = "ipsToFilter";

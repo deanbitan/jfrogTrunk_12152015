@@ -33,11 +33,7 @@ import org.artifactory.descriptor.property.PropertySet;
 import org.artifactory.descriptor.quota.QuotaConfigDescriptor;
 import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
-import org.artifactory.descriptor.repo.LocalRepoDescriptor;
-import org.artifactory.descriptor.repo.ProxyDescriptor;
-import org.artifactory.descriptor.repo.RemoteRepoDescriptor;
-import org.artifactory.descriptor.repo.RepoLayout;
-import org.artifactory.descriptor.repo.VirtualRepoDescriptor;
+import org.artifactory.descriptor.repo.*;
 import org.artifactory.descriptor.security.SecurityDescriptor;
 
 import javax.annotation.Nonnull;
@@ -62,6 +58,10 @@ public interface CentralConfigDescriptor extends Descriptor {
     List<ProxyDescriptor> getProxies();
 
     ProxyDescriptor getProxy(String proxyKey);
+
+    List<ReverseProxyDescriptor> getReverseProxies();
+
+    ReverseProxyDescriptor getReverseProxy(String key);
 
     String getDateFormat();
 

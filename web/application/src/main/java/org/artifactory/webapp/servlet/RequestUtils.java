@@ -275,7 +275,7 @@ public abstract class RequestUtils {
      */
     public static void addAdditionalHeadersToWebAppRequest(HttpServletRequest request, HttpServletResponse response) {
         final String servletPath = RequestUtils.getServletPathFromRequest(request);
-        if (servletPath.contains(HttpUtils.ANGULAR_WEBAPP)) {
+        if (servletPath.contains(HttpUtils.WEBAPP_URL_PATH_PREFIX)) {
             verifyExplorerUserAgentAndSetHeader(request, response);
             if (servletPath.endsWith("/app.html")) {
                 // don't store (cache) the app.html in the browser. other resources contain unique version identifier
@@ -298,13 +298,16 @@ public abstract class RequestUtils {
      */
     private static void verifyExplorerUserAgentAndSetHeader(HttpServletRequest request, HttpServletResponse response) {
         String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        if(userAgent.contains("MSIE") || userAgent.contains("Trident")
-                || (userAgent.contains("Windows") && userAgent.contains("Edge"))
-                || userAgent.contains("IEMobile")) {
+        if(isNewExplorer(userAgent)) {
             response.setHeader("X-UA-Compatible", "IE=Edge");
         }
     }
 
+    private static boolean isNewExplorer(String userAgent) {
+        return StringUtils.isNotEmpty(userAgent) && (userAgent.contains("MSIE") || userAgent.contains("Trident")
+                || (userAgent.contains("Windows") && userAgent.contains("Edge"))
+                || userAgent.contains("IEMobile"));
+    }
 
     /**
      * return user name by props auth

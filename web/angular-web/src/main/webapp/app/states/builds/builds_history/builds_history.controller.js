@@ -169,7 +169,7 @@ export class BuildsHistoryController {
     _getBatchActions() {
         return [
             {
-                icon: 'icon icon-clear',
+                icon: 'clear',
                 name: 'Delete',
                 callback: () => this.bulkDelete(),
                 visibleWhen: () => this.user.isAdmin()

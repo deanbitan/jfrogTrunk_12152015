@@ -109,7 +109,7 @@ class JfSimpleBrowserController extends JFCommonBrowser {
 
     _transformNode(node) {
         let nodeText;
-        if (this.nativeBrowser.isAllowed(node)) {
+        if (false) {///this.nativeBrowser.isAllowed(node)) {
             // TODO: remove -> once we have the icon in the SVG
             nodeText = `${ node.text }
                 <a onclick="event.stopImmediatePropagation()"

@@ -15,6 +15,7 @@ export default class JFCommonBrowser {
             if (this.searchText.endsWith('*')) this.searchText = this.searchText.substr(0,this.searchText.length-1);
         }
 
+//        this._initJSTreeSorting();
     }
 
     /********************************************
@@ -68,6 +69,7 @@ export default class JFCommonBrowser {
                             console.log("Unrecognized action", name);
                             return true;
                         }
+                        action._class = 'menu-item-' + action.icon;
                         action.icon = 'action-icon icon ' + action.icon;
                         action.label = action.title;
                         if (actionObj.name === 'Download') {
@@ -358,4 +360,108 @@ $
         }
     }
 
+
+    _initJSTreeSorting() {
+        $.jstree.defaults.sort = (a,b) => {
+            let aNode = this.jstree().get_node(a);
+            let bNode = this.jstree().get_node(b);
+            let aText = aNode.data ? aNode.data.text : '*';
+            let bText = bNode.data ? bNode.data.text : '*';
+
+            let aType = aNode.data ? aNode.data.type : '*';
+            let bType = bNode.data ? bNode.data.type : '*';
+            let aRepoType = aNode.data ? aNode.data.repoType : '*';
+            let bRepoType = bNode.data ? bNode.data.repoType : '*';
+
+            let aScore=0,bScore=0;
+            if ((aType === 'repository' || aType === 'virtualRemoteRepository') &&
+                (bType === 'repository' || bType === 'virtualRemoteRepository')) {
+                //both repos - top level sort
+
+                if (aRepoType==='local') aScore+=10000;
+                if (bRepoType==='local') bScore+=10000;
+
+                if (aRepoType==='cached') aScore+=1000;
+                if (bRepoType==='cached') bScore+=1000;
+
+                if (aRepoType==='remote') aScore+=100;
+                if (bRepoType==='remote') bScore+=100;
+
+                if (aRepoType==='virtual') aScore+=10;
+                if (bRepoType==='virtual') bScore+=10;
+
+                if (aText.toLowerCase()<bText.toLowerCase()) aScore++;
+                if (aText.toLowerCase()>bText.toLowerCase()) bScore++;
+
+                return aScore<bScore?1:-1;
+            }
+            else if ((aType !== 'repository' && aType !== 'virtualRemoteRepository') &&
+                     (bType !== 'repository' && bType !== 'virtualRemoteRepository')) {
+                //both files or folders
+
+                if (aType==='folder') aScore+=10000;
+                if (bType==='folder') bScore+=10000;
+
+                if (!_.isNaN(parseInt(aText))) aScore+=1000;
+                if (!_.isNaN(parseInt(bText))) bScore+=1000;
+
+                if (!_.isNaN(parseInt(aText)) && !_.isNaN(parseInt(bText))) {
+
+                    let addTo = this._compareVersions(aText,bText);
+
+                    if (addTo==='a') aScore += 100;
+                    if (addTo==='b') bScore += 100;
+                }
+                else {
+                    if (aText.toLowerCase()<bText.toLowerCase()) aScore++;
+                    if (aText.toLowerCase()>bText.toLowerCase()) bScore++;
+                }
+                return aScore<bScore?1:-1;
+            }
+            else {
+                if (!aNode.data) return -1; //special node
+                else if (!bNode.data) return 1; //special node
+                else if ((aType === 'repository' || aType === 'virtualRemoteRepository')) return -1;
+                else if ((bType === 'repository' || bType === 'virtualRemoteRepository')) return 1;
+                else return aText.toLowerCase()>bText.toLowerCase()?1:-1;
+            }
+        }
+    }
+
+    _compareVersions(aText,bText) {
+        let aArr = aText.split('.');
+        let bArr = bText.split('.');
+        let minLength = Math.min(aArr.length,bArr.length);
+
+        let addTo;
+        for (let i = 0; i<minLength; i++) {
+            let aNum = parseInt(aArr[i]);
+            let bNum = parseInt(bArr[i]);
+            if (!_.isNaN(aNum) && !_.isNaN(bNum) && aNum<bNum) {
+                addTo = 'a';
+                break;
+            }
+            else if (!_.isNaN(aNum) && !_.isNaN(bNum) && aNum>bNum) {
+                addTo = 'b';
+                break;
+            }
+            else {
+                if (aArr[i]<bArr[i]) {
+                    addTo = 'a';
+                    break;
+                }
+                else if (aArr[i]>bArr[i]) {
+                    addTo = 'b';
+                    break;
+                }
+            }
+        }
+
+        if (!addTo) {
+            if (aArr.length > bArr.length) addTo = 'b';
+            else if (aArr.length < bArr.length) addTo = 'a';
+        }
+
+        return addTo;
+    }
 }

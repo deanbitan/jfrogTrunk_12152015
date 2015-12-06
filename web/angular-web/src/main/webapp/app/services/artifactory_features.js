@@ -187,6 +187,10 @@ export const FEATURES = {
     'supportpage': {
         license: 'PRO',
         label: 'Support Page'
+    },
+    'reverse_proxies': {
+        license: 'PRO',
+        label: 'Reverse Proxies'
     }
 };
 
@@ -205,7 +209,8 @@ export const HIDDEN_AOL_FEATURES = [
     'securitydescriptor',
     'system',
     'mail',
-    'supportpage'
+    'supportpage',
+    'reverse_proxies'
 ];
 
 // Features that are hidden for OSS

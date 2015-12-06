@@ -56,7 +56,4 @@ public interface VersionInfoService {
      */
     @Async
     Future<ArtifactoryVersioning> getRemoteVersioningAsync(Map<String, String> headersMap);
-
-    @Async
-    void callHome();
 }

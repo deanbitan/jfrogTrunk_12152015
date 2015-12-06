@@ -2,6 +2,7 @@ package org.artifactory.ui.rest.model.admin.configuration.repository;
 
 import org.artifactory.rest.common.model.RestModel;
 import org.artifactory.ui.rest.model.admin.configuration.propertysets.PropertySetNameModel;
+import org.artifactory.ui.rest.model.admin.configuration.reverseProxy.ReverseProxyRepoModel;
 
 import java.util.List;
 
@@ -21,6 +22,10 @@ public interface AdvancedRepositoryConfigModel extends RestModel {
     Boolean getAllowContentBrowsing();
 
     void setAllowContentBrowsing(Boolean allowContentBrowsing);
+
+    ReverseProxyRepoModel getReverseProxy();
+
+    void setReverseProxy(ReverseProxyRepoModel reverseProxy);
 
     String toString();
 }

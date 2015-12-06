@@ -2,11 +2,11 @@ package org.artifactory.ui.rest.service.admin.configuration.proxies;
 
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
+import org.artifactory.rest.common.model.proxies.ProxiesModel;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
-import org.artifactory.ui.rest.model.admin.configuration.proxy.DeleteProxiesModel;
-import org.artifactory.ui.rest.service.utils.AolUtils;
+import org.artifactory.rest.common.util.AolUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-public class DeleteProxyService<T extends DeleteProxiesModel> implements RestService<T> {
+public class DeleteProxyService<T extends ProxiesModel> implements RestService<T> {
 
     @Autowired
     private CentralConfigService centralConfigService;

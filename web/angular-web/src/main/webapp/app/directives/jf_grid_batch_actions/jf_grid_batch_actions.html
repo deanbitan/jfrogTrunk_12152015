@@ -3,7 +3,7 @@
        ng-repeat="action in jfBatchActions.actions"
        ng-if="!action.visibleWhen || action.visibleWhen()"
        ng-click="jfBatchActions.perform(action)"
-       class="btn">
+       class="btn batch-action-{{action.icon}}">
         <img ng-src="images/{{action.icon}}.png"
                 ng-if="action.img"/>
         <i class="icon icon-{{action.icon}}"

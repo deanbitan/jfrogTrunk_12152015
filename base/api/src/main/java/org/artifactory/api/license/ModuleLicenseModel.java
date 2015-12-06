@@ -18,7 +18,7 @@ import static org.artifactory.api.license.LicenseInfo.*;
 /**
  * @author Chen Keinan
  */
-@JsonIgnoreProperties({"repoPath", "neutral", "scopes"})
+@JsonIgnoreProperties({"repoPath", "neutral"})
 public class ModuleLicenseModel {
 
     private String id;

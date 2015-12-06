@@ -97,7 +97,7 @@ export class AdminSecurityGroupsController {
    _getBatchActions() {
         return [
             {
-                icon: 'icon icon-clear',
+                icon: 'clear',
                 name: 'Delete',
                 callback: () => this.bulkDelete()
             }

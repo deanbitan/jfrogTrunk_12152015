@@ -5,7 +5,7 @@ import org.artifactory.api.repo.index.MavenIndexerService;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
-import org.artifactory.ui.rest.service.utils.AolUtils;
+import org.artifactory.rest.common.util.AolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

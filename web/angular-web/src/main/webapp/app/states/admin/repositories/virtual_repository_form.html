@@ -35,6 +35,7 @@
                                ng-required="repositoriesForm.repoType.$valid || (!repositoriesForm.repoType.$valid && !RepositoryForm.isTypeModalOpen)"
                                jf-repokey-validator="RepositoryForm"
                                ng-model="RepositoryForm.repoInfo.general.repoKey"
+                               ng-change="RepositoryForm.onChangeRepoKey()"
                                ng-model-options="{debounce: { 'default': 500 } }"
                                 />
                     </jf-field>
@@ -371,6 +372,11 @@
                             </div>
                         </div>
                     </jf-panel>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6">
+                    <ng-include src="'states/admin/repositories/reverse_proxy.html'"></ng-include>
                 </div>
             </div>
         </div>

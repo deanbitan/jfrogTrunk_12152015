@@ -33,6 +33,8 @@ function appConfig($stateProvider, $urlRouterProvider, ngClipProvider, $httpProv
 }
 
 function appRun($httpBackend, $rootScope, ArtifactoryFeatures, $timeout) {
+
+
     $httpBackend.whenPOST(/.*/).passThrough();
     $httpBackend.whenPUT(/.*/).passThrough();
     $httpBackend.whenGET(/.*/).passThrough();

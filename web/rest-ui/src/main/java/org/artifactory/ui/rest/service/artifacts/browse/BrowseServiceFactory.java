@@ -1,5 +1,6 @@
 package org.artifactory.ui.rest.service.artifacts.browse;
 
+import org.artifactory.rest.common.service.admin.reverseProxies.ReverseProxySnippetService;
 import org.artifactory.rest.common.service.artifact.AddSha256ToArtifactService;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.properties.DeletePropertyModel;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.watchers.DeleteWatchersModel;
@@ -22,11 +23,7 @@ import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.GetGeneralArtifactsService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.SetFilteredResourceService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.bintray.GetGeneralBintrayService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.licenses.GetAllAvailableLicensesService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.licenses.GetArchiveLicenseFileService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.licenses.QueryCodeCenterService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.licenses.ScanArtifactForLicensesService;
-import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.licenses.SetLicensesOnPathService;
+import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.general.licenses.*;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.npmview.NpmViewService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.nugetview.NugetViewService;
 import org.artifactory.ui.rest.service.artifacts.browse.treebrowser.tabs.permission.GetEffectivePermissionService;
@@ -162,6 +159,9 @@ public abstract class BrowseServiceFactory {
 
     @Lookup
     public abstract DockerAncestryViewService dockerAncestryViewService();
+
+    @Lookup
+    public abstract ReverseProxySnippetService dockerProxyViewService();
 
     @Lookup
     public abstract GetBlackDuckArtifactService getBlackDuckArtifact();

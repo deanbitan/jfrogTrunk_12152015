@@ -18,13 +18,9 @@
 
 package org.artifactory.util;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpException;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import org.apache.http.*;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ManagedHttpClientConnection;
@@ -32,12 +28,14 @@ import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.api.rest.constant.RestConstants;
 import org.artifactory.common.ConstantValues;
+import org.artifactory.repo.RepoPath;
 import org.artifactory.request.ArtifactoryRequest;
 import org.artifactory.request.RequestThreadLocal;
 import org.artifactory.rest.ErrorResponse;
 import org.artifactory.util.encodeing.URIUtil;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.jfrog.build.api.Build;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -61,9 +59,8 @@ import java.util.StringTokenizer;
  * @author yoavl
  */
 public abstract class HttpUtils {
-    public static final String WEBAPP_URL_PATH_PREFIX = "wicket";
-    public static final String ANGULAR_WEBAPP = "webapp";
-    public static final String ANGULAR_BASE_WEBAPP  = "/artifactory/web/";
+    public static final String WEBAPP_URL_PATH_PREFIX = "webapp";
+    private static final String BROWSE_REPO_URL_PREFIX = "/#/artifacts/browse/tree/General/";
     /**
      * Determine if we are running with servlet API v2.4 or v2.5
      */
@@ -123,14 +120,6 @@ public abstract class HttpUtils {
             remoteAddress = request.getRemoteAddr();
         }
         return remoteAddress;
-    }
-
-    public static String getWebappContextUrl(HttpServletRequest httpRequest) {
-        String servletContextUrl = getServletContextUrl(httpRequest);
-        if (!servletContextUrl.endsWith("/")) {
-            servletContextUrl += "/";
-        }
-        return servletContextUrl + WEBAPP_URL_PATH_PREFIX + "/";
     }
 
     public static String getServletContextUrl(HttpServletRequest httpRequest) {
@@ -329,6 +318,15 @@ public abstract class HttpUtils {
         }
     }
 
+    public static String getServerAndPortFromContext(String contextUrl){
+        String [] splittedServerContext = contextUrl.split("/");
+        if (splittedServerContext.length >= 3) {
+            return splittedServerContext[2];
+        }else{
+            return "";
+        }
+    }
+
     /**
      * Return content length as long (required for uploaded files > 2GB).
      * The servlet api can only return this as int.
@@ -400,6 +398,43 @@ public abstract class HttpUtils {
             return hostAddress == null ? StringUtils.EMPTY : hostAddress;
         } catch (Throwable throwable) {
             return StringUtils.EMPTY;
+        }
+    }
+
+    public static String createBuildInfoLink(Build build) {
+        String artifactoryUrl = ContextHelper.get().beanForType(
+                CentralConfigService.class).getDescriptor().getServerUrlForEmail();
+        if (StringUtils.isBlank(artifactoryUrl)) {
+            return build.getName() + ":" + build.getNumber();
+        } else {
+            try {
+                String href = Joiner.on("/").join(
+                        artifactoryUrl + HttpUtils.WEBAPP_URL_PATH_PREFIX,
+                        "builds",
+                        // Do a manual "encoding" of spaces for the build name. This is due to the fact that if the mail
+                        // is sent to a Gmail account it will automatically insert '+' for every space, and not its '%20'
+                        // hex representation, this will cause a broken link. see more here:
+                        // http://www.google.fr/support/forum/p/gmail/thread?tid=53a5c616a0324d96&hl=en
+                        build.getName().replace(" ", "%20"),
+                        build.getNumber());
+
+                return "<a href=\"" + href + "\"" + " target=\"blank\">" + build.getName() + ":" + build.getNumber()
+                        + "</a>";
+            } catch (Exception e) {
+                return build.getName() + ":" + build.getNumber();
+            }
+        }
+    }
+
+    public static String createLinkToBrowsableArtifact(RepoPath repoPath, String linkLabel) {
+        String artifactoryUrl = ContextHelper.get().beanForType(CentralConfigService.class).getDescriptor()
+                .getServerUrlForEmail();
+        if(StringUtils.isBlank(artifactoryUrl)) {
+            return linkLabel;
+        } else {
+            String url = artifactoryUrl + HttpUtils.WEBAPP_URL_PATH_PREFIX + BROWSE_REPO_URL_PREFIX
+                    + HttpUtils.encodeQuery(repoPath.toPath());
+            return "<a href=" + url + " target=\"blank\"" + ">" + linkLabel + "</a>";
         }
     }
 }

@@ -1,7 +1,7 @@
 import TOOLTIP from '../../../../constants/artifact_tooltip.constant';
 
 export class AdminAdvancedSupportPageController {
-    constructor(SupportPageDao, ServerTimeDao, $timeout, $scope, artifactoryIFrameDownload, GeneralConfigDao, RESOURCE, ArtifactoryNotifications, $compile) {
+    constructor(SupportPageDao, ServerTimeDao, $timeout, $scope, artifactoryIFrameDownload, GeneralConfigDao, RESOURCE, ArtifactoryNotifications, $compile, ArtifactoryModal) {
 
         this.$scope = $scope;
         this.$timeout = $timeout;
@@ -12,6 +12,7 @@ export class AdminAdvancedSupportPageController {
         this.RESOURCE = RESOURCE;
         this.TOOLTIP = TOOLTIP.admin.advanced.supportPage;
         this.artifactoryNotifications = ArtifactoryNotifications;
+        this.modal = ArtifactoryModal;
 
         this.ready = false;
 
@@ -164,9 +165,12 @@ export class AdminAdvancedSupportPageController {
     }
 
     deleteOld(filename) {
-        this.supportPageDao.deleteBundle({},{filename: filename}).$promise.then((resp)=>{
-            this._getOldBundles();
-        })
+        this.modal.confirm(`Are you sure you want to delete this bundle?`)
+                .then(() => {
+                    this.supportPageDao.deleteBundle({}, {filename: filename}).$promise.then((resp)=> {
+                        this._getOldBundles();
+                    })
+                });
     }
 
     create() {

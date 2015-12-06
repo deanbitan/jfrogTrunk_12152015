@@ -24,7 +24,7 @@
     <parent>
         <artifactId>artifactory-web-parent</artifactId>
         <groupId>org.artifactory</groupId>
-        <version>4.3.0</version>
+        <version>4.3.1</version>
     </parent>
     <dependencies>
         <dependency>
@@ -54,11 +54,6 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-        </dependency>
-        <!-- for cron expressions validation -->
-        <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz</artifactId>
         </dependency>
         <dependency>
             <groupId>org.ocpsoft.prettytime</groupId>

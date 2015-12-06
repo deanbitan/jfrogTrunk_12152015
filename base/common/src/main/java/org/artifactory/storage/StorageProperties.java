@@ -233,12 +233,30 @@ public class StorageProperties {
         return StorageUnit.fromReadableString(getProperty(Key.binaryProviderCacheMaxSize, DEFAULT_MAX_CACHE_SIZE));
     }
 
-    public String getS3Entpoint() {
+    public String getS3EndPoint() {
         return getProperty(Key.binaryProviderS3Endpoint);
     }
 
     public int getS3EntpointPort() {
         return getIntProperty(Key.binaryProviderS3EndpointPort.key, -1);
+    }
+
+    public boolean getBinaryProviderGsHttpsOnly() {
+        return getBooleanProperty(Key.binaryProviderGsHttpsOnly.key, true);
+    }
+    public int getBinaryProviderGsHttpsPort() {
+        return getIntProperty(Key.binaryProviderGsHttpsPort.key, 443);
+    }
+    public int getBinaryProviderGsHttpPort() {
+        return getIntProperty(Key.binaryProviderGsHttpPort.key, 80);
+    }
+
+    public String getGsEndPoint() {
+        return getProperty(Key.binaryProviderGsEndPoint, "commondatastorage.googleapis.com");
+    }
+
+    public String getGsProviderId() {
+        return getProperty(Key.binaryProviderS3ProviderId, "google-cloud-storage");
     }
 
     public Boolean isHttpsOnly() {
@@ -343,22 +361,28 @@ public class StorageProperties {
         binaryProviderRetryDelayBetweenRetries("binary.provider.retry.delay.between.retries"),
 
         // S3 binary provider
-        binaryProviderS3BucketName("binary.provider.s3.bucket.name"),
-        binaryProviderS3BucketPath("binary.provider.s3.bucket.path"),
         binaryProviderS3Identity("binary.provider.s3.identity"),
         binaryProviderS3UseSignature("binary.provider.s3.use.signature"),
         binaryProviderS3Credential("binary.provider.s3.credential"),
-        binaryProviderS3ProviderId("binary.provider.s3.provider.id"),
         binaryProviderS3ProxyPort("binary.provider.s3.proxy.port"),
         binaryProviderS3ProxyHost("binary.provider.s3.proxy.host"),
         binaryProviderS3BlobVerifyTimeout("binary.provider.s3.blob.verification.timeout"),
         binaryProviderS3ProxyIdentity("binary.provider.s3.proxy.identity"),
         binaryProviderS3ProxyCredential("binary.provider.s3.proxy.credential"),
+        binaryProviderS3BucketName("binary.provider.s3.bucket.name"),
+        binaryProviderS3BucketPath("binary.provider.s3.bucket.path"),
+        binaryProviderS3ProviderId("binary.provider.s3.provider.id"),
         binaryProviderS3Endpoint("binary.provider.s3.endpoint"),
+        binaryProviderS3EndpointPort("binary.provider.s3.endpoint.port"),
         binaryProviderS3awsVersion("binary.provider.s3.aws.version"),
         binaryProviderS3Region("binary.provider.s3.region"),
         binaryProviderS3MultiPartLimit("binary.provider.s3.multi.part.limit"),
-        binaryProviderS3EndpointPort("binary.provider.s3.endpoint.port"),
+
+        // Google binary provider
+        binaryProviderGsHttpsOnly("gsservice.https-only"),
+        binaryProviderGsHttpsPort("gsservice.gs-endpoint-https-port"),
+        binaryProviderGsHttpPort("gsservice.gs-endpoint-http-port"),
+        binaryProviderGsEndPoint("gsservice.gs-endpoint"),
 
         // Dynamic S3 Param
         binaryProviderS3Param("binary.provider.s3.env"),

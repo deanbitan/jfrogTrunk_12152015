@@ -52,6 +52,8 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
 
     void setProxies(List<ProxyDescriptor> proxies);
 
+    void setReverseProxies(List<ReverseProxyDescriptor> proxies);
+
     void setDateFormat(String dateFormat);
 
     void setFileUploadMaxSizeMb(int fileUploadMaxSizeMb);
@@ -140,6 +142,36 @@ public interface MutableCentralConfigDescriptor extends CentralConfigDescriptor 
      * @return The removed proxy descriptor or null if not found.
      */
     ProxyDescriptor removeProxy(String proxyKey);
+
+    /**
+     * Checks if the given reverse proxy exists by key
+     *
+     * @param key The reverse proxy key to check
+     * @return True if the reverse proxy with the given key exists, false otherwise
+     */
+    boolean isReverseProxyExists(String key);
+
+    /**
+     * Adds the reverse proxy to the list
+     *
+     * @param descriptor The new reverse proxy to add
+     */
+    void addReverseProxy(ReverseProxyDescriptor descriptor);
+
+    /**
+     * Adds the reverse proxy to the list
+     *
+     * @param descriptor The new reverse proxy to add
+     */
+    void updateReverseProxy(ReverseProxyDescriptor descriptor);
+
+    /**
+     * Removes the reverse proxy with the specified key from the list.
+     *
+     * @param key The reverse proxy key to remove
+     * @return The removed reverse proxy descriptor or null if not found
+     */
+    ReverseProxyDescriptor removeReverseProxy(String key);
 
     /**
      * Changes the default proxy. Will also set the default proxies in already existing repositories if flag is set to

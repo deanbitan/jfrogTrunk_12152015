@@ -42,7 +42,7 @@
                                 ng-click="Search.setShowAQL(false)"
                                 ng-if="Search.showAQL"><i class="icon iconrepo iconrepo-aql"></i></button>
                     </div>
-                    <div collapse="!Search.showAQL" class="margin-top-20">
+                    <div collapse="!Search.showAQL" class="no-margin-top" id="aql-viewer">
                         <jf-clip-copy text-to-copy="Search.aql"
                                       class="code-mirror-copy"
                                       object-name="Query"></jf-clip-copy>

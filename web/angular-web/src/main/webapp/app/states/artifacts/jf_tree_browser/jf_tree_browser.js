@@ -26,7 +26,7 @@ export function jfTreeBrowser() {
 const ARCHIVE_MARKER = '!';
 
 class JFTreeBrowserController extends JFCommonBrowser {
-    constructor($timeout, ArtifactoryEventBus, $element, $scope, TreeBrowserDao, $stateParams, $q, ArtifactoryState, ArtifactActions, ArtifactoryNotifications) {
+    constructor($timeout, ArtifactoryEventBus, $element, $scope, TreeBrowserDao, $stateParams, $q, ArtifactoryState, ArtifactActions, ArtifactoryNotifications, NativeBrowser) {
         super(ArtifactActions);
         this.$scope = $scope;
         this.$timeout = $timeout;
@@ -36,6 +36,7 @@ class JFTreeBrowserController extends JFCommonBrowser {
         this.artifactoryEventBus = ArtifactoryEventBus;
         this.treeBrowserDao = TreeBrowserDao;
         this.artifactoryState = ArtifactoryState;
+        this.nativeBrowser = NativeBrowser;
         if (_.isEmpty($stateParams.artifact)) {
             // Important to know for switching to simple browser
             this.whenTreeDataLoaded = $q.when([]);
@@ -222,6 +223,22 @@ class JFTreeBrowserController extends JFCommonBrowser {
                 promise = obj.data.getChildren();
             }
             promise.then((data) => {
+                if (obj.id === '#') {
+                    data.forEach((node)=>{
+                        let removeIndex = node.actions.indexOf(_.findWhere(node.actions, {name: "NativeBrowser"}));
+                        if (removeIndex !== -1) node.actions.splice(removeIndex,1);
+
+                        let index = node.actions.indexOf(_.findWhere(node.actions, {name: "Watch"}));
+                        if (index===-1) index = node.actions.indexOf(_.findWhere(node.actions, {name: "Unwatch"}));
+                        if (index===-1) index = node.actions.indexOf(_.findWhere(node.actions, {name: "Move"}));
+                        if (index===-1) index = node.actions.indexOf(_.findWhere(node.actions, {name: "Refresh"}));
+                        if (this.nativeBrowser.isAllowed(node)) node.actions.splice(index+1,0,{
+                            icon: "icon-simple-browser",
+                            name: "NativeBrowser",
+                            title: "Native Browser"
+                        });
+                    })
+                }
                 this.artifactoryState.setState("hasArtifactsData", data.length > 0 || obj.id !== '#');
                 cb(this._transformData(data));
             });

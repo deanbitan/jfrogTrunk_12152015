@@ -6,7 +6,7 @@ import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
 import org.artifactory.ui.rest.model.utils.cron.CronTime;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.replication.ReplicationConfigService;
-import org.artifactory.ui.utils.CronUtils;
+import org.artifactory.cron.CronUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;

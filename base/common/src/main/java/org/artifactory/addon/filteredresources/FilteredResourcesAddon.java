@@ -67,6 +67,8 @@ public interface FilteredResourcesAddon extends Addon {
 
     String filterResource(Request request, Properties contextProperties, Reader reader) throws Exception;
 
+    String filterResource(Reader reader, Object model) throws Exception;
+
     /**
      * Controls the filtered state of a resource
      *

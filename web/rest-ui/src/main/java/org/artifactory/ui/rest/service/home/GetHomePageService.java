@@ -67,7 +67,9 @@ public class GetHomePageService implements RestService {
         // update addon data
         updateAddonList(addonInfoMap, addonModels);
         homeModel.setAddons(addonModels);
-        homeModel.setUpTime(getUptime());
+        if (authorizationService.isAdmin()) {
+            homeModel.setUpTime(getUptime());
+        }
         homeModel.setAccountManagementLink(getAccountManagementLink());
         homeModel.setDisplayAccountManagementLink(displayAccountManagementLink());
         response.iModel(homeModel);

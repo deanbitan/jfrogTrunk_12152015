@@ -258,6 +258,8 @@ a.clear-all {
 }
 
 .package-search {
+  position: relative;
+  
   .form-group {
     margin-bottom: 0;
     
@@ -280,6 +282,10 @@ a.clear-all {
     @media screen and (max-width: 1440px) {
       &:nth-child(3n + 1).package-search-buttons {
         width: 790px;
+        
+        & + .field-bottom-remark {
+          bottom: 45px;
+        }
       }
     }
     &:nth-child(4n + 1).package-search-buttons {
@@ -292,6 +298,12 @@ a.clear-all {
     &.package-search-buttons {
       width: auto;
     }
+  }
+  
+  .field-bottom-remark {
+    clear: both;
+    position: absolute;
+    bottom: -10px;
   }
 }
 
@@ -408,6 +420,9 @@ a.clear-all {
   }
 }
 
+#aql-viewer {
+  margin-bottom: 15px;
+}
 
 .cm-external-command {
   color: red;

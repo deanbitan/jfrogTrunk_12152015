@@ -88,6 +88,17 @@
         background: transparent;
       }
     }
+
+    &.icon-clear, &.menu-item-icon-clear {
+      &:hover {
+        background: #F4E7E7 !important;
+        box-shadow: inset 3px 0px 0px 0px @redError;
+
+        & > a, > a > span, .action-icon::before, &.context-menu-item, &.context-menu-item:before {
+          color: @redError;
+        }
+      }
+    }
   }
 }
 

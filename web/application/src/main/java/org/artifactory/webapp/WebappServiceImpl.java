@@ -30,19 +30,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class WebappServiceImpl implements WebappService {
 
-    public static final String PATH_ID_PARAM = "pathId";
-    private static final String WEBAPP_URL_BROWSE_REPO = "/browserepo.html";
+    private static final String ANGULAR_URL_BROWSE_REPO = "/#/artifacts/browse/tree/General/";
 
     @Override
     public String createLinkToBrowsableArtifact(String artifactoryUrl, String repoPathId, String linkLabel) {
         String encodedPathId = HttpUtils.encodeQuery(repoPathId);
         String url = new StringBuilder().append(artifactoryUrl).append(HttpUtils.WEBAPP_URL_PATH_PREFIX)
-                .append(WEBAPP_URL_BROWSE_REPO).append("?").append(PATH_ID_PARAM).append("=").append(encodedPathId)
+                .append(ANGULAR_URL_BROWSE_REPO).append(encodedPathId)
                 .toString();
 
         StringBuilder builder = new StringBuilder();
-        builder.append("<a href=").append(url).append(" target=\"blank\"").append(">")
-                .append(linkLabel).append("</a>");
+        builder.append("<a href=").append(url).append(" target=\"blank\"").append(">").append(linkLabel).append("</a>");
         return builder.toString();
+
     }
 }

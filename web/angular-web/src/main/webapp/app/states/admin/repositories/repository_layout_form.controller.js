@@ -66,9 +66,10 @@ export class AdminRepositoryLayoutFormController {
     }
 
     hasAnyAssoc() {
-        return this.layoutData.repositoryAssociations.localRepositories.length ||
+        return this.layoutData &&
+               (this.layoutData.repositoryAssociations.localRepositories.length ||
                this.layoutData.repositoryAssociations.remoteRepositories.length ||
-               this.layoutData.repositoryAssociations.virtualRepositories.length;
+               this.layoutData.repositoryAssociations.virtualRepositories.length);
     }
 
     cancel() {

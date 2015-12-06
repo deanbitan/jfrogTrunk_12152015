@@ -1,9 +1,9 @@
-package org.artifactory.ui.rest.service.utils;
+package org.artifactory.rest.common.util;
 
 import org.artifactory.addon.AddonsManager;
 import org.artifactory.addon.CoreAddons;
 import org.artifactory.api.context.ContextHelper;
-import org.artifactory.ui.exception.ForbiddenException;
+import org.artifactory.rest.common.exception.ForbiddenException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

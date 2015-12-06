@@ -4,7 +4,7 @@
     <div class="content-wrapper">
         <div class="card stretch card-pole-pad card-side-pad">
             <div class="content-with-footer">
-                <form name="UserProfile.unlockform" ng-submit="UserProfile.unlock()">
+                <form name="UserProfile.unlockform" ng-submit="UserProfile.unlock()" ng-if="UserProfile.profileLocked">
                     <div class="form-group current-password">
                         <div class="form-group-cell">
                             <jf-field validations="users" autofocus="true">

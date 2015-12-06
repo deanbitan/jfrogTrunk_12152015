@@ -31,8 +31,8 @@ Cached POM files older than the number of hours defined in the 'virtualCacheClea
 The default is 168 hours (one week). Artifacts accessed through virtual repositories will not be affected by this.`,
                 compressTheInternetDatabase: `When using the internal Derby database, use this to clean up fragmented space that may remain
 after delete operations.
-NOTE! It is recommended to run this when Artifactory activity is low because compression may not run its full course
-when storage is busy (although this has no detrimental effect on the storage).`,
+NOTE! It is recommended to run this when Artifactory activity is low because compression may not run its full course when
+storage is busy (although this has no detrimental effect on the storage).`,
                 pruneUnreferencedData: `Running Artifactory with the wrong file system permissions on storage folders, or running out of storage space,
 can result in unreferenced binary files and empty folders present in the filestore or cache folders. This action
 removes unreferenced files and empty folders.`
@@ -41,7 +41,7 @@ removes unreferenced files and empty folders.`
             storageSummary: {
                 itemsCount: `The total number of items (both files and folders) in your system.`,
                 optimization: `The ratio of Binaries Size to Artifacts Size.
-                This reflects how much the usage of storage in your system has been reduced by Artifactory using checksum storage.`,
+This reflects how much the usage of storage in your system has been reduced by Artifactory using checksum storage.`,
                 artifactsCount: `The total number of artifacts pointing to the physical binaries stored on your system.`,
                 storageDirectory: `If Storage Type is "filesystem" then this is the path to the physical file store.
 If Storage Type is "fullDb" then this is the path to the directory that caches binaries when they are extracted from the database.
@@ -90,6 +90,15 @@ Default is 20000 ms.`,
                 redirectingProxyTargetHosts: `An optional list of host names (separated by newline or comma) to which the proxy may redirect requests.
 The credentials of the proxy are reused by requests redirected to any of these hosts.`
 
+            },
+            reverseProxy: {
+                serverName: `The server name which will be publicly used by users to access Artifactory.`,
+                publicAppContext: `The path which will be publicly used to access Artifactory. If Artifactory is accessible on the root of the server leave empty.`,
+                artifactoryServerName: `The internal server name for Artifactory which will be used by the web server to access the Artifacotry machine.
+If the web server is installed on the same machine as Artifactory you can use localhost, otherwise use the IP or hostname.`,
+                artifactoryAppContext: `The path which will be used to access the Artifactory application. If Artifactory is accessible on the root of the server leave empty.`,
+                sslCertificate: `The full path of the certificate file on the web server.`,
+                sslKey: `The full path of the key file on the web server.`
             },
             mail: {
                 enable: `The activity state of the configuration.`,
@@ -359,9 +368,8 @@ of Artifactory can be fulfilled by accessing this virtual repository's remote re
 For example, specifying **/github.com/** will only allow external dependencies from github.com host.`,
                 cleanupRepositoryReferencesInPOMs: `(1) Discard Active References - Removes repository elements that are declared
 directly under a project or a profile in the same POM that is activeByDefault.
-(2)Discard Any References - Removes all repository elements regardless of whether
-they are included in an active profile or not.
-(3)Nothing - Does not remove any repository elements declared in the POM.`,
+(2) Discard Any References - Removes all repository elements regardless of whether they are included in an active profile or not.
+(3) Nothing - Does not remove any repository elements declared in the POM.`,
                 keyPair: `A named key-pair that is used to sign artifacts automatically.`
 
 
@@ -379,6 +387,9 @@ in Maven.
 Note! Take care not to introduce any regexp capturing groups within this expression.
 If not applicable use '.*'.`
 
+            },
+            reverseProxy: {
+                registryPort: `This port will be binded to the Docker registry.`
             }
         },
         security: {
@@ -432,7 +443,6 @@ Only used with "search" authentication.
                 managerPassword: `The password of the user that binds to the LDAP server to perform the search.
 Only used with "search" authentication.`,
                 subTreeSearch: `When set, enables deep search through the sub tree of the LDAP URL + search base.`
-
             },
             LDAPGroupsForm: {
                 settingsName: `LDAP group key.`,
@@ -566,7 +576,6 @@ The Stash Browser displays all the artifacts in your stash and provides a conven
 You can copy or move the entire Stash to a repository, or perform actions on individual items.`
         },
 
-
         general: {
             /*name: 'Copy this link to navigate directly to this item in the tree browser.',*/
             created: `The time this artifact was deployed to or cached in Artifactory`,
@@ -574,7 +583,6 @@ You can copy or move the entire Stash to a repository, or perform actions on ind
 A filtered textual resource is processed by the <a href="http://freemarker.org/" target="_blank">FreeMarker</a> engine before being returned to clients.
 The context accessible to the template includes:
 Properties ,Security and Request. Javadocs can be found in the <a href="http://repo.jfrog.org/artifactory/libs-releases-local/org/artifactory/artifactory-papi/%5BRELEASE%5D/artifactory-papi-%5BRELEASE%5D-javadoc.jar!/index.html" target="_blank">Artifactory Public API</a>.`
-
         },
         selectTargetPathModal: {
             targetRepoInput: [`Selects the target repository for the transferred items.`,
@@ -607,7 +615,6 @@ Properties ,Security and Request. Javadocs can be found in the <a href="http://r
         }
     },
     builds: {
-
         summary: `An artifact license can have one of the following statuses:
 Unapproved: The license found is not approved.
 Unknown: License information was found but cannot be related to any license managed in Artifactory.
@@ -620,9 +627,7 @@ You can optionally select the dependency scopes to include.`,
         autoFindLicenses: `Automatically extract license data from artifacts' module information.
 When an artifact has conflicting licenses already attached, you can select whether
 to override these licenses with the ones found.`,
-
-
         name: `The Code Center application name. Click on the link to navigate to this application in Code Center.`
-
     }
+
 }

@@ -3,6 +3,7 @@ package org.artifactory.storage.db.servers.service;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
+import org.artifactory.post.jobs.CallHomeJob;
 import org.artifactory.schedule.JobCommand;
 import org.artifactory.schedule.TaskBase;
 import org.artifactory.schedule.TaskService;
@@ -39,10 +40,31 @@ public class ArtifactoryHeartbeatServiceImpl implements ArtifactoryHeartbeatServ
 
     @Override
     public void init() {
+        registersHeartbeatJob();
+        registerCallHomeJob();
+    }
+
+    /**
+     * creates & starts HeartbeatJob
+     */
+    private void registersHeartbeatJob() {
         TaskBase heartbeatJob = TaskUtils.createRepeatingTask(HeartbeatJob.class,
                 TimeUnit.SECONDS.toMillis(ConstantValues.haHeartbeatIntervalSecs.getLong()),
                 TimeUnit.SECONDS.toMillis(ConstantValues.haHeartbeatIntervalSecs.getLong()));
         taskService.startTask(heartbeatJob, false);
+    }
+
+    /**
+     * creates & starts CallHomeJob
+     */
+    private void registerCallHomeJob() {
+        String callHomeQuarzExpression = CallHomeJob.buildRandomQuartzExp();
+        TaskBase callHomeJob = TaskUtils.createCronTask(
+                CallHomeJob.class,
+                callHomeQuarzExpression
+        );
+        log.debug("Scheduling CallHomeJob to run at '{}'", callHomeQuarzExpression);
+        taskService.startTask(callHomeJob, false);
     }
 
     @Override

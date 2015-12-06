@@ -95,7 +95,6 @@ public class ArtifactoryStateManagerImpl implements ArtifactoryStateManager, Rel
             log.debug("Changing from {} to {} is allowed only if the previous step was {}",
                     artifactoryServer.getServerState(), RUNNING.getPrettyName(), STARTING.getPrettyName());
         }
-        versionInfoService.callHome();
     }
 
     @Override

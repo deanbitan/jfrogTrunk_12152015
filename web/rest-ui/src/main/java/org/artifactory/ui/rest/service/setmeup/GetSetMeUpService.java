@@ -86,7 +86,12 @@ public class GetSetMeUpService implements RestService {
                 if(userRepo instanceof LocalRepoDescriptor){
                     repoKeyType.setIsLocal(true);
                 }
-
+                if(userRepo instanceof RemoteRepoDescriptor){
+                    repoKeyType.setIsRemote(true);
+                }
+                if(userRepo instanceof VirtualRepoDescriptor){
+                    repoKeyType.setIsVirtual(true);
+                }
                 repoKeyTypes.add(repoKeyType);
             }
         });

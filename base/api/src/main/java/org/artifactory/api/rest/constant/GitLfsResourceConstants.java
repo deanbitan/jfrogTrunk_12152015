@@ -8,7 +8,7 @@ package org.artifactory.api.rest.constant;
  * @author Dan Feldman
  */
 public interface GitLfsResourceConstants {
-    String PATH_ROOT = "lfs"; // TODO: [by dan] lfs or gitlfs?
+    String PATH_ROOT = "lfs";
 
     String OBJECTS = "objects";
     String REPO_KEY = "repoKey";

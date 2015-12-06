@@ -232,6 +232,12 @@ public class DummyArtifactoryContext implements ArtifactoryContext {
         public void propagateReindexAll(ArtifactoryServer server, String repoKey, boolean async) {}
 
         @Override
+        public List propagateTrafficCollector(long startLong, long endLong, List<String> ipsToFilter,
+                List<ArtifactoryServer> servers, Class clazz) {
+            return null;
+        }
+
+        @Override
         public boolean isDefault() {
             return false;
         }

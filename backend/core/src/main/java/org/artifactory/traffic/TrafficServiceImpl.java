@@ -19,6 +19,8 @@
 package org.artifactory.traffic;
 
 import com.google.common.collect.Lists;
+import org.artifactory.addon.AddonsManager;
+import org.artifactory.addon.ha.HaCommonAddon;
 import org.artifactory.api.context.ContextHelper;
 import org.artifactory.common.ConstantValues;
 import org.artifactory.descriptor.config.CentralConfigDescriptor;
@@ -29,11 +31,14 @@ import org.artifactory.spring.InternalArtifactoryContext;
 import org.artifactory.spring.InternalContextHelper;
 import org.artifactory.spring.Reloadable;
 import org.artifactory.spring.ReloadableBean;
+import org.artifactory.storage.db.servers.model.ArtifactoryServer;
+import org.artifactory.storage.db.servers.service.ArtifactoryServersCommonService;
 import org.artifactory.traffic.entry.TrafficEntry;
 import org.artifactory.traffic.entry.TransferEntry;
 import org.artifactory.traffic.mbean.Traffic;
 import org.artifactory.traffic.read.TrafficReader;
 import org.artifactory.version.CompoundVersionDetails;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -50,6 +55,9 @@ import java.util.List;
 public class TrafficServiceImpl implements InternalTrafficService, ReloadableBean {
 
     private boolean active;
+
+    @Autowired
+    private ArtifactoryServersCommonService serversService;
 
     @Override
     public void init() {
@@ -86,6 +94,12 @@ public class TrafficServiceImpl implements InternalTrafficService, ReloadableBea
         }
     }
 
+    public void validateDateRange(Calendar startDate, Calendar endDate) {
+        if (startDate.after(endDate)) {
+            throw new IllegalArgumentException("The start date cannot be later than the end date");
+        }
+    }
+
     /**
      * Returns traffic entries
      *
@@ -116,22 +130,59 @@ public class TrafficServiceImpl implements InternalTrafficService, ReloadableBea
     /**
      * Returns transfer usage
      *
-     * @param from Traffic start time
-     * @param to   Traffic end time
-     * @param ipToFilter   filter the traffic by list of ip
+     * @param startTime  Traffic start time in long
+     * @param endTime    Traffic end time in long
+     * @param ipToFilter filter the traffic by list of ip
      * @return TransferUsage taken from the traffic log files or the database
      */
     @Override
-    public TransferUsage getUsageWithFilter(Calendar from, Calendar to,
+    public TransferUsage getTrafficUsageWithFilterCurrentNode(long startTime, long endTime,
             List<String> ipToFilter) {
+        Calendar from = Calendar.getInstance();
+        from.setTimeInMillis(startTime);
+        Calendar to = Calendar.getInstance();
+        to.setTimeInMillis(endTime);
+        validateDateRange(from, to);
         List<TrafficEntry> allTrafficEntry = getEntryList(from, to);
         TransferUsage transferUsage = orderEntriesByFilter(allTrafficEntry, ipToFilter);
         return transferUsage;
     }
 
     @Override
-    public boolean isActive(){
+    public boolean isActive() {
         return active;
+    }
+
+    @Override
+    public TransferUsage getTrafficUsageWithFilter(long startTime, long endTime, List<String> ipsToFilter) {
+        List<TransferUsage> transferUsageList = Lists.newArrayList();
+        TransferUsage currentNodeUsage = getTrafficUsageWithFilterCurrentNode(startTime, endTime, ipsToFilter);
+        transferUsageList.add(currentNodeUsage);
+
+        HaCommonAddon haAddon = ContextHelper.get().beanForType(AddonsManager.class).addonByType(HaCommonAddon.class);
+        if (haAddon.isHaEnabled() && haAddon.isHaConfigured()) {
+            List<ArtifactoryServer> allOtherActiveHaServers = serversService.getOtherActiveMembers();
+            List<TransferUsage> responseList = (List<TransferUsage>) haAddon.propagateTrafficCollector(startTime, endTime, ipsToFilter,
+                    allOtherActiveHaServers, TransferUsage.class);
+            if (responseList == null) {
+               return null;
+            }
+            transferUsageList.addAll(responseList);
+        }
+        return aggregateUsage(transferUsageList);
+    }
+
+    private TransferUsage aggregateUsage(List<TransferUsage> transferUsageList) {
+        TransferUsage finalTransferUsage = new TransferUsage();
+        for (TransferUsage transferUsage : transferUsageList) {
+            finalTransferUsage.setDownload(finalTransferUsage.getDownload() + transferUsage.getDownload());
+            finalTransferUsage.setUpload(finalTransferUsage.getUpload() + transferUsage.getUpload());
+            finalTransferUsage.setExcludedDownload(
+                    finalTransferUsage.getExcludedDownload() + transferUsage.getExcludedDownload());
+            finalTransferUsage.setExcludedUpload(
+                    finalTransferUsage.getExcludedUpload() + transferUsage.getExcludedUpload());
+        }
+        return finalTransferUsage;
     }
 
     private TransferUsage orderEntriesByFilter(List<TrafficEntry> allTrafficEntry,
@@ -156,7 +207,8 @@ public class TrafficServiceImpl implements InternalTrafficService, ReloadableBea
         return transferUsage;
     }
 
-    private void fillUsage(List<TrafficEntry> trafficEntriesUsage, TransferUsage transferUsage, boolean isExcludedUsage) {
+    private void fillUsage(List<TrafficEntry> trafficEntriesUsage, TransferUsage transferUsage,
+            boolean isExcludedUsage) {
         long uploadTransferUsage = 0;
         long downloadTransferUsage = 0;
 
@@ -168,10 +220,10 @@ public class TrafficServiceImpl implements InternalTrafficService, ReloadableBea
                 downloadTransferUsage += contentLength;
             }
         }
-        if(isExcludedUsage) {
+        if (isExcludedUsage) {
             transferUsage.setExcludedUpload(uploadTransferUsage);
             transferUsage.setExcludedDownload(downloadTransferUsage);
-        }else{
+        } else {
             transferUsage.setUpload(uploadTransferUsage);
             transferUsage.setDownload(downloadTransferUsage);
         }

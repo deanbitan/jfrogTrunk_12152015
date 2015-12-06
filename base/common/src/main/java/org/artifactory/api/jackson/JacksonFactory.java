@@ -187,6 +187,7 @@ public abstract class JacksonFactory {
     public static ObjectMapper createObjectMapper(boolean ident) {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
         if (ident) mapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
         return mapper;
     }

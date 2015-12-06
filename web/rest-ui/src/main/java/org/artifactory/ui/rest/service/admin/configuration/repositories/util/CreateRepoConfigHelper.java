@@ -12,6 +12,7 @@ import org.artifactory.descriptor.replication.LocalReplicationDescriptor;
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.*;
 import org.artifactory.ui.rest.model.admin.configuration.repository.RepoConfigDefaultValues;
+import org.artifactory.ui.rest.model.admin.configuration.repository.RepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.local.LocalRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.remote.RemoteRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.typespecific.P2TypeSpecificConfigModel;
@@ -74,6 +75,8 @@ public class CreateRepoConfigHelper {
         LocalRepoDescriptor repoDescriptor = model.toDescriptor(repoValidator, repoBuilder);
         configDescriptor.addLocalRepository(repoDescriptor);
         configDescriptor.conditionallyAddToBackups(repoDescriptor);
+        ReverseProxyDescriptor reverseProxyDescriptor = getReverseProxyDescriptor(repoDescriptor, model);
+        configDescriptor.updateReverseProxy(reverseProxyDescriptor);
         if (model.getReplications() != null) {
             log.debug("Creating push replication descriptor(s) from received model");
             Set<LocalReplicationDescriptor> replications = model.getReplicationDescriptors(replicationValidator,
@@ -83,11 +86,18 @@ public class CreateRepoConfigHelper {
         configService.saveEditedDescriptorAndReload(configDescriptor);
     }
 
+    public ReverseProxyDescriptor getReverseProxyDescriptor(RepoBaseDescriptor repoDescriptor,RepositoryConfigModel model){
+        ReverseProxyDescriptor reverseProxyDescriptor = model.getReverseProxyDescriptor(repoDescriptor, repoBuilder);
+        return reverseProxyDescriptor;
+    }
+
     public void handleRemote(RemoteRepositoryConfigModel model) throws RepoConfigException, IOException {
         MutableCentralConfigDescriptor configDescriptor = configService.getMutableDescriptor();
         log.debug("Model resolved to remote repo descriptor, adding.");
         log.debug("Creating descriptor from received model");
         HttpRepoDescriptor repoDescriptor = model.toDescriptor(repoValidator, repoBuilder);
+        ReverseProxyDescriptor reverseProxyDescriptor = getReverseProxyDescriptor(repoDescriptor, model);
+        configDescriptor.updateReverseProxy(reverseProxyDescriptor);
         configDescriptor.addRemoteRepository(repoDescriptor);
         if (model.getReplications() != null) {
             log.debug("Creating pull replication descriptor from received model");
@@ -102,7 +112,9 @@ public class CreateRepoConfigHelper {
         log.debug("Model resolved to virtual repo descriptor, adding.");
         log.debug("Creating descriptor from received model");
         VirtualRepoDescriptor repoDescriptor = model.toDescriptor(repoValidator, repoBuilder);
+        ReverseProxyDescriptor reverseProxyDescriptor = getReverseProxyDescriptor(repoDescriptor, model);
         MutableCentralConfigDescriptor configDescriptor = configService.getMutableDescriptor();
+        configDescriptor.updateReverseProxy(reverseProxyDescriptor);
         if (repoDescriptor.getType().equals(RepoType.P2)) {
             log.debug("Creating P2 config for repo {}", repoDescriptor.getKey());
             repoDescriptor.setRepositories(validateAndCreateP2ConfigRepos(configDescriptor, repoDescriptor,

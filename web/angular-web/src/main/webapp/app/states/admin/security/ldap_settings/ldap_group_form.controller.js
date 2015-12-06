@@ -109,7 +109,7 @@ export class LdapGroupFormController {
     _getBatchActions() {
         return [
             {
-                icon: 'icon icon-import',
+                icon: 'import',
                 name: 'Import',
                 callback: () => this.importSyncGroups()
             }

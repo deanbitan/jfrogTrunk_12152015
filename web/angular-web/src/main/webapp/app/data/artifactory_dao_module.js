@@ -8,6 +8,7 @@ import {LicensesDao}             from './dao/licenses_dao';
 import {MailDao}                 from './dao/mail_dao';
 import {PasswordsEncryptionDao}  from './dao/passwords_encryption_dao';
 import {ProxiesDao}              from './dao/proxies_dao';
+import {ReverseProxiesDao}       from './dao/reverse_proxies_dao';
 import {RegisterProDao}          from './dao/register_pro_dao';
 import {UserDao}                 from './dao/user_dao';
 import {SamlDao}                 from './dao/saml_dao';
@@ -84,6 +85,7 @@ angular.module('artifactory.dao', ['ngResource', 'artifactory.services'])
     .service('MailDao', MailDao)
     .service('PasswordsEncryptionDao', PasswordsEncryptionDao)
     .factory('ProxiesDao', ProxiesDao)
+    .factory('ReverseProxiesDao', ReverseProxiesDao)
     .service('RegisterProDao', RegisterProDao)
     .service('UserDao', UserDao)
     .service('SamlDao', SamlDao)

@@ -9,7 +9,6 @@ import org.artifactory.rest.common.service.RestService;
 import org.artifactory.ui.rest.common.ConfigModelPopulator;
 import org.artifactory.ui.rest.model.admin.configuration.proxy.Proxy;
 import org.artifactory.ui.rest.model.empty.EmptyModel;
-import org.artifactory.ui.rest.service.utils.AolUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;

@@ -152,6 +152,11 @@ public class LocalCacheRepoDescriptor extends LocalRepoDescriptor implements Tas
         remoteRepo.setForceNugetAuthentication(forceNugetAuthentication);
     }
 
+    /*@Override
+    public void setReverseProxy(ReverseProxyRepoConfig reverseProxy) {
+        remoteRepo.setReverseProxy(reverseProxy);
+    }*/
+
     @Override
     public boolean identicalCache(RepoDescriptor oldDescriptor) {
         if (!(oldDescriptor instanceof LocalCacheRepoDescriptor)) {

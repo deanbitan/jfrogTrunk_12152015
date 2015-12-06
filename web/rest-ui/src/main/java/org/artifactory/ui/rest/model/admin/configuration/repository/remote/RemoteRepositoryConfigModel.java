@@ -2,7 +2,9 @@ package org.artifactory.ui.rest.model.admin.configuration.repository.remote;
 
 import org.artifactory.descriptor.replication.RemoteReplicationDescriptor;
 import org.artifactory.descriptor.repo.HttpRepoDescriptor;
+import org.artifactory.descriptor.repo.RepoBaseDescriptor;
 import org.artifactory.descriptor.repo.RepoDescriptor;
+import org.artifactory.descriptor.repo.ReverseProxyDescriptor;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.repository.GeneralRepositoryConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.RepositoryConfigModel;
@@ -90,6 +92,11 @@ public class RemoteRepositoryConfigModel implements RepositoryConfigModel<Remote
             throws RepoConfigException {
         validator.validateRemote(this);
         return builder.buildRemoteDescriptor(this);
+    }
+
+    public ReverseProxyDescriptor getReverseProxyDescriptor(RepoBaseDescriptor repoDescriptor,
+                                                            RepoConfigDescriptorBuilder builder){
+        return builder.buildReverseProxyDescriptor(this.advanced, repoDescriptor);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.artifactory.ui.utils;
+package org.artifactory.cron;
 
 /*
  * Artifactory is a binaries repository manager.

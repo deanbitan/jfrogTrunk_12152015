@@ -169,19 +169,28 @@
 <jf-panel jf-panel-heading="Checksums"
           ng-if="jfGeneral.generalData.checksums">
 
-    <table class="jf-data-table">
-        <tr ng-if="!jfGeneral.generalData.checksums.sha2">
-            <td>SHA-2:</td>
-            <td ng-if="!jfGeneral.features.isOss()"><a ng-class="{'not-allowed':!jfGeneral.canCalculateSha256()}" ng-click="jfGeneral.getSha256()">Calculate</a></td>
-            <td ng-if="jfGeneral.features.isOss()"><div style="width:92px" class="license-required license-required-PRO"><a class="not-allowed">Calculate</a></div></td>
-        </tr>
-        <tr ng-repeat="(_key,_value) in jfGeneral.generalData.checksums"
-            ng-if="_key != 'showFixChecksums' && _key != 'message' && _key != 'sha1Value'">
-            <td>{{jfGeneral.getChecksumKey(_value)}}:</td>
-            <td>{{jfGeneral.getChecksumVal(_value)}}</td>
-        </tr>
-    </table>
-
+    <div class="jf-data-table-ellipsis">
+        <div ng-if="!jfGeneral.generalData.checksums.sha2">
+            <div class="key-cell">SHA-2:</div>
+            <a ng-if="!jfGeneral.features.isOss()"
+                     ng-class="{'not-allowed':!jfGeneral.canCalculateSha256()}"
+                     ng-click="jfGeneral.getSha256()">
+                <span ng-if="!jfGeneral.sha256Calculated">Calculate&nbsp;</span><jf-spinner domain="sha256"></jf-spinner>
+            </a>
+            <span class="license-required license-required-PRO"
+                  ng-if="jfGeneral.features.isOss()">
+                <a class="not-allowed">Calculate</a>
+            </span>
+        </div>
+        <div ng-repeat="(_key,_value) in jfGeneral.generalData.checksums"
+             ng-if="_key != 'showFixChecksums' && _key != 'message' && _key != 'sha1Value'"
+             jf-tooltip-on-overflow>
+            <div class="key-cell">{{jfGeneral.getChecksumKey(_value)}}:</div>{{jfGeneral.getChecksumVal(_value)}}
+        </div>
+    </div>
+    
+    <div class="clearfix"></div>
+    
     <div ng-if="jfGeneral.generalData.checksums.showFixChecksums">
         <div class="text-danger preserve-lb"
              ng-if="jfGeneral.generalData.checksums.message">{{jfGeneral.generalData.checksums.message}}

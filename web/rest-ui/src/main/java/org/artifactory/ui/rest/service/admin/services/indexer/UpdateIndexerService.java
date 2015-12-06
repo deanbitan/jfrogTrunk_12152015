@@ -5,8 +5,8 @@ import org.artifactory.descriptor.config.MutableCentralConfigDescriptor;
 import org.artifactory.rest.common.service.ArtifactoryRestRequest;
 import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.rest.common.service.RestService;
+import org.artifactory.rest.common.util.AolUtils;
 import org.artifactory.ui.rest.model.admin.services.indexer.Indexer;
-import org.artifactory.ui.rest.service.utils.AolUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

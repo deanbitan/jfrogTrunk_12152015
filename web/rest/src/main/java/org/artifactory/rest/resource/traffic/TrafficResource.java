@@ -20,8 +20,10 @@ package org.artifactory.rest.resource.traffic;
 
 import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.artifactory.api.rest.constant.HaRestConstants;
 import org.artifactory.api.rest.constant.TrafficRestConstants;
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.exception.RestException;
 import org.artifactory.rest.common.list.StringList;
 import org.artifactory.traffic.TrafficService;
 import org.artifactory.traffic.TransferUsage;
@@ -50,7 +52,7 @@ import java.util.List;
 @Component
 @Scope(BeanDefinition.SCOPE_PROTOTYPE)
 @Path(TrafficRestConstants.PATH_ROOT)
-@RolesAllowed({AuthorizationService.ROLE_ADMIN})
+@RolesAllowed({AuthorizationService.ROLE_ADMIN, HaRestConstants.ROLE_HA})
 public class TrafficResource {
 
     @Context
@@ -69,11 +71,22 @@ public class TrafficResource {
         from.setTimeInMillis(startLong);
         Calendar to = Calendar.getInstance();
         to.setTimeInMillis(endLong);
-        validateDateRange(from, to);
+        trafficService.validateDateRange(from, to);
         List<TrafficEntry> trafficEntryList = trafficService.getEntryList(from, to);
         writeEntriesToStream(trafficEntryList);
 
         return "";
+    }
+
+    @GET
+    @Path(TrafficRestConstants.PATH_FILTER_NODE)
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({AuthorizationService.ROLE_ADMIN, HaRestConstants.ROLE_HA})
+    public TransferUsage getTransferUsageCurrentNode(
+            @QueryParam(TrafficRestConstants.PARAM_START_DATE) long startLong,
+            @QueryParam(TrafficRestConstants.PARAM_END_DATE) long endLong,
+            @QueryParam(TrafficRestConstants.PARAM_FILTER) StringList ipsToFilter) throws IOException {
+        return trafficService.getTrafficUsageWithFilterCurrentNode(startLong, endLong, ipsToFilter);
     }
 
     @GET
@@ -83,19 +96,11 @@ public class TrafficResource {
             @QueryParam(TrafficRestConstants.PARAM_START_DATE) long startLong,
             @QueryParam(TrafficRestConstants.PARAM_END_DATE) long endLong,
             @QueryParam(TrafficRestConstants.PARAM_FILTER) StringList ipsToFilter) throws IOException {
-        Calendar from = Calendar.getInstance();
-        from.setTimeInMillis(startLong);
-        Calendar to = Calendar.getInstance();
-        to.setTimeInMillis(endLong);
-        validateDateRange(from, to);
-        TransferUsage transferUsage = trafficService.getUsageWithFilter(from, to, ipsToFilter);
-        return transferUsage;
-    }
-
-    private void validateDateRange(Calendar startDate, Calendar endDate) {
-        if (startDate.after(endDate)) {
-            throw new IllegalArgumentException("The start date cannot be later than the end date");
+        TransferUsage transferUsage = trafficService.getTrafficUsageWithFilter(startLong, endLong, ipsToFilter);
+        if (transferUsage == null) {
+            throw new RestException("HA member is null or inactive and therefore propagate traffic collector is not allowed");
         }
+        return transferUsage;
     }
 
     private void writeEntriesToStream(List<TrafficEntry> trafficEntryList) throws IOException {

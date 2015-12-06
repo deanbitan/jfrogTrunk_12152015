@@ -2,6 +2,7 @@
     <div class="row">
         <div class="col-lg-5">
             <input type="text"
+                   ng-style="{color:jfDragDrop.noMatches ? 'red' : 'black'}"
                    ng-model="jfDragDrop.filterList"
                    placeholder="Filter..."
                    ng-change="jfDragDrop.filterChange()"

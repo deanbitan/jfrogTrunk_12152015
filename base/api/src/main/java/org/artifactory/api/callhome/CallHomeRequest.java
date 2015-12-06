@@ -1,7 +1,10 @@
-package org.artifactory.api.version;
+package org.artifactory.api.callhome;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import java.util.List;
 
 /**
  * POJO used when calling home
@@ -31,6 +34,23 @@ public class CallHomeRequest {
     public String dist = "unknown";
 
     public Environment environment = new Environment();
+
+    @JsonProperty(value = "feature_groups")
+    private List<FeatureGroup> featureGroups;
+
+    public CallHomeRequest() {
+    }
+
+    /**
+     * Adds in
+     *
+     * @param callHomeFeature
+     */
+    public void addCallHomeFeature(FeatureGroup callHomeFeature) {
+        if (featureGroups == null)
+            featureGroups = Lists.newLinkedList();
+        featureGroups.add(callHomeFeature);
+    }
 
     public void setDist(String artdist) {
         if (StringUtils.isBlank(artdist)) {

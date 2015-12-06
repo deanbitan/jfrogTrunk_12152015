@@ -143,6 +143,8 @@
                         <div class="form-group-cell">
                             <jf-checkbox text="Exclude Metadata">
                                 <input
+                                        ng-checked="SystemController.importOptions.excludeContent"
+                                        ng-disabled="SystemController.importOptions.excludeContent"
                                         type="checkbox"
                                         id="importExcludeMetadata"
                                         ng-model="SystemController.importOptions.excludeMetadata">

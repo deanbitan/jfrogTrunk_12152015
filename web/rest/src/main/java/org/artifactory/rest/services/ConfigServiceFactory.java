@@ -1,6 +1,10 @@
 package org.artifactory.rest.services;
 
 import org.artifactory.rest.common.service.admin.advance.GetStorageSummaryService;
+import org.artifactory.rest.common.service.admin.reverseProxies.CreateReverseProxyService;
+import org.artifactory.rest.common.service.admin.reverseProxies.GetReverseProxiesService;
+import org.artifactory.rest.common.service.admin.reverseProxies.ReverseProxySnippetService;
+import org.artifactory.rest.common.service.admin.reverseProxies.UpdateReverseProxyService;
 import org.artifactory.rest.common.service.admin.userprofile.*;
 import org.artifactory.rest.common.service.artifact.AddSha256ToArtifactService;
 import org.artifactory.rest.services.replication.*;
@@ -53,5 +57,17 @@ public abstract class ConfigServiceFactory {
 
     @Lookup
     public abstract AddSha256ToArtifactService addSha256ToArtifact();
+
+    @Lookup
+    public abstract CreateReverseProxyService createReverseProxy();
+
+    @Lookup
+    public abstract UpdateReverseProxyService updateReverseProxy();
+
+    @Lookup
+    public abstract GetReverseProxiesService getReverseProxies();
+
+    @Lookup
+    public abstract ReverseProxySnippetService getReverseProxySnippet();
 
 }

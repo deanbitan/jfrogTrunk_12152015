@@ -61,6 +61,7 @@ import {jfValidatorMaxTextLength}   from './validators/jf_validator_max_text_len
 import {jfSpecialChars}   from './jf_special_chars/jf_special_chars';
 import {jfRepokeyValidator}   from './jf_repokey_validator/jf_repokey_validtaor';
 import {jfValidatorDateFormat}   from './validators/jf_validator_date_format';
+import {jfValidatorReverseProxyPort}   from './validators/jf_validator_reverse_proxy_port';
 
 
 angular.module('artifactory.directives', ['artifactory.services', 'artifactory.dao', 'searchTabs', 'ui.select', 'ngSanitize', 'ui.highlight'])
@@ -104,6 +105,7 @@ angular.module('artifactory.directives', ['artifactory.services', 'artifactory.d
         'jfValidatorIntValue': jfValidatorIntValue,
         'jfValidatorDateFormat': jfValidatorDateFormat,
         'jfValidatorMaxTextLength': jfValidatorMaxTextLength,
+        'jfValidatorReverseProxyPort': jfValidatorReverseProxyPort,
         'jfGridFilter': jfGridFilter,
         'jfBreadcrumb': jfBreadcrumb,
         'jfTabs': jfTabs,

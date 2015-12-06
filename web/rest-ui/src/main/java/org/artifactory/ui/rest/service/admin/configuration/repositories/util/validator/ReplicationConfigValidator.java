@@ -11,7 +11,7 @@ import org.artifactory.ui.rest.model.admin.configuration.repository.remote.Remot
 import org.artifactory.ui.rest.model.admin.configuration.repository.replication.local.LocalReplicationConfigModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.replication.remote.RemoteReplicationConfigModel;
 import org.artifactory.ui.rest.service.admin.configuration.repositories.util.exception.RepoConfigException;
-import org.artifactory.ui.utils.CronUtils;
+import org.artifactory.cron.CronUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,6 +1,8 @@
 package org.artifactory.ui.rest.resource.artifacts.browse.treebrowser.tabs.views;
 
 import org.artifactory.api.security.AuthorizationService;
+import org.artifactory.rest.common.resource.BaseResource;
+import org.artifactory.rest.common.service.RestResponse;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.action.ViewArtifact;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.bower.BowerArtifactInfo;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.docker.DockerArtifactInfo;
@@ -10,18 +12,15 @@ import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.npm.NpmAr
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.nugetinfo.NugetArtifactInfo;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.pypi.PypiArtifactInfo;
 import org.artifactory.ui.rest.model.artifacts.browse.treebrowser.tabs.rpm.RpmArtifactInfo;
-import org.artifactory.rest.common.resource.BaseResource;
 import org.artifactory.ui.rest.service.artifacts.browse.BrowseServiceFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -36,6 +35,13 @@ public class ViewsResource extends BaseResource {
 
     @Autowired
     BrowseServiceFactory browseFactory;
+
+    @Autowired
+    @Qualifier("streamingRestResponse")
+    @Override
+    public void setArtifactoryResponse(RestResponse artifactoryResponse) {
+        this.artifactoryResponse = artifactoryResponse;
+    }
 
     @POST
     @Path("pom")
@@ -126,5 +132,13 @@ public class ViewsResource extends BaseResource {
     public Response viewDockerAncestry(DockerAncestryArtifactInfo dockerAncestryArtifactInfo)
             throws Exception {
         return runService(browseFactory.dockerAncestryViewService(), dockerAncestryArtifactInfo);
+    }
+
+    @GET
+    @Path("dockerproxy{id:(/[^/]+?)?}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response viewDockerProxyConfig() throws Exception {
+        return runService(browseFactory.dockerProxyViewService());
     }
 }

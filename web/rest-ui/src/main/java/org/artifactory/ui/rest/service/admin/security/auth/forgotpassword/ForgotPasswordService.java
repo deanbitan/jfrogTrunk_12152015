@@ -78,7 +78,7 @@ public class ForgotPasswordService implements RestService {
             if (addon.isAol()) {
                 resetPageUrl += "#/resetpassword";
             } else {
-                resetPageUrl += HttpUtils.ANGULAR_WEBAPP + "/#/resetpassword";
+                resetPageUrl += HttpUtils.WEBAPP_URL_PATH_PREFIX + "/#/resetpassword";
             }
         }
         return resetPageUrl;

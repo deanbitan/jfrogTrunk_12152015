@@ -65,4 +65,6 @@ public interface RepoDescriptor extends Descriptor, Comparable {
     boolean isForceDockerAuthentication();
 
     boolean isForceNugetAuthentication();
+
+    //ReverseProxyRepoConfig getReverseProxy();
 }

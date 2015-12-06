@@ -3,6 +3,7 @@ package org.artifactory.ui.rest.model.admin.configuration.repository.virtual;
 import org.artifactory.rest.common.util.JsonUtil;
 import org.artifactory.ui.rest.model.admin.configuration.propertysets.PropertySetNameModel;
 import org.artifactory.ui.rest.model.admin.configuration.repository.AdvancedRepositoryConfigModel;
+import org.artifactory.ui.rest.model.admin.configuration.reverseProxy.ReverseProxyRepoModel;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import static org.artifactory.ui.rest.model.admin.configuration.repository.RepoC
 public class VirtualAdvancedRepositoryConfigModel implements AdvancedRepositoryConfigModel {
 
     private Boolean retrieveRemoteArtifacts = DEFAULT_VIRTUAL_CAN_RETRIEVE_FROM_REMOTE;
+    private ReverseProxyRepoModel reverseProxy;
 
     public Boolean getRetrieveRemoteArtifacts() {
         return retrieveRemoteArtifacts;
@@ -58,6 +60,16 @@ public class VirtualAdvancedRepositoryConfigModel implements AdvancedRepositoryC
     @Override
     public void setAllowContentBrowsing(Boolean allowContentBrowsing) {
 
+    }
+
+    @Override
+    public ReverseProxyRepoModel getReverseProxy() {
+        return reverseProxy;
+    }
+
+    @Override
+    public void setReverseProxy(ReverseProxyRepoModel reverseProxy) {
+        this.reverseProxy = reverseProxy;
     }
 
     @Override

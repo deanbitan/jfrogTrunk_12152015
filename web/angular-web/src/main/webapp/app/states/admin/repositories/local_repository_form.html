@@ -38,6 +38,7 @@
                            ng-required="repositoriesForm.repoType.$valid || (!repositoriesForm.repoType.$valid && !RepositoryForm.isTypeModalOpen)"
                            jf-repokey-validator="RepositoryForm"
                            ng-model="RepositoryForm.repoInfo.general.repoKey"
+                           ng-change="RepositoryForm.onChangeRepoKey()"
                            ng-model-options="{debounce: { 'default': 500 } }"/>
                 </jf-field>
                 <ng-messages for="repositoriesForm.repoKey.$error" class="jf-validation">
@@ -406,8 +407,7 @@
                                   include-display-field="name"
                                   exclude-display-field="name"
                                   objects-name="Property Sets"
-                                  headers="{leftTitle:'Available',
-      rightTitle:'Selected'}"></jf-drag-drop>
+                                  headers="{leftTitle:'Available',rightTitle:'Selected'}"></jf-drag-drop>
 
                 </jf-panel>
 
@@ -431,6 +431,9 @@
                         <jf-help-tooltip html="RepositoryForm.TOOLTIP.localForm.allowContentBrowsing"></jf-help-tooltip>
                     </div>
                 </div>
+            </div>
+            <div class="col-lg-6">
+                <ng-include src="'states/admin/repositories/reverse_proxy.html'"></ng-include>
             </div>
         </div>
     </div>

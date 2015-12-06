@@ -20,5 +20,6 @@ export default {
     'UploadToBintray': {title: 'Push to Bintray', icon: 'icon-bintray'},
     'Zap': {title: 'Zap Cache', icon: 'icon-zap'},
     'ZapCaches': {title: 'Zap Caches', icon: 'icon-zap'},
-    'RecalculateIndex': {title: 'Recalculate Index', icon: 'icon-re-index'}
+    'RecalculateIndex': {title: 'Recalculate Index', icon: 'icon-re-index'},
+    'NativeBrowser': {title: 'Native Browser', icon: 'icon-simple-browser'}
 };

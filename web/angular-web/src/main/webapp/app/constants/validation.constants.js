@@ -78,5 +78,8 @@ const customMessages = {
     "propertySet": {
         "name": "Property set name should start with a letter and contain only letters, digits, '-' and '_'. no spaces allowed.",
         "xmlName": "Property set name should start with a letter and contain only letters, digits, '-' and '_'. no spaces allowed."
+    },
+    "reverseProxy": {
+        "port": "Port is not available"
     }
 };

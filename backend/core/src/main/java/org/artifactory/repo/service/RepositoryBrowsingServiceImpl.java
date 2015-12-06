@@ -21,21 +21,9 @@ package org.artifactory.repo.service;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
 import org.apache.commons.lang.StringUtils;
-import org.artifactory.api.repo.BaseBrowsableItem;
-import org.artifactory.api.repo.BrowsableItem;
-import org.artifactory.api.repo.BrowsableItemCriteria;
-import org.artifactory.api.repo.RemoteBrowsableItem;
-import org.artifactory.api.repo.RepositoryBrowsingService;
-import org.artifactory.api.repo.RootNodesFilterResult;
-import org.artifactory.api.repo.VirtualBrowsableItem;
-import org.artifactory.api.repo.VirtualRepoItem;
+import org.artifactory.api.repo.*;
 import org.artifactory.api.repo.exception.FolderExpectedException;
 import org.artifactory.api.repo.exception.ItemNotFoundRuntimeException;
 import org.artifactory.api.security.AuthorizationService;
@@ -46,12 +34,7 @@ import org.artifactory.fs.FileInfo;
 import org.artifactory.fs.ItemInfo;
 import org.artifactory.md.Properties;
 import org.artifactory.mime.MavenNaming;
-import org.artifactory.repo.ArtifactoryStandardUrlResolver;
-import org.artifactory.repo.InternalRepoPathFactory;
-import org.artifactory.repo.LocalRepo;
-import org.artifactory.repo.RealRepo;
-import org.artifactory.repo.RemoteRepo;
-import org.artifactory.repo.RepoPath;
+import org.artifactory.repo.*;
 import org.artifactory.repo.remote.browse.RemoteItem;
 import org.artifactory.repo.virtual.VirtualRepo;
 import org.artifactory.sapi.common.RepositoryRuntimeException;
@@ -67,13 +50,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author Tomer Cohen
@@ -134,14 +111,14 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
     @Override
     @Nonnull
     public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(BrowsableItemCriteria criteria) {
-        return getLocalRepoBrowsableChildrenData(criteria,false,null);
+        return getLocalRepoBrowsableChildrenData(criteria, false, null);
     }
 
     @Nullable
     @Override
     public List<BaseBrowsableItem> getLocalRepoBrowsableChildren(@Nonnull BrowsableItemCriteria criteria,
             boolean updateRootNodesFilterFlag, RootNodesFilterResult browsableItemAccept) {
-        return getLocalRepoBrowsableChildrenData(criteria, updateRootNodesFilterFlag,browsableItemAccept);
+        return getLocalRepoBrowsableChildrenData(criteria, updateRootNodesFilterFlag, browsableItemAccept);
     }
 
     private List<BaseBrowsableItem> getLocalRepoBrowsableChildrenData(BrowsableItemCriteria criteria,
@@ -423,14 +400,34 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             List<BaseBrowsableItem> candidateChildren, List<VirtualRepo> searchableRepos,
             Multimap<String, VirtualRepo> pathToVirtualRepos) {
         StringBuilder canReadReposFlags = new StringBuilder();
+        List<ItemNotFoundRuntimeException> itemNotFoundOnLocalList = new ArrayList<>();
+        List<ItemNotFoundRuntimeException> itemNotFoundOnRemoteList = new ArrayList<>();
+        int localIndex = 0;
+        int remoteIndex = 0;
         if (updateRootNodesFilterFlag) {
             for (VirtualRepo repo : searchableRepos) {
                 RootNodesFilterResult localBrowsableItemAccept = new RootNodesFilterResult();
                 RootNodesFilterResult remoteBrowsableItemAccept = new RootNodesFilterResult();
-                addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos,
-                        updateRootNodesFilterFlag,localBrowsableItemAccept);
+                try {
+                    addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos,
+                            updateRootNodesFilterFlag, localBrowsableItemAccept);
+                    if (!repo.getLocalRepositories().isEmpty()) {
+                        localIndex++;
+                    }
+                } catch (ItemNotFoundRuntimeException e) {
+                    localIndex++;
+                    itemNotFoundOnLocalList.add(e);
+                }
+                try {
                 addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos,
                         updateRootNodesFilterFlag,remoteBrowsableItemAccept);
+                    if (!repo.getRemoteRepositories().isEmpty()) {
+                        remoteIndex++;
+                    }
+                } catch (ItemNotFoundRuntimeException e) {
+                    remoteIndex++;
+                    itemNotFoundOnRemoteList.add(e);
+                }
                 updatefolderCanRead(canReadReposFlags, localBrowsableItemAccept, remoteBrowsableItemAccept);
             }
             if (canReadReposFlags.toString().indexOf("false") != -1 && candidateChildren.isEmpty() ){
@@ -440,12 +437,36 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             for (VirtualRepo repo : searchableRepos) {
                 RootNodesFilterResult localBrowsableItemAccept = new RootNodesFilterResult();
                 RootNodesFilterResult remoteBrowsableItemAccept = new RootNodesFilterResult();
-                addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos,
-                        updateRootNodesFilterFlag,localBrowsableItemAccept);
-                addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos,
-                        updateRootNodesFilterFlag,remoteBrowsableItemAccept);
+                try {
+                    addVirtualBrowsableItemsFromLocal(criteria, repo, candidateChildren, pathToVirtualRepos,
+                            updateRootNodesFilterFlag, localBrowsableItemAccept);
+                    if (!repo.getLocalRepositories().isEmpty()) {
+                        localIndex++;
+                    }
+                } catch (ItemNotFoundRuntimeException e) {
+                    localIndex++;
+                    itemNotFoundOnLocalList.add(e);
+                }
+                try {
+                    addVirtualBrowsableItemsFromRemote(criteria, repo, candidateChildren, pathToVirtualRepos,
+                            updateRootNodesFilterFlag, remoteBrowsableItemAccept);
+                    if (!repo.getRemoteRepositories().isEmpty()) {
+                        remoteIndex++;
+                    }
+                } catch (ItemNotFoundRuntimeException e) {
+                    remoteIndex++;
+                    itemNotFoundOnRemoteList.add(e);
+                }
             }
         }
+        if (isItemNotFoundOnVirtualRepo(candidateChildren, itemNotFoundOnLocalList, itemNotFoundOnRemoteList, remoteIndex + localIndex)) {
+            throw new ItemNotFoundRuntimeException("children items not found on all virtual repos");
+        }
+    }
+
+    private boolean isItemNotFoundOnVirtualRepo(List<BaseBrowsableItem> candidateChildren, List<ItemNotFoundRuntimeException> itemNotFoundOnLocalList,
+                                                List<ItemNotFoundRuntimeException> itemNotFoundOnRemoteList, int totalVirtualIndex) {
+        return candidateChildren.isEmpty() && ((itemNotFoundOnLocalList.size() + itemNotFoundOnRemoteList.size()) == totalVirtualIndex);
     }
 
     /**
@@ -474,6 +495,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             boolean updateRootNodesFilterFlag ,RootNodesFilterResult rootNodesFilterResult) {
         String relativePath = criteria.getRepoPath().getPath();
         List<LocalRepo> localRepositories = repo.getLocalRepositories();
+        List<ItemNotFoundRuntimeException> itemNotFoundRuntimeExceptionList = new ArrayList<>();
         log.debug("adding  Virtual Browsable Items From Local to virtual Repo:'{}'", repo);
         for (LocalRepo localRepo : localRepositories) {
             RepoPath path = InternalRepoPathFactory.create(localRepo.getKey(),
@@ -498,8 +520,33 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
                 }
             } catch (ItemNotFoundRuntimeException e) {
                 log.trace("Could not find local browsable children at '{}'", criteria + " " + e.getMessage());
+                // add item not found exception to list
+                updateItemNotFoundRuntimeExceptionsList(itemNotFoundRuntimeExceptionList, e);
             }
         }
+        if (isAllLocalRepoReturnItemNotFoundException(localRepositories, itemNotFoundRuntimeExceptionList)) {
+            throw new ItemNotFoundRuntimeException("Could not find local browsable children");
+        }
+    }
+
+    /**
+     * update item not foound exception list for local and remote
+     * @param itemNotFoundRuntimeExceptionList - item not found excception list referance
+     * @param e - item not found exception
+     */
+    private void updateItemNotFoundRuntimeExceptionsList(List<ItemNotFoundRuntimeException> itemNotFoundRuntimeExceptionList, ItemNotFoundRuntimeException e) {
+        itemNotFoundRuntimeExceptionList.add(e);
+    }
+
+    /**
+     * check weather all local repositories return item not found exception
+     *
+     * @param localRepositories                - local repositories list
+     * @param itemNotFoundRuntimeExceptionList - item not found exception list
+     * @return - true if all local repositories return item not found exception
+     */
+    private boolean isAllLocalRepoReturnItemNotFoundException(List<LocalRepo> localRepositories, List<ItemNotFoundRuntimeException> itemNotFoundRuntimeExceptionList) {
+        return !itemNotFoundRuntimeExceptionList.isEmpty() && itemNotFoundRuntimeExceptionList.size() == localRepositories.size();
     }
 
     /**
@@ -528,6 +575,7 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
         List<RemoteRepo> remoteRepositories = repo.getRemoteRepositories();
         // add children from all remote repos (and their caches)
         log.debug("adding  Virtual Browsable Items From Remote to virtual Repo:'{}'", repo);
+        List<ItemNotFoundRuntimeException> itemNotFoundRuntimeExceptionList = new ArrayList<>();
         for (RemoteRepo remoteRepo : remoteRepositories) {
             RepoPath remoteRepoPath = InternalRepoPathFactory.create(remoteRepo.getKey(),
                     criteria.getRepoPath().getPath(), criteria.getRepoPath().isFolder());
@@ -555,8 +603,24 @@ public class RepositoryBrowsingServiceImpl implements RepositoryBrowsingService 
             } catch (ItemNotFoundRuntimeException e) {
                 log.trace("Could not find local browsable children at '{}'",
                         criteria + " " + e.getMessage());
+                // add item not found exception to list
+                updateItemNotFoundRuntimeExceptionsList(itemNotFoundRuntimeExceptionList, e);
             }
         }
+        if (isAllRemoteRepoReturnItemNotFoundException(remoteRepositories, itemNotFoundRuntimeExceptionList)) {
+            throw new ItemNotFoundRuntimeException("Could not find remote browsable children");
+        }
+    }
+
+    /**
+     * check weather all local repositories return item not found exception
+     *
+     * @param localRepositories                - local repositories list
+     * @param itemNotFoundRuntimeExceptionList - item not found exception list
+     * @return - true if all local repositories return item not found exception
+     */
+    private boolean isAllRemoteRepoReturnItemNotFoundException(List<RemoteRepo> localRepositories, List<ItemNotFoundRuntimeException> itemNotFoundRuntimeExceptionList) {
+        return !itemNotFoundRuntimeExceptionList.isEmpty() && itemNotFoundRuntimeExceptionList.size() == localRepositories.size();
     }
 
     private List<VirtualRepo> getSearchableRepos(VirtualRepo virtualRepo, RepoPath pathToCheck) {
