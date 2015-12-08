@@ -82,6 +82,7 @@ public class GetReverseProxiesService implements RestService {
         reverseProxyDescriptorModel.setDockerReverseProxyMethod(descriptor.getDockerReverseProxyMethod());
         reverseProxyDescriptorModel.setArtifactoryAppContext(descriptor.getArtifactoryAppContext());
         reverseProxyDescriptorModel.setHttpPort(descriptor.getHttpPort());
+        reverseProxyDescriptorModel.setSslPort(descriptor.getSslPort());
         reverseProxyDescriptorModel.setPublicAppContext(descriptor.getPublicAppContext());
         reverseProxyDescriptorModel.setServerNameExpression(descriptor.getServerNameExpression());
         reverseProxyDescriptorModel.setUpStreamName(descriptor.getUpStreamName());

@@ -20,7 +20,7 @@
     <groupId>org.artifactory</groupId>
     <artifactId>artifactory-parent</artifactId>
     <packaging>pom</packaging>
-    <version>4.3.1</version>
+    <version>4.3.2</version>
     <name>Artifactory Parent</name>
     <url>http://artifactory.jfrog.org/</url>
 
@@ -133,44 +133,44 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-config</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-common</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-capi</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-papi</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-api</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-common</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-config</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
@@ -180,59 +180,59 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-support-core</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-config</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-traffic</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-log</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-core</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-update</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest-common</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-rest-ui</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-angular-web</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-application</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
@@ -242,7 +242,7 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-web-war</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
                 <type>war</type>
             </dependency>
             <dependency>
@@ -1159,12 +1159,12 @@
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
             </dependency>
             <dependency>
                 <groupId>org.artifactory</groupId>
                 <artifactId>artifactory-storage-db</artifactId>
-                <version>4.3.1</version>
+                <version>4.3.2</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>

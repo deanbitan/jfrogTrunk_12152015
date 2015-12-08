@@ -33,10 +33,10 @@ public class ReverseProxyTemplateProvider {
     /**
      * @return
      */
-    public String provideGeneralServerConfigServer(String reverseProxyKey) {
+    public String provideGeneralServerConfigServer(String reverseProxyKey, List<String> repoKeys) {
         CentralConfigService centralConfig = ContextHelper.get().getCentralConfig();
         ReverseProxyDescriptor reverseProxy = centralConfig.getMutableDescriptor().getReverseProxy(reverseProxyKey);
-        String snippet = getGeneralReverseProxySnippet(reverseProxy);
+        String snippet = getGeneralReverseProxySnippet(reverseProxy, repoKeys);
         if (snippet != null) {
             return snippet;
         }
@@ -83,12 +83,12 @@ public class ReverseProxyTemplateProvider {
      * @param reverseProxyDescriptor - reverse proxy descriptor
      * @return reverse proxy snippet
      */
-    private String getGeneralReverseProxySnippet(ReverseProxyDescriptor reverseProxyDescriptor) {
+    private String getGeneralReverseProxySnippet(ReverseProxyDescriptor reverseProxyDescriptor, List<String> repoKeys) {
         switch (reverseProxyDescriptor.getWebServerType()) {
             case NGINX:
-                return buildGeneralTemplate(reverseProxyDescriptor,"/templates/nginx.ftl",true);
+                return buildGeneralTemplate(reverseProxyDescriptor, "/templates/nginx.ftl", true, repoKeys);
             case APACHE:
-                return buildGeneralTemplate(reverseProxyDescriptor,"/templates/apache.ftl",false);
+                return buildGeneralTemplate(reverseProxyDescriptor, "/templates/apache.ftl", false, repoKeys);
         }
         return null;
     }
@@ -98,11 +98,10 @@ public class ReverseProxyTemplateProvider {
      *
      * @return - proxy snippet
      */
-    public String provideDockerReverseProxyServerSnippet(String reverseProxyKey) {
+    public String provideDockerReverseProxyServerSnippet(String reverseProxyKey, List<String> repoKeys) {
         ReverseProxyDescriptor reverseProxy = ContextHelper.get().getCentralConfig().
                 getMutableDescriptor().getReverseProxy(reverseProxyKey);
         List<ReverseProxyRepoConfig> reverseProxyRepoConfigs = reverseProxy.getReverseProxyRepoConfigs();
-        // Set<RepoDescriptor> allRepoDescriptors = getAllReposDescriptors();
         StringBuilder snippetBuilder = new StringBuilder();
         reverseProxyRepoConfigs.forEach(reverseProxyRepoConfig -> {
             if (reverseProxyRepoConfig != null) {
@@ -113,6 +112,10 @@ public class ReverseProxyTemplateProvider {
                 String snippet = getReverseProxySnippet(reverseProxy,repoRef, reverseProxyRepoConfig, false);
                 if (!StringUtils.isEmpty(snippet)) {
                     snippetBuilder.append(snippet).append("\n");
+                } else {
+                    if (isGeneralSslAndDockerPortAreTheSame(reverseProxy, reverseProxyRepoConfig)) {
+                        repoKeys.add(reverseProxyRepoConfig.getRepoRef().getKey());
+                    }
                 }
             }
         });
@@ -147,12 +150,11 @@ public class ReverseProxyTemplateProvider {
      * @param generalOnly - if true general config
      * @return -  snippet
      */
-    private String buildDockerTemplate(ReverseProxyDescriptor reverseProxyDescriptor ,RepoDescriptor repo, ReverseProxyRepoConfig config,boolean generalOnly,
-                                       String templatePath,boolean isNginx) {
+    private String buildDockerTemplate(ReverseProxyDescriptor reverseProxyDescriptor, RepoDescriptor repo,
+                                       ReverseProxyRepoConfig config, boolean generalOnly, String templatePath, boolean isNginx) {
         try {
             FilteredResourcesAddon filteredResourcesAddon = addonsManager.addonByType(FilteredResourcesAddon.class);
             ReverseProxyMethod dockerReverseProxyMethod = reverseProxyDescriptor.getDockerReverseProxyMethod();
-            boolean noValue = dockerReverseProxyMethod.toString().equals("noValue");
             InputStreamReader reader = getInputStreamReader(templatePath);
             int repoPort = config.getPort();
             int generalPort = getNginxGeneralPort(reverseProxyDescriptor);
@@ -177,7 +179,6 @@ public class ReverseProxyTemplateProvider {
             updateLocalNameAndPortData(reverseProxyDescriptor, isNginx, params,
                     reverseProxyDescriptor.getArtifactoryPort());
             params.put("upstreamName", reverseProxyDescriptor.getUpStreamName());
-            params.put("repoKey", repo.getKey());
             params.put("generalOnly", generalOnly);
             params.put("generalPort", generalPort);
             updateSubDomain(dockerReverseProxyMethod, params);
@@ -254,7 +255,7 @@ public class ReverseProxyTemplateProvider {
      * @param reverseProxyDescriptor - reverse proxy descriptor
      * @return nginx general snippet
      */
-    private String buildGeneralTemplate(ReverseProxyDescriptor reverseProxyDescriptor,String templatePath,boolean isNginx) {
+    private String buildGeneralTemplate(ReverseProxyDescriptor reverseProxyDescriptor, String templatePath, boolean isNginx, List<String> repoKeys) {
         try {
             FilteredResourcesAddon filteredResourcesAddon = addonsManager.addonByType(FilteredResourcesAddon.class);
             InputStreamReader reader = getInputStreamReader(templatePath);
@@ -262,6 +263,9 @@ public class ReverseProxyTemplateProvider {
             ReverseProxyMethod dockerReverseProxyMethod = reverseProxyDescriptor.getDockerReverseProxyMethod();
             int sslPort = reverseProxyDescriptor.getSslPort();
             // update template variables
+            if (!repoKeys.isEmpty()) {
+                params.put("repoKey", repoKeys.get(0));
+            }
             params.put("serverName", reverseProxyDescriptor.getServerName());
             params.put("addSsl",reverseProxyDescriptor.isUseHttps());
             params.put("useHttps", reverseProxyDescriptor.isUseHttps());

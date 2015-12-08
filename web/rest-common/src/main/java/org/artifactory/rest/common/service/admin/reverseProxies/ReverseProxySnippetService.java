@@ -1,5 +1,6 @@
 package org.artifactory.rest.common.service.admin.reverseProxies;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.artifactory.api.config.CentralConfigService;
 import org.artifactory.api.context.ContextHelper;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * @author Shay Yaakov
@@ -50,12 +52,14 @@ public class ReverseProxySnippetService implements RestService {
         if (reverseProxy == null) {
             response.error("No such reverse proxy config '" + reverseProxyKey + "'");
         } else {
+            List<String> repoKeys = Lists.newArrayList();
             StringBuilder reverseProxySnippetbuilder = new StringBuilder();
             ReverseProxyMethod dockerReverseProxyMethod = reverseProxy.getDockerReverseProxyMethod();
+            String dockerConfig = templateProvider.provideDockerReverseProxyServerSnippet(reverseProxyKey, repoKeys);
             // update general data
-            updateGeneralData(reverseProxySnippetbuilder, dockerReverseProxyMethod, reverseProxyKey);
+            updateGeneralData(reverseProxySnippetbuilder, dockerReverseProxyMethod, reverseProxyKey, repoKeys);
             // update docker data
-            updateDockerData(reverseProxySnippetbuilder, dockerReverseProxyMethod, reverseProxyKey);
+            updateDockerData(reverseProxySnippetbuilder, dockerReverseProxyMethod, dockerConfig);
             // update response with snippet
             updateResponseWithSnippet(request, response, reverseProxySnippetbuilder, isDownload);
         }
@@ -89,8 +93,7 @@ public class ReverseProxySnippetService implements RestService {
      * @param reverseProxySnippetbuilder - reverse proxy snippet builder
      * @param dockerReverseProxyMethod - docker reverse proxy method (port / sub domain)
      */
-    private void updateDockerData(StringBuilder reverseProxySnippetbuilder, ReverseProxyMethod dockerReverseProxyMethod,String reverseProxyKey) {
-        String dockerConfig = templateProvider.provideDockerReverseProxyServerSnippet(reverseProxyKey);
+    private void updateDockerData(StringBuilder reverseProxySnippetbuilder, ReverseProxyMethod dockerReverseProxyMethod, String dockerConfig) {
         if (addDockerRelatedSnippet(dockerConfig, dockerReverseProxyMethod)) {
             reverseProxySnippetbuilder.append("\n");
             reverseProxySnippetbuilder.append(dockerConfig);
@@ -103,8 +106,8 @@ public class ReverseProxySnippetService implements RestService {
      * @param dockerReverseProxyMethod - docker reverse proxy method (port / sub domain)
      */
     private void updateGeneralData(StringBuilder reverseProxySnippetbuilder, ReverseProxyMethod dockerReverseProxyMethod
-                                   ,String reverseProxyKey) {
-        String generalConfig = templateProvider.provideGeneralServerConfigServer(reverseProxyKey);
+            , String reverseProxyKey, List<String> repoKeys) {
+        String generalConfig = templateProvider.provideGeneralServerConfigServer(reverseProxyKey, repoKeys);
         if (generateGeneralReverseProxySnippet(dockerReverseProxyMethod)) {
             reverseProxySnippetbuilder.append(generalConfig);
         }
